@@ -1,6 +1,7 @@
 """Load question answering chains."""
 from typing import Any, Mapping, Optional, Protocol
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
@@ -15,7 +16,6 @@ from langchain.chains.question_answering import (
     stuff_prompt,
 )
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
 
 
 class LoadingCallable(Protocol):

@@ -5,10 +5,14 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 
 
@@ -88,10 +92,18 @@ class JsonListKeysTool(BaseTool):
     """
     spec: JsonSpec
 
-    def _run(self, tool_input: str) -> str:
+    def _run(
+        self,
+        tool_input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         return self.spec.keys(tool_input)
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(
+        self,
+        tool_input: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         return self._run(tool_input)
 
 
@@ -106,8 +118,16 @@ class JsonGetValueTool(BaseTool):
     """
     spec: JsonSpec
 
-    def _run(self, tool_input: str) -> str:
+    def _run(
+        self,
+        tool_input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         return self.spec.value(tool_input)
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(
+        self,
+        tool_input: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         return self._run(tool_input)

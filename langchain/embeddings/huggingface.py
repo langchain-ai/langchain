@@ -1,7 +1,7 @@
 """Wrapper around HuggingFace embedding models."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.schema import EmbeddingResult
@@ -23,8 +23,10 @@ class HuggingFaceEmbeddings(Embeddings):
         .. code-block:: python
 
             from langchain.embeddings import HuggingFaceEmbeddings
+
             model_name = "sentence-transformers/all-mpnet-base-v2"
-            hf = HuggingFaceEmbeddings(model_name=model_name)
+            model_kwargs = {'device': 'cpu'}
+            hf = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs)
     """
 
     client: Any  #: :meta private:
@@ -33,6 +35,10 @@ class HuggingFaceEmbeddings(Embeddings):
     cache_folder: Optional[str] = None
     """Path to store models. 
     Can be also set by SENTENCE_TRANSFORMERS_HOME enviroment variable."""
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Key word arguments to pass to the model."""
+    encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Key word arguments to pass when calling the `encode` method of the model."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
@@ -40,14 +46,15 @@ class HuggingFaceEmbeddings(Embeddings):
         try:
             import sentence_transformers
 
-            self.client = sentence_transformers.SentenceTransformer(
-                self.model_name, self.cache_folder
-            )
-        except ImportError:
+        except ImportError as exc:
             raise ValueError(
                 "Could not import sentence_transformers python package. "
                 "Please install it with `pip install sentence_transformers`."
-            )
+            ) from exc
+
+        self.client = sentence_transformers.SentenceTransformer(
+            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+        )
 
     class Config:
         """Configuration for this pydantic object."""
@@ -64,7 +71,7 @@ class HuggingFaceEmbeddings(Embeddings):
             List of embeddings, one for each text.
         """
         texts = list(map(lambda x: x.replace("\n", " "), texts))
-        embeddings = self.client.encode(texts)
+        embeddings = self.client.encode(texts, **self.encode_kwargs)
         return embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
@@ -77,7 +84,7 @@ class HuggingFaceEmbeddings(Embeddings):
             Embeddings for the text.
         """
         text = text.replace("\n", " ")
-        embedding = self.client.encode(text)
+        embedding = self.client.encode(text, **self.encode_kwargs)
         return embedding.tolist()
 
 
@@ -85,19 +92,28 @@ class HuggingFaceInstructEmbeddings(Embeddings):
     """Wrapper around sentence_transformers embedding models.
 
     To use, you should have the ``sentence_transformers``
-    and ``InstructorEmbedding`` python package installed.
+    and ``InstructorEmbedding`` python packages installed.
 
     Example:
         .. code-block:: python
 
             from langchain.embeddings import HuggingFaceInstructEmbeddings
+
             model_name = "hkunlp/instructor-large"
-            hf = HuggingFaceInstructEmbeddings(model_name=model_name)
+            model_kwargs = {'device': 'cpu'}
+            hf = HuggingFaceInstructEmbeddings(
+                model_name=model_name, model_kwargs=model_kwargs
+            )
     """
 
     client: Any  #: :meta private:
     model_name: str = DEFAULT_INSTRUCT_MODEL
     """Model name to use."""
+    cache_folder: Optional[str] = None
+    """Path to store models. 
+    Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Key word arguments to pass to the model."""
     embed_instruction: str = DEFAULT_EMBED_INSTRUCTION
     """Instruction to use for embedding documents."""
     query_instruction: str = DEFAULT_QUERY_INSTRUCTION
@@ -109,7 +125,9 @@ class HuggingFaceInstructEmbeddings(Embeddings):
         try:
             from InstructorEmbedding import INSTRUCTOR
 
-            self.client = INSTRUCTOR(self.model_name)
+            self.client = INSTRUCTOR(
+                self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+            )
         except ImportError as e:
             raise ValueError("Dependencies for InstructorEmbedding not found.") from e
 

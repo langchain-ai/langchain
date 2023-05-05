@@ -24,31 +24,16 @@ class TelegramChatLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
-        try:
-            import pandas as pd
-        except ImportError:
-            raise ValueError(
-                "pandas is needed for Telegram loader, "
-                "please install with `pip install pandas`"
-            )
         p = Path(self.file_path)
 
         with open(p, encoding="utf8") as f:
             d = json.load(f)
 
-        normalized_messages = pd.json_normalize(d["messages"])
-        df_normalized_messages = pd.DataFrame(normalized_messages)
-
-        # Only keep plain text messages (no services, links, hashtags, code, bold...)
-        df_filtered = df_normalized_messages[
-            (df_normalized_messages.type == "message")
-            & (df_normalized_messages.text.apply(lambda x: type(x) == str))
-        ]
-
-        df_filtered = df_filtered[["date", "text", "from"]]
-
-        text = df_filtered.apply(concatenate_rows, axis=1).str.cat(sep="")
-
+        text = "".join(
+            concatenate_rows(message)
+            for message in d["messages"]
+            if message["type"] == "message" and isinstance(message["text"], str)
+        )
         metadata = {"source": str(p)}
 
         return [Document(page_content=text, metadata=metadata)]

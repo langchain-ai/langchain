@@ -44,7 +44,8 @@ class AutoGPTOutputParser(BaseAutoGPTOutputParser):
                 name=parsed["command"]["name"],
                 args=parsed["command"]["args"],
             )
-        except KeyError:
+        except (KeyError, TypeError):
+            # If the command is null or incomplete, return an erroneous tool
             return AutoGPTAction(
                 name="ERROR", args={"error": f"Incomplete command args: {parsed}"}
             )
