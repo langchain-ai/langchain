@@ -37,8 +37,10 @@ class TracerSessionV2Base(TracerSessionBase):
     tenant_id: UUID
 
 
-class TracerSessionV2Create(TracerSessionBase):
+class TracerSessionV2Create(TracerSessionV2Base):
     """A creation class for TracerSessionV2."""
+
+    id: Optional[UUID]
 
     pass
 
@@ -100,9 +102,10 @@ class RunTypeEnum(str, Enum):
     llm = "llm"
 
 
-class Run(BaseModel):
+class RunBase(BaseModel):
+    """Base Run schema."""
+
     id: Optional[UUID]
-    name: str
     start_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     end_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     extra: dict
@@ -112,10 +115,22 @@ class Run(BaseModel):
     inputs: dict
     outputs: Optional[dict]
     session_id: UUID
-    parent_run_id: Optional[UUID]
     reference_example_id: Optional[UUID]
     run_type: RunTypeEnum
-    child_runs: List[Run] = Field(default_factory=list)
+
+
+class RunCreate(RunBase):
+    """Schema to create a run in the DB."""
+
+    name: Optional[str]
+    child_runs: List[RunCreate] = Field(default_factory=list)
+
+
+class Run(RunBase):
+    """Run schema when loading from the DB."""
+
+    name: str
+    parent_run_id: Optional[UUID]
 
 
 ChainRun.update_forward_refs()

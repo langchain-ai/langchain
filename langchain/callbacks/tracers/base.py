@@ -29,7 +29,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.run_map: Dict[str, Union[LLMRun, ChainRun, ToolRun]] = {}
-        self.session: Optional[Union[TracerSessionV2, TracerSession]] = None
+        self.session: Optional[Union[TracerSession, TracerSessionV2]] = None
 
     @staticmethod
     def _add_child_run(
@@ -165,7 +165,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or not isinstance(llm_run, LLMRun):
             raise TracerException("No LLMRun found to be traced")
-
         llm_run.response = response
         llm_run.end_time = datetime.utcnow()
         self._end_trace(llm_run)
