@@ -417,7 +417,7 @@ class LangChainPlusClient(BaseSettings):
     @staticmethod
     async def _worker(
         queue: asyncio.Queue,
-        tracers: List[LangChainTracerV2],
+        tracer: LangChainTracerV2,
         chain: Chain,
         n_repetitions: int,
         results: Dict[str, Any],
@@ -430,7 +430,6 @@ class LangChainPlusClient(BaseSettings):
             if example is None:
                 break
 
-            tracer = tracers.pop()
             result = await LangChainPlusClient._arun_llm_or_chain(
                 example,
                 tracer,
@@ -438,7 +437,6 @@ class LangChainPlusClient(BaseSettings):
                 n_repetitions,
             )
             results[str(example.id)] = result
-            tracers.append(tracer)
             queue.task_done()
             job_state.increment()
             if verbose:
@@ -473,22 +471,16 @@ class LangChainPlusClient(BaseSettings):
                 f"{dataset_name}_{llm_or_chain.__class__.__name__}-{num_repetitions}"
             )
         dataset = self.read_dataset(dataset_name=dataset_name)
+        workers = []
+        job_state = {"num_processed": 0, "num_total": len(examples)}
         with tracing_v2_enabled(session_name=session_name) as session:
-            tracers = []
             for _ in range(num_workers):
                 tracer = LangChainTracerV2()
                 tracer.session = session
-                tracers.append(tracer)
-            results: Dict[str, Any] = {}
-            examples = self.list_examples(dataset_id=str(dataset.id))
-            # return examples
-            queue: asyncio.Queue[Optional[Example]] = asyncio.Queue()
-            job_state = {"num_processed": 0, "num_total": len(examples)}
-            workers = [
-                asyncio.create_task(
+                task = asyncio.create_task(
                     LangChainPlusClient._worker(
                         queue,
-                        tracers,
+                        tracer,
                         llm_or_chain,
                         num_repetitions,
                         results,
@@ -496,9 +488,11 @@ class LangChainPlusClient(BaseSettings):
                         verbose,
                     )
                 )
-                for _ in range(num_workers)
-            ]
-
+                workers.append(task)
+            results: Dict[str, Any] = {}
+            examples = self.list_examples(dataset_id=str(dataset.id))
+            # return examples
+            queue: asyncio.Queue[Optional[Example]] = asyncio.Queue()
             for example in examples:
                 await queue.put(example)
 

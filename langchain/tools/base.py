@@ -146,7 +146,8 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     @property
     def is_single_input(self) -> bool:
         """Whether the tool only accepts a single input."""
-        return len(self.args) == 1
+        keys = {k for k in self.args if k != "kwargs"}
+        return len(keys) == 1
 
     @property
     def args(self) -> dict:
