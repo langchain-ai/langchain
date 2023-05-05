@@ -14,13 +14,13 @@ from sqlalchemy.orm import Session, declarative_base, relationship
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, get_from_env
 from langchain.vectorstores.base import VectorStore
 
 Base = declarative_base()  # type: Any
 
 
-PGVECTOR_VECTOR_SIZE = int(os.getenv("PGVECTOR_VECTOR_SIZE", default="1536"))
+PGVECTOR_VECTOR_SIZE = 1536
 _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
 
 
@@ -86,6 +86,21 @@ class EmbeddingStore(BaseModel):
 
     # custom_id : any user defined id
     custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+
+    def __init__(
+        self, *args: Any, vector_size: Optional[int] = None, **kwargs: Any
+    ) -> None:
+        if "embedding" not in kwargs:
+            if vector_size is None:
+                vector_size = int(
+                    get_from_env(
+                        "vector_size",
+                        "PGVECTOR_VECTOR_SIZE",
+                        default=str(PGVECTOR_VECTOR_SIZE),
+                    )
+                )
+            kwargs["embedding"] = sqlalchemy.Column(Vector(vector_size))
+        super().__init__(*args, **kwargs)
 
 
 class QueryResult:
