@@ -22,6 +22,7 @@ class SeleniumURLLoader(BaseLoader):
         browser (str): The browser to use, either 'chrome' or 'firefox'.
         executable_path (Optional[str]): The path to the browser executable.
         headless (bool): If True, the browser will run in headless mode.
+        arguments [List[str]]: List of arguments to pass to the browser.
     """
 
     def __init__(
@@ -31,6 +32,7 @@ class SeleniumURLLoader(BaseLoader):
         browser: Literal["chrome", "firefox"] = "chrome",
         executable_path: Optional[str] = None,
         headless: bool = True,
+        arguments: List[str] = [],
     ):
         """Load a list of URLs using Selenium and unstructured."""
         try:
@@ -54,6 +56,7 @@ class SeleniumURLLoader(BaseLoader):
         self.browser = browser
         self.executable_path = executable_path
         self.headless = headless
+        self.arguments = arguments
 
     def _get_driver(self) -> Union["Chrome", "Firefox"]:
         """Create and return a WebDriver instance based on the specified browser.
@@ -69,6 +72,10 @@ class SeleniumURLLoader(BaseLoader):
             from selenium.webdriver.chrome.options import Options as ChromeOptions
 
             chrome_options = ChromeOptions()
+
+            for arg in self.arguments:
+                chrome_options.add_argument(arg)
+
             if self.headless:
                 chrome_options.add_argument("--headless")
                 chrome_options.add_argument("--no-sandbox")
@@ -80,6 +87,10 @@ class SeleniumURLLoader(BaseLoader):
             from selenium.webdriver.firefox.options import Options as FirefoxOptions
 
             firefox_options = FirefoxOptions()
+
+            for arg in self.arguments:
+                firefox_options.add_argument(arg)
+
             if self.headless:
                 firefox_options.add_argument("--headless")
             if self.executable_path is None:
