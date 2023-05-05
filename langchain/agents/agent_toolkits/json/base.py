@@ -6,13 +6,13 @@ from langchain.agents.agent_toolkits.json.prompt import JSON_PREFIX, JSON_SUFFIX
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
 
 
 def create_json_agent(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     toolkit: JsonToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = JSON_PREFIX,

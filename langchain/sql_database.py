@@ -4,13 +4,22 @@ from __future__ import annotations
 import warnings
 from typing import Any, Iterable, List, Optional
 
-from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
+import sqlalchemy
+from sqlalchemy import (
+    CursorResult,
+    MetaData,
+    Table,
+    create_engine,
+    inspect,
+    select,
+    text,
+)
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 
 
-def _format_index(index: dict) -> str:
+def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
     return (
         f'Name: {index["name"]}, Unique: {index["unique"]},'
         f' Columns: {str(index["column_names"])}'
@@ -30,7 +39,7 @@ class SQLDatabase:
         sample_rows_in_table_info: int = 3,
         indexes_in_table_info: bool = False,
         custom_table_info: Optional[dict] = None,
-        view_support: Optional[bool] = False,
+        view_support: bool = False,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -90,7 +99,7 @@ class SQLDatabase:
         self._metadata.reflect(
             views=view_support,
             bind=self._engine,
-            only=self._usable_tables,
+            only=list(self._usable_tables),
             schema=self._schema,
         )
 
@@ -188,10 +197,10 @@ class SQLDatabase:
         try:
             # get the sample rows
             with self._engine.connect() as connection:
-                sample_rows = connection.execute(command)
+                sample_rows_result: CursorResult = connection.execute(command)
                 # shorten values in the sample rows
                 sample_rows = list(
-                    map(lambda ls: [str(i)[:100] for i in ls], sample_rows)
+                    map(lambda ls: [str(i)[:100] for i in ls], sample_rows_result)
                 )
 
             # save the sample rows in string format
@@ -222,7 +231,7 @@ class SQLDatabase:
                 if fetch == "all":
                     result = cursor.fetchall()
                 elif fetch == "one":
-                    result = cursor.fetchone()[0]
+                    result = cursor.fetchone()[0]  # type: ignore
                 else:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
                 return str(result)

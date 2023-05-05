@@ -9,7 +9,7 @@ from langchain.agents.self_ask_with_search.output_parser import SelfAskOutputPar
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
-from langchain.llms.base import BaseLLM
+from langchain.base_language import BaseLanguageModel
 from langchain.prompts.base import BasePromptTemplate
 from langchain.tools.base import BaseTool
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
@@ -71,7 +71,7 @@ class SelfAskWithSearchChain(AgentExecutor):
 
     def __init__(
         self,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         search_chain: Union[GoogleSerperAPIWrapper, SerpAPIWrapper],
         **kwargs: Any,
     ):

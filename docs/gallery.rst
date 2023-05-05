@@ -343,4 +343,12 @@ Proprietary
     +++
 
     A journaling app for self-care that uses AI to uncover insights and patterns over time.
-    
+
+
+Articles on **Google Scholar**
+-----------------------------
+
+LangChain is used in many scientific and research projects.
+
+**Google Scholar** presents a `list of the papers <https://scholar.google.com/scholar?q=%22langchain%22&hl=en&as_sdt=0,5&as_vis=1>`_
+with references to LangChain.
