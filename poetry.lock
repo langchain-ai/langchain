@@ -2205,7 +2205,7 @@ name = "gql"
 version = "3.4.0"
 description = "GraphQL client for Python"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "gql-3.4.0-py2.py3-none-any.whl", hash = "sha256:59c8a0b8f0a2f3b0b2ff970c94de86f82f65cb1da3340bfe57143e5f7ea82f71"},
@@ -2232,7 +2232,7 @@ name = "graphql-core"
 version = "3.2.3"
 description = "GraphQL implementation for Python, a port of GraphQL.js, the JavaScript reference implementation for GraphQL."
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.6,<4"
 files = [
     {file = "graphql-core-3.2.3.tar.gz", hash = "sha256:06d2aad0ac723e35b1cb47885d3e5c45e956a53bc1b209a9fc5369007fe46676"},
@@ -9501,4 +9501,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f9ee529e73959184cb42811bc98d9e2c099dc5ce1bd50edd1f8483121c248e43"
+content-hash = "0876f693a751366cf7e5174f037f1729654d70b8ff8bf99312644bf4d1f0f970"
