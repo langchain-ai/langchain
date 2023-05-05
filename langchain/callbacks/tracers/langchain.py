@@ -124,13 +124,13 @@ def _get_tenant_id() -> Optional[str]:
 class LangChainTracerV2(LangChainTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, example_id: Optional[UUID] = None, **kwargs: Any) -> None:
         """Initialize the LangChain tracer."""
         super().__init__(**kwargs)
         self._endpoint = _get_endpoint()
         self._headers = _get_headers()
         self.tenant_id = _get_tenant_id()
-        self.example_id: Optional[UUID] = None
+        self.example_id = example_id
 
     def _get_session_create(
         self, name: Optional[str] = None, **kwargs: Any
@@ -147,7 +147,10 @@ class LangChainTracerV2(LangChainTracer):
                 headers=self._headers,
             )
             raise_for_status_with_text(r)
-            return TracerSessionV2(id=r.json()["id"], **session_create.dict())
+            creation_args = session_create.dict()
+            if "id" in creation_args:
+                del creation_args["id"]
+            return TracerSessionV2(id=r.json()["id"], **creation_args)
         except Exception as e:
             if session_create.name is not None:
                 try:
