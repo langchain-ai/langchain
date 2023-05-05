@@ -1,14 +1,20 @@
-import time
-import hashlib
-import json
 import random
 import string
 import tempfile
+import traceback
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
+from langchain.callbacks.utils import (
+    BaseMetadataCallbackHandler,
+    flatten_dict,
+    hash_string,
+    import_pandas,
+    import_spacy,
+    import_textstat,
+)
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 from langchain.utils import get_from_dict_or_env
@@ -23,93 +29,6 @@ def import_mlflow() -> Any:
             "package installed. Please install it with `pip install mlflow==2.2.2`"
         )
     return mlflow
-
-
-def import_spacy() -> Any:
-    try:
-        import spacy
-    except ImportError:
-        raise ImportError(
-            "To use the mlflow callback manager you need to have the `spacy` python "
-            "package installed. Please install it with `pip install spacy`"
-        )
-    return spacy
-
-
-def import_pandas() -> Any:
-    try:
-        import pandas
-    except ImportError:
-        raise ImportError(
-            "To use the mlflow callback manager you need to have the `pandas` python "
-            "package installed. Please install it with `pip install pandas`"
-        )
-    return pandas
-
-
-def import_textstat() -> Any:
-    try:
-        import textstat
-    except ImportError:
-        raise ImportError(
-            "To use the mlflow callback manager you need to have the `textstat` python "
-            "package installed. Please install it with `pip install textstat`"
-        )
-    return textstat
-
-
-def _flatten_dict(
-    nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"
-) -> Iterable[Tuple[str, Any]]:
-    """
-    Generator that yields flattened items from a nested dictionary for a flat dict.
-
-    Parameters:
-        nested_dict (dict): The nested dictionary to flatten.
-        parent_key (str): The prefix to prepend to the keys of the flattened dict.
-        sep (str): The separator to use between the parent key and the key of the
-            flattened dictionary.
-
-    Yields:
-        (str, any): A key-value pair from the flattened dictionary.
-    """
-    for key, value in nested_dict.items():
-        new_key = parent_key + sep + key if parent_key else key
-        if isinstance(value, dict):
-            yield from _flatten_dict(value, new_key, sep)
-        else:
-            yield new_key, value
-
-
-def flatten_dict(
-    nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"
-) -> Dict[str, Any]:
-    """Flattens a nested dictionary into a flat dictionary.
-
-    Parameters:
-        nested_dict (dict): The nested dictionary to flatten.
-        parent_key (str): The prefix to prepend to the keys of the flattened dict.
-        sep (str): The separator to use between the parent key and the key of the
-            flattened dictionary.
-
-    Returns:
-        (dict): A flat dictionary.
-
-    """
-    flat_dict = {k: v for k, v in _flatten_dict(nested_dict, parent_key, sep)}
-    return flat_dict
-
-
-def hash_string(s: str) -> str:
-    """Hash a string using sha1.
-
-    Parameters:
-        s (str): The string to hash.
-
-    Returns:
-        (str): The hashed string.
-    """
-    return hashlib.sha1(s.encode("utf-8")).hexdigest()
 
 
 def analyze_text(
@@ -209,7 +128,7 @@ class MlflowLogger:
     def __init__(self, **kwargs):
         self.mlflow = import_mlflow()
         tracking_uri = get_from_dict_or_env(
-            kwargs, "tracking_uri", "MLFLOW_TRACKING_URI"
+            kwargs, "tracking_uri", "MLFLOW_TRACKING_URI", ''
         )
         self.mlflow.set_tracking_uri(tracking_uri)
 
@@ -296,7 +215,7 @@ class MlflowLogger:
             self.mlflow.langchain.log_model(chain, "langchain-model")
 
 
-class MlflowCallbackHandler(BaseCallbackHandler):
+class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     """Callback Handler that logs metrics and artifacts to mlflow server.
 
     Parameters:
@@ -321,6 +240,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         """Initialize callback handler."""
         import_pandas()
         import_textstat()
+        import_mlflow()
         spacy = import_spacy()
         super().__init__()
 
@@ -698,7 +618,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
             if "langchain.chains.llm.LLMChain" in str(type(langchain_asset)):
                 self.mlflg.langchain_artifact(langchain_asset)
             else:
-                langchain_asset_path = Path(self.temp_dir.name, "model.json")
+                langchain_asset_path = str(Path(self.temp_dir.name, "model.json"))
                 try:
                     langchain_asset.save(langchain_asset_path)
                     self.mlflg.artifact(langchain_asset_path)
@@ -708,11 +628,15 @@ class MlflowCallbackHandler(BaseCallbackHandler):
                         self.mlflg.artifact(langchain_asset_path)
                     except AttributeError as ae:
                         print("Could not save model.")
-                        print(repr(ae))
+                        traceback.print_exc()
+                        pass
+                    except NotImplementedError as e:
+                        print("Could not save model.")
+                        traceback.print_exc()
                         pass
                 except NotImplementedError as e:
                     print("Could not save model.")
-                    print(repr(e))
+                    traceback.print_exc()
                     pass
         if finish:
             self.mlflg.finish_run()
