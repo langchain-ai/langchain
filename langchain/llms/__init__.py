@@ -16,7 +16,7 @@ from langchain.llms.gpt4all import GPT4All
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
-from langchain.llms.human import HumanLLM
+from langchain.llms.human import HumanInputLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.modal import Modal
 from langchain.llms.nlpcloud import NLPCloud
@@ -66,7 +66,7 @@ __all__ = [
     "Writer",
     "RWKV",
     "PredictionGuard",
-    "HumanLLM",
+    "HumanInputLLM",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -87,7 +87,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "modal": Modal,
     "sagemaker_endpoint": SagemakerEndpoint,
     "nlpcloud": NLPCloud,
-    "human_llm": HumanLLM,
+    "human-input": HumanInputLLM,
     "openai": OpenAI,
     "petals": Petals,
     "pipelineai": PipelineAI,

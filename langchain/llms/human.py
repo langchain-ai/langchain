@@ -32,7 +32,7 @@ def _collect_user_input(
     return multi_line_input
 
 
-class HumanLLM(LLM):
+class HumanInputLLM(LLM):
     """
     A LLM wrapper which returns user input as the response.
     """
@@ -53,7 +53,7 @@ class HumanLLM(LLM):
     @property
     def _llm_type(self) -> str:
         """Returns the type of LLM."""
-        return "human_llm"
+        return "human-input"
 
     def _call(
         self,
