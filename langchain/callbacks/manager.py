@@ -6,7 +6,7 @@ import os
 import warnings
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union, cast
 from uuid import UUID, uuid4
 
 from langchain.callbacks.base import (
@@ -29,9 +29,7 @@ Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
 )
-tracing_callback_var: ContextVar[
-    Optional[Union[LangChainTracer, LangChainTracerV2]]
-] = ContextVar(  # noqa: E501
+tracing_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
 
@@ -51,7 +49,7 @@ def tracing_enabled(
 ) -> Generator[TracerSession, None, None]:
     """Get Tracer in a context manager."""
     cb = LangChainTracer()
-    session = cb.load_session(session_name)
+    session = cast(TracerSession, cb.load_session(session_name))
     tracing_callback_var.set(cb)
     yield session
     tracing_callback_var.set(None)
@@ -73,7 +71,7 @@ def tracing_v2_enabled(
         if isinstance(example_id, str):
             example_id = UUID(example_id)
         cb.example_id = example_id
-    session = cb.new_session(session_name)
+    session = cast(TracerSessionV2, cb.new_session(session_name))
     tracing_callback_var.set(cb)
     yield session
     tracing_callback_var.set(None)

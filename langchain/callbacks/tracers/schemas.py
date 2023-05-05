@@ -37,6 +37,14 @@ class TracerSessionV2Base(TracerSessionBase):
     tenant_id: UUID
 
 
+class TracerSessionV2Create(TracerSessionV2Base):
+    """A creation class for TracerSessionV2."""
+
+    id: Optional[UUID]
+
+    pass
+
+
 class TracerSessionV2(TracerSessionV2Base):
     """TracerSession schema for the V2 API."""
 
@@ -95,6 +103,8 @@ class RunTypeEnum(str, Enum):
 
 
 class Run(BaseModel):
+    """Run schema."""
+
     id: Optional[UUID]
     name: str
     start_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
@@ -109,7 +119,6 @@ class Run(BaseModel):
     parent_run_id: Optional[UUID]
     reference_example_id: Optional[UUID]
     run_type: RunTypeEnum
-    child_runs: List[Run] = Field(default_factory=list)
 
 
 ChainRun.update_forward_refs()

@@ -24,7 +24,10 @@ def parse_chat_messages(
     """Parse chat messages from a string. This is not robust."""
     roles = roles or ["Human", "AI", "System"]
     roles_pattern = "|".join(roles)
-    pattern = rf"(?P<entity>{roles_pattern}): (?P<message>(?:.*\n?)*?)(?=(?:{roles_pattern}): |\Z)"
+    pattern = (
+        rf"(?P<entity>{roles_pattern}): (?P<message>"
+        "(?:.*\n?)*?)(?=(?:{roles_pattern}): |\Z)"
+    )
     matches = re.finditer(pattern, input_text, re.MULTILINE)
 
     results: List[BaseMessage] = []
