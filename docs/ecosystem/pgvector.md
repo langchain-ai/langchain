@@ -24,6 +24,10 @@ To import this vectorstore:
 from langchain.vectorstores.pgvector import PGVector
 ```
 
+PGVector embedding size is not autodetected. If you are using ChatGPT or any other embedding with 1536 dimensions
+default is fine. If you are going to use for example HuggingFaceEmbeddings you need to set the environment variable named `PGVECTOR_VECTOR_SIZE`
+to the needed value, In case of HuggingFaceEmbeddings is would be: `PGVECTOR_VECTOR_SIZE=768`
+
 ### Usage
 
 For a more detailed walkthrough of the PGVector Wrapper, see [this notebook](../modules/indexes/vectorstores/examples/pgvector.ipynb)

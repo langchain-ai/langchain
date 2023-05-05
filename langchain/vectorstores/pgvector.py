@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import enum
 import logging
+import os
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
@@ -19,7 +20,7 @@ from langchain.vectorstores.base import VectorStore
 Base = declarative_base()  # type: Any
 
 
-ADA_TOKEN_COUNT = 1536
+PGVECTOR_VECTOR_SIZE = int(os.getenv("PGVECTOR_VECTOR_SIZE", default="1536"))
 _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
 
 
@@ -79,7 +80,7 @@ class EmbeddingStore(BaseModel):
     )
     collection = relationship(CollectionStore, back_populates="embeddings")
 
-    embedding: Vector = sqlalchemy.Column(Vector(ADA_TOKEN_COUNT))
+    embedding: Vector = sqlalchemy.Column(Vector(PGVECTOR_VECTOR_SIZE))
     document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     cmetadata = sqlalchemy.Column(JSON, nullable=True)
 
