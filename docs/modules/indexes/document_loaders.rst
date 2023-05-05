@@ -13,10 +13,10 @@ The document loader is aimed at making this easy.
 The following document loaders are provided:
 
 
-Transformer Loaders
+Transform Loaders
 ------------------------------
 
-These **transformer** loaders transform data from a specific format into the Document format.
+These **transform** loaders transform data from a specific format into the Document format.
 For example, there are **transformers** for CSV and SQL.
 Mostly, these loaders input data from files but sometime from URLs.
 
@@ -85,7 +85,7 @@ Proprietary dataset or service loaders
 ------------------------------
 These datasets and services are not from the public domain.
 These loaders mostly transform data from specific formats of applications or cloud services,
-for example the **Google Drive**.
+for example **Google Drive**.
 We need access tokens and sometime other parameters to get access to these datasets and services.
 
 
