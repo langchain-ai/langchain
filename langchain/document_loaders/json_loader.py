@@ -54,11 +54,22 @@ class JSONLoader(BaseLoader):
         # and prevent the user from getting a cryptic error later on.
         if self._content_key is not None:
             sample = data.first()
-            assert isinstance(sample, dict)
-            assert sample.get(self._content_key) is not None
+            if not isinstance(sample, dict):
+                raise ValueError(
+                    f"Expected the jq schema to result in a list of objects (dict), so sample must be a dict but got `{type(sample)}`"
+                )
+
+            if sample.get(self._content_key) is None:
+                raise ValueError(
+                    f"Expected the jq schema to result in a list of objects (dict) with the key `{self._content_key}`"
+                )
 
             if self._metadata_func is not None:
-                assert isinstance(self._metadata_func(sample, {}), dict)
+                sample_metadata = self._metadata_func(sample, {})
+                if not isinstance(sample_metadata, dict):
+                    raise ValueError(
+                        f"Expected the metadata_func to return a dict but got `{type(sample_metadata)}`"
+                    )
 
         docs = []
 
