@@ -1,11 +1,23 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import logging
 import socket
 from datetime import datetime
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Coroutine,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -120,34 +132,6 @@ class LangChainPlusClient(BaseSettings):
             f"{self.api_url}{path}", headers=self._headers, params=query_params
         )
 
-    @xor_args(("dataset_id", "dataset_name"))
-    def create_example(
-        self,
-        inputs: Dict[str, Any],
-        dataset_id: Optional[UUID] = None,
-        dataset_name: Optional[str] = None,
-        created_at: Optional[datetime] = None,
-        outputs: Dict[str, Any] | None = None,
-    ) -> Example:
-        """Create a dataset example in the LangChain+ API."""
-        if dataset_id is None:
-            dataset_id = self.read_dataset(dataset_name).id
-
-        data = {
-            "inputs": inputs,
-            "outputs": outputs,
-            "dataset_id": dataset_id,
-        }
-        if created_at:
-            data["created_at"] = created_at.isoformat()
-        example = ExampleCreate(**data)
-        response = requests.post(
-            f"{self.api_url}/examples", headers=self._headers, data=example.json()
-        )
-        raise_for_status_with_text(response)
-        result = response.json()
-        return Example(**result)
-
     def upload_dataframe(
         self,
         df: pd.DataFrame,
@@ -255,6 +239,34 @@ class LangChainPlusClient(BaseSettings):
         raise_for_status_with_text(response)
         return response.json()
 
+    @xor_args(("dataset_id", "dataset_name"))
+    def create_example(
+        self,
+        inputs: Dict[str, Any],
+        dataset_id: Optional[UUID] = None,
+        dataset_name: Optional[str] = None,
+        created_at: Optional[datetime] = None,
+        outputs: Dict[str, Any] | None = None,
+    ) -> Example:
+        """Create a dataset example in the LangChain+ API."""
+        if dataset_id is None:
+            dataset_id = self.read_dataset(dataset_name).id
+
+        data = {
+            "inputs": inputs,
+            "outputs": outputs,
+            "dataset_id": dataset_id,
+        }
+        if created_at:
+            data["created_at"] = created_at.isoformat()
+        example = ExampleCreate(**data)
+        response = requests.post(
+            f"{self.api_url}/examples", headers=self._headers, data=example.json()
+        )
+        raise_for_status_with_text(response)
+        result = response.json()
+        return Example(**result)
+
     def read_example(self, example_id: str) -> Example:
         """Read an example from the LangChain+ API."""
         response = self._get(f"/examples/{example_id}")
@@ -326,52 +338,69 @@ class LangChainPlusClient(BaseSettings):
         return outputs
 
     @staticmethod
-    async def _worker(
-        queue: asyncio.Queue,
-        tracer: LangChainTracerV2,
-        llm_or_chain: Union[Chain, BaseLanguageModel],
-        n_repetitions: int,
-        results: Dict[str, Any],
-        job_state: Dict[str, Any],
-        verbose: bool,
-    ) -> None:
-        """Worker for running the chain on examples."""
-        while True:
-            example: Optional[Example] = await queue.get()
-            if example is None:
-                break
+    async def _gather_with_concurrency(
+        n: int,
+        initializer: Callable[[], Coroutine[Any, Any, Tuple[LangChainTracerV2, Dict]]],
+        *async_funcs: Callable[[LangChainTracerV2, Dict], Coroutine[Any, Any, Any]],
+    ) -> List[Any]:
+        """
+        Run coroutines with a concurrency limit.
 
-            result = await LangChainPlusClient._arun_llm_or_chain(
-                example,
-                tracer,
-                llm_or_chain,
-                n_repetitions,
-            )
-            results[str(example.id)] = result
-            queue.task_done()
-            job_state["num_processed"] += 1
-            if verbose:
-                print(
-                    f"Processed examples: {job_state['num_processed']}",
-                    end="\r",
-                    flush=True,
-                )
+        Args:
+            n: The maximum number of concurrent tasks.
+            initializer: A coroutine that initializes shared resources for the tasks.
+            async_funcs: The async_funcs to be run concurrently.
+
+        Returns:
+            A list of results from the coroutines.
+        """
+        semaphore = asyncio.Semaphore(n)
+        tracer, job_state = await initializer()
+
+        async def run_coroutine_with_semaphore(
+            async_func: Callable[[LangChainTracerV2, Dict], Coroutine[Any, Any, Any]]
+        ) -> Any:
+            async with semaphore:
+                return await async_func(tracer, job_state)
+
+        return await asyncio.gather(
+            *(run_coroutine_with_semaphore(function) for function in async_funcs)
+        )
+
+    async def _tracer_initializer(
+        self, session_name: str
+    ) -> Tuple[LangChainTracerV2, dict]:
+        """
+        Initialize a tracer to share across tasks.
+
+        Args:
+            session_name: The session name for the tracer.
+
+        Returns:
+            A LangChainTracerV2 instance with an active session.
+        """
+        job_state = {"num_processed": 0}
+        with tracing_v2_enabled(session_name=session_name) as session:
+            tracer = LangChainTracerV2()
+            tracer.session = session
+            return tracer, job_state
 
     async def arun_on_dataset(
         self,
         dataset_name: str,
         llm_or_chain: Union[Chain, BaseLanguageModel],
-        num_workers: int = 5,
+        concurrency_level: int = 5,
         num_repetitions: int = 1,
         session_name: Optional[str] = None,
         verbose: bool = False,
     ) -> Dict[str, Any]:
-        """Run the chain on a dataset and store traces to the specified session name.
+        """
+        Run the chain on a dataset and store traces to the specified session name.
 
         Args:
             dataset_name: Name of the dataset to run the chain on.
             llm_or_chain: Chain or language model to run over the dataset.
-            num_workers: Number of async workers to run in parallel.
+            concurrency_level: The number of async tasks to run concurrently.
             num_repetitions: Number of times to run the model on each example.
                 This is useful when testing success rates or generating confidence
                 intervals.
@@ -388,39 +417,34 @@ class LangChainPlusClient(BaseSettings):
                 f"{dataset_name}-{llm_or_chain.__class__.__name__}-{current_time}"
             )
         dataset = self.read_dataset(dataset_name=dataset_name)
-        workers = []
         examples = self.list_examples(dataset_id=str(dataset.id))
         results: Dict[str, List[Any]] = {}
-        queue: asyncio.Queue[Optional[Example]] = asyncio.Queue()
-        job_state = {"num_processed": 0}
-        with tracing_v2_enabled(session_name=session_name) as session:
-            for _ in range(num_workers):
-                tracer = LangChainTracerV2()
-                tracer.session = session
-                task = asyncio.create_task(
-                    LangChainPlusClient._worker(
-                        queue,
-                        tracer,
-                        llm_or_chain,
-                        num_repetitions,
-                        results,
-                        job_state,
-                        verbose,
-                    )
+
+        async def process_example(
+            example: Example, tracer: LangChainTracerV2, job_state: dict
+        ) -> None:
+            """Process a single example."""
+            result = await LangChainPlusClient._arun_llm_or_chain(
+                example,
+                tracer,
+                llm_or_chain,
+                num_repetitions,
+            )
+            results[str(example.id)] = result
+            job_state["num_processed"] += 1
+            if verbose:
+                print(
+                    f"Processed examples: {job_state['num_processed']}",
+                    end="\r",
+                    flush=True,
                 )
-                workers.append(task)
 
-            for example in examples:
-                await queue.put(example)
-
-            await queue.join()  # Wait for all tasks to complete
-
-            for _ in workers:
-                await queue.put(None)  # Signal the workers to exit
-
-            await asyncio.gather(*workers)
-
-            return results
+        await self._gather_with_concurrency(
+            concurrency_level,
+            functools.partial(self._tracer_initializer, session_name),
+            *(functools.partial(process_example, e) for e in examples),
+        )
+        return results
 
     @staticmethod
     def run_llm(
@@ -484,7 +508,7 @@ class LangChainPlusClient(BaseSettings):
         Args:
             dataset_name: Name of the dataset to run the chain on.
             llm_or_chain: Chain or language model to run over the dataset.
-            num_workers: Number of async workers to run in parallel.
+            concurrency_level: Number of async workers to run in parallel.
             num_repetitions: Number of times to run the model on each example.
                 This is useful when testing success rates or generating confidence
                 intervals.
