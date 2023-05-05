@@ -14,16 +14,17 @@ def concatenate_rows(date: str, sender: str, text: str) -> str:
 class WhatsAppChatLoader(BaseLoader):
     """Loader that loads WhatsApp messages text file."""
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, encoding: str = "UTF-8"):
         """Initialize with path."""
         self.file_path = path
+        self.encoding = encoding
 
     def load(self) -> List[Document]:
         """Load documents."""
         p = Path(self.file_path)
         text_content = ""
 
-        with open(p, encoding="utf8") as f:
+        with open(p, encoding=self.encoding) as f:
             lines = f.readlines()
 
         message_line_regex = r"""

@@ -12,8 +12,8 @@ class ReadTheDocsLoader(BaseLoader):
     def __init__(
         self,
         path: str,
-        encoding: Optional[str] = None,
         errors: Optional[str] = None,
+        encoding: str = "UTF-8",
         **kwargs: Optional[Any]
     ):
         """Initialize path."""
@@ -34,9 +34,9 @@ class ReadTheDocsLoader(BaseLoader):
             raise ValueError("Parsing kwargs do not appear valid") from e
 
         self.file_path = path
-        self.encoding = encoding
         self.errors = errors
         self.bs_kwargs = kwargs
+        self.encoding = encoding
 
     def load(self) -> List[Document]:
         """Load documents."""

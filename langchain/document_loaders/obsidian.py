@@ -13,12 +13,12 @@ class ObsidianLoader(BaseLoader):
     FRONT_MATTER_REGEX = re.compile(r"^---\n(.*?)\n---\n", re.MULTILINE | re.DOTALL)
 
     def __init__(
-        self, path: str, encoding: str = "UTF-8", collect_metadata: bool = True
+        self, path: str, collect_metadata: bool = True, encoding: str ="UTF-8"
     ):
         """Initialize with path."""
         self.file_path = path
-        self.encoding = encoding
         self.collect_metadata = collect_metadata
+        self.encoding = encoding
 
     def _parse_front_matter(self, content: str) -> dict:
         """Parse front matter metadata from the content and return it as a dict."""
