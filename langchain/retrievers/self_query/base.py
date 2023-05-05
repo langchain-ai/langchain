@@ -8,15 +8,17 @@ from langchain.base_language import BaseLanguageModel
 from langchain.chains.query_constructor.base import load_query_constructor_chain
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
+from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.schema import BaseRetriever, Document
-from langchain.vectorstores import Pinecone, VectorStore
+from langchain.vectorstores import Chroma, Pinecone, VectorStore
 
 
 def _get_builtin_translator(vectorstore_cls: Type[VectorStore]) -> Visitor:
     """Get the translator class corresponding to the vector store class."""
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
-        Pinecone: PineconeTranslator
+        Pinecone: PineconeTranslator,
+        Chroma: ChromaTranslator,
     }
     if vectorstore_cls not in BUILTIN_TRANSLATORS:
         raise ValueError(
