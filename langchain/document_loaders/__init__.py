@@ -121,7 +121,6 @@ __all__ = [
     "BlockchainDocumentLoader",
     "CSVLoader",
     "ChatGPTLoader",
-    "ChatGPTLoader",
     "CoNLLULoader",
     "CollegeConfidentialLoader",
     "ConfluenceLoader",
