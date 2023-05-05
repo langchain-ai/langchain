@@ -45,7 +45,6 @@ class TelegramChatFileLoader(BaseLoader):
 
 try:
     import pandas as pd
-    import pytz
     from telethon.sync import TelegramClient
 except ImportError:
     raise ValueError(
