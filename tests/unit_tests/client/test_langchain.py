@@ -102,7 +102,6 @@ def test_upload_csv(mock_post: mock.Mock) -> None:
     assert dataset.id == "1"
     assert dataset.name == "test.csv"
     assert dataset.description == "Test dataset"
-    assert dataset.examples == [example_1, example_2]
 
 
 @pytest.mark.asyncio

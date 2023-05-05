@@ -26,7 +26,7 @@ def parse_chat_messages(
     roles_pattern = "|".join(roles)
     pattern = (
         rf"(?P<entity>{roles_pattern}): (?P<message>"
-        "(?:.*\n?)*?)(?=(?:{roles_pattern}): |\Z)"
+        rf"(?:.*\n?)*?)(?=(?:{roles_pattern}): |\Z)"
     )
     matches = re.finditer(pattern, input_text, re.MULTILINE)
 

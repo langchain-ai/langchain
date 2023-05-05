@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime
 import logging
 import socket
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
 from urllib.parse import urlsplit
+from uuid import UUID
 
 import requests
 from pydantic import BaseSettings, Field, root_validator
@@ -16,7 +18,7 @@ from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.callbacks.tracers.langchain import LangChainTracerV2
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
-from langchain.client.models import Dataset, Example
+from langchain.client.models import Dataset, DatasetCreate, Example, ExampleCreate
 from langchain.client.utils import parse_chat_messages
 from langchain.llms.base import BaseLLM
 from langchain.schema import ChatResult, LLMResult
@@ -117,6 +119,34 @@ class LangChainPlusClient(BaseSettings):
             f"{self.api_url}{path}", headers=self._headers, params=query_params
         )
 
+    @xor_args(("dataset_id", "dataset_name"))
+    def create_example(
+        self,
+        inputs: Dict[str, Any],
+        dataset_id: Optional[UUID] = None,
+        dataset_name: Optional[str] = None,
+        created_at: Optional[datetime] = None,
+        outputs: Dict[str, Any] | None = None,
+    ) -> Example:
+        """Create a dataset example in the LangChain+ API."""
+        if dataset_id is None:
+            dataset_id = self.read_dataset(dataset_name).id
+        url = f"/examples"
+        data = {
+            "inputs": inputs,
+            "outputs": outputs,
+            "dataset_id": dataset_id,
+        }
+        if created_at:
+            data["created_at"] = created_at.isoformat()
+        example = ExampleCreate(**data)
+        response = requests.post(
+            f"{self.api_url}{url}", headers=self._headers, data=example.json()
+        )
+        raise_for_status_with_text(response)
+        result = response.json()
+        return Example(**result)
+
     def upload_dataframe(
         self,
         df: pd.DataFrame,
@@ -125,20 +155,13 @@ class LangChainPlusClient(BaseSettings):
         input_keys: List[str],
         output_keys: List[str],
     ) -> Dataset:
-        """Upload a dataframe as a CSV to the LangChain+ API."""
-        if not name.endswith(".csv"):
-            raise ValueError("Name must end with .csv")
-        if not all([key in df.columns for key in input_keys]):
-            raise ValueError("Input keys must be in dataframe columns")
-        if not all([key in df.columns for key in output_keys]):
-            raise ValueError("Output keys must be in dataframe columns")
-        buffer = BytesIO()
-        df.to_csv(buffer, index=False)
-        buffer.seek(0)
-        csv_file = (name, buffer)
-        return self.upload_csv(
-            csv_file, description, input_keys=input_keys, output_keys=output_keys
-        )
+        """Upload a dataframe as individual examples to the LangChain+ API."""
+        dataset = self.create_dataset(dataset_name=name, description=description)
+        for row in df.itertuples():
+            inputs = {key: getattr(row, key) for key in input_keys}
+            outputs = {key: getattr(row, key) for key in output_keys}
+            self.create_example(inputs, outputs=outputs, dataset_id=dataset.id)
+        return dataset
 
     def upload_csv(
         self,
@@ -169,6 +192,21 @@ class LangChainPlusClient(BaseSettings):
             file_name = file_name.split("/")[-1]
             raise ValueError(f"Dataset {file_name} already exists")
         return Dataset(**result)
+
+    def create_dataset(self, dataset_name: str, description: str) -> Dataset:
+        """Create a dataset in the LangChain+ API."""
+        dataset = DatasetCreate(
+            tenant_id=self.tenant_id,
+            name=dataset_name,
+            description=description,
+        )
+        response = requests.post(
+            self.api_url + "/datasets",
+            headers=self._headers,
+            data=dataset.json(),
+        )
+        raise_for_status_with_text(response)
+        return Dataset(**response.json())
 
     @xor_args(("dataset_name", "dataset_id"))
     def read_dataset(
@@ -222,9 +260,18 @@ class LangChainPlusClient(BaseSettings):
         raise_for_status_with_text(response)
         return Example(**response.json())
 
-    def list_examples(self, dataset_id: Optional[str] = None) -> Iterable[Example]:
+    def list_examples(
+        self, dataset_id: Optional[str] = None, dataset_name: Optional[str] = None
+    ) -> Iterable[Example]:
         """List the datasets on the LangChain+ API."""
-        params = {"dataset": dataset_id} if dataset_id is not None else {}
+        params = {}
+        if dataset_id is not None:
+            params["dataset"] = dataset_id
+        elif dataset_name is not None:
+            dataset_id = self.read_dataset(dataset_name=dataset_name).id
+            params["dataset"] = dataset_id
+        else:
+            pass
         response = self._get("/examples", params=params)
         raise_for_status_with_text(response)
         return [Example(**dataset) for dataset in response.json()]
@@ -281,7 +328,7 @@ class LangChainPlusClient(BaseSettings):
     async def _worker(
         queue: asyncio.Queue,
         tracer: LangChainTracerV2,
-        chain: Chain,
+        llm_or_chain: Union[Chain, BaseLanguageModel],
         n_repetitions: int,
         results: Dict[str, Any],
         job_state: Dict[str, Any],
@@ -296,7 +343,7 @@ class LangChainPlusClient(BaseSettings):
             result = await LangChainPlusClient._arun_llm_or_chain(
                 example,
                 tracer,
-                chain,
+                llm_or_chain,
                 n_repetitions,
             )
             results[str(example.id)] = result
@@ -304,7 +351,7 @@ class LangChainPlusClient(BaseSettings):
             job_state["num_processed"] += 1
             if verbose:
                 print(
-                    f"Completed {job_state['num_processed']}",
+                    f"Processed examples: {job_state['num_processed']}",
                     end="\r",
                     flush=True,
                 )
@@ -324,18 +371,20 @@ class LangChainPlusClient(BaseSettings):
             dataset_name: Name of the dataset to run the chain on.
             llm_or_chain: Chain or language model to run over the dataset.
             num_workers: Number of async workers to run in parallel.
-            num_repetitions: Number of times to run the chain on each example.
+            num_repetitions: Number of times to run the model on each example.
+                This is useful when testing success rates or generating confidence
+                intervals.
             session_name: Name of the session to store the traces in.
+                Defaults to {dataset_name}-{chain class name}-{datetime}.
             verbose: Whether to print progress.
 
         Returns:
-            A dictionary mapping example ids to the chain outputs.
+            A dictionary mapping example ids to the model outputs.
         """
-        if isinstance(llm_or_chain, BaseLanguageModel):
-            raise NotImplementedError
         if session_name is None:
+            current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
             session_name = (
-                f"{dataset_name}_{llm_or_chain.__class__.__name__}-{num_repetitions}"
+                f"{dataset_name}-{llm_or_chain.__class__.__name__}-{current_time}"
             )
         dataset = self.read_dataset(dataset_name=dataset_name)
         workers = []
@@ -378,6 +427,7 @@ class LangChainPlusClient(BaseSettings):
         inputs: Dict[str, Any],
         langchain_tracer: LangChainTracerV2,
     ) -> Union[LLMResult, ChatResult]:
+        """Run the language model on the example."""
         if isinstance(llm, BaseLLM):
             llm_prompts: List[str] = inputs["prompts"]
             llm_output = llm.generate(llm_prompts, callbacks=[langchain_tracer])
@@ -433,18 +483,21 @@ class LangChainPlusClient(BaseSettings):
         Args:
             dataset_name: Name of the dataset to run the chain on.
             llm_or_chain: Chain or language model to run over the dataset.
-            num_repetitions: Number of times to run the chain on each example.
+            num_workers: Number of async workers to run in parallel.
+            num_repetitions: Number of times to run the model on each example.
+                This is useful when testing success rates or generating confidence
+                intervals.
             session_name: Name of the session to store the traces in.
+                Defaults to {dataset_name}-{chain class name}-{datetime}.
             verbose: Whether to print progress.
 
         Returns:
-            A dictionary mapping example ids to the chain outputs.
+            A dictionary mapping example ids to the model outputs.
         """
-        if isinstance(llm_or_chain, BaseLanguageModel):
-            raise NotImplementedError
         if session_name is None:
+            current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
             session_name = (
-                f"{dataset_name}-{llm_or_chain.__class__.__name__}-{num_repetitions}"
+                f"{dataset_name}-{llm_or_chain.__class__.__name__}-{current_time}"
             )
         dataset = self.read_dataset(dataset_name=dataset_name)
         examples = self.list_examples(dataset_id=str(dataset.id))
@@ -461,6 +514,8 @@ class LangChainPlusClient(BaseSettings):
                     num_repetitions,
                 )
                 if verbose:
-                    print(f"{i+1} processed", flush=True)
-            results[example.id] = result
+                    print(f"{i+1} processed", flush=True, end="\r")
+                if i > 5:
+                    break
+            results[str(example.id)] = result
         return results
