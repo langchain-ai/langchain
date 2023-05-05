@@ -75,6 +75,7 @@ lark = {version="^1.1.5", optional=true}
 lancedb = {version = "^0.1", optional = true}
 pexpect = {version = "^4.8.0", optional = true}
 pyvespa = {version = "^0.33.0", optional = true}
+gql = "^3.4.0"
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
