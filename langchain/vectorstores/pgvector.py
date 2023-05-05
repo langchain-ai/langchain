@@ -20,7 +20,7 @@ from langchain.vectorstores.base import VectorStore
 Base = declarative_base()  # type: Any
 
 
-ADA_TOKEN_COUNT = int(os.getenv("PGVECTOR_ADA_TOKEN_COUNT", default="1536"))
+ADA_TOKEN_COUNT = int(os.getenv("PGVECTOR_VECTOR_SIZE", default="1536"))
 _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
 
 
