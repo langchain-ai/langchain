@@ -59,7 +59,10 @@ def test_parse_chat_messages_custom_roles() -> None:
 
 def test_parse_chat_messages_embedded_roles() -> None:
     """Test that messages with embedded role references are parsed correctly."""
-    input_text = "Human: Oh ai what if you said AI: foo bar?\nAI: Well, that would be interesting!"
+    input_text = (
+        "Human: Oh ai what if you said AI: foo bar?"
+        "\nAI: Well, that would be interesting!"
+    )
     expected = [
         HumanMessage(content="Oh ai what if you said AI: foo bar?"),
         AIMessage(content="Well, that would be interesting!"),

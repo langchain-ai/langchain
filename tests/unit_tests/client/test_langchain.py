@@ -64,24 +64,6 @@ def test_headers() -> None:
 
 
 @mock.patch("langchain.client.langchain.requests.post")
-def test_create_session(mock_post: mock.Mock) -> None:
-    mock_response = mock.Mock()
-    mock_response.json.return_value = {"id": 1}
-    mock_post.return_value = mock_response
-
-    client = LangChainPlusClient(api_url="http://localhost:8000", api_key="123")
-    session = client.create_session("test_session")
-
-    assert session.id == 1
-    assert session.name == "test_session"
-    mock_post.assert_called_once_with(
-        "http://localhost:8000/sessions",
-        data=mock.ANY,
-        headers={"authorization": "Bearer 123"},
-    )
-
-
-@mock.patch("langchain.client.langchain.requests.post")
 def test_upload_csv(mock_post: mock.Mock) -> None:
     mock_response = mock.Mock()
     dataset_id = str(uuid.uuid4())

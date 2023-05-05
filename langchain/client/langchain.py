@@ -444,7 +444,7 @@ class LangChainPlusClient(BaseSettings):
             raise NotImplementedError
         if session_name is None:
             session_name = (
-                f"{dataset_name}_{llm_or_chain.__class__.__name__}-{num_repetitions}"
+                f"{dataset_name}-{llm_or_chain.__class__.__name__}-{num_repetitions}"
             )
         dataset = self.read_dataset(dataset_name=dataset_name)
         examples = self.list_examples(dataset_id=str(dataset.id))
@@ -462,5 +462,5 @@ class LangChainPlusClient(BaseSettings):
                 )
                 if verbose:
                     print(f"{i+1} processed", flush=True)
-            results[str(example.id)] = result
+            results[example.id] = result
         return results

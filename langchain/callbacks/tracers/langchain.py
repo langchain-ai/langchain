@@ -90,7 +90,6 @@ class LangChainTracer(BaseTracer):
             tracer_session = TracerSession(**r.json()[0])
         except Exception as e:
             session_type = "default" if not session_name else session_name
-            print("WHY IS THIS BEING CALLED")
             logging.warning(
                 f"Failed to load {session_type} session, using empty session: {e}"
             )
@@ -179,9 +178,6 @@ class LangChainTracerV2(LangChainTracer):
             raise_for_status_with_text(r)
             tracer_session = TracerSessionV2(**r.json()[0])
         except Exception as e:
-            # Print the stacktrace and th esession name
-            logging.error(str(traceback.format_exc()))
-            logging.error(f"Session name: {session_name}")
             session_type = "default" if not session_name else session_name
             logging.warning(
                 f"Failed to load {session_type} session, using empty session: {e}"
