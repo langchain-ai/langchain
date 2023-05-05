@@ -2,6 +2,7 @@
 import itertools
 import re
 from typing import Any, Callable, Generator, Iterable, List, Optional
+from urllib.parse import urlparse
 
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.schema import Document
@@ -23,7 +24,6 @@ class SitemapLoader(WebBaseLoader):
     def __init__(
         self,
         web_path: str,
-        local_path: Optional[str] = None,
         filter_urls: Optional[List[str]] = None,
         parsing_function: Optional[Callable] = None,
         blocksize: Optional[int] = None,
@@ -32,9 +32,7 @@ class SitemapLoader(WebBaseLoader):
         """Initialize with webpage path and optional filter URLs.
 
         Args:
-            web_path: url of the sitemap
-            local_path: path to a sitemap file if the file is only available locally
-                will override web_path
+            web_path: url of the sitemap. can also be a local path
             filter_urls: list of strings or regexes that will be applied to filter the
                 urls that are parsed and loaded
             parsing_function: Function to parse bs4.Soup output
@@ -57,7 +55,6 @@ class SitemapLoader(WebBaseLoader):
 
         super().__init__(web_path)
 
-        self.local_path = local_path
         self.filter_urls = filter_urls
         self.parsing_function = parsing_function or _default_parsing_function
         self.blocksize = blocksize
@@ -93,21 +90,26 @@ class SitemapLoader(WebBaseLoader):
             els.extend(self.parse_sitemap(soup_child))
         return els
 
+    def is_url(url):
+        try:
+            result = urlparse(url)
+            return all([result.scheme, result.netloc])
+        except ValueError:
+            return False
+
     def load(self) -> List[Document]:
         """Load sitemap."""
-        if self.local_path:
-
+        if self.is_url(self.web_path):
+            soup = self.scrape("xml")
+        else:
             try:
                 import bs4
             except ImportError:
                 raise ValueError(
                     "bs4 package not found, please install it with " "`pip install bs4`"
                 )
-
-            fp = open(self.local_path)
-            soup = bs4.BeautifulSoup(fp, "xml")
-        else: 
-            soup = self.scrape("xml")
+            fp = open(self.web_path)
+            soup = bs4.BeautifulSoup(fp, 'xml')
 
         els = self.parse_sitemap(soup)
 
