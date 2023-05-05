@@ -6,7 +6,6 @@ from typing import Any, Iterable, List, Optional
 
 import sqlalchemy
 from sqlalchemy import (
-    CursorResult,
     MetaData,
     Table,
     create_engine,
@@ -14,7 +13,7 @@ from sqlalchemy import (
     select,
     text,
 )
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import CursorResult, Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 

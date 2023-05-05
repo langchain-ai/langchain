@@ -6,6 +6,7 @@ from langchain.retrievers.knn import KNNRetriever
 from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
+from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.svm import SVMRetriever
 from langchain.retrievers.tfidf import TFIDFRetriever
 from langchain.retrievers.time_weighted_retriever import (
@@ -28,4 +29,5 @@ __all__ = [
     "SVMRetriever",
     "KNNRetriever",
     "VespaRetriever",
+    "SelfQueryRetriever",
 ]
