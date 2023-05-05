@@ -59,7 +59,9 @@ class LangChainTracer(BaseTracer):
         except Exception as e:
             logging.warning(f"Failed to persist run: {e}")
 
-    def _persist_session(self, session_create: TracerSessionBase) -> TracerSession:
+    def _persist_session(
+        self, session_create: TracerSessionBase
+    ) -> Union[TracerSession, TracerSessionV2]:
         """Persist a session."""
         try:
             r = requests.post(
@@ -92,11 +94,11 @@ class LangChainTracer(BaseTracer):
         self.session = tracer_session
         return tracer_session
 
-    def load_session(self, session_name: str) -> TracerSession:
+    def load_session(self, session_name: str) -> Union[TracerSession, TracerSessionV2]:
         """Load a session with the given name from the tracer."""
         return self._load_session(session_name)
 
-    def load_default_session(self) -> TracerSession:
+    def load_default_session(self) -> Union[TracerSession, TracerSessionV2]:
         """Load the default tracing session and set it as the Tracer's session."""
         return self._load_session("default")
 
@@ -116,7 +118,7 @@ def _get_tenant_id() -> Optional[str]:
     return tenants[0]["id"]
 
 
-class LangChainTracerV2(BaseTracer):
+class LangChainTracerV2(LangChainTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
     def __init__(self, **kwargs: Any) -> None:
