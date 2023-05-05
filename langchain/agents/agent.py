@@ -957,11 +957,7 @@ class AgentExecutor(Chain):
                         run_manager=run_manager,
                     )
                     if isinstance(next_step_output, AgentFinish):
-                        return await self._areturn(
-                            next_step_output,
-                            intermediate_steps,
-                            run_manager=run_manager,
-                        )
+                        return await self._areturn(next_step_output, intermediate_steps)
 
                     intermediate_steps.extend(next_step_output)
                     if len(next_step_output) == 1:
@@ -969,9 +965,7 @@ class AgentExecutor(Chain):
                         # See if tool should return directly
                         tool_return = self._get_tool_return(next_step_action)
                         if tool_return is not None:
-                            return await self._areturn(
-                                tool_return, intermediate_steps, run_manager=run_manager
-                            )
+                            return await self._areturn(tool_return, intermediate_steps)
 
                     iterations += 1
                     time_elapsed = time.time() - start_time
@@ -986,9 +980,7 @@ class AgentExecutor(Chain):
                 output = self.agent.return_stopped_response(
                     self.early_stopping_method, intermediate_steps, **inputs
                 )
-                return await self._areturn(
-                    output, intermediate_steps, run_manager=run_manager
-                )
+                return await self._areturn(output, intermediate_steps)
 
     def _get_tool_return(
         self, next_step_output: Tuple[AgentAction, str]
