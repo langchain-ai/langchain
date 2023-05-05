@@ -9,8 +9,8 @@ from langchain.agents.agent import AgentExecutor
 from langchain.llms import OpenAI
 
 
-@pytest.fixture(scope="function")
-def data() -> DataFrame:
+@pytest.fixture(scope="module")
+def df() -> DataFrame:
     random_data = np.random.rand(4, 4)
     df = DataFrame(random_data, columns=["name", "age", "food", "sport"])
     return df
