@@ -23,6 +23,7 @@ _EXPECTED = [
     "create_pandas_dataframe_agent",
     "create_pbi_agent",
     "create_pbi_chat_agent",
+    "create_spark_dataframe_agent",
     "create_sql_agent",
     "create_vectorstore_agent",
     "create_vectorstore_router_agent",
