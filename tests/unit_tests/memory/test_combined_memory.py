@@ -35,3 +35,22 @@ def test_repeated_memory_var(example_memory: List[ConversationBufferMemory]) -> 
     """Test raising error when repeated memory variables found"""
     with pytest.raises(ValueError):
         CombinedMemory(memories=[example_memory[1], example_memory[2]])
+
+
+def test_save_context_input_disambiguation(example_memory: List[ConversationBufferMemory]) -> None:
+    """Test basic functionality of methods exposed by class"""
+    combined_memory = CombinedMemory(memories=[example_memory[0], example_memory[1]])
+    assert combined_memory.memory_variables == ["foo", "bar"]
+    assert combined_memory.load_memory_variables({}) == {"foo": "", "bar": ""}
+    combined_memory.save_context(
+        {"input": "Hello there", "foo": ""},
+	{"output": "Hello, how can I help you?"}
+    )
+    assert combined_memory.load_memory_variables({}) == {
+        "foo": "Human: Hello there\nAI: Hello, how can I help you?",
+        "bar": "Human: Hello there\nAI: Hello, how can I help you?",
+    }
+    combined_memory.clear()
+    assert combined_memory.load_memory_variables({}) == {"foo": "", "bar": ""}
+
+
