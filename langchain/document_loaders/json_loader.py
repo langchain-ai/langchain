@@ -87,17 +87,17 @@ class JSONLoader(BaseLoader):
             )
 
             if self._content_key is not None:
-                text = sample.get(self._content_key)
+                content = sample.get(self._content_key)
                 if self._metadata_func is not None:
                     # We pass in the metadata dict to the metadata_func
                     # so that the user can customize the default metadata
                     # based on the content of the JSON object.
                     metadata = self._metadata_func(sample, metadata)
             else:
-                text = sample
+                content = sample
 
             # In case the text is None, set it to an empty string
-            text: str = "" if not text else json.dumps(text)
+            text = str(content) if content else ""
 
             docs.append(Document(page_content=text, metadata=metadata))
 
