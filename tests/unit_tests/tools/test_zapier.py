@@ -18,7 +18,7 @@ def test_default_base_prompt() -> None:
     # Test that the base prompt was successfully assigned to the default prompt
     assert tool.base_prompt == BASE_ZAPIER_TOOL_PROMPT
     assert tool.description == BASE_ZAPIER_TOOL_PROMPT.format(
-        zapier_description="test", 
+        zapier_description="test",
         params=str(list({"test": "test"}.keys())),
     )
 
