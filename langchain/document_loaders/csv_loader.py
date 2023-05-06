@@ -30,7 +30,7 @@ class CSVLoader(BaseLoader):
         self,
         file_path: str,
         source_column: Optional[str] = None,
-        csv_args: Optional[Dict] = {},
+        csv_args: Optional[Dict] = None,
         encoding: Optional[str] = None,
     ):
         self.file_path = file_path
