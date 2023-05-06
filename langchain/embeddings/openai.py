@@ -120,7 +120,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
-    request_timeout: Optional[int] = None
+    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout in seconds for the OpenAPI request."""
 
     class Config:
