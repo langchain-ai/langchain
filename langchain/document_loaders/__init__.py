@@ -61,6 +61,7 @@ from langchain.document_loaders.pdf import (
     PDFMinerPDFasHTMLLoader,
     PyMuPDFLoader,
     PyPDFDirectoryLoader,
+    PyPDFium2Loader,
     PyPDFLoader,
     UnstructuredPDFLoader,
 )
@@ -161,6 +162,7 @@ __all__ = [
     "PlaywrightURLLoader",
     "PyMuPDFLoader",
     "PyPDFLoader",
+    "PyPDFium2Loader",
     "PythonLoader",
     "ReadTheDocsLoader",
     "RoamLoader",
