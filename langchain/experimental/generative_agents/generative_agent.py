@@ -33,7 +33,7 @@ class GenerativeAgent(BaseModel):
     summary_refresh_seconds: int = 3600  #: :meta private:
     """How frequently to re-generate the summary."""
 
-    last_refreshed: datetime  # : :meta private:
+    last_refreshed: datetime = Field(default_factory=datetime.now)  # : :meta private:
     """The last time the character's summary was regenerated."""
 
     daily_summaries: List[str] = Field(default_factory=list)  # : :meta private:
