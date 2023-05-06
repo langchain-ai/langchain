@@ -34,6 +34,7 @@ from langchain.llms import (
     SagemakerEndpoint,
     StochasticAI,
     Writer,
+    HuggingFaceTextGenInference, 
 )
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.prompts import (
@@ -114,4 +115,5 @@ __all__ = [
     "QAWithSourcesChain",
     "PALChain",
     "LlamaCpp",
+    "HuggingFaceTextGenInference",
 ]
