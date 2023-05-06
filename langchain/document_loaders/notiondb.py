@@ -19,14 +19,17 @@ class NotionDBLoader(BaseLoader):
     Args:
         integration_token (str): Notion integration token.
         database_id (str): Notion database id.
+        request_timeout_sec (int): Timeout for Notion requests in seconds.
     """
 
-    def __init__(self, integration_token: str, database_id: str) -> None:
+    def __init__(self, integration_token: str, database_id: str, request_timeout_sec: int) -> None:
         """Initialize with parameters."""
         if not integration_token:
             raise ValueError("integration_token must be provided")
         if not database_id:
             raise ValueError("database_id must be provided")
+        if not request_timeout_sec:
+            request_timeout_sec = 10
 
         self.token = integration_token
         self.database_id = database_id
@@ -35,6 +38,7 @@ class NotionDBLoader(BaseLoader):
             "Content-Type": "application/json",
             "Notion-Version": "2022-06-28",
         }
+        self.request_timeout_sec = request_timeout_sec
 
     def load(self) -> List[Document]:
         """Load documents from the Notion database.
@@ -148,7 +152,7 @@ class NotionDBLoader(BaseLoader):
             url,
             headers=self.headers,
             json=query_dict,
-            timeout=10,
+            timeout=self.request_timeout_sec,
         )
         res.raise_for_status()
         return res.json()
