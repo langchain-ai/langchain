@@ -30,30 +30,31 @@ For detailed instructions on how to get set up with Unstructured, see installati
    :maxdepth: 1
    :glob:
 
-   ./document_loaders/examples/CoNLL-U.ipynb
+   ./document_loaders/examples/conll-u.ipynb
    ./document_loaders/examples/copypaste.ipynb
    ./document_loaders/examples/csv.ipynb
-   ./document_loaders/examples/dataframe.ipynb
-   ./document_loaders/examples/directory_loader.ipynb
    ./document_loaders/examples/email.ipynb
    ./document_loaders/examples/epub.ipynb
-   ./document_loaders/examples/image.ipynb
-   ./document_loaders/examples/html.ipynb
    ./document_loaders/examples/evernote.ipynb
    ./document_loaders/examples/facebook_chat.ipynb
+   ./document_loaders/examples/file_directory.ipynb
+   ./document_loaders/examples/html.ipynb
+   ./document_loaders/examples/image.ipynb
+   ./document_loaders/examples/jupyter_notebook.ipynb
    ./document_loaders/examples/markdown.ipynb
-   ./document_loaders/examples/notebook.ipynb
+   ./document_loaders/examples/microsoft_powerpoint.ipynb
+   ./document_loaders/examples/microsoft_word.ipynb
+   ./document_loaders/examples/pandas_dataframe.ipynb
    ./document_loaders/examples/pdf.ipynb
-   ./document_loaders/examples/powerpoint.ipynb
    ./document_loaders/examples/sitemap.ipynb
-   ./document_loaders/examples/srt.ipynb
+   ./document_loaders/examples/subtitle.ipynb
    ./document_loaders/examples/telegram.ipynb
    ./document_loaders/examples/toml.ipynb
    ./document_loaders/examples/unstructured_file.ipynb
    ./document_loaders/examples/url.ipynb
    ./document_loaders/examples/web_base.ipynb
    ./document_loaders/examples/whatsapp_chat.ipynb
-   ./document_loaders/examples/word_document.ipynb
+
 
 
 Public dataset or service loaders
@@ -74,12 +75,12 @@ We don't need any access permissions to these datasets and services.
    ./document_loaders/examples/bilibili.ipynb
    ./document_loaders/examples/college_confidential.ipynb
    ./document_loaders/examples/gutenberg.ipynb
-   ./document_loaders/examples/hn.ipynb
+   ./document_loaders/examples/hacker_news.ipynb
    ./document_loaders/examples/hugging_face_dataset.ipynb
    ./document_loaders/examples/ifixit.ipynb
    ./document_loaders/examples/imsdb.ipynb
    ./document_loaders/examples/mediawikidump.ipynb
-   ./document_loaders/examples/youtube.ipynb
+   ./document_loaders/examples/youtube_transcript.ipynb
 
 
 Proprietary dataset or service loaders
@@ -97,9 +98,10 @@ We need access tokens and sometime other parameters to get access to these datas
 
    ./document_loaders/examples/airbyte_json.ipynb
    ./document_loaders/examples/apify_dataset.ipynb
+   ./document_loaders/examples/aws_s3_directory.ipynb
+   ./document_loaders/examples/aws_s3_file.ipynb
    ./document_loaders/examples/azure_blob_storage_container.ipynb
    ./document_loaders/examples/azure_blob_storage_file.ipynb
-   ./document_loaders/examples/bigquery.ipynb
    ./document_loaders/examples/blackboard.ipynb
    ./document_loaders/examples/blockchain.ipynb
    ./document_loaders/examples/chatgpt_loader.ipynb
@@ -108,23 +110,22 @@ We need access tokens and sometime other parameters to get access to these datas
    ./document_loaders/examples/discord_loader.ipynb
    ./document_loaders/examples/duckdb.ipynb
    ./document_loaders/examples/figma.ipynb
-   ./document_loaders/examples/gcs_directory.ipynb
-   ./document_loaders/examples/gcs_file.ipynb
    ./document_loaders/examples/gitbook.ipynb
    ./document_loaders/examples/git.ipynb
-   ./document_loaders/examples/googledrive.ipynb
+   ./document_loaders/examples/google_bigquery.ipynb
+   ./document_loaders/examples/google_cloud_storage_directory.ipynb
+   ./document_loaders/examples/google_cloud_storage_file.ipynb
+   ./document_loaders/examples/google_drive.ipynb
    ./document_loaders/examples/image_captions.ipynb
+   ./document_loaders/examples/microsoft_onedrive.ipynb
    ./document_loaders/examples/modern_treasury.ipynb
    ./document_loaders/examples/notiondb.ipynb
    ./document_loaders/examples/notion.ipynb
    ./document_loaders/examples/obsidian.ipynb
-   ./document_loaders/examples/onedrive.ipynb
    ./document_loaders/examples/readthedocs_documentation.ipynb
    ./document_loaders/examples/reddit.ipynb
    ./document_loaders/examples/roam.ipynb
-   ./document_loaders/examples/s3_directory.ipynb
-   ./document_loaders/examples/s3_file.ipynb
-   ./document_loaders/examples/slack_directory.ipynb
+   ./document_loaders/examples/slack.ipynb
    ./document_loaders/examples/spreedly.ipynb
    ./document_loaders/examples/stripe.ipynb
    ./document_loaders/examples/twitter.ipynb
