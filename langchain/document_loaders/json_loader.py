@@ -97,7 +97,7 @@ class JSONLoader(BaseLoader):
                 text = sample
 
             # In case the text is None, set it to an empty string
-            text = text or ""
+            text: str = "" if not text else json.dumps(text)
 
             docs.append(Document(page_content=text, metadata=metadata))
 
