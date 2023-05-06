@@ -1,7 +1,6 @@
 """Use to load blobs from the local file system."""
 from pathlib import Path
 from typing import Iterable, Optional, Sequence, Union
-
 from langchain.document_loaders.blob_loaders.schema import Blob, BlobLoader
 
 # PUBLIC API
@@ -26,6 +25,7 @@ class FileSystemBlobLoader(BlobLoader):
         *,
         glob: str = "**/[!.]*",
         suffixes: Optional[Sequence[str]] = None,
+        show_progress: bool = False,
     ) -> None:
         """Initialize with path to directory and how to glob over it.
 
@@ -36,6 +36,9 @@ class FileSystemBlobLoader(BlobLoader):
             suffixes: Provide to keep only files with these suffixes
                       Useful when wanting to keep files with different suffixes
                       Suffixes must include the dot, e.g. ".txt"
+            show_progress: If true, will show a progress bar as the files are loaded.
+                           This forces an iteration through all matching files
+                           to count them prior to loading them.
 
         Examples:
 
@@ -60,14 +63,36 @@ class FileSystemBlobLoader(BlobLoader):
         self.path = _path
         self.glob = glob
         self.suffixes = set(suffixes or [])
+        self.show_progress = show_progress
 
     def yield_blobs(
         self,
     ) -> Iterable[Blob]:
         """Yield blobs that match the requested pattern."""
+        if self.show_progress:
+            from tqdm.auto import tqdm
+
+            with tqdm(total=self.count_matching_files()) as progress_bar:
+                for path in self._yield_paths():
+                    yield Blob.from_path(path)
+                    progress_bar.update(1)
+        else:
+            yield from (Blob.from_path(path) for path in self._yield_paths())
+
+    def _yield_paths(self) -> Iterable[Path]:
+        """Yield paths that match the requested pattern."""
         paths = self.path.glob(self.glob)
         for path in paths:
             if path.is_file():
                 if self.suffixes and path.suffix not in self.suffixes:
                     continue
-                yield Blob.from_path(str(path))
+                yield path
+
+    def count_matching_files(self) -> int:
+        """Count files that match the pattern without loading them."""
+        # Carry out a full iteration to count the files without
+        # materializing anything expensive in memory.
+        num = 0
+        for _ in self._yield_paths():
+            num += 1
+        return num
