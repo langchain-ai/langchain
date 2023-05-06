@@ -22,12 +22,15 @@ class NotionDBLoader(BaseLoader):
         request_timeout_sec (int): Timeout for Notion requests in seconds.
     """
 
-    def __init__(self, integration_token: str, database_id: str, request_timeout_sec: int) -> None:
+    def __init__(self, integration_token: str, database_id: str, request_timeout_sec: int = None) -> None:
         """Initialize with parameters."""
         if not integration_token:
             raise ValueError("integration_token must be provided")
         if not database_id:
             raise ValueError("database_id must be provided")
+        if request_timeout_sec > 30:
+            raise ValueError("request timeout cannot exceed 30s")
+
         if not request_timeout_sec:
             request_timeout_sec = 10
 
