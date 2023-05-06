@@ -1,8 +1,6 @@
 """Loader that loads Telegram chat json dump."""
 import asyncio
-import datetime
 import json
-from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -127,7 +125,8 @@ class TelegramChatApiLoader(BaseLoader):
         """Create a dictionary of message threads from the given data.
 
         Args:
-            data (pd.DataFrame): A DataFrame containing the conversation data with columns:
+            data (pd.DataFrame): A DataFrame containing the conversation \
+                data with columns:
                 - message.sender_id
                 - text
                 - date
@@ -136,7 +135,8 @@ class TelegramChatApiLoader(BaseLoader):
                 - reply_to_id
 
         Returns:
-            dict: A dictionary where the key is the parent message ID and the value is a list of message IDs in ascending order.
+            dict: A dictionary where the key is the parent message ID and \
+                the value is a list of message IDs in ascending order.
         """
 
         def find_replies(parent_id: int, reply_data: pd.DataFrame) -> List[int]:
@@ -144,7 +144,7 @@ class TelegramChatApiLoader(BaseLoader):
             Recursively find all replies to a given parent message ID.
 
             Args:
-                parent_id (int): The parent message ID to find replies for.
+                parent_id (int): The parent message ID.
                 reply_data (pd.DataFrame): A DataFrame containing reply messages.
 
             Returns:
@@ -163,15 +163,16 @@ class TelegramChatApiLoader(BaseLoader):
             return all_replies
 
         # Filter out parent messages
-        parent_messages = data[data["is_reply"] == False]
+        parent_messages = data[data["is_reply"] is False]
 
         # Filter out reply messages and drop rows with NaN in 'reply_to_id'
-        reply_messages = data[data["is_reply"] == True].dropna(subset=["reply_to_id"])
+        reply_messages = data[data["is_reply"] is True].dropna(subset=["reply_to_id"])
 
         # Convert 'reply_to_id' to integer
         reply_messages["reply_to_id"] = reply_messages["reply_to_id"].astype(int)
 
-        # Create a dictionary of message threads with parent message IDs as keys and lists of reply message IDs as values
+        # Create a dictionary of message threads with parent message IDs as keys and \
+        # lists of reply message IDs as values
         message_threads = {
             parent_id: [parent_id] + find_replies(parent_id, reply_messages)
             for parent_id in parent_messages["message.id"]
@@ -183,11 +184,13 @@ class TelegramChatApiLoader(BaseLoader):
         self, message_threads: Dict[int, List[int]], data: pd.DataFrame
     ) -> str:
         """
-        Combine the message texts for each parent message ID based on the list of message threads.
+        Combine the message texts for each parent message ID based \
+            on the list of message threads.
 
         Args:
-            message_threads (dict): A dictionary where the key is the parent message ID and the value is a list of message IDs in ascending order.
-            data (pd.DataFrame): A DataFrame containing the conversation data with columns:
+            message_threads (dict): A dictionary where the key is the parent message \
+                ID and the value is a list of message IDs in ascending order.
+            data (pd.DataFrame): A DataFrame containing the conversation data:
                 - message.sender_id
                 - text
                 - date
