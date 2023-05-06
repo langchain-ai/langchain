@@ -122,7 +122,7 @@ class ZapierNLARunAction(BaseTool):
         necessary_fields = {"{zapier_description}", "{params}"}
         if not all(field in values["base_prompt"] for field in necessary_fields):
             raise ValueError(
-                "Your custom base Zapier prompt must contain input fields for 
+                "Your custom base Zapier prompt must contain input fields for "
                 "{zapier_description} and {params}."
             )
             
