@@ -420,7 +420,7 @@ tools = load_tools(["serpapi", "llm-math"], llm=llm)
 agent = initialize_agent(tools, chat, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
 
 # Now let's test it out!
-agent.run("Who is Olivia Wilde's boyfriend? What is his current age raised to the 0.23 power?")
+agent.run("Who is Olivia Wilde's boyfriend? What is his current age? Raise it to the 0.23 power.")
 ```
 
 ```pycon
