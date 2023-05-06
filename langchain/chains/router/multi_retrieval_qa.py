@@ -1,7 +1,7 @@
 """Use a single chain to route an input to one of multiple retrieval qa chains."""
 from __future__ import annotations
 
-from typing import Any, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import ConversationChain
@@ -37,10 +37,7 @@ class MultiRetrievalQAChain(MultiRouteChain):
     def from_retrievers(
         cls,
         llm: BaseLanguageModel,
-        retriever_names: List[str],
-        retriever_descriptions: List[str],
-        retrievers: List[BaseRetriever],
-        retriever_prompts: Optional[List[PromptTemplate]] = None,
+        retriever_infos: List[Dict[str, Any]],
         default_retriever: Optional[BaseRetriever] = None,
         default_prompt: Optional[PromptTemplate] = None,
         default_chain: Optional[Chain] = None,
@@ -51,10 +48,7 @@ class MultiRetrievalQAChain(MultiRouteChain):
                 "`default_retriever` must be specified if `default_prompt` is "
                 "provided. Received only `default_prompt`."
             )
-        destinations = [
-            f"{name}: {description}"
-            for name, description in zip(retriever_names, retriever_descriptions)
-        ]
+        destinations = [f"{r['name']}: {r['description']}" for r in retriever_infos]
         destinations_str = "\n".join(destinations)
         router_template = MULTI_RETRIEVAL_ROUTER_TEMPLATE.format(
             destinations=destinations_str
@@ -66,10 +60,11 @@ class MultiRetrievalQAChain(MultiRouteChain):
         )
         router_chain = LLMRouterChain.from_llm(llm, router_prompt)
         destination_chains = {}
-        for i, retriever in enumerate(retrievers):
-            name = retriever_names[i]
-            prompt = retriever_prompts[i] if retriever_prompts else None
+        for r_info in retriever_infos:
+            prompt = r_info.get("prompt")
+            retriever = r_info["retriever"]
             chain = RetrievalQA.from_llm(llm, prompt=prompt, retriever=retriever)
+            name = r_info["name"]
             destination_chains[name] = chain
         if default_chain:
             _default_chain = default_chain
