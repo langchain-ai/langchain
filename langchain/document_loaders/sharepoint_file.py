@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 CHUNK_SIZE = 1024 * 1024 * 5
 
 
-class OneDriveFileLoader(BaseLoader, BaseModel):
+class SharePointFileLoader(BaseLoader, BaseModel):
     class Config:
         arbitrary_types_allowed = True
 

@@ -1,15 +1,15 @@
 """Loader that loads data from OneDrive"""
 from __future__ import annotations
 
-import os
-import tempfile
-from enum import Enum
-from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
-from langchain.document_loaders.onedrive_file import OneDriveFileLoader
-from langchain.document_loaders.base_o365 import _O365Settings, O365BaseLoader
-from langchain.docstore.document import Document
-from pydantic import BaseModel, Field
 import logging
+from enum import Enum
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
+
+from pydantic import BaseModel, Field
+
+from langchain.docstore.document import Document
+from langchain.document_loaders.base_o365 import O365BaseLoader
+from langchain.document_loaders.onedrive_file import OneDriveFileLoader
 
 if TYPE_CHECKING:
     from O365.drive import Drive, Folder
@@ -42,12 +42,18 @@ class _SupportedFileTypes(BaseModel):
 
 
 class OneDriveLoader(O365BaseLoader):
-    settings: _O365Settings = Field(default_factory=_O365Settings)
     drive_id: str = Field(...)
     folder_path: Optional[str] = None
     object_ids: Optional[List[str]] = None
     auth_with_token: bool = False
     file_loader: OneDriveFileLoader = Field(default_factory=OneDriveFileLoader)
+
+    def _fetch_mime_types(self) -> Dict[str, str]:
+        """This method will give you a Dictionary where the supported file types
+        are the keys and their corresponding mime types are the values."""
+        file_types = _SupportedFileTypes(file_types=["doc", "docx", "pdf"])
+        file_mime_types = file_types.fetch_mime_types()
+        return file_mime_types
 
     def _get_folder_from_path(self, drive: Drive) -> Union[Folder, Drive]:
         """
@@ -82,66 +88,6 @@ class OneDriveLoader(O365BaseLoader):
                 raise FileNotFoundError("Path {} not exist.".format(self.folder_path))
         return subfolder_drive
 
-    def _load_from_folder(self, folder: Folder) -> List[Document]:
-        """
-        Loads all supported document files from the specified folder
-        and returns a list of Document objects.
-
-        Args:
-            folder (Type[Folder]): The folder object to load the documents from.
-
-        Returns:
-            List[Document]: A list of Document objects representing
-            the loaded documents.
-
-        """
-        docs = []
-        file_types = _SupportedFileTypes(file_types=["doc", "docx", "pdf"])
-        file_mime_types = file_types.fetch_mime_types()
-        items = folder.get_items()
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = f"{temp_dir}"
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            for file in items:
-                if file.is_file:
-                    if file.mime_type in list(file_mime_types.values()):
-                        docs.extend(self.file_loader.load(file=file))
-        return docs
-
-    def _load_from_object_ids(self, drive: Drive) -> List[Document]:
-        """
-        Loads all supported document files from the specified OneDrive
-        drive based on their object IDs and returns a list
-        of Document objects.
-
-        Args:
-            drive (Type[Drive]): The OneDrive drive object
-            to load the documents from.
-
-        Returns:
-            List[Document]: A list of Document objects representing
-            the loaded documents.
-        """
-        docs = []
-        file_types = _SupportedFileTypes(file_types=["doc", "docx", "pdf"])
-        file_mime_types = file_types.fetch_mime_types()
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = f"{temp_dir}"
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
-            for object_id in self.object_ids if self.object_ids else [""]:
-                file = drive.get_item(object_id)
-                if not file:
-                    logging.warning(
-                        "There isn't a file with"
-                        f"object_id {object_id} in drive {drive}."
-                    )
-                    continue
-                if file.is_file:
-                    if file.mime_type in list(file_mime_types.values()):
-                        docs.extend(self.file_loader.load(file=file))
-        return docs
-
     def load(self) -> List[Document]:
         """
         Loads all supported document files from the specified OneDrive drive a
@@ -162,10 +108,12 @@ class OneDriveLoader(O365BaseLoader):
         drive = storage.get_drive(self.drive_id)
         docs: List[Document] = []
         if not drive:
-            raise ValueError(f"There isn't a drive with id {self.drive_id}.")
+            raise ValueError(f"There isn't a Drive with id {self.drive_id}.")
         if self.folder_path:
             folder = self._get_folder_from_path(drive=drive)
             docs.extend(self._load_from_folder(folder=folder))
-        elif self.object_ids:
-            docs.extend(self._load_from_object_ids(drive=drive))
+        if self.object_ids:
+            docs.extend(
+                self._load_from_object_ids(drive=drive, object_ids=self.object_ids)
+            )
         return docs
