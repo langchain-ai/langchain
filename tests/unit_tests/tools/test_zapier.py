@@ -6,7 +6,7 @@ from langchain.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain.utilities.zapier import ZapierNLAWrapper
 
 
-def test_default_base_prompt():
+def test_default_base_prompt() -> None:
     """Test that the default prompt is being inserted."""
     tool = ZapierNLARunAction(
         action_id="test",
@@ -23,7 +23,7 @@ def test_default_base_prompt():
     )
 
 
-def test_custom_base_prompt():
+def test_custom_base_prompt() -> None:
     """Test that a custom prompt is being inserted."""
     base_prompt = "Test. {zapier_description} and {params}."
     tool = ZapierNLARunAction(
@@ -39,7 +39,7 @@ def test_custom_base_prompt():
     assert tool.description == "Test. test and ['test']."
 
 
-def test_custom_base_prompt_fail():
+def test_custom_base_prompt_fail() -> None:
     """Test validating an invalid custom prompt."""
     base_prompt = "Test. {zapier_description}."
     with pytest.raises(ValueError):
