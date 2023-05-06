@@ -1,39 +1,21 @@
 """Loader that loads data from OneDrive"""
 from __future__ import annotations
 
-import logging
 import os
 import tempfile
 from enum import Enum
-from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
-
-from pydantic import BaseModel, BaseSettings, Field, FilePath, SecretStr
-
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.onedrive_file import OneDriveFileLoader
+from langchain.document_loaders.base_o365 import _O365Settings, O365BaseLoader
+from langchain.docstore.document import Document
+from pydantic import BaseModel, Field
+import logging
 
 if TYPE_CHECKING:
-    from O365 import Account
     from O365.drive import Drive, Folder
 
 SCOPES = ["offline_access", "Files.Read.All"]
 logger = logging.getLogger(__name__)
-
-
-class _OneDriveSettings(BaseSettings):
-    client_id: str = Field(..., env="O365_CLIENT_ID")
-    client_secret: SecretStr = Field(..., env="O365_CLIENT_SECRET")
-
-    class Config:
-        env_prefix = ""
-        case_sentive = False
-        env_file = ".env"
-
-
-class _OneDriveTokenStorage(BaseSettings):
-    token_path: FilePath = Field(Path.home() / ".credentials" / "o365_token.txt")
 
 
 class _FileType(str, Enum):
@@ -59,66 +41,21 @@ class _SupportedFileTypes(BaseModel):
         return mime_types_mapping
 
 
-class OneDriveLoader(BaseLoader, BaseModel):
-    settings: _OneDriveSettings = Field(default_factory=_OneDriveSettings)
+class OneDriveLoader(O365BaseLoader):
+    settings: _O365Settings = Field(default_factory=_O365Settings)
     drive_id: str = Field(...)
     folder_path: Optional[str] = None
     object_ids: Optional[List[str]] = None
     auth_with_token: bool = False
+    file_loader: OneDriveFileLoader = Field(default_factory=OneDriveFileLoader)
 
-    def _auth(self) -> Type[Account]:
-        """
-        Authenticates the OneDrive API client using the specified
-        authentication method and returns the Account object.
-
-        Returns:
-            Type[Account]: The authenticated Account object.
-        """
-        try:
-            from O365 import FileSystemTokenBackend
-        except ImportError:
-            raise ValueError(
-                "O365 package not found, please install it with `pip install o365`"
-            )
-        if self.auth_with_token:
-            token_storage = _OneDriveTokenStorage()
-            token_path = token_storage.token_path
-            token_backend = FileSystemTokenBackend(
-                token_path=token_path.parent, token_filename=token_path.name
-            )
-            account = Account(
-                credentials=(
-                    self.settings.client_id,
-                    self.settings.client_secret.get_secret_value(),
-                ),
-                scopes=SCOPES,
-                token_backend=token_backend,
-                **{"raise_http_errors": False},
-            )
-        else:
-            token_backend = FileSystemTokenBackend(
-                token_path=Path.home() / ".credentials"
-            )
-            account = Account(
-                credentials=(
-                    self.settings.client_id,
-                    self.settings.client_secret.get_secret_value(),
-                ),
-                scopes=SCOPES,
-                token_backend=token_backend,
-                **{"raise_http_errors": False},
-            )
-            # make the auth
-            account.authenticate()
-        return account
-
-    def _get_folder_from_path(self, drive: Type[Drive]) -> Union[Folder, Drive]:
+    def _get_folder_from_path(self, drive: Drive) -> Union[Folder, Drive]:
         """
         Returns the folder or drive object located at the
         specified path relative to the given drive.
 
         Args:
-            drive (Type[Drive]): The root drive from which the folder path is relative.
+            drive (Drive): The root drive from which the folder path is relative.
 
         Returns:
             Union[Folder, Drive]: The folder or drive object
@@ -145,7 +82,7 @@ class OneDriveLoader(BaseLoader, BaseModel):
                 raise FileNotFoundError("Path {} not exist.".format(self.folder_path))
         return subfolder_drive
 
-    def _load_from_folder(self, folder: Type[Folder]) -> List[Document]:
+    def _load_from_folder(self, folder: Folder) -> List[Document]:
         """
         Loads all supported document files from the specified folder
         and returns a list of Document objects.
@@ -168,11 +105,10 @@ class OneDriveLoader(BaseLoader, BaseModel):
             for file in items:
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
-                        loader = OneDriveFileLoader(file=file)
-                        docs.extend(loader.load())
+                        docs.extend(self.file_loader.load(file=file))
         return docs
 
-    def _load_from_object_ids(self, drive: Type[Drive]) -> List[Document]:
+    def _load_from_object_ids(self, drive: Drive) -> List[Document]:
         """
         Loads all supported document files from the specified OneDrive
         drive based on their object IDs and returns a list
@@ -203,8 +139,7 @@ class OneDriveLoader(BaseLoader, BaseModel):
                     continue
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
-                        loader = OneDriveFileLoader(file=file)
-                        docs.extend(loader.load())
+                        docs.extend(self.file_loader.load(file=file))
         return docs
 
     def load(self) -> List[Document]:
@@ -220,7 +155,9 @@ class OneDriveLoader(BaseLoader, BaseModel):
             ValueError: If the specified drive ID
             does not correspond to a drive in the OneDrive storage.
         """
-        account = self._auth()
+        account = self._auth(
+            settings=self.settings, scopes=SCOPES, auth_with_token=self.auth_with_token
+        )
         storage = account.storage()
         drive = storage.get_drive(self.drive_id)
         docs: List[Document] = []
