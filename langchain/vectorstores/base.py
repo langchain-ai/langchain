@@ -79,12 +79,21 @@ class VectorStore(ABC):
         """Return docs most similar to query using specified search type."""
         if search_type == "similarity":
             return self.similarity_search(query, **kwargs)
+        elif search_type == "similarity_with_score":
+            docs_with_scores = self.similarity_search_with_relevance_scores(
+                query, **kwargs
+            )
+            docs = []
+            for doc, score in docs_with_scores:
+                doc.metadata["score"] = score
+                docs.append(doc)
+            return docs
         elif search_type == "mmr":
             return self.max_marginal_relevance_search(query, **kwargs)
         else:
             raise ValueError(
                 f"search_type of {search_type} not allowed. Expected "
-                "search_type to be 'similarity' or 'mmr'."
+                "search_type to be 'similarity', 'similarity_with_score' or 'mmr'."
             )
 
     async def asearch(
@@ -324,33 +333,17 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
         """Validate search type."""
         if "search_type" in values:
             search_type = values["search_type"]
-            if search_type not in ("similarity", "mmr"):
+            if search_type not in ("similarity", "similarity_with_score", "mmr"):
                 raise ValueError(f"search_type of {search_type} not allowed.")
         return values
 
     def get_relevant_documents(self, query: str) -> List[Document]:
-        if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
-        elif self.search_type == "mmr":
-            docs = self.vectorstore.max_marginal_relevance_search(
-                query, **self.search_kwargs
-            )
-        else:
-            raise ValueError(f"search_type of {self.search_type} not allowed.")
-        return docs
+        return self.vectorstore.search(query, self.search_type, **self.search_kwargs)
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
-        if self.search_type == "similarity":
-            docs = await self.vectorstore.asimilarity_search(
-                query, **self.search_kwargs
-            )
-        elif self.search_type == "mmr":
-            docs = await self.vectorstore.amax_marginal_relevance_search(
-                query, **self.search_kwargs
-            )
-        else:
-            raise ValueError(f"search_type of {self.search_type} not allowed.")
-        return docs
+        return await self.vectorstore.asearch(
+            query, self.search_type, **self.search_kwargs
+        )
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""
