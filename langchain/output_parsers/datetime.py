@@ -2,7 +2,7 @@ import random
 from datetime import datetime, timedelta
 
 from langchain.schema import BaseOutputParser, OutputParserException
-from langchain.utils.formatting import comma_list
+from langchain.utils import comma_list
 
 
 def _generate_random_datetime_strings(
