@@ -1,4 +1,7 @@
 import json
+import logging
+from typing import List
+
 from langchain.schema import (
     AIMessage,
     BaseChatMessageHistory,
@@ -7,9 +10,6 @@ from langchain.schema import (
     _message_to_dict,
     messages_from_dict,
 )
-from typing import List
-import logging
-
 
 logger = logging.getLogger(__name__)
 
@@ -35,19 +35,19 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         database_name: str = DEFAULT_DBNAME,
         collection_name: str = DEFAULT_COLLECTION_NAME,
     ):
-        from pymongo import MongoClient, errors, ASCENDING
-        
+        from pymongo import MongoClient, errors
+
         self.connection_string = connection_string
         self.session_id = session_id
         self.database_name = database_name
         self.collection_name = collection_name
-        
+
         try:
-            self._client = MongoClient(connection_string)
-        except  errors.ConnectionFailure as error:
+            self.client : MongoClient = MongoClient(connection_string)
+        except errors.ConnectionFailure as error:
             logger.error(error)
-            
-        self.db = self._client[database_name]
+
+        self.db = self.client[database_name]
         self.collection = self.db[collection_name]
 
     @property
@@ -58,13 +58,13 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         try:
             cursor = self.collection.find({"SessionId": self.session_id})
         except errors.OperationFailure as error:
-                logger.error(error)
+            logger.error(error)
 
-        if cursor :
-            items = [ json.loads(document["History"]) for document in cursor] 
+        if cursor:
+            items = [json.loads(document["History"]) for document in cursor]
         else:
             items = []
-        
+
         messages = messages_from_dict(items)
         return messages
 
@@ -80,7 +80,10 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
 
         try:
             self.collection.insert_one(
-                {"SessionId": self.session_id, "History": json.dumps(_message_to_dict(message))}
+                {
+                    "SessionId": self.session_id,
+                    "History": json.dumps(_message_to_dict(message)),
+                }
             )
         except errors.WriteError as err:
             logger.error(err)
@@ -91,5 +94,5 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
 
         try:
             self.collection.delete_many({"SessionId": self.session_id})
-        except errors.WriteError  as err:
+        except errors.WriteError as err:
             logger.error(err)
