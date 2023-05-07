@@ -1,6 +1,6 @@
 """Notion DB loader for langchain"""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -22,7 +22,7 @@ class NotionDBLoader(BaseLoader):
         request_timeout_sec (int): Timeout for Notion requests in seconds.
     """
 
-    def __init__(self, integration_token: str, database_id: str, request_timeout_sec: int = None) -> None:
+    def __init__(self, integration_token: str, database_id: str, request_timeout_sec: Optional[int] = 10) -> None:
         """Initialize with parameters."""
         if not integration_token:
             raise ValueError("integration_token must be provided")
@@ -30,9 +30,6 @@ class NotionDBLoader(BaseLoader):
             raise ValueError("database_id must be provided")
         if request_timeout_sec > 30:
             raise ValueError("request timeout cannot exceed 30s")
-
-        if not request_timeout_sec:
-            request_timeout_sec = 10
 
         self.token = integration_token
         self.database_id = database_id
