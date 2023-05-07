@@ -316,7 +316,7 @@ You can also pass in multiple messages for OpenAI's gpt-3.5-turbo and gpt-4 mode
 ```python
 messages = [
     SystemMessage(content="You are a helpful assistant that translates English to French."),
-    HumanMessage(content="Translate this sentence from English to French. I love programming.")
+    HumanMessage(content="I love programming.")
 ]
 chat(messages)
 # -> AIMessage(content="J'aime programmer.", additional_kwargs={})
@@ -327,29 +327,29 @@ You can go one step further and generate completions for multiple sets of messag
 batch_messages = [
     [
         SystemMessage(content="You are a helpful assistant that translates English to French."),
-        HumanMessage(content="Translate this sentence from English to French. I love programming.")
+        HumanMessage(content="I love programming.")
     ],
     [
         SystemMessage(content="You are a helpful assistant that translates English to French."),
-        HumanMessage(content="Translate this sentence from English to French. I love artificial intelligence.")
+        HumanMessage(content="I love artificial intelligence.")
     ],
 ]
 result = chat.generate(batch_messages)
 result
-# -> LLMResult(generations=[[ChatGeneration(text="J'aime programmer.", generation_info=None, message=AIMessage(content="J'aime programmer.", additional_kwargs={}))], [ChatGeneration(text="J'aime l'intelligence artificielle.", generation_info=None, message=AIMessage(content="J'aime l'intelligence artificielle.", additional_kwargs={}))]], llm_output={'token_usage': {'prompt_tokens': 71, 'completion_tokens': 18, 'total_tokens': 89}})
+# -> LLMResult(generations=[[ChatGeneration(text="J'aime programmer.", generation_info=None, message=AIMessage(content="J'aime programmer.", additional_kwargs={}))], [ChatGeneration(text="J'aime l'intelligence artificielle.", generation_info=None, message=AIMessage(content="J'aime l'intelligence artificielle.", additional_kwargs={}))]], llm_output={'token_usage': {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}})
 ```
 
 You can recover things like token usage from this LLMResult:
 ```
 result.llm_output['token_usage']
-# -> {'prompt_tokens': 71, 'completion_tokens': 18, 'total_tokens': 89}
+# -> {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}
 ```
 
 
 ## Chat Prompt Templates
 Similar to LLMs, you can make use of templating by using a `MessagePromptTemplate`. You can build a `ChatPromptTemplate` from one or more `MessagePromptTemplate`s. You can use `ChatPromptTemplate`'s `format_prompt` -- this returns a `PromptValue`, which you can convert to a string or `Message` object, depending on whether you want to use the formatted value as input to an llm or chat model.
 
-For convience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:
+For convenience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:
 
 ```python
 from langchain.chat_models import ChatOpenAI

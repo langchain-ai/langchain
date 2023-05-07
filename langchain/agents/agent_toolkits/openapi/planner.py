@@ -2,7 +2,7 @@
 import json
 import re
 from functools import partial
-from typing import Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import yaml
 from pydantic import Field
@@ -29,6 +29,7 @@ from langchain.agents.agent_toolkits.openapi.spec import ReducedOpenAPISpec
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.tools import Tool
 from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.memory import ReadOnlySharedMemory
@@ -261,7 +262,10 @@ def create_openapi_agent(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
     shared_memory: Optional[ReadOnlySharedMemory] = None,
+    callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = True,
+    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Instantiate API planner and controller for a given spec.
 
@@ -288,5 +292,12 @@ def create_openapi_agent(
     agent = ZeroShotAgent(
         llm_chain=LLMChain(llm=llm, prompt=prompt, memory=shared_memory),
         allowed_tools=[tool.name for tool in tools],
+        **kwargs,
     )
-    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=verbose)
+    return AgentExecutor.from_agent_and_tools(
+        agent=agent,
+        tools=tools,
+        callback_manager=callback_manager,
+        verbose=verbose,
+        **(agent_executor_kwargs or {}),
+    )

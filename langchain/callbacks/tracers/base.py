@@ -12,7 +12,9 @@ from langchain.callbacks.tracers.schemas import (
     LLMRun,
     ToolRun,
     TracerSession,
+    TracerSessionBase,
     TracerSessionCreate,
+    TracerSessionV2,
 )
 from langchain.schema import LLMResult
 
@@ -27,7 +29,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.run_map: Dict[str, Union[LLMRun, ChainRun, ToolRun]] = {}
-        self.session: Optional[TracerSession] = None
+        self.session: Optional[Union[TracerSession, TracerSessionV2]] = None
 
     @staticmethod
     def _add_child_run(
@@ -49,22 +51,31 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Persist a run."""
 
     @abstractmethod
-    def _persist_session(self, session: TracerSessionCreate) -> TracerSession:
+    def _persist_session(
+        self, session: TracerSessionBase
+    ) -> Union[TracerSession, TracerSessionV2]:
         """Persist a tracing session."""
 
-    def new_session(self, name: Optional[str] = None, **kwargs: Any) -> TracerSession:
+    def _get_session_create(
+        self, name: Optional[str] = None, **kwargs: Any
+    ) -> TracerSessionBase:
+        return TracerSessionCreate(name=name, extra=kwargs)
+
+    def new_session(
+        self, name: Optional[str] = None, **kwargs: Any
+    ) -> Union[TracerSession, TracerSessionV2]:
         """NOT thread safe, do not call this method from multiple threads."""
-        session_create = TracerSessionCreate(name=name, extra=kwargs)
+        session_create = self._get_session_create(name=name, **kwargs)
         session = self._persist_session(session_create)
         self.session = session
         return session
 
     @abstractmethod
-    def load_session(self, session_name: str) -> TracerSession:
+    def load_session(self, session_name: str) -> Union[TracerSession, TracerSessionV2]:
         """Load a tracing session and set it as the Tracer's session."""
 
     @abstractmethod
-    def load_default_session(self) -> TracerSession:
+    def load_default_session(self) -> Union[TracerSession, TracerSessionV2]:
         """Load the default tracing session and set it as the Tracer's session."""
 
     def _start_trace(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
@@ -154,7 +165,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or not isinstance(llm_run, LLMRun):
             raise TracerException("No LLMRun found to be traced")
-
         llm_run.response = response
         llm_run.end_time = datetime.utcnow()
         self._end_trace(llm_run)
