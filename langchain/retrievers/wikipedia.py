@@ -1,7 +1,7 @@
 from typing import List
 
 from langchain.schema import BaseRetriever, Document
-from langchain.utilities import WikipediaAPIWrapper
+from langchain.utilities.wikipedia import WikipediaAPIWrapper
 
 
 class WikipediaRetriever(BaseRetriever, WikipediaAPIWrapper):

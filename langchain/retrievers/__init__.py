@@ -16,7 +16,6 @@ from langchain.retrievers.vespa_retriever import VespaRetriever
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
 from langchain.retrievers.wikipedia import WikipediaRetriever
 
-
 __all__ = [
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",
