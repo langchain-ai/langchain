@@ -9,7 +9,7 @@ class ChoiceOutputParser(BaseOutputParser[str]):
     """Parses one of a set of options."""
 
     options: List[str] = []
-    min_distance: int = None
+    max_distance: int = None
 
     def get_format_instructions(self):
         return f"Select one of the following options: {', '.join(self.options)}"
@@ -17,7 +17,7 @@ class ChoiceOutputParser(BaseOutputParser[str]):
     def parse(self, response):
         response = response.strip()
 
-        if self.min_distance is None:
+        if self.max_distance is None:
             # do fuzzy matching
             closest_option, min_distance = None, float("inf")
             for option in self.options:
@@ -26,11 +26,11 @@ class ChoiceOutputParser(BaseOutputParser[str]):
                     min_distance = distance
                     closest_option = option
 
-            if min_distance <= self.min_distance:
+            if min_distance <= self.max_distance:
                 return closest_option
             else:
                 raise OutputParserException(
-                    f"Response '{response}' does not match any options within the min_distance {self.min_distance}"
+                    f"Response '{response}' does not match any options within the min_distance {self.max_distance}"
                 )
 
         if response not in self.options:
