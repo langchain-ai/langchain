@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Any, List, Mapping, Optional
 
 from langchain.chat_models.base import BaseChatModel
-from langchain.llms.base import LLM
-from langchain.schema import BaseLanguageModel
+from langchain.llms.base import LLM, BaseLanguageModel
 
 
 class LLMFacade(LLM):

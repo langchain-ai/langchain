@@ -3,16 +3,15 @@ from __future__ import annotations
 from typing import List, Optional
 
 from langchain.chat_models.base import BaseChatModel, SimpleChatModel
-from langchain.schema import BaseLanguageModel, BaseMessage
+from langchain.schema import BaseMessage
+from langchain.llms.base import BaseLanguageModel
 from langchain.utils.messages import serialize_msgs
 
 
 class ChatModelFacade(SimpleChatModel):
     llm: BaseLanguageModel
 
-    def _call(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
-    ) -> str:
+    def _call(self, messages: List[BaseMessage], stop: Optional[List[str]] = None) -> str:
         if isinstance(self.llm, BaseChatModel):
             return self.llm(messages, stop=stop).content
         elif isinstance(self.llm, BaseLanguageModel):
