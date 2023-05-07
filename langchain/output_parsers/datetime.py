@@ -27,10 +27,6 @@ def _generate_random_datetime_strings(
 class DatetimeOutputParser(BaseOutputParser[datetime]):
     format: str = "%Y-%m-%dT%H:%M:%S.%fZ"
 
-    def __init__(self, format, **kwargs):
-        super().__init__(**kwargs)
-        self.format = format
-
     def get_format_instructions(self):
         return f"""Write a datetime string that matches the following pattern: "{self.format}". Examples: {comma_list(_generate_random_datetime_strings(self.format))}"""
 
