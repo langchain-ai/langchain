@@ -1,4 +1,6 @@
 """Test conversational router chain and memory."""
+from typing import Dict, List, Tuple, Any
+
 import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 import pytest
@@ -6,6 +8,7 @@ import yaml
 from langchain.chains.llm_router_chain.base import ConditionalRouterChain
 from langchain import LLMChain, PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
+from chromadb.api.models.Collection import Collection
 
 LLM_MAP_CONFIG = '''
     models:
@@ -53,7 +56,7 @@ LLM = FakeLLM()
 
 
 class RouterConfig:
-    def __init__(self, llm):
+    def __init__(self, llm: FakeLLM):
         self.chain_map = {}
         chroma_client = chromadb.Client()
         sentence_transformer_ef = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
@@ -70,10 +73,10 @@ class RouterConfig:
                                                                                  input_variables=m_content.get(
                                                                                      'input_vars')))
 
-    def get_chains(self):
+    def get_chains(self) -> Dict[str, LLMChain]:
         return self.chain_map
 
-    def get_embedding(self):
+    def get_embedding(self) -> Collection:
         return self.router_coll
 
 
@@ -81,7 +84,7 @@ class RouterConfig:
 def router_config() -> ConditionalRouterChain:
     config = RouterConfig(llm=LLM)
 
-    def vector_lookup(query):
+    def vector_lookup(query: List[str]) -> Tuple[Any, Any]:
         x = config.get_embedding().query(query_texts=query, n_results=3)
         return x['metadatas'][0][0].get('classification'), x['distances'][0][0]
 
@@ -92,14 +95,13 @@ def router_config() -> ConditionalRouterChain:
 def test_vector_selection_and_routing(router_config: ConditionalRouterChain) -> None:
     """Test that the vector search has a hit and is able to pick a destination chain."""
     output = router_config.run("How far is the moon from the earth?")
-    assert output['chain'] == 'space'
-    assert output['output'] == 'foo'
+    assert output == 'foo'
 
 
 def test_vector_memory_state(router_config: ConditionalRouterChain) -> None:
     """Test that the conversational router chain is able to maintain historical context"""
-    output1 = router_config.run("How far is the moon from th earth?")
-    output2 = router_config.run("Tell me more!")
+    output1 = router_config.run_with_attribution("How far is the moon from th earth?")
+    output2 = router_config.run_with_attribution("Tell me more!")
     assert output1['chain'] == 'space'
     assert output1['output'] == 'foo'
     assert output2['chain'] == 'space'
@@ -108,10 +110,11 @@ def test_vector_memory_state(router_config: ConditionalRouterChain) -> None:
 
 def test_memory_context_switch_across_chains(router_config: ConditionalRouterChain) -> None:
     """Test that the history is maintained even if the conversation spans across chains"""
-    output1 = router_config.run(input="How far is the moon from th earth?")
-    output2 = router_config.run(input="How do you scale databases for large scale software development?")
-    output3 = router_config.run(input="How do you solve genetic problems through AI/ML?")
-    output4 = router_config.run(input="Tell me more about it!")
+    output1 = router_config.run_with_attribution(input="How far is the moon from th earth?")
+    output2 = router_config.run_with_attribution(
+        input="How do you scale databases for large scale software development?")
+    output3 = router_config.run_with_attribution(input="How do you solve genetic problems through AI/ML?")
+    output4 = router_config.run_with_attribution(input="Tell me more about it!")
     assert output1['chain'] == 'space'
     assert output1['output'] == 'foo'
     assert output2['chain'] == 'architecture'

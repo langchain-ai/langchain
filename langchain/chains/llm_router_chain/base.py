@@ -1,10 +1,10 @@
 import re
 from types import FunctionType
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
-from pydantic import Extra, root_validator
+from pydantic import Extra
 
-from langchain import LLMChain, BasePromptTemplate
+from langchain import BasePromptTemplate
 from langchain.chains.base import Chain
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.input import get_color_mapping
@@ -16,7 +16,8 @@ class ConditionalRouterChain(Chain):
     """
     Router chain that picks the most relevant model to call based on a lookup function the caller would pass in.
     The function for example could be a vector query to do the determination of the destination
-    The chain includes support for memory for maintaining a conversational context and leverages it for a fall back logic
+    The chain includes support for memory for maintaining a conversational context and leverages it for a fallback
+     logic
     to defer subsequent messages to the same destination chain if the threshold for match is not met.
     """
 
@@ -27,9 +28,9 @@ class ConditionalRouterChain(Chain):
     """Default conversation prompt to use."""
 
     async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        pass
+        raise NotImplementedError("Not implemented for this chain type")
 
-    last_chain: Chain = None
+    last_chain: Optional[Chain]
     chains: Dict[str, Chain]
     strip_outputs: bool = False
     input_key: str = "input"  #: :meta private:
@@ -37,7 +38,7 @@ class ConditionalRouterChain(Chain):
     response_chain: str = "chain"
     responding_chain_hint: str = "dest_chain - "
 
-    vector_lookup_fn: FunctionType = None
+    vector_lookup_fn: FunctionType
 
     class Config:
         """Configuration for this pydantic object."""
@@ -64,7 +65,7 @@ class ConditionalRouterChain(Chain):
     def _chain_type(self) -> str:
         return "conditional_router_chain"
 
-    def extract_dict_for_output_keys(self, val):
+    def extract_dict_for_output_keys(self, val: Dict) -> Dict[str, str]:
         if not val:
             raise ValueError(f'Empty value provided for output extraction. Got ${val}')
         result: Dict[str, str] = {}
@@ -73,7 +74,7 @@ class ConditionalRouterChain(Chain):
                 result[k] = v
         return result
 
-    def run(self, *args: Any, **kwargs: Any) -> Dict[str, str]:
+    def _run(self, *args: Any, **kwargs: Any) -> Dict[str, str]:
         """Run the chain as text in, text out or multiple variables, text out."""
         if len(self.output_keys) != 2:
             raise ValueError(
@@ -94,8 +95,20 @@ class ConditionalRouterChain(Chain):
             f" but not both. Got args: {args} and kwargs: {kwargs}."
         )
 
-    async def arun(self, *args: Any, **kwargs: Any) -> dict[str, str]:
-        return self.run(args, kwargs)
+    def run(self, *args: Any, **kwargs: Any) -> str:
+        """
+        Implementation to keep contract same as parent method and return the string output
+        """
+        return self._run(*args, **kwargs)[self.output_key]
+
+    def run_with_attribution(self, *args: Any, **kwargs: Any) -> Dict[str, str]:
+        """
+        Custom run method implementation to return a dictionary with additional attribution to the caller.
+        """
+        return self._run(*args, **kwargs)
+
+    async def arun(self, *args: Any, **kwargs: Any) -> str:
+        raise NotImplementedError("Async implementation not supported for this chain type")
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         _input = inputs[self.input_key]
@@ -135,9 +148,11 @@ class ConditionalRouterChain(Chain):
         """Validate and prep outputs."""
         self._validate_outputs(outputs)
         if self.memory is not None:
-            self.memory.save_context(inputs,
-                                     {self.output_key: self.responding_chain_hint + outputs[self.response_chain] + ':' +
-                                                       outputs[self.output_key]})
+            var = dict({
+                self.output_key: self.responding_chain_hint + outputs[self.response_chain] + ':' + outputs[
+                    self.output_key]
+            })
+            self.memory.save_context(inputs, var)
         if return_only_outputs:
             return outputs
         else:
