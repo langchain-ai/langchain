@@ -7,6 +7,7 @@ from langchain.memory.chat_message_histories.firestore import (
 from langchain.memory.chat_message_histories.postgres import PostgresChatMessageHistory
 from langchain.memory.chat_message_histories.redis import RedisChatMessageHistory
 from langchain.memory.chat_message_histories.sql import SQLChatMessageHistory
+from langchain.memory.chat_message_histories.mongodb import MongoDBChatMessageHistory
 
 __all__ = [
     "DynamoDBChatMessageHistory",
@@ -16,4 +17,5 @@ __all__ = [
     "FileChatMessageHistory",
     "CosmosDBChatMessageHistory",
     "FirestoreChatMessageHistory",
+    "MongoDBChatMessageHistory",
 ]
