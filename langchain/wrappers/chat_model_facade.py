@@ -5,7 +5,7 @@ from typing import List, Optional
 from langchain.chat_models.base import BaseChatModel, SimpleChatModel
 from langchain.schema import BaseMessage
 from langchain.llms.base import BaseLanguageModel
-from langchain.utils.messages import serialize_msgs
+from langchain.utils import serialize_msgs
 
 
 class ChatModelFacade(SimpleChatModel):
