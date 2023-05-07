@@ -2,7 +2,7 @@ from langchain.output_parsers.enum import EnumOutputParser
 from langchain.schema import OutputParserException
 
 
-def test_choice_output_parser_parse() -> None:
+def test_enum_output_parser_parse() -> None:
     class Colors:
         RED = "red"
         GREEN = "green"
