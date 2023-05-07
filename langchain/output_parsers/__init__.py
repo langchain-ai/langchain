@@ -21,6 +21,7 @@ from langchain.output_parsers.retry import (
 )
 from langchain.output_parsers.stitched import StitchedOutputParser
 from langchain.output_parsers.structured import ResponseSchema, StructuredOutputParser
+from langchain.output_parsers.choice import ChoicesOutputParser
 
 __all__ = [
     "RegexParser",
@@ -36,7 +37,8 @@ __all__ = [
     "MultiAttemptRetryWithErrorOutputParser",
     "OutputFixingParser",
     "ChainedOutputParser",
-    "ChoiceOutputParser" "CodeBlockOutputParser",
+    "ChoiceOutputParser",
+    "CodeBlockOutputParser",
     "DateTimeOutputParser",
     "EnumOutputParser",
     "ItemParsedListOutputParser",
