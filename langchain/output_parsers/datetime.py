@@ -31,9 +31,9 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
         return f"""Write a datetime string that matches the following pattern: "{self.format}". Examples: {comma_list(_generate_random_datetime_strings(self.format))}"""
 
     def parse(self, response) -> datetime:
-        response = response.strip().strip('"').strip("'")
-        if response not in self.options:
+        try:
+            return datetime.strptime(response, self.format)
+        except ValueError as e:
             raise OutputParserException(
-                f"'{response}' does not match the expected format {self.format}."
-            )
-        return response
+                f"Could not parse datetime string: {response}"
+            ) from e
