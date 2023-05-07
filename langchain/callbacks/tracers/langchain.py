@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import os
 from typing import Any, Dict, List, Optional, Union
+from uuid import UUID, uuid4
 
 import requests
 
@@ -11,13 +12,14 @@ from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import (
     ChainRun,
     LLMRun,
-    Run,
+    RunCreate,
     ToolRun,
     TracerSession,
     TracerSessionBase,
     TracerSessionV2,
     TracerSessionV2Create,
 )
+from langchain.utils import raise_for_status_with_text
 
 
 def _get_headers() -> Dict[str, Any]:
@@ -51,11 +53,12 @@ class LangChainTracer(BaseTracer):
             endpoint = f"{self._endpoint}/tool-runs"
 
         try:
-            requests.post(
+            response = requests.post(
                 endpoint,
                 data=run.json(),
                 headers=self._headers,
             )
+            raise_for_status_with_text(response)
         except Exception as e:
             logging.warning(f"Failed to persist run: {e}")
 
@@ -111,7 +114,7 @@ def _get_tenant_id() -> Optional[str]:
     endpoint = _get_endpoint()
     headers = _get_headers()
     response = requests.get(endpoint + "/tenants", headers=headers)
-    response.raise_for_status()
+    raise_for_status_with_text(response)
     tenants: List[Dict[str, Any]] = response.json()
     if not tenants:
         raise ValueError(f"No tenants found for URL {endpoint}")
@@ -121,12 +124,13 @@ def _get_tenant_id() -> Optional[str]:
 class LangChainTracerV2(LangChainTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, example_id: Optional[UUID] = None, **kwargs: Any) -> None:
         """Initialize the LangChain tracer."""
         super().__init__(**kwargs)
         self._endpoint = _get_endpoint()
         self._headers = _get_headers()
         self.tenant_id = _get_tenant_id()
+        self.example_id = example_id
 
     def _get_session_create(
         self, name: Optional[str] = None, **kwargs: Any
@@ -135,16 +139,30 @@ class LangChainTracerV2(LangChainTracer):
 
     def _persist_session(self, session_create: TracerSessionBase) -> TracerSessionV2:
         """Persist a session."""
+        session: Optional[TracerSessionV2] = None
         try:
             r = requests.post(
                 f"{self._endpoint}/sessions",
                 data=session_create.json(),
                 headers=self._headers,
             )
-            session = TracerSessionV2(id=r.json()["id"], **session_create.dict())
+            raise_for_status_with_text(r)
+            creation_args = session_create.dict()
+            if "id" in creation_args:
+                del creation_args["id"]
+            return TracerSessionV2(id=r.json()["id"], **creation_args)
         except Exception as e:
-            logging.warning(f"Failed to create session, using default session: {e}")
-            session = self.load_session("default")
+            if session_create.name is not None:
+                try:
+                    return self.load_session(session_create.name)
+                except Exception:
+                    pass
+            logging.warning(
+                f"Failed to create session {session_create.name},"
+                f" using empty session: {e}"
+            )
+            session = TracerSessionV2(id=uuid4(), **session_create.dict())
+
         return session
 
     def _get_default_query_params(self) -> Dict[str, Any]:
@@ -159,13 +177,14 @@ class LangChainTracerV2(LangChainTracer):
             if session_name:
                 params["name"] = session_name
             r = requests.get(url, headers=self._headers, params=params)
+            raise_for_status_with_text(r)
             tracer_session = TracerSessionV2(**r.json()[0])
         except Exception as e:
             session_type = "default" if not session_name else session_name
             logging.warning(
                 f"Failed to load {session_type} session, using empty session: {e}"
             )
-            tracer_session = TracerSessionV2(id=1, tenant_id=self.tenant_id)
+            tracer_session = TracerSessionV2(id=uuid4(), tenant_id=self.tenant_id)
 
         self.session = tracer_session
         return tracer_session
@@ -174,7 +193,7 @@ class LangChainTracerV2(LangChainTracer):
         """Load the default tracing session and set it as the Tracer's session."""
         return self.load_session("default")
 
-    def _convert_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> Run:
+    def _convert_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> RunCreate:
         """Convert a run to a Run."""
         session = self.session or self.load_default_session()
         inputs: Dict[str, Any] = {}
@@ -204,9 +223,9 @@ class LangChainTracerV2(LangChainTracer):
                 *run.child_tool_runs,
             ]
 
-        return Run(
+        return RunCreate(
             id=run.uuid,
-            name=run.serialized.get("name", f"{run_type}-{run.uuid}"),
+            name=run.serialized.get("name"),
             start_time=run.start_time,
             end_time=run.end_time,
             extra=run.extra or {},
@@ -217,7 +236,7 @@ class LangChainTracerV2(LangChainTracer):
             outputs=outputs,
             session_id=session.id,
             run_type=run_type,
-            parent_run_id=run.parent_uuid,
+            reference_example_id=self.example_id,
             child_runs=[self._convert_run(child) for child in child_runs],
         )
 
@@ -225,11 +244,11 @@ class LangChainTracerV2(LangChainTracer):
         """Persist a run."""
         run_create = self._convert_run(run)
         try:
-            result = requests.post(
+            response = requests.post(
                 f"{self._endpoint}/runs",
                 data=run_create.json(),
                 headers=self._headers,
             )
-            result.raise_for_status()
+            raise_for_status_with_text(response)
         except Exception as e:
             logging.warning(f"Failed to persist run: {e}")

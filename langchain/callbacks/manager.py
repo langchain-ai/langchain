@@ -58,6 +58,7 @@ def tracing_enabled(
 @contextmanager
 def tracing_v2_enabled(
     session_name: str = "default",
+    example_id: Optional[Union[str, UUID]] = None,
 ) -> Generator[TracerSessionV2, None, None]:
     """Get the experimental tracer handler in a context manager."""
     # Issue a warning that this is experimental
@@ -65,8 +66,10 @@ def tracing_v2_enabled(
         "The experimental tracing v2 is in development. "
         "This is not yet stable and may change in the future."
     )
-    cb = LangChainTracerV2()
-    session = cb.load_session(session_name)
+    if isinstance(example_id, str):
+        example_id = UUID(example_id)
+    cb = LangChainTracerV2(example_id=example_id)
+    session = cast(TracerSessionV2, cb.new_session(session_name))
     tracing_callback_var.set(cb)
     yield session
     tracing_callback_var.set(None)
