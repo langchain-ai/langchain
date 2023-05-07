@@ -1,4 +1,4 @@
-from langchain.concise._utils.pattern import pattern
+from langchain.concise.pattern import pattern
 from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.schema import BaseLanguageModel
 

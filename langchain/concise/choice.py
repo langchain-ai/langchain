@@ -1,4 +1,4 @@
-from langchain.concise._utils.pattern import pattern
+from langchain.concise.pattern import pattern
 from langchain.llms.base import BaseLanguageModel
 from langchain.output_parsers.choice import ChoiceOutputParser
 from langchain.schema import BaseLanguageModel
