@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import warnings
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Any, Coroutine, Dict, List, Optional
 
 from pydantic import Extra, Field, root_validator
 
@@ -196,6 +196,14 @@ class SimpleChatModel(BaseChatModel):
         message = AIMessage(content=output_str)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
+
+    def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: List[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+    ) -> Coroutine[Any, Any, ChatResult]:
+        return self._generate(messages, stop=stop, run_manager=run_manager)
 
     @abstractmethod
     def _call(
