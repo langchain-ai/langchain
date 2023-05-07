@@ -6,7 +6,7 @@ T = TypeVar("T")
 
 
 class RemoveQuotesOutputParser(BaseOutputParser[list[T]], Generic[T]):
-    parser: BaseOutputParser[T]
+    parser: BaseOutputParser[T] = None
     quotes: list[tuple[str, str]] = [
         ("'", "'"),
         ('"', '"'),
@@ -28,7 +28,9 @@ class RemoveQuotesOutputParser(BaseOutputParser[list[T]], Generic[T]):
                     break
             else:
                 break
-        return self.parser.parse(response)
+        if self.parser is not None:
+            response = self.parser.parse(response)
+        return response
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
