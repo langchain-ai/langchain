@@ -1,8 +1,11 @@
 """Generic utility functions."""
 import os
 from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any
 
 from requests import HTTPError, Response
+
+from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
 
 def get_from_dict_or_env(
@@ -78,3 +81,56 @@ def stringify_dict(data: dict) -> str:
     for key, value in data.items():
         text += key + ": " + stringify_value(value) + "\n"
     return text
+
+
+def render_prompt_and_examples(
+    system_prompt: str,
+    input_prompt_template: str,
+    output_prompt_template: str,
+    input_obj: object,
+    examples: list = [],
+    input_keys: list[str] = [],
+    output_keys: list[str] = [],
+) -> list[BaseMessage]:
+    return [
+        SystemMessage(system_prompt),
+        *sum(
+            [
+                HumanMessage(
+                    input_prompt_template.format(
+                        **{input_key: example[input_key] for input_key in input_keys}
+                    )
+                ),
+                AIMessage(
+                    output_prompt_template.format(
+                        **{output_key: example[output_key] for output_key in output_keys}
+                    )
+                ),
+            ]
+            for example in examples
+        ),
+    ] + [
+        input_prompt_template.format(
+            **{input_key: input_obj[input_key] for input_key in input_keys}
+        )
+    ]
+
+
+def comma_list(items: list[Any]) -> str:
+    return ", ".join(str(item) for item in items)
+
+
+def bullet_list(items: list[Any]) -> str:
+    return "\n".join(f"- {str(item)}" for item in items)
+
+
+def summarized_items(items: list[str], chars=30) -> str:
+    return "\n\n".join(
+        f"{str(item)[:chars]}..." if len(item) > chars else item for item in items
+    )
+
+
+def serialize_msgs(msgs: list[BaseMessage], include_type=False) -> str:
+    return "\n\n".join(
+        (f"{msg.type}: {msg.content}" if include_type else msg.content) for msg in msgs
+    )
