@@ -49,6 +49,7 @@ from langchain.document_loaders.json_loader import JSONLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
+from langchain.document_loaders.mongodb import MongodbLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.notiondb import NotionDBLoader
@@ -150,6 +151,7 @@ __all__ = [
     "MWDumpLoader",
     "MathpixPDFLoader",
     "ModernTreasuryLoader",
+    "MongodbLoader",
     "NotebookLoader",
     "NotionDBLoader",
     "NotionDirectoryLoader",
