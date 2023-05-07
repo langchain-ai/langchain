@@ -1,4 +1,4 @@
-# OpenWeatherMap
+# OpenWeatherMap API
 
 This page covers how to use the OpenWeatherMap API within LangChain.
 It is broken into two parts: installation and setup, and then references to specific OpenWeatherMap API wrappers.
