@@ -1,4 +1,4 @@
-"""Experimental implementation of RELLM wrapped LLM."""
+"""Experimental implementation of jsonformer wrapped LLM."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, cast
@@ -10,36 +10,30 @@ from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.utils import enforce_stop_tokens
 
 if TYPE_CHECKING:
-    import rellm
-    from regex import Pattern as RegexPattern
-else:
-    try:
-        from regex import Pattern as RegexPattern
-    except ImportError:
-        pass
+    import jsonformer
 
 
-def import_rellm() -> rellm:
-    """Lazily import rellm."""
+def import_jsonformer() -> jsonformer:
+    """Lazily import jsonformer."""
     try:
-        import rellm
+        import jsonformer
     except ImportError:
         raise ValueError(
-            "Could not import rellm python package. "
-            "Please install it with `pip install rellm`."
+            "Could not import jsonformer python package. "
+            "Please install it with `pip install jsonformer`."
         )
-    return rellm
+    return jsonformer
 
 
-class RELLM(HuggingFacePipeline):
-    regex: RegexPattern = Field(..., description="The structured format to complete.")
+class JsonFormer(HuggingFacePipeline):
+    json_schema: dict = Field(..., description="The JSON Schema to complete.")
     max_new_tokens: int = Field(
         default=200, description="Maximum number of new tokens to generate."
     )
 
     @root_validator
-    def check_rellm_installation(cls, values: dict) -> dict:
-        import_rellm()
+    def check_jsonformer_installation(cls, values: dict) -> dict:
+        import_jsonformer()
         return values
 
     def _call(
@@ -48,18 +42,19 @@ class RELLM(HuggingFacePipeline):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
-        rellm = import_rellm()
+        jsonformer = import_jsonformer()
         from transformers import Text2TextGenerationPipeline
 
         pipeline = cast(Text2TextGenerationPipeline, self.pipeline)
 
-        text = rellm.complete_re(
-            prompt,
-            self.regex,
-            tokenizer=pipeline.tokenizer,
+        model = jsonformer.Jsonformer(
             model=pipeline.model,
-            max_new_tokens=self.max_new_tokens,
+            tokenizer=pipeline.tokenizer,
+            json_schema=self.json_schema,
+            prompt=prompt,
+            max_number_tokens=self.max_new_tokens,
         )
+        text = model()
         if stop is not None:
             # This is a bit hacky, but I can't figure out a better way to enforce
             # stop tokens when making calls to huggingface_hub.
