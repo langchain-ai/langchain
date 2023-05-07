@@ -7,6 +7,7 @@ from langchain.schema import OutputParserException
 
 class EnumOutputParser(ChoiceOutputParser):
     def __init__(self, enum: Enum, **kwargs):
+        assert all(isinstance(e.value, str) for e in enum), "Enum values must be strings"
         super().__init__([e.value for e in enum], **kwargs)
         self.enum = enum
 
