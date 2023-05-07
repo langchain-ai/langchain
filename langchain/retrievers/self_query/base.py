@@ -57,7 +57,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
             )
         return values
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def get_relevant_documents(self, query: str, k: int = 4) -> List[Document]:
         """Get documents relevant for a query.
 
         Args:
@@ -66,7 +66,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         Returns:
             List of relevant documents
         """
-        inputs = self.llm_chain.prep_inputs(query)
+        inputs = self.llm_chain.prep_inputs({'query' : query, 'k' : k})
         structured_query = cast(
             StructuredQuery, self.llm_chain.predict_and_parse(callbacks=None, **inputs)
         )
@@ -96,6 +96,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         if structured_query_translator is None:
             structured_query_translator = _get_builtin_translator(vectorstore.__class__)
         chain_kwargs = chain_kwargs or {}
+        
         if "allowed_comparators" not in chain_kwargs:
             chain_kwargs[
                 "allowed_comparators"

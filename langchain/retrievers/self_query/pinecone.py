@@ -49,5 +49,5 @@ class PineconeTranslator(Visitor):
         if structured_query.filter is None:
             kwargs = {}
         else:
-            kwargs = {"filter": structured_query.filter.accept(self)}
+            kwargs = {"filter": structured_query.filter.accept(self), "k": structured_query.k}
         return structured_query.query, kwargs
