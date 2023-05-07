@@ -8,7 +8,8 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import BaseLanguageModel, BaseOutputParser, PromptValue
+from langchain.schema import BaseOutputParser, PromptValue
+from langchain.llms.base import BaseLanguageModel
 from langchain.wrappers.chat_model_facade import ChatModelFacade
 from langchain.wrappers.llm_facade import LLMFacade
 
