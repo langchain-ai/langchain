@@ -28,7 +28,7 @@ class LLMFacade(LLM):
     @staticmethod
     def of(llm) -> LLMFacade:
         if isinstance(llm, BaseChatModel):
-            return LLMFacade(llm=llm)
+            return LLMFacade(chat_model=llm)
         elif isinstance(llm, BaseLanguageModel):
             return llm
         else:
