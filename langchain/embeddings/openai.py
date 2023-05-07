@@ -144,11 +144,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_API_TYPE",
             default="",
         )
-        openai_api_version = get_from_dict_or_env(
-            values,
-            "openai_api_version",
-            "OPENAI_API_VERSION",
-        )
+        if openai_api_type in ("azure", "azure_ad", "azuread"):
+            openai_api_version = get_from_dict_or_env(
+                values,
+                "openai_api_version",
+                "OPENAI_API_VERSION",
+            )
+        else:
+            openai_api_version = None
         openai_organization = get_from_dict_or_env(
             values,
             "openai_organization",
@@ -163,6 +166,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 openai.organization = openai_organization
             if openai_api_base:
                 openai.api_base = openai_api_base
+            if openai_api_version:
                 openai.api_version = openai_api_version
             if openai_api_type:
                 openai.api_type = openai_api_type
