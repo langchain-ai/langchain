@@ -43,7 +43,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         self.collection_name = collection_name
 
         try:
-            self.client : MongoClient = MongoClient(connection_string)
+            self.client: MongoClient = MongoClient(connection_string)
         except errors.ConnectionFailure as error:
             logger.error(error)
 

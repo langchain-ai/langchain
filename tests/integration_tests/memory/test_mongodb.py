@@ -8,6 +8,7 @@ from langchain.schema import _message_to_dict
 # Replace these with your mongodb connection string
 connection_string = os.environ["MONGODB_CONNECTION_STRING"]
 
+
 def test_memory_with_message_store() -> None:
     """Test the memory with a message store."""
     # setup MongoDB as a message store
