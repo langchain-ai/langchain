@@ -3,7 +3,7 @@ from typing import List
 
 import pytest
 
-from langchain.retrievers.wikipedia import WikipediaRetriever
+from langchain.retrievers import WikipediaRetriever
 from langchain.schema import Document
 
 
