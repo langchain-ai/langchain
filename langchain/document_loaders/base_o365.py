@@ -80,7 +80,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
         of Document objects.
 
         Args:
-            drive (Type[Drive]): The OneDrive drive object
+            drive (Drive): The OneDrive drive object
             to load the documents from.
 
         Returns:

@@ -73,6 +73,7 @@ from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
+from langchain.document_loaders.sharepoint import SharePointLoader
 from langchain.document_loaders.sitemap import SitemapLoader
 from langchain.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain.document_loaders.spreedly import SpreedlyLoader
@@ -177,6 +178,7 @@ __all__ = [
     "SlackDirectoryLoader",
     "SpreedlyLoader",
     "StripeLoader",
+    "SharePointLoader",
     "TelegramChatLoader",
     "TextLoader",
     "TomlLoader",
