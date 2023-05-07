@@ -11,8 +11,9 @@ class ItemParsedListOutputParser(BaseOutputParser[list[T]], Generic[T]):
     separator = "\n"
 
     def parse(self, response: str) -> Iterable[T]:
-        items = response.split(separator)
+        items = response.split(self.separator)
         items = [item.strip() for item in items]
+        items = [item for item in items if item != ""]
         if self.item_parser is None:
             return items
         else:
