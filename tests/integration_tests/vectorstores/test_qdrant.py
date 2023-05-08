@@ -86,8 +86,12 @@ def test_qdrant_similarity_search_filters() -> None:
         location=":memory:",
     )
 
-    output = docsearch.similarity_search("foo", k=1, filter={"page": 1, "metadata": {"page": 2}})
-    assert output == [Document(page_content="bar", metadata={"page": 1, "metadata": {"page": 2}})]
+    output = docsearch.similarity_search(
+        "foo", k=1, filter={"page": 1, "metadata": {"page": 2}}
+    )
+    assert output == [
+        Document(page_content="bar", metadata={"page": 1, "metadata": {"page": 2}})
+    ]
 
 
 @pytest.mark.parametrize(
