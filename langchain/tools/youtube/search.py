@@ -9,7 +9,12 @@ Input to this tool should be a comma separated list,
     maximum number of video results to return
  """
 import json
+from typing import Optional
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools import BaseTool
 
 
@@ -31,7 +36,11 @@ class YouTubeSearchTool(BaseTool):
         url_suffix_list = [video["url_suffix"] for video in data["videos"]]
         return str(url_suffix_list)
 
-    def _run(self, query: str) -> str:
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         values = query.split(",")
         person = values[0]
@@ -41,6 +50,10 @@ class YouTubeSearchTool(BaseTool):
             num_results = 2
         return self._search(person, num_results)
 
-    async def _arun(self, query: str) -> str:
+    async def _arun(
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("YouTubeSearchTool  does not yet support async")
