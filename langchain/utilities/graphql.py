@@ -11,6 +11,7 @@ class GraphQLAPIWrapper(BaseModel):
 
     graphql_endpoint: str
     gql_client: Any  #: :meta private:
+    gql_function: Any  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -22,11 +23,12 @@ class GraphQLAPIWrapper(BaseModel):
         """Validate that the python package exists in the environment."""
         try:
             from gql import gql, Client
-            from gql.transport.requests import RequestsHTTPTransport
+            from gql.transport.aiohttp import AIOHTTPTransport
 
-            transport = RequestsHTTPTransport(url=values["graphql_endpoint"])
+            transport = AIOHTTPTransport(url=values["graphql_endpoint"])
             client = Client(transport=transport, fetch_schema_from_transport=True)
             values["gql_client"] = client
+            values["gql_function"] = gql
         except ImportError:
             raise ValueError(
                 "Could not import gql python package. "
@@ -41,6 +43,6 @@ class GraphQLAPIWrapper(BaseModel):
 
     def _execute_query(self, query: str) -> Dict[str, Any]:
         """Execute a GraphQL query and return the results."""
-        query = gql(query)
+        query = self.gql_function(query)
         result = self.gql_client.execute(query)
         return result
