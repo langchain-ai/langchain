@@ -52,7 +52,9 @@ class DirectoryLoader(BaseLoader):
         self.show_progress = show_progress
         self.use_multithreading = use_multithreading
 
-    def load_file(self, item: Path, path: Path, docs: List[Document], pbar: Optional[Any]) -> None:
+    def load_file(
+        self, item: Path, path: Path, docs: List[Document], pbar: Optional[Any]
+    ) -> None:
         if item.is_file():
             if _is_visible(item.relative_to(path)) or self.load_hidden:
                 try:
