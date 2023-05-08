@@ -144,10 +144,24 @@ class ChatOpenAI(BaseChatModel):
 
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
+            if field_name in extra:
+                raise ValueError(f"Found {field_name} supplied twice.")
             if field_name not in all_required_field_names:
-                if field_name in extra:
-                    raise ValueError(f"Found {field_name} supplied twice.")
+                logger.warning(
+                    f"""WARNING! {field_name} is not default parameter.
+                    {field_name} was transferred to model_kwargs.
+                    Please confirm that {field_name} is what you intended."""
+                )
                 extra[field_name] = values.pop(field_name)
+
+        disallowed_model_kwargs = all_required_field_names | {"model"}
+        invalid_model_kwargs = disallowed_model_kwargs.intersection(extra.keys())
+        if invalid_model_kwargs:
+            raise ValueError(
+                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
+                f"Instead they were passed in as part of `model_kwargs` parameter."
+            )
+
         values["model_kwargs"] = extra
         return values
 
@@ -199,15 +213,6 @@ class ChatOpenAI(BaseChatModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        if (
-            "model" in self.model_kwargs
-            and self.model_kwargs["model"] != self.model_name
-        ):
-            warnings.warn(
-                f"Inconsistency in model name '{self.model_kwargs['model']}' \
-                vs '{self.model_name}'. \
-                Please use the `ChatOpenAI(model_name=...) for better compability"
-            )
         return {
             "model": self.model_name,
             "request_timeout": self.request_timeout,
