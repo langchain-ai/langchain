@@ -18,6 +18,7 @@ from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
+from langchain.tools.graphql.tool import BaseGraphQLTool
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import (
@@ -38,6 +39,7 @@ from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
+from langchain.utilities.graphql import GraphQLAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
@@ -236,6 +238,11 @@ def _get_scenexplain(**kwargs: Any) -> BaseTool:
     return SceneXplainTool(**kwargs)
 
 
+def _get_graphql_tool(**kwargs: Any) -> BaseTool:
+    graphql_endpoint = kwargs["graphql_endpoint"]
+    wrapper = GraphQLAPIWrapper(graphql_endpoint=graphql_endpoint)
+    return BaseGraphQLTool(graphql_wrapper=wrapper)
+
 _EXTRA_LLM_TOOLS: Dict[
     str,
     Tuple[Callable[[Arg(BaseLanguageModel, "llm"), KwArg(Any)], BaseTool], List[str]],
@@ -276,6 +283,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["awslambda_tool_name", "awslambda_tool_description", "function_name"],
     ),
     "sceneXplain": (_get_scenexplain, []),
+    "graphql": (_get_graphql_tool, ["graphql_endpoint"]),
 }
 
 
