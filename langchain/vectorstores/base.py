@@ -355,8 +355,8 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
                     not isinstance(score_threshold, float)
                 ):
                     raise ValueError(
-                        "`score_threshold` is not specified with a float value(0~1)\
-                              in `search_kwargs`."
+                        "`score_threshold` is not specified with a float value(0~1) "
+                        "in `search_kwargs`."
                     )
         return values
 
