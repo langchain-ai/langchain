@@ -158,7 +158,6 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
-            kwargs["model_name"] = model_name
         else:
             enc = tiktoken.get_encoding(encoding_name)
 
@@ -171,6 +170,15 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     **kwargs,
                 )
             )
+
+        if issubclass(cls, TokenTextSplitter):
+            extra_kwargs = {
+                "encoding_name": encoding_name,
+                "model_name": model_name,
+                "allowed_special": allowed_special,
+                "disallowed_special": disallowed_special,
+            }
+            kwargs = {**kwargs, **extra_kwargs}
 
         return cls(length_function=_tiktoken_encoder, **kwargs)
 
