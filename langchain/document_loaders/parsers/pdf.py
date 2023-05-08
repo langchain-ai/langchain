@@ -57,7 +57,7 @@ class PyMuPDFParser(BaseBlobParser):
 
             yield from [
                 Document(
-                    page_content=page.get_text(**self.text_kwargs).encode("utf-8"),
+                    page_content=page.get_text(**self.text_kwargs),
                     metadata=dict(
                         {
                             "source": blob.source,

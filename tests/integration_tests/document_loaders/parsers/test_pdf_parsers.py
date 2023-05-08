@@ -31,6 +31,8 @@ def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> 
     assert isinstance(doc_generator, Iterator)
     docs = list(doc_generator)
     assert len(docs) == 1
+    page_content = docs[0].page_content
+    assert isinstance(page_content, str)
     # The different parsers return different amount of whitespace, so using
     # startswith instead of equals.
     assert docs[0].page_content.startswith("Hello world!")
