@@ -35,6 +35,7 @@ from langchain.tools.vectorstore.tool import (
 )
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
+from langchain.tools.youtube.search import YouTubeSearchTool
 from langchain.tools.zapier.tool import ZapierNLAListActions, ZapierNLARunAction
 
 __all__ = [
@@ -80,4 +81,5 @@ __all__ = [
     "ZapierNLAListActions",
     "ZapierNLARunAction",
     "tool",
+    "YouTubeSearchTool",
 ]
