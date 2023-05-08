@@ -4,6 +4,7 @@ from langchain.agents.agent_toolkits.csv.base import create_csv_agent
 from langchain.agents.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
 )
+from langchain.agents.agent_toolkits.gmail.toolkit import GmailToolkit
 from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
 from langchain.agents.agent_toolkits.json.base import create_json_agent
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
@@ -51,6 +52,7 @@ __all__ = [
     "create_spark_dataframe_agent",
     "create_csv_agent",
     "ZapierToolkit",
+    "GmailToolkit",
     "JiraToolkit",
     "FileManagementToolkit",
     "PlayWrightBrowserToolkit",
