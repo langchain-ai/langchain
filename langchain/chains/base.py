@@ -238,6 +238,12 @@ class Chain(BaseModel, ABC):
         if kwargs and not args:
             return self(kwargs, callbacks=callbacks)[self.output_keys[0]]
 
+        if not kwargs and not args:
+            raise ValueError(
+                "`run` supported with either positional arguments or keyword arguments,"
+                " but none were provided."
+            )
+
         raise ValueError(
             f"`run` supported with either positional arguments or keyword arguments"
             f" but not both. Got args: {args} and kwargs: {kwargs}."

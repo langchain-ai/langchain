@@ -1,5 +1,4 @@
 """Abstract interface for document loader implementations."""
-import abc
 from abc import ABC, abstractmethod
 from typing import Iterable, Iterator, List, Optional
 
@@ -47,7 +46,7 @@ class BaseLoader(ABC):
         )
 
 
-class BaseBlobParser(abc.ABC):
+class BaseBlobParser(ABC):
     """Abstract interface for blob parsers.
 
     A blob parser is provides a way to parse raw data stored in a blob into one
@@ -57,7 +56,7 @@ class BaseBlobParser(abc.ABC):
     a parser independent of how the blob was originally loaded.
     """
 
-    @abc.abstractmethod
+    @abstractmethod
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazy parsing interface.
 
