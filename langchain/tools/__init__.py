@@ -10,6 +10,13 @@ from langchain.tools.file_management.list_dir import ListDirectoryTool
 from langchain.tools.file_management.move import MoveFileTool
 from langchain.tools.file_management.read import ReadFileTool
 from langchain.tools.file_management.write import WriteFileTool
+from langchain.tools.gmail import (
+    GmailCreateDraft,
+    GmailGetMessage,
+    GmailGetThread,
+    GmailSearch,
+    GmailSendMessage,
+)
 from langchain.tools.google_places.tool import GooglePlacesTool
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
@@ -56,6 +63,11 @@ __all__ = [
     "ExtractTextTool",
     "FileSearchTool",
     "GetElementsTool",
+    "GmailCreateDraft",
+    "GmailGetMessage",
+    "GmailGetThread",
+    "GmailSearch",
+    "GmailSendMessage",
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
