@@ -1,8 +1,10 @@
 """Use to load blobs from the local file system."""
 from pathlib import Path
-from typing import Iterable, Optional, Sequence, Union
+from typing import Iterable, Optional, Sequence, TypeVar, Union
 
 from langchain.document_loaders.blob_loaders.schema import Blob, BlobLoader
+
+T = TypeVar("T")
 
 # PUBLIC API
 
@@ -71,11 +73,21 @@ class FileSystemBlobLoader(BlobLoader):
     ) -> Iterable[Blob]:
         """Yield blobs that match the requested pattern."""
         if self.show_progress:
-            from tqdm.auto import tqdm
+            try:
+                from tqdm.auto import tqdm
+            except ImportError:
+                raise ImportError(
+                    "You must install tqdm to use show_progress=True."
+                    "You can install tqdm with `pip install tqdm`."
+                )
 
             # Make sure to provide `total` here so that tqdm can show
             # a progress bar that takes into account the total number of files.
-            iterator = lambda x: tqdm(x, total=self.count_matching_files())
+            def _make_iterator(iterable: Iterable[T]) -> Iterable[T]:
+                """Wrap an iterable in a tqdm progress bar."""
+                return tqdm(iterable, total=self.count_matching_files())
+
+            iterator = _make_iterator
         else:
             iterator = iter
 
