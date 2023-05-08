@@ -16,6 +16,7 @@ from langchain.llms.gpt4all import GPT4All
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain.llms.human import HumanInputLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.modal import Modal
@@ -32,7 +33,6 @@ from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
 from langchain.llms.writer import Writer
-from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 
 __all__ = [
     "Anthropic",

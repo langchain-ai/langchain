@@ -26,6 +26,7 @@ from langchain.llms import (
     ForefrontAI,
     GooseAI,
     HuggingFaceHub,
+    HuggingFaceTextGenInference,
     LlamaCpp,
     Modal,
     OpenAI,
@@ -34,7 +35,6 @@ from langchain.llms import (
     SagemakerEndpoint,
     StochasticAI,
     Writer,
-    HuggingFaceTextGenInference, 
 )
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.prompts import (
