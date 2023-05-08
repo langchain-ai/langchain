@@ -66,6 +66,30 @@ class HuggingFacePipeline(LLM):
         **kwargs: Any,
     ) -> LLM:
         """Construct the pipeline object from model_id and task."""
+        if task not in VALID_TASKS:
+            raise ValueError(
+                f"Got invalid task {task}, "
+                f"currently only {VALID_TASKS} are supported"
+            )
+
+        if importlib.util.find_spec("torch") is not None:
+            import torch
+
+            cuda_device_count = torch.cuda.device_count()
+            if device < -1 or (device >= cuda_device_count):
+                raise ValueError(
+                    f"Got device=={device}, "
+                    f"device is required to be within [-1, {cuda_device_count})"
+                )
+            if device < 0 and cuda_device_count > 0:
+                logger.warning(
+                    "Device has %d GPUs available. "
+                    "Provide device={deviceId} to `from_model_id` to use available"
+                    "GPUs for execution. deviceId is -1 (default) for CPU and "
+                    "can be a positive integer associated with CUDA device id.",
+                    cuda_device_count,
+                )
+
         try:
             from transformers import (
                 AutoModelForCausalLM,
@@ -98,24 +122,6 @@ class HuggingFacePipeline(LLM):
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 
-        if importlib.util.find_spec("torch") is not None:
-            import torch
-
-            cuda_device_count = torch.cuda.device_count()
-            if device < -1 or (device >= cuda_device_count):
-                raise ValueError(
-                    f"Got device=={device}, "
-                    f"device is required to be within [-1, {cuda_device_count})"
-                )
-            if device < 0 and cuda_device_count > 0:
-                logger.warning(
-                    "Device has %d GPUs available. "
-                    "Provide device={deviceId} to `from_model_id` to use available"
-                    "GPUs for execution. deviceId is -1 (default) for CPU and "
-                    "can be a positive integer associated with CUDA device id.",
-                    cuda_device_count,
-                )
-
         pipeline = hf_pipeline(
             task=task,
             model=model,
@@ -123,11 +129,7 @@ class HuggingFacePipeline(LLM):
             device=device,
             model_kwargs=_model_kwargs,
         )
-        if pipeline.task not in VALID_TASKS:
-            raise ValueError(
-                f"Got invalid task {pipeline.task}, "
-                f"currently only {VALID_TASKS} are supported"
-            )
+
         return cls(
             pipeline=pipeline,
             model_id=model_id,
