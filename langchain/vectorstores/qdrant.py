@@ -467,12 +467,18 @@ class Qdrant(VectorStore):
 
         from qdrant_client.http import models as rest
 
-        return rest.Filter(
-            must=[
-                rest.FieldCondition(
+        def _build_condition(key: str, value: Any) -> rest.FieldCondition:
+            if isinstance(value, dict):
+                for _key, value in value.items():
+                    return _build_condition(f"{key}.{_key}", value)
+            else:
+                return rest.FieldCondition(
                     key=f"{self.metadata_payload_key}.{key}",
                     match=rest.MatchValue(value=value),
                 )
-                for key, value in filter.items()
+
+        return rest.Filter(
+            must=[
+                _build_condition(key, value) for key, value in filter.items()
             ]
         )
