@@ -412,7 +412,7 @@ class PDFPlumberLoader(BasePDFLoader):
                     {
                         "source": file_path,
                         "file_path": file_path,
-                        "page_number": page.page_number + 1,
+                        "page_number": page.page_number,
                         "total_pages": len(doc.pages),
                     },
                     **{
@@ -457,7 +457,7 @@ class PDFPlumberLoader(BasePDFLoader):
                     {
                         "source": file_path,
                         "file_path": file_path,
-                        "page_number": page.page_number + 1,
+                        "page_number": page.page_number,
                         "total_pages": len(doc.pages),
                     },
                     **{
