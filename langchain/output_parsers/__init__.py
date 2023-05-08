@@ -1,5 +1,6 @@
+from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.output_parsers.choice import ChoiceOutputParser
-from langchain.output_parsers.code_block import CodeOutputParser
+from langchain.output_parsers.code import CodeOutputParser
 from langchain.output_parsers.enum import EnumOutputParser
 from langchain.output_parsers.fix import OutputFixingParser
 from langchain.output_parsers.item_parsed_list import ItemParsedListOutputParser
@@ -19,9 +20,9 @@ from langchain.output_parsers.retry import (
 )
 from langchain.output_parsers.stitched import StitchedOutputParser
 from langchain.output_parsers.structured import ResponseSchema, StructuredOutputParser
-from langchain.output_parsers.choice import ChoicesOutputParser
 
 __all__ = [
+    "BooleanOutputParser",
     "RegexParser",
     "RegexDictParser",
     "ListOutputParser",
