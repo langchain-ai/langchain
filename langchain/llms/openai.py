@@ -588,7 +588,8 @@ class AzureOpenAI(BaseOpenAI):
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         params = super()._invocation_params
-        # fix InvalidRequestError: logprobs, best_of and echo parameters are not available on gpt-35-turbo model.
+        # fix InvalidRequestError: logprobs, best_of and echo parameters 
+        # are not available on gpt-35-turbo model.
         if self.model_name == "gpt-35-turbo":
             params.pop("logprobs", None)
             params.pop("best_of", None)
