@@ -204,8 +204,9 @@ class ChatOpenAI(BaseChatModel):
             and self.model_kwargs["model"] != self.model_name
         ):
             warnings.warn(
-                f"Inconsistency in model name '{self.model_kwargs['model']}' vs '{self.model_name}'. \
-                          Please use the `ChatOpenAI(model_name=...) for better compability"
+                f"Inconsistency in model name '{self.model_kwargs['model']}' \
+                vs '{self.model_name}'. \
+                Please use the `ChatOpenAI(model_name=...) for better compability"
             )
         return {
             "model": self.model_name,
