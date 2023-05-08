@@ -62,10 +62,10 @@ class ArxivAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """
-        Run Arxiv search and get the document meta information.
+        Run Arxiv search and get the article meta information.
         See https://lukasschwab.me/arxiv.py/index.html#Search
         See https://lukasschwab.me/arxiv.py/index.html#Result
-        It uses only the most informative fields of document meta information.
+        It uses only the most informative fields of article meta information.
         """
         try:
             docs = [
@@ -82,10 +82,10 @@ class ArxivAPIWrapper(BaseModel):
 
     def load(self, query: str) -> List[Document]:
         """
-        Run Arxiv search and get the PDF documents plus the meta information.
+        Run Arxiv search and get the article texts plus the article meta information.
         See https://lukasschwab.me/arxiv.py/index.html#Search
 
-        Returns: a list of documents with the document.page_content in PDF format
+        Returns: a list of documents with the document.page_content in text format
 
         """
         try:
