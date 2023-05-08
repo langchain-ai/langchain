@@ -92,7 +92,7 @@ class DirectoryLoader(BaseLoader):
                     raise e
 
         if self.use_multithreading:
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
                 executor.map(lambda i: self.load_file(i, p, docs, pbar), items)
         else:
             for i in items:
