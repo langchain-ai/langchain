@@ -86,6 +86,7 @@ following schema:
 {{{{
     "query": string \\ text string to compare to document contents
     "filter": string \\ logical condition statement for filtering documents
+    "k": int \\ the number of documents to retrieve
 }}}}
 ```
 
@@ -112,6 +113,7 @@ Make sure that filters take into account the descriptions of attributes and only
 comparisons that are feasible given the type of data being stored.
 Make sure that filters are only used as needed. If there are no filters that should be \
 applied return "NO_FILTER" for the filter value.\
+Make sure the k is always an int value. It is an optional parameter so leave it blank if it is not in the input.
 """
 
 DEFAULT_PREFIX = """\
@@ -132,6 +134,9 @@ Data Source:
 
 User Query:
 {{query}}
+
+k:
+{{k}}
 
 Structured Request:
 """

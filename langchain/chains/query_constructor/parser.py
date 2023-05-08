@@ -47,11 +47,13 @@ class QueryTransformer(Transformer):
         *args: Any,
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
+        k: int = 4,
         **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
         self.allowed_comparators = allowed_comparators
         self.allowed_operators = allowed_operators
+        self.k = k
 
     def program(self, *items: Any) -> tuple:
         return items
@@ -113,8 +115,9 @@ class QueryTransformer(Transformer):
 def get_parser(
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
+    k: int = 4
 ) -> Lark:
     transformer = QueryTransformer(
-        allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
+        allowed_comparators=allowed_comparators, allowed_operators=allowed_operators, k=k
     )
     return Lark(GRAMMAR, parser="lalr", transformer=transformer, start="program")
