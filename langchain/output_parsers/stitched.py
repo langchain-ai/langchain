@@ -1,3 +1,5 @@
+from textwrap import dedent
+from types import LambdaType
 from typing import Any, Callable
 
 from langchain.chat_models.base import BaseChatModel
@@ -51,7 +53,7 @@ class StitchedOutputParser(BaseOutputParser[str]):
     chat_model: BaseChatModel
     continue_prompt: BaseChatPromptTemplate
     merge_prompt: BaseMessagePromptTemplate
-    text_splitter: TextSplitter
+    # text_splitter: TextSplitter
     max_steps: int
     continuation_keep_start_chars: int
     continuation_keep_end_chars: int
@@ -65,7 +67,7 @@ class StitchedOutputParser(BaseOutputParser[str]):
         continue_prompt: BaseMessagePromptTemplate = CONTINUE_INCOMPLETE_PROMPT,
         continue_incomplete_pls_continue_prompt: BaseMessagePromptTemplate = CONTINUE_INCOMPLETE_PLEASE_CONTINUE_PROMPT,
         merge_prompt: BaseMessagePromptTemplate = MERGE_INCOMPLETE_RESPONSES_PROMPT,
-        text_splitter: TextSplitter = RecursiveCharacterTextSplitter(),
+        # text_splitter: TextSplitter = RecursiveCharacterTextSplitter(),
         max_steps: int = 10,
         continuation_keep_start_chars: int = 500,
         continuation_keep_end_chars: int = 500,
@@ -84,18 +86,19 @@ class StitchedOutputParser(BaseOutputParser[str]):
             chat_model=ChatModelFacade.of(llm),
             continue_prompt=continue_prompt,
             merge_prompt=merge_prompt,
-            text_splitter=text_splitter,
+            # text_splitter=text_splitter,
             max_steps=max_steps,
             continuation_keep_start_chars=continuation_keep_start_chars,
             continuation_keep_end_chars=continuation_keep_end_chars,
             stitch_chars=stitch_chars,
         )
 
-    def parse_with_prompt(self, completion: str, prompt: PromptValue) -> Any:
+    def parse_with_prompt(self, completion: str, prompt: PromptValue) -> str:
         while not self._is_complete(completion):
             # get the continuation
             completion_start_trunc = completion[: self.continuation_keep_start_chars]
             completion_end_trunc = completion[-self.continuation_keep_end_chars :]
+            # TODO: don't use templates. Just use text. Because I'll need to merge the truncs if they are too short.
             continuation = self.chat_model(
                 self.continue_prompt.format_messages(
                     prompt=prompt,
@@ -104,18 +107,30 @@ class StitchedOutputParser(BaseOutputParser[str]):
                 )
             ).content
             # stitch the continuation to the completion
-            prev_trailing = completion[-self.stitch_chars :]
-            new_leading = continuation[: self.stitch_chars]
+            prev_trailing = completion[-self.stitch_chars // 2 :]
+            new_leading = continuation[: self.stitch_chars // 2]
             stitch = self.chat_model(
                 self.merge_prompt.format_messages(
                     prev_trailing=prev_trailing, new_leading=new_leading
                 )
-            )
-            completion = (
-                completion[: self.stitch_chars]
+            ).content
+            new_completion = (
+                completion[: len(completion) - self.stitch_chars // 2]
                 + stitch
-                + continuation[self.stitch_chars :]
+                + continuation[self.stitch_chars // 2 :]
             )
+            # print(
+            #     dedent(
+            #         f"""
+            #         completion:         {completion}
+            #         continuation:       {continuation}
+            #         stitch:             {stitch}
+            #         new_completion:     {new_completion}
+            #         ----------------------------
+            #         """
+            #     )
+            # )
+            completion = new_completion
 
         return completion
 
@@ -127,7 +142,7 @@ class StitchedOutputParser(BaseOutputParser[str]):
 
     def _is_complete(self, output) -> True:
         padded_output = f"START HERE\n---\n{output}\n---\nEND HERE"
-        for chunk in self.text_splitter.split_text(padded_output):
+        for chunk in RecursiveCharacterTextSplitter().split_text(padded_output):
             if not self.completion_validator(chunk):
                 return False
         return True

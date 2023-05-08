@@ -1,34 +1,47 @@
 import inspect
+from textwrap import dedent
 from langchain.llms.fake import FakeListLLM
 from langchain.output_parsers.stitched import StitchedOutputParser
 
 
 def test_stitched_output_parser_parse() -> None:
-    stitch_chars = 50
+    stitch_len = 10
+    irrelevant_len = 2
     prompt = "Please provide an implementation for test_stitched_output_parser_parse:"
-    full_response = f"Sure, here the implementation for test_stitched_output_parser_parse:\n\n```python\n{inspect.getsource(test_stitched_output_parser_parse)}```"
-    partial_response_1 = full_response[: len(full_response) // 2]
-    partial_response_2 = (
-        f"Sorry about that! Here is a continuation of the response.\n\n"
-        f"```python\n{partial_response_1[len(full_response) // 2:]}```"
-    )
-    partial_response_1_delete_chars = len("")
-    partial_response_2_delete_chars = len(
-        f"Sorry about that! Here is a continuation of the response.\n\n```python\n"
-    )
-    stitch = (
-        partial_response_1[-stitch_chars:-partial_response_1_delete_chars]
-        + partial_response_2[partial_response_2_delete_chars:stitch_chars]
-    )
-    llm_responses = [partial_response_2, stitch_chars]
-    completion_validator_responses = [False, False, True]
+    split_pos = 7
+    original_response = split_pos * "A" + 12 * "B"
+
+    partial_response_1 = original_response[:split_pos] + irrelevant_len * "C"
+    partial_response_2 = irrelevant_len * "D" + original_response[split_pos:]
+
+    stitch_start = split_pos - stitch_len // 2 + irrelevant_len
+    stitch_end = split_pos + stitch_len // 2 - irrelevant_len
+    stitch = original_response[stitch_start:stitch_end]
+    llm_responses = [partial_response_2, stitch]
+    completion_validator_responses = [False, True]
 
     parser = StitchedOutputParser.from_llm(
-        completion_validator=lambda: completion_validator_responses.pop(0),
+        completion_validator=lambda _: completion_validator_responses.pop(0),
         llm=FakeListLLM(responses=llm_responses),
-        stitch_chars=stitch_chars,
+        stitch_chars=stitch_len,
     )
 
     # Test valid input
-    response = parser.parse_with_prompt(completion=partial_response_1, prompt=prompt)
-    assert response == full_response
+    stitched_response = parser.parse_with_prompt(
+        completion=partial_response_1, prompt=prompt
+    )
+    # print(
+    #     dedent(
+    #         f"""
+    #         --- test_stitched_output_parser_parse ---
+    #         origonal_response:  {original_response}
+    #         stitched_response:  {stitched_response}
+    #         partial_response_1: {partial_response_1}
+    #         partial_response_2: {(split_pos-irrelevant_len)*' '+partial_response_2}
+    #         stitch:             {(split_pos-stitch_len//2)*' '+stitch}
+    #         -----------------------------------------
+    #         """
+    #     )
+    # )
+
+    assert stitched_response == original_response
