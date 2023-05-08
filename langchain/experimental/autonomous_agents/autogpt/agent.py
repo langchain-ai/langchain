@@ -138,5 +138,5 @@ class AutoGPT:
                     return "EXITING"
                 memory_to_add += feedback
 
-            self.memory.retriver.add_documents([Document(page_content=memory_to_add)])
+            self.memory.retriever.add_documents([Document(page_content=memory_to_add)])
             self.full_message_history.append(SystemMessage(content=result))
