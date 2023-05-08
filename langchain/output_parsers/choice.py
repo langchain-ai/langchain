@@ -9,7 +9,7 @@ class ChoiceOutputParser(BaseOutputParser[str]):
     """Parses one of a set of options."""
 
     options: List[str] = []
-    max_distance: int = None
+    max_distance: int = 0
 
     def get_format_instructions(self):
         return f"Select one of the following options: {', '.join(self.options)}"
