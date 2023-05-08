@@ -412,7 +412,7 @@ class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Python syntax."""
 
     def __init__(self, **kwargs: Any):
-        """Initialize a MarkdownTextSplitter."""
+        """Initialize a PythonCodeTextSplitter."""
         separators = [
             # First, try to split along class definitions
             "\nclass ",
