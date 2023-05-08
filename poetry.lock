@@ -1560,14 +1560,14 @@ wmi = ["wmi (>=1.5.1,<2.0.0)"]
 
 [[package]]
 name = "docarray"
-version = "0.31.0.dev64"
+version = "0.31.0"
 description = "The data structure for multimodal data"
 category = "main"
 optional = true
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "docarray-0.31.0.dev64-py3-none-any.whl", hash = "sha256:87791cc77c2989a2f54d77c12400443f61fb245ca8b3d2af2d56feee04961128"},
-    {file = "docarray-0.31.0.dev64.tar.gz", hash = "sha256:ea3ce816ac1a18d523e589dac962b042517befb2824787686030686ec3fdc328"},
+    {file = "docarray-0.31.0-py3-none-any.whl", hash = "sha256:3783e9bdcf0d59b17499660e54577f4e3d202545998afca9306ebcc09cf0e14e"},
+    {file = "docarray-0.31.0.tar.gz", hash = "sha256:a79d1ed70bd143b3e2a53ff90a62e4b3ce7231d5d237a2fab9b8311d7ae7d245"},
 ]
 
 [package.dependencies]
@@ -2862,14 +2862,14 @@ files = [
 
 [[package]]
 name = "ipykernel"
-version = "6.22.0"
+version = "6.23.0"
 description = "IPython Kernel for Jupyter"
 category = "dev"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "ipykernel-6.22.0-py3-none-any.whl", hash = "sha256:1ae6047c1277508933078163721bbb479c3e7292778a04b4bacf0874550977d6"},
-    {file = "ipykernel-6.22.0.tar.gz", hash = "sha256:302558b81f1bc22dc259fb2a0c5c7cf2f4c0bdb21b50484348f7bafe7fb71421"},
+    {file = "ipykernel-6.23.0-py3-none-any.whl", hash = "sha256:fc886f1dcdc0ec17f277e4d21fd071c857d381adcb04f3f3735d25325ca323c6"},
+    {file = "ipykernel-6.23.0.tar.gz", hash = "sha256:bd6f487d9e2744c84f6e667d46462d7647a4c862e70e08282f05a52b9d4b705f"},
 ]
 
 [package.dependencies]
@@ -4414,14 +4414,14 @@ test = ["flaky", "ipykernel", "ipython", "ipywidgets", "nbconvert (>=7.0.0)", "p
 
 [[package]]
 name = "nbconvert"
-version = "7.3.1"
+version = "7.4.0"
 description = "Converting Jupyter Notebooks"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "nbconvert-7.3.1-py3-none-any.whl", hash = "sha256:d2e95904666f1ff77d36105b9de4e0801726f93b862d5b28f69e93d99ad3b19c"},
-    {file = "nbconvert-7.3.1.tar.gz", hash = "sha256:78685362b11d2e8058e70196fe83b09abed8df22d3e599cf271f4d39fdc48b9e"},
+    {file = "nbconvert-7.4.0-py3-none-any.whl", hash = "sha256:af5064a9db524f9f12f4e8be7f0799524bd5b14c1adea37e34e83c95127cc818"},
+    {file = "nbconvert-7.4.0.tar.gz", hash = "sha256:51b6c77b507b177b73f6729dba15676e42c4e92bcb00edc8cc982ee72e7d89d7"},
 ]
 
 [package.dependencies]
@@ -9756,4 +9756,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b77ce5f91654d8258753dcc527115580f40718537581d1b4727ef31b30ff4b06"
+content-hash = "39a61e1f193e60698bf6d3572a06f42cbf6ac93c59982d67826ca99bffa98290"

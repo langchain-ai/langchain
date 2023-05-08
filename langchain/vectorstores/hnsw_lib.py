@@ -127,7 +127,7 @@ class HnswLib(VecStoreFromDocIndex):
             HnswLib Vector Store
         """
         if work_dir is None:
-            raise ValueError("`work_dir` parameter hs not been set.")
+            raise ValueError("`work_dir` parameter has not been set.")
         if n_dim is None:
             raise ValueError("`n_dim` parameter has not been set.")
 

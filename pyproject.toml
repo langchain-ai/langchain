@@ -77,7 +77,7 @@ pexpect = {version = "^4.8.0", optional = true}
 pyvespa = {version = "^0.33.0", optional = true}
 O365 = {version = "^2.0.26", optional = true}
 jq = {version = "^1.4.1", optional = true}
-docarray = {version="^0.31.0.dev35", optional=true}
+docarray = {version="^0.31.0", optional=true}
 protobuf = {version="3.19", optional=true}
 hnswlib = {version="^0.7.0", optional=true}
 
