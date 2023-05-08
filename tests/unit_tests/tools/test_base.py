@@ -1,6 +1,8 @@
 """Test the base tool implementation."""
 from datetime import datetime
+from enum import Enum
 from functools import partial
+import json
 from typing import Any, Optional, Type, Union
 
 import pytest
@@ -240,6 +242,40 @@ def test_structured_single_str_decorator_no_infer_schema() -> None:
     assert isinstance(unstructured_tool_input, BaseTool)
     assert unstructured_tool_input.args_schema is None
     assert unstructured_tool_input.run("foo") == "foo"
+
+
+def test_structured_tool_types_parsed() -> None:
+    """Test the non-primitive types are correctly passed to structured tools."""
+
+    class SomeEnum(Enum):
+        A = "a"
+        B = "b"
+
+    class SomeBaseModel(BaseModel):
+        foo: str
+
+    @tool
+    def structured_tool(
+        some_enum: SomeEnum,
+        some_base_model: SomeBaseModel,
+    ) -> str:
+        """Return the arguments directly."""
+        return {
+            "some_enum": some_enum,
+            "some_base_model": some_base_model,
+        }
+
+    assert isinstance(structured_tool, StructuredTool)
+    args = {
+        "some_enum": SomeEnum.A.value,
+        "some_base_model": SomeBaseModel(foo="bar").dict(),
+    }
+    result = structured_tool.run(json.loads(json.dumps(args)))
+    expected = {
+        "some_enum": SomeEnum.A,
+        "some_base_model": SomeBaseModel(foo="bar"),
+    }
+    assert result == expected
 
 
 def test_base_tool_inheritance_base_schema() -> None:
