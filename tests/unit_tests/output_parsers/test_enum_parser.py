@@ -1,14 +1,15 @@
+from enum import Enum
 from langchain.output_parsers.enum import EnumOutputParser
 from langchain.schema import OutputParserException
 
 
 def test_enum_output_parser_parse() -> None:
-    class Colors:
+    class Colors(Enum):
         RED = "red"
         GREEN = "green"
         BLUE = "blue"
 
-    parser = EnumOutputParser(Colors)
+    parser = EnumOutputParser.from_enum(Colors)
 
     # Test valid inputs
     result = parser.parse("red")
