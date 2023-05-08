@@ -13,20 +13,24 @@ from langchain.tools.python.tool import PythonAstREPLTool
 def _validate_spark_df(df: Any) -> bool:
     try:
         from pyspark.sql import DataFrame as SparkLocalDataFrame
+
         if not isinstance(df, SparkLocalDataFrame):
             return False
         return True
     except ImportError:
         return False
 
+
 def _validate_spark_connect_df(df: Any) -> bool:
     try:
         from pyspark.sql.connect.dataframe import DataFrame as SparkConnectDataFrame
+
         if not isinstance(df, SparkConnectDataFrame):
             return False
         return True
     except ImportError:
         return False
+
 
 def create_spark_dataframe_agent(
     llm: BaseLLM,
