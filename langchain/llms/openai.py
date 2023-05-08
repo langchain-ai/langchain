@@ -579,6 +579,13 @@ class AzureOpenAI(BaseOpenAI):
     """Deployment name to use."""
 
     @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        return {
+            **{"deployment_name": self.deployment_name},
+            **super()._identifying_params,
+        }
+
+    @property
     def _invocation_params(self) -> Dict[str, Any]:
         params = super()._invocation_params
         # fix InvalidRequestError: logprobs, best_of and echo parameters are not available on gpt-35-turbo model.
@@ -587,10 +594,6 @@ class AzureOpenAI(BaseOpenAI):
             params.pop('best_of', None)
             params.pop('echo', None)
         return {**{"engine": self.deployment_name}, **params}
-
-    @property
-    def _invocation_params(self) -> Dict[str, Any]:
-        return {**{"engine": self.deployment_name}, **super()._invocation_params}
 
     @property
     def _llm_type(self) -> str:
