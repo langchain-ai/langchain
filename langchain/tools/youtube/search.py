@@ -1,4 +1,6 @@
 """
+Adapted from https://github.com/venuv/langchain_yt_tools
+
 CustomYTSearchTool searches YouTube videos related to a person
 and returns a specified number of video URLs.
 Input to this tool should be a comma separated list,
