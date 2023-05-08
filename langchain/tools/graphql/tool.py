@@ -21,7 +21,7 @@ class BaseGraphQLTool(BaseTool):
     If an error is returned with 'Bad request' in it, rewrite the query and try again.
     If an error is returned with 'Unauthorized' in it, do not try again, but tell the user to change their authentication.
 
-    Example Input: 'query { allUsers { id, name, email } }'
+    Example Input: query {{ allUsers {{ id, name, email }} }}
     """ # noqa: E501
 
     class Config:
@@ -42,23 +42,11 @@ class BaseGraphQLTool(BaseTool):
         result = self._run_query(tool_input)
         return json.dumps(result, indent=2)
 
-
- 
-    def _run(
-        self,
-        tool_input: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        result = self._run_query(tool_input)
-        return json.dumps(result, indent=2)
-'''
     async def _arun(
         self,
         tool_input: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        # For now, we use the synchronous _run_query method as there isn't
-        # an async version available in the gql library.
-        result = self._run_query(tool_input)
-        return json.dumps(result, indent=2)
-'''
+        """Use the Graphql tool asynchronously."""
+        raise NotImplementedError("GraphQLAPIWrapper does not support async")
+
