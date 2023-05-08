@@ -23,6 +23,7 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
             ...
     """
     # Mapping from the name of a package to whether it is installed or not.
+    # Used to avoid repeated calls to `util.find_spec`
     required_pkgs_info: Dict[str, bool] = {}
 
     for item in items:
@@ -36,8 +37,8 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                 if pkg not in required_pkgs_info:
                     required_pkgs_info[pkg] = util.find_spec(pkg) is not None
 
-                # If the package is installed, we can continue, if not
-                # we break immediately and set all_exist to False
                 if not required_pkgs_info[pkg]:
+                    # If the package is not installed, we immediately break
+                    # and mark the test as skipped.
                     item.add_marker(pytest.mark.skip(reason=f"requires pkg: `{pkg}`"))
                     break
