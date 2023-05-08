@@ -6,8 +6,6 @@ from typing import Any
 
 from requests import HTTPError, Response
 
-from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
-
 
 def get_from_dict_or_env(
     data: Dict[str, Any], key: str, env_key: str, default: Optional[str] = None
@@ -82,6 +80,9 @@ def stringify_dict(data: dict) -> str:
     for key, value in data.items():
         text += key + ": " + stringify_value(value) + "\n"
     return text
+
+
+from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
 
 def render_prompt_and_examples(
