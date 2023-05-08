@@ -32,13 +32,13 @@ lint lint_diff:
 	poetry run black $(PYTHON_FILES) --check
 	poetry run ruff .
 
-TEST_FILE = 
+TEST_FILE ?= tests/unit_tests/
 
 test:
-	poetry run pytest tests/unit_tests/$(TEST_FILE)
+	poetry run pytest $(TEST_FILE)
 
 tests:
-	poetry run pytest tests/unit_tests/$(TEST_FILE)
+	poetry run pytest $(TEST_FILE)
 
 test_watch:
 	poetry run ptw --now . -- tests/unit_tests
@@ -59,7 +59,7 @@ help:
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
 	@echo 'test                         - run unit tests'
-	@echo 'test test_file=<test_file>   - run all tests in file'
+	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
 	@echo 'test_watch                   - run unit tests in watch mode'
 	@echo 'integration_tests            - run integration tests'
 	@echo 'docker_tests                 - run unit tests in docker'
