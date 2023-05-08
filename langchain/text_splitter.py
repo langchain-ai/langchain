@@ -158,6 +158,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
+            kwargs["model_name"] = model_name
         else:
             enc = tiktoken.get_encoding(encoding_name)
 
