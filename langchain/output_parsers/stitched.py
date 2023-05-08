@@ -8,7 +8,8 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import BaseLanguageModel, BaseOutputParser, PromptValue
+from langchain.schema import BaseOutputParser, PromptValue
+from langchain.llms.base import BaseLanguageModel
 from langchain.wrappers.chat_model_facade import ChatModelFacade
 from langchain.wrappers.llm_facade import LLMFacade
 
@@ -28,15 +29,15 @@ CONTINUE_INCOMPLETE_PLEASE_CONTINUE_PROMPT_TEMPLATE = (
     "Sorry, your response was incomplete. Please finish your response:"
 )
 
-SYSTEM_PROMPT = ChatPromptTemplate.from_template(SYSTEM_PROMPT_TEMPLATE)
+SYSTEM_PROMPT = ChatMessagePromptTemplate.from_template(template=SYSTEM_PROMPT_TEMPLATE)
 CONTINUE_INCOMPLETE_PROMPT = HumanMessagePromptTemplate.from_template(
-    CONTINUE_INCOMPLETE_PROMPT_TEMPLATE
+    template=CONTINUE_INCOMPLETE_PROMPT_TEMPLATE
 )
 MERGE_INCOMPLETE_RESPONSES_PROMPT = HumanMessagePromptTemplate.from_template(
-    MERGE_INCOMPLETE_RESPONSES_PROMPT_TEMPLATE
+    template=MERGE_INCOMPLETE_RESPONSES_PROMPT_TEMPLATE
 )
 CONTINUE_INCOMPLETE_PLEASE_CONTINUE_PROMPT = SystemMessagePromptTemplate.from_template(
-    CONTINUE_INCOMPLETE_PLEASE_CONTINUE_PROMPT_TEMPLATE
+    template=CONTINUE_INCOMPLETE_PLEASE_CONTINUE_PROMPT_TEMPLATE
 )
 
 
