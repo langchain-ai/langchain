@@ -35,10 +35,10 @@ lint lint_diff:
 TEST_FILE = 
 
 test:
-	poetry run pytest tests/unit_tests/$(test_file)
+	poetry run pytest tests/unit_tests/$(TEST_FILE)
 
 tests:
-	poetry run pytest tests/unit_tests/$(test_file)
+	poetry run pytest tests/unit_tests/$(TEST_FILE)
 
 test_watch:
 	poetry run ptw --now . -- tests/unit_tests
