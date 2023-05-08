@@ -115,6 +115,34 @@ class PyPDFLoader(BasePDFLoader):
             ]
 
 
+class PyPDFium2Loader(BasePDFLoader):
+    """Loads a PDF with pypdfium2 and chunks at character level."""
+
+    def __init__(self, file_path: str):
+        """Initialize with file path."""
+        try:
+            import pypdfium2  # noqa:F401
+        except ImportError:
+            raise ValueError(
+                "pypdfium2 package not found, please install it with"
+                " `pip install pypdfium2`"
+            )
+        super().__init__(file_path)
+
+    def load(self) -> List[Document]:
+        """Load given path as pages."""
+        import pypdfium2
+
+        with open(self.file_path, "rb") as f:
+            pdf_reader = pypdfium2.PdfDocument(f)
+            docs = []
+            for i, page in enumerate(pdf_reader):
+                content = page.get_textpage().get_text_range()
+                metadata = {"source": self.file_path, "page": i}
+                docs.append(Document(page_content=content, metadata=metadata))
+            return docs
+
+
 class PyPDFDirectoryLoader(BaseLoader):
     """Loads a directory with PDF files with pypdf and chunks at character level.
 

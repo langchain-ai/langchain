@@ -89,7 +89,7 @@ class GetElementsTool(BaseBrowserTool):
         page = get_current_page(self.sync_browser)
         # Navigate to the desired webpage before using this tool
         results = _get_elements(page, selector, attributes)
-        return json.dumps(results)
+        return json.dumps(results, ensure_ascii=False)
 
     async def _arun(
         self,
@@ -103,4 +103,4 @@ class GetElementsTool(BaseBrowserTool):
         page = await aget_current_page(self.async_browser)
         # Navigate to the desired webpage before using this tool
         results = await _aget_elements(page, selector, attributes)
-        return json.dumps(results)
+        return json.dumps(results, ensure_ascii=False)
