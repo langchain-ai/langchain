@@ -83,6 +83,7 @@ class Weaviate(VectorStore):
         client: Any,
         index_name: str,
         text_key: str,
+        by_text: bool = True,
         embedding: Optional[Embeddings] = None,
         attributes: Optional[List[str]] = None,
         relevance_score_fn: Optional[
@@ -105,6 +106,7 @@ class Weaviate(VectorStore):
         self._index_name = index_name
         self._embedding = embedding
         self._text_key = text_key
+        self._by_text = by_text
         self._query_attrs = [self._text_key]
         self._relevance_score_fn = relevance_score_fn
         if attributes is not None:
@@ -154,6 +156,15 @@ class Weaviate(VectorStore):
         return ids
 
     def similarity_search(
+            self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        if self._by_text:
+            return self.similarity_search_by_text(query, k, **kwargs)
+        else:
+            embd = self._embedding.embed_query(query)
+            return self.similarity_search_by_vector(embd, k, **kwargs)
+
+    def similarity_search_by_text(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query.
