@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import sys
+import warnings
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 from pydantic import Extra, Field, root_validator
@@ -198,6 +199,15 @@ class ChatOpenAI(BaseChatModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
+        if (
+            "model" in self.model_kwargs
+            and self.model_kwargs["model"] != self.model_name
+        ):
+            warnings.warn(
+                f"Inconsistency in model name '{self.model_kwargs['model']}' \
+                vs '{self.model_name}'. \
+                Please use the `ChatOpenAI(model_name=...) for better compability"
+            )
         return {
             "model": self.model_name,
             "request_timeout": self.request_timeout,
