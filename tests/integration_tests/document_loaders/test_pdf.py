@@ -4,6 +4,7 @@ from langchain.document_loaders import (
     MathpixPDFLoader,
     PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
+    PDFPlumberLoader,
     PyMuPDFLoader,
     PyPDFium2Loader,
     PyPDFLoader,
@@ -118,3 +119,33 @@ def test_mathpix_loader() -> None:
     docs = loader.load()
     assert len(docs) == 1
     print(docs[0].page_content)
+
+
+def test_pdfplumber_loader() -> None:
+    """Test PDFPlumber loader."""
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PDFPlumberLoader(str(file_path))
+
+    docs = loader.load()
+    assert len(docs) == 1
+
+    docs = loader.annotate_and_load(str(Path(__file__).parent.parent / "examples/"))
+    assert len(docs) == 1
+    assert Path(
+        str(Path(__file__).parent.parent / "examples/hello_annotated.pdf")
+    ).is_file()
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PDFPlumberLoader(str(file_path))
+
+    docs = loader.load()
+    assert len(docs) == 16
+    assert loader.web_path is None
+
+    web_path = "https://people.sc.fsu.edu/~jpeterson/hello_world.pdf"
+    loader = PDFPlumberLoader(web_path)
+
+    docs = loader.load()
+    assert loader.web_path == web_path
+    assert loader.file_path != web_path
+    assert len(docs) == 1
