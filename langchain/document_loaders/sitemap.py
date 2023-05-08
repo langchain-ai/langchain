@@ -10,6 +10,8 @@ from langchain.schema import Document
 def _default_parsing_function(content: Any) -> str:
     return str(content.get_text())
 
+def _default_meta_function(list: dict, _content: Any) -> dict:
+    return list
 
 def _batch_block(iterable: Iterable, size: int) -> Generator[List[dict], None, None]:
     it = iter(iterable)
@@ -27,6 +29,7 @@ class SitemapLoader(WebBaseLoader):
         parsing_function: Optional[Callable] = None,
         blocksize: Optional[int] = None,
         blocknum: int = 0,
+        meta_function: Optional[Callable] = None,
     ):
         """Initialize with webpage path and optional filter URLs.
 
@@ -37,6 +40,7 @@ class SitemapLoader(WebBaseLoader):
             parsing_function: Function to parse bs4.Soup output
             blocksize: number of sitemap locations per block
             blocknum: the number of the block that should be loaded - zero indexed
+            meta_function: Function to parse bs4.Soup output for metadata
         """
 
         if blocksize is not None and blocksize < 1:
@@ -56,6 +60,7 @@ class SitemapLoader(WebBaseLoader):
 
         self.filter_urls = filter_urls
         self.parsing_function = parsing_function or _default_parsing_function
+        self.meta_function = meta_function or _default_meta_function
         self.blocksize = blocksize
         self.blocknum = blocknum
 
@@ -110,7 +115,7 @@ class SitemapLoader(WebBaseLoader):
         return [
             Document(
                 page_content=self.parsing_function(results[i]),
-                metadata={**{"source": els[i]["loc"]}, **els[i]},
+                metadata={**{"source": els[i]["loc"]}, **self.meta_function(els[i], results[i])},
             )
             for i in range(len(results))
         ]

@@ -78,3 +78,19 @@ def test_filter_sitemap() -> None:
     documents = loader.load()
     assert len(documents) == 1
     assert "🦜🔗" in documents[0].page_content
+
+
+def test_sitemap_metadata() -> None:
+
+    def sitemap_metadata_one(meta, _content) -> dict:
+        return {**meta, "mykey": "Super Important Metadata"}
+
+    """Test sitemap loader."""
+    loader = SitemapLoader(
+        "https://langchain.readthedocs.io/sitemap.xml",
+        meta_function = sitemap_metadata_one
+    )
+    documents = loader.load()
+    assert len(documents) > 1
+    assert "mykey" in documents[0].metadata
+    assert "Super Important Metadata" in documents[0].metadata["mykey"]
