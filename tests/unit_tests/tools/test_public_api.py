@@ -44,6 +44,7 @@ _EXPECTED = [
     "ZapierNLAListActions",
     "ZapierNLARunAction",
     "tool",
+    "YouTubeSearchTool"
 ]
 
 
