@@ -4,6 +4,8 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 from requests import HTTPError, Response
 
+from langchain.schema import BaseMessage
+
 
 def get_from_dict_or_env(
     data: Dict[str, Any], key: str, env_key: str, default: Optional[str] = None
@@ -78,3 +80,9 @@ def stringify_dict(data: dict) -> str:
     for key, value in data.items():
         text += key + ": " + stringify_value(value) + "\n"
     return text
+
+
+def serialize_msgs(msgs: list[BaseMessage], include_type=False) -> str:
+    return "\n\n".join(
+        (f"{msg.type}: {msg.content}" if include_type else msg.content) for msg in msgs
+    )
