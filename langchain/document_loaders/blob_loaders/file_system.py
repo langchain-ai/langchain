@@ -73,12 +73,14 @@ class FileSystemBlobLoader(BlobLoader):
         if self.show_progress:
             from tqdm.auto import tqdm
 
-            with tqdm(total=self.count_matching_files()) as progress_bar:
-                for path in self._yield_paths():
-                    yield Blob.from_path(path)
-                    progress_bar.update(1)
+            # Make sure to provide `total` here so that tqdm can show
+            # a progress bar that takes into account the total number of files.
+            iterator = lambda x: tqdm(x, total=self.count_matching_files())
         else:
-            yield from (Blob.from_path(path) for path in self._yield_paths())
+            iterator = iter
+
+        for path in iterator(self._yield_paths()):
+            yield Blob.from_path(path)
 
     def _yield_paths(self) -> Iterable[Path]:
         """Yield paths that match the requested pattern."""
