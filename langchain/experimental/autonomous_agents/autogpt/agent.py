@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import List, Optional
+from langchain.experimental.autonomous_agents.autogpt.memory import AutoGPTMemory
 
 from pydantic import ValidationError
 
@@ -32,7 +33,7 @@ class AutoGPT:
     def __init__(
         self,
         ai_name: str,
-        memory: VectorStoreRetriever,
+        memory: AutoGPTMemory,
         chain: LLMChain,
         output_parser: BaseAutoGPTOutputParser,
         tools: List[BaseTool],
@@ -52,7 +53,7 @@ class AutoGPT:
         cls,
         ai_name: str,
         ai_role: str,
-        memory: VectorStoreRetriever,
+        memory: AutoGPTMemory,
         tools: List[BaseTool],
         llm: BaseChatModel,
         human_in_the_loop: bool = False,
@@ -137,5 +138,5 @@ class AutoGPT:
                     return "EXITING"
                 memory_to_add += feedback
 
-            self.memory.add_documents([Document(page_content=memory_to_add)])
+            self.memory.retriver.add_documents([Document(page_content=memory_to_add)])
             self.full_message_history.append(SystemMessage(content=result))

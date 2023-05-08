@@ -1,5 +1,6 @@
 import time
 from typing import Any, Callable, List
+from langchain.experimental.autonomous_agents.autogpt.memory import AutoGPTMemory
 
 from pydantic import BaseModel
 
@@ -46,9 +47,9 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
         used_tokens = self.token_counter(base_prompt.content) + self.token_counter(
             time_prompt.content
         )
-        memory: VectorStoreRetriever = kwargs["memory"]
+        memory: AutoGPTMemory = kwargs["memory"]
         previous_messages = kwargs["messages"]
-        relevant_docs = memory.get_relevant_documents(str(previous_messages[-10:]))
+        relevant_docs = memory.retriever.get_relevant_documents(str(previous_messages[-10:]))
         relevant_memory = [d.page_content for d in relevant_docs]
         relevant_memory_tokens = sum(
             [self.token_counter(doc) for doc in relevant_memory]
