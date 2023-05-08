@@ -381,3 +381,91 @@ class MathpixPDFLoader(BasePDFLoader):
             contents = self.clean_pdf(contents)
         metadata = {"source": self.source, "file_path": self.source}
         return [Document(page_content=contents, metadata=metadata)]
+
+
+class PDFPlumberLoader(BasePDFLoader):
+    """Loader that uses PDFPlumber to load PDF files."""
+
+    def __init__(self, file_path: str):
+        """Initialize with file path."""
+        try:
+            import pdfplumber  # noqa:F401
+        except ImportError:
+            raise ValueError(
+                "PDFPlumber package not found, please install it with "
+                "`pip install pdfplumber`"
+            )
+
+        super().__init__(file_path)
+
+    def load(self, **kwargs: Optional[Any]) -> List[Document]:
+        """Load file."""
+        import pdfplumber
+
+        doc = pdfplumber.open(self.file_path)
+        file_path = self.file_path if self.web_path is None else self.web_path
+
+        return [
+            Document(
+                page_content=page.extract_text(**kwargs).encode("utf-8"),
+                metadata=dict(
+                    {
+                        "source": file_path,
+                        "file_path": file_path,
+                        "page_number": page.page_number + 1,
+                        "total_pages": len(doc.pages),
+                    },
+                    **{
+                        k: doc.metadata[k]
+                        for k in doc.metadata
+                        if type(doc.metadata[k]) in [str, int]
+                    },
+                ),
+            )
+            for page in doc.pages
+        ]
+
+    def annotate_and_load(
+        self, folder_path: str, **kwargs: Optional[Any]
+    ) -> List[Document]:
+        """Annotate/save pdf file using pdfplumber's visual debudding and load file."""
+        path = Path(folder_path)
+        path.mkdir(exist_ok=True, parents=True)
+
+        import pdfplumber
+
+        doc = pdfplumber.open(self.file_path)
+        file_path = self.file_path if self.web_path is None else self.web_path
+
+        # get annotated PIL.Images
+        annotated_imgs = []
+        for page in doc.pages:
+            im = page.to_image(resolution=100)
+            annotated_imgs.append(im.draw_rects(page.extract_words(**kwargs)).annotated)
+        # save as ranamed pdf
+        file_name = Path(self.file_path).stem
+        annotated_imgs[0].save(
+            str(path / "{}_annotated.pdf".format(file_name)),
+            save_all=True,
+            append_images=annotated_imgs[1:],
+        )
+
+        return [
+            Document(
+                page_content=page.extract_text(**kwargs).encode("utf-8"),
+                metadata=dict(
+                    {
+                        "source": file_path,
+                        "file_path": file_path,
+                        "page_number": page.page_number + 1,
+                        "total_pages": len(doc.pages),
+                    },
+                    **{
+                        k: doc.metadata[k]
+                        for k in doc.metadata
+                        if type(doc.metadata[k]) in [str, int]
+                    },
+                ),
+            )
+            for page in doc.pages
+        ]
