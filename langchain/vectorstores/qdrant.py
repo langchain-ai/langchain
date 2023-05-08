@@ -472,13 +472,13 @@ class Qdrant(VectorStore):
                 for _key, value in value.items():
                     return _build_condition(f"{key}.{_key}", value)
             else:
-                return rest.FieldCondition(
+                out = rest.FieldCondition(
                     key=f"{self.metadata_payload_key}.{key}",
                     match=rest.MatchValue(value=value),
                 )
 
+            return out
+
         return rest.Filter(
-            must=[
-                _build_condition(key, value) for key, value in filter.items()
-            ]
+            must=[_build_condition(key, value) for key, value in filter.items()]
         )
