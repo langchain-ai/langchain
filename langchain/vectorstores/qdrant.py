@@ -14,7 +14,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
-MetadataFilter = Dict[str, Union[str, int, bool]]
+MetadataFilter = Dict[str, Union[str, int, bool, dict, list]]
 
 
 class Qdrant(VectorStore):
