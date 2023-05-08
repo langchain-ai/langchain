@@ -5,6 +5,17 @@ import Levenshtein
 from langchain.schema import BaseOutputParser, OutputParserException
 
 
+def _import_levenshtein_distance() -> Any:
+    """Import Levenshtein if available, otherwise raise error."""
+    try:
+        from Levenshtein import distance
+    except ImportError:
+        raise ValueError(
+            "Could not import Levenshtein. Please install it with `pip install python-Levenshtein`."
+        )
+    return distance
+
+
 class ChoiceOutputParser(BaseOutputParser[str]):
     """Parses one of a set of options."""
 
@@ -21,7 +32,6 @@ class ChoiceOutputParser(BaseOutputParser[str]):
             # do fuzzy matching
             closest_option, min_distance = None, float("inf")
             for option in self.options:
-                distance = Levenshtein.distance(response, option)
                 if distance < min_distance:
                     min_distance = distance
                     closest_option = option
@@ -34,6 +44,8 @@ class ChoiceOutputParser(BaseOutputParser[str]):
                 )
 
         if response not in self.options:
+            levenshtein_distance = _import_levenshtein_distance()
+            distance = levenshtein_distance(response, option)
             raise OutputParserException(
                 f"Response '{response}' not in options {self.options}"
             )
