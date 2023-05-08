@@ -1,11 +1,11 @@
 from typing import TypeVar
 
 from langchain.concise import config
-from langchain.concise._utils.examples import render_prompt_and_examples
 from langchain.concise.generate import generate
 from langchain.llms.base import BaseLanguageModel
 from langchain.output_parsers.choice import ChoiceOutputParser
 from langchain.schema import BaseOutputParser
+from langchain.utils import render_prompt_and_examples
 
 T = TypeVar("T")
 

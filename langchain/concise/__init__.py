@@ -10,7 +10,8 @@ from langchain.concise.config import (
     set_default_text_splitter,
 )
 from langchain.concise.decide import decide
-from langchain.concise.function import function
+from langchain.concise.gemplate import gemplate
+from langchain.concise.template import template
 from langchain.concise.generate import generate
 from langchain.concise.rulex import rulex
 
@@ -19,7 +20,8 @@ __all__ = [
     "chunk",
     "config",
     "decide",
-    "function",
+    "gemplate",
+    "template",
     "generate",
     "get_default_max_tokens",
     "get_default_model",

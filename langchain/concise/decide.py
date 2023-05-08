@@ -25,9 +25,9 @@ def decide(
         bool: The boolean value of the evaluated statement.
     """
     parser = BooleanOutputParser()
-
     examples.extend([(ex, True) for ex in true_examples])
     examples.extend([(ex, False) for ex in false_examples])
+    # Rephrase the outputs in the vernacular of the boolean parser.
     examples = [
         (input, parser.true_val if output else parser.false_val)
         for input, output in examples

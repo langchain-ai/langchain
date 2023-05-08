@@ -1,6 +1,8 @@
-from textwrap import dedent
+from __future__ import annotations
 
 import attr
+from textwrap import dedent
+from langchain.concise.config import get_default_text_splitter
 from pydantic import BaseModel, Field, validator
 
 from langchain.base_language import BaseLanguageModel
@@ -23,16 +25,13 @@ class Rule(BaseModel):
         return f"{self.name}: {self.pattern} -> {self.replacement}"
 
 
-@attr.s(auto_attribs=True)
-class RulEx:
+class RulEx(BaseModel):
     _NO_RULE_MATCH = "No match"
 
-    rules: list[Rule] = attr.ib()
-    choice_parser: ChoiceOutputParser = attr.ib()
-    text_splitter: TextSplitter = attr.ib(
-        TokenTextSplitter(chunk_size=200, chunk_overlap=50)
-    )
-    replacements_per_chunk: int = attr.ib(5)
+    rules: list[Rule]
+    choice_parser: ChoiceOutputParser
+    text_splitter: TextSplitter
+    replacements_per_chunk: int = 5
 
     @classmethod
     def create(
@@ -40,17 +39,13 @@ class RulEx:
         rules: str | list[str] | list[tuple[str, str]] | list[Rule],
         text_splitter: TextSplitter,
         llm: BaseLanguageModel,
-    ):
+    ) -> RulEx:
         rules = cls._parse_rules(rules, llm)
-        text_splitter = text_splitter or TokenTextSplitter(
-            chunk_size=200, chunk_overlap=50
-        )
+        text_splitter = text_splitter or get_default_text_splitter()
         choice_parser = ChoiceOutputParser(
             options=[rule.pattern for rule in rules] + [RulEx._NO_RULE_MATCH], llm=llm
         )
-        super().__init__(
-            rules=rules, text_splitter=text_splitter, choice_parser=choice_parser
-        )
+        return cls(rules=rules, text_splitter=text_splitter, choice_parser=choice_parser)
 
     @classmethod
     def _parse_rules(cls, rules, llm):
@@ -82,7 +77,8 @@ class RulEx:
             )
         return rules
 
-    def __call__(self, input):
+    def __call__(self, input) -> str:
+        output = ""
         for chunk in self.text_splitter.chunk(input):
             for _ in range(self.replacements_per_chunk):
                 # get the next matching rule
@@ -119,6 +115,7 @@ class RulEx:
                         """
                     ),
                     llm=self.llm,
-                )
+                ).strip()
                 chunk = chunk.replace(match, replacement)
-            yield chunk
+            output += chunk
+        return output
