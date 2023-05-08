@@ -1,6 +1,13 @@
 from typing import Any, Optional, Sequence, Union
 
 try:
+    import lark
+    from packaging import version
+
+    if version.parse(lark.__version__) < version.parse("1.1.5"):
+        raise ValueError(
+            f"Lark should be at least version 1.1.5, got {lark.__version__}"
+        )
     from lark import Lark, Transformer, v_args
 except ImportError:
     pass
