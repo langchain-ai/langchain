@@ -2,7 +2,7 @@
 import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -49,7 +49,7 @@ class GmailSendMessage(GmailBaseTool):
         subject: str,
         cc: Optional[List[str]] = None,
         bcc: Optional[List[str]] = None,
-    ):
+    ) -> Dict[str, Any]:
         """Create a message for an email."""
         mime_message = MIMEMultipart()
         mime_message.attach(MIMEText(message, "html"))

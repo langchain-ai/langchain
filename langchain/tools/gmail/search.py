@@ -47,7 +47,7 @@ class GmailSearch(GmailBaseTool):
     description: str = (
         "Use this tool to search for email messages or threads."
         " The input must be a valid Gmail query."
-        " The output is a JSON list of the requested resource.",
+        " The output is a JSON list of the requested resource."
     )
     args_schema: Type[SearchArgsSchema] = SearchArgsSchema
 
@@ -127,7 +127,7 @@ class GmailSearch(GmailBaseTool):
         else:
             raise NotImplementedError(f"Resource of type {resource} not implemented.")
 
-    def _arun(
+    async def _arun(
         self,
         query: str,
         resource: Resource = Resource.MESSAGES,

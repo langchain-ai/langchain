@@ -100,7 +100,7 @@ def build_resource_service(
     return builder(service_name, service_version, credentials=credentials)
 
 
-def clean_email_body(body: str):
+def clean_email_body(body: str) -> str:
     """Clean email body."""
     try:
         from bs4 import BeautifulSoup

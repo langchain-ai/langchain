@@ -59,7 +59,7 @@ class GmailGetMessage(GmailBaseTool):
             "sender": sender,
         }
 
-    def _arun(
+    async def _arun(
         self,
         message_id: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,

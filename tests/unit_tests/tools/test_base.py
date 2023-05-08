@@ -1,8 +1,8 @@
 """Test the base tool implementation."""
+import json
 from datetime import datetime
 from enum import Enum
 from functools import partial
-import json
 from typing import Any, Optional, Type, Union
 
 import pytest
@@ -258,7 +258,7 @@ def test_structured_tool_types_parsed() -> None:
     def structured_tool(
         some_enum: SomeEnum,
         some_base_model: SomeBaseModel,
-    ) -> str:
+    ) -> dict:
         """Return the arguments directly."""
         return {
             "some_enum": some_enum,

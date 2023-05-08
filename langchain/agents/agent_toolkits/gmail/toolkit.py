@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import List
+from typing import TYPE_CHECKING, List
 
-from git import TYPE_CHECKING
 from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
@@ -31,8 +30,6 @@ SCOPES = ["https://mail.google.com/"]
 class GmailToolkit(BaseToolkit):
     """Toolkit for interacting with Gmail."""
 
-    credentials: dict = None
-    tools_return_direct: bool = False
     api_resource: Resource = Field(default_factory=build_resource_service)
 
     class Config:

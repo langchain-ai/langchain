@@ -22,7 +22,7 @@ class GmailGetThread(GmailBaseTool):
     description: str = (
         "Use this tool to search for email messages."
         " The input must be a valid Gmail query."
-        " The output is a JSON list of messages.",
+        " The output is a JSON list of messages."
     )
     args_schema: Type[GetThreadSchema] = GetThreadSchema
 
@@ -46,7 +46,7 @@ class GmailGetThread(GmailBaseTool):
             )
         return thread_data
 
-    def _arun(
+    async def _arun(
         self,
         thread_id: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
