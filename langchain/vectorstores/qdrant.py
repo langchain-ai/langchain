@@ -5,7 +5,18 @@ import uuid
 import warnings
 from hashlib import md5
 from operator import itemgetter
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import numpy as np
 
@@ -13,6 +24,10 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
+
+if TYPE_CHECKING:
+    from qdrant_client.http import models as rest
+
 
 MetadataFilter = Dict[str, Union[str, int, bool, dict, list]]
 
@@ -461,38 +476,40 @@ class Qdrant(VectorStore):
             metadata=scored_point.payload.get(metadata_payload_key) or {},
         )
 
-    def _qdrant_filter_from_dict(self, filter: Optional[MetadataFilter]) -> Any:
+    def _build_condition(self, key: str, value: Any) -> List[rest.FieldCondition]:
+        from qdrant_client.http import models as rest
+
+        out = []
+
+        if isinstance(value, dict):
+            for _key, value in value.items():
+                out.extend(self._build_condition(f"{key}.{_key}", value))
+        elif isinstance(value, list):
+            for _value in value:
+                if isinstance(_value, dict):
+                    out.extend(self._build_condition(f"{key}[]", _value))
+                else:
+                    out.extend(self._build_condition(f"{key}", _value))
+        else:
+            out.append(
+                rest.FieldCondition(
+                    key=f"{self.metadata_payload_key}.{key}",
+                    match=rest.MatchValue(value=value),
+                )
+            )
+
+        return out
+
+    def _qdrant_filter_from_dict(self, filter: Optional[MetadataFilter]) -> rest.Filter:
         if not filter:
             return None
 
         from qdrant_client.http import models as rest
 
-        def _build_condition(key: str, value: Any) -> List[rest.FieldCondition]:
-            out = []
-
-            if isinstance(value, dict):
-                for _key, value in value.items():
-                    out.extend(_build_condition(f"{key}.{_key}", value))
-            elif isinstance(value, list):
-                for _value in value:
-                    if isinstance(_value, dict):
-                        out.extend(_build_condition(f"{key}[]", _value))
-                    else:
-                        out.extend(_build_condition(f"{key}", _value))
-            else:
-                out.append(
-                    rest.FieldCondition(
-                        key=f"{self.metadata_payload_key}.{key}",
-                        match=rest.MatchValue(value=value),
-                    )
-                )
-
-            return out
-
         return rest.Filter(
             must=[
                 condition
                 for key, value in filter.items()
-                for condition in _build_condition(key, value)
+                for condition in self._build_condition(key, value)
             ]
         )
