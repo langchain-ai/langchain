@@ -462,23 +462,37 @@ class Qdrant(VectorStore):
         )
 
     def _qdrant_filter_from_dict(self, filter: Optional[MetadataFilter]) -> Any:
-        if filter is None or 0 == len(filter):
+        if not filter:
             return None
 
         from qdrant_client.http import models as rest
 
-        def _build_condition(key: str, value: Any) -> rest.FieldCondition:
+        def _build_condition(key: str, value: Any) -> List[rest.FieldCondition]:
+            out = []
+
             if isinstance(value, dict):
                 for _key, value in value.items():
-                    return _build_condition(f"{key}.{_key}", value)
+                    out.extend(_build_condition(f"{key}.{_key}", value))
+            elif isinstance(value, list):
+                for _value in value:
+                    if isinstance(_value, dict):
+                        out.extend(_build_condition(f"{key}[]", _value))
+                    else:
+                        out.extend(_build_condition(f"{key}", _value))
             else:
-                out = rest.FieldCondition(
-                    key=f"{self.metadata_payload_key}.{key}",
-                    match=rest.MatchValue(value=value),
+                out.append(
+                    rest.FieldCondition(
+                        key=f"{self.metadata_payload_key}.{key}",
+                        match=rest.MatchValue(value=value),
+                    )
                 )
 
             return out
 
         return rest.Filter(
-            must=[_build_condition(key, value) for key, value in filter.items()]
+            must=[
+                condition
+                for key, value in filter.items()
+                for condition in _build_condition(key, value)
+            ]
         )
