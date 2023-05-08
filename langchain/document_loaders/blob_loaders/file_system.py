@@ -1,10 +1,37 @@
 """Use to load blobs from the local file system."""
 from pathlib import Path
-from typing import Iterable, Optional, Sequence, TypeVar, Union
+from typing import Callable, Iterable, Iterator, Optional, Sequence, TypeVar, Union
 
 from langchain.document_loaders.blob_loaders.schema import Blob, BlobLoader
 
 T = TypeVar("T")
+
+
+def _make_iterator(
+    length_func: Callable[[], int], show_progress: bool = False
+) -> Callable[[Iterable[T]], Iterator[T]]:
+    """Create a function that optionally wraps an iterable in tqdm."""
+    if show_progress:
+        try:
+            from tqdm.auto import tqdm
+        except ImportError:
+            raise ImportError(
+                "You must install tqdm to use show_progress=True."
+                "You can install tqdm with `pip install tqdm`."
+            )
+
+        # Make sure to provide `total` here so that tqdm can show
+        # a progress bar that takes into account the total number of files.
+        def _with_tqdm(iterable: Iterable[T]) -> Iterator[T]:
+            """Wrap an iterable in a tqdm progress bar."""
+            return tqdm(iterable, total=length_func())
+
+        iterator = _with_tqdm
+    else:
+        iterator = iter  # type: ignore
+
+    return iterator
+
 
 # PUBLIC API
 
@@ -72,24 +99,9 @@ class FileSystemBlobLoader(BlobLoader):
         self,
     ) -> Iterable[Blob]:
         """Yield blobs that match the requested pattern."""
-        if self.show_progress:
-            try:
-                from tqdm.auto import tqdm
-            except ImportError:
-                raise ImportError(
-                    "You must install tqdm to use show_progress=True."
-                    "You can install tqdm with `pip install tqdm`."
-                )
-
-            # Make sure to provide `total` here so that tqdm can show
-            # a progress bar that takes into account the total number of files.
-            def _make_iterator(iterable: Iterable[T]) -> Iterable[T]:
-                """Wrap an iterable in a tqdm progress bar."""
-                return tqdm(iterable, total=self.count_matching_files())
-
-            iterator = _make_iterator
-        else:
-            iterator = iter
+        iterator = _make_iterator(
+            length_func=self.count_matching_files, show_progress=self.show_progress
+        )
 
         for path in iterator(self._yield_paths()):
             yield Blob.from_path(path)
