@@ -10,7 +10,12 @@ try:
         )
     from lark import Lark, Transformer, v_args
 except ImportError:
-    pass
+
+    def v_args(*args: Any, **kwargs: Any) -> Any:
+        return lambda _: None
+
+    Transformer = object
+    Lark = object
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
