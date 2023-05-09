@@ -1,10 +1,12 @@
 """Fake LLM wrapper for testing purposes."""
-import asyncio
-from typing import Any, List, Mapping, Optional, cast
+from typing import List, Optional
 
 import pytest
 
-from langchain.callbacks.manager import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms.base import LLM
 from langchain.schema import LLMResult
 
@@ -33,6 +35,7 @@ class FakeNewSignLLM(LLM):
         """Return type of llm."""
         return "fake_test_only"
 
+
 def test_llm_intern_generate():
     llm = FakeNewSignLLM()
     results = llm._generate(["hello", "world"])
@@ -40,6 +43,7 @@ def test_llm_intern_generate():
     assert len(results.generations) == 2
     assert results.generations[0][0].text == "hello"
     assert results.generations[1][0].text == "world"
+
 
 @pytest.mark.asyncio
 async def test_llm_async_intern_generate():
