@@ -40,7 +40,7 @@ def _validate_for_cuda_counting(device: Any) -> True:
 
 def _validate_device_status(device: Any) -> bool:
     # apple silicone
-    if device == "mps":
+    if device == "cpu":
         # no hardware availablity check so far.
         return True
     return _validate_for_cuda_counting(device)
