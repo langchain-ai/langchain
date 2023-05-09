@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from langchain.agents.plan_and_execute.executors.base import BaseExecutor
 from langchain.agents.plan_and_execute.planners.base import BasePlanner
+from langchain.agents.plan_and_execute.schema import Step, StepResponse
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 
@@ -9,14 +10,16 @@ from langchain.chains.base import Chain
 class PlanAndExecute(Chain):
     planner: BasePlanner
     executer: BaseExecutor
+    input_key: str = "input"
+    output_key: str = "output"
 
     @property
     def input_keys(self) -> List[str]:
-        return ["input"]
+        return [self.input_key]
 
     @property
     def output_keys(self) -> List[str]:
-        return ["answer"]
+        return [self.output_key]
 
     def _call(
         self,
@@ -27,8 +30,9 @@ class PlanAndExecute(Chain):
             inputs,
             callbacks=run_manager.get_child() if run_manager else None,
         )
-        run_manager.on_text(str(plan))
-        previous_steps = []
+        if run_manager:
+            run_manager.on_text(str(plan))
+        previous_steps: List[Tuple[Step, StepResponse]] = []
         for step in plan.steps:
             _new_inputs = {"previous_steps": previous_steps, "current_step": step}
             new_inputs = {**_new_inputs, **inputs}
@@ -36,7 +40,8 @@ class PlanAndExecute(Chain):
                 new_inputs,
                 callbacks=run_manager.get_child() if run_manager else None,
             )
-            run_manager.on_text(f"*****\n\nStep: {step}")
-            run_manager.on_text(f"\n\nResponse: {response.response}")
+            if run_manager:
+                run_manager.on_text(f"*****\n\nStep: {step.value}")
+                run_manager.on_text(f"\n\nResponse: {response.response}")
             previous_steps.append((step, response))
-        return {"answer": previous_steps[-1][1].response}
+        return {self.output_key: previous_steps[-1][1].response}

@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 
 from pydantic import BaseModel
 
-from langchain import LLMChain
+from langchain.chains.llm import LLMChain
 from langchain.agents.plan_and_execute.schema import Plan, PlanOutputParser
 from langchain.callbacks.manager import Callbacks
 

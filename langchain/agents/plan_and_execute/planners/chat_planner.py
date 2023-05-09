@@ -1,7 +1,7 @@
 import re
 
 from langchain.agents.plan_and_execute.planners.base import LLMPlanner
-from langchain.agents.plan_and_execute.schema import Plan, PlanOutputParser
+from langchain.agents.plan_and_execute.schema import Plan, PlanOutputParser, Step
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
@@ -19,9 +19,10 @@ SYSTEM_PROMPT = (
 )
 
 
-class PlanOP(PlanOutputParser):
-    def parse(self, text):
-        return Plan(steps=re.split("\n\d+\. ", text)[1:])
+class PlanningOutputParser(PlanOutputParser):
+    def parse(self, text: str) -> Plan:
+        steps = [Step(value=v) for v in re.split("\n\d+\. ", text)[1:]]
+        return Plan(steps=steps)
 
 
 def load_chat_planner(llm: BaseLanguageModel) -> LLMPlanner:
@@ -31,7 +32,9 @@ def load_chat_planner(llm: BaseLanguageModel) -> LLMPlanner:
             HumanMessagePromptTemplate.from_template("{input}"),
         ]
     )
-    llm_chain_1 = LLMChain(llm=llm, prompt=prompt_template)
+    llm_chain = LLMChain(llm=llm, prompt=prompt_template)
     return LLMPlanner(
-        llm_chain=llm_chain_1, output_parser=PlanOP(), stop=["<END_OF_PLAN>"]
+        llm_chain=llm_chain,
+        output_parser=PlanningOutputParser(),
+        stop=["<END_OF_PLAN>"],
     )
