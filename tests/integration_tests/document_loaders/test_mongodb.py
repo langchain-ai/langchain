@@ -1,4 +1,3 @@
-import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -6,12 +5,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from langchain.docstore.document import Document
 from langchain.document_loaders import MongodbLoader
-
-if "MONGODB_API_KEY" in os.environ:
-    mongo_api_key_set = True
-    mongo_api_key = os.environ["MONGODB_API_KEY"]
-else:
-    mongo_api_key_set = False
 
 
 @pytest.fixture
@@ -93,17 +86,3 @@ def test_load_mocked(expected_documents):
     documents = loader.load()
 
     assert documents == expected_documents
-
-
-@pytest.mark.skipif(not mongo_api_key_set, reason="MONGODB_API_KEY not provided.")
-def test_load_actual_db() -> None:
-    if "MONGODB_API_KEY" in os.environ:
-        mongo_api_key = os.environ["MONGODB_API_KEY"]
-        db_name = os.environ["MONGODB_DB_NAME"]
-        collection_name = os.environ["MONGODB_COLLECTION_NAME"]
-
-        loader = MongodbLoader(mongo_api_key, db_name, collection_name)
-
-        result = loader.load()
-
-        assert len(result) > 0
