@@ -1,8 +1,7 @@
 """Wrapper around HuggingFace Pipeline APIs."""
-from enum import Enum
 import importlib.util
 import logging
-from typing import Any, List, Mapping, Optional, Union
+from typing import Any, List, Mapping, Optional
 
 from pydantic import Extra
 
@@ -16,7 +15,8 @@ VALID_TASKS = ("text2text-generation", "text-generation")
 
 logger = logging.getLogger(__name__)
 
-def _validate_for_cuda_counting(device: Any) -> True:
+
+def _validate_for_cuda_counting(device: Any) -> bool:
     if type(device) is not int:
         return True
     if importlib.util.find_spec("torch") is not None:
@@ -37,6 +37,8 @@ def _validate_for_cuda_counting(device: Any) -> True:
                 cuda_device_count,
             )
         return True
+    return True
+
 
 def _validate_device_status(device: Any) -> bool:
     # apple silicone
@@ -45,12 +47,15 @@ def _validate_device_status(device: Any) -> bool:
         return True
     return _validate_for_cuda_counting(device)
 
+
 def _validate_device_type(device: Any) -> bool:
     if importlib.util.find_spec("torch") is not None:
         import torch
+
         if type(device) is torch.device:
             return True
     return type(device) is int or type(device) is str
+
 
 class HuggingFacePipeline(LLM):
     """Wrapper around HuggingFace Pipeline API.
@@ -109,11 +114,12 @@ class HuggingFacePipeline(LLM):
             )
         if not _validate_device_type(device):
             raise ValueError(
-                f"Got invalid device {device}, expecting int, str or torch.device" 
+                f"Got invalid device {device}, expecting int, str or torch.device"
             )
         if not _validate_device_status(device):
             raise ValueError(
-                f"Failed while checking for device {device}, please read logs for details." 
+                f"Failed while checking for device {device},"
+                "please read logs for details."
             )
 
         try:
