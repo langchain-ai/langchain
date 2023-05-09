@@ -10,8 +10,8 @@ from langchain.schema import Document
 def _default_parsing_function(content: Any) -> str:
     return str(content.get_text())
 
-def _default_meta_function(list: dict, _content: Any) -> dict:
-    return list
+def _default_meta_function(meta: dict, _content: Any) -> dict:
+    return meta
 
 def _batch_block(iterable: Iterable, size: int) -> Generator[List[dict], None, None]:
     it = iter(iterable)
