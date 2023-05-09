@@ -12,6 +12,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
+    """Wrapper around Azure Cognitive Search."""
     service_name: str  # name of Azure Cognitive Search service
     index_name: str
     azure_cognitive_search_api_key: Optional[str] = None
@@ -42,7 +43,7 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
         search_url = f"{self._build_search_url()}&search={query}"
         response = requests.get(search_url, headers=headers)
         if response.status_code != 200:
-            raise Exception(f"Error in search request: {response}")
+            raise Exception(f"Error in search request: {response}") 
 
         return json.loads(response.text)["value"]
 
