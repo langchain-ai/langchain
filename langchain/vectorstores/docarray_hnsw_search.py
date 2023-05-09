@@ -1,4 +1,4 @@
-"""Wrapper around HnswLib store."""
+"""Wrapper around DocArrayHnswSearch store."""
 from __future__ import annotations
 
 from typing import List, Optional, Type
@@ -11,8 +11,8 @@ from langchain.vectorstores.vector_store_from_doc_index import (
 )
 
 
-class HnswLib(VecStoreFromDocIndex):
-    """Wrapper around HnswLib storage.
+class DocArrayHnswSearch(VecStoreFromDocIndex):
+    """Wrapper around DocArrayHnswSearch storage.
 
     To use it, you should have the ``docarray[hnswlib]`` package with version >=0.31.0 installed.
     You can install it with `pip install "langchain[hnswlib]"`.
@@ -32,13 +32,13 @@ class HnswLib(VecStoreFromDocIndex):
         allow_replace_deleted: bool = True,
         num_threads: int = 1,
     ) -> None:
-        """Initialize HnswLib store.
+        """Initialize DocArrayHnswSearch store.
 
         Args:
             embedding (Embeddings): Embedding function.
             work_dir (str): path to the location where all the data will be stored.
             n_dim (int): dimension of an embedding.
-            dist_metric (str): Distance metric for HnswLib can be one of: "cosine",
+            dist_metric (str): Distance metric for DocArrayHnswSearch can be one of: "cosine",
                 "ip", and "l2". Defaults to "cosine".
             max_elements (int): Maximum number of vectors that can be stored.
                 Defaults to 1024.
@@ -97,8 +97,8 @@ class HnswLib(VecStoreFromDocIndex):
         M: int = 16,
         allow_replace_deleted: bool = True,
         num_threads: int = 1,
-    ) -> HnswLib:
-        """Create an HnswLib store and insert data.
+    ) -> DocArrayHnswSearch:
+        """Create an DocArrayHnswSearch store and insert data.
 
         Args:
             texts (List[str]): Text data.
@@ -107,7 +107,7 @@ class HnswLib(VecStoreFromDocIndex):
                 Defaults to None.
             work_dir (str): path to the location where all the data will be stored.
             n_dim (int): dimension of an embedding.
-            dist_metric (str): Distance metric for HnswLib can be one of: "cosine",
+            dist_metric (str): Distance metric for DocArrayHnswSearch can be one of: "cosine",
                 "ip", and "l2". Defaults to "l2".
             max_elements (int): Maximum number of vectors that can be stored.
                 Defaults to 1024.
@@ -124,7 +124,7 @@ class HnswLib(VecStoreFromDocIndex):
             num_threads (int): Sets the number of cpu threads to use. Defaults to 1.
 
         Returns:
-            HnswLib Vector Store
+            DocArrayHnswSearch Vector Store
         """
         if work_dir is None:
             raise ValueError("`work_dir` parameter has not been set.")

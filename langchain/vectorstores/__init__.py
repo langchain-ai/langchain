@@ -8,8 +8,8 @@ from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.lancedb import LanceDB
-from langchain.vectorstores.hnsw_lib import HnswLib
-from langchain.vectorstores.in_memory_exact_search import InMemoryExactSearch
+from langchain.vectorstores.docarray_hnsw_search import DocArrayHnswSearch
+from langchain.vectorstores.docarray_in_memory_search import DocArrayInMemorySearch
 from langchain.vectorstores.milvus import Milvus
 from langchain.vectorstores.myscale import MyScale, MyScaleSettings
 from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
@@ -42,6 +42,6 @@ __all__ = [
     "AnalyticDB",
     "Tair",
     "LanceDB",
-    "HnswLib",
-    "InMemoryExactSearch",
+    "DocArrayHnswSearch",
+    "DocArrayInMemorySearch",
 ]
