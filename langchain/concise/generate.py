@@ -1,4 +1,8 @@
 from typing import Callable, NoReturn, TypeVar
+from langchain.output_parsers.boolean import BooleanOutputParser
+from langchain.output_parsers.pydantic import PydanticOutputParser
+
+from pydantic import BaseModel
 
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import BaseLanguageModel
@@ -40,12 +44,48 @@ from langchain.schema import BaseOutputParser
 def generate(
     input: str | list[BaseMessage],
     parser: BaseOutputParser[T] = None,
+    type=None,
     llm=None,
     stop=None,
     attempts=None,
     additional_validator: Callable[[str], None] = None,
     remove_quotes=False,
 ) -> T:
+    if type is not None:
+        if isinstance(type, str):
+
+            class StringParser(BaseOutputParser[str]):
+                def parse(self, output: str) -> str:
+                    return output
+
+            parser = StringParser()
+
+        elif isinstance(type, bool):
+            parser = BooleanOutputParser()
+
+        elif isinstance(type, int):
+
+            class IntParser(BaseOutputParser[int]):
+                def parse(self, output: str) -> int:
+                    return int(output)
+
+            parser = IntParser()
+
+        elif isinstance(type, float):
+
+            class FloatParser(BaseOutputParser[float]):
+                def parse(self, output: str) -> float:
+                    return float(output)
+
+            parser = FloatParser()
+
+        elif isinstance(type, BaseModel):
+            parser = PydanticOutputParser(pydantic_object=type)
+
+        else:
+            raise ValueError(
+                f"Invalid type: {type}. Must be a str, bool, int, float, or BaseModel."
+            )
     if parser is None:
         return _generate(input, llm=llm, stop=stop)
     if remove_quotes:
