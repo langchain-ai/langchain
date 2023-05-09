@@ -1,7 +1,7 @@
 from typing import Any, Iterable, List, Optional
 
 from langchain import SQLDatabase
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, Row, DataFrame
 
 
 class SparkSQL(SQLDatabase):
@@ -42,7 +42,9 @@ class SparkSQL(SQLDatabase):
         self._sample_rows_in_table_info = sample_rows_in_table_info
 
     @classmethod
-    def from_uri(cls, database_uri: str, **kwargs: Any):
+    def from_uri(
+            cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
+    ) -> SQLDatabase:
         """Creating a remote Spark Session via Spark connect.
           For more details: https://spark.apache.org/docs/latest/api/python/getting_started/quickstart_connect.html
         """
@@ -64,8 +66,8 @@ class SparkSQL(SQLDatabase):
         rows = self._spark.sql("SHOW TABLES").select("tableName").collect()
         return list(map(lambda row: row.tableName, rows))
 
-    def _get_create_table_stmt(self, table) -> str:
-        statement = self._spark.sql("SHOW CREATE TABLE " + table).collect()[0].createtab_stmt
+    def _get_create_table_stmt(self, table: str) -> str:
+        statement = self._spark.sql(f"SHOW CREATE TABLE {table}").collect()[0].createtab_stmt
         # Ignore the data source provider and options to reduce the number of tokens.
         using_clause_index = statement.find("USING")
         return statement[:using_clause_index] + ";"
@@ -82,13 +84,13 @@ class SparkSQL(SQLDatabase):
             table_info = self._get_create_table_stmt(table_name)
             if self._sample_rows_in_table_info:
                 table_info += "\n\n/*"
-                table_info += f"\n{self._get_sample_rows(table_name)}\n"
+                table_info += f"\n{self._get_sample_spark_rows(table_name)}\n"
                 table_info += "*/"
             tables.append(table_info)
         final_str = "\n\n".join(tables)
         return final_str
 
-    def _get_sample_rows(self, table: str) -> str:
+    def _get_sample_spark_rows(self, table: str) -> str:
         query = f"SELECT * FROM {table} LIMIT {self._sample_rows_in_table_info}"
         df = self._spark.sql(query)
         columns_str = "\t".join(list(map(lambda f: f.name, df.schema.fields)))
@@ -105,11 +107,10 @@ class SparkSQL(SQLDatabase):
             f"{sample_rows_str}"
         )
 
-    @staticmethod
-    def _convert_row_as_tuple(row) -> tuple:
+    def _convert_row_as_tuple(self, row: Row) -> tuple:
         return tuple(map(str, row.asDict().values()))
 
-    def _get_dataframe_results(self, df) -> list:
+    def _get_dataframe_results(self, df: DataFrame) -> list:
         return list(map(self._convert_row_as_tuple, df.collect()))
 
     def run(self, command: str, fetch: str = "all") -> str:
