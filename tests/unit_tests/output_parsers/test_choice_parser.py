@@ -6,7 +6,7 @@ def test_choice_output_parser_parse() -> None:
     RED = "red"
     GREEN = "green"
     BLUE = "blue"
-    parser = ChoiceOutputParser([RED, GREEN, BLUE])
+    parser = ChoiceOutputParser(options=[RED, GREEN, BLUE])
 
     # Test valid inputs
     result = parser.parse("red")
@@ -26,7 +26,7 @@ def test_choice_output_parser_parse() -> None:
         pass
 
     # Test levenstein distance matching
-    parser = ChoiceOutputParser([RED, GREEN, BLUE], max_distance=1)
+    parser = ChoiceOutputParser(options=[RED, GREEN, BLUE], max_distance=2)
 
     # Test valid inputs
     result = parser.parse("rdd")
