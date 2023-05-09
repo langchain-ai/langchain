@@ -111,7 +111,7 @@ class WikipediaAPIWrapper(BaseModel):
         """
         page_titles = self.wiki_client.search(query[:WIKIPEDIA_MAX_QUERY_LENGTH])
         docs = []
-        for page_title in page_titles[: self.doc_content_chars_max]:
+        for page_title in page_titles[: self.top_k_results]:
             if wiki_page := self._fetch_page(page_title):
                 if doc := self._page_to_document(page_title, wiki_page):
                     docs.append(doc)
