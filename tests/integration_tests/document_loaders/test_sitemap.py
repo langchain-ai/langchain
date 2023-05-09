@@ -94,3 +94,22 @@ def test_sitemap_metadata() -> None:
     assert len(documents) > 1
     assert "mykey" in documents[0].metadata
     assert "Super Important Metadata" in documents[0].metadata["mykey"]
+
+
+def test_sitemap_metadata_extraction() -> None:
+
+    def sitemap_metadata_two(meta, content) -> dict:
+        title = content.find("title")
+        if title:
+            return {**meta, "title": title.get_text()}
+        return meta
+
+    """Test sitemap loader."""
+    loader = SitemapLoader(
+        "https://langchain.readthedocs.io/sitemap.xml",
+        meta_function = sitemap_metadata_two
+    )
+    documents = loader.load()
+    assert len(documents) > 1
+    assert "title" in documents[0].metadata
+    assert "LangChain" in documents[0].metadata["title"]
