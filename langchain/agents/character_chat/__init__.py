@@ -1,0 +1,1 @@
+"""An agent designed to hold a conversation with a character in addition to using tools."""
