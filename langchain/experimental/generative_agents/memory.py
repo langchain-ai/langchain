@@ -204,7 +204,7 @@ class GenerativeAgentMemory(BaseMemory):
             }
         return {}
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, Any]) -> None:
         """Save the context of this model run to memory."""
         # TODO: fix the save memory key
         mem = outputs.get(self.add_memory_key)
