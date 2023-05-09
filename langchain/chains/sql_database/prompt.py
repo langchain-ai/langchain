@@ -250,5 +250,5 @@ SQL_PROMPTS = {
     "oracle": ORACLE_PROMPT,
     "postgresql": POSTGRES_PROMPT,
     "sqlite": SQLITE_PROMPT,
-    "spark": SPARK_PROMPT
+    "spark": SPARK_PROMPT,
 }

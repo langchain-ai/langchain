@@ -5,14 +5,18 @@ from pyspark.sql import SparkSession, Row, DataFrame
 
 
 class SparkSQL(SQLDatabase):
-    def __init__(self,
-                 spark_session: Optional[SparkSession] = None,
-                 catalog: Optional[str] = None,
-                 schema: Optional[str] = None,
-                 ignore_tables: Optional[List[str]] = None,
-                 include_tables: Optional[List[str]] = None,
-                 sample_rows_in_table_info: int = 3):
-        self._spark = spark_session if spark_session else SparkSession.builder.getOrCreate()
+    def __init__(
+        self,
+        spark_session: Optional[SparkSession] = None,
+        catalog: Optional[str] = None,
+        schema: Optional[str] = None,
+        ignore_tables: Optional[List[str]] = None,
+        include_tables: Optional[List[str]] = None,
+        sample_rows_in_table_info: int = 3,
+    ):
+        self._spark = (
+            spark_session if spark_session else SparkSession.builder.getOrCreate()
+        )
         if catalog is not None:
             self._spark.catalog.setCurrentCatalog(catalog)
         if schema is not None:
@@ -43,17 +47,17 @@ class SparkSQL(SQLDatabase):
 
     @classmethod
     def from_uri(
-            cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
+        cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
     ) -> SQLDatabase:
         """Creating a remote Spark Session via Spark connect.
-          For more details: https://spark.apache.org/docs/latest/api/python/getting_started/quickstart_connect.html
+        For more details: https://spark.apache.org/docs/latest/api/python/getting_started/quickstart_connect.html
         """
         spark = SparkSession.builder.remote(database_uri).getOrCreate()
         return cls(spark, **kwargs)
 
     @property
     def dialect(self) -> str:
-        return 'spark'
+        return "spark"
 
     def get_usable_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
@@ -67,7 +71,9 @@ class SparkSQL(SQLDatabase):
         return list(map(lambda row: row.tableName, rows))
 
     def _get_create_table_stmt(self, table: str) -> str:
-        statement = self._spark.sql(f"SHOW CREATE TABLE {table}").collect()[0].createtab_stmt
+        statement = (
+            self._spark.sql(f"SHOW CREATE TABLE {table}").collect()[0].createtab_stmt
+        )
         # Ignore the data source provider and options to reduce the number of tokens.
         using_clause_index = statement.find("USING")
         return statement[:using_clause_index] + ";"
