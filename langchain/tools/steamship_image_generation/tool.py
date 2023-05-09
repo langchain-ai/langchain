@@ -1,4 +1,10 @@
-"""This tool allows agents to generate images.
+"""This tool allows agents to generate images using Steamship.
+
+Steamship offers access to different third party image generation APIs using a single API key.
+
+Today the following models are supported:
+- Dall-E
+- Stable Diffusion
 
 To use this tool, you must first set as environment variables:
     STEAMSHIP_API_KEY
