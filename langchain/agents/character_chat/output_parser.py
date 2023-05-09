@@ -4,9 +4,8 @@ import json
 import re
 from typing import Union
 
-from pendium.langchain.agents.character_chat.prompt import FORMAT_INSTRUCTIONS
-
 from langchain.agents import AgentOutputParser
+from langchain.agents.character_chat.prompt import FORMAT_INSTRUCTIONS
 from langchain.schema import AgentAction, AgentFinish
 
 FINAL_ANSWER_PREFIX = '''{
