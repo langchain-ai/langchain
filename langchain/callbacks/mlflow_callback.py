@@ -16,7 +16,6 @@ from langchain.callbacks.utils import (
     import_textstat,
 )
 from langchain.schema import AgentAction, AgentFinish, LLMResult
-
 from langchain.utils import get_from_dict_or_env
 
 
@@ -45,7 +44,7 @@ def analyze_text(
         (dict): A dictionary containing the complexity metrics and visualization
             files serialized to  HTML string.
     """
-    resp = {}
+    resp: dict[str, Any] = {}
     textstat = import_textstat()
     spacy = import_spacy()
     text_complexity_metrics = {
@@ -125,10 +124,10 @@ class MlflowLogger:
     log metrics and artifacts to the mlflow server.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         self.mlflow = import_mlflow()
         tracking_uri = get_from_dict_or_env(
-            kwargs, "tracking_uri", "MLFLOW_TRACKING_URI", ''
+            kwargs, "tracking_uri", "MLFLOW_TRACKING_URI", ""
         )
         self.mlflow.set_tracking_uri(tracking_uri)
 
@@ -146,7 +145,7 @@ class MlflowLogger:
 
         self.start_run(kwargs["run_name"], kwargs["run_tags"])
 
-    def start_run(self, name: str, tags: dict[str, str]):
+    def start_run(self, name: str, tags: dict[str, str]) -> None:
         """To start a new run, auto generates the random suffix for name"""
         if name.endswith("-%"):
             rname = "".join(random.choices(string.ascii_uppercase + string.digits, k=7))
@@ -155,60 +154,62 @@ class MlflowLogger:
             self.mlf_expid, run_name=name, tags=tags
         )
 
-    def finish_run(self):
+    def finish_run(self) -> None:
         """To finish the run."""
         with self.mlflow.start_run(
             run_id=self.run.info.run_id, experiment_id=self.mlf_expid
         ):
             self.mlflow.end_run()
 
-    def metric(self, key: str, value: float):
+    def metric(self, key: str, value: float) -> None:
         """To log metric to mlflow server."""
         with self.mlflow.start_run(
             run_id=self.run.info.run_id, experiment_id=self.mlf_expid
         ):
             self.mlflow.log_metric(key, value)
 
-    def metrics(self, data: dict[str, float], step: Optional[int] = 0):
+    def metrics(
+        self, data: Union[dict[str, float], dict[str, int]], step: Optional[int] = 0
+    ) -> None:
         """To log all metrics in the input dict."""
         with self.mlflow.start_run(
             run_id=self.run.info.run_id, experiment_id=self.mlf_expid
         ):
             self.mlflow.log_metrics(data)
 
-    def jsonf(self, data: dict[str, float], filename: str):
+    def jsonf(self, data: dict[str, Any], filename: str) -> None:
         """To log the input data as json file artifact."""
         with self.mlflow.start_run(
             run_id=self.run.info.run_id, experiment_id=self.mlf_expid
         ):
             self.mlflow.log_dict(data, f"{filename}.json")
 
-    def table(self, name: str, df):
-        """To log the input dataframe as a html table"""
-        self.html(df.to_html(), f"table_{name}")
+    def table(self, name: str, dataframe) -> None:  # type: ignore
+        """To log the input pandas dataframe as a html table"""
+        self.html(dataframe.to_html(), f"table_{name}")
 
-    def html(self, html: str, filename: str):
+    def html(self, html: str, filename: str) -> None:
         """To log the input html string as html file artifact."""
         with self.mlflow.start_run(
             run_id=self.run.info.run_id, experiment_id=self.mlf_expid
         ):
             self.mlflow.log_text(html, f"{filename}.html")
 
-    def text(self, text: str, filename: str):
+    def text(self, text: str, filename: str) -> None:
         """To log the input text as text file artifact."""
         with self.mlflow.start_run(
             run_id=self.run.info.run_id, experiment_id=self.mlf_expid
         ):
             self.mlflow.log_text(text, f"{filename}.txt")
 
-    def artifact(self, path: str):
+    def artifact(self, path: str) -> None:
         """To upload the file from given path as artifact."""
         with self.mlflow.start_run(
             run_id=self.run.info.run_id, experiment_id=self.mlf_expid
         ):
             self.mlflow.log_artifact(path)
 
-    def langchain_artifact(self, chain: Any):
+    def langchain_artifact(self, chain: Any) -> None:
         with self.mlflow.start_run(
             run_id=self.run.info.run_id, experiment_id=self.mlf_expid
         ):
@@ -277,7 +278,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             "agent_ends": 0,
         }
 
-        self.records = {
+        self.records: dict[str, Any] = {
             "on_llm_start_records": [],
             "on_llm_token_records": [],
             "on_llm_end_records": [],
@@ -291,7 +292,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             "action_records": [],
         }
 
-    def _reset(self):
+    def _reset(self) -> None:
         for k, v in self.metrics.items():
             self.metrics[k] = 0
         for k, v in self.records.items():
@@ -307,7 +308,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         llm_starts = self.metrics["llm_starts"]
 
-        resp = {}
+        resp: dict[str, Any] = {}
         resp.update({"action": "on_llm_start"})
         resp.update(flatten_dict(serialized))
         resp.update(self.metrics)
@@ -328,7 +329,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         llm_streams = self.metrics["llm_streams"]
 
-        resp = {}
+        resp: dict[str, Any] = {}
         resp.update({"action": "on_llm_new_token", "token": token})
         resp.update(self.metrics)
 
@@ -346,7 +347,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         llm_ends = self.metrics["llm_ends"]
 
-        resp = {}
+        resp: dict[str, Any] = {}
         resp.update({"action": "on_llm_end"})
         resp.update(flatten_dict(response.llm_output or {}))
         resp.update(self.metrics)
@@ -363,8 +364,9 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                         nlp=self.nlp,
                     )
                 )
+                complexity_metrics: dict[str, float] = generation_resp.pop("text_complexity_metrics")  # type: ignore
                 self.mlflg.metrics(
-                    generation_resp.pop("text_complexity_metrics"),
+                    complexity_metrics,
                     step=self.metrics["step"],
                 )
                 self.records["on_llm_end_records"].append(generation_resp)
@@ -392,7 +394,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         chain_starts = self.metrics["chain_starts"]
 
-        resp = {}
+        resp: dict[str, Any] = {}
         resp.update({"action": "on_chain_start"})
         resp.update(flatten_dict(serialized))
         resp.update(self.metrics)
@@ -414,7 +416,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         chain_ends = self.metrics["chain_ends"]
 
-        resp = {}
+        resp: dict[str, Any] = {}
         chain_output = ",".join([f"{k}={v}" for k, v in outputs.items()])
         resp.update({"action": "on_chain_end", "outputs": chain_output})
         resp.update(self.metrics)
@@ -442,7 +444,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         tool_starts = self.metrics["tool_starts"]
 
-        resp = {}
+        resp: dict[str, Any] = {}
         resp.update({"action": "on_tool_start", "input_str": input_str})
         resp.update(flatten_dict(serialized))
         resp.update(self.metrics)
@@ -461,7 +463,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         tool_ends = self.metrics["tool_ends"]
 
-        resp = {}
+        resp: dict[str, Any] = {}
         resp.update({"action": "on_tool_end", "output": output})
         resp.update(self.metrics)
 
@@ -487,7 +489,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         text_ctr = self.metrics["text_ctr"]
 
-        resp = {}
+        resp: dict[str, Any] = {}
         resp.update({"action": "on_text", "text": text})
         resp.update(self.metrics)
 
@@ -504,7 +506,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.metrics["ends"] += 1
 
         agent_ends = self.metrics["agent_ends"]
-        resp = {}
+        resp: dict[str, Any] = {}
         resp.update(
             {
                 "action": "on_agent_finish",
@@ -527,7 +529,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.metrics["starts"] += 1
 
         tool_starts = self.metrics["tool_starts"]
-        resp = {}
+        resp: dict[str, Any] = {}
         resp.update(
             {
                 "action": "on_agent_action",
@@ -603,7 +605,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
         return session_analysis_df
 
-    def flush_tracker(self, langchain_asset: Any = None, finish: bool = False):
+    def flush_tracker(self, langchain_asset: Any = None, finish: bool = False) -> None:
         pd = import_pandas()
         self.mlflg.table("action_records", pd.DataFrame(self.records["action_records"]))
         session_analysis_df = self._create_session_analysis_df()
