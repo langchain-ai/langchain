@@ -113,3 +113,12 @@ def test_sitemap_metadata_extraction() -> None:
     assert len(documents) > 1
     assert "title" in documents[0].metadata
     assert "LangChain" in documents[0].metadata["title"]
+
+
+def test_sitemap_metadata_default() -> None:
+    """Test sitemap loader."""
+    loader = SitemapLoader("https://langchain.readthedocs.io/sitemap.xml")
+    documents = loader.load()
+    assert len(documents) > 1
+    assert "source" in documents[0].metadata
+    assert "loc" in documents[0].metadata
