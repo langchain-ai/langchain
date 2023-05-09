@@ -73,6 +73,10 @@ class QueryPowerBITool(BaseTool):
             self.session_cache[tool_input] = json_to_md(
                 self.session_cache[tool_input]["results"][0]["tables"][0]["rows"]
             )
+        if "error" in self.session_cache[tool_input]:
+            self.session_cache[
+                tool_input
+            ] = f'{BAD_REQUEST_RESPONSE}, error was {self.session_cache[tool_input]["error"]}'
         return self.session_cache[tool_input]
 
     async def _arun(
@@ -99,6 +103,10 @@ class QueryPowerBITool(BaseTool):
             self.session_cache[tool_input] = json_to_md(
                 self.session_cache[tool_input]["results"][0]["tables"][0]["rows"]
             )
+        if "error" in self.session_cache[tool_input]:
+            self.session_cache[
+                tool_input
+            ] = f'{BAD_REQUEST_RESPONSE}, error was {self.session_cache[tool_input]["error"]}'
         return self.session_cache[tool_input]
 
 

@@ -192,7 +192,6 @@ class PowerBIDataset(BaseModel):
             headers=self.headers,
             timeout=10,
         )
-        result.raise_for_status()
         return result.json()
 
     async def arun(self, command: str) -> Any:
@@ -208,14 +207,12 @@ class PowerBIDataset(BaseModel):
             async with self.aiosession.post(
                 self.request_url, headers=self.headers, json=json_content, timeout=10
             ) as response:
-                response.raise_for_status()
                 response_json = await response.json()
                 return response_json
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 self.request_url, headers=self.headers, json=json_content, timeout=10
             ) as response:
-                response.raise_for_status()
                 response_json = await response.json()
                 return response_json
 
