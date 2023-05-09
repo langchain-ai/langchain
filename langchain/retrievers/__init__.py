@@ -14,6 +14,7 @@ from langchain.retrievers.time_weighted_retriever import (
 )
 from langchain.retrievers.vespa_retriever import VespaRetriever
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
+from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
 
 __all__ = [
     "ChatGPTPluginRetriever",
@@ -30,4 +31,5 @@ __all__ = [
     "KNNRetriever",
     "VespaRetriever",
     "SelfQueryRetriever",
+    "AzureCognitiveSearchRetriever",
 ]
