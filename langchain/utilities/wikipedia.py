@@ -71,7 +71,6 @@ class WikipediaAPIWrapper(BaseModel):
         add_meta = (
             {
                 "categories": wiki_page.categories,
-                # "coordinates": wiki_page.coordinates,
                 "page_url": wiki_page.url,
                 "image_urls": wiki_page.images,
                 "related_titles": wiki_page.links,
