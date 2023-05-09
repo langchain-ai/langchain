@@ -425,9 +425,7 @@ class PDFPlumberLoader(BasePDFLoader):
             for page in doc.pages
         ]
 
-    def annotate_and_load(
-        self, save_path: str, **kwargs: Any
-    ) -> List[Document]:
+    def annotate_and_load(self, save_path: str, **kwargs: Any) -> List[Document]:
         """Annotate/save pdf file using pdfplumber's visual debudding and load file."""
         import pdfplumber
 
