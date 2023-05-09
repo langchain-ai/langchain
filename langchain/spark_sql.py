@@ -1,7 +1,8 @@
 from typing import Any, Iterable, List, Optional
 
+from pyspark.sql import DataFrame, Row, SparkSession
+
 from langchain import SQLDatabase
-from pyspark.sql import SparkSession, Row, DataFrame
 
 
 class SparkSQL(SQLDatabase):
@@ -50,7 +51,7 @@ class SparkSQL(SQLDatabase):
         cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
     ) -> SQLDatabase:
         """Creating a remote Spark Session via Spark connect.
-        For more details: https://spark.apache.org/docs/latest/api/python/getting_started/quickstart_connect.html
+        For example: SparkSQL.from_uri("sc://localhost:15002")
         """
         spark = SparkSession.builder.remote(database_uri).getOrCreate()
         return cls(spark, **kwargs)
