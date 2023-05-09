@@ -36,7 +36,7 @@ class FakeNewSignLLM(LLM):
         return "fake_test_only"
 
 
-def test_llm_intern_generate():
+def test_llm_intern_generate() -> None:
     llm = FakeNewSignLLM()
     results = llm._generate(["hello", "world"])
     assert isinstance(results, LLMResult)
@@ -46,7 +46,7 @@ def test_llm_intern_generate():
 
 
 @pytest.mark.asyncio
-async def test_llm_async_intern_generate():
+async def test_llm_async_intern_generate() -> None:
     llm = FakeNewSignLLM()
     results = await llm._agenerate(["hello", "world"])
     assert isinstance(results, LLMResult)
