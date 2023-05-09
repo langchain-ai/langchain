@@ -14,7 +14,6 @@ from enum import Enum
 from typing import Optional, Dict
 
 from pydantic import root_validator
-from steamship import Steamship
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -38,6 +37,8 @@ SUPPORTED_IMAGE_SIZES = {
 
 
 class SteamshipImageGenerationTool(BaseTool):
+    from steamship import Steamship
+
     """Tool used to generate images from a text-prompt."""
     model_name: ModelName
     size: Optional[str] = "512x512"
