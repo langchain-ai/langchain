@@ -11,6 +11,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Mapping,
     Optional,
     Tuple,
@@ -39,6 +40,8 @@ REDIS_REQUIRED_MODULES = [
     {"name": "searchlight", "ver": 20400},
 ]
 
+# distance mmetrics
+REDIS_DISTANCE_METRICS = Literal["COSINE", "IP", "L2"]
 
 def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -> None:
     """Check if the correct Redis modules are installed."""
@@ -142,7 +145,7 @@ class Redis(VectorStore):
         self.vector_key = vector_key
         self.relevance_score_fn = relevance_score_fn
 
-    def _create_index(self, dim: int = 1536) -> None:
+    def _create_index(self, dim: int = 1536, distance_metric: REDIS_DISTANCE_METRICS = "COSINE") -> None:
         try:
             from redis.commands.search.field import TextField, VectorField
             from redis.commands.search.indexDefinition import IndexDefinition, IndexType
@@ -154,10 +157,7 @@ class Redis(VectorStore):
 
         # Check if index exists
         if not _check_index_exists(self.client, self.index_name):
-            # Constants
-            distance_metric = (
-                "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
-            )
+            # Define schema
             schema = (
                 TextField(name=self.content_key),
                 TextField(name=self.metadata_key),
@@ -364,6 +364,7 @@ class Redis(VectorStore):
         content_key: str = "content",
         metadata_key: str = "metadata",
         vector_key: str = "content_vector",
+        distance_metric: REDIS_DISTANCE_METRICS = "COSINE",
         **kwargs: Any,
     ) -> Redis:
         """Create a Redis vectorstore from raw documents.
@@ -407,7 +408,7 @@ class Redis(VectorStore):
         embeddings = embedding.embed_documents(texts)
 
         # Create the search index
-        instance._create_index(dim=len(embeddings[0]))
+        instance._create_index(dim=len(embeddings[0]), distance_metric=distance_metric)
 
         # Add data to Redis
         instance.add_texts(texts, metadatas, embeddings)

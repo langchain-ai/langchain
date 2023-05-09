@@ -58,3 +58,37 @@ def test_redis_add_texts_to_existing() -> None:
     output = docsearch.similarity_search("foo", k=2)
     assert output == TEST_RESULT
     assert drop(TEST_INDEX_NAME)
+
+
+class TestRedisDistanceMetrics():
+    """Test using different distance metrics for new indices."""
+    
+    def test_cosine(self) -> None:
+        """Test cosine distance."""
+        texts = ["foo", "bar", "baz"]
+        docsearch = Redis.from_texts(
+            texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, distance_metric="COSINE"
+        )
+        output = docsearch.similarity_search("foo", k=1)
+        assert output == TEST_SINGLE_RESULT
+        assert drop(docsearch.index_name)
+        
+    def test_l2(self) -> None:
+        """Test Flat L2 distance."""
+        texts = ["foo", "bar", "baz"]
+        docsearch = Redis.from_texts(
+            texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, distance_metric="L2"
+        )
+        output = docsearch.similarity_search("foo", k=1)
+        assert output == TEST_SINGLE_RESULT
+        assert drop(docsearch.index_name)
+        
+    def test_ip(self) -> None:
+        """Test inner product distance."""
+        texts = ["foo", "bar", "baz"]
+        docsearch = Redis.from_texts(
+            texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, distance_metric="IP"
+        )
+        output = docsearch.similarity_search("foo", k=1)
+        assert output == TEST_SINGLE_RESULT
+        assert drop(docsearch.index_name)
