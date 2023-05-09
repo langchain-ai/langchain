@@ -13,10 +13,16 @@ from langchain.utils import get_from_dict_or_env
 
 class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
     """Wrapper around Azure Cognitive Search."""
-    service_name: str  # name of Azure Cognitive Search service
+    service_name: str
+    """Name of Azure Cognitive Search service"""
     index_name: str
-    azure_cognitive_search_api_key: Optional[str] = None
+    """Name of Index inside Azure Cognitive Search service"""
+    api_key: Optional[str] = None
+    """API Key. Both Admin and Query keys work, but as we only read data it is recommended to use a Query key"""
+    api_version: str = "2020-06-30"
+    """API version"""
     aiosession: Optional[aiohttp.ClientSession] = None
+    """ClientSession, in case we want to reuse connection for better performance."""
 
     class Config:
         extra = Extra.forbid
@@ -24,21 +30,27 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key exists in environment."""
-        api_key = get_from_dict_or_env(
-            values, "azure_cognitive_search_api_key", "AZURE_COGNITIVE_SEARCH_API_KEY"
+        """Validate that service name, index name and api key exists in environment."""
+        values["service_name"] = get_from_dict_or_env(
+            values, "service_name", "AZURE_COGNITIVE_SEARCH_SERVICE_NAME"
         )
-        values["azure_cognitive_search_api_key"] = api_key
+        values["index_name"] = get_from_dict_or_env(
+            values, "index_name", "AZURE_COGNITIVE_SEARCH_INDEX_NAME"
+        )
+        values["api_key"] = get_from_dict_or_env(
+            values, "api_key", "AZURE_COGNITIVE_SEARCH_API_KEY"
+        )
+
         return values
 
 
-    def _build_search_url(self, api_version: str = "2020-06-30") -> str:
-        return f"https://{self.service_name}.search.windows.net/indexes/{self.index_name}/docs?api-version={api_version}"
+    def _build_search_url(self) -> str:
+        return f"https://{self.service_name}.search.windows.net/indexes/{self.index_name}/docs?api-version={self.api_version}"
 
     def _search(self, query: str) -> List[dict]:
         headers = {
             "Content-Type": "application/json",
-            "api-key": self.azure_cognitive_search_api_key,
+            "api-key": self.api_key,
         }
         search_url = f"{self._build_search_url()}&search={query}"
         response = requests.get(search_url, headers=headers)
@@ -50,7 +62,7 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
     async def _async_search(self, query: str) -> List[dict]:
         headers = {
             "Content-Type": "application/json",
-            "api-key": self.azure_cognitive_search_api_key,
+            "api-key": self.api_key,
         }
         search_url = f"{self._build_search_url()}&search={query}"
 
@@ -66,7 +78,7 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
         search_results = self._search(query)
 
         return [
-            Document(page_content=result["content"], metadata=result)
+            Document(page_content=result.pop("content"), metadata=result)
             for result in search_results
         ]
 
@@ -74,6 +86,6 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
         search_results = await self._async_search(query)
 
         return [
-            Document(page_content=result["content"], metadata=result)
+            Document(page_content=result.pop("content"), metadata=result)
             for result in search_results["value"]
         ]
