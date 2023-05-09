@@ -8,7 +8,7 @@ class GraphQLAPIWrapper(BaseModel):
     To use, you should have the ``gql`` python package installed.
     This wrapper will use the GraphQL API to conduct queries.
     """
-
+    custom_headers: Optional[Dict[str, str]] = None
     graphql_endpoint: str
     gql_client: Any  #: :meta private:
     gql_function: Any  #: :meta private:
@@ -23,9 +23,15 @@ class GraphQLAPIWrapper(BaseModel):
         """Validate that the python package exists in the environment."""
         try:
             from gql import gql, Client
-            from gql.transport.aiohttp import AIOHTTPTransport
+            from gql.transport.requests import RequestsHTTPTransport
 
-            transport = AIOHTTPTransport(url=values["graphql_endpoint"])
+            headers = values.get("custom_headers", {})
+            
+            transport = RequestsHTTPTransport(
+                url=values["graphql_endpoint"],
+                headers=headers or None,
+            )
+
             client = Client(transport=transport, fetch_schema_from_transport=True)
             values["gql_client"] = client
             values["gql_function"] = gql
