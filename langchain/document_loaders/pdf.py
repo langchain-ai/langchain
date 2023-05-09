@@ -426,12 +426,12 @@ class PDFPlumberLoader(BasePDFLoader):
         ]
 
     def annotate_and_load(
-        self, folder_path: str, **kwargs: Optional[Any]
+        self, save_path: str, **kwargs: Optional[Any]
     ) -> List[Document]:
         """Annotate/save pdf file using pdfplumber's visual debudding and load file."""
         import pdfplumber
 
-        path = Path(folder_path)
+        path = Path(save_path)
         path.mkdir(exist_ok=True, parents=True)
         doc = pdfplumber.open(self.file_path)
         file_path = self.source
