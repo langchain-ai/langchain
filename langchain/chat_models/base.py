@@ -35,8 +35,8 @@ def _get_verbosity() -> bool:
 class BaseChatModel(BaseLanguageModel, ABC):
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
-    callbacks: Callbacks = None
-    callback_manager: Optional[BaseCallbackManager] = None
+    callbacks: Callbacks = Field(default=None, exclude=True)
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
 
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
