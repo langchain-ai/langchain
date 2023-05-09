@@ -1,5 +1,7 @@
 """Test the base tool implementation."""
+import json
 from datetime import datetime
+from enum import Enum
 from functools import partial
 from typing import Any, Optional, Type, Union
 
@@ -224,9 +226,8 @@ def test_structured_args_decorator_no_infer_schema() -> None:
     assert isinstance(structured_tool_input, BaseTool)
     assert structured_tool_input.name == "structured_tool_input"
     args = {"arg1": 1, "arg2": 0.001, "opt_arg": {"foo": "bar"}}
-    expected_result = "1, 0.001, {'foo': 'bar'}"
     with pytest.raises(ValueError):
-        assert structured_tool_input.run(args) == expected_result
+        assert structured_tool_input.run(args)
 
 
 def test_structured_single_str_decorator_no_infer_schema() -> None:
@@ -235,11 +236,46 @@ def test_structured_single_str_decorator_no_infer_schema() -> None:
     @tool(infer_schema=False)
     def unstructured_tool_input(tool_input: str) -> str:
         """Return the arguments directly."""
+        assert isinstance(tool_input, str)
         return f"{tool_input}"
 
     assert isinstance(unstructured_tool_input, BaseTool)
     assert unstructured_tool_input.args_schema is None
     assert unstructured_tool_input.run("foo") == "foo"
+
+
+def test_structured_tool_types_parsed() -> None:
+    """Test the non-primitive types are correctly passed to structured tools."""
+
+    class SomeEnum(Enum):
+        A = "a"
+        B = "b"
+
+    class SomeBaseModel(BaseModel):
+        foo: str
+
+    @tool
+    def structured_tool(
+        some_enum: SomeEnum,
+        some_base_model: SomeBaseModel,
+    ) -> dict:
+        """Return the arguments directly."""
+        return {
+            "some_enum": some_enum,
+            "some_base_model": some_base_model,
+        }
+
+    assert isinstance(structured_tool, StructuredTool)
+    args = {
+        "some_enum": SomeEnum.A.value,
+        "some_base_model": SomeBaseModel(foo="bar").dict(),
+    }
+    result = structured_tool.run(json.loads(json.dumps(args)))
+    expected = {
+        "some_enum": SomeEnum.A,
+        "some_base_model": SomeBaseModel(foo="bar"),
+    }
+    assert result == expected
 
 
 def test_base_tool_inheritance_base_schema() -> None:
@@ -293,6 +329,8 @@ def test_tool_partial_function_args_schema() -> None:
     """Test args schema inference when the tool argument is a partial function."""
 
     def func(tool_input: str, other_arg: str) -> str:
+        assert isinstance(tool_input, str)
+        assert isinstance(other_arg, str)
         return tool_input + other_arg
 
     tool = Tool(
@@ -323,24 +361,27 @@ def test_named_tool_decorator() -> None:
     @tool("search")
     def search_api(query: str) -> str:
         """Search the API for the query."""
-        return "API result"
+        assert isinstance(query, str)
+        return f"API result - {query}"
 
     assert isinstance(search_api, BaseTool)
     assert search_api.name == "search"
     assert not search_api.return_direct
+    assert search_api.run({"query": "foo"}) == "API result - foo"
 
 
 def test_named_tool_decorator_return_direct() -> None:
     """Test functionality when arguments and return direct are provided as input."""
 
     @tool("search", return_direct=True)
-    def search_api(query: str) -> str:
+    def search_api(query: str, *args: Any) -> str:
         """Search the API for the query."""
         return "API result"
 
     assert isinstance(search_api, BaseTool)
     assert search_api.name == "search"
     assert search_api.return_direct
+    assert search_api.run({"query": "foo"}) == "API result"
 
 
 def test_unnamed_tool_decorator_return_direct() -> None:
@@ -349,11 +390,13 @@ def test_unnamed_tool_decorator_return_direct() -> None:
     @tool(return_direct=True)
     def search_api(query: str) -> str:
         """Search the API for the query."""
+        assert isinstance(query, str)
         return "API result"
 
     assert isinstance(search_api, BaseTool)
     assert search_api.name == "search_api"
     assert search_api.return_direct
+    assert search_api.run({"query": "foo"}) == "API result"
 
 
 def test_tool_with_kwargs() -> None:
