@@ -25,10 +25,12 @@ class PlanningOutputParser(PlanOutputParser):
         return Plan(steps=steps)
 
 
-def load_chat_planner(llm: BaseLanguageModel) -> LLMPlanner:
+def load_chat_planner(
+    llm: BaseLanguageModel, system_prompt: str = SYSTEM_PROMPT
+) -> LLMPlanner:
     prompt_template = ChatPromptTemplate.from_messages(
         [
-            SystemMessage(content=SYSTEM_PROMPT),
+            SystemMessage(content=system_prompt),
             HumanMessagePromptTemplate.from_template("{input}"),
         ]
     )
