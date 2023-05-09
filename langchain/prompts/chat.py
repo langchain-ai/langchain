@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import json
+import yaml
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, List, Sequence, Tuple, Type, Union
+from typing import Any, Callable, List, Sequence, Tuple, Type, Union, Dict
 
 from pydantic import BaseModel, Field
 
