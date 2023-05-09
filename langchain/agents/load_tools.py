@@ -244,6 +244,7 @@ def _get_graphql_tool(**kwargs: Any) -> BaseTool:
     wrapper = GraphQLAPIWrapper(graphql_endpoint=graphql_endpoint)
     return BaseGraphQLTool(graphql_wrapper=wrapper)
 
+
 _EXTRA_LLM_TOOLS: Dict[
     str,
     Tuple[Callable[[Arg(BaseLanguageModel, "llm"), KwArg(Any)], BaseTool], List[str]],

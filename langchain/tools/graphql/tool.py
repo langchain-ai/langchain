@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -22,14 +22,14 @@ class BaseGraphQLTool(BaseTool):
     If an error is returned with 'Unauthorized' in it, do not try again, but tell the user to change their authentication.
 
     Example Input: query {{ allUsers {{ id, name, email }} }}
-    """ # noqa: E501
+    """  # noqa: E501
 
     class Config:
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
 
-    def _run_query(self, query: str) -> Dict[str, Any]:
+    def _run_query(self, query: str) -> str:
         """Execute a GraphQL query and return the results."""
         result = self.graphql_wrapper.run(query)
         return result
@@ -49,4 +49,3 @@ class BaseGraphQLTool(BaseTool):
     ) -> str:
         """Use the Graphql tool asynchronously."""
         raise NotImplementedError("GraphQLAPIWrapper does not support async")
-

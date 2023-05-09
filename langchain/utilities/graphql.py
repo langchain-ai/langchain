@@ -1,6 +1,8 @@
-from typing import Any, Dict, Optional
 import json
+from typing import Any, Dict, Optional
+
 from pydantic import BaseModel, Extra, root_validator
+
 
 class GraphQLAPIWrapper(BaseModel):
     """Wrapper around GraphQL API.
@@ -8,6 +10,7 @@ class GraphQLAPIWrapper(BaseModel):
     To use, you should have the ``gql`` python package installed.
     This wrapper will use the GraphQL API to conduct queries.
     """
+
     custom_headers: Optional[Dict[str, str]] = None
     graphql_endpoint: str
     gql_client: Any  #: :meta private:
@@ -22,11 +25,11 @@ class GraphQLAPIWrapper(BaseModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
         try:
-            from gql import gql, Client
+            from gql import Client, gql
             from gql.transport.requests import RequestsHTTPTransport
 
             headers = values.get("custom_headers", {})
-            
+
             transport = RequestsHTTPTransport(
                 url=values["graphql_endpoint"],
                 headers=headers or None,
