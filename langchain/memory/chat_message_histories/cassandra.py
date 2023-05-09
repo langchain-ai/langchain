@@ -43,8 +43,6 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         keyspace_name: str = DEFAULT_KEYSPACE_NAME,
         table_name: str = DEFAULT_TABLE_NAME,
     ):
-        from cassandra.cluster import Cluster, PlainTextAuthProvider
-
         self.contact_points = contact_points
         self.session_id = session_id
         self.port = port
@@ -54,22 +52,45 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         self.table_name = table_name
 
         try:
-            self.cluster: Cluster = Cluster(
-                contact_points,
-                port=port,
-                auth_provider=PlainTextAuthProvider(
-                    username=self.username, password=self.password
-                ),
+            from cassandra import (
+                AuthenticationFailed,
+                OperationTimedOut,
+                UnresolvableContactPoints,
             )
+            from cassandra.cluster import Cluster, PlainTextAuthProvider
+        except ImportError:
+            raise ValueError(
+                "Could not import cassandra-driver python package. "
+                "Please install it with `pip install cassandra-driver`."
+            )
+
+        self.cluster: Cluster = Cluster(
+            contact_points,
+            port=port,
+            auth_provider=PlainTextAuthProvider(
+                username=self.username, password=self.password
+            ),
+        )
+
+        try:
             self.session = self.cluster.connect()
-        except Exception as error:
-            logger.error(error)
-            self.session = None
+        except (
+            AuthenticationFailed,
+            UnresolvableContactPoints,
+            OperationTimedOut,
+        ) as error:
+            logger.error(
+                "Unable to establish connection with \
+                cassandra chat message history database"
+            )
+            raise error
 
         self._prepare_cassandra()
 
     def _prepare_cassandra(self) -> None:
         """Create the keyspace and table if they don't exist yet"""
+
+        from cassandra import OperationTimedOut, Unavailable
 
         try:
             self.session.execute(
@@ -77,8 +98,12 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
                 {self.keyspace_name} WITH REPLICATION = 
                 {{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }};"""
             )
-        except Exception as error:
-            logger.error(error)
+        except (OperationTimedOut, Unavailable) as error:
+            logger.error(
+                f"Unable to create cassandra \
+                chat message history keyspace: {self.keyspace_name}."
+            )
+            raise error
 
         self.session.set_keyspace(self.keyspace_name)
 
@@ -88,20 +113,26 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
                 {self.table_name} (id UUID, session_id varchar, 
                 history text,  PRIMARY KEY ((session_id), id) );"""
             )
-        except Exception as error:
-            logger.error(error)
+        except (OperationTimedOut, Unavailable) as error:
+            logger.error(
+                f"Unable to create cassandra \
+                chat message history table: {self.table_name}"
+            )
+            raise error
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the messages from Cassandra"""
+        from cassandra import ReadFailure, ReadTimeout, Unavailable
+
         try:
             rows = self.session.execute(
                 f"""SELECT * FROM {self.table_name}
                 WHERE session_id = '{self.session_id}' ;"""
             )
-        except Exception as error:
-            logger.error(error)
-            rows = None
+        except (Unavailable, ReadTimeout, ReadFailure) as error:
+            logger.error("Unable to Retreive chat history messages from cassadra")
+            raise error
 
         if rows:
             items = [json.loads(row.history) for row in rows]
@@ -123,24 +154,30 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
 
         import uuid
 
+        from cassandra import Unavailable, WriteFailure, WriteTimeout
+
         try:
             self.session.execute(
                 """INSERT INTO message_store
                 (id, session_id, history) VALUES (%s, %s, %s);""",
                 (uuid.uuid4(), self.session_id, json.dumps(_message_to_dict(message))),
             )
-        except Exception as error:
-            logger.error(error)
+        except (Unavailable, WriteTimeout, WriteFailure) as error:
+            logger.error("Unable to write chat history messages to cassandra")
+            raise error
 
     def clear(self) -> None:
         """Clear session memory from Cassandra"""
+
+        from cassandra import OperationTimedOut, Unavailable
 
         try:
             self.session.execute(
                 f"DELETE FROM {self.table_name} WHERE session_id = '{self.session_id}';"
             )
-        except Exception as error:
-            logger.error(error)
+        except (Unavailable, OperationTimedOut) as error:
+            logger.error("Unable to clear chat history messages from cassandra")
+            raise error
 
     def __del__(self) -> None:
         if self.session:
