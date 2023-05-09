@@ -19,6 +19,11 @@ _EXPECTED = [
     "ExtractTextTool",
     "FileSearchTool",
     "GetElementsTool",
+    "GmailCreateDraft",
+    "GmailGetMessage",
+    "GmailGetThread",
+    "GmailSearch",
+    "GmailSendMessage",
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
@@ -44,10 +49,11 @@ _EXPECTED = [
     "ZapierNLAListActions",
     "ZapierNLARunAction",
     "tool",
+    "YouTubeSearchTool",
 ]
 
 
 def test_public_api() -> None:
     """Test for regressions or changes in the public API."""
     # Check that the public API is as expected
-    assert public_api == sorted(_EXPECTED)
+    assert sorted(public_api) == sorted(_EXPECTED)

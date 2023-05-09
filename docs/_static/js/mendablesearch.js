@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadScript('https://unpkg.com/react@17/umd/react.production.min.js', () => {
     loadScript('https://unpkg.com/react-dom@17/umd/react-dom.production.min.js', () => {
-      loadScript('https://unpkg.com/@mendable/search@0.0.83/dist/umd/mendable.min.js', initializeMendable);
+      loadScript('https://unpkg.com/@mendable/search@0.0.93/dist/umd/mendable.min.js', initializeMendable);
     });
   });
 });

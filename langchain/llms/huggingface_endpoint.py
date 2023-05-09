@@ -73,6 +73,7 @@ class HuggingFaceEndpoint(LLM):
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
+        values["huggingfacehub_api_token"] = huggingfacehub_api_token
         return values
 
     @property

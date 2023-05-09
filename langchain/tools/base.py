@@ -132,9 +132,9 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     verbose: bool = False
     """Whether to log the tool's progress."""
 
-    callbacks: Callbacks = None
+    callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to be called during tool execution."""
-    callback_manager: Optional[BaseCallbackManager] = None
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """Deprecated. Please use callbacks instead."""
 
     class Config:
@@ -160,16 +160,19 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     def _parse_input(
         self,
         tool_input: Union[str, Dict],
-    ) -> None:
+    ) -> Union[str, Dict[str, Any]]:
         """Convert tool input to pydantic model."""
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
                 key_ = next(iter(input_args.__fields__.keys()))
                 input_args.validate({key_: tool_input})
+            return tool_input
         else:
             if input_args is not None:
-                input_args.validate(tool_input)
+                result = input_args.parse_obj(tool_input)
+                return {k: v for k, v in result.dict().items() if k in tool_input}
+        return tool_input
 
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -224,7 +227,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
-        self._parse_input(tool_input)
+        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -241,7 +244,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             **kwargs,
         )
         try:
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
                 self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
                 if new_arg_supported
@@ -263,7 +266,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
-        self._parse_input(tool_input)
+        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -280,7 +283,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         )
         try:
             # We then call the tool on the tool input to get an observation
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
                 await self._arun(*tool_args, run_manager=run_manager, **tool_kwargs)
                 if new_arg_supported
