@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from langchain.document_loaders import SitemapLoader
@@ -81,14 +83,13 @@ def test_filter_sitemap() -> None:
 
 
 def test_sitemap_metadata() -> None:
-
-    def sitemap_metadata_one(meta, _content) -> dict:
+    def sitemap_metadata_one(meta: dict, _content: None) -> dict:
         return {**meta, "mykey": "Super Important Metadata"}
 
     """Test sitemap loader."""
     loader = SitemapLoader(
         "https://langchain.readthedocs.io/sitemap.xml",
-        meta_function = sitemap_metadata_one
+        meta_function=sitemap_metadata_one,
     )
     documents = loader.load()
     assert len(documents) > 1
@@ -97,8 +98,7 @@ def test_sitemap_metadata() -> None:
 
 
 def test_sitemap_metadata_extraction() -> None:
-
-    def sitemap_metadata_two(meta, content) -> dict:
+    def sitemap_metadata_two(meta: dict, content: Any) -> dict:
         title = content.find("title")
         if title:
             return {**meta, "title": title.get_text()}
@@ -107,7 +107,7 @@ def test_sitemap_metadata_extraction() -> None:
     """Test sitemap loader."""
     loader = SitemapLoader(
         "https://langchain.readthedocs.io/sitemap.xml",
-        meta_function = sitemap_metadata_two
+        meta_function=sitemap_metadata_two,
     )
     documents = loader.load()
     assert len(documents) > 1
