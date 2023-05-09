@@ -24,4 +24,4 @@ To import this vectorstore:
 from langchain.vectorstores import AtlasDB
 ```
 
-For a more detailed walkthrough of the AtlasDB wrapper, see [this notebook](../modules/indexes/vectorstore_examples/atlas.ipynb)
+For a more detailed walkthrough of the AtlasDB wrapper, see [this notebook](../modules/indexes/vectorstores/examples/atlas.ipynb)

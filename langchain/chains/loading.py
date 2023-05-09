@@ -20,8 +20,8 @@ from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
+from langchain.chains.retrieval_qa.base import VectorDBQA
 from langchain.chains.sql_database.base import SQLDatabaseChain
-from langchain.chains.vector_db_qa.base import VectorDBQA
 from langchain.llms.loading import load_llm, load_llm_from_config
 from langchain.prompts.loading import load_prompt, load_prompt_from_config
 from langchain.utilities.loading import try_load_from_hub

@@ -4,19 +4,13 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Union
 
 import yaml
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.formatting import formatter
-from langchain.output_parsers.base import BaseOutputParser
-from langchain.output_parsers.list import (  # noqa: F401
-    CommaSeparatedListOutputParser,
-    ListOutputParser,
-)
-from langchain.output_parsers.regex import RegexParser  # noqa: F401
-from langchain.schema import BaseMessage, HumanMessage, PromptValue
+from langchain.schema import BaseMessage, BaseOutputParser, HumanMessage, PromptValue
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -24,7 +18,7 @@ def jinja2_formatter(template: str, **kwargs: Any) -> str:
     try:
         from jinja2 import Template
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "jinja2 not installed, which is needed to use the jinja2_formatter. "
             "Please install it with `pip install jinja2`."
         )
@@ -32,9 +26,45 @@ def jinja2_formatter(template: str, **kwargs: Any) -> str:
     return Template(template).render(**kwargs)
 
 
+def validate_jinja2(template: str, input_variables: List[str]) -> None:
+    input_variables_set = set(input_variables)
+    valid_variables = _get_jinja2_variables_from_template(template)
+    missing_variables = valid_variables - input_variables_set
+    extra_variables = input_variables_set - valid_variables
+
+    error_message = ""
+    if missing_variables:
+        error_message += f"Missing variables: {missing_variables} "
+
+    if extra_variables:
+        error_message += f"Extra variables: {extra_variables}"
+
+    if error_message:
+        raise KeyError(error_message.strip())
+
+
+def _get_jinja2_variables_from_template(template: str) -> Set[str]:
+    try:
+        from jinja2 import Environment, meta
+    except ImportError:
+        raise ImportError(
+            "jinja2 not installed, which is needed to use the jinja2_formatter. "
+            "Please install it with `pip install jinja2`."
+        )
+    env = Environment()
+    ast = env.parse(template)
+    variables = meta.find_undeclared_variables(ast)
+    return variables
+
+
 DEFAULT_FORMATTER_MAPPING: Dict[str, Callable] = {
     "f-string": formatter.format,
     "jinja2": jinja2_formatter,
+}
+
+DEFAULT_VALIDATOR_MAPPING: Dict[str, Callable] = {
+    "f-string": formatter.validate_input_variables,
+    "jinja2": validate_jinja2,
 }
 
 
@@ -48,10 +78,9 @@ def check_valid_template(
             f"Invalid template format. Got `{template_format}`;"
             f" should be one of {valid_formats}"
         )
-    dummy_inputs = {input_variable: "foo" for input_variable in input_variables}
     try:
-        formatter_func = DEFAULT_FORMATTER_MAPPING[template_format]
-        formatter_func(template, **dummy_inputs)
+        validator_func = DEFAULT_VALIDATOR_MAPPING[template_format]
+        validator_func(template, input_variables)
     except KeyError as e:
         raise ValueError(
             "Invalid prompt schema; check for mismatched or missing input parameters. "
@@ -72,7 +101,7 @@ class StringPromptValue(PromptValue):
 
 
 class BasePromptTemplate(BaseModel, ABC):
-    """Base prompt should expose the format method, returning a prompt."""
+    """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
@@ -150,9 +179,9 @@ class BasePromptTemplate(BaseModel, ABC):
         """
 
     @property
-    @abstractmethod
     def _prompt_type(self) -> str:
         """Return the prompt type key."""
+        raise NotImplementedError
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of prompt."""
@@ -196,6 +225,8 @@ class BasePromptTemplate(BaseModel, ABC):
 
 
 class StringPromptTemplate(BasePromptTemplate, ABC):
+    """String prompt should expose the format method, returning a prompt."""
+
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
         return StringPromptValue(text=self.format(**kwargs))

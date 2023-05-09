@@ -10,16 +10,33 @@ This page is broken into two parts: installation and setup, and then references 
 `unstructured` wrappers.
 
 ## Installation and Setup
+
+If you are using a loader that runs locally, use the following steps to get `unstructured` and
+its dependencies running locally.
+
 - Install the Python SDK with `pip install "unstructured[local-inference]"`
 - Install the following system dependencies if they are not already available on your system.
   Depending on what document types you're parsing, you may not need all of these.
-    - `libmagic-dev`
-    - `poppler-utils`
-    - `tesseract-ocr`
-    - `libreoffice`
-- If you are parsing PDFs, run the following to install the `detectron2` model, which
+    - `libmagic-dev` (filetype detection)
+    - `poppler-utils` (images and PDFs)
+    - `tesseract-ocr`(images and PDFs)
+    - `libreoffice` (MS Office docs)
+    - `pandoc` (EPUBs)
+- If you are parsing PDFs using the `"hi_res"` strategy, run the following to install the `detectron2` model, which
   `unstructured` uses for layout detection:
-    - `pip install "detectron2@git+https://github.com/facebookresearch/detectron2.git@v0.6#egg=detectron2"`
+    - `pip install "detectron2@git+https://github.com/facebookresearch/detectron2.git@e2ce8dc#egg=detectron2"`
+    - If `detectron2` is not installed, `unstructured` will fallback to processing PDFs
+      using the `"fast"` strategy, which uses `pdfminer` directly and doesn't require
+      `detectron2`.
+
+If you want to get up and running with less set up, you can
+simply run `pip install unstructured` and use `UnstructuredAPIFileLoader` or
+`UnstructuredAPIFileIOLoader`. That will process your document using the hosted Unstructured API.
+Note that currently (as of 1 May 2023) the Unstructured API is open, but it will soon require
+an API. The [Unstructured documentation page](https://unstructured-io.github.io/) will have
+instructions on how to generate an API key once they're available. Check out the instructions
+[here](https://github.com/Unstructured-IO/unstructured-api#dizzy-instructions-for-using-the-docker-image)
+if you'd like to self-host the Unstructured API or run it locally.
 
 ## Wrappers
 

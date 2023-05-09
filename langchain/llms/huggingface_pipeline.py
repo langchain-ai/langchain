@@ -3,8 +3,9 @@ import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -12,10 +13,10 @@ DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
 VALID_TASKS = ("text2text-generation", "text-generation")
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
-class HuggingFacePipeline(LLM, BaseModel):
+class HuggingFacePipeline(LLM):
     """Wrapper around HuggingFace Pipeline API.
 
     To use, you should have the ``transformers`` python package installed.
@@ -76,7 +77,7 @@ class HuggingFacePipeline(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
-                "Please it install it with `pip install transformers`."
+                "Please install it with `pip install transformers`."
             )
 
         _model_kwargs = model_kwargs or {}
@@ -146,7 +147,12 @@ class HuggingFacePipeline(LLM, BaseModel):
     def _llm_type(self) -> str:
         return "huggingface_pipeline"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         response = self.pipeline(prompt)
         if self.pipeline.task == "text-generation":
             # Text generation return includes the starter text.

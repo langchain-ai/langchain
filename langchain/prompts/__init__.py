@@ -1,7 +1,8 @@
 """Prompt template classes."""
-from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.base import BasePromptTemplate, StringPromptTemplate
 from langchain.prompts.chat import (
     AIMessagePromptTemplate,
+    BaseChatPromptTemplate,
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -15,6 +16,7 @@ from langchain.prompts.prompt import Prompt, PromptTemplate
 
 __all__ = [
     "BasePromptTemplate",
+    "StringPromptTemplate",
     "load_prompt",
     "PromptTemplate",
     "FewShotPromptTemplate",
@@ -26,4 +28,5 @@ __all__ = [
     "AIMessagePromptTemplate",
     "SystemMessagePromptTemplate",
     "ChatMessagePromptTemplate",
+    "BaseChatPromptTemplate",
 ]

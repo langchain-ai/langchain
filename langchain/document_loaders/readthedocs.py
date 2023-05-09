@@ -45,6 +45,10 @@ class ReadTheDocsLoader(BaseLoader):
         def _clean_data(data: str) -> str:
             soup = BeautifulSoup(data, **self.bs_kwargs)
             text = soup.find_all("main", {"id": "main-content"})
+
+            if len(text) == 0:
+                text = soup.find_all("div", {"role": "main"})
+
             if len(text) != 0:
                 text = text[0].get_text()
             else:

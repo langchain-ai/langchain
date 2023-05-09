@@ -2,13 +2,15 @@
 import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
-
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import BaseMessage, ChatResult
 
 
-class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
+class PromptLayerChatOpenAI(ChatOpenAI):
     """Wrapper around OpenAI Chat large language models and PromptLayer.
 
     To use, you should have the ``openai`` and ``promptlayer`` python
@@ -17,8 +19,12 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
     promptlayer key respectively.
 
     All parameters that can be passed to the OpenAI LLM can also
-    be passed here. The PromptLayerChatOpenAI LLM adds an extra
-    ``pl_tags`` parameter that can be used to tag the request.
+    be passed here. The PromptLayerChatOpenAI adds to optional
+    parameters:
+        ``pl_tags``: List of strings to tag the request with.
+        ``return_pl_id``: If True, the PromptLayer request ID will be
+            returned in the ``generation_info`` field of the
+            ``Generation`` object.
 
     Example:
         .. code-block:: python
@@ -28,22 +34,26 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
     """
 
     pl_tags: Optional[List[str]]
+    return_pl_id: Optional[bool] = False
 
     def _generate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> ChatResult:
         """Call ChatOpenAI generate and then call PromptLayer API to log the request."""
         from promptlayer.utils import get_api_key, promptlayer_api_request
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = super()._generate(messages, stop)
+        generated_responses = super()._generate(messages, stop, run_manager)
         request_end_time = datetime.datetime.now().timestamp()
         message_dicts, params = super()._create_message_dicts(messages, stop)
         for i, generation in enumerate(generated_responses.generations):
             response_dict, params = super()._create_message_dicts(
                 [generation.message], stop
             )
-            promptlayer_api_request(
+            pl_request_id = promptlayer_api_request(
                 "langchain.PromptLayerChatOpenAI",
                 "langchain",
                 message_dicts,
@@ -53,24 +63,34 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
                 request_start_time,
                 request_end_time,
                 get_api_key(),
+                return_pl_id=self.return_pl_id,
             )
+            if self.return_pl_id:
+                if generation.generation_info is None or not isinstance(
+                    generation.generation_info, dict
+                ):
+                    generation.generation_info = {}
+                generation.generation_info["pl_request_id"] = pl_request_id
         return generated_responses
 
     async def _agenerate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> ChatResult:
         """Call ChatOpenAI agenerate and then call PromptLayer to log."""
-        from promptlayer.utils import get_api_key, promptlayer_api_request
+        from promptlayer.utils import get_api_key, promptlayer_api_request_async
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = await super()._agenerate(messages, stop)
+        generated_responses = await super()._agenerate(messages, stop, run_manager)
         request_end_time = datetime.datetime.now().timestamp()
         message_dicts, params = super()._create_message_dicts(messages, stop)
         for i, generation in enumerate(generated_responses.generations):
             response_dict, params = super()._create_message_dicts(
                 [generation.message], stop
             )
-            promptlayer_api_request(
+            pl_request_id = await promptlayer_api_request_async(
                 "langchain.PromptLayerChatOpenAI.async",
                 "langchain",
                 message_dicts,
@@ -80,5 +100,12 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
                 request_start_time,
                 request_end_time,
                 get_api_key(),
+                return_pl_id=self.return_pl_id,
             )
+            if self.return_pl_id:
+                if generation.generation_info is None or not isinstance(
+                    generation.generation_info, dict
+                ):
+                    generation.generation_info = {}
+                generation.generation_info["pl_request_id"] = pl_request_id
         return generated_responses
