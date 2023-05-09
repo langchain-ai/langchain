@@ -92,18 +92,24 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 
 class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
+    role: str = "human"
+
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
         return HumanMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
 class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
+    role: str = "ai"
+
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
         return AIMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
 class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
+    role: str = "system"
+
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
         return SystemMessage(content=text, additional_kwargs=self.additional_kwargs)
