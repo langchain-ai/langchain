@@ -15,7 +15,7 @@ else:
 
 
 @pytest.fixture
-def docs():
+def raw_docs():
     return [
         {"_id": "1", "address": {"building": "1", "room": "1"}},
         {"_id": "2", "address": {"building": "2", "room": "2"}},
@@ -36,10 +36,10 @@ def expected_documents():
     ]
 
 
-@pytest.mark.asyncio
-async def test_async_load_mocked(mocker, docs, expected_documents):
+@pytest.fixture
+def mock_mongodb(mocker, raw_docs):
     async def mock_find():
-        for doc in docs:
+        for doc in raw_docs:
             yield doc
 
     mock_collection = MagicMock()
@@ -49,37 +49,26 @@ async def test_async_load_mocked(mocker, docs, expected_documents):
     mocker.patch.object(mock_collection, "find", return_value=mock_find())
     mocker.patch.object(AsyncIOMotorClient, "get_database", return_value=mock_db)
     mocker.patch.object(mock_db, "get_collection", return_value=mock_collection)
+    mocker.patch("motor.motor_asyncio.AsyncIOMotorClient", return_value=mock_client)
 
-    with patch("motor.motor_asyncio.AsyncIOMotorClient", return_value=mock_client):
-        loader = MongodbLoader(
-            "mongodb://localhost:27017", "sample_restaurants", "restaurants"
-        )
+    return mocker
 
+
+@pytest.mark.asyncio
+async def test_async_load_mocked(mock_mongodb, expected_documents):
+    loader = MongodbLoader(
+        "mongodb://localhost:27017", "sample_restaurants", "restaurants"
+    )
     documents = await loader._async_load()
-
     assert documents == expected_documents
 
 
 @pytest.mark.asyncio
-async def test_async_partial_load_mocked(mocker, docs, expected_documents):
-    async def mock_find():
-        for doc in docs:
-            yield doc
-
+async def test_async_partial_load_mocked(expected_documents):
+    loader = MongodbLoader(
+        "mongodb://localhost:27017", "sample_restaurants", "restaurants"
+    )
     expected_documents.remove(expected_documents[1])
-
-    mock_collection = MagicMock()
-    mock_db = MagicMock()
-    mock_client = MagicMock()
-
-    mocker.patch.object(mock_collection, "find", return_value=mock_find())
-    mocker.patch.object(AsyncIOMotorClient, "get_database", return_value=mock_db)
-    mocker.patch.object(mock_db, "get_collection", return_value=mock_collection)
-
-    with patch("motor.motor_asyncio.AsyncIOMotorClient", return_value=mock_client):
-        loader = MongodbLoader(
-            "mongodb://localhost:27017", "sample_restaurants", "restaurants"
-        )
 
     with pytest.raises(Exception) as error_PartialLoad:
         await loader._async_load()
@@ -92,7 +81,6 @@ async def test_async_partial_load_mocked(mocker, docs, expected_documents):
 
 def test_load_mocked(expected_documents):
     mock_async_load = AsyncMock()
-
     mock_async_load.return_value = expected_documents
 
     with patch("langchain.document_loaders.MongodbLoader", MagicMock()):
