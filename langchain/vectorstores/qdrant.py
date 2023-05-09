@@ -500,11 +500,13 @@ class Qdrant(VectorStore):
 
         return out
 
-    def _qdrant_filter_from_dict(self, filter: Optional[MetadataFilter]) -> rest.Filter:
+    def _qdrant_filter_from_dict(
+        self, filter: Optional[MetadataFilter]
+    ) -> Optional[rest.Filter]:
+        from qdrant_client.http import models as rest
+
         if not filter:
             return None
-
-        from qdrant_client.http import models as rest
 
         return rest.Filter(
             must=[
