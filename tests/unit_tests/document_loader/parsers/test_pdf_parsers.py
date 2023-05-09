@@ -1,6 +1,6 @@
 """Tests for the various PDF parsers."""
-from pathlib import Path
 from typing import Iterator
+
 import pytest
 
 from langchain.document_loaders.base import BaseBlobParser
