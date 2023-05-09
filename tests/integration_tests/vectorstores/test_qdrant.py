@@ -78,15 +78,26 @@ def test_qdrant_with_metadatas(
 def test_qdrant_similarity_search_filters() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
-    metadatas = [{"page": i} for i in range(len(texts))]
+    metadatas = [
+        {"page": i, "metadata": {"page": i + 1, "pages": [i + 2, -1]}}
+        for i in range(len(texts))
+    ]
     docsearch = Qdrant.from_texts(
         texts,
         FakeEmbeddings(),
         metadatas=metadatas,
         location=":memory:",
     )
-    output = docsearch.similarity_search("foo", k=1, filter={"page": 1})
-    assert output == [Document(page_content="bar", metadata={"page": 1})]
+
+    output = docsearch.similarity_search(
+        "foo", k=1, filter={"page": 1, "metadata": {"page": 2, "pages": [3]}}
+    )
+    assert output == [
+        Document(
+            page_content="bar",
+            metadata={"page": 1, "metadata": {"page": 2, "pages": [3, -1]}},
+        )
+    ]
 
 
 @pytest.mark.parametrize(
