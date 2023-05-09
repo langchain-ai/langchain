@@ -79,7 +79,6 @@ O365 = {version = "^2.0.26", optional = true}
 jq = {version = "^1.4.1", optional = true}
 pypdfium2 = {version = "^4.10.0", optional = true}
 pdfminer-six = {version = "^20221105", optional = true}
-pymupdf = {version = "^1.22.2", optional = true}
 
 
 [tool.poetry.group.docs.dependencies]
