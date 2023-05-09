@@ -26,7 +26,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           poetry-version: "1.4.2"
           cache-key: "main"
-          install-command: "poetry install --with test"
+          install-command: "poetry install"
       - name: Run unit tests
         run: |
           make test
