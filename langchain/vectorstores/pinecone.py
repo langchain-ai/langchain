@@ -123,8 +123,14 @@ class Pinecone(VectorStore):
         )
         for res in results["matches"]:
             metadata = res["metadata"]
-            text = metadata.pop(self._text_key)
-            docs.append((Document(page_content=text, metadata=metadata), res["score"]))
+            if self._text_key in metadata:
+                text = metadata.pop(self._text_key)
+                score = res["score"]
+                docs.append((Document(page_content=text, metadata=metadata), score))
+            else:
+                logger.warning(
+                    f"Found document with no `{self._text_key}` key. Skipping."
+                )
         return docs
 
     def similarity_search(
@@ -146,27 +152,10 @@ class Pinecone(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        if namespace is None:
-            namespace = self._namespace
-        query_obj = self._embedding_function(query)
-        docs = []
-        results = self._index.query(
-            [query_obj],
-            top_k=k,
-            include_metadata=True,
-            namespace=namespace,
-            filter=filter,
+        docs_and_scores = self.similarity_search_with_score(
+            query, k=k, filter=filter, namespace=namespace, **kwargs
         )
-        for res in results["matches"]:
-            metadata = res["metadata"]
-            if self._text_key in metadata:
-                text = metadata.pop(self._text_key)
-                docs.append(Document(page_content=text, metadata=metadata))
-            else:
-                logger.warning(
-                    f"Found document with no `{self._text_key}` key. Skipping."
-                )
-        return docs
+        return [doc for doc, _ in docs_and_scores]
 
     @classmethod
     def from_texts(
