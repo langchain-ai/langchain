@@ -2,11 +2,18 @@ import json
 import os
 
 from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories.cassandra import CassandraChatMessageHistory
+from langchain.memory.chat_message_histories.cassandra import (
+    CassandraChatMessageHistory,
+)
 from langchain.schema import _message_to_dict
 
-# Replace these with your cassandra contact points 
-contact_points = os.environ["CONTACT_POINTS"].split(",") if "CONTACT_POINTS" in os.environ else ["cassandra"]
+# Replace these with your cassandra contact points
+contact_points = (
+    os.environ["CONTACT_POINTS"].split(",")
+    if "CONTACT_POINTS" in os.environ
+    else ["cassandra"]
+)
+
 
 def test_memory_with_message_store() -> None:
     """Test the memory with a message store."""

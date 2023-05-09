@@ -73,7 +73,9 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
 
         try:
             self.session.execute(
-                f"CREATE KEYSPACE IF NOT EXISTS {self.keyspace_name} WITH REPLICATION = {{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }};"
+                f"""CREATE KEYSPACE IF NOT EXISTS 
+                {self.keyspace_name} WITH REPLICATION = 
+                {{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }};"""
             )
         except Exception as error:
             logger.error(error)
@@ -82,7 +84,9 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
 
         try:
             self.session.execute(
-                f"CREATE TABLE IF NOT EXISTS {self.table_name} (id UUID, session_id varchar, history text,  PRIMARY KEY ((session_id), id) );"
+                f"""CREATE TABLE IF NOT EXISTS 
+                {self.table_name} (id UUID, session_id varchar, 
+                history text,  PRIMARY KEY ((session_id), id) );"""
             )
         except Exception as error:
             logger.error(error)
@@ -92,7 +96,8 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         """Retrieve the messages from Cassandra"""
         try:
             rows = self.session.execute(
-                f"SELECT * FROM {self.table_name} WHERE session_id = '{self.session_id}' ;"
+                f"""SELECT * FROM {self.table_name}
+                WHERE session_id = '{self.session_id}' ;"""
             )
         except Exception as error:
             logger.error(error)
@@ -120,7 +125,8 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
 
         try:
             self.session.execute(
-                """INSERT INTO message_store (id, session_id, history) VALUES (%s, %s, %s);""",
+                """INSERT INTO message_store
+                (id, session_id, history) VALUES (%s, %s, %s);""",
                 (uuid.uuid4(), self.session_id, json.dumps(_message_to_dict(message))),
             )
         except Exception as error:
@@ -131,7 +137,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
 
         try:
             self.session.execute(
-               f"DELETE FROM {self.table_name} WHERE session_id = '{self.session_id}';"
+                f"DELETE FROM {self.table_name} WHERE session_id = '{self.session_id}';"
             )
         except Exception as error:
             logger.error(error)
