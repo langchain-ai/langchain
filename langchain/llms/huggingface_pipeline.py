@@ -1,7 +1,8 @@
 """Wrapper around HuggingFace Pipeline APIs."""
+from enum import Enum
 import importlib.util
 import logging
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Union
 
 from pydantic import Extra
 
@@ -15,6 +16,41 @@ VALID_TASKS = ("text2text-generation", "text-generation")
 
 logger = logging.getLogger(__name__)
 
+def _validate_for_cuda_counting(device: Any) -> True:
+    if type(device) is not int:
+        return True
+    if importlib.util.find_spec("torch") is not None:
+        import torch
+
+        cuda_device_count = torch.cuda.device_count()
+        if device < -1 or (device >= cuda_device_count):
+            raise ValueError(
+                f"Got device=={device}, "
+                f"device is required to be within [-1, {cuda_device_count})"
+            )
+        if device < 0 and cuda_device_count > 0:
+            logger.warning(
+                "Device has %d GPUs available. "
+                "Provide device={deviceId} to `from_model_id` to use available"
+                "GPUs for execution. deviceId is -1 (default) for CPU and "
+                "can be a positive integer associated with CUDA device id.",
+                cuda_device_count,
+            )
+        return True
+
+def _validate_device_status(device: Any) -> bool:
+    # apple silicone
+    if device == "mps":
+        # no hardware availablity check so far.
+        return True
+    return _validate_for_cuda_counting(device)
+
+def _validate_device_type(device: Any) -> bool:
+    if importlib.util.find_spec("torch") is not None:
+        import torch
+        if type(device) is torch.device:
+            return True
+    return type(device) is int or type(device) is str
 
 class HuggingFacePipeline(LLM):
     """Wrapper around HuggingFace Pipeline API.
@@ -61,7 +97,7 @@ class HuggingFacePipeline(LLM):
         cls,
         model_id: str,
         task: str,
-        device: int = -1,
+        device: Any = -1,
         model_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> LLM:
@@ -71,24 +107,14 @@ class HuggingFacePipeline(LLM):
                 f"Got invalid task {task}, "
                 f"currently only {VALID_TASKS} are supported"
             )
-
-        if importlib.util.find_spec("torch") is not None:
-            import torch
-
-            cuda_device_count = torch.cuda.device_count()
-            if device < -1 or (device >= cuda_device_count):
-                raise ValueError(
-                    f"Got device=={device}, "
-                    f"device is required to be within [-1, {cuda_device_count})"
-                )
-            if device < 0 and cuda_device_count > 0:
-                logger.warning(
-                    "Device has %d GPUs available. "
-                    "Provide device={deviceId} to `from_model_id` to use available"
-                    "GPUs for execution. deviceId is -1 (default) for CPU and "
-                    "can be a positive integer associated with CUDA device id.",
-                    cuda_device_count,
-                )
+        if not _validate_device_type(device):
+            raise ValueError(
+                f"Got invalid device {device}, expecting int, str or torch.device" 
+            )
+        if not _validate_device_status(device):
+            raise ValueError(
+                f"Failed while checking for device {device}, please read logs for details." 
+            )
 
         try:
             from transformers import (
