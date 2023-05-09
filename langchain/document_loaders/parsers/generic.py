@@ -22,15 +22,12 @@ class MimeTypeBasedParser(BaseBlobParser):
         .. code-block:: python
 
         from langchain.document_loaders.parsers.generic import MimeTypeBasedParser
-        from langchain.document_loaders.parsers.image import ImageParser
-        from langchain.document_loaders.parsers.pdf import PyPDFParser
 
         parser = MimeTypeBasedParser(
             handlers={
-                "application/pdf": PDFParser(),
-                "image/*": ImageParser(),
+                "application/pdf": ...,
             },
-            fallback_parser=PDFParser(),
+            fallback_parser=...,
         )
     """
 
@@ -39,7 +36,7 @@ class MimeTypeBasedParser(BaseBlobParser):
         handlers: Mapping[str, BaseBlobParser],
         fallback_parser: Optional[BaseBlobParser] = None,
     ) -> None:
-        """A parser based on mime-types.
+        """Define a parser that uses mime-types to determine how to parse a blob.
 
         Args:
             handlers: A mapping from mime-types to functions that take a blob, parse it
@@ -49,13 +46,13 @@ class MimeTypeBasedParser(BaseBlobParser):
                              used to parse blobs with all mime-types not found in
                              the handlers.
                              If not provided, a ValueError will be raised if the
-                            mime-type is not found in the handlers.
+                             mime-type is not found in the handlers.
         """
         self.handlers = handlers
         self.fallback_parser = fallback_parser
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
-        """Load documents from a file."""
+        """Load documents from a blob."""
         mimetype = blob.mimetype
 
         if mimetype is None:

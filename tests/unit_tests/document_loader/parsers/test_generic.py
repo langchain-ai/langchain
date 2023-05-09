@@ -46,7 +46,7 @@ class TestMimeBasedParser:
 
         blob = Blob(data=b"Hello World", mimetype="text/csv")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Unsupported mime type"):
             # Check that the fallback parser is used when the mimetype is not found.
             parser.parse(blob)
 
