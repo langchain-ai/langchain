@@ -12,7 +12,7 @@ from langchain.vectorstores.vector_store_from_doc_index import (
 
 
 class DocArrayHnswSearch(VecStoreFromDocIndex):
-    """Wrapper around DocArrayHnswSearch storage.
+    """Wrapper around HnswLib storage.
 
     To use it, you should have the ``docarray[hnswlib]`` package with version >=0.31.0 installed.
     You can install it with `pip install "langchain[hnswlib]"`.
