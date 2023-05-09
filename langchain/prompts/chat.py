@@ -135,7 +135,15 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
 
 class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     input_variables: List[str]
-    messages: List[Union[BaseMessagePromptTemplate, BaseMessage, AIMessagePromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate]]
+    messages: List[
+        Union[
+            BaseMessagePromptTemplate,
+            BaseMessage,
+            AIMessagePromptTemplate,
+            SystemMessagePromptTemplate,
+            HumanMessagePromptTemplate,
+        ]
+    ]
 
     @classmethod
     def from_role_strings(
@@ -204,11 +212,11 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         prompt_dict["_type"] = self._prompt_type
         for i, message in enumerate(self.messages):
             if isinstance(message, SystemMessagePromptTemplate):
-                prompt_dict['messages'][i]['prompt']['role'] = 'system'
+                prompt_dict["messages"][i]["prompt"]["role"] = "system"
             elif isinstance(message, HumanMessagePromptTemplate):
-                prompt_dict['messages'][i]['prompt']['role'] = 'human'
+                prompt_dict["messages"][i]["prompt"]["role"] = "human"
             elif isinstance(message, AIMessagePromptTemplate):
-                prompt_dict['messages'][i]['prompt']['role'] = 'ai'
+                prompt_dict["messages"][i]["prompt"]["role"] = "ai"
 
         return prompt_dict
 

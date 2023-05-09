@@ -9,9 +9,14 @@ import yaml
 
 from langchain.output_parsers.regex import RegexParser
 from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.chat import (
+    AIMessagePromptTemplate,
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate, AIMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
@@ -124,11 +129,11 @@ def _load_chat_prompt(config: dict) -> ChatPromptTemplate:
 
     messages = []
     for message in config["messages"]:
-        role = message['prompt'].get('role')
-        template = message['prompt']['template']
-        if role == 'human':
+        role = message["prompt"].get("role")
+        template = message["prompt"]["template"]
+        if role == "human":
             messages.append(HumanMessagePromptTemplate.from_template(template))
-        elif role == 'ai':
+        elif role == "ai":
             messages.append(AIMessagePromptTemplate.from_template(template))
         else:  # role == system
             messages.append(SystemMessagePromptTemplate.from_template(template))
