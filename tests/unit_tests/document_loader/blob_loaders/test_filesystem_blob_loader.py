@@ -91,6 +91,8 @@ def test_file_names_exist(
     loader = FileSystemBlobLoader(toy_dir, glob=glob, suffixes=suffixes)
     blobs = list(loader.yield_blobs())
 
+    assert loader.count_matching_files() == len(relative_filenames)
+
     file_names = sorted(str(blob.path) for blob in blobs)
 
     expected_filenames = sorted(
@@ -99,3 +101,11 @@ def test_file_names_exist(
     )
 
     assert file_names == expected_filenames
+
+
+@pytest.mark.requires("tqdm")
+def test_show_progress(toy_dir: str) -> None:
+    """Verify that file system loader works with a progress bar."""
+    loader = FileSystemBlobLoader(toy_dir)
+    blobs = list(loader.yield_blobs())
+    assert len(blobs) == loader.count_matching_files()

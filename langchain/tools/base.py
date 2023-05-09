@@ -132,9 +132,9 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     verbose: bool = False
     """Whether to log the tool's progress."""
 
-    callbacks: Callbacks = None
+    callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to be called during tool execution."""
-    callback_manager: Optional[BaseCallbackManager] = None
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """Deprecated. Please use callbacks instead."""
 
     class Config:
