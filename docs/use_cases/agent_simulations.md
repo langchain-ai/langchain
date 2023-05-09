@@ -14,6 +14,7 @@ Specific implementations of agent simulations (or parts of agent simulations) in
 ## Simulations with Two Agents
 - [CAMEL](agent_simulations/camel_role_playing.ipynb): an implementation of the CAMEL (Communicative Agents for “Mind” Exploration of Large Scale Language Model Society) paper, where two agents communicate with each other.
 - [Two Player D&D](agent_simulations/two_player_dnd.ipynb): an example of how to use a generic simulator for two agents to implement a variant of the popular Dungeons & Dragons role playing game.
+- [Agent Debates with Tools](agent_simulations/two_agent_debate_tools.ipynb): an example of how to enable Dialogue Agents to use tools to inform their responses.
 
 ## Simulations with Multiple Agents
 - [Multi-Player D&D](agent_simulations/multi_player_dnd.ipynb): an example of how to use a generic dialogue simulator for multiple dialogue agents with a custom speaker-ordering, illustrated with a variant of the popular Dungeons & Dragons role playing game.
