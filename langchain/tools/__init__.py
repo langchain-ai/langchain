@@ -10,6 +10,13 @@ from langchain.tools.file_management.list_dir import ListDirectoryTool
 from langchain.tools.file_management.move import MoveFileTool
 from langchain.tools.file_management.read import ReadFileTool
 from langchain.tools.file_management.write import WriteFileTool
+from langchain.tools.gmail import (
+    GmailCreateDraft,
+    GmailGetMessage,
+    GmailGetThread,
+    GmailSearch,
+    GmailSendMessage,
+)
 from langchain.tools.google_places.tool import GooglePlacesTool
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
@@ -36,6 +43,7 @@ from langchain.tools.vectorstore.tool import (
 )
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
+from langchain.tools.youtube.search import YouTubeSearchTool
 from langchain.tools.zapier.tool import ZapierNLAListActions, ZapierNLARunAction
 
 __all__ = [
@@ -57,6 +65,11 @@ __all__ = [
     "FileSearchTool",
     "GetElementsTool",
     "GenerateImageTool",
+    "GmailCreateDraft",
+    "GmailGetMessage",
+    "GmailGetThread",
+    "GmailSearch",
+    "GmailSendMessage",
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
@@ -82,4 +95,5 @@ __all__ = [
     "ZapierNLAListActions",
     "ZapierNLARunAction",
     "tool",
+    "YouTubeSearchTool",
 ]
