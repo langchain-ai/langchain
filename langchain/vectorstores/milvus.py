@@ -803,3 +803,22 @@ class Milvus(VectorStore):
         )
         vector_db.add_texts(texts=texts, metadatas=metadatas)
         return vector_db
+    
+    def relevance_score_fn(
+        self, 
+        score: float
+    ) -> float:
+        if self.search_params["metric_type"] == 'L2':
+            return 1 / (1 + score)
+        raise NotImplemented
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and their similarity scores on a scale from 0 to 1."""
+
+        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
