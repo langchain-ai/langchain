@@ -1,10 +1,10 @@
 import uuid
 
-from steamship.data.workspace import SignedUrl
-from steamship.utils.signed_urls import upload_to_signed_url
-
 
 def make_image_public(client, block):
+    from steamship.data.workspace import SignedUrl
+    from steamship.utils.signed_urls import upload_to_signed_url
+
     filepath = str(uuid.uuid4())
     signed_url = (
         client.get_workspace()

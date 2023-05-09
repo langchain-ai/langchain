@@ -31,9 +31,9 @@ SUPPORTED_IMAGE_SIZES = {
 }
 
 
-class GenerateImageTool(BaseTool):
+class SteamshipImageGenerationTool(BaseTool):
     """Tool used to generate images from a text-prompt."""
-    model_name: Optional[ModelName] = ModelName.DALL_E
+    model_name: ModelName
     size: Optional[str] = "512x512"
     steamship: Steamship
     return_urls: Optional[bool] = False
