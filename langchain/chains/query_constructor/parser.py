@@ -11,11 +11,11 @@ try:
     from lark import Lark, Transformer, v_args
 except ImportError:
 
-    def v_args(*args: Any, **kwargs: Any) -> Any:
+    def v_args(*args: Any, **kwargs: Any) -> Any:  # type: ignore
         return lambda _: None
 
-    Transformer = object
-    Lark = object
+    Transformer = object  # type: ignore
+    Lark = object  # type: ignore
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
