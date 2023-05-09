@@ -9,7 +9,7 @@ example_prompt:
         ["input", "output"]
     template:
         "Input: {input}\nOutput: {output}"
-examples:
+examples_path:
     examples.json
 suffix:
     "Input: {adjective}\nOutput:"

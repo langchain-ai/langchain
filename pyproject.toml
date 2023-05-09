@@ -77,6 +77,7 @@ pexpect = {version = "^4.8.0", optional = true}
 pyvespa = {version = "^0.33.0", optional = true}
 O365 = {version = "^2.0.26", optional = true}
 jq = {version = "^1.4.1", optional = true}
+pytest-vcr = "1.0.2"
 
 
 [tool.poetry.group.docs.dependencies]
