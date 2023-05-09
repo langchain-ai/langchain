@@ -14,20 +14,22 @@ from langchain.retrievers.time_weighted_retriever import (
 )
 from langchain.retrievers.vespa_retriever import VespaRetriever
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
+from langchain.retrievers.wikipedia import WikipediaRetriever
 
 __all__ = [
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",
-    "RemoteLangChainRetriever",
-    "PineconeHybridSearchRetriever",
-    "MetalRetriever",
-    "ElasticSearchBM25Retriever",
-    "TFIDFRetriever",
-    "WeaviateHybridSearchRetriever",
     "DataberryRetriever",
-    "TimeWeightedVectorStoreRetriever",
-    "SVMRetriever",
+    "ElasticSearchBM25Retriever",
     "KNNRetriever",
-    "VespaRetriever",
+    "MetalRetriever",
+    "PineconeHybridSearchRetriever",
+    "RemoteLangChainRetriever",
+    "SVMRetriever",
     "SelfQueryRetriever",
+    "TFIDFRetriever",
+    "TimeWeightedVectorStoreRetriever",
+    "VespaRetriever",
+    "WeaviateHybridSearchRetriever",
+    "WikipediaRetriever",
 ]

@@ -17,13 +17,15 @@ class WikipediaAPIWrapper(BaseModel):
     To use, you should have the ``wikipedia`` python package installed.
     This wrapper will use the Wikipedia API to conduct searches and
     fetch page summaries. By default, it will return the page summaries
-    of the top-k results of an input search.
+    of the top-k results.
+    It limits the Document content by doc_content_chars_max.
     """
 
     wiki_client: Any  #: :meta private:
     top_k_results: int = 3
     lang: str = "en"
     load_all_available_meta: bool = False
+    doc_content_chars_max: int = 4000
 
     class Config:
         """Configuration for this pydantic object."""
@@ -55,7 +57,7 @@ class WikipediaAPIWrapper(BaseModel):
                     summaries.append(summary)
         if not summaries:
             return "No good Wikipedia Search Result was found"
-        return "\n\n".join(summaries)
+        return "\n\n".join(summaries)[: self.doc_content_chars_max]
 
     @staticmethod
     def _formatted_page_summary(page_title: str, wiki_page: Any) -> Optional[str]:
@@ -69,7 +71,6 @@ class WikipediaAPIWrapper(BaseModel):
         add_meta = (
             {
                 "categories": wiki_page.categories,
-                # "coordinates": wiki_page.coordinates,
                 "page_url": wiki_page.url,
                 "image_urls": wiki_page.images,
                 "related_titles": wiki_page.links,
@@ -82,7 +83,7 @@ class WikipediaAPIWrapper(BaseModel):
             else {}
         )
         doc = Document(
-            page_content=wiki_page.content,
+            page_content=wiki_page.content[: self.doc_content_chars_max],
             metadata={
                 **main_meta,
                 **add_meta,
@@ -104,7 +105,7 @@ class WikipediaAPIWrapper(BaseModel):
         Run Wikipedia search and get the article text plus the meta information.
         See
 
-        Returns: a list of documents with the document.page_content in PDF format
+        Returns: a list of documents.
 
         """
         page_titles = self.wiki_client.search(query[:WIKIPEDIA_MAX_QUERY_LENGTH])
