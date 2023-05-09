@@ -60,9 +60,9 @@ def test_redis_add_texts_to_existing() -> None:
     assert drop(TEST_INDEX_NAME)
 
 
-class TestRedisDistanceMetrics():
+class TestRedisDistanceMetrics:
     """Test using different distance metrics for new indices."""
-    
+
     def test_cosine(self) -> None:
         """Test cosine distance."""
         texts = ["foo", "bar", "baz"]
@@ -72,7 +72,7 @@ class TestRedisDistanceMetrics():
         output = docsearch.similarity_search("foo", k=1)
         assert output == TEST_SINGLE_RESULT
         assert drop(docsearch.index_name)
-        
+
     def test_l2(self) -> None:
         """Test Flat L2 distance."""
         texts = ["foo", "bar", "baz"]
@@ -82,7 +82,7 @@ class TestRedisDistanceMetrics():
         output = docsearch.similarity_search("foo", k=1)
         assert output == TEST_SINGLE_RESULT
         assert drop(docsearch.index_name)
-        
+
     def test_ip(self) -> None:
         """Test inner product distance."""
         texts = ["foo", "bar", "baz"]

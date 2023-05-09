@@ -43,6 +43,7 @@ REDIS_REQUIRED_MODULES = [
 # distance mmetrics
 REDIS_DISTANCE_METRICS = Literal["COSINE", "IP", "L2"]
 
+
 def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -> None:
     """Check if the correct Redis modules are installed."""
     installed_modules = client.module_list()
@@ -145,7 +146,9 @@ class Redis(VectorStore):
         self.vector_key = vector_key
         self.relevance_score_fn = relevance_score_fn
 
-    def _create_index(self, dim: int = 1536, distance_metric: REDIS_DISTANCE_METRICS = "COSINE") -> None:
+    def _create_index(
+        self, dim: int = 1536, distance_metric: REDIS_DISTANCE_METRICS = "COSINE"
+    ) -> None:
         try:
             from redis.commands.search.field import TextField, VectorField
             from redis.commands.search.indexDefinition import IndexDefinition, IndexType
