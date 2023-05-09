@@ -1,15 +1,17 @@
 from enum import Enum
-from typing import Any
+from typing import Any, Type
 
 from langchain.output_parsers.choice import ChoiceOutputParser
 from langchain.schema import OutputParserException
 
 
 class EnumOutputParser(ChoiceOutputParser):
-    def __init__(self, enum: Enum, **kwargs):
+    enum: Type[Enum]
+
+    @classmethod
+    def from_enum(cls, enum: Type[Enum], **kwargs):
         assert all(isinstance(e.value, str) for e in enum), "Enum values must be strings"
-        super().__init__([e.value for e in enum], **kwargs)
-        self.enum = enum
+        return cls(options=[e.value for e in enum], enum=enum, **kwargs)
 
     def parse(self, response: str) -> Any:
         try:
