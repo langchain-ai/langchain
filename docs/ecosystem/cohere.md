@@ -22,4 +22,4 @@ There exists an Cohere Embeddings wrapper, which you can access with
 ```python
 from langchain.embeddings import CohereEmbeddings
 ```
-For a more detailed walkthrough of this, see [this notebook](../modules/utils/combine_docs_examples/embeddings.ipynb)
+For a more detailed walkthrough of this, see [this notebook](../modules/models/text_embedding/examples/cohere.ipynb)

@@ -48,6 +48,8 @@ class GoogleSearchAPIWrapper(BaseModel):
     search_engine: Any  #: :meta private:
     google_api_key: Optional[str] = None
     google_cse_id: Optional[str] = None
+    k: int = 10
+    siterestrict: bool = False
 
     class Config:
         """Configuration for this pydantic object."""
@@ -55,12 +57,11 @@ class GoogleSearchAPIWrapper(BaseModel):
         extra = Extra.forbid
 
     def _google_search_results(self, search_term: str, **kwargs: Any) -> List[dict]:
-        res = (
-            self.search_engine.cse()
-            .list(q=search_term, cx=self.google_cse_id, **kwargs)
-            .execute()
-        )
-        return res["items"]
+        cse = self.search_engine.cse()
+        if self.siterestrict:
+            cse = cse.siterestrict()
+        res = cse.list(q=search_term, cx=self.google_cse_id, **kwargs).execute()
+        return res.get("items", [])
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -85,16 +86,44 @@ class GoogleSearchAPIWrapper(BaseModel):
         service = build("customsearch", "v1", developerKey=google_api_key)
         values["search_engine"] = service
 
-        # TODO: Add error handling if keys are missing
         return values
 
     def run(self, query: str) -> str:
         """Run query through GoogleSearch and parse result."""
         snippets = []
-        results = self._google_search_results(query, num=10)
+        results = self._google_search_results(query, num=self.k)
         if len(results) == 0:
             return "No good Google Search Result was found"
         for result in results:
-            snippets.append(result["snippet"])
+            if "snippet" in result:
+                snippets.append(result["snippet"])
 
         return " ".join(snippets)
+
+    def results(self, query: str, num_results: int) -> List[Dict]:
+        """Run query through GoogleSearch and return metadata.
+
+        Args:
+            query: The query to search for.
+            num_results: The number of results to return.
+
+        Returns:
+            A list of dictionaries with the following keys:
+                snippet - The description of the result.
+                title - The title of the result.
+                link - The link to the result.
+        """
+        metadata_results = []
+        results = self._google_search_results(query, num=num_results)
+        if len(results) == 0:
+            return [{"Result": "No good Google Search Result was found"}]
+        for result in results:
+            metadata_result = {
+                "title": result["title"],
+                "link": result["link"],
+            }
+            if "snippet" in result:
+                metadata_result["snippet"] = result["snippet"]
+            metadata_results.append(metadata_result)
+
+        return metadata_results

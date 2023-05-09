@@ -1,5 +1,5 @@
 LangChain Gallery
-=============
+=================
 
 Lots of people have built some pretty awesome stuff with LangChain.
 This is a collection of our favorites.
@@ -34,6 +34,17 @@ Open Source
     +++
 
     An end-to-end example of doing question answering on YouTube transcripts, returning the timestamps as sources to legitimize the answer.
+
+    ---
+
+    .. link-button:: https://github.com/normandmickey/MrsStax
+        :type: url
+        :text: QA Slack Bot
+        :classes: stretched-link btn-lg
+
+    +++
+
+    This application is a Slack Bot that uses Langchain and OpenAI's GPT3 language model to provide domain specific answers. You provide the documents.
 
     ---
 
@@ -73,6 +84,17 @@ Open Source
     .. link-button:: https://dagster.io/blog/chatgpt-langchain
         :type: url
         :text: Dagster Documentation ChatBot
+        :classes: stretched-link btn-lg
+
+    +++
+
+    A jupyter notebook demonstrating how you could create a semantic search engine on documents in one of your Google Folders
+
+    ---
+
+    .. link-button:: https://github.com/venuv/langchain_semantic_search
+        :type: url
+        :text: Google Folder Semantic Search
         :classes: stretched-link btn-lg
 
     +++
@@ -136,14 +158,14 @@ Open Source
 
     ---
 
-    .. link-button:: https://github.com/jerryjliu/gpt_index
+    .. link-button:: https://github.com/jerryjliu/llama_index
         :type: url
-        :text: GPT Index
+        :text: LlamaIndex
         :classes: stretched-link btn-lg
     
     +++
 
-    GPT Index is a project consisting of a set of data structures that are created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
+    LlamaIndex (formerly GPT Index) is a project consisting of a set of data structures that are created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
 
     ---
 
@@ -155,6 +177,17 @@ Open Source
     +++
 
     Leveraging Qiskit, OpenAI and LangChain to demonstrate Grover's algorithm
+
+    ---
+
+    .. link-button:: https://huggingface.co/spaces/rituthombre/QNim
+        :type: url
+        :text: QNimGPT
+        :classes: stretched-link btn-lg
+
+    +++
+
+    A chat UI to play Nim, where a player can select an opponent, either a quantum computer or an AI
 
     ---
 
@@ -177,7 +210,56 @@ Open Source
     +++
 
     This repo is a simple demonstration of using LangChain to do fact-checking with prompt chaining.
+    
+    ---
 
+    .. link-button:: https://github.com/arc53/docsgpt
+        :type: url
+        :text: DocsGPT
+        :classes: stretched-link btn-lg
+    
+    +++
+
+    Answer questions about the documentation of any project    
+
+Misc. Colab Notebooks
+~~~~~~~~~~~~~~~~~~~~~
+
+.. panels::
+    :body: text-center
+
+    ---
+
+    .. link-button:: https://colab.research.google.com/drive/1AAyEdTz-Z6ShKvewbt1ZHUICqak0MiwR?usp=sharing
+        :type: url
+        :text: Wolfram Alpha in Conversational Agent
+        :classes: stretched-link btn-lg
+    
+    +++
+
+    Give ChatGPT a WolframAlpha neural implant
+    
+    ---
+
+    .. link-button:: https://colab.research.google.com/drive/1UsCLcPy8q5PMNQ5ytgrAAAHa124dzLJg?usp=sharing
+        :type: url
+        :text: Tool Updates in Agents
+        :classes: stretched-link btn-lg
+    
+    +++
+
+    Agent improvements (6th Jan 2023)
+    
+    ---
+
+    .. link-button:: https://colab.research.google.com/drive/1UsCLcPy8q5PMNQ5ytgrAAAHa124dzLJg?usp=sharing
+        :type: url
+        :text: Conversational Agent with Tools (Langchain AGI)
+        :classes: stretched-link btn-lg
+    
+    +++
+
+    Langchain AGI (23rd Dec 2022)    
 
 Proprietary
 -----------
@@ -196,6 +278,17 @@ Proprietary
 
     A chat-based AI personal assistant with long-term memory about you.
 
+    ---
+
+    .. link-button:: https://anysummary.app
+        :type: url
+        :text: Summarize any file with AI
+        :classes: stretched-link btn-lg
+
+    +++
+
+    Summarize not only long docs, interview audio or video files quickly, but also entire websites and YouTube videos. Share or download your generated summaries to collaborate with others, or revisit them at any time! Bonus: `@anysummary <https://twitter.com/anysummary>`_ on Twitter will also summarize any thread it is tagged in.
+    
     ---
 
     .. link-button:: https://twitter.com/dory111111/status/1608406234646052870?s=20&t=XYlrbKM0ornJsrtGa0br-g
@@ -240,5 +333,22 @@ Proprietary
 
     By Zahid Khawaja, this demo utilizes question answering to answer questions about a given website. A followup added this for `YouTube videos <https://twitter.com/chillzaza_/status/1593739682013220865?s=20&t=EhU8jl0KyCPJ7vE9Rnz-cQ>`_, and then another followup added it for `Wikipedia <https://twitter.com/chillzaza_/status/1594847151238037505?s=20&t=EhU8jl0KyCPJ7vE9Rnz-cQ>`_.
 
+    ---
+
+    .. link-button:: https://mynd.so
+        :type: url
+        :text: Mynd
+        :classes: stretched-link btn-lg
+
+    +++
+
+    A journaling app for self-care that uses AI to uncover insights and patterns over time.
 
 
+Articles on **Google Scholar**
+-----------------------------
+
+LangChain is used in many scientific and research projects.
+
+**Google Scholar** presents a `list of the papers <https://scholar.google.com/scholar?q=%22langchain%22&hl=en&as_sdt=0,5&as_vis=1>`_
+with references to LangChain.

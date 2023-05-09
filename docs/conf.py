@@ -23,13 +23,14 @@ with open("../pyproject.toml") as f:
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2022, Harrison Chase"
+copyright = "2023, Harrison Chase"
 author = "Harrison Chase"
 
 version = data["tool"]["poetry"]["version"]
 release = version
 
 html_title = project + " " + version
+html_last_updated_fmt = "%b %d, %Y"
 
 
 # -- General configuration ---------------------------------------------------
@@ -45,6 +46,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
     "myst_nb",
+    "sphinx_copybutton",
     "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",
 ]
@@ -94,6 +96,17 @@ html_context = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path: list = []
+html_static_path = ["_static"]
+
+# These paths are either relative to html_static_path
+# or fully qualified paths (eg. https://...)
+html_css_files = [
+    "css/custom.css",
+]
+
+html_js_files = [
+    "js/mendablesearch.js",
+]
+
 nb_execution_mode = "off"
 myst_enable_extensions = ["colon_fence"]
