@@ -429,11 +429,10 @@ class PDFPlumberLoader(BasePDFLoader):
         self, folder_path: str, **kwargs: Optional[Any]
     ) -> List[Document]:
         """Annotate/save pdf file using pdfplumber's visual debudding and load file."""
+        import pdfplumber
+        
         path = Path(folder_path)
         path.mkdir(exist_ok=True, parents=True)
-
-        import pdfplumber
-
         doc = pdfplumber.open(self.file_path)
         file_path = self.file_path if self.web_path is None else self.web_path
 
