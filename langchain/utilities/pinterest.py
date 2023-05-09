@@ -1,7 +1,7 @@
 """Util that calls Pinterest REST API"""
-from typing import Any, Dict, List, Optional
+from typing import Dict
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 from langchain.utils import get_from_dict_or_env
 
