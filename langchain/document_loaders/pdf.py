@@ -398,7 +398,7 @@ class PDFPlumberLoader(BasePDFLoader):
 
         super().__init__(file_path)
 
-    def load(self, **kwargs: Optional[Any]) -> List[Document]:
+    def load(self, **kwargs: Any) -> List[Document]:
         """Load file."""
         import pdfplumber
 
@@ -426,7 +426,7 @@ class PDFPlumberLoader(BasePDFLoader):
         ]
 
     def annotate_and_load(
-        self, save_path: str, **kwargs: Optional[Any]
+        self, save_path: str, **kwargs: Any
     ) -> List[Document]:
         """Annotate/save pdf file using pdfplumber's visual debudding and load file."""
         import pdfplumber
