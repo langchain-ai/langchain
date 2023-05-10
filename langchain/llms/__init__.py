@@ -16,6 +16,7 @@ from langchain.llms.gpt4all import GPT4All
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain.llms.huggingface_textgen import HuggingFaceTextgen
 from langchain.llms.human import HumanInputLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.modal import Modal
@@ -53,6 +54,7 @@ __all__ = [
     "PipelineAI",
     "HuggingFaceEndpoint",
     "HuggingFaceHub",
+    "HuggingFaceTextgen",
     "SagemakerEndpoint",
     "HuggingFacePipeline",
     "AI21",
@@ -83,6 +85,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "gpt4all": GPT4All,
     "huggingface_hub": HuggingFaceHub,
     "huggingface_endpoint": HuggingFaceEndpoint,
+    "huggingface_textgen": HuggingFaceTextgen,
     "llamacpp": LlamaCpp,
     "modal": Modal,
     "sagemaker_endpoint": SagemakerEndpoint,
