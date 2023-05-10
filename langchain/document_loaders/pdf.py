@@ -7,7 +7,7 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, List, Mapping, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -386,7 +386,13 @@ class MathpixPDFLoader(BasePDFLoader):
 class PDFPlumberLoader(BasePDFLoader):
     """Loader that uses PDFPlumber to load PDF files."""
 
-    def __init__(self, file_path: str):
+    def __init__(
+        self,
+        file_path: str,
+        text_kwargs: Mapping[str, Any] = {"x_tolerance": 3, "y_tolerance": 3},
+        word_kwargs: Mapping[str, Any] = {"x_tolerance": 3, "y_tolerance": 3},
+        image_kwargs: Mapping[str, Any] = {"resolution": None},
+    ):
         """Initialize with file path."""
         try:
             import pdfplumber  # noqa:F401
@@ -397,8 +403,11 @@ class PDFPlumberLoader(BasePDFLoader):
             )
 
         super().__init__(file_path)
+        self.text_kwargs = text_kwargs
+        self.word_kwargs = word_kwargs
+        self.image_kwargs = image_kwargs
 
-    def load(self, **kwargs: Any) -> List[Document]:
+    def load(self) -> List[Document]:
         """Load file."""
         import pdfplumber
 
@@ -407,7 +416,7 @@ class PDFPlumberLoader(BasePDFLoader):
 
         return [
             Document(
-                page_content=page.extract_text(**kwargs).encode("utf-8"),
+                page_content=page.extract_text(**self.text_kwargs).encode("utf-8"),
                 metadata=dict(
                     {
                         "source": file_path,
@@ -425,7 +434,7 @@ class PDFPlumberLoader(BasePDFLoader):
             for page in doc.pages
         ]
 
-    def annotate_and_load(self, save_path: str, **kwargs: Any) -> List[Document]:
+    def annotate_and_load(self, save_path: str) -> List[Document]:
         """Annotate/save pdf file using pdfplumber's visual debudding and load file."""
         import pdfplumber
 
@@ -437,8 +446,10 @@ class PDFPlumberLoader(BasePDFLoader):
         # get annotated PIL.Images
         annotated_imgs = []
         for page in doc.pages:
-            im = page.to_image(resolution=100)
-            annotated_imgs.append(im.draw_rects(page.extract_words(**kwargs)).annotated)
+            im = page.to_image(**self.image_kwargs)
+            annotated_imgs.append(
+                im.draw_rects(page.extract_words(**self.word_kwargs)).annotated
+            )
         # save as ranamed pdf
         file_name = Path(self.file_path).stem
         annotated_imgs[0].save(
@@ -449,7 +460,7 @@ class PDFPlumberLoader(BasePDFLoader):
 
         return [
             Document(
-                page_content=page.extract_text(**kwargs).encode("utf-8"),
+                page_content=page.extract_text(**self.text_kwargs).encode("utf-8"),
                 metadata=dict(
                     {
                         "source": file_path,
