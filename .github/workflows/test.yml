@@ -21,7 +21,6 @@ jobs:
         test_type:
           - "core"
           - "extended"
-    name: ${{ matrix.python-version }} - ${{ matrix.test_type }} Tests
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
