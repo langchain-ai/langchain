@@ -160,7 +160,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                 f"Failed to download {url} (status: {response.status_code})"
             )
 
-    def _metadata_for_project(self, project: Dict) -> List[Dict]:
+    def _metadata_for_project(self, project: Dict) -> Dict:
         """Gets project metadata"""
         project_id = project.get("id")
         project_name = project.get("name")
