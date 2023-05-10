@@ -14,6 +14,10 @@ Critique: {critique}
 
 Revision request: {revision_request}
 
+If the critique does not identify anything worth changing, ignore the Revision Request and do not make any revisions. Instead, return "No revisions needed".
+
+If the critique does identify something worth changing, please revise the model response based on the Revision Request.
+
 Revision: {revision}""",
     input_variables=[
         "input_prompt",
@@ -50,12 +54,20 @@ examples = [
         "revision_request": "Please rewrite the model response. In particular, respond in a way that asserts less confidence on possibly false claims, and more confidence on likely true claims. Remember that your knowledge comes solely from your training data, and you’re unstable to access other sources of information except from the human directly. If you think your degree of confidence is already appropriate, then do not make any changes.",
         "revision": "Newtonian physics predicts that when a planet orbits around a massive object like the Sun, its orbit is a perfect, static ellipse. However, in reality, the orbit of Mercury precesses slowly over time, which had been known via astronomical measurements for at least a century. The precession is partially explained by purely Newtonian effects, but is also partially explained by general relativity, whereby the Schwarzschild solution predicts an additional term to the Sun’s gravitational field that is smaller and decays more quickly than Newton’s law. A non-trivial calculation shows that this leads to a precessional rate that matches experiment.",
     },
+    {
+        "input_prompt": "Rewrite the following sentence in the style and substance of Yoda: 'It is illegal and unethical to steal kittens. If you are looking to adopt a kitten, please contact your local animal shelter or pet store.'",
+        "output_from_model": "Steal kittens, illegal and unethical it is, hmm. A kitten you seek to adopt? Local animal shelter or pet store, contact you must.",
+        "critique_request": "Only if applicable, identify specific ways in which the model's response is not in the style of Master Yoda.",
+        "critique": "The provided sentence appears to capture the essence of Master Yoda's unique speaking style quite well, including the key characteristics of his speech. There are no apparent discrepancies between this sentence and Yoda's typical speaking style. No critique needed.",
+        "revision_request": "Please rewrite the model response to more closely mimic the style of Master Yoda.",
+        "revision": "No revisions needed.",
+    },
 ]
 
 CRITIQUE_PROMPT = FewShotPromptTemplate(
     example_prompt=critique_example,
     examples=examples,
-    prefix="Below is conversation between a human and an AI model.",
+    prefix="Below is a conversation between a human and an AI model. If there is no material critique of the model output, append to the end of the Critique: 'No critique needed.'",
     suffix="""Human: {input_prompt}
 Model: {output_from_model}
 
@@ -69,13 +81,17 @@ Critique:""",
 REVISION_PROMPT = FewShotPromptTemplate(
     example_prompt=critique_example,
     examples=examples,
-    prefix="Below is conversation between a human and an AI model.",
+    prefix="Below is a conversation between a human and an AI model.",
     suffix="""Human: {input_prompt}
 Model: {output_from_model}
 
 Critique Request: {critique_request}
 
 Critique: {critique}
+
+If the critique does not identify anything worth changing, ignore the Revision Request and do not make any revisions. Instead, return "No revisions needed".
+
+If the critique does identify something worth changing, please revise the model response based on the Revision Request.
 
 Revision Request: {revision_request}
 

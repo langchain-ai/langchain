@@ -95,6 +95,8 @@ class NotionDBLoader(BaseLoader):
                     if prop_data["multi_select"]
                     else []
                 )
+            elif prop_type == "url":
+                value = prop_data["url"]
             else:
                 value = None
 

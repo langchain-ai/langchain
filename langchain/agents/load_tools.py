@@ -5,18 +5,20 @@ from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
 
 from langchain.agents.tools import Tool
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
-from langchain.llms.base import BaseLLM
 from langchain.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import (
@@ -26,17 +28,17 @@ from langchain.tools.requests.tool import (
     RequestsPostTool,
     RequestsPutTool,
 )
+from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.shell.tool import ShellTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities import ArxivAPIWrapper
-from langchain.utilities.apify import ApifyWrapper
-from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
@@ -83,7 +85,7 @@ _BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
 }
 
 
-def _get_pal_math(llm: BaseLLM) -> BaseTool:
+def _get_pal_math(llm: BaseLanguageModel) -> BaseTool:
     return Tool(
         name="PAL-MATH",
         description="A language model that is really good at solving complex word math problems. Input should be a fully worded hard word math problem.",
@@ -91,7 +93,7 @@ def _get_pal_math(llm: BaseLLM) -> BaseTool:
     )
 
 
-def _get_pal_colored_objects(llm: BaseLLM) -> BaseTool:
+def _get_pal_colored_objects(llm: BaseLanguageModel) -> BaseTool:
     return Tool(
         name="PAL-COLOR-OBJ",
         description="A language model that is really good at reasoning about position and the color attributes of objects. Input should be a fully worded hard reasoning problem. Make sure to include all information about the objects AND the final question you want to answer.",
@@ -99,16 +101,16 @@ def _get_pal_colored_objects(llm: BaseLLM) -> BaseTool:
     )
 
 
-def _get_llm_math(llm: BaseLLM) -> BaseTool:
+def _get_llm_math(llm: BaseLanguageModel) -> BaseTool:
     return Tool(
         name="Calculator",
         description="Useful for when you need to answer questions about math.",
-        func=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).run,
-        coroutine=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).arun,
+        func=LLMMathChain.from_llm(llm=llm).run,
+        coroutine=LLMMathChain.from_llm(llm=llm).arun,
     )
 
 
-def _get_open_meteo_api(llm: BaseLLM) -> BaseTool:
+def _get_open_meteo_api(llm: BaseLanguageModel) -> BaseTool:
     chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
     return Tool(
         name="Open Meteo API",
@@ -117,7 +119,7 @@ def _get_open_meteo_api(llm: BaseLLM) -> BaseTool:
     )
 
 
-_LLM_TOOLS: Dict[str, Callable[[BaseLLM], BaseTool]] = {
+_LLM_TOOLS: Dict[str, Callable[[BaseLanguageModel], BaseTool]] = {
     "pal-math": _get_pal_math,
     "pal-colored-objects": _get_pal_colored_objects,
     "llm-math": _get_llm_math,
@@ -125,7 +127,7 @@ _LLM_TOOLS: Dict[str, Callable[[BaseLLM], BaseTool]] = {
 }
 
 
-def _get_news_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
+def _get_news_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     news_api_key = kwargs["news_api_key"]
     chain = APIChain.from_llm_and_api_docs(
         llm, news_docs.NEWS_DOCS, headers={"X-Api-Key": news_api_key}
@@ -137,7 +139,7 @@ def _get_news_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     )
 
 
-def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
+def _get_tmdb_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     tmdb_bearer_token = kwargs["tmdb_bearer_token"]
     chain = APIChain.from_llm_and_api_docs(
         llm,
@@ -151,7 +153,7 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     )
 
 
-def _get_podcast_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
+def _get_podcast_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     listen_api_key = kwargs["listen_api_key"]
     chain = APIChain.from_llm_and_api_docs(
         llm,
@@ -162,6 +164,14 @@ def _get_podcast_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
         name="Podcast API",
         description="Use the Listen Notes Podcast API to search all podcasts or episodes. The input should be a question in natural language that this API can answer.",
         func=chain.run,
+    )
+
+
+def _get_lambda_api(**kwargs: Any) -> BaseTool:
+    return Tool(
+        name=kwargs["awslambda_tool_name"],
+        description=kwargs["awslambda_tool_description"],
+        func=LambdaWrapper(**kwargs).run,
     )
 
 
@@ -182,11 +192,11 @@ def _get_arxiv(**kwargs: Any) -> BaseTool:
 
 
 def _get_google_serper(**kwargs: Any) -> BaseTool:
-    return Tool(
-        name="Serper Search",
-        func=GoogleSerperAPIWrapper(**kwargs).run,
-        description="A low-cost Google Search API. Useful for when you need to answer questions about current events. Input should be a search query.",
-    )
+    return GoogleSerperRun(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
+
+
+def _get_google_serper_results_json(**kwargs: Any) -> BaseTool:
+    return GoogleSerperResults(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
 
 
 def _get_google_search_results_json(**kwargs: Any) -> BaseTool:
@@ -223,8 +233,13 @@ def _get_human_tool(**kwargs: Any) -> BaseTool:
     return HumanInputRun(**kwargs)
 
 
+def _get_scenexplain(**kwargs: Any) -> BaseTool:
+    return SceneXplainTool(**kwargs)
+
+
 _EXTRA_LLM_TOOLS: Dict[
-    str, Tuple[Callable[[Arg(BaseLLM, "llm"), KwArg(Any)], BaseTool], List[str]]
+    str,
+    Tuple[Callable[[Arg(BaseLanguageModel, "llm"), KwArg(Any)], BaseTool], List[str]],
 ] = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
@@ -244,18 +259,47 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "ddg-search": (_get_ddg_search, []),
-    "google-serper": (_get_google_serper, ["serper_api_key"]),
+    "google-serper": (_get_google_serper, ["serper_api_key", "aiosession"]),
+    "google-serper-results-json": (
+        _get_google_serper_results_json,
+        ["serper_api_key", "aiosession"],
+    ),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
+    "arxiv": (
+        _get_arxiv,
+        ["top_k_results", "load_max_docs", "load_all_available_meta"],
+    ),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
+    "awslambda": (
+        _get_lambda_api,
+        ["awslambda_tool_name", "awslambda_tool_description", "function_name"],
+    ),
+    "sceneXplain": (_get_scenexplain, []),
 }
+
+
+def _handle_callbacks(
+    callback_manager: Optional[BaseCallbackManager], callbacks: Callbacks
+) -> Callbacks:
+    if callback_manager is not None:
+        warnings.warn(
+            "callback_manager is deprecated. Please use callbacks instead.",
+            DeprecationWarning,
+        )
+        if callbacks is not None:
+            raise ValueError(
+                "Cannot specify both callback_manager and callbacks arguments."
+            )
+        return callback_manager
+    return callbacks
 
 
 def load_tools(
     tool_names: List[str],
-    llm: Optional[BaseLLM] = None,
-    callback_manager: Optional[BaseCallbackManager] = None,
+    llm: Optional[BaseLanguageModel] = None,
+    callbacks: Callbacks = None,
     **kwargs: Any,
 ) -> List[BaseTool]:
     """Load tools based on their name.
@@ -263,13 +307,16 @@ def load_tools(
     Args:
         tool_names: name of tools to load.
         llm: Optional language model, may be needed to initialize certain tools.
-        callback_manager: Optional callback manager. If not provided, default global callback manager will be used.
+        callbacks: Optional callback manager or list of callback handlers.
+            If not provided, default global callback manager will be used.
 
     Returns:
         List of tools.
     """
     tools = []
-
+    callbacks = _handle_callbacks(
+        callback_manager=kwargs.get("callback_manager"), callbacks=callbacks
+    )
     for name in tool_names:
         if name == "requests":
             warnings.warn(
@@ -289,8 +336,6 @@ def load_tools(
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
             tool = _LLM_TOOLS[name](llm)
-            if callback_manager is not None:
-                tool.callback_manager = callback_manager
             tools.append(tool)
         elif name in _EXTRA_LLM_TOOLS:
             if llm is None:
@@ -304,18 +349,17 @@ def load_tools(
                 )
             sub_kwargs = {k: kwargs[k] for k in extra_keys}
             tool = _get_llm_tool_func(llm=llm, **sub_kwargs)
-            if callback_manager is not None:
-                tool.callback_manager = callback_manager
             tools.append(tool)
         elif name in _EXTRA_OPTIONAL_TOOLS:
             _get_tool_func, extra_keys = _EXTRA_OPTIONAL_TOOLS[name]
             sub_kwargs = {k: kwargs[k] for k in extra_keys if k in kwargs}
             tool = _get_tool_func(**sub_kwargs)
-            if callback_manager is not None:
-                tool.callback_manager = callback_manager
             tools.append(tool)
         else:
             raise ValueError(f"Got unknown tool {name}")
+    if callbacks is not None:
+        for tool in tools:
+            tool.callbacks = callbacks
     return tools
 
 

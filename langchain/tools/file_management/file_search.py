@@ -1,12 +1,17 @@
 import fnmatch
 import os
-from typing import Type
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
+from langchain.tools.base import BaseTool
 from langchain.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
-    BaseFileTool,
+    BaseFileToolMixin,
     FileValidationError,
 )
 
@@ -24,14 +29,19 @@ class FileSearchInput(BaseModel):
     )
 
 
-class FileSearchTool(BaseFileTool):
+class FileSearchTool(BaseFileToolMixin, BaseTool):
     name: str = "file_search"
     args_schema: Type[BaseModel] = FileSearchInput
     description: str = (
         "Recursively search for files in a subdirectory that match the regex pattern"
     )
 
-    def _run(self, pattern: str, dir_path: str = ".") -> str:
+    def _run(
+        self,
+        pattern: str,
+        dir_path: str = ".",
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         try:
             dir_path_ = self.get_relative_path(dir_path)
         except FileValidationError:
@@ -50,6 +60,11 @@ class FileSearchTool(BaseFileTool):
         except Exception as e:
             return "Error: " + str(e)
 
-    async def _arun(self, dir_path: str, pattern: str) -> str:
+    async def _arun(
+        self,
+        dir_path: str,
+        pattern: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         # TODO: Add aiofiles method
         raise NotImplementedError

@@ -87,7 +87,7 @@ class SQLAlchemyCache(BaseCache):
         """Look up based on prompt and llm_string."""
         stmt = (
             select(self.cache_schema.response)
-            .where(self.cache_schema.prompt == prompt)
+            .where(self.cache_schema.prompt == prompt)  # type: ignore
             .where(self.cache_schema.llm == llm_string)
             .order_by(self.cache_schema.idx)
         )

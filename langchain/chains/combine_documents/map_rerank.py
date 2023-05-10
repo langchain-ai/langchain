@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
@@ -89,19 +90,22 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                 )
         return values
 
-    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
+    def combine_docs(
+        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
+    ) -> Tuple[str, dict]:
         """Combine documents in a map rerank manner.
 
         Combine by mapping first chain over all documents, then reranking the results.
         """
         results = self.llm_chain.apply_and_parse(
             # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs]
+            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
+            callbacks=callbacks,
         )
         return self._process_results(docs, results)
 
     async def acombine_docs(
-        self, docs: List[Document], **kwargs: Any
+        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
         """Combine documents in a map rerank manner.
 
@@ -109,7 +113,8 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         """
         results = await self.llm_chain.aapply_and_parse(
             # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs]
+            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
+            callbacks=callbacks,
         )
         return self._process_results(docs, results)
 
