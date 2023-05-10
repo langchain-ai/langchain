@@ -32,6 +32,11 @@ openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
 tracing_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
+tracing_v2_callback_var: ContextVar[
+    Optional[LangChainTracer]
+] = ContextVar(  # noqa: E501
+    "tracing_callback_v2", default=None
+)
 
 
 @contextmanager
@@ -727,6 +732,10 @@ def _configure(
         or tracer is not None
         or os.environ.get("LANGCHAIN_HANDLER") is not None
     )
+    tracerv2 = tracing_v2_callback_var.get()
+    tracingv2_enabled_ = (
+        os.environ.get("LANGCHAIN_TRACING_V2") is not None or tracer is not None
+    )
     tracer_session = os.environ.get("LANGCHAIN_SESSION")
     if tracer_session is None:
         tracer_session = "default"
@@ -744,6 +753,16 @@ def _configure(
                 callback_manager.add_handler(tracer, True)
             else:
                 handler = LangChainTracer()
+                handler.load_session(tracer_session)
+                callback_manager.add_handler(handler, True)
+        if tracingv2_enabled_ and not any(
+            isinstance(handler, LangChainTracerV2)
+            for handler in callback_manager.handlers
+        ):
+            if tracerv2:
+                callback_manager.add_handler(tracerv2, True)
+            else:
+                handler = LangChainTracerV2()
                 handler.load_session(tracer_session)
                 callback_manager.add_handler(handler, True)
         if open_ai is not None and not any(
