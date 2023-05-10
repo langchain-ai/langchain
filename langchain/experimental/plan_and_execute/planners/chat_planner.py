@@ -1,9 +1,13 @@
 import re
 
-from langchain.agents.plan_and_execute.planners.base import LLMPlanner
-from langchain.agents.plan_and_execute.schema import Plan, PlanOutputParser, Step
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
+from langchain.experimental.plan_and_execute.planners.base import LLMPlanner
+from langchain.experimental.plan_and_execute.schema import (
+    Plan,
+    PlanOutputParser,
+    Step,
+)
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.schema import SystemMessage
 
