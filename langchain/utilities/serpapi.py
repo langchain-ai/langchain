@@ -72,7 +72,7 @@ class SerpAPIWrapper(BaseModel):
             values,
             "serpapi_api_base_url",
             "SERPAPI_API_BASE_URL",
-            default="https://serpapi.com/search"
+            default="https://serpapi.com/search",
         )
         values["serpapi_api_base_url"] = serpapi_api_base_url
 
