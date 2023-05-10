@@ -30,7 +30,6 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
     properties.
 
     https://github.com/getzep/zep-python
-
     """
 
     def __init__(
@@ -92,9 +91,8 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
     def _get_memory(self) -> Optional[Memory]:
         """Retrieve memory from Zep"""
         from zep_python import NotFoundError
-
         try:
-            zep_memory: Memory = self.zep_client.get_memory(self.session_id)[0]
+            zep_memory: Memory = self.zep_client.get_memory(self.session_id)
         except NotFoundError:
             logger.warning(f"Session {self.session_id} not found in Zep. Returning []")
             return None
@@ -123,7 +121,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
     def search(self, query: str, limit: Optional[int] = None) -> List[SearchResult]:
         """Search Zep memory for messages matching the query"""
         from zep_python import SearchPayload
-
+        
         payload: SearchPayload = SearchPayload(text=query)
 
         return self.zep_client.search_memory(self.session_id, payload, limit=limit)
