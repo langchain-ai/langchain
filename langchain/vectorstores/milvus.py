@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
 from uuid import uuid4
 
 import numpy as np
@@ -22,6 +22,9 @@ DEFAULT_MILVUS_CONNECTION = {
     "secure": False,
 }
 
+def _default_relevance_score_fn(score: float) -> float:
+    """Return a similarity score on a scale [0, 1]."""
+    return 1 / (1 + score)
 
 class Milvus(VectorStore):
     """Wrapper around the Milvus vector database."""
@@ -35,6 +38,9 @@ class Milvus(VectorStore):
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         drop_old: Optional[bool] = False,
+        relevance_score_fn: Optional[
+            Callable[[float], float]
+        ] = _default_relevance_score_fn,
     ):
         """Initialize wrapper around the milvus vector database.
 
@@ -118,6 +124,7 @@ class Milvus(VectorStore):
         self.index_params = index_params
         self.search_params = search_params
         self.consistency_level = consistency_level
+        self.relevance_score_fn = relevance_score_fn
 
         # In order for a collection to be compatible, pk needs to be auto'id and int
         self._primary_field = "pk"
@@ -803,14 +810,6 @@ class Milvus(VectorStore):
         )
         vector_db.add_texts(texts=texts, metadatas=metadatas)
         return vector_db
-    
-    def relevance_score_fn(
-        self, 
-        score: float
-    ) -> float:
-        if "metric_type" in self.search_params and self.search_params["metric_type"] == 'L2':
-            return 1 / (1 + score)
-        raise NotImplemented
 
     def _similarity_search_with_relevance_scores(
         self,
