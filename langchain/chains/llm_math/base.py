@@ -84,7 +84,10 @@ class LLMMathChain(Chain):
                 )
             )
         except Exception as e:
-            raise ValueError(f"{e}. Please try again with a valid numerical expression")
+            raise ValueError(
+                f'LLMMathChain._evaluate("{expression}") raised error: {e}.'
+                " Please try again with a valid numerical expression"
+            )
 
         # Remove any leading and trailing brackets from the output
         return re.sub(r"^\[|\]$", "", output)
