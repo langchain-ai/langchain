@@ -15,9 +15,9 @@ Getting Started
 
 How to get started using LangChain to create an Language Model application.
 
-- `Getting Started Documentation <./getting_started/getting_started.html>`_
+- `Getting Started tutorial <./getting_started/getting_started.html>`_
 
-There are tutorials created by community and presented on YouTube.
+Tutorials created by community experts and presented on YouTube.
 
 - `Tutorials <./getting_started/tutorials.html>`_
 
