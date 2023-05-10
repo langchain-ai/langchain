@@ -808,7 +808,7 @@ class Milvus(VectorStore):
         self, 
         score: float
     ) -> float:
-        if self.search_params["metric_type"] == 'L2':
+        if "metric_type" in self.search_params and self.search_params["metric_type"] == 'L2':
             return 1 / (1 + score)
         raise NotImplemented
 
