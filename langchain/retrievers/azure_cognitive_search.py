@@ -1,3 +1,4 @@
+"""Retriever wrapper for Azure Cognitive Search."""
 from __future__ import annotations
 
 import json
@@ -14,17 +15,19 @@ from langchain.utils import get_from_dict_or_env
 class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
     """Wrapper around Azure Cognitive Search."""
 
-    service_name: str
+    service_name: str = ""
     """Name of Azure Cognitive Search service"""
-    index_name: str
+    index_name: str = ""
     """Name of Index inside Azure Cognitive Search service"""
-    api_key: str
+    api_key: str = ""
     """API Key. Both Admin and Query keys work, but for reading data it's
     recommended to use a Query key."""
     api_version: str = "2020-06-30"
     """API version"""
     aiosession: Optional[aiohttp.ClientSession] = None
     """ClientSession, in case we want to reuse connection for better performance."""
+    content_key: str = "content"
+    """Key in a retrieved result to set as the Document page_content."""
 
     class Config:
         extra = Extra.forbid
@@ -42,39 +45,38 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
         values["api_key"] = get_from_dict_or_env(
             values, "api_key", "AZURE_COGNITIVE_SEARCH_API_KEY"
         )
-
         return values
 
-    def _build_search_url(self) -> str:
+    def _build_search_url(self, query: str) -> str:
         base_url = f"https://{self.service_name}.search.windows.net/"
         endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
-        return base_url + endpoint_path
+        return base_url + endpoint_path + f"&search={query}"
 
-    def _search(self, query: str) -> List[dict]:
-        headers = {
+    @property
+    def _headers(self) -> Dict[str, str]:
+        return {
             "Content-Type": "application/json",
             "api-key": self.api_key,
         }
-        search_url = f"{self._build_search_url()}&search={query}"
-        response = requests.get(search_url, headers=headers)
+
+    def _search(self, query: str) -> List[dict]:
+        search_url = self._build_search_url(query)
+        response = requests.get(search_url, headers=self._headers)
         if response.status_code != 200:
             raise Exception(f"Error in search request: {response}")
 
         return json.loads(response.text)["value"]
 
-    async def _async_search(self, query: str) -> List[dict]:
-        headers = {
-            "Content-Type": "application/json",
-            "api-key": self.api_key,
-        }
-        search_url = f"{self._build_search_url()}&search={query}"
-
+    async def _asearch(self, query: str) -> List[dict]:
+        search_url = self._build_search_url(query)
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
-                async with session.get(search_url, headers=headers) as response:
+                async with session.get(search_url, headers=self._headers) as response:
                     response_json = await response.json()
         else:
-            async with self.aiosession.get(search_url, headers=headers) as response:
+            async with self.aiosession.get(
+                search_url, headers=self._headers
+            ) as response:
                 response_json = await response.json()
 
         return response_json["value"]
@@ -83,14 +85,14 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
         search_results = self._search(query)
 
         return [
-            Document(page_content=result.pop("content"), metadata=result)
+            Document(page_content=result.pop(self.content_key), metadata=result)
             for result in search_results
         ]
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
-        search_results = await self._async_search(query)
+        search_results = await self._asearch(query)
 
         return [
-            Document(page_content=result.pop("content"), metadata=result)
+            Document(page_content=result.pop(self.content_key), metadata=result)
             for result in search_results
         ]
