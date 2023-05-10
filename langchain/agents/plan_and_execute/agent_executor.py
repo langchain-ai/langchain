@@ -1,8 +1,13 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
+
+from pydantic import Field
 
 from langchain.agents.plan_and_execute.executors.base import BaseExecutor
 from langchain.agents.plan_and_execute.planners.base import BasePlanner
-from langchain.agents.plan_and_execute.schema import Step, StepResponse
+from langchain.agents.plan_and_execute.schema import (
+    BaseStepContainer,
+    ListStepContainer,
+)
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 
@@ -10,6 +15,7 @@ from langchain.chains.base import Chain
 class PlanAndExecute(Chain):
     planner: BasePlanner
     executer: BaseExecutor
+    step_container: BaseStepContainer = Field(default_factory=ListStepContainer)
     input_key: str = "input"
     output_key: str = "output"
 
@@ -31,17 +37,20 @@ class PlanAndExecute(Chain):
             callbacks=run_manager.get_child() if run_manager else None,
         )
         if run_manager:
-            run_manager.on_text(str(plan))
-        previous_steps: List[Tuple[Step, StepResponse]] = []
+            run_manager.on_text(str(plan), verbose=self.verbose)
         for step in plan.steps:
-            _new_inputs = {"previous_steps": previous_steps, "current_step": step}
+            _new_inputs = {"previous_steps": self.step_container, "current_step": step}
             new_inputs = {**_new_inputs, **inputs}
             response = self.executer.step(
                 new_inputs,
                 callbacks=run_manager.get_child() if run_manager else None,
             )
             if run_manager:
-                run_manager.on_text(f"*****\n\nStep: {step.value}")
-                run_manager.on_text(f"\n\nResponse: {response.response}")
-            previous_steps.append((step, response))
-        return {self.output_key: previous_steps[-1][1].response}
+                run_manager.on_text(
+                    f"*****\n\nStep: {step.value}", verbose=self.verbose
+                )
+                run_manager.on_text(
+                    f"\n\nResponse: {response.response}", verbose=self.verbose
+                )
+            self.step_container.add_step(step, response)
+        return {self.output_key: self.step_container.get_final_response()}
