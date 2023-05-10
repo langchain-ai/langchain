@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.base import Chain
-from langchain.experimental.agents.plan_and_execute.schema import StepResponse
+from langchain.experimental.plan_and_execute.schema import StepResponse
 
 
 class BaseExecutor(BaseModel):

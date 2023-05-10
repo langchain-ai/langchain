@@ -2,8 +2,8 @@ import re
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
-from langchain.experimental.agents.plan_and_execute.planners.base import LLMPlanner
-from langchain.experimental.agents.plan_and_execute.schema import (
+from langchain.experimental.plan_and_execute.planners.base import LLMPlanner
+from langchain.experimental.plan_and_execute.schema import (
     Plan,
     PlanOutputParser,
     Step,

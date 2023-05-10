@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
-from langchain.experimental.agents.plan_and_execute.schema import Plan, PlanOutputParser
+from langchain.experimental.plan_and_execute.schema import Plan, PlanOutputParser
 
 
 class BasePlanner(BaseModel):
