@@ -24,3 +24,4 @@ jobs:
     name: Python ${{ matrix.python-version }} ${{ matrix.test_type }}
     steps:
       - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
