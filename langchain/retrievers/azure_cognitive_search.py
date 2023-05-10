@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import List, Dict, Optional
-
 import json
+from typing import Dict, List, Optional
+
 import aiohttp
 import requests
 from pydantic import BaseModel, Extra, root_validator
@@ -13,11 +13,12 @@ from langchain.utils import get_from_dict_or_env
 
 class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
     """Wrapper around Azure Cognitive Search."""
+
     service_name: str
     """Name of Azure Cognitive Search service"""
     index_name: str
     """Name of Index inside Azure Cognitive Search service"""
-    api_key: Optional[str] = None
+    api_key: str
     """API Key. Both Admin and Query keys work, but as we only read data it is recommended to use a Query key"""
     api_version: str = "2020-06-30"
     """API version"""
@@ -43,7 +44,6 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
 
         return values
 
-
     def _build_search_url(self) -> str:
         return f"https://{self.service_name}.search.windows.net/indexes/{self.index_name}/docs?api-version={self.api_version}"
 
@@ -55,7 +55,7 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
         search_url = f"{self._build_search_url()}&search={query}"
         response = requests.get(search_url, headers=headers)
         if response.status_code != 200:
-            raise Exception(f"Error in search request: {response}") 
+            raise Exception(f"Error in search request: {response}")
 
         return json.loads(response.text)["value"]
 
@@ -69,10 +69,12 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
                 async with session.get(search_url, headers=headers) as response:
-                    return await response.json()
+                    response_json = await response.json()
         else:
             async with self.aiosession.get(search_url, headers=headers) as response:
-                return await response.json()
+                response_json = await response.json()
+
+        return response_json["value"]
 
     def get_relevant_documents(self, query: str) -> List[Document]:
         search_results = self._search(query)
@@ -87,5 +89,5 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
 
         return [
             Document(page_content=result.pop("content"), metadata=result)
-            for result in search_results["value"]
+            for result in search_results
         ]
