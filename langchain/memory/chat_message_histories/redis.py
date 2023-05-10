@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from langchain.schema import (
     AIMessage,
@@ -52,11 +52,11 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         messages = messages_from_dict(items)
         return messages
 
-    def add_user_message(self, message: str) -> None:
-        self.append(HumanMessage(content=message))
+    def add_user_message(self, message: str, **kwargs: Any) -> None:
+        self.append(HumanMessage(content=message, additional_kwargs=kwargs))
 
-    def add_ai_message(self, message: str) -> None:
-        self.append(AIMessage(content=message))
+    def add_ai_message(self, message: str, **kwargs: Any) -> None:
+        self.append(AIMessage(content=message, additional_kwargs=kwargs))
 
     def append(self, message: BaseMessage) -> None:
         """Append the message to the record in Redis"""

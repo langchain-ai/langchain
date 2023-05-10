@@ -83,13 +83,13 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
             if "messages" in data and len(data["messages"]) > 0:
                 self.messages = messages_from_dict(data["messages"])
 
-    def add_user_message(self, message: str) -> None:
+    def add_user_message(self, message: str, **kwargs: Any) -> None:
         """Add a user message to the memory."""
-        self.upsert_messages(HumanMessage(content=message))
+        self.upsert_messages(HumanMessage(content=message, additional_kwargs=kwargs))
 
-    def add_ai_message(self, message: str) -> None:
+    def add_ai_message(self, message: str, **kwargs: Any) -> None:
         """Add a AI message to the memory."""
-        self.upsert_messages(AIMessage(content=message))
+        self.upsert_messages(AIMessage(content=message, additional_kwargs=kwargs))
 
     def upsert_messages(self, new_message: Optional[BaseMessage] = None) -> None:
         """Update the Firestore document."""

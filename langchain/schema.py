@@ -254,11 +254,11 @@ class BaseChatMessageHistory(ABC):
     messages: List[BaseMessage]
 
     @abstractmethod
-    def add_user_message(self, message: str) -> None:
+    def add_user_message(self, message: str, **kwargs: Any) -> None:
         """Add a user message to the store"""
 
     @abstractmethod
-    def add_ai_message(self, message: str) -> None:
+    def add_ai_message(self, message: str, **kwargs: Any) -> None:
         """Add an AI message to the store"""
 
     @abstractmethod
