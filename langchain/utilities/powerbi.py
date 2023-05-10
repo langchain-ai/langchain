@@ -120,6 +120,10 @@ class PowerBIDataset(BaseModel):
         """Get the tables that still need to be queried."""
         todo = deepcopy(tables_todo)
         for table in todo:
+            if table not in self.table_names:
+                _LOGGER.warning("Table %s not found in dataset.", table)
+                todo.remove(table)
+                continue
             if table in self.schemas:
                 todo.remove(table)
         return todo
