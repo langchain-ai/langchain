@@ -62,14 +62,14 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         return ids
 
     def get_relevant_documents(
-        self, query: str, where_filter: Optional[Dict[str, object]] = None
+        self, query: str, where_filter: Optional[Dict[str, object]] = None, vector: Optional[List[float]] = None
     ) -> List[Document]:
         """Look up similar documents in Weaviate."""
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         if where_filter:
             query_obj = query_obj.with_where(where_filter)
 
-        result = query_obj.with_hybrid(query, alpha=self.alpha).with_limit(self.k).do()
+        result = query_obj.with_hybrid(query, alpha=self.alpha, vector=vector).with_limit(self.k).do()
         if "errors" in result:
             raise ValueError(f"Error during query: {result['errors']}")
 
