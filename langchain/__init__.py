@@ -113,9 +113,5 @@ __all__ = [
     "VectorDBQAWithSourcesChain",
     "QAWithSourcesChain",
     "PALChain",
-<<<<<<< HEAD
-    "NotionAPIWrapper",
-=======
     "LlamaCpp",
->>>>>>> master
 ]
