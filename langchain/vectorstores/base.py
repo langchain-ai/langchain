@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import asyncio
+import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
-import warnings
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -351,8 +351,10 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
                 raise ValueError(f"search_type of {search_type} not allowed.")
             if search_type == "similarity_score_threshold":
                 score_threshold = values["search_kwargs"].get("score_threshold")
-                if (score_threshold is None) or (
-                    not isinstance(score_threshold, float)
+                if (
+                    (not isinstance(score_threshold, float))
+                    or (score_threshold <= 0)
+                    or (score_threshold >= 1)
                 ):
                     raise ValueError(
                         "`score_threshold` is not specified with a float value(0~1)\
