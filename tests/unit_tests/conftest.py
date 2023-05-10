@@ -6,6 +6,19 @@ import pytest
 from pytest import Config, Function
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--only-extended",
+        action="store_true",
+        help="Only run extended tests. Does not allow skipping any extended tests.",
+    )
+    parser.addoption(
+        "--only-core",
+        action="store_true",
+        help="Only run core tests",
+    )
+
+
 def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> None:
     """Add implementations for handling custom markers.
 
@@ -26,9 +39,16 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
     # Used to avoid repeated calls to `util.find_spec`
     required_pkgs_info: Dict[str, bool] = {}
 
+    only_extended = config.getoption("--only-extended") or False
+    only_core = config.getoption("--only-core") or False
+
     for item in items:
         requires_marker = item.get_closest_marker("requires")
         if requires_marker is not None:
+            if only_core:
+                item.add_marker(pytest.mark.skip(reason="Skipping not a core test."))
+                continue
+
             # Iterate through the list of required packages
             required_pkgs = requires_marker.args
             for pkg in required_pkgs:
@@ -38,7 +58,20 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                     required_pkgs_info[pkg] = util.find_spec(pkg) is not None
 
                 if not required_pkgs_info[pkg]:
-                    # If the package is not installed, we immediately break
-                    # and mark the test as skipped.
-                    item.add_marker(pytest.mark.skip(reason=f"requires pkg: `{pkg}`"))
-                    break
+                    if only_extended:
+                        raise ValueError(
+                            f"Package `{pkg}` is not installed but is required for "
+                            f"extended tests."
+                        )
+                    else:
+                        # If the package is not installed, we immediately break
+                        # and mark the test as skipped.
+                        item.add_marker(
+                            pytest.mark.skip(reason=f"Requires pkg: `{pkg}`")
+                        )
+                        break
+        else:
+            if only_extended:
+                item.add_marker(
+                    pytest.mark.skip(reason="Skipping not an extended test.")
+                )
