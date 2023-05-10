@@ -113,10 +113,15 @@ class YoutubeLoader(BaseLoader):
         self.language = language
         self.continue_on_failure = continue_on_failure
 
+    @staticmethod
+    def extract_video_id(youtube_url: str) -> str:
+        """Extract video id from common YT urls."""
+        return youtube_url.split("youtube.com/watch?v=")[-1]
+
     @classmethod
     def from_youtube_url(cls, youtube_url: str, **kwargs: Any) -> YoutubeLoader:
         """Given youtube URL, load video."""
-        video_id = youtube_url.split("youtube.com/watch?v=")[-1]
+        video_id = cls.extract_video_id(youtube_url)
         return cls(video_id, **kwargs)
 
     def load(self) -> List[Document]:
