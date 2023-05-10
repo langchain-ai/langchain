@@ -230,6 +230,11 @@ class LlamaCpp(LLM):
             return combined_text_output
         else:
             params = self._get_parameters(stop)
+
+            """Set max tokens."""
+            if params["max_tokens"] < 0:
+                params["max_tokens"] = self._get_max_tokens(prompt)
+
             result = self.client(prompt=prompt, **params)
             return result["choices"][0]["text"]
 
@@ -282,3 +287,30 @@ class LlamaCpp(LLM):
                     token=token, verbose=self.verbose, log_probs=log_probs
                 )
             yield chunk
+
+    def _get_max_tokens(self, prompt: str) -> int:
+        """Calculate the maximum number of tokens to generate.
+
+        Args:
+            prompt: The prompt to use for generation.
+
+        Returns:
+            The maximum number of tokens to generate.
+        """
+        from llama_cpp import llama_cpp
+
+        prompt_tokens: List[llama_cpp.llama_token] = self.client.tokenize(
+            b" " + prompt.encode("utf-8")
+        )
+
+        if len(prompt_tokens) >= int(llama_cpp.llama_n_ctx(self.client.ctx)):
+            raise ValueError(
+                f"""Requested tokens exceed context window of
+                {llama_cpp.llama_n_ctx(self.client.ctx)}"""
+            )
+        else:
+            max_tokens = int(llama_cpp.llama_n_ctx(self.client.ctx)) - len(
+                prompt_tokens
+            )
+
+        return max_tokens
