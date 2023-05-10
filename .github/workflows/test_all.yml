@@ -1,4 +1,5 @@
-name: test
+# Run unit tests with all optional packages installed.
+name: test_all
 
 on:
   push:
@@ -25,8 +26,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           poetry-version: "1.4.2"
-          cache-key: "main"
-          install-command: "poetry install"
+          cache-key: "extended"
+          install-command: "poetry install -E extended_testing"
       - name: Run unit tests
         run: |
           make test
