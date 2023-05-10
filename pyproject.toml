@@ -77,6 +77,7 @@ pexpect = {version = "^4.8.0", optional = true}
 pyvespa = {version = "^0.33.0", optional = true}
 O365 = {version = "^2.0.26", optional = true}
 jq = {version = "^1.4.1", optional = true}
+pdfminer-six = {version = "^20221105", optional = true}
 
 
 [tool.poetry.group.docs.dependencies]
@@ -161,6 +162,8 @@ cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
 azure = ["azure-identity", "azure-cosmos", "openai", "azure-core"]
 all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "lark", "pexpect", "pyvespa", "O365", "jq"]
+# An extra used to be able to add extended testing.
+extended_testing = ["pypdf", "pdfminer.six"]
 
 [tool.ruff]
 select = [
