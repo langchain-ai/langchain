@@ -179,16 +179,19 @@ class PowerBIDataset(BaseModel):
             self.schemas[table] = json_to_md(result["results"][0]["tables"][0]["rows"])
         return self._get_schema_for_tables(tables_requested)
 
+    def _create_json_content(self, command: str) -> dict[str, Any]:
+        """Create the json content for the request."""
+        return {
+            "queries": [{"query": rf"{command}"}],
+            "impersonatedUserName": self.impersonated_user_name,
+            "serializerSettings": {"includeNulls": True},
+        }
+
     def run(self, command: str) -> Any:
         """Execute a DAX command and return a json representing the results."""
-
         result = requests.post(
             self.request_url,
-            json={
-                "queries": [{"query": command}],
-                "impersonatedUserName": self.impersonated_user_name,
-                "serializerSettings": {"includeNulls": True},
-            },
+            json=self._create_json_content(command),
             headers=self.headers,
             timeout=10,
         )
@@ -196,22 +199,15 @@ class PowerBIDataset(BaseModel):
 
     async def arun(self, command: str) -> Any:
         """Execute a DAX command and return the result asynchronously."""
-        json_content = (
-            {
-                "queries": [{"query": command}],
-                "impersonatedUserName": self.impersonated_user_name,
-                "serializerSettings": {"includeNulls": True},
-            },
-        )
         if self.aiosession:
             async with self.aiosession.post(
-                self.request_url, headers=self.headers, json=json_content, timeout=10
+                self.request_url, headers=self.headers, json=self._create_json_content(command), timeout=10
             ) as response:
                 response_json = await response.json()
                 return response_json
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                self.request_url, headers=self.headers, json=json_content, timeout=10
+                self.request_url, headers=self.headers, json=self._create_json_content(command), timeout=10
             ) as response:
                 response_json = await response.json()
                 return response_json

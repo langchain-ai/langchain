@@ -73,10 +73,19 @@ class QueryPowerBITool(BaseTool):
             self.session_cache[tool_input] = json_to_md(
                 self.session_cache[tool_input]["results"][0]["tables"][0]["rows"]
             )
-        if "error" in self.session_cache[tool_input]:
+            return self.session_cache[tool_input]
+        if (
+            "error" in self.session_cache[tool_input]
+            and "pbi.error" in self.session_cache[tool_input]["error"]
+            and "details" in self.session_cache[tool_input]["error"]["pbi.error"]
+        ):
             self.session_cache[
                 tool_input
-            ] = f'{BAD_REQUEST_RESPONSE}, error was {self.session_cache[tool_input]["error"]}'
+            ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]["pbi.error"]["details"][0]["detail"]}'
+            return self.session_cache[tool_input]
+        self.session_cache[
+            tool_input
+        ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]}'
         return self.session_cache[tool_input]
 
     async def _arun(
@@ -103,10 +112,19 @@ class QueryPowerBITool(BaseTool):
             self.session_cache[tool_input] = json_to_md(
                 self.session_cache[tool_input]["results"][0]["tables"][0]["rows"]
             )
-        if "error" in self.session_cache[tool_input]:
+            return self.session_cache[tool_input]
+        if (
+            "error" in self.session_cache[tool_input]
+            and "pbi.error" in self.session_cache[tool_input]["error"]
+            and "details" in self.session_cache[tool_input]["error"]["pbi.error"]
+        ):
             self.session_cache[
                 tool_input
-            ] = f'{BAD_REQUEST_RESPONSE}, error was {self.session_cache[tool_input]["error"]}'
+            ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]["pbi.error"]["details"][0]["detail"]}'
+            return self.session_cache[tool_input]
+        self.session_cache[
+            tool_input
+        ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]}'
         return self.session_cache[tool_input]
 
 
