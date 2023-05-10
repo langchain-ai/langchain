@@ -30,14 +30,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           poetry-version: "1.4.2"
           cache-key: "main"
-          install-command: |
-            if [ "${{ matrix.test_type }}" == "core" ]; then
-              echo "Running core tests, installing dependencies with poetry..."
-              poetry install
-            else
-              echo "Running extended tests, installing dependencies with poetry..."
-              poetry install -E extended_testing
-            fi
+          install-command: "poetry install"
       - name: Run unit tests
         run: |
           make test
