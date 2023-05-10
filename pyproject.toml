@@ -81,8 +81,7 @@ pdfminer-six = {version = "^20221105", optional = true}
 docarray = {version="^0.31.0", optional=true}
 protobuf = {version="3.19", optional=true}
 hnswlib = {version="^0.7.0", optional=true}
-zep-python = {version="^0.23", optional=true}
-
+zep-python = {version="^0.25", optional=true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
