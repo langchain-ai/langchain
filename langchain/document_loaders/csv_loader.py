@@ -36,13 +36,7 @@ class CSVLoader(BaseLoader):
         self.file_path = file_path
         self.source_column = source_column
         self.encoding = encoding
-        if csv_args is None:
-            self.csv_args = {
-                "delimiter": csv.Dialect.delimiter,
-                "quotechar": csv.Dialect.quotechar,
-            }
-        else:
-            self.csv_args = csv_args
+        self.csv_args = csv_args or {}
 
     def load(self) -> List[Document]:
         """Load data into document objects."""

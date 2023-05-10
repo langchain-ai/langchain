@@ -217,7 +217,6 @@ class ConfluenceLoader(BaseLoader):
                 label=label,
                 limit=limit,
                 max_pages=max_pages,
-                expand="body.storage.value",
             )
             ids_by_label = [page["id"] for page in pages]
             if page_ids:
