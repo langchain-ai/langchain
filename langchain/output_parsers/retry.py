@@ -78,7 +78,7 @@ class RetryOutputParser(BaseOutputParser[T]):
 
     @property
     def _type(self) -> str:
-        return f"retry_{self.parser._type}"
+        return "retry"
 
 
 class RetryWithErrorOutputParser(BaseOutputParser[T]):

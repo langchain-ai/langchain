@@ -45,4 +45,4 @@ class OutputFixingParser(BaseOutputParser[T]):
 
     @property
     def _type(self) -> str:
-        return f"output_fixing_{self.parser._type}"
+        return "output_fixing"
