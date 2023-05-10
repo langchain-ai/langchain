@@ -1,9 +1,9 @@
 from typing import List
 
 from langchain.agents.agent import AgentExecutor
-from langchain.agents.plan_and_execute.executors.base import ChainExecutor
 from langchain.agents.structured_chat.base import StructuredChatAgent
 from langchain.base_language import BaseLanguageModel
+from langchain.experimental.plan_and_execute.executors.base import ChainExecutor
 from langchain.tools import BaseTool
 
 HUMAN_MESSAGE_TEMPLATE = """Previous steps: {previous_steps}

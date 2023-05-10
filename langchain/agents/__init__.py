@@ -26,11 +26,6 @@ from langchain.agents.initialize import initialize_agent
 from langchain.agents.load_tools import get_all_tool_names, load_tools
 from langchain.agents.loading import load_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
-from langchain.agents.plan_and_execute.agent_executor import PlanAndExecute
-from langchain.agents.plan_and_execute.executors.agent_executor import (
-    load_agent_executor,
-)
-from langchain.agents.plan_and_execute.planners.chat_planner import load_chat_planner
 from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.agents.structured_chat.base import StructuredChatAgent
@@ -68,7 +63,4 @@ __all__ = [
     "load_agent",
     "load_tools",
     "tool",
-    "PlanAndExecute",
-    "load_chat_planner",
-    "load_agent_executor",
 ]
