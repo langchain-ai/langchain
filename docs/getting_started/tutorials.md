@@ -2,7 +2,7 @@
 
 This is a collection of `LangChain` tutorials on `YouTube`.
 
-[LangChain Crash Course: Build an AutoGPT app in 25 minutes!](https://youtu.be/MlK6SIjcjE8) by [Nicholas Renotte](https://www.youtube.com/@NicholasRenotte)
+[LangChain Crash Course: Build an AutoGPT app in 25 minutes](https://youtu.be/MlK6SIjcjE8) by [Nicholas Renotte](https://www.youtube.com/@NicholasRenotte)
 
 
 [LangChain Crash Course - Build apps with language models](https://youtu.be/LbT1yp6quS8) by [Patrick Loeber](https://www.youtube.com/@patloeber)
