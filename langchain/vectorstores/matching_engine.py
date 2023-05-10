@@ -43,7 +43,7 @@ class MatchingEngine(VectorStore):
         embedding: Embeddings,
         gcs_client: storage.Client,
         gcs_bucket_name: str,
-        credentials: Credentials = None,
+        credentials: Optional[Credentials] = None,
     ):
         """Vertex Matching Engine implementation of the vector store.
 
@@ -63,14 +63,15 @@ class MatchingEngine(VectorStore):
         Attributes:
             project_id: The GCS project id.
             index: The created index class. See
-            ~:func:`MatchingEngine.from_components`.
+                ~:func:`MatchingEngine.from_components`.
             endpoint: The created endpoint class. See
-            ~:func:`MatchingEngine.from_components`.
-            gcs_client: The Google Cloud Storage client.
-            credentials (Optional): Created GCP credentials.
+                ~:func:`MatchingEngine.from_components`.
             embedding: A :class:`Embeddings` that will be used for
-            embedding the text sent. If none is sent, then the
-            multilingual Tensorflow Universal Sentence Encoder will be used.
+                embedding the text sent. If none is sent, then the
+                multilingual Tensorflow Universal Sentence Encoder will be used.
+            gcs_client: The GCS client.
+            gcs_bucket_name: The GCS bucket name.
+            credentials (Optional): Created GCP credentials.
         """
         super().__init__()
         self._validate_google_libraries_installation()
@@ -237,7 +238,7 @@ class MatchingEngine(VectorStore):
         raise NotImplementedError(
             "This method is not implemented. Instead, you should initialize the class"
             " with `MatchingEngine.from_components(...)` and then call "
-            "`from_texts`"
+            "`add_texts`"
         )
 
     @classmethod
@@ -341,6 +342,9 @@ class MatchingEngine(VectorStore):
 
         Args:
             index_id: The created index id.
+            project_id: The project to retrieve index from.
+            region: Location to retrieve index from.
+            credentials: GCS credentials.
 
         Returns:
             A configured MatchingEngineIndex.
@@ -364,12 +368,12 @@ class MatchingEngine(VectorStore):
 
         Args:
             endpoint_id: The created endpoint id.
+            project_id: The project to retrieve index from.
+            region: Location to retrieve index from.
+            credentials: GCS credentials.
 
         Returns:
             A configured MatchingEngineIndexEndpoint.
-            :param project_id:
-            :param region:
-            :param credentials:
         """
 
         from google.cloud import aiplatform
@@ -429,5 +433,9 @@ class MatchingEngine(VectorStore):
 
     @classmethod
     def _get_default_embeddings(cls) -> TensorflowHubEmbeddings:
-        """This function returns the default embedding."""
+        """This function returns the default embedding.
+
+        Returns:
+            Default TensorflowHubEmbeddings to use.
+        """
         return TensorflowHubEmbeddings()
