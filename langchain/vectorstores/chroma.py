@@ -312,11 +312,11 @@ class Chroma(VectorStore):
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
 
-    def get(self, include: Optional[List] = None) -> Chroma:
+    def get(self, include: Optional[List[str]] = None) -> Dict[str, Any]:
         """Gets the collection.
         
         Args:
-            include (Optional[List], optional): List of fields to include from db. Defaults to None.
+            include (Optional[List[str]]): List of fields to include from db. Defaults to None.
         """
         if include is not None:
             return self._collection.get(include=include)
