@@ -23,8 +23,8 @@ def _check_docarray_import() -> None:
         da_version = docarray.__version__.split(".")
         if int(da_version[0]) == 0 and int(da_version[1]) <= 30:
             raise ValueError(
-                f"To use the DocArrayHnswSearch VectorStore the docarray version >=0.31.0 is expected, "
-                f"received: {docarray.__version__}."
+                f"To use the DocArrayHnswSearch VectorStore the docarray "
+                f"version >=0.31.0 is expected, received: {docarray.__version__}."
                 f"To upgrade, please run: `pip install -U docarray`."
             )
     except ImportError:

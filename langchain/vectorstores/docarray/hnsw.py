@@ -10,8 +10,8 @@ from langchain.vectorstores.docarray.base import DocArrayIndex, _check_docarray_
 class DocArrayHnswSearch(DocArrayIndex):
     """Wrapper around HnswLib storage.
 
-    To use it, you should have the ``docarray[hnswlib]`` package with version >=0.31.0 installed.
-    You can install it with `pip install "langchain[hnswlib]"`.
+    To use it, you should have the ``docarray[hnswlib]`` package with version >=0.31.0
+    installed. You can install it with `pip install "langchain[hnswlib]"`.
     """
 
     def __init__(
