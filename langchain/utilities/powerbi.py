@@ -201,13 +201,19 @@ class PowerBIDataset(BaseModel):
         """Execute a DAX command and return the result asynchronously."""
         if self.aiosession:
             async with self.aiosession.post(
-                self.request_url, headers=self.headers, json=self._create_json_content(command), timeout=10
+                self.request_url,
+                headers=self.headers,
+                json=self._create_json_content(command),
+                timeout=10,
             ) as response:
                 response_json = await response.json()
                 return response_json
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                self.request_url, headers=self.headers, json=self._create_json_content(command), timeout=10
+                self.request_url,
+                headers=self.headers,
+                json=self._create_json_content(command),
+                timeout=10,
             ) as response:
                 response_json = await response.json()
                 return response_json
