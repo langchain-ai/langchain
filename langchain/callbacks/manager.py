@@ -6,7 +6,7 @@ import os
 import warnings
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union, cast
 from uuid import UUID, uuid4
 
 from langchain.callbacks.base import (
@@ -21,6 +21,7 @@ from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers.base import TracerSession
 from langchain.callbacks.tracers.langchain import LangChainTracer, LangChainTracerV2
+from langchain.callbacks.tracers.schemas import TracerSessionV2
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
@@ -28,7 +29,7 @@ Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
 )
-tracing_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(
+tracing_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
 
@@ -48,7 +49,7 @@ def tracing_enabled(
 ) -> Generator[TracerSession, None, None]:
     """Get Tracer in a context manager."""
     cb = LangChainTracer()
-    session = cb.load_session(session_name)
+    session = cast(TracerSession, cb.load_session(session_name))
     tracing_callback_var.set(cb)
     yield session
     tracing_callback_var.set(None)
@@ -57,15 +58,18 @@ def tracing_enabled(
 @contextmanager
 def tracing_v2_enabled(
     session_name: str = "default",
-) -> Generator[TracerSession, None, None]:
+    example_id: Optional[Union[str, UUID]] = None,
+) -> Generator[TracerSessionV2, None, None]:
     """Get the experimental tracer handler in a context manager."""
     # Issue a warning that this is experimental
     warnings.warn(
         "The experimental tracing v2 is in development. "
         "This is not yet stable and may change in the future."
     )
-    cb = LangChainTracerV2()
-    session = cb.load_session(session_name)
+    if isinstance(example_id, str):
+        example_id = UUID(example_id)
+    cb = LangChainTracerV2(example_id=example_id)
+    session = cast(TracerSessionV2, cb.new_session(session_name))
     tracing_callback_var.set(cb)
     yield session
     tracing_callback_var.set(None)

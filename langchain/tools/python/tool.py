@@ -36,7 +36,6 @@ class PythonREPLTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
     ) -> Any:
         """Use the tool."""
         if self.sanitize_input:
@@ -47,7 +46,6 @@ class PythonREPLTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-        **kwargs: Any,
     ) -> Any:
         """Use the tool asynchronously."""
         raise NotImplementedError("PythonReplTool does not support async")
