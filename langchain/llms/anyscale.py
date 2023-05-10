@@ -98,8 +98,8 @@ class Anyscale(LLM):
         
         anyscale_service_endpoint = f'{self.anyscale_service_url}/{self.anyscale_service_route}'
         headers = {'Authorization': f'Bearer {self.anyscale_service_token}'}
-        params = {'prompt':prompt}
-        resp = requests.get(anyscale_service_endpoint, headers=headers, params=params)
+        body = {'prompt':prompt}
+        resp = requests.post(anyscale_service_endpoint, headers=headers, json=body)
             
         if resp.status_code != 200:
             raise ValueError(f"Error returned by service")
