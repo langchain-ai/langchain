@@ -1,3 +1,4 @@
+from abc import ABC
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
@@ -11,9 +12,6 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 if TYPE_CHECKING:
     from docarray import BaseDoc
     from docarray.index.abstract import BaseDocIndex
-else:
-    BaseDoc = object
-    BaseDocIndex = object
 
 
 def _check_docarray_import() -> None:
@@ -34,7 +32,20 @@ def _check_docarray_import() -> None:
         )
 
 
-class DocArrayIndex(VectorStore):
+def get_doc_cls(**embeddings_params: Any) -> Type[BaseDoc]:
+    """Get docarray Document class describing the schema of DocIndex."""
+    from docarray import BaseDoc
+    from docarray.typing import NdArray
+
+    class DocArrayDoc(BaseDoc):
+        text: Optional[str]
+        embedding: Optional[NdArray] = Field(**embeddings_params)
+        metadata: Optional[dict]
+
+    return DocArrayDoc
+
+
+class DocArrayIndex(VectorStore, ABC):
     def __init__(
         self,
         doc_index: BaseDocIndex,
@@ -44,19 +55,6 @@ class DocArrayIndex(VectorStore):
         self.doc_index = doc_index
         self.doc_cls = doc_index._schema
         self.embedding = embedding
-
-    @staticmethod
-    def _get_doc_cls(embeddings_params: Dict[str, Any]) -> Type[BaseDoc]:
-        """Get docarray Document class describing the schema of DocIndex."""
-        from docarray import BaseDoc
-        from docarray.typing import NdArray
-
-        class DocArrayDoc(BaseDoc):
-            text: Optional[str]
-            embedding: Optional[NdArray] = Field(**embeddings_params)
-            metadata: Optional[dict]
-
-        return DocArrayDoc
 
     def add_texts(
         self,

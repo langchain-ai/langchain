@@ -1,10 +1,14 @@
 """Wrapper around Hnswlib store."""
 from __future__ import annotations
 
-from typing import Any, List, Optional, Type
+from typing import Any, List, Literal, Optional
 
 from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.docarray.base import DocArrayIndex, _check_docarray_import
+from langchain.vectorstores.docarray.base import (
+    DocArrayIndex,
+    _check_docarray_import,
+    get_doc_cls,
+)
 
 
 class DocArrayHnswSearch(DocArrayIndex):
@@ -14,42 +18,66 @@ class DocArrayHnswSearch(DocArrayIndex):
     installed. You can install it with `pip install "langchain[hnswlib]"`.
     """
 
-    def __init__(
-        self, embedding: Embeddings, work_dir: str, n_dim: int, **kwargs: Any
-    ) -> None:
+    @classmethod
+    def from_params(
+        cls,
+        embedding: Embeddings,
+        work_dir: str,
+        n_dim: int,
+        dist_metric: Literal["cosine", "ip", "l2"] = "cosine",
+        max_elements: int = 1024,
+        index: bool = True,
+        ef_construction: int = 200,
+        ef: int = 10,
+        M: int = 16,
+        allow_replace_deleted: bool = True,
+        num_threads: int = 1,
+        **kwargs: Any,
+    ) -> DocArrayHnswSearch:
         """Initialize DocArrayHnswSearch store.
 
         Args:
             embedding (Embeddings): Embedding function.
             work_dir (str): path to the location where all the data will be stored.
             n_dim (int): dimension of an embedding.
-            **kwargs: Other keyword arguments to be passed to the _get_doc_cls method.
+            dist_metric (str): Distance metric for DocArrayHnswSearch can be one of:
+                "cosine", "ip", and "l2". Defaults to "cosine".
+             max_elements (int): Maximum number of vectors that can be stored.
+                 Defaults to 1024.
+             index (bool): Whether an index should be built for this field.
+                 Defaults to True.
+             ef_construction (int): defines a construction time/accuracy trade-off.
+                 Defaults to 200.
+             ef (int): parameter controlling query time/accuracy trade-off.
+                 Defaults to 10.
+             M (int): parameter that defines the maximum number of outgoing
+                 connections in the graph. Defaults to 16.
+             allow_replace_deleted (bool): Enables replacing of deleted elements
+                 with new added ones. Defaults to True.
+             num_threads (int): Sets the number of cpu threads to use. Defaults to 1.
+            **kwargs: Other keyword arguments to be passed to the get_doc_cls method.
         """
         _check_docarray_import()
         from docarray.index import HnswDocumentIndex
 
-        kwargs.setdefault("dist_metric", "cosine")
-        kwargs.setdefault("max_elements", 1024)
-        kwargs.setdefault("index", True)
-        kwargs.setdefault("ef_construction", 200)
-        kwargs.setdefault("ef", 10)
-        kwargs.setdefault("M", 16)
-        kwargs.setdefault("allow_replace_deleted", True)
-        kwargs.setdefault("num_threads", 1)
-
-        doc_cls = self._get_doc_cls(
-            {
-                "dim": n_dim,
-                "space": kwargs["dist_metric"],
-                **{k: v for k, v in kwargs.items() if k != "dist_metric"},
-            }
+        doc_cls = get_doc_cls(
+            n_dim=n_dim,
+            space=dist_metric,
+            max_elements=max_elements,
+            index=index,
+            ef_construction=ef_construction,
+            ef=ef,
+            M=M,
+            allow_replace_deleted=allow_replace_deleted,
+            num_threads=num_threads,
+            **kwargs,
         )
         doc_index = HnswDocumentIndex[doc_cls](work_dir=work_dir)  # type: ignore
-        super().__init__(doc_index, embedding)
+        return cls(doc_index, embedding)
 
     @classmethod
     def from_texts(
-        cls: Type[DocArrayHnswSearch],
+        cls,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -77,6 +105,6 @@ class DocArrayHnswSearch(DocArrayIndex):
         if n_dim is None:
             raise ValueError("`n_dim` parameter has not been set.")
 
-        store = cls(work_dir=work_dir, n_dim=n_dim, embedding=embedding, **kwargs)
+        store = cls.from_params(embedding, work_dir, n_dim, **kwargs)
         store.add_texts(texts=texts, metadatas=metadatas)
         return store
