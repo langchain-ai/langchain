@@ -3,9 +3,9 @@ from typing import Any, List, Optional
 
 from pydantic import BaseModel
 
-from langchain.agents.plan_and_execute.schema import Plan, PlanOutputParser
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
+from langchain.experimental.plan_and_execute.schema import Plan, PlanOutputParser
 
 
 class BasePlanner(BaseModel):
