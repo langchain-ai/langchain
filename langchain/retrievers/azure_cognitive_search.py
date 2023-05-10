@@ -19,7 +19,8 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
     index_name: str
     """Name of Index inside Azure Cognitive Search service"""
     api_key: str
-    """API Key. Both Admin and Query keys work, but as we only read data it is recommended to use a Query key"""
+    """API Key. Both Admin and Query keys work, but for reading data it's
+    recommended to use a Query key."""
     api_version: str = "2020-06-30"
     """API version"""
     aiosession: Optional[aiohttp.ClientSession] = None
@@ -45,7 +46,9 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
         return values
 
     def _build_search_url(self) -> str:
-        return f"https://{self.service_name}.search.windows.net/indexes/{self.index_name}/docs?api-version={self.api_version}"
+        base_url = f"https://{self.service_name}.search.windows.net/"
+        endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
+        return base_url + endpoint_path
 
     def _search(self, query: str) -> List[dict]:
         headers = {

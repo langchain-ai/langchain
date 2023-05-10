@@ -1,7 +1,6 @@
 """Test Azure Cognitive Search wrapper."""
 
 import os
-from typing import List
 
 from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
 from langchain.schema import Document
