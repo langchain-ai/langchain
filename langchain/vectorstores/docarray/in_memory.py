@@ -7,7 +7,6 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.docarray.base import (
     DocArrayIndex,
     _check_docarray_import,
-    get_doc_cls,
 )
 
 
@@ -39,7 +38,7 @@ class DocArrayInMemorySearch(DocArrayIndex):
         _check_docarray_import()
         from docarray.index import InMemoryExactNNIndex
 
-        doc_cls = get_doc_cls(space=metric, **kwargs)
+        doc_cls = cls._get_doc_cls(space=metric, **kwargs)
         doc_index = InMemoryExactNNIndex[doc_cls]()  # type: ignore
         return cls(doc_index, embedding)
 

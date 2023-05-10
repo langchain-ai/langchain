@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import pytest
@@ -8,9 +9,13 @@ from langchain.vectorstores.docarray import DocArrayInMemorySearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
-def test_in_memory_vec_store_from_texts() -> None:
+@pytest.fixture
+def texts() -> List[str]:
+    return ["foo", "bar", "baz"]
+
+
+def test_from_texts(texts: List[str]) -> None:
     """Test end to end construction and simple similarity search."""
-    texts = ["foo", "bar", "baz"]
     docsearch = DocArrayInMemorySearch.from_texts(
         texts,
         FakeEmbeddings(),
@@ -19,21 +24,18 @@ def test_in_memory_vec_store_from_texts() -> None:
     assert docsearch.doc_index.num_docs() == 3
 
 
-def test_in_memory_vec_store_add_texts(tmp_path: Path) -> None:
+def test_add_texts(texts: List[str], tmp_path: Path) -> None:
     """Test end to end construction and simple similarity search."""
-    docsearch = DocArrayInMemorySearch(
-        embedding=FakeEmbeddings(),
-    )
+    docsearch = DocArrayInMemorySearch.from_params(FakeEmbeddings())
     assert isinstance(docsearch, DocArrayInMemorySearch)
     assert docsearch.doc_index.num_docs() == 0
 
-    texts = ["foo", "bar", "baz"]
     docsearch.add_texts(texts=texts)
     assert docsearch.doc_index.num_docs() == 3
 
 
 @pytest.mark.parametrize("metric", ["cosine_sim", "euclidean_dist", "sqeuclidean_dist"])
-def test_sim_search(metric: str) -> None:
+def test_sim_search(metric: str, texts: List[str]) -> None:
     """Test end to end construction and simple similarity search."""
     texts = ["foo", "bar", "baz"]
     in_memory_vec_store = DocArrayInMemorySearch.from_texts(
@@ -47,9 +49,8 @@ def test_sim_search(metric: str) -> None:
 
 
 @pytest.mark.parametrize("metric", ["cosine_sim", "euclidean_dist", "sqeuclidean_dist"])
-def test_sim_search_with_score(metric: str) -> None:
+def test_sim_search_with_score(metric: str, texts: List[str]) -> None:
     """Test end to end construction and similarity search with score."""
-    texts = ["foo", "bar", "baz"]
     in_memory_vec_store = DocArrayInMemorySearch.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),
@@ -66,9 +67,8 @@ def test_sim_search_with_score(metric: str) -> None:
 
 
 @pytest.mark.parametrize("metric", ["cosine_sim", "euclidean_dist", "sqeuclidean_dist"])
-def test_sim_search_by_vector(metric: str) -> None:
+def test_sim_search_by_vector(metric: str, texts: List[str]) -> None:
     """Test end to end construction and similarity search by vector."""
-    texts = ["foo", "bar", "baz"]
     in_memory_vec_store = DocArrayInMemorySearch.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),
@@ -82,9 +82,8 @@ def test_sim_search_by_vector(metric: str) -> None:
 
 
 @pytest.mark.parametrize("metric", ["cosine_sim", "euclidean_dist", "sqeuclidean_dist"])
-def test_max_marginal_relevance_search(metric: str) -> None:
+def test_max_marginal_relevance_search(metric: str, texts: List[str]) -> None:
     """Test MRR search."""
-    texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = DocArrayInMemorySearch.from_texts(
         texts, FakeEmbeddings(), metadatas=metadatas, metric=metric

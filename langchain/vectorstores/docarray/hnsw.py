@@ -7,7 +7,6 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.docarray.base import (
     DocArrayIndex,
     _check_docarray_import,
-    get_doc_cls,
 )
 
 
@@ -60,8 +59,8 @@ class DocArrayHnswSearch(DocArrayIndex):
         _check_docarray_import()
         from docarray.index import HnswDocumentIndex
 
-        doc_cls = get_doc_cls(
-            n_dim=n_dim,
+        doc_cls = cls._get_doc_cls(
+            dim=n_dim,
             space=dist_metric,
             max_elements=max_elements,
             index=index,

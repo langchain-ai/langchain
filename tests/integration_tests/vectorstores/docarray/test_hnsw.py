@@ -45,6 +45,7 @@ def test_sim_search(metric: str, texts: List[str], tmp_path: Path) -> None:
         work_dir=str(tmp_path),
         n_dim=10,
         dist_metric=metric,
+        index=True,
     )
     output = hnsw_vec_store.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
@@ -62,7 +63,6 @@ def test_sim_search_all_configurations(
         dist_metric=metric,
         n_dim=10,
         max_elements=8,
-        index=False,
         ef_construction=300,
         ef=20,
         M=8,

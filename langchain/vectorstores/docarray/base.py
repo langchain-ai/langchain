@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
 from pydantic import Field
@@ -32,35 +32,31 @@ def _check_docarray_import() -> None:
         )
 
 
-# TODO: Find better way of typing output.
-def get_doc_cls(**embeddings_params: Any) -> Type:
-    """Get docarray Document class describing the schema of DocIndex."""
-    from docarray import BaseDoc
-    from docarray.typing import NdArray
-
-    class DocArrayDoc(BaseDoc):
-        text: Optional[str]
-        embedding: Optional[NdArray] = Field(**embeddings_params)
-        metadata: Optional[dict]
-
-    return DocArrayDoc
-
-
 class DocArrayIndex(VectorStore, ABC):
-    from docarray.index.abstract import BaseDocIndex
-    from docarray import BaseDoc
-
     def __init__(
         self,
-        doc_index: BaseDocIndex,
+        doc_index: "BaseDocIndex",
         embedding: Embeddings,
     ):
         """Initialize a vector store from DocArray's DocIndex."""
         self.doc_index = doc_index
         self.embedding = embedding
 
+    @staticmethod
+    def _get_doc_cls(**embeddings_params: Any) -> Type["BaseDoc"]:
+        """Get docarray Document class describing the schema of DocIndex."""
+        from docarray import BaseDoc
+        from docarray.typing import NdArray
+
+        class DocArrayDoc(BaseDoc):
+            text: Optional[str]
+            embedding: Optional[NdArray] = Field(**embeddings_params)
+            metadata: Optional[dict]
+
+        return DocArrayDoc
+
     @property
-    def doc_cls(self) -> Type[BaseDoc]:
+    def doc_cls(self) -> Type["BaseDoc"]:
         if self.doc_index._schema is None:
             raise ValueError("doc_index expected to have non-null _schema attribute.")
         return self.doc_index._schema
