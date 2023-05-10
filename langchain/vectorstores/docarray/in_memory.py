@@ -5,13 +5,10 @@ from typing import List, Optional, Type
 
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VST
-from langchain.vectorstores.vector_store_from_doc_index import (
-    VecStoreFromDocIndex,
-    _check_docarray_import,
-)
+from langchain.vectorstores.docarray.base import DocArrayIndex, _check_docarray_import
 
 
-class DocArrayInMemorySearch(VecStoreFromDocIndex):
+class DocArrayInMemorySearch(DocArrayIndex):
     """Wrapper around in-memory storage for exact search.
 
     To use it, you should have the ``docarray`` package with version >=0.31.0 installed.

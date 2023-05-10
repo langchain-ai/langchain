@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from langchain.schema import Document
-from langchain.vectorstores.docarray_hnsw_search import DocArrayHnswSearch
+from langchain.vectorstores.docarray import DocArrayHnswSearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
@@ -14,7 +14,7 @@ def test_docarray_hnsw_search_vec_store_from_texts(tmp_path) -> None:
         FakeEmbeddings(),
         work_dir=str(tmp_path),
         n_dim=10,
-        dist_metric='cosine',
+        dist_metric="cosine",
     )
     assert isinstance(docsearch, DocArrayHnswSearch)
     assert docsearch.doc_index.num_docs() == 3
@@ -26,7 +26,7 @@ def test_docarray_hnsw_search_vec_store_add_texts(tmp_path) -> None:
         work_dir=str(tmp_path),
         n_dim=10,
         embedding=FakeEmbeddings(),
-        dist_metric='cosine',
+        dist_metric="cosine",
     )
     assert isinstance(docsearch, DocArrayHnswSearch)
     assert docsearch.doc_index.num_docs() == 0
@@ -36,7 +36,7 @@ def test_docarray_hnsw_search_vec_store_add_texts(tmp_path) -> None:
     assert docsearch.doc_index.num_docs() == 3
 
 
-@pytest.mark.parametrize('metric', ['cosine', 'l2'])
+@pytest.mark.parametrize("metric", ["cosine", "l2"])
 def test_sim_search(metric, tmp_path) -> None:
     """Test end to end construction and simple similarity search."""
     texts = ["foo", "bar", "baz"]
@@ -51,7 +51,7 @@ def test_sim_search(metric, tmp_path) -> None:
     assert output == [Document(page_content="foo")]
 
 
-@pytest.mark.parametrize('metric', ['cosine', 'l2'])
+@pytest.mark.parametrize("metric", ["cosine", "l2"])
 def test_sim_search_all_configurations(metric, tmp_path) -> None:
     """Test end to end construction and simple similarity search."""
     texts = ["foo", "bar", "baz"]
@@ -73,7 +73,7 @@ def test_sim_search_all_configurations(metric, tmp_path) -> None:
     assert output == [Document(page_content="foo")]
 
 
-@pytest.mark.parametrize('metric', ['cosine', 'l2'])
+@pytest.mark.parametrize("metric", ["cosine", "l2"])
 def test_sim_search_by_vector(metric, tmp_path) -> None:
     """Test end to end construction and similarity search by vector."""
     texts = ["foo", "bar", "baz"]
@@ -90,7 +90,7 @@ def test_sim_search_by_vector(metric, tmp_path) -> None:
     assert output == [Document(page_content="bar")]
 
 
-@pytest.mark.parametrize('metric', ['cosine', 'l2'])
+@pytest.mark.parametrize("metric", ["cosine", "l2"])
 def test_sim_search_with_score(metric, tmp_path) -> None:
     """Test end to end construction and similarity search with score."""
     texts = ["foo", "bar", "baz"]
@@ -106,7 +106,7 @@ def test_sim_search_with_score(metric, tmp_path) -> None:
 
     out_doc, out_score = output[0]
     assert out_doc == Document(page_content="foo")
-    assert np.isclose(out_score, 0.0, atol=1.e-6)
+    assert np.isclose(out_score, 0.0, atol=1.0e-6)
 
 
 def test_sim_search_with_score_for_ip_metric(tmp_path) -> None:
@@ -120,7 +120,7 @@ def test_sim_search_with_score_for_ip_metric(tmp_path) -> None:
         FakeEmbeddings(),
         work_dir=str(tmp_path),
         n_dim=10,
-        dist_metric='ip',
+        dist_metric="ip",
     )
     output = hnsw_vec_store.similarity_search_with_score("foo", k=3)
     assert len(output) == 3
@@ -129,7 +129,7 @@ def test_sim_search_with_score_for_ip_metric(tmp_path) -> None:
         assert result[1] == -8.0
 
 
-@pytest.mark.parametrize('metric', ['cosine', 'l2'])
+@pytest.mark.parametrize("metric", ["cosine", "l2"])
 def test_max_marginal_relevance_search(metric, tmp_path) -> None:
     """Test MRR search."""
     texts = ["foo", "bar", "baz"]

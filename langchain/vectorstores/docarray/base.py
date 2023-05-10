@@ -1,19 +1,19 @@
-from operator import itemgetter
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
-try:
-    from docarray import BaseDoc
-    from docarray.index.abstract import BaseDocIndex
-    from docarray.typing import NdArray
-except ImportError:
-    BaseDoc = None
-    BaseDocIndex = None
-    NdArray = None
+import numpy as np
+from pydantic import Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.schema import Document
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
+
+if TYPE_CHECKING:
+    from docarray import BaseDoc
+    from docarray.index.abstract import BaseDocIndex
+else:
+    BaseDoc = object
+    BaseDocIndex = object
 
 
 def _check_docarray_import() -> None:
@@ -30,15 +30,11 @@ def _check_docarray_import() -> None:
     except ImportError:
         raise ImportError(
             "Could not import docarray python package. "
-            "Please install it with `pip install \"langchain[docarray]\"`."
+            'Please install it with `pip install "langchain[docarray]"`.'
         )
 
 
-class VecStoreFromDocIndex(VectorStore):
-    doc_index: BaseDocIndex
-    doc_cls: Type[BaseDoc]
-    embedding: Embeddings
-
+class DocArrayIndex(VectorStore):
     def __init__(
         self,
         doc_index: BaseDocIndex,
@@ -53,7 +49,7 @@ class VecStoreFromDocIndex(VectorStore):
     def _get_doc_cls(embeddings_params: Dict[str, Any]) -> Type[BaseDoc]:
         """Get docarray Document class describing the schema of DocIndex."""
         from docarray import BaseDoc
-        from pydantic import Field
+        from docarray.typing import NdArray
 
         class DocArrayDoc(BaseDoc):
             text: Optional[str]
@@ -77,12 +73,10 @@ class VecStoreFromDocIndex(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        if metadatas is None:
-            metadatas = [{} for _ in range(len(list(texts)))]
-
         ids: List[str] = []
         embeddings = self.embedding.embed_documents(texts)
-        for t, m, e in zip(texts, metadatas, embeddings):
+        for i, (t, e) in enumerate(zip(texts, embeddings)):
+            m = metadatas[i] if metadatas else {}
             doc = self.doc_cls(text=t, embedding=e, metadata=m)
             self.doc_index.index([doc])
             ids.append(str(doc.id))
@@ -106,7 +100,8 @@ class VecStoreFromDocIndex(VectorStore):
         docs, scores = self.doc_index.find(query_doc, search_field="embedding", limit=k)
 
         result = [
-            (Document(page_content=doc.text), score) for doc, score in zip(docs, scores)
+            (Document(page_content=doc.text, metadata=doc.metadata), score)
+            for doc, score in zip(docs, scores)
         ]
         return result
 
@@ -122,8 +117,8 @@ class VecStoreFromDocIndex(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        results = self.similarity_search_with_score(query, k)
-        return list(map(itemgetter(0), results))
+        results = self.similarity_search_with_score(query=query, k=k, **kwargs)
+        return [doc for doc, _ in results]
 
     def _similarity_search_with_relevance_scores(
         self,
@@ -155,7 +150,9 @@ class VecStoreFromDocIndex(VectorStore):
             query_doc, search_field="embedding", limit=k
         ).documents
 
-        result = [Document(page_content=doc.text) for doc in docs]
+        result = [
+            Document(page_content=doc.text, metadata=doc.metadata) for doc in docs
+        ]
         return result
 
     def max_marginal_relevance_search(
@@ -181,7 +178,9 @@ class VecStoreFromDocIndex(VectorStore):
             query_doc, search_field="embedding", limit=fetch_k
         ).documents
 
-        mmr_selected = maximal_marginal_relevance(query_embedding, docs.embedding, k=k)
+        mmr_selected = maximal_marginal_relevance(
+            np.array(query_embedding), docs.embedding, k=k
+        )
         results = [
             Document(page_content=docs[idx].text, metadata=docs[idx].metadata)
             for idx in mmr_selected
