@@ -15,7 +15,7 @@ Please follow the checked-in pull request template when opening pull requests. N
 maintainers.
 
 Pull requests cannot land without passing the formatting, linting and testing checks first. See
-[Common Tasks](#✅-common-tasks) for how to run these checks locally.
+[Common Tasks](#-common-tasks) for how to run these checks locally.
 
 It's essential that we maintain great documentation and testing. If you:
 - Fix a bug
