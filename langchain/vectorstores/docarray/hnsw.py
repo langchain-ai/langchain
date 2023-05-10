@@ -42,19 +42,19 @@ class DocArrayHnswSearch(DocArrayIndex):
             n_dim (int): dimension of an embedding.
             dist_metric (str): Distance metric for DocArrayHnswSearch can be one of:
                 "cosine", "ip", and "l2". Defaults to "cosine".
-             max_elements (int): Maximum number of vectors that can be stored.
-                 Defaults to 1024.
-             index (bool): Whether an index should be built for this field.
-                 Defaults to True.
-             ef_construction (int): defines a construction time/accuracy trade-off.
-                 Defaults to 200.
-             ef (int): parameter controlling query time/accuracy trade-off.
-                 Defaults to 10.
-             M (int): parameter that defines the maximum number of outgoing
-                 connections in the graph. Defaults to 16.
-             allow_replace_deleted (bool): Enables replacing of deleted elements
-                 with new added ones. Defaults to True.
-             num_threads (int): Sets the number of cpu threads to use. Defaults to 1.
+            max_elements (int): Maximum number of vectors that can be stored.
+                Defaults to 1024.
+            index (bool): Whether an index should be built for this field.
+                Defaults to True.
+            ef_construction (int): defines a construction time/accuracy trade-off.
+                Defaults to 200.
+            ef (int): parameter controlling query time/accuracy trade-off.
+                Defaults to 10.
+            M (int): parameter that defines the maximum number of outgoing
+                connections in the graph. Defaults to 16.
+            allow_replace_deleted (bool): Enables replacing of deleted elements
+                with new added ones. Defaults to True.
+            num_threads (int): Sets the number of cpu threads to use. Defaults to 1.
             **kwargs: Other keyword arguments to be passed to the get_doc_cls method.
         """
         _check_docarray_import()

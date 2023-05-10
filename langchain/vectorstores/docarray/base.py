@@ -32,7 +32,8 @@ def _check_docarray_import() -> None:
         )
 
 
-def get_doc_cls(**embeddings_params: Any) -> Type[BaseDoc]:
+# TODO: Find better way of typing output.
+def get_doc_cls(**embeddings_params: Any) -> Type:
     """Get docarray Document class describing the schema of DocIndex."""
     from docarray import BaseDoc
     from docarray.typing import NdArray
@@ -46,6 +47,9 @@ def get_doc_cls(**embeddings_params: Any) -> Type[BaseDoc]:
 
 
 class DocArrayIndex(VectorStore, ABC):
+    from docarray.index.abstract import BaseDocIndex
+    from docarray import BaseDoc
+
     def __init__(
         self,
         doc_index: BaseDocIndex,
@@ -53,8 +57,13 @@ class DocArrayIndex(VectorStore, ABC):
     ):
         """Initialize a vector store from DocArray's DocIndex."""
         self.doc_index = doc_index
-        self.doc_cls = doc_index._schema
         self.embedding = embedding
+
+    @property
+    def doc_cls(self) -> Type[BaseDoc]:
+        if self.doc_index._schema is None:
+            raise ValueError("doc_index expected to have non-null _schema attribute.")
+        return self.doc_index._schema
 
     def add_texts(
         self,
@@ -75,7 +84,7 @@ class DocArrayIndex(VectorStore, ABC):
         embeddings = self.embedding.embed_documents(list(texts))
         for i, (t, e) in enumerate(zip(texts, embeddings)):
             m = metadatas[i] if metadatas else {}
-            doc = self.doc_cls(text=t, embedding=e, metadata=m)  # type: ignore
+            doc = self.doc_cls(text=t, embedding=e, metadata=m)
             self.doc_index.index([doc])
             ids.append(str(doc.id))
 
