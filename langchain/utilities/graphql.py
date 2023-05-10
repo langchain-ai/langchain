@@ -1,7 +1,10 @@
 import json
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from pydantic import BaseModel, Extra, root_validator
+
+if TYPE_CHECKING:
+    from gql import Client
 
 
 class GraphQLAPIWrapper(BaseModel):
@@ -13,8 +16,8 @@ class GraphQLAPIWrapper(BaseModel):
 
     custom_headers: Optional[Dict[str, str]] = None
     graphql_endpoint: str
-    gql_client: Any  #: :meta private:
-    gql_function: Any  #: :meta private:
+    gql_client: "Client"  #: :meta private:
+    gql_function: Callable[[str], Any]  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -24,11 +27,12 @@ class GraphQLAPIWrapper(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
+
+        headers = values.get("custom_headers", {})
+
         try:
             from gql import Client, gql
             from gql.transport.requests import RequestsHTTPTransport
-
-            headers = values.get("custom_headers", {})
 
             transport = RequestsHTTPTransport(
                 url=values["graphql_endpoint"],
@@ -52,6 +56,6 @@ class GraphQLAPIWrapper(BaseModel):
 
     def _execute_query(self, query: str) -> Dict[str, Any]:
         """Execute a GraphQL query and return the results."""
-        query = self.gql_function(query)
-        result = self.gql_client.execute(query)
+        document_node = self.gql_function(query)
+        result = self.gql_client.execute(document_node)
         return result
