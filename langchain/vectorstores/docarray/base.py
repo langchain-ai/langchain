@@ -120,7 +120,7 @@ class DocArrayIndex(VectorStore, ABC):
         Returns:
             List of Documents most similar to the query.
         """
-        results = self.similarity_search_with_score(query=query, k=k, **kwargs)
+        results = self.similarity_search_with_score(query, k=k, **kwargs)
         return [doc for doc, _ in results]
 
     def _similarity_search_with_relevance_scores(
