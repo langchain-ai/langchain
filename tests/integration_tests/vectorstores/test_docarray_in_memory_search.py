@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -17,7 +19,7 @@ def test_in_memory_vec_store_from_texts() -> None:
     assert docsearch.doc_index.num_docs() == 3
 
 
-def test_in_memory_vec_store_add_texts(tmp_path) -> None:
+def test_in_memory_vec_store_add_texts(tmp_path: Path) -> None:
     """Test end to end construction and simple similarity search."""
     docsearch = DocArrayInMemorySearch(
         embedding=FakeEmbeddings(),
@@ -31,7 +33,7 @@ def test_in_memory_vec_store_add_texts(tmp_path) -> None:
 
 
 @pytest.mark.parametrize("metric", ["cosine_sim", "euclidean_dist", "sqeuclidean_dist"])
-def test_sim_search(metric) -> None:
+def test_sim_search(metric: str) -> None:
     """Test end to end construction and simple similarity search."""
     texts = ["foo", "bar", "baz"]
     in_memory_vec_store = DocArrayInMemorySearch.from_texts(
@@ -45,7 +47,7 @@ def test_sim_search(metric) -> None:
 
 
 @pytest.mark.parametrize("metric", ["cosine_sim", "euclidean_dist", "sqeuclidean_dist"])
-def test_sim_search_with_score(metric) -> None:
+def test_sim_search_with_score(metric: str) -> None:
     """Test end to end construction and similarity search with score."""
     texts = ["foo", "bar", "baz"]
     in_memory_vec_store = DocArrayInMemorySearch.from_texts(
@@ -64,7 +66,7 @@ def test_sim_search_with_score(metric) -> None:
 
 
 @pytest.mark.parametrize("metric", ["cosine_sim", "euclidean_dist", "sqeuclidean_dist"])
-def test_sim_search_by_vector(metric) -> None:
+def test_sim_search_by_vector(metric: str) -> None:
     """Test end to end construction and similarity search by vector."""
     texts = ["foo", "bar", "baz"]
     in_memory_vec_store = DocArrayInMemorySearch.from_texts(
@@ -80,7 +82,7 @@ def test_sim_search_by_vector(metric) -> None:
 
 
 @pytest.mark.parametrize("metric", ["cosine_sim", "euclidean_dist", "sqeuclidean_dist"])
-def test_max_marginal_relevance_search(metric) -> None:
+def test_max_marginal_relevance_search(metric: str) -> None:
     """Test MRR search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]

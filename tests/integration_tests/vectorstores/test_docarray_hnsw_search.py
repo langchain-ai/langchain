@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -6,7 +8,7 @@ from langchain.vectorstores.docarray import DocArrayHnswSearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
-def test_docarray_hnsw_search_vec_store_from_texts(tmp_path) -> None:
+def test_docarray_hnsw_search_vec_store_from_texts(tmp_path: Path) -> None:
     """Test end to end construction and simple similarity search."""
     texts = ["foo", "bar", "baz"]
     docsearch = DocArrayHnswSearch.from_texts(
@@ -20,7 +22,7 @@ def test_docarray_hnsw_search_vec_store_from_texts(tmp_path) -> None:
     assert docsearch.doc_index.num_docs() == 3
 
 
-def test_docarray_hnsw_search_vec_store_add_texts(tmp_path) -> None:
+def test_docarray_hnsw_search_vec_store_add_texts(tmp_path: Path) -> None:
     """Test end to end construction and simple similarity search."""
     docsearch = DocArrayHnswSearch(
         work_dir=str(tmp_path),
@@ -37,7 +39,7 @@ def test_docarray_hnsw_search_vec_store_add_texts(tmp_path) -> None:
 
 
 @pytest.mark.parametrize("metric", ["cosine", "l2"])
-def test_sim_search(metric, tmp_path) -> None:
+def test_sim_search(metric: str, tmp_path: Path) -> None:
     """Test end to end construction and simple similarity search."""
     texts = ["foo", "bar", "baz"]
     hnsw_vec_store = DocArrayHnswSearch.from_texts(
@@ -52,7 +54,7 @@ def test_sim_search(metric, tmp_path) -> None:
 
 
 @pytest.mark.parametrize("metric", ["cosine", "l2"])
-def test_sim_search_all_configurations(metric, tmp_path) -> None:
+def test_sim_search_all_configurations(metric: str, tmp_path: Path) -> None:
     """Test end to end construction and simple similarity search."""
     texts = ["foo", "bar", "baz"]
     hnsw_vec_store = DocArrayHnswSearch.from_texts(
@@ -74,7 +76,7 @@ def test_sim_search_all_configurations(metric, tmp_path) -> None:
 
 
 @pytest.mark.parametrize("metric", ["cosine", "l2"])
-def test_sim_search_by_vector(metric, tmp_path) -> None:
+def test_sim_search_by_vector(metric: str, tmp_path: Path) -> None:
     """Test end to end construction and similarity search by vector."""
     texts = ["foo", "bar", "baz"]
     hnsw_vec_store = DocArrayHnswSearch.from_texts(
@@ -91,7 +93,7 @@ def test_sim_search_by_vector(metric, tmp_path) -> None:
 
 
 @pytest.mark.parametrize("metric", ["cosine", "l2"])
-def test_sim_search_with_score(metric, tmp_path) -> None:
+def test_sim_search_with_score(metric: str, tmp_path: Path) -> None:
     """Test end to end construction and similarity search with score."""
     texts = ["foo", "bar", "baz"]
     hnsw_vec_store = DocArrayHnswSearch.from_texts(
@@ -109,7 +111,7 @@ def test_sim_search_with_score(metric, tmp_path) -> None:
     assert np.isclose(out_score, 0.0, atol=1.0e-6)
 
 
-def test_sim_search_with_score_for_ip_metric(tmp_path) -> None:
+def test_sim_search_with_score_for_ip_metric(tmp_path: Path) -> None:
     """
     Test end to end construction and similarity search with score for ip
     (inner-product) metric.
@@ -130,7 +132,7 @@ def test_sim_search_with_score_for_ip_metric(tmp_path) -> None:
 
 
 @pytest.mark.parametrize("metric", ["cosine", "l2"])
-def test_max_marginal_relevance_search(metric, tmp_path) -> None:
+def test_max_marginal_relevance_search(metric: str, tmp_path: Path) -> None:
     """Test MRR search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]

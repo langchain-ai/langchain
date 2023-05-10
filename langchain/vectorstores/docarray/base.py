@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple,
+                    Type)
 
 import numpy as np
 from pydantic import Field
@@ -74,10 +75,10 @@ class DocArrayIndex(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         ids: List[str] = []
-        embeddings = self.embedding.embed_documents(texts)
+        embeddings = self.embedding.embed_documents(list(texts))
         for i, (t, e) in enumerate(zip(texts, embeddings)):
             m = metadatas[i] if metadatas else {}
-            doc = self.doc_cls(text=t, embedding=e, metadata=m)
+            doc = self.doc_cls(text=t, embedding=e, metadata=m)  # type: ignore
             self.doc_index.index([doc])
             ids.append(str(doc.id))
 
@@ -96,7 +97,7 @@ class DocArrayIndex(VectorStore):
             List of Documents most similar to the query and score for each.
         """
         query_embedding = self.embedding.embed_query(query)
-        query_doc = self.doc_cls(embedding=query_embedding)
+        query_doc = self.doc_cls(embedding=query_embedding)  # type: ignore
         docs, scores = self.doc_index.find(query_doc, search_field="embedding", limit=k)
 
         result = [
@@ -145,7 +146,7 @@ class DocArrayIndex(VectorStore):
             List of Documents most similar to the query vector.
         """
 
-        query_doc = self.doc_cls(embedding=embedding)
+        query_doc = self.doc_cls(embedding=embedding)  # type: ignore
         docs = self.doc_index.find(
             query_doc, search_field="embedding", limit=k
         ).documents
@@ -156,7 +157,12 @@ class DocArrayIndex(VectorStore):
         return result
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -167,12 +173,15 @@ class DocArrayIndex(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-
+            lambda_mult: Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
         query_embedding = self.embedding.embed_query(query)
-        query_doc = self.doc_cls(embedding=query_embedding)
+        query_doc = self.doc_cls(embedding=query_embedding)  # type: ignore
 
         docs = self.doc_index.find(
             query_doc, search_field="embedding", limit=fetch_k

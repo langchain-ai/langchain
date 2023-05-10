@@ -4,7 +4,8 @@ from __future__ import annotations
 from typing import Any, List, Optional, Type
 
 from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.docarray.base import DocArrayIndex, _check_docarray_import
+from langchain.vectorstores.docarray.base import (DocArrayIndex,
+                                                  _check_docarray_import)
 
 
 class DocArrayHnswSearch(DocArrayIndex):
@@ -44,7 +45,7 @@ class DocArrayHnswSearch(DocArrayIndex):
                 **{k: v for k, v in kwargs.items() if k != "dist_metric"},
             }
         )
-        doc_index = HnswDocumentIndex[doc_cls](work_dir=work_dir)
+        doc_index = HnswDocumentIndex[doc_cls](work_dir=work_dir)  # type: ignore
         super().__init__(doc_index, embedding)
 
     @classmethod
@@ -53,11 +54,12 @@ class DocArrayHnswSearch(DocArrayIndex):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        work_dir: str = None,
-        n_dim: int = None,
+        work_dir: Optional[str] = None,
+        n_dim: Optional[int] = None,
         **kwargs: Any,
     ) -> DocArrayHnswSearch:
         """Create an DocArrayHnswSearch store and insert data.
+
 
         Args:
             texts (List[str]): Text data.

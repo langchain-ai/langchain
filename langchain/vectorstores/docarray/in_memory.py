@@ -1,11 +1,11 @@
 """Wrapper around in-memory storage."""
 from __future__ import annotations
 
-from typing import List, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VST
-from langchain.vectorstores.docarray.base import DocArrayIndex, _check_docarray_import
+from langchain.vectorstores.docarray.base import (DocArrayIndex,
+                                                  _check_docarray_import)
 
 
 class DocArrayInMemorySearch(DocArrayIndex):
@@ -32,23 +32,24 @@ class DocArrayInMemorySearch(DocArrayIndex):
         from docarray.index import InMemoryExactNNIndex
 
         doc_cls = self._get_doc_cls({"space": metric})
-        doc_index = InMemoryExactNNIndex[doc_cls]()
+        doc_index = InMemoryExactNNIndex[doc_cls]()  # type: ignore
         super().__init__(doc_index, embedding)
 
     @classmethod
     def from_texts(
-        cls: Type[VST],
+        cls: Type[DocArrayInMemorySearch],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[List[Dict[Any, Any]]] = None,
         metric: str = "cosine_sim",
+        **kwargs: Any,
     ) -> DocArrayInMemorySearch:
         """Create an DocArrayInMemorySearch store and insert data.
 
         Args:
             texts (List[str]): Text data.
             embedding (Embeddings): Embedding function.
-            metadatas (Optional[List[dict]]): Metadata for each text if it exists.
+            metadatas (Optional[List[Dict[Any, Any]]]): Metadata for each text if it exists.
                 Defaults to None.
             metric (str): metric for exact nearest-neighbor search.
                 Can be one of: "cosine_sim", "euclidean_dist" and "sqeuclidean_dist".
