@@ -19,6 +19,7 @@ Docugami converts business documents, into a Document XML Knowledge Graph, gener
 
 Appropriate chunking of your documents is critical for retrieval from documents. Many chunking techniques exist, including simple ones that rely on whitespace and recursive chunk splitting based on character length. Docugami offers a different approach:
 
-1. The XML tree hierarchically represents the information that is in headings, paragraphs, lists, tables, and other common elements, consistently across all supported document formats, such as scanned PDFs or docx. 
-2. Every document is broken down into chunks of varying sizes, from a single word or numerical value to an address to an entire section or more.
-3. Chunks are annotated with semantic tags that are coherent across the document set, for example facilitating consistent hierarchical queries across a set of leases, such as identifying the Landlord, a Tenant or if a specific Country has an exception section inside of a Termination Clause.
+1. The XML tree hierarchically represents the information that is in headings, paragraphs, lists, tables, and other common elements, consistently across all supported document formats, such as scanned PDFs or docx. Common long-form document characteristics such as page headers/footers or multi-column flows are appropriately handled for clean text extraction. 
+2. Every document is broken down into chunks of varying sizes, from a single word or numerical value to an address to an entire section or more. These chunks follow the structural and semantic countours of the document, rather than arbitrary length or simple whitespace-based chunking.
+3. Chunks are annotated with semantic tags that are coherent across the document set, facilitating consistent hierarchical queries across a set of documents. For example in the case of a leases docset: identifying the Landlord, Tenant or whether a specific Country has an exception section inside a Termination Clause.
+4. Chunks are additionally annotated with project metadata, if a user has been using Docugami. This additional metadata can be used to do high accuracy Document QA without context window restrictions, using 
