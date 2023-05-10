@@ -81,11 +81,11 @@ class QueryPowerBITool(BaseTool):
         ):
             self.session_cache[
                 tool_input
-            ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]["pbi.error"]["details"][0]["detail"]}'
+            ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]["pbi.error"]["details"][0]["detail"]}'  # noqa: E501
             return self.session_cache[tool_input]
         self.session_cache[
             tool_input
-        ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]}'
+        ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]}'  # noqa: E501
         return self.session_cache[tool_input]
 
     async def _arun(
@@ -120,11 +120,11 @@ class QueryPowerBITool(BaseTool):
         ):
             self.session_cache[
                 tool_input
-            ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]["pbi.error"]["details"][0]["detail"]}'
+            ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]["pbi.error"]["details"][0]["detail"]}'  # noqa: E501
             return self.session_cache[tool_input]
         self.session_cache[
             tool_input
-        ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]}'
+        ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]}'  # noqa: E501
         return self.session_cache[tool_input]
 
 
