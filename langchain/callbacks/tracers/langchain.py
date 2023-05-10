@@ -236,13 +236,13 @@ class LangChainTracerV2(LangChainTracer):
             outputs=outputs,
             session_id=session.id,
             run_type=run_type,
-            reference_example_id=self.example_id,
             child_runs=[self._convert_run(child) for child in child_runs],
         )
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Persist a run."""
         run_create = self._convert_run(run)
+        run_create.reference_example_id = self.example_id
         try:
             response = requests.post(
                 f"{self._endpoint}/runs",

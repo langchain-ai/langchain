@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from langchain.document_loaders import SitemapLoader
@@ -78,3 +80,45 @@ def test_filter_sitemap() -> None:
     documents = loader.load()
     assert len(documents) == 1
     assert "🦜🔗" in documents[0].page_content
+
+
+def test_sitemap_metadata() -> None:
+    def sitemap_metadata_one(meta: dict, _content: None) -> dict:
+        return {**meta, "mykey": "Super Important Metadata"}
+
+    """Test sitemap loader."""
+    loader = SitemapLoader(
+        "https://langchain.readthedocs.io/sitemap.xml",
+        meta_function=sitemap_metadata_one,
+    )
+    documents = loader.load()
+    assert len(documents) > 1
+    assert "mykey" in documents[0].metadata
+    assert "Super Important Metadata" in documents[0].metadata["mykey"]
+
+
+def test_sitemap_metadata_extraction() -> None:
+    def sitemap_metadata_two(meta: dict, content: Any) -> dict:
+        title = content.find("title")
+        if title:
+            return {**meta, "title": title.get_text()}
+        return meta
+
+    """Test sitemap loader."""
+    loader = SitemapLoader(
+        "https://langchain.readthedocs.io/sitemap.xml",
+        meta_function=sitemap_metadata_two,
+    )
+    documents = loader.load()
+    assert len(documents) > 1
+    assert "title" in documents[0].metadata
+    assert "LangChain" in documents[0].metadata["title"]
+
+
+def test_sitemap_metadata_default() -> None:
+    """Test sitemap loader."""
+    loader = SitemapLoader("https://langchain.readthedocs.io/sitemap.xml")
+    documents = loader.load()
+    assert len(documents) > 1
+    assert "source" in documents[0].metadata
+    assert "loc" in documents[0].metadata
