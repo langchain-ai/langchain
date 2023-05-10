@@ -7,6 +7,7 @@ from mypy_extensions import Arg, KwArg
 from langchain.agents.tools import Tool
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
@@ -279,10 +280,26 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
 }
 
 
+def _handle_callbacks(
+    callback_manager: Optional[BaseCallbackManager], callbacks: Callbacks
+) -> Callbacks:
+    if callback_manager is not None:
+        warnings.warn(
+            "callback_manager is deprecated. Please use callbacks instead.",
+            DeprecationWarning,
+        )
+        if callbacks is not None:
+            raise ValueError(
+                "Cannot specify both callback_manager and callbacks arguments."
+            )
+        return callback_manager
+    return callbacks
+
+
 def load_tools(
     tool_names: List[str],
     llm: Optional[BaseLanguageModel] = None,
-    callback_manager: Optional[BaseCallbackManager] = None,
+    callbacks: Callbacks = None,
     **kwargs: Any,
 ) -> List[BaseTool]:
     """Load tools based on their name.
@@ -290,13 +307,16 @@ def load_tools(
     Args:
         tool_names: name of tools to load.
         llm: Optional language model, may be needed to initialize certain tools.
-        callback_manager: Optional callback manager. If not provided, default global callback manager will be used.
+        callbacks: Optional callback manager or list of callback handlers.
+            If not provided, default global callback manager will be used.
 
     Returns:
         List of tools.
     """
     tools = []
-
+    callbacks = _handle_callbacks(
+        callback_manager=kwargs.get("callback_manager"), callbacks=callbacks
+    )
     for name in tool_names:
         if name == "requests":
             warnings.warn(
@@ -316,8 +336,6 @@ def load_tools(
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
             tool = _LLM_TOOLS[name](llm)
-            if callback_manager is not None:
-                tool.callback_manager = callback_manager
             tools.append(tool)
         elif name in _EXTRA_LLM_TOOLS:
             if llm is None:
@@ -331,18 +349,17 @@ def load_tools(
                 )
             sub_kwargs = {k: kwargs[k] for k in extra_keys}
             tool = _get_llm_tool_func(llm=llm, **sub_kwargs)
-            if callback_manager is not None:
-                tool.callback_manager = callback_manager
             tools.append(tool)
         elif name in _EXTRA_OPTIONAL_TOOLS:
             _get_tool_func, extra_keys = _EXTRA_OPTIONAL_TOOLS[name]
             sub_kwargs = {k: kwargs[k] for k in extra_keys if k in kwargs}
             tool = _get_tool_func(**sub_kwargs)
-            if callback_manager is not None:
-                tool.callback_manager = callback_manager
             tools.append(tool)
         else:
             raise ValueError(f"Got unknown tool {name}")
+    if callbacks is not None:
+        for tool in tools:
+            tool.callbacks = callbacks
     return tools
 
 

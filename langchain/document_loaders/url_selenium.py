@@ -20,6 +20,7 @@ class SeleniumURLLoader(BaseLoader):
         urls (List[str]): List of URLs to load.
         continue_on_failure (bool): If True, continue loading other URLs on failure.
         browser (str): The browser to use, either 'chrome' or 'firefox'.
+        binary_location (Optional[str]): The location of the browser binary.
         executable_path (Optional[str]): The path to the browser executable.
         headless (bool): If True, the browser will run in headless mode.
         arguments [List[str]]: List of arguments to pass to the browser.
@@ -30,6 +31,7 @@ class SeleniumURLLoader(BaseLoader):
         urls: List[str],
         continue_on_failure: bool = True,
         browser: Literal["chrome", "firefox"] = "chrome",
+        binary_location: Optional[str] = None,
         executable_path: Optional[str] = None,
         headless: bool = True,
         arguments: List[str] = [],
@@ -54,6 +56,7 @@ class SeleniumURLLoader(BaseLoader):
         self.urls = urls
         self.continue_on_failure = continue_on_failure
         self.browser = browser
+        self.binary_location = binary_location
         self.executable_path = executable_path
         self.headless = headless
         self.arguments = arguments
@@ -79,6 +82,8 @@ class SeleniumURLLoader(BaseLoader):
             if self.headless:
                 chrome_options.add_argument("--headless")
                 chrome_options.add_argument("--no-sandbox")
+            if self.binary_location is not None:
+                chrome_options.binary_location = self.binary_location
             if self.executable_path is None:
                 return Chrome(options=chrome_options)
             return Chrome(executable_path=self.executable_path, options=chrome_options)
@@ -93,6 +98,8 @@ class SeleniumURLLoader(BaseLoader):
 
             if self.headless:
                 firefox_options.add_argument("--headless")
+            if self.binary_location is not None:
+                firefox_options.binary_location = self.binary_location
             if self.executable_path is None:
                 return Firefox(options=firefox_options)
             return Firefox(

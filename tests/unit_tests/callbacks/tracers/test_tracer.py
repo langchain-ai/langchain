@@ -1,6 +1,7 @@
 """Test Tracer classes."""
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from typing import List, Tuple, Union
 from unittest.mock import Mock, patch
@@ -603,6 +604,39 @@ def test_persist_run(
 
         assert post.call_count == 3
         assert get.call_count == 0
+
+
+def test_persist_run_with_example_id(
+    lang_chain_tracer_v2: LangChainTracerV2,
+    sample_tracer_session_v2: TracerSessionV2,
+    sample_runs: Tuple[LLMRun, ChainRun, ToolRun],
+) -> None:
+    """Test the example ID is assigned only to the parent run and not the children."""
+    example_id = uuid4()
+    llm_run, chain_run, tool_run = sample_runs
+    chain_run.child_tool_runs = [tool_run]
+    tool_run.child_llm_runs = [llm_run]
+    with patch("langchain.callbacks.tracers.langchain.requests.post") as post, patch(
+        "langchain.callbacks.tracers.langchain.requests.get"
+    ) as get:
+        post.return_value.raise_for_status.return_value = None
+        lang_chain_tracer_v2.session = sample_tracer_session_v2
+        lang_chain_tracer_v2.example_id = example_id
+        lang_chain_tracer_v2._persist_run(chain_run)
+
+        assert post.call_count == 1
+        assert get.call_count == 0
+        posted_data = json.loads(post.call_args[1]["data"])
+        assert posted_data["id"] == chain_run.uuid
+        assert posted_data["reference_example_id"] == str(example_id)
+
+        def assert_child_run_no_example_id(run: dict) -> None:
+            assert not run.get("reference_example_id")
+            for child_run in run.get("child_runs", []):
+                assert_child_run_no_example_id(child_run)
+
+        for child_run in posted_data["child_runs"]:
+            assert_child_run_no_example_id(child_run)
 
 
 def test_get_session_create(lang_chain_tracer_v2: LangChainTracerV2) -> None:

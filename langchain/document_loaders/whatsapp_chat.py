@@ -44,7 +44,7 @@ class WhatsAppChatLoader(BaseLoader):
             )
             \]?
             [\s-]*
-            ([\w\s]+)
+            ([~\w\s]+)
             [:]+
             \s
             (.+)

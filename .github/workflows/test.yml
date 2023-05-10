@@ -20,15 +20,13 @@ jobs:
           - "3.11"
     steps:
       - uses: actions/checkout@v3
-      - name: Install poetry
-        run: pipx install poetry==$POETRY_VERSION
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-      - name: Install dependencies
-        run: poetry install
+          poetry-version: "1.4.2"
+          cache-key: "main"
+          install-command: "poetry install"
       - name: Run unit tests
         run: |
           make test
