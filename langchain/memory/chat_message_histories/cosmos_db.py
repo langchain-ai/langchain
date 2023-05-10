@@ -51,7 +51,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         :param credential: The credential to use to authenticate to Azure Cosmos DB.
         :param connection_string: The connection string to use to authenticate.
         :param ttl: The time to live (in seconds) to use for documents in the container.
-        :param cosmos_client_kwargs: Additional keyword arguments to pass to the CosmosClient.
+        :param cosmos_client_kwargs: Additional kwargs to pass to the CosmosClient.
         """
         self.cosmos_endpoint = cosmos_endpoint
         self.cosmos_database = cosmos_database

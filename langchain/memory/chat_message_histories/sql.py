@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Any
+from typing import Any, List
 
 from sqlalchemy import Column, Integer, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
