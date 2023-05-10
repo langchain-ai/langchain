@@ -1,0 +1,27 @@
+{
+    "memory": null,
+    "verbose": true,
+    "prompt": {
+        "input_variables": [
+            "question"
+        ],
+        "output_parser": null,
+        "template": "Question: {question}\n\nAnswer: Let's think step by step.",
+        "template_format": "f-string"
+    },
+    "llm": {
+        "model_name": "text-davinci-003",
+        "temperature": 0.0,
+        "max_tokens": 256,
+        "top_p": 1,
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "n": 1,
+        "best_of": 1,
+        "request_timeout": null,
+        "logit_bias": {},
+        "_type": "openai"
+    },
+    "output_key": "text",
+    "_type": "llm_chain"
+}

@@ -1,195 +1,184 @@
 Welcome to LangChain
 ==========================
 
-Large language models (LLMs) are emerging as a transformative technology, enabling
-developers to build applications that they previously could not.
-But using these LLMs in isolation is often not enough to
-create a truly powerful app - the real power comes when you are able to
-combine them with other sources of computation or knowledge.
+LangChain is a framework for developing applications powered by language models. We believe that the most powerful and differentiated applications will not only call out to a language model via an API, but will also:
 
-This library is aimed at assisting in the development of those types of applications.
+- *Be data-aware*: connect a language model to other sources of data
+- *Be agentic*: allow a language model to interact with its environment
 
-There are six main areas that LangChain is designed to help with.
-These are, in increasing order of complexity:
+The LangChain framework is designed with the above principles in mind.
 
-1. LLM and Prompts
-2. Chains
-3. Data Augmented Generation
-4. Agents
-5. Memory
-6. [BETA] Evaluation
+This is the Python specific portion of the documentation. For a purely conceptual guide to LangChain, see `here <https://docs.langchain.com/docs/>`_. For the JavaScript documentation, see `here <https://js.langchain.com/docs/>`_.
 
-Let's go through these categories and for each one identify key concepts (to clarify terminology) as well as the problems in this area LangChain helps solve.
+Getting Started
+----------------
 
-**🦜 LLMs and Prompts**
+Checkout the below guide for a walkthrough of how to get started using LangChain to create an Language Model application.
 
-Calling out to an LLM once is pretty easy, with most of them being behind well documented APIs.
-However, there are still some challenges going from that to an application running in production that LangChain attempts to address.
-
-*Key Concepts*
-
-- LLM: A large language model, in particular a text-to-text model.
-- Prompt: The input to a language model. Typically this is not simply a hardcoded string but rather a combination of a template, some examples, and user input.
-- Prompt Template: An object responsible for constructing the final prompt to pass to a LLM.
-
-*Problems Solved*
-
-- Switching costs: by exposing a standard interface for all the top LLM providers, LangChain makes it easy to switch from one provider to another, whether it be for production use cases or just for testing stuff out.
-- Prompt management: managing your prompts is easy when you only have one simple one, but can get tricky when you have a bunch or when they start to get more complex. LangChain provides a standard way for storing, constructing, and referencing prompts.
-- Prompt optimization: despite the underlying models getting better and better, there is still currently a need for carefully constructing prompts.
-
-**🔗️ Chains**
-
-Using an LLM in isolation is fine for some simple applications, but many more complex ones require chaining LLMs - either with eachother or with other experts.
-LangChain provides several parts to help with that.
-
-*Key Concepts*
-
-- Tools: APIs designed for assisting with a particular use case (search, databases, Python REPL, etc). Prompt templates, LLMs, and chains can also be considered tools.
-- Chains: A combination of multiple tools in a deterministic manner.
-
-*Problems Solved*
-
-- Standard interface for working with Chains
-- Easy way to construct chains of LLMs
-- Lots of integrations with other tools that you may want to use in conjunction with LLMs
-- End-to-end chains for common workflows (database question/answer, api calling, etc)
-
-**📚 Data Augmented Generation**
-
-LLMs have access to all the data they were trained on, but there are still large chunks of data they were not trained on.
-Data Augmented Generation covers how to use LLMs to generate text conditioning on data outside of what the LLM was trained on.
-
-*Key Concepts*
-
-- Documents: A document is a piece of text, along with some associated metadata, that can be inserted into the context of a query to condition generation on that text.
-- Embeddings: A vector representation of text (or other unstructured data). Useful for being able to numerically compare pieces of text.
-- Vectorstore: A database which stores embeddings and can be searched over.
-
-*Problems Solved*
-
-- Standard interface for working with Documents, Embeddings, and Vectorstores
-- Lots of integrations with common embedding providers and vectorstores
-- End-to-end chains for common workflows (recursive summarization, question answering over documents, etc)
-
-
-**🤖 Agents**
-
-Some applications will require not just a predetermined chain of calls to LLMs/other tools, but potentially an unknown chain that depends on the user input.
-In these types of chains, there is a “agent” which has access to a suite of tools.
-Depending on the user input, the agent can then decide which, if any, of these tools to call.
-
-*Key Concepts*
-
-- Tools: same as above.
-- Agent: An LLM-powered class responsible for determining which tools to use and in what order.
-
-
-*Problems Solved*
-
-- Standard agent interfaces
-- A selection of powerful agents to choose from
-- Common chains that can be used as tools
-
-**🧠 Memory**
-
-By default, Chains and Agents are stateless, meaning that they treat each incoming query independently.
-In some applications (chatbots being a GREAT example) it is highly important to remember previous interactions,
-both at a short term but also at a long term level. The concept of "Memory" exists to do exactly that.
-
-*Key Concepts*
-
-- Memory: A class that can be added to an Agent or Chain to (1) pull in memory variables before calling that chain/agent, and (2) create new memories after the chain/agent finishes.
-- Memory Variables: Variables returned from a Memory class, to be passed into the chain/agent along with the user input.
-
-*Problems Solved*
-
-- Standard memory interfaces
-- A collection of common memory implementations to choose from
-- Common chains/agents that use memory (e.g. chatbots)
-
-**🧐 Evaluation:**
-
-[BETA] Generative models are notoriously hard to evaluate with traditional metrics.
-One new way of evaluating them is using language models themselves to do the evaluation.
-LangChain provides some prompts/chains for assisting in this.
-This is still in Beta, which also means that feedback is especially appreciated here.
-
-
-Documentation Structure
-=======================
-The documentation is structured into the following sections:
-
+- `Getting Started Documentation <./getting_started/getting_started.html>`_
 
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started
    :name: getting_started
+   :hidden:
 
-   getting_started/installation.md
-   getting_started/environment.md
-   getting_started/llm.md
-   getting_started/llm_chain.md
-   getting_started/sequential_chains.ipynb
-   getting_started/data_augmented_generation.ipynb
-   getting_started/agents.ipynb
-   getting_started/memory.ipynb
+   getting_started/getting_started.md
 
-Goes over a simple walk through and tutorial for getting started setting up a simple chain that generates a company name based on what the company makes.
-Covers installation, environment set up, calling LLMs, and using prompts.
-Start here if you haven't used LangChain before.
+Modules
+-----------
+
+There are several main modules that LangChain provides support for.
+For each module we provide some examples to get started, how-to guides, reference docs, and conceptual guides.
+These modules are, in increasing order of complexity:
+
+- `Models <./modules/models.html>`_: The various model types and model integrations LangChain supports.
+
+- `Prompts <./modules/prompts.html>`_: This includes prompt management, prompt optimization, and prompt serialization.
+
+- `Memory <./modules/memory.html>`_: Memory is the concept of persisting state between calls of a chain/agent. LangChain provides a standard interface for memory, a collection of memory implementations, and examples of chains/agents that use memory.
+
+- `Indexes <./modules/indexes.html>`_: Language models are often more powerful when combined with your own text data - this module covers best practices for doing exactly that.
+
+- `Chains <./modules/chains.html>`_: Chains go beyond just a single LLM call, and are sequences of calls (whether to an LLM or a different utility). LangChain provides a standard interface for chains, lots of integrations with other tools, and end-to-end chains for common applications.
+
+- `Agents <./modules/agents.html>`_: Agents involve an LLM making decisions about which Actions to take, taking that Action, seeing an Observation, and repeating that until done. LangChain provides a standard interface for agents, a selection of agents to choose from, and examples of end to end agents.
+
+- `Callbacks <./modules/callbacks/getting_started.html>`_: It can be difficult to track all that occurs inside a chain or agent - callbacks help add a level of observability and introspection.
 
 
 .. toctree::
    :maxdepth: 1
-   :caption: How-To Examples
-   :name: examples
+   :caption: Modules
+   :name: modules
+   :hidden:
 
-   examples/prompts.rst
-   examples/chains.rst
-   examples/data_augmented_generation.rst
-   examples/agents.rst
-   examples/memory.rst
-   examples/evaluation.rst
-   examples/model_laboratory.ipynb
+   ./modules/models.rst
+   ./modules/prompts.rst
+   ./modules/indexes.md
+   ./modules/memory.md
+   ./modules/chains.md
+   ./modules/agents.md
+   ./modules/callbacks/getting_started.ipynb
 
-More elaborate examples and walkthroughs of particular
-integrations and use cases. This is the place to look if you have questions
-about how to integrate certain pieces, or if you want to find examples of
-common tasks or cool demos.
+Use Cases
+----------
+
+The above modules can be used in a variety of ways. LangChain also provides guidance and assistance in this. Below are some of the common use cases LangChain supports.
+
+- `Autonomous Agents <./use_cases/autonomous_agents.html>`_: Autonomous agents are long running agents that take many steps in an attempt to accomplish an objective. Examples include AutoGPT and BabyAGI.
+
+- `Agent Simulations <./use_cases/agent_simulations.html>`_: Putting agents in a sandbox and observing how they interact with each other or to events can be an interesting way to observe their long-term memory abilities.
+
+- `Personal Assistants <./use_cases/personal_assistants.html>`_: The main LangChain use case. Personal assistants need to take actions, remember interactions, and have knowledge about your data.
+
+- `Question Answering <./use_cases/question_answering.html>`_: The second big LangChain use case. Answering questions over specific documents, only utilizing the information in those documents to construct an answer.
+
+- `Chatbots <./use_cases/chatbots.html>`_: Since language models are good at producing text, that makes them ideal for creating chatbots.
+
+- `Querying Tabular Data <./use_cases/tabular.html>`_: If you want to understand how to use LLMs to query data that is stored in a tabular format (csvs, SQL, dataframes, etc) you should read this page.
+
+- `Code Understanding <./use_cases/code.html>`_: If you want to understand how to use LLMs to query source code from github, you should read this page.
+
+- `Interacting with APIs <./use_cases/apis.html>`_: Enabling LLMs to interact with APIs is extremely powerful in order to give them more up-to-date information and allow them to take actions.
+
+- `Extraction <./use_cases/extraction.html>`_: Extract structured information from text.
+
+- `Summarization <./use_cases/summarization.html>`_: Summarizing longer documents into shorter, more condensed chunks of information. A type of Data Augmented Generation.
+
+- `Evaluation <./use_cases/evaluation.html>`_: Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
 
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Use Cases
+   :name: use_cases
+   :hidden:
+
+   ./use_cases/personal_assistants.md
+   ./use_cases/autonomous_agents.md
+   ./use_cases/agent_simulations.md
+   ./use_cases/question_answering.md
+   ./use_cases/chatbots.md
+   ./use_cases/tabular.rst
+   ./use_cases/code.md
+   ./use_cases/apis.md
+   ./use_cases/summarization.md
+   ./use_cases/extraction.md
+   ./use_cases/evaluation.rst
+
+
+Reference Docs
+---------------
+
+All of LangChain's reference documentation, in one place. Full documentation on all methods, classes, installation methods, and integration setups for LangChain.
+
+
+- `Reference Documentation <./reference.html>`_
 .. toctree::
    :maxdepth: 1
    :caption: Reference
    :name: reference
+   :hidden:
 
-   reference/installation.md
-   reference/integrations.md
-   reference/prompts.rst
-   reference/chains.rst
-   reference/data_augmented_generation.rst
-   reference/modules/agents
+   ./reference/installation.md
+   ./reference/integrations.md
+   ./reference.rst
 
 
-Full API documentation. This is the place to look if you want to
-see detailed information about the various classes, methods, and APIs.
+LangChain Ecosystem
+-------------------
+
+Guides for how other companies/products can be used with LangChain
+
+- `LangChain Ecosystem <./ecosystem.html>`_
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :caption: Ecosystem
+   :name: ecosystem
+   :hidden:
+
+   ./ecosystem.rst
+
+
+Additional Resources
+---------------------
+
+Additional collection of resources we think may be useful as you develop your application!
+
+- `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: The LangChainHub is a place to share and explore other prompts, chains, and agents.
+
+- `Glossary <./glossary.html>`_: A glossary of all related terms, papers, methods, etc. Whether implemented in LangChain or not!
+
+- `Gallery <./gallery.html>`_: A collection of our favorite projects that use LangChain. Useful for finding inspiration or seeing how things were done in other applications.
+
+- `Deployments <./deployments.html>`_: A collection of instructions, code snippets, and template repositories for deploying LangChain apps.
+
+- `Tracing <./tracing.html>`_: A guide on using tracing in LangChain to visualize the execution of chains and agents.
+
+- `Model Laboratory <./model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
+
+- `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
+
+- `YouTube <./youtube.html>`_: A collection of the LangChain tutorials and videos.
+
+- `Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>`_: As you move your LangChains into production, we'd love to offer more comprehensive support. Please fill out this form and we'll set up a dedicated support Slack channel.
 
 
 .. toctree::
    :maxdepth: 1
-   :caption: Resources
+   :caption: Additional Resources
    :name: resources
+   :hidden:
 
-   explanation/core_concepts.md
-   explanation/combine_docs.md
-   explanation/agents.md
-   explanation/tools.md
-   explanation/glossary.md
-   explanation/cool_demos.md
+   LangChainHub <https://github.com/hwchase17/langchain-hub>
+   ./glossary.md
+   ./gallery.rst
+   ./deployments.md
+   ./tracing.md
+   ./use_cases/model_laboratory.ipynb
    Discord <https://discord.gg/6adMQxSpJS>
-
-Higher level, conceptual explanations of the LangChain components.
-This is the place to go if you want to increase your high level understanding
-of the problems LangChain is solving, and how we decided to go about do so.
-
+   ./youtube.md
+   Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>

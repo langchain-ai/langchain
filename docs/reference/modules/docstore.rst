@@ -1,4 +1,4 @@
-:mod:`langchain.docstore`
+Docstore
 =============================
 
 .. automodule:: langchain.docstore

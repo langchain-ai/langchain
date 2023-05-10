@@ -1,13 +1,15 @@
 """Test logic on base chain class."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import pytest
-from pydantic import BaseModel
 
-from langchain.chains.base import Chain, Memory
+from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.chains.base import Chain
+from langchain.schema import BaseMemory
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-class FakeMemory(Memory, BaseModel):
+class FakeMemory(BaseMemory):
     """Fake memory class for testing purposes."""
 
     @property
@@ -15,20 +17,20 @@ class FakeMemory(Memory, BaseModel):
         """Return baz variable."""
         return ["baz"]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(
+        self, inputs: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, str]:
         """Return baz variable."""
         return {"baz": "foo"}
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Pass."""
-        pass
 
     def clear(self) -> None:
         """Pass."""
-        pass
 
 
-class FakeChain(Chain, BaseModel):
+class FakeChain(Chain):
     """Fake chain class for testing purposes."""
 
     be_correct: bool = True
@@ -45,7 +47,11 @@ class FakeChain(Chain, BaseModel):
         """Output key of bar."""
         return self.the_output_keys
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         if self.be_correct:
             return {"bar": "baz"}
         else:
@@ -133,3 +139,16 @@ def test_run_arg_with_memory() -> None:
     """Test run method works when arg is passed."""
     chain = FakeChain(the_input_keys=["foo", "baz"], memory=FakeMemory())
     chain.run("bar")
+
+
+def test_run_with_callback() -> None:
+    """Test run method works when callback manager is passed."""
+    handler = FakeCallbackHandler()
+    chain = FakeChain(
+        callbacks=[handler],
+    )
+    output = chain.run("bar")
+    assert output == "baz"
+    assert handler.starts == 1
+    assert handler.ends == 1
+    assert handler.errors == 0

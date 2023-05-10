@@ -1,0 +1,17 @@
+Below are some assertions that have been fact checked and are labeled as true of false.  If the answer is false, a suggestion is given for a correction.
+
+Checked Assertions:
+"""
+{checked_assertions}
+"""
+
+Original Summary:
+"""
+{summary}
+"""
+
+Using these checked assertions, rewrite the original summary to be completely true.
+
+The output should have the same structure and formatting as the original summary.
+
+Summary:

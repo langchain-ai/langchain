@@ -1,0 +1,184 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "5436020b",
+   "metadata": {},
+   "source": [
+    "# Getting Started\n",
+    "\n",
+    "Agents use an LLM to determine which actions to take and in what order.\n",
+    "An action can either be using a tool and observing its output, or returning to the user.\n",
+    "\n",
+    "When used correctly agents can be extremely powerful. The purpose of this notebook is to show you how to easily use agents through the simplest, highest level API."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3c6226b9",
+   "metadata": {},
+   "source": [
+    "In order to load agents, you should understand the following concepts:\n",
+    "\n",
+    "- Tool: A function that performs a specific duty. This can be things like: Google Search, Database lookup, Python REPL, other chains. The interface for a tool is currently a function that is expected to have a string as an input, with a string as an output.\n",
+    "- LLM: The language model powering the agent.\n",
+    "- Agent: The agent to use. This should be a string that references a support agent class. Because this notebook focuses on the simplest, highest level API, this only covers using the standard supported agents. If you want to implement a custom agent, see the documentation for custom agents (coming soon).\n",
+    "\n",
+    "**Agents**: For a list of supported agents and their specifications, see [here](agents.md).\n",
+    "\n",
+    "**Tools**: For a list of predefined tools and their specifications, see [here](tools.md)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "d01216c0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from langchain.agents import load_tools\n",
+    "from langchain.agents import initialize_agent\n",
+    "from langchain.agents import AgentType\n",
+    "from langchain.llms import OpenAI"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ef965094",
+   "metadata": {},
+   "source": [
+    "First, let's load the language model we're going to use to control the agent."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "0728f0d9",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "llm = OpenAI(temperature=0)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "fb29d592",
+   "metadata": {},
+   "source": [
+    "Next, let's load some tools to use. Note that the `llm-math` tool uses an LLM, so we need to pass that in."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "ba4e7618",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "tools = load_tools([\"serpapi\", \"llm-math\"], llm=llm)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0b50fc9b",
+   "metadata": {},
+   "source": [
+    "Finally, let's initialize an agent with the tools, the language model, and the type of agent we want to use."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "03208e2b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "373361d5",
+   "metadata": {},
+   "source": [
+    "Now let's test it out!"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "244ee75c",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "\n",
+      "\u001b[1m> Entering new AgentExecutor chain...\u001b[0m\n",
+      "\u001b[32;1m\u001b[1;3m I need to find out who Leo DiCaprio's girlfriend is and then calculate her age raised to the 0.43 power.\n",
+      "Action: Search\n",
+      "Action Input: \"Leo DiCaprio girlfriend\"\u001b[0m\n",
+      "Observation: \u001b[36;1m\u001b[1;3mCamila Morrone\u001b[0m\n",
+      "Thought:\u001b[32;1m\u001b[1;3m I need to find out Camila Morrone's age\n",
+      "Action: Search\n",
+      "Action Input: \"Camila Morrone age\"\u001b[0m\n",
+      "Observation: \u001b[36;1m\u001b[1;3m25 years\u001b[0m\n",
+      "Thought:\u001b[32;1m\u001b[1;3m I need to calculate 25 raised to the 0.43 power\n",
+      "Action: Calculator\n",
+      "Action Input: 25^0.43\u001b[0m\n",
+      "Observation: \u001b[33;1m\u001b[1;3mAnswer: 3.991298452658078\n",
+      "\u001b[0m\n",
+      "Thought:\u001b[32;1m\u001b[1;3m I now know the final answer\n",
+      "Final Answer: Camila Morrone is Leo DiCaprio's girlfriend and her current age raised to the 0.43 power is 3.991298452658078.\u001b[0m\n",
+      "\n",
+      "\u001b[1m> Finished chain.\u001b[0m\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "\"Camila Morrone is Leo DiCaprio's girlfriend and her current age raised to the 0.43 power is 3.991298452658078.\""
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "agent.run(\"Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "5901695b",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

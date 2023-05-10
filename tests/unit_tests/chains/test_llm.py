@@ -1,11 +1,14 @@
 """Test LLM chain."""
+from tempfile import TemporaryDirectory
 from typing import Dict, List, Union
+from unittest.mock import patch
 
 import pytest
 
 from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BaseOutputParser
+from langchain.chains.loading import load_chain
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema import BaseOutputParser
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -22,6 +25,16 @@ def fake_llm_chain() -> LLMChain:
     """Fake LLM chain for testing purposes."""
     prompt = PromptTemplate(input_variables=["bar"], template="This is a {bar}:")
     return LLMChain(prompt=prompt, llm=FakeLLM(), output_key="text1")
+
+
+@patch("langchain.llms.loading.type_to_cls_dict", {"fake": FakeLLM})
+def test_serialization(fake_llm_chain: LLMChain) -> None:
+    """Test serialization."""
+    with TemporaryDirectory() as temp_dir:
+        file = temp_dir + "/llm.json"
+        fake_llm_chain.save(file)
+        loaded_chain = load_chain(file)
+        assert loaded_chain == fake_llm_chain
 
 
 def test_missing_inputs(fake_llm_chain: LLMChain) -> None:

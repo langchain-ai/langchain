@@ -22,12 +22,15 @@ with open("../pyproject.toml") as f:
 
 # -- Project information -----------------------------------------------------
 
-project = "LangChain"
-copyright = "2022, Harrison Chase"
+project = "🦜🔗 LangChain"
+copyright = "2023, Harrison Chase"
 author = "Harrison Chase"
 
 version = data["tool"]["poetry"]["version"]
 release = version
+
+html_title = project + " " + version
+html_last_updated_fmt = "%b %d, %Y"
 
 
 # -- General configuration ---------------------------------------------------
@@ -42,11 +45,12 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
-    "myst_parser",
-    "nbsphinx",
+    "myst_nb",
+    "sphinx_copybutton",
     "sphinx_panels",
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
-
+source_suffix = [".ipynb", ".html", ".md", ".rst"]
 
 autodoc_pydantic_model_show_json = False
 autodoc_pydantic_field_list_validators = False
@@ -73,8 +77,13 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
-# html_theme = "sphinx_typlog_theme"
+html_theme = "sphinx_book_theme"
+
+html_theme_options = {
+    "path_to_docs": "docs",
+    "repository_url": "https://github.com/hwchase17/langchain",
+    "use_repository_button": True,
+}
 
 html_context = {
     "display_github": True,  # Integrate GitHub
@@ -87,4 +96,17 @@ html_context = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path: list = []
+html_static_path = ["_static"]
+
+# These paths are either relative to html_static_path
+# or fully qualified paths (eg. https://...)
+html_css_files = [
+    "css/custom.css",
+]
+
+html_js_files = [
+    "js/mendablesearch.js",
+]
+
+nb_execution_mode = "off"
+myst_enable_extensions = ["colon_fence"]
