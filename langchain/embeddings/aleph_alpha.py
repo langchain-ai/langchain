@@ -53,6 +53,8 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     """Attention control parameters only apply to those tokens that have explicitly been set in the request"""
     control_log_additive: Optional[bool] = True
     """Apply controls on prompt items by adding the log(control_factor) to attention scores"""
+    aleph_alpha_api_key: Optional[str] = None
+    """API key for Aleph Alpha API."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
