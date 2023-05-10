@@ -1,6 +1,9 @@
-from typing import Any, Iterable, List, Optional
+from __future__ import annotations
 
-from pyspark.sql import DataFrame, Row, SparkSession
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional
+
+if TYPE_CHECKING:
+    from pyspark.sql import DataFrame, Row, SparkSession
 
 from langchain import SQLDatabase
 
@@ -15,6 +18,13 @@ class SparkSQL(SQLDatabase):
         include_tables: Optional[List[str]] = None,
         sample_rows_in_table_info: int = 3,
     ):
+        try:
+            from pyspark.sql import SparkSession
+        except ImportError:
+            raise ValueError(
+                "pyspark is not installed. Please install it with `pip install pyspark`"
+            )
+
         self._spark = (
             spark_session if spark_session else SparkSession.builder.getOrCreate()
         )
@@ -37,6 +47,13 @@ class SparkSQL(SQLDatabase):
         """Creating a remote Spark Session via Spark connect.
         For example: SparkSQL.from_uri("sc://localhost:15002")
         """
+        try:
+            from pyspark.sql import SparkSession
+        except ImportError:
+            raise ValueError(
+                "pyspark is not installed. Please install it with `pip install pyspark`"
+            )
+
         spark = SparkSession.builder.remote(database_uri).getOrCreate()
         return cls(spark, **kwargs)
 
