@@ -59,6 +59,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
             if len(zep_memory.summary.content) > 0:
                 messages.append(HumanMessage(content=zep_memory.summary.content))
         if zep_memory.messages:
+            msg: Message
             for msg in zep_memory.messages:
                 if msg.role == "ai":
                     messages.append(AIMessage(content=msg.content))
@@ -119,7 +120,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         return self.zep_client.search_memory(self.session_id, payload, limit=limit)
 
     def clear(self) -> None:
-        """Clear session memory from Zep. Note that Zep is long-term storage for memort
+        """Clear session memory from Zep. Note that Zep is long-term storage for memory
         and this is not advised unless you have specific data retention requirements.
         """
         try:
