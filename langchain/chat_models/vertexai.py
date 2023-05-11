@@ -4,6 +4,10 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.vertexai import _VertexAICommon
 from langchain.schema import (
@@ -67,23 +71,20 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     installed.
     """
 
-    model_name: str = "chat-bison-001"
+    model_name: str = "chat-bison@001"
     chat: Any = None  #: :meta private:
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the python package exists in environment."""
         try:
-            from google.cloud.aiplatform.private_preview.language_models import (
-                ChatModel,
-            )
+            import vertexai
+            from vertexai.preview.language_models import ChatModel
+
+            vertexai.init()
         except ImportError:
             cls._raise_import_error()
-        if values["model_name"]:
-            values["client"] = ChatModel.from_pretrained(values["model_name"])
-        else:
-            values["client"] = ChatModel()
-            values["model_name"] = values["client"]._MODEL_NAME
+        values["client"] = ChatModel.from_pretrained(values["model_name"])
         return values
 
     def send_message(
@@ -95,7 +96,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
 
     def _generate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> ChatResult:
         if not messages:
             raise ValueError(
@@ -128,7 +132,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         return history
 
     async def _agenerate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> ChatResult:
         raise NotImplementedError(
             """Vertex AI doesn't support async requests at the moment."""

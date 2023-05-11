@@ -18,7 +18,7 @@ def test_embedding_documents() -> None:
     assert len(output) == 1
     assert len(output[0]) == 768
     assert model._llm_type == "vertexai"
-    assert model.model_name == model.client._MODEL_NAME
+    assert model.model_name == model.client._model_id
 
 
 def test_embedding_query() -> None:

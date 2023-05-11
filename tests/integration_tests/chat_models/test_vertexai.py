@@ -30,7 +30,7 @@ def test_vertexai_single_call() -> None:
     assert len(model.history) == 2
     assert model.history[0] == HumanMessage(content="Hello")
     assert model.history[1] == response
-    assert model.model_name == model.client._MODEL_NAME
+    assert model.model_name == model.client._model_id
 
 
 def test_vertexai_single_call_with_context() -> None:

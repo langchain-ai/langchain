@@ -139,6 +139,7 @@ tair = "^1.3.3"
 wikipedia = "^1"
 pymongo = "^4.3.3"
 arxiv = "^1.4"
+google-cloud-aiplatform = ">=1.25.0"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"

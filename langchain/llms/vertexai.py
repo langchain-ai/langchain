@@ -3,17 +3,18 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
 
 class _VertexAICommon(BaseModel):
     client: Any = None  #: :meta private:
-    model_name: Optional[str] = None
+    model_name: Optional[str] = "text-bison@001"
     """Model name to use."""
     temperature: float = 0.7
     """Sampling temperature, it controls the degree of randomness in token selection."""
-    max_decode_steps: int = 256
+    max_output_tokens: int = 256
     "Token limit determines the maximum amount of text output from one prompt."
     top_p: float = 1
     "Tokens are selected from most probable to least until the sum of their "
@@ -27,7 +28,7 @@ class _VertexAICommon(BaseModel):
         """Get the default parameters for calling OpenAI API."""
         base_params = {
             "temperature": self.temperature,
-            "max_output_tokens": self.max_decode_steps,
+            "max_output_tokens": self.max_output_tokens,
             "top_k": self.top_p,
             "top_p": self.top_k,
         }
@@ -49,10 +50,9 @@ class _VertexAICommon(BaseModel):
 
     @staticmethod
     def _raise_import_error() -> ValueError:
-        sdk = "google_cloud_aiplatform-1.25.dev20230413+language.models-py2.py3-none-any.whl"  # noqa: E501
+        sdk = "google-cloud-aiplatform>=1.25.0"
         raise ImportError(
-            "Could not import VertexAI. Please, install it with "
-            f"pip install {sdk} 'shapely<2.0.0' && pip install invoke "
+            "Could not import VertexAI. Please, install it with " f"pip install {sdk} "
         )
 
 
@@ -63,19 +63,21 @@ class VertexAI(_VertexAICommon, LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
-            from google.cloud.aiplatform.private_preview.language_models import (
-                TextGenerationModel,
-            )
+            import vertexai
+            from vertexai.preview.language_models import TextGenerationModel
+
+            vertexai.init()
         except ImportError:
             cls._raise_import_error()
-        if values["model_name"]:
-            values["client"] = TextGenerationModel.from_pretrained(values["model_name"])
-        else:
-            values["client"] = TextGenerationModel()
-            values["model_name"] = values["client"]._MODEL_NAME
+        values["client"] = TextGenerationModel.from_pretrained(values["model_name"])
         return values
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to Vertex AI's create endpoint.
         Args:
             prompt: The prompt to pass into the model.

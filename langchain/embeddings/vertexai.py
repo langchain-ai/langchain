@@ -1,5 +1,5 @@
 """Wrapper around Google VertexAI embedding models."""
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import root_validator
 
@@ -8,20 +8,19 @@ from langchain.llms.vertexai import _VertexAICommon
 
 
 class VertexAIEmbeddings(_VertexAICommon, Embeddings):
+    model_name: Optional[str] = "textembedding-gecko@001"
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the python package exists in environment."""
         try:
-            from google.cloud.aiplatform.private_preview.language_models import (
-                TextEmbeddingModel,
-            )
+            import vertexai
+            from vertexai.preview.language_models import TextEmbeddingModel
+
+            vertexai.init()
         except ImportError:
             cls._raise_import_error()
-        if values["model_name"]:
-            values["client"] = TextEmbeddingModel.from_pretrained(values["model_name"])
-        else:
-            values["client"] = TextEmbeddingModel()
-            values["model_name"] = values["client"]._MODEL_NAME
+        values["client"] = TextEmbeddingModel.from_pretrained(values["model_name"])
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
