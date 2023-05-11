@@ -1,6 +1,6 @@
 """Loader that uses unstructured to load files."""
 from abc import ABC, abstractmethod
-from typing import IO, Any, List
+from typing import IO, Any, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -112,7 +112,8 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: str = "",
+        file_paths: Optional[List[str]] = None,
         mode: str = "single",
         url: str = "https://api.unstructured.io/general/v0/general",
         api_key: str = "",
@@ -120,27 +121,44 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
     ):
         """Initialize with file path."""
 
-        min_unstructured_version = "0.6.2"
-        if not satisfies_min_unstructured_version(min_unstructured_version):
+        if not file_path and not file_paths:
             raise ValueError(
-                "Partitioning via API is only supported in "
-                f"unstructured>={min_unstructured_version}."
+                "At least one of file_path and file_paths must be specified."
             )
+
+        if file_path and file_paths:
+            raise ValueError("Only one of file_path and file_paths can be specified.")
+
+        if file_path:
+            validate_unstructured_version(min_unstructured_version="0.6.2")
+        else:
+            validate_unstructured_version(min_unstructured_version="0.6.3")
 
         self.url = url
         self.api_key = api_key
+        self.file_paths = file_paths
 
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
-        from unstructured.partition.api import partition_via_api
+        if self.file_path:
+            from unstructured.partition.api import partition_via_api
 
-        return partition_via_api(
-            filename=self.file_path,
-            api_key=self.api_key,
-            api_url=self.url,
-            **self.unstructured_kwargs,
-        )
+            return partition_via_api(
+                filename=self.file_path,
+                api_key=self.api_key,
+                api_url=self.url,
+                **self.unstructured_kwargs,
+            )
+        else:
+            from unstructured.partition.api import partition_multiple_via_api
+
+            return partition_multiple_via_api(
+                filenames=self.file_paths,
+                api_key=self.api_key,
+                api_url=self.url,
+                **self.unstructured_kwargs,
+            )
 
 
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
