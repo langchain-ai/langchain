@@ -39,6 +39,8 @@ class DocugamiLoader(BaseLoader, BaseModel):
     docset_id: Optional[str]
     document_ids: Optional[List[str]]
     file_paths: Optional[List[Path]]
+    max_chunk_size: int = 1024
+    min_chunk_size: int = 10
 
     @root_validator
     def validate_local_or_remote(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -82,6 +84,24 @@ class DocugamiLoader(BaseLoader, BaseModel):
                 "Please install it with `pip install lxml`."
             )
 
+        # helper functions
+        def _is_structural(node):
+            return "structure" in node.attrib
+
+        def _get_text(node):
+            return " ".join(node.itertext()).strip()
+
+        def _leaf_structural_nodes(node):
+            if _is_structural(node) and not any(
+                _is_structural(child) for child in node
+            ):
+                return [node]
+            else:
+                leaf_nodes = []
+                for child in node:
+                    leaf_nodes.extend(_leaf_structural_nodes(child))
+                return leaf_nodes
+
         # combine metadata across projects for this document
         doc_metadata = []
         if project_metadata:
@@ -93,32 +113,27 @@ class DocugamiLoader(BaseLoader, BaseModel):
         # parse the tree and return chunks
         tree = etree.parse(io.BytesIO(content))
         root = tree.getroot()
-        chunks: List[Document] = []
-        for chunk in root.iter(tag=etree.Element):
-            structure = chunk.attrib.get("structure", "")
-            valid_chunk = False
-            if structure in ("h1", "p"):
-                # heading or paragraph chunks found in document layout
-                valid_chunk = True
-            elif chunk.tag == TD_NAME or structure in ("div", "li"):
-                if not any(
-                    "structure" in x.attrib or x.tag == TABLE_NAME for x in chunk
-                ):
-                    # Table cells, divs and list items found in document
-                    # layout that don't contain further inner structure
-                    valid_chunk = True
-                    if chunk.tag == TD_NAME:
-                        structure = "td"
 
-            if valid_chunk:
+        chunks: List[Document] = []
+        for node in _leaf_structural_nodes(root):
+            text = _get_text(node)
+            if (
+                len(text) < self.min_chunk_size
+                and len(chunks) > 0
+                and len(chunks[-1].page_content + text) < self.max_chunk_size
+            ):
+                # node is leaf structural, but too small, so append to previous chunk
+                # as long as this will not push previous chunk itself past max size.
+                chunks[-1].page_content += " " + text
+            else:
                 chunks.append(
                     Document(
-                        page_content=" ".join(chunk.itertext()).strip(),
+                        page_content=text,
                         metadata={
-                            XPATH_KEY: self._xpath_for_chunk(chunk),
+                            XPATH_KEY: self._xpath_for_chunk(node),
                             DOCUMENT_ID_KEY: document_id,
-                            STRUCTURE_KEY: structure,
-                            TAG_KEY: re.sub(r"\{.*\}", "", chunk.tag),
+                            STRUCTURE_KEY: node.attrib.get("structure", ""),
+                            TAG_KEY: re.sub(r"\{.*\}", "", node.tag),
                             PROJECTS_KEY: doc_metadata,
                         },
                     )
