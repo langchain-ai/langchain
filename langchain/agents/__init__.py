@@ -25,8 +25,8 @@ from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.agents.initialize import initialize_agent
 from langchain.agents.load_tools import (
     get_all_tool_names,
-    load_tools,
     load_huggingface_tool,
+    load_tools,
 )
 from langchain.agents.loading import load_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
@@ -65,7 +65,7 @@ __all__ = [
     "get_all_tool_names",
     "initialize_agent",
     "load_agent",
-    "load_tools",
     "load_huggingface_tool",
+    "load_tools",
     "tool",
 ]
