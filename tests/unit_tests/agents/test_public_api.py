@@ -30,6 +30,7 @@ _EXPECTED = [
     "get_all_tool_names",
     "initialize_agent",
     "load_agent",
+    "load_huggingface_tool",
     "load_tools",
     "tool",
 ]

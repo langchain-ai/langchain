@@ -8,6 +8,7 @@ from langchain.callbacks.manager import (
     tracing_enabled,
     wandb_tracing_enabled,
 )
+from langchain.callbacks.mlflow_callback import MlflowCallbackHandler
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
@@ -16,6 +17,8 @@ __all__ = [
     "OpenAICallbackHandler",
     "StdOutCallbackHandler",
     "AimCallbackHandler",
+    "WandbCallbackHandler",
+    "MlflowCallbackHandler",
     "ClearMLCallbackHandler",
     "CometCallbackHandler",
     "AsyncIteratorCallbackHandler",

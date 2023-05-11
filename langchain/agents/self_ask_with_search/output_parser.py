@@ -20,3 +20,7 @@ class SelfAskOutputParser(AgentOutputParser):
         if " " == after_colon[0]:
             after_colon = after_colon[1:]
         return AgentAction("Intermediate Answer", after_colon, text)
+
+    @property
+    def _type(self) -> str:
+        return "self_ask"
