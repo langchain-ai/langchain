@@ -31,7 +31,7 @@ from langchain.callbacks.tracers.langchain import LangChainTracerV2
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.client.models import Dataset, DatasetCreate, Example, ExampleCreate
-from langchain.client.utils import parse_chat_messages
+from langchain.client.utils import deserialize_message
 from langchain.llms.base import BaseLLM
 from langchain.schema import ChatResult, LLMResult
 from langchain.utils import raise_for_status_with_text, xor_args
@@ -295,12 +295,17 @@ class LangChainPlusClient(BaseSettings):
         langchain_tracer: LangChainTracerV2,
     ) -> Union[LLMResult, ChatResult]:
         if isinstance(llm, BaseLLM):
+            if "prompts" not in inputs:
+                raise ValueError(f"LLM Run requires 'prompts' input. Got {inputs}")
             llm_prompts: List[str] = inputs["prompts"]
             llm_output = await llm.agenerate(llm_prompts, callbacks=[langchain_tracer])
         elif isinstance(llm, BaseChatModel):
-            chat_prompts: List[str] = inputs["prompts"]
+            if "messages" not in inputs:
+                raise ValueError(f"Chat Run requires 'messages' input. Got {inputs}")
+            raw_messages: List[List[dict]] = inputs["messages"]
             messages = [
-                parse_chat_messages(chat_prompt) for chat_prompt in chat_prompts
+                [deserialize_message(message) for message in batch]
+                for batch in raw_messages
             ]
             llm_output = await llm.agenerate(messages, callbacks=[langchain_tracer])
         else:
@@ -453,12 +458,19 @@ class LangChainPlusClient(BaseSettings):
     ) -> Union[LLMResult, ChatResult]:
         """Run the language model on the example."""
         if isinstance(llm, BaseLLM):
+            if "prompts" not in inputs:
+                raise ValueError(f"LLM Run must contain 'prompts' key. Got {inputs}")
             llm_prompts: List[str] = inputs["prompts"]
             llm_output = llm.generate(llm_prompts, callbacks=[langchain_tracer])
         elif isinstance(llm, BaseChatModel):
-            chat_prompts: List[str] = inputs["prompts"]
+            if "messages" not in inputs:
+                raise ValueError(
+                    f"Chat Model Run must contain 'messages' key. Got {inputs}"
+                )
+            raw_messages: List[List[dict]] = inputs["messages"]
             messages = [
-                parse_chat_messages(chat_prompt) for chat_prompt in chat_prompts
+                [deserialize_message(message) for message in batch]
+                for batch in raw_messages
             ]
             llm_output = llm.generate(messages, callbacks=[langchain_tracer])
         else:
