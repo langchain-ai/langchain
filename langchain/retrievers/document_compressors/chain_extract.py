@@ -58,6 +58,10 @@ class LLMChainExtractor(BaseDocumentCompressor):
             if len(output) == 0:
                 continue
             compressed_docs.append(Document(page_content=output, metadata=doc.metadata))
+        if len(documents) > 0 and len(compressed_docs) == 0:
+            raise ValueError(
+                "No documents contain relevant information wrt to the query"
+            )
         return compressed_docs
 
     async def acompress_documents(
@@ -76,6 +80,10 @@ class LLMChainExtractor(BaseDocumentCompressor):
                 continue
             compressed_docs.append(
                 Document(page_content=outputs[i], metadata=doc.metadata)
+            )
+        if len(documents) > 0 and len(compressed_docs) == 0:
+            raise ValueError(
+                "No documents contain relevant information wrt to the query"
             )
         return compressed_docs
 
