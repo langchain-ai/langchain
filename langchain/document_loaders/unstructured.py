@@ -104,7 +104,10 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
         return partition(filename=self.file_path, **self.unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
-        return {"source": self.file_path}
+        if self.file_path:
+            return {"source": self.file_path}
+        else:
+            return {"sources": self.file_paths}
 
 
 def get_elements_from_api(
