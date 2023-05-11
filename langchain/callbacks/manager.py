@@ -22,6 +22,7 @@ from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers.base import TracerSession
 from langchain.callbacks.tracers.langchain import LangChainTracer, LangChainTracerV2
 from langchain.callbacks.tracers.schemas import TracerSessionV2
+from langchain.callbacks.tracers.wandb import WandbTracer
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
@@ -32,6 +33,12 @@ openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
 tracing_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
+wandb_tracing_callback_var: ContextVar[
+    Optional[WandbTracer]
+] = ContextVar(  # noqa: E501
+    "tracing_wandb_callback", default=None
+)
+
 tracing_v2_callback_var: ContextVar[
     Optional[LangChainTracerV2]
 ] = ContextVar(  # noqa: E501
@@ -58,6 +65,18 @@ def tracing_enabled(
     tracing_callback_var.set(cb)
     yield session
     tracing_callback_var.set(None)
+
+
+@contextmanager
+def wandb_tracing_enabled(
+    session_name: str = "default",
+) -> Generator[TracerSession, None, None]:
+    """Get WandbTracer in a context manager."""
+    cb = WandbTracer()
+    session = cast(TracerSession, cb.load_session(session_name))
+    wandb_tracing_callback_var.set(cb)
+    yield session
+    wandb_tracing_callback_var.set(None)
 
 
 @contextmanager
@@ -726,11 +745,16 @@ def _configure(
             callback_manager.add_handler(handler, False)
 
     tracer = tracing_callback_var.get()
+    wandb_tracer = wandb_tracing_callback_var.get()
     open_ai = openai_callback_var.get()
     tracing_enabled_ = (
         os.environ.get("LANGCHAIN_TRACING") is not None
         or tracer is not None
         or os.environ.get("LANGCHAIN_HANDLER") is not None
+    )
+    wandb_tracing_enabled_ = (
+        os.environ.get("LANGCHAIN_WANDB_TRACING") is not None
+        or wandb_tracer is not None
     )
 
     tracer_v2 = tracing_v2_callback_var.get()
@@ -740,7 +764,7 @@ def _configure(
     tracer_session = os.environ.get("LANGCHAIN_SESSION")
     if tracer_session is None:
         tracer_session = "default"
-    if verbose or tracing_enabled_ or open_ai is not None:
+    if verbose or tracing_enabled_ or wandb_tracing_enabled_ or open_ai is not None:
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
             for handler in callback_manager.handlers
@@ -754,6 +778,15 @@ def _configure(
                 callback_manager.add_handler(tracer, True)
             else:
                 handler = LangChainTracer()
+                handler.load_session(tracer_session)
+                callback_manager.add_handler(handler, True)
+        if wandb_tracing_enabled_ and not any(
+            isinstance(handler, WandbTracer) for handler in callback_manager.handlers
+        ):
+            if tracer:
+                callback_manager.add_handler(wandb_tracer, True)
+            else:
+                handler = WandbTracer()
                 handler.load_session(tracer_session)
                 callback_manager.add_handler(handler, True)
         if tracing_v2_enabled_ and not any(
