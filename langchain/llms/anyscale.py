@@ -9,10 +9,11 @@ from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 import requests
 
+
 class Anyscale(LLM):
     """Wrapper around Anyscale Services.
     To use, you should have the environment variable ``ANYSCALE_SERVICE_URL``,``ANYSCALE_SERVICE_ROUTE`` and ``ANYSCALE_SERVICE_TOKEN`` set with your Anyscale Service, or pass it as a named parameter to the constructor.
-    
+
     Example:
         .. code-block:: python
             from langchain.llms import Anyscale
@@ -21,8 +22,8 @@ class Anyscale(LLM):
                                 anyscale_service_token="SERVICE_TOKEN")
 
             # Use Ray for distributed processing
-	    import ray
-	    prompt_list=[]
+            import ray
+            prompt_list=[]
             @ray.remote
             def send_query(llm, prompt):
                 resp = llm(prompt)
@@ -56,14 +57,14 @@ class Anyscale(LLM):
             values, "anyscale_service_token", "ANYSCALE_SERVICE_TOKEN"
         )
         try:
-            anyscale_service_endpoint = f'{anyscale_service_url}/-/route'
-            headers = {'Authorization': f'Bearer {anyscale_service_token}'}
+            anyscale_service_endpoint = f"{anyscale_service_url}/-/route"
+            headers = {"Authorization": f"Bearer {anyscale_service_token}"}
             resp = requests.get(anyscale_service_endpoint, headers=headers)
-        except requests.exceptions.RequestException as e: 
+        except requests.exceptions.RequestException as e:
             raise ValueError(e)
-        values['anyscale_service_url'] = anyscale_service_url
-        values['anyscale_service_route'] = anyscale_service_route
-        values['anyscale_service_token'] = anyscale_service_token
+        values["anyscale_service_url"] = anyscale_service_url
+        values["anyscale_service_route"] = anyscale_service_route
+        values["anyscale_service_token"] = anyscale_service_token
         return values
 
     @property
@@ -71,7 +72,7 @@ class Anyscale(LLM):
         """Get the identifying parameters."""
         return {
             "anyscale_service_url": self.anyscale_service_url,
-            "anyscale_service_route": self.anyscale_service_route
+            "anyscale_service_route": self.anyscale_service_route,
         }
 
     @property
@@ -95,16 +96,18 @@ class Anyscale(LLM):
             .. code-block:: python
                 response = anyscale("Tell me a joke.")
         """
-        
-        anyscale_service_endpoint = f'{self.anyscale_service_url}/{self.anyscale_service_route}'
-        headers = {'Authorization': f'Bearer {self.anyscale_service_token}'}
-        body = {'prompt':prompt}
+
+        anyscale_service_endpoint = (
+            f"{self.anyscale_service_url}/{self.anyscale_service_route}"
+        )
+        headers = {"Authorization": f"Bearer {self.anyscale_service_token}"}
+        body = {"prompt": prompt}
         resp = requests.post(anyscale_service_endpoint, headers=headers, json=body)
-            
+
         if resp.status_code != 200:
             raise ValueError(f"Error returned by service")
         text = resp.text
-        
+
         if stop is not None:
             # This is a bit hacky, but I can't figure out a better way to enforce
             # stop tokens when making calls to huggingface_hub.
