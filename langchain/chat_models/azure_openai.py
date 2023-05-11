@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Mapping
 
 from pydantic import root_validator
 
@@ -110,3 +110,12 @@ class AzureChatOpenAI(ChatOpenAI):
             **super()._default_params,
             "engine": self.deployment_name,
         }
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {**self._default_params}
+
+    @property
+    def _llm_type(self) -> str:
+        return "azure-openai-chat"
