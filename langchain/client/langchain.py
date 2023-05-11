@@ -31,9 +31,8 @@ from langchain.callbacks.tracers.langchain import LangChainTracerV2
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.client.models import Dataset, DatasetCreate, Example, ExampleCreate
-from langchain.client.utils import deserialize_message
 from langchain.llms.base import BaseLLM
-from langchain.schema import ChatResult, LLMResult
+from langchain.schema import ChatResult, LLMResult, messages_from_dict
 from langchain.utils import raise_for_status_with_text, xor_args
 
 if TYPE_CHECKING:
@@ -303,10 +302,7 @@ class LangChainPlusClient(BaseSettings):
             if "messages" not in inputs:
                 raise ValueError(f"Chat Run requires 'messages' input. Got {inputs}")
             raw_messages: List[List[dict]] = inputs["messages"]
-            messages = [
-                [deserialize_message(message) for message in batch]
-                for batch in raw_messages
-            ]
+            messages = [messages_from_dict(batch) for batch in raw_messages]
             llm_output = await llm.agenerate(messages, callbacks=[langchain_tracer])
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
@@ -468,10 +464,7 @@ class LangChainPlusClient(BaseSettings):
                     f"Chat Model Run must contain 'messages' key. Got {inputs}"
                 )
             raw_messages: List[List[dict]] = inputs["messages"]
-            messages = [
-                [deserialize_message(message) for message in batch]
-                for batch in raw_messages
-            ]
+            messages = [messages_from_dict(batch) for batch in raw_messages]
             llm_output = llm.generate(messages, callbacks=[langchain_tracer])
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
