@@ -107,6 +107,44 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
         return {"source": self.file_path}
 
 
+def get_elements_from_api(
+    file_path: Optional[str] = None,
+    file_paths: Optional[List[str]] = None,
+    file: Optional[IO] = None,
+    files: Optional[List[IO]] = None,
+    api_url: str = "https://api.unstructured.io/general/v0/general",
+    api_key: str = "",
+    **unstructured_kwargs: Any,
+) -> List:
+    """Retrieves a list of elements from the Unstructured API."""
+    if file or file_path:
+        from unstructured.partition.api import partition_via_api
+
+        return partition_via_api(
+            filename=file_path,
+            file=file,
+            api_key=api_key,
+            api_url=api_url,
+            **unstructured_kwargs,
+        )
+    else:
+        from unstructured.partition.api import partition_multiple_via_api
+
+        _doc_elements = partition_multiple_via_api(
+            filenames=file_paths,
+            files=files,
+            api_key=api_key,
+            api_url=api_url,
+            **unstructured_kwargs,
+        )
+
+        elements = []
+        for _elements in _doc_elements:
+            elements.extend(_elements)
+
+        return elements
+
+
 class UnstructuredAPIFileLoader(UnstructuredFileLoader):
     """Loader that uses the unstructured web API to load files."""
 
@@ -141,36 +179,21 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
-        if self.file_path:
-            from unstructured.partition.api import partition_via_api
-
-            return partition_via_api(
-                filename=self.file_path,
-                api_key=self.api_key,
-                api_url=self.url,
-                **self.unstructured_kwargs,
-            )
-        else:
-            from unstructured.partition.api import partition_multiple_via_api
-
-            _doc_elements = partition_multiple_via_api(
-                filenames=self.file_paths,
-                api_key=self.api_key,
-                api_url=self.url,
-                **self.unstructured_kwargs,
-            )
-
-            elements = []
-            for _elements in _doc_elements:
-                elements.extend(_elements)
-
-            return elements
+        return get_elements_from_api(
+            file_path=self.file_path,
+            file_paths=self.file_paths,
+            api_key=self.api_key,
+            api_url=self.url,
+            **self.unstructured_kwargs,
+        )
 
 
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load file IO objects."""
 
-    def __init__(self, file: IO, mode: str = "single", **unstructured_kwargs: Any):
+    def __init__(
+        self, file: Optional[IO], mode: str = "single", **unstructured_kwargs: Any
+    ):
         """Initialize with file path."""
         self.file = file
         super().__init__(mode=mode, **unstructured_kwargs)
@@ -189,30 +212,36 @@ class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
 
     def __init__(
         self,
-        file: IO,
+        file: Optional[IO] = None,
         mode: str = "single",
         url: str = "https://api.unstructured.io/general/v0/general",
         api_key: str = "",
+        files: Optional[List[IO]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
 
-        min_unstructured_version = "0.6.2"
-        if not satisfies_min_unstructured_version(min_unstructured_version):
-            raise ValueError(
-                "Partitioning via API is only supported in "
-                f"unstructured>={min_unstructured_version}."
-            )
+        if not file and not files:
+            raise ValueError("At least one of file and files must be specified.")
+
+        if file and files:
+            raise ValueError("Only one of file and files can be specified.")
+
+        if file:
+            validate_unstructured_version(min_unstructured_version="0.6.2")
+        else:
+            validate_unstructured_version(min_unstructured_version="0.6.3")
 
         self.url = url
         self.api_key = api_key
+        self.files = files
+
         super().__init__(file=file, mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
-        from unstructured.partition.api import partition_via_api
-
-        return partition_via_api(
+        return get_elements_from_api(
             file=self.file,
+            files=self.files,
             api_key=self.api_key,
             api_url=self.url,
             **self.unstructured_kwargs,
