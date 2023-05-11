@@ -1,18 +1,20 @@
 """Wrapper around Anyscale"""
 from typing import Any, Dict, List, Mapping, Optional
 
+import requests
 from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
-import requests
 
 
 class Anyscale(LLM):
     """Wrapper around Anyscale Services.
-    To use, you should have the environment variable ``ANYSCALE_SERVICE_URL``,``ANYSCALE_SERVICE_ROUTE`` and ``ANYSCALE_SERVICE_TOKEN`` set with your Anyscale Service, or pass it as a named parameter to the constructor.
+    To use, you should have the environment variable ``ANYSCALE_SERVICE_URL``,
+    ``ANYSCALE_SERVICE_ROUTE`` and ``ANYSCALE_SERVICE_TOKEN`` set with your Anyscale
+    Service, or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
@@ -59,7 +61,7 @@ class Anyscale(LLM):
         try:
             anyscale_service_endpoint = f"{anyscale_service_url}/-/route"
             headers = {"Authorization": f"Bearer {anyscale_service_token}"}
-            resp = requests.get(anyscale_service_endpoint, headers=headers)
+            requests.get(anyscale_service_endpoint, headers=headers)
         except requests.exceptions.RequestException as e:
             raise ValueError(e)
         values["anyscale_service_url"] = anyscale_service_url
@@ -105,7 +107,9 @@ class Anyscale(LLM):
         resp = requests.post(anyscale_service_endpoint, headers=headers, json=body)
 
         if resp.status_code != 200:
-            raise ValueError(f"Error returned by service")
+            raise ValueError(
+                f"Error returned by service, status code {resp.status_code}"
+            )
         text = resp.text
 
         if stop is not None:
