@@ -117,6 +117,7 @@ class RunBase(BaseModel):
     session_id: UUID
     reference_example_id: Optional[UUID]
     run_type: RunTypeEnum
+    parent_run_id: Optional[UUID]
 
 
 class RunCreate(RunBase):
@@ -124,13 +125,13 @@ class RunCreate(RunBase):
 
     name: Optional[str]
     child_runs: List[RunCreate] = Field(default_factory=list)
+    child_execution_order: int
 
 
 class Run(RunBase):
     """Run schema when loading from the DB."""
 
     name: str
-    parent_run_id: Optional[UUID]
 
 
 ChainRun.update_forward_refs()
