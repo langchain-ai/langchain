@@ -121,8 +121,9 @@ class VectorStore(ABC):
         Args:
             query: input text
             k: Number of Documents to return. Defaults to 4.
-            score_threshold: Optional, a floating point value between 0 to 1 to
-                            filter the resulting set of retrieved docs
+            **kwargs: kwargs to be passed to similarity search. Should include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
 
         Returns:
             List of Tuples of (doc, similarity_score)
