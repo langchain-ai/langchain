@@ -72,7 +72,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
             callbacks, self.callbacks, self.verbose
         )
         run_manager = callback_manager.on_chat_model_start(
-            {"name": self.__class__.__name__}, messages, **params
+            {"name": self.__class__.__name__}, messages, invocation_params=params
         )
 
         new_arg_supported = inspect.signature(self._generate).parameters.get(
@@ -108,7 +108,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
             callbacks, self.callbacks, self.verbose
         )
         run_manager = await callback_manager.on_chat_model_start(
-            {"name": self.__class__.__name__}, messages, **params
+            {"name": self.__class__.__name__}, messages, invocation_params=params
         )
 
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
