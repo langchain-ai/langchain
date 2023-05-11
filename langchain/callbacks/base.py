@@ -203,6 +203,11 @@ class BaseCallbackHandler(
         """Whether to ignore agent callbacks."""
         return False
 
+    @property
+    def ignore_chat_model(self) -> bool:
+        """Whether to ignore chat model callbacks."""
+        return False
+
 
 class AsyncCallbackHandler(BaseCallbackHandler):
     """Async callback handler that can be used to handle callbacks from langchain."""

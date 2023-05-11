@@ -96,7 +96,6 @@ class LangChainPlusClient(BaseSettings):
                 "Unable to get seeded tenant ID. Please manually provide."
             ) from e
         results: List[dict] = response.json()
-        breakpoint()
         if len(results) == 0:
             raise ValueError("No seeded tenant found")
         return results[0]["id"]

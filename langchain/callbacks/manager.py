@@ -96,42 +96,30 @@ def _handle_event(
     **kwargs: Any,
 ) -> None:
     """Generic event handler for CallbackManager."""
+    message_strings: Optional[List[str]] = None
     for handler in handlers:
         try:
             if ignore_condition_name is None or not getattr(
                 handler, ignore_condition_name
             ):
                 getattr(handler, event_name)(*args, **kwargs)
+        except NotImplementedError as e:
+            if event_name == "on_chat_model_start":
+                if message_strings is None:
+                    message_strings = [get_buffer_string(m) for m in args[1]]
+                _handle_event(
+                    [handler],
+                    "on_llm_start",
+                    "ignore_llm",
+                    args[0],
+                    message_strings,
+                    *args[2:],
+                    **kwargs,
+                )
+            else:
+                logger.warning(f"Error in {event_name} callback: {e}")
         except Exception as e:
-            # TODO: switch this to use logging
             logging.warning(f"Error in {event_name} callback: {e}")
-
-
-def _handle_chat_start_event(
-    handlers: List[BaseCallbackHandler],
-    serialized: Dict[str, Any],
-    messages: List[List[BaseMessage]],
-    *args: Any,
-    **kwargs: Any,
-) -> None:
-    """Handle the chat start event."""
-    for handler in handlers:
-        try:
-            if not getattr(handler, "ignore_chat_start", False):
-                handler.on_chat_model_start(serialized, messages, *args, **kwargs)
-        except NotImplementedError:
-            message_strings = [get_buffer_string(m) for m in messages]
-            _handle_event(
-                handlers,
-                "on_llm_start",
-                "ignore_llm",
-                serialized,
-                message_strings,
-                *args,
-                **kwargs,
-            )
-        except Exception as e:
-            logger.warning(f"Error in on_chat_model_start callback: {e}")
 
 
 async def _ahandle_event_for_handler(
@@ -150,6 +138,20 @@ async def _ahandle_event_for_handler(
                 await asyncio.get_event_loop().run_in_executor(
                     None, functools.partial(event, *args, **kwargs)
                 )
+    except NotImplementedError as e:
+        if event_name == "on_chat_model_start":
+            message_strings = [get_buffer_string(m) for m in args[1]]
+            await _ahandle_event_for_handler(
+                handler,
+                "on_llm",
+                "ignore_llm",
+                args[0],
+                message_strings,
+                *args[2:],
+                **kwargs,
+            )
+        else:
+            logger.warning(f"Error in {event_name} callback: {e}")
     except Exception as e:
         logger.warning(f"Error in {event_name} callback: {e}")
 
@@ -166,61 +168,6 @@ async def _ahandle_event(
         *(
             _ahandle_event_for_handler(
                 handler, event_name, ignore_condition_name, *args, **kwargs
-            )
-            for handler in handlers
-        )
-    )
-
-
-async def _ahandle_chat_start_for_handler(
-    handler: BaseCallbackHandler,
-    serialized: Dict[str, Any],
-    messages: List[List[BaseMessage]],
-    *args: Any,
-    **kwargs: Any,
-) -> None:
-    try:
-        if not getattr(handler, "ignore_chat_start", False):
-            if asyncio.iscoroutinefunction(handler.on_chat_model_start):
-                await handler.on_chat_model_start(serialized, messages, *args, **kwargs)
-            else:
-                await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    functools.partial(
-                        handler.on_chat_model_start,
-                        serialized,
-                        messages,
-                        *args,
-                        **kwargs,
-                    ),
-                )
-    except NotImplementedError:
-        message_strings = [get_buffer_string(m) for m in messages]
-        await _ahandle_event_for_handler(
-            handler,
-            "on_llm_start",
-            "ignore_llm",
-            serialized,
-            message_strings,
-            *args,
-            **kwargs,
-        )
-    except Exception as e:
-        logger.warning(f"Error in on_chat_model_start callback: {e}")
-
-
-async def _ahandle_chat_start(
-    handlers: List[BaseCallbackHandler],
-    serialized: Dict[str, Any],
-    messages: List[List[BaseMessage]],
-    *args: Any,
-    **kwargs: Any,
-) -> None:
-    """Generic event handler for AsyncCallbackManager."""
-    await asyncio.gather(
-        *(
-            _ahandle_chat_start_for_handler(
-                handler, serialized, messages, *args, **kwargs
             )
             for handler in handlers
         )
@@ -631,8 +578,10 @@ class CallbackManager(BaseCallbackManager):
         """Run when LLM starts running."""
         if run_id is None:
             run_id = uuid4()
-        _handle_chat_start_event(
+        _handle_event(
             self.handlers,
+            "on_chat_model_start",
+            "ignore_chat_model",
             serialized,
             messages,
             run_id=run_id,
@@ -754,8 +703,10 @@ class AsyncCallbackManager(BaseCallbackManager):
         if run_id is None:
             run_id = uuid4()
 
-        await _ahandle_chat_start(
+        await _ahandle_event(
             self.handlers,
+            "on_chat_model_start",
+            "ignore_chat_model",
             serialized,
             messages,
             run_id=run_id,
