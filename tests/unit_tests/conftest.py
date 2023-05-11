@@ -3,10 +3,11 @@ from importlib import util
 from typing import Dict, Sequence
 
 import pytest
-from pytest import Config, Function
+from pytest import Config, Function, Parser
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: Parser) -> None:
+    """Add custom command line options to pytest."""
     parser.addoption(
         "--only-extended",
         action="store_true",
@@ -15,7 +16,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--only-core",
         action="store_true",
-        help="Only run core tests",
+        help="Only run core tests. Never runs any extended tests.",
     )
 
 
