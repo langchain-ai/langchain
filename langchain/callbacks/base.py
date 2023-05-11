@@ -8,7 +8,6 @@ from langchain.schema import (
     AgentAction,
     AgentFinish,
     BaseMessage,
-    ChatResult,
     LLMResult,
 )
 
@@ -45,40 +44,6 @@ class LLMManagerMixin:
         **kwargs: Any,
     ) -> Any:
         """Run when LLM errors."""
-
-
-# class ChatModelManagerMixin:
-#     """Mixin for Chat Model callbacks."""
-
-#     def on_chat_model_new_token(
-#         self,
-#         token: str,
-#         *,
-#         run_id: UUID,
-#         parent_run_id: Optional[UUID] = None,
-#         **kwargs: Any,
-#     ) -> Any:
-#         """Run on new Chat Model token. Only available when streaming is enabled."""
-
-#     def on_chat_model_end(
-#         self,
-#         response: ChatResult,
-#         *,
-#         run_id: UUID,
-#         parent_run_id: Optional[UUID] = None,
-#         **kwargs: Any,
-#     ) -> Any:
-#         """Run when the Chat Model ends running."""
-
-#     def on_chat_model_error(
-#         self,
-#         error: Union[Exception, KeyboardInterrupt],
-#         *,
-#         run_id: UUID,
-#         parent_run_id: Optional[UUID] = None,
-#         **kwargs: Any,
-#     ) -> Any:
-#         """Run when a Chat Model errors."""
 
 
 class ChainManagerMixin:
@@ -173,6 +138,9 @@ class CallbackManagerMixin:
         **kwargs: Any,
     ) -> Any:
         """Run when a chat model starts running."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement `on_chat_model_start`"
+        )
 
     def on_chain_start(
         self,
@@ -213,7 +181,6 @@ class RunManagerMixin:
 
 class BaseCallbackHandler(
     LLMManagerMixin,
-    # ChatModelManagerMixin,
     ChainManagerMixin,
     ToolManagerMixin,
     CallbackManagerMixin,
@@ -251,6 +218,20 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when LLM starts running."""
 
+    async def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when a chat model starts running."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement `on_chat_model_start`"
+        )
+
     async def on_llm_new_token(
         self,
         token: str,
@@ -272,47 +253,6 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when LLM ends running."""
 
     async def on_llm_error(
-        self,
-        error: Union[Exception, KeyboardInterrupt],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Run when LLM errors."""
-
-    # async def on_chat_model_start(
-    #     self,
-    #     serialized: Dict[str, Any],
-    #     messages: List[List[BaseMessage]],
-    #     *,
-    #     run_id: UUID,
-    #     parent_run_id: Optional[UUID] = None,
-    #     **kwargs: Any,
-    # ) -> None:
-    #     """Run when Chat Model starts running."""
-
-    # async def on_chat_model_new_token(
-    #     self,
-    #     token: str,
-    #     *,
-    #     run_id: UUID,
-    #     parent_run_id: Optional[UUID] = None,
-    #     **kwargs: Any,
-    # ) -> None:
-    #     """Run on new Chat Model token. Only available when streaming is enabled."""
-
-    # async def on_chat_model_end(
-    #     self,
-    #     response: ChatResult,
-    #     *,
-    #     run_id: UUID,
-    #     parent_run_id: Optional[UUID] = None,
-    #     **kwargs: Any,
-    # ) -> None:
-    #     """Run when Chat Model ends running."""
-
-    async def on_chat_model_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,

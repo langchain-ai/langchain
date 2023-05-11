@@ -125,7 +125,6 @@ class RunCreate(RunBase):
 
     name: Optional[str]
     child_runs: List[RunCreate] = Field(default_factory=list)
-    child_execution_order: int
 
 
 class Run(RunBase):

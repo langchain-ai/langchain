@@ -1,7 +1,8 @@
 from __future__ import annotations
-import logging
+
 import asyncio
 import functools
+import logging
 import os
 import warnings
 from contextlib import contextmanager
@@ -630,7 +631,6 @@ class CallbackManager(BaseCallbackManager):
         """Run when LLM starts running."""
         if run_id is None:
             run_id = uuid4()
-
         _handle_chat_start_event(
             self.handlers,
             serialized,
@@ -640,7 +640,8 @@ class CallbackManager(BaseCallbackManager):
             **kwargs,
         )
 
-        # Do we need ChatRun manager?
+        # Re-use the LLM Run Manager since the outputs are treated
+        # the same for now
         return CallbackManagerForLLMRun(
             run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
         )
@@ -747,7 +748,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
-        run_id: UUID,
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         if run_id is None:

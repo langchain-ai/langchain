@@ -24,7 +24,6 @@ from langchain.schema import (
     HumanMessage,
     LLMResult,
     PromptValue,
-    get_buffer_string,
 )
 
 
