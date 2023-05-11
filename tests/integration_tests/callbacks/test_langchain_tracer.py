@@ -7,6 +7,7 @@ from aiohttp import ClientSession
 
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import tracing_enabled
+from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.llms import OpenAI
 
 questions = [
@@ -121,3 +122,33 @@ async def test_tracing_context_manager_async() -> None:
         await asyncio.gather(*tasks)
 
     await task
+
+
+@pytest.mark.asyncio
+async def test_tracing_v2_environment_variable() -> None:
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+
+    aiosession = ClientSession()
+    llm = OpenAI(temperature=0)
+    async_tools = load_tools(["llm-math", "serpapi"], llm=llm, aiosession=aiosession)
+    agent = initialize_agent(
+        async_tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+    )
+    tasks = [agent.arun(q) for q in questions[:3]]
+    await asyncio.gather(*tasks)
+    await aiosession.close()
+
+
+def test_tracing_v2_context_manager() -> None:
+    llm = OpenAI(temperature=0)
+    tools = load_tools(["llm-math", "serpapi"], llm=llm)
+    agent = initialize_agent(
+        tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+    )
+    if "LANGCHAIN_TRACING_V2" in os.environ:
+        del os.environ["LANGCHAIN_TRACING_V2"]
+    with tracing_v2_enabled() as session:
+        assert session
+        agent.run(questions[0])  # this should be traced
+
+    agent.run(questions[0])  # this should not be traced
