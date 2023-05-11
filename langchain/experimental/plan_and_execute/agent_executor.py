@@ -14,7 +14,7 @@ from langchain.experimental.plan_and_execute.schema import (
 
 class PlanAndExecute(Chain):
     planner: BasePlanner
-    executer: BaseExecutor
+    executor: BaseExecutor
     step_container: BaseStepContainer = Field(default_factory=ListStepContainer)
     input_key: str = "input"
     output_key: str = "output"
