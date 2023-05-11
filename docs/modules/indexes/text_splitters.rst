@@ -60,8 +60,8 @@ Usage examples for the text splitters:
 
 Most LLMs are constrained by the number of tokens that you can pass in, which is not the same as the number of characters.
 In order to get a more accurate estimate, we can use tokenizers to count the number of tokens in the text.
-We use this number inside the `CharacterTextSplitter` class.
-This implemented as the `from_<tokenizer>` methods of the `CharacterTextSplitter` class:
+We use this number inside the `..TextSplitter` classes.
+This implemented as the `from_<tokenizer>` methods of the `..TextSplitter` classes:
 
 - `Hugging Face tokenizer <./text_splitters/examples/huggingface_length_function.html>`_
 - `tiktoken (OpenAI) tokenizer <./text_splitters/examples/tiktoken.html>`_
