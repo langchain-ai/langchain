@@ -194,14 +194,6 @@ class SimpleChatModel(BaseChatModel):
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
 
-    def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: List[str] | None = None,
-        run_manager: AsyncCallbackManagerForLLMRun | None = None,
-    ) -> Coroutine[Any, Any, ChatResult]:
-        return self._generate(messages, stop=stop, run_manager=run_manager)
-
     @abstractmethod
     def _call(
         self,
