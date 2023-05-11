@@ -25,9 +25,7 @@ class MRKLOutputParser(AgentOutputParser):
         if not match:
             # Sometimes GPT ignored the requested format and returned result separated
             # by a comma. This is a mitigation to GPT noises.
-            regex = (
-                r"Action\s*\d*\s*:[\s]*(.*?)[\s]*, (.*)"
-            )
+            regex = r"Action\s*\d*\s*:[\s]*(.*?)[\s]*, (.*)"
             match = re.search(regex, text, re.DOTALL)
         if not match:
             raise OutputParserException(f"Could not parse LLM output: `{text}`")
