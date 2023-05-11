@@ -12,11 +12,16 @@ from langchain.vectorstores import Chroma
 def retriever() -> SelfQueryRetriever:
     docs = [
         Document(
-            page_content="A bunch of scientists bring back dinosaurs and mayhem breaks loose",
+            page_content=(
+                "A bunch of scientists bring back dinosaurs and mayhem breaks loose"
+            ),
             metadata={"year": 1993, "rating": 7.7, "genre": "science fiction"},
         ),
         Document(
-            page_content="Leo DiCaprio gets lost in a dream within a dream within a dream within a ...",
+            page_content=(
+                "Leo DiCaprio gets lost in a dream within a dream within a dream "
+                "within a ..."
+            ),
             metadata={"year": 2010, "director": "Christopher Nolan", "rating": 8.2},
         ),
         Document(
