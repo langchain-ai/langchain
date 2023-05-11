@@ -11,3 +11,4 @@ class AgentType(str, Enum):
     STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION = (
         "structured-chat-zero-shot-react-description"
     )
+    REFLEXION_DOCSTORE = "reflexion-docstore"
