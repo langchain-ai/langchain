@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import logging
 import os
 import warnings
 from contextlib import contextmanager
@@ -22,8 +23,15 @@ from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers.base import TracerSession
 from langchain.callbacks.tracers.langchain import LangChainTracer, LangChainTracerV2
 from langchain.callbacks.tracers.schemas import TracerSessionV2
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import (
+    AgentAction,
+    AgentFinish,
+    BaseMessage,
+    LLMResult,
+    get_buffer_string,
+)
 
+logger = logging.getLogger(__name__)
 Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
 
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
@@ -31,6 +39,11 @@ openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
 )
 tracing_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
+)
+tracing_v2_callback_var: ContextVar[
+    Optional[LangChainTracerV2]
+] = ContextVar(  # noqa: E501
+    "tracing_callback_v2", default=None
 )
 
 
@@ -82,15 +95,31 @@ def _handle_event(
     *args: Any,
     **kwargs: Any,
 ) -> None:
+    """Generic event handler for CallbackManager."""
+    message_strings: Optional[List[str]] = None
     for handler in handlers:
         try:
             if ignore_condition_name is None or not getattr(
                 handler, ignore_condition_name
             ):
                 getattr(handler, event_name)(*args, **kwargs)
+        except NotImplementedError as e:
+            if event_name == "on_chat_model_start":
+                if message_strings is None:
+                    message_strings = [get_buffer_string(m) for m in args[1]]
+                _handle_event(
+                    [handler],
+                    "on_llm_start",
+                    "ignore_llm",
+                    args[0],
+                    message_strings,
+                    *args[2:],
+                    **kwargs,
+                )
+            else:
+                logger.warning(f"Error in {event_name} callback: {e}")
         except Exception as e:
-            # TODO: switch this to use logging
-            print(f"Error in {event_name} callback: {e}")
+            logging.warning(f"Error in {event_name} callback: {e}")
 
 
 async def _ahandle_event_for_handler(
@@ -109,9 +138,22 @@ async def _ahandle_event_for_handler(
                 await asyncio.get_event_loop().run_in_executor(
                     None, functools.partial(event, *args, **kwargs)
                 )
+    except NotImplementedError as e:
+        if event_name == "on_chat_model_start":
+            message_strings = [get_buffer_string(m) for m in args[1]]
+            await _ahandle_event_for_handler(
+                handler,
+                "on_llm",
+                "ignore_llm",
+                args[0],
+                message_strings,
+                *args[2:],
+                **kwargs,
+            )
+        else:
+            logger.warning(f"Error in {event_name} callback: {e}")
     except Exception as e:
-        # TODO: switch this to use logging
-        print(f"Error in {event_name} callback: {e}")
+        logger.warning(f"Error in {event_name} callback: {e}")
 
 
 async def _ahandle_event(
@@ -526,6 +568,33 @@ class CallbackManager(BaseCallbackManager):
             run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
         )
 
+    def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> CallbackManagerForLLMRun:
+        """Run when LLM starts running."""
+        if run_id is None:
+            run_id = uuid4()
+        _handle_event(
+            self.handlers,
+            "on_chat_model_start",
+            "ignore_chat_model",
+            serialized,
+            messages,
+            run_id=run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+        # Re-use the LLM Run Manager since the outputs are treated
+        # the same for now
+        return CallbackManagerForLLMRun(
+            run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
+        )
+
     def on_chain_start(
         self,
         serialized: Dict[str, Any],
@@ -615,6 +684,31 @@ class AsyncCallbackManager(BaseCallbackManager):
             "ignore_llm",
             serialized,
             prompts,
+            run_id=run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+        return AsyncCallbackManagerForLLMRun(
+            run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
+        )
+
+    async def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        if run_id is None:
+            run_id = uuid4()
+
+        await _ahandle_event(
+            self.handlers,
+            "on_chat_model_start",
+            "ignore_chat_model",
+            serialized,
+            messages,
             run_id=run_id,
             parent_run_id=self.parent_run_id,
             **kwargs,
@@ -727,6 +821,11 @@ def _configure(
         or tracer is not None
         or os.environ.get("LANGCHAIN_HANDLER") is not None
     )
+
+    tracer_v2 = tracing_v2_callback_var.get()
+    tracing_v2_enabled_ = (
+        os.environ.get("LANGCHAIN_TRACING_V2") is not None or tracer_v2 is not None
+    )
     tracer_session = os.environ.get("LANGCHAIN_SESSION")
     if tracer_session is None:
         tracer_session = "default"
@@ -744,6 +843,16 @@ def _configure(
                 callback_manager.add_handler(tracer, True)
             else:
                 handler = LangChainTracer()
+                handler.load_session(tracer_session)
+                callback_manager.add_handler(handler, True)
+        if tracing_v2_enabled_ and not any(
+            isinstance(handler, LangChainTracerV2)
+            for handler in callback_manager.handlers
+        ):
+            if tracer_v2:
+                callback_manager.add_handler(tracer_v2, True)
+            else:
+                handler = LangChainTracerV2()
                 handler.load_session(tracer_session)
                 callback_manager.add_handler(handler, True)
         if open_ai is not None and not any(
