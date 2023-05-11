@@ -112,6 +112,8 @@ def get_elements_from_api(
     file_paths: Optional[List[str]] = None,
     file: Optional[IO] = None,
     files: Optional[List[IO]] = None,
+    file_filename: Optional[str] = "",
+    file_filenames: Optional[List[str]] = None,
     api_url: str = "https://api.unstructured.io/general/v0/general",
     api_key: str = "",
     **unstructured_kwargs: Any,
@@ -123,6 +125,7 @@ def get_elements_from_api(
         return partition_via_api(
             filename=file_path,
             file=file,
+            file_filename=file_filename,
             api_key=api_key,
             api_url=api_url,
             **unstructured_kwargs,
@@ -133,6 +136,7 @@ def get_elements_from_api(
         _doc_elements = partition_multiple_via_api(
             filenames=file_paths,
             files=files,
+            file_filenames=file_filenames,
             api_key=api_key,
             api_url=api_url,
             **unstructured_kwargs,
@@ -217,6 +221,8 @@ class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
         url: str = "https://api.unstructured.io/general/v0/general",
         api_key: str = "",
         files: Optional[List[IO]] = None,
+        file_filename: Optional[str] = "",
+        file_filenames: Optional[List[str]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
@@ -235,6 +241,8 @@ class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
         self.url = url
         self.api_key = api_key
         self.files = files
+        self.file_filename = file_filename
+        self.file_filenames = file_filenames
 
         super().__init__(file=file, mode=mode, **unstructured_kwargs)
 
@@ -242,6 +250,8 @@ class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
         return get_elements_from_api(
             file=self.file,
             files=self.files,
+            file_filename=self.file_filename,
+            file_filenames=self.file_filenames,
             api_key=self.api_key,
             api_url=self.url,
             **self.unstructured_kwargs,
