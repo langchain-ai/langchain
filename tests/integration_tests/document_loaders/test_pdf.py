@@ -1,12 +1,14 @@
 from pathlib import Path
 
 from langchain.document_loaders import (
+    MathpixPDFLoader,
     PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
     PyMuPDFLoader,
+    PyPDFium2Loader,
+    PyPDFLoader,
     UnstructuredPDFLoader,
 )
-from langchain.document_loaders.pdf import MathpixPDFLoader
 
 
 def test_unstructured_pdf_loader() -> None:
@@ -46,6 +48,36 @@ def test_pdfminer_pdf_as_html_loader() -> None:
 
     docs = loader.load()
     assert len(docs) == 1
+
+
+def test_pypdf_loader() -> None:
+    """Test PyPDFLoader."""
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PyPDFLoader(str(file_path))
+    docs = loader.load()
+
+    assert len(docs) == 1
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PyPDFLoader(str(file_path))
+
+    docs = loader.load()
+    assert len(docs) == 16
+
+
+def test_pypdfium2_loader() -> None:
+    """Test PyPDFium2Loader."""
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PyPDFium2Loader(str(file_path))
+    docs = loader.load()
+
+    assert len(docs) == 1
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PyPDFium2Loader(str(file_path))
+
+    docs = loader.load()
+    assert len(docs) == 16
 
 
 def test_pymupdf_loader() -> None:

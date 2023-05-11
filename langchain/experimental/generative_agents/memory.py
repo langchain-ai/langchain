@@ -46,6 +46,7 @@ class GenerativeAgentMemory(BaseMemory):
     relevant_memories_simple_key: str = "relevant_memories_simple"
     most_recent_memories_key: str = "most_recent_memories"
     now_key: str = "now"
+    reflecting: bool = False
 
     def chain(self, prompt: PromptTemplate) -> LLMChain:
         return LLMChain(llm=self.llm, prompt=prompt, verbose=self.verbose)
@@ -138,10 +139,13 @@ class GenerativeAgentMemory(BaseMemory):
         if (
             self.reflection_threshold is not None
             and self.aggregate_importance > self.reflection_threshold
+            and not self.reflecting
         ):
+            self.reflecting = True
             self.pause_to_reflect(now=now)
             # Hack to clear the importance from reflection
             self.aggregate_importance = 0.0
+            self.reflecting = False
         return result
 
     def fetch_memories(self, observation: str, now: Optional[datetime] = None) -> List[Document]:
