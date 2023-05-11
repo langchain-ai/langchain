@@ -11,13 +11,11 @@ from langchain.callbacks.manager import (
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
-from langchain.callbacks.wandb_callback import WandbCallbackHandler
 
 __all__ = [
     "OpenAICallbackHandler",
     "StdOutCallbackHandler",
     "AimCallbackHandler",
-    "WandbCallbackHandler",
     "ClearMLCallbackHandler",
     "CometCallbackHandler",
     "AsyncIteratorCallbackHandler",
