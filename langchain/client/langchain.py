@@ -31,9 +31,8 @@ from langchain.callbacks.tracers.langchain import LangChainTracerV2
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.client.models import Dataset, DatasetCreate, Example, ExampleCreate
-from langchain.client.utils import parse_chat_messages
 from langchain.llms.base import BaseLLM
-from langchain.schema import ChatResult, LLMResult
+from langchain.schema import ChatResult, LLMResult, messages_from_dict
 from langchain.utils import raise_for_status_with_text, xor_args
 
 if TYPE_CHECKING:
@@ -96,7 +95,6 @@ class LangChainPlusClient(BaseSettings):
                 "Unable to get seeded tenant ID. Please manually provide."
             ) from e
         results: List[dict] = response.json()
-        breakpoint()
         if len(results) == 0:
             raise ValueError("No seeded tenant found")
         return results[0]["id"]
@@ -296,13 +294,15 @@ class LangChainPlusClient(BaseSettings):
         langchain_tracer: LangChainTracerV2,
     ) -> Union[LLMResult, ChatResult]:
         if isinstance(llm, BaseLLM):
+            if "prompts" not in inputs:
+                raise ValueError(f"LLM Run requires 'prompts' input. Got {inputs}")
             llm_prompts: List[str] = inputs["prompts"]
             llm_output = await llm.agenerate(llm_prompts, callbacks=[langchain_tracer])
         elif isinstance(llm, BaseChatModel):
-            chat_prompts: List[str] = inputs["prompts"]
-            messages = [
-                parse_chat_messages(chat_prompt) for chat_prompt in chat_prompts
-            ]
+            if "messages" not in inputs:
+                raise ValueError(f"Chat Run requires 'messages' input. Got {inputs}")
+            raw_messages: List[List[dict]] = inputs["messages"]
+            messages = [messages_from_dict(batch) for batch in raw_messages]
             llm_output = await llm.agenerate(messages, callbacks=[langchain_tracer])
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
@@ -454,13 +454,17 @@ class LangChainPlusClient(BaseSettings):
     ) -> Union[LLMResult, ChatResult]:
         """Run the language model on the example."""
         if isinstance(llm, BaseLLM):
+            if "prompts" not in inputs:
+                raise ValueError(f"LLM Run must contain 'prompts' key. Got {inputs}")
             llm_prompts: List[str] = inputs["prompts"]
             llm_output = llm.generate(llm_prompts, callbacks=[langchain_tracer])
         elif isinstance(llm, BaseChatModel):
-            chat_prompts: List[str] = inputs["prompts"]
-            messages = [
-                parse_chat_messages(chat_prompt) for chat_prompt in chat_prompts
-            ]
+            if "messages" not in inputs:
+                raise ValueError(
+                    f"Chat Model Run must contain 'messages' key. Got {inputs}"
+                )
+            raw_messages: List[List[dict]] = inputs["messages"]
+            messages = [messages_from_dict(batch) for batch in raw_messages]
             llm_output = llm.generate(messages, callbacks=[langchain_tracer])
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
