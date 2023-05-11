@@ -25,7 +25,8 @@ def import_mlflow() -> Any:
     except ImportError:
         raise ImportError(
             "To use the mlflow callback manager you need to have the `mlflow` python "
-            "package installed. Please install it with `pip install mlflow==2.2.2`"
+            "package installed. Please install it with `pip install mlflow>=2.3.0`"
+
         )
     return mlflow
 
