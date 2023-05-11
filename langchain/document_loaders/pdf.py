@@ -7,13 +7,20 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Iterator, List, Optional
 from urllib.parse import urlparse
 
 import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.blob_loaders import Blob
+from langchain.document_loaders.parsers.pdf import (
+    PDFMinerParser,
+    PyMuPDFParser,
+    PyPDFium2Parser,
+    PyPDFParser,
+)
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 from langchain.utils import get_from_dict_or_env
 
@@ -90,7 +97,7 @@ class PyPDFLoader(BasePDFLoader):
     Loader also stores page numbers in metadatas.
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str) -> None:
         """Initialize with file path."""
         try:
             import pypdf  # noqa:F401
@@ -98,21 +105,19 @@ class PyPDFLoader(BasePDFLoader):
             raise ValueError(
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
+        self.parser = PyPDFParser()
         super().__init__(file_path)
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
-        import pypdf
+        return list(self.lazy_load())
 
-        with open(self.file_path, "rb") as pdf_file_obj:
-            pdf_reader = pypdf.PdfReader(pdf_file_obj)
-            return [
-                Document(
-                    page_content=page.extract_text(),
-                    metadata={"source": self.file_path, "page": i},
-                )
-                for i, page in enumerate(pdf_reader.pages)
-            ]
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        """Lazy load given path as pages."""
+        blob = Blob.from_path(self.file_path)
+        yield from self.parser.parse(blob)
 
 
 class PyPDFium2Loader(BasePDFLoader):
@@ -120,27 +125,19 @@ class PyPDFium2Loader(BasePDFLoader):
 
     def __init__(self, file_path: str):
         """Initialize with file path."""
-        try:
-            import pypdfium2  # noqa:F401
-        except ImportError:
-            raise ValueError(
-                "pypdfium2 package not found, please install it with"
-                " `pip install pypdfium2`"
-            )
         super().__init__(file_path)
+        self.parser = PyPDFium2Parser()
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
-        import pypdfium2
+        return list(self.lazy_load())
 
-        with open(self.file_path, "rb") as f:
-            pdf_reader = pypdfium2.PdfDocument(f)
-            docs = []
-            for i, page in enumerate(pdf_reader):
-                content = page.get_textpage().get_text_range()
-                metadata = {"source": self.file_path, "page": i}
-                docs.append(Document(page_content=content, metadata=metadata))
-            return docs
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        """Lazy load given path as pages."""
+        blob = Blob.from_path(self.file_path)
+        yield from self.parser.parse(blob)
 
 
 class PyPDFDirectoryLoader(BaseLoader):
@@ -191,7 +188,7 @@ class PyPDFDirectoryLoader(BaseLoader):
 class PDFMinerLoader(BasePDFLoader):
     """Loader that uses PDFMiner to load PDF files."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str) -> None:
         """Initialize with file path."""
         try:
             from pdfminer.high_level import extract_text  # noqa:F401
@@ -202,14 +199,18 @@ class PDFMinerLoader(BasePDFLoader):
             )
 
         super().__init__(file_path)
+        self.parser = PDFMinerParser()
 
     def load(self) -> List[Document]:
-        """Load file."""
-        from pdfminer.high_level import extract_text
+        """Eagerly load the content."""
+        return list(self.lazy_load())
 
-        text = extract_text(self.file_path)
-        metadata = {"source": self.file_path}
-        return [Document(page_content=text, metadata=metadata)]
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        """Lazily lod documents."""
+        blob = Blob.from_path(self.file_path)
+        yield from self.parser.parse(blob)
 
 
 class PDFMinerPDFasHTMLLoader(BasePDFLoader):
@@ -249,7 +250,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 class PyMuPDFLoader(BasePDFLoader):
     """Loader that uses PyMuPDF to load PDF files."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str) -> None:
         """Initialize with file path."""
         try:
             import fitz  # noqa:F401
@@ -263,30 +264,10 @@ class PyMuPDFLoader(BasePDFLoader):
 
     def load(self, **kwargs: Optional[Any]) -> List[Document]:
         """Load file."""
-        import fitz
 
-        doc = fitz.open(self.file_path)  # open document
-        file_path = self.file_path if self.web_path is None else self.web_path
-
-        return [
-            Document(
-                page_content=page.get_text(**kwargs).encode("utf-8"),
-                metadata=dict(
-                    {
-                        "source": file_path,
-                        "file_path": file_path,
-                        "page_number": page.number + 1,
-                        "total_pages": len(doc),
-                    },
-                    **{
-                        k: doc.metadata[k]
-                        for k in doc.metadata
-                        if type(doc.metadata[k]) in [str, int]
-                    },
-                ),
-            )
-            for page in doc
-        ]
+        parser = PyMuPDFParser(text_kwargs=kwargs)
+        blob = Blob.from_path(self.file_path)
+        return parser.parse(blob)
 
 
 # MathpixPDFLoader implementation taken largely from Daniel Gross's:
@@ -367,10 +348,10 @@ class MathpixPDFLoader(BasePDFLoader):
         contents = contents.replace("\\section{", "# ").replace("}", "")
         # replace the "\" slash that Mathpix adds to escape $, %, (, etc.
         contents = (
-            contents.replace("\$", "$")
-            .replace("\%", "%")
-            .replace("\(", "(")
-            .replace("\)", ")")
+            contents.replace(r"\$", "$")
+            .replace(r"\%", "%")
+            .replace(r"\(", "(")
+            .replace(r"\)", ")")
         )
         return contents
 

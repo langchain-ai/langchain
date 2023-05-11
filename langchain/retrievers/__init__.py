@@ -1,3 +1,4 @@
+from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
 from langchain.retrievers.chatgpt_plugin_retriever import ChatGPTPluginRetriever
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.databerry import DataberryRetriever
@@ -14,20 +15,23 @@ from langchain.retrievers.time_weighted_retriever import (
 )
 from langchain.retrievers.vespa_retriever import VespaRetriever
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
+from langchain.retrievers.wikipedia import WikipediaRetriever
 
 __all__ = [
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",
-    "RemoteLangChainRetriever",
-    "PineconeHybridSearchRetriever",
-    "MetalRetriever",
-    "ElasticSearchBM25Retriever",
-    "TFIDFRetriever",
-    "WeaviateHybridSearchRetriever",
     "DataberryRetriever",
-    "TimeWeightedVectorStoreRetriever",
-    "SVMRetriever",
+    "ElasticSearchBM25Retriever",
     "KNNRetriever",
-    "VespaRetriever",
+    "MetalRetriever",
+    "PineconeHybridSearchRetriever",
+    "RemoteLangChainRetriever",
+    "SVMRetriever",
     "SelfQueryRetriever",
+    "TFIDFRetriever",
+    "TimeWeightedVectorStoreRetriever",
+    "VespaRetriever",
+    "WeaviateHybridSearchRetriever",
+    "AzureCognitiveSearchRetriever",
+    "WikipediaRetriever",
 ]

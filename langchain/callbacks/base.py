@@ -4,7 +4,12 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import (
+    AgentAction,
+    AgentFinish,
+    BaseMessage,
+    LLMResult,
+)
 
 
 class LLMManagerMixin:
@@ -123,6 +128,20 @@ class CallbackManagerMixin:
     ) -> Any:
         """Run when LLM starts running."""
 
+    def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when a chat model starts running."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement `on_chat_model_start`"
+        )
+
     def on_chain_start(
         self,
         serialized: Dict[str, Any],
@@ -184,6 +203,11 @@ class BaseCallbackHandler(
         """Whether to ignore agent callbacks."""
         return False
 
+    @property
+    def ignore_chat_model(self) -> bool:
+        """Whether to ignore chat model callbacks."""
+        return False
+
 
 class AsyncCallbackHandler(BaseCallbackHandler):
     """Async callback handler that can be used to handle callbacks from langchain."""
@@ -198,6 +222,20 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run when LLM starts running."""
+
+    async def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when a chat model starts running."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement `on_chat_model_start`"
+        )
 
     async def on_llm_new_token(
         self,
