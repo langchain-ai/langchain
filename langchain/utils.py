@@ -2,6 +2,8 @@
 import os
 from typing import Any, Callable, Dict, Optional, Tuple
 
+from requests import HTTPError, Response
+
 
 def get_from_dict_or_env(
     data: Dict[str, Any], key: str, env_key: str, default: Optional[str] = None
@@ -50,6 +52,14 @@ def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
         return wrapper
 
     return decorator
+
+
+def raise_for_status_with_text(response: Response) -> None:
+    """Raise an error with the response text."""
+    try:
+        response.raise_for_status()
+    except HTTPError as e:
+        raise ValueError(response.text) from e
 
 
 def stringify_value(val: Any) -> str:
