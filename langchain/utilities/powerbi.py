@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import aiohttp
 import requests
@@ -17,8 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 
 BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg")
 
-if TYPE_CHECKING:
-    from azure.core.credentials import TokenCredential
+from azure.core.credentials import TokenCredential
 
 
 class PowerBIDataset(BaseModel):
