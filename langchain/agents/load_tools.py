@@ -262,7 +262,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "google-serper": (_get_google_serper, ["serper_api_key", "aiosession"]),
     "google-serper-results-json": (
         _get_google_serper_results_json,
-        ["serper_api_key", "serpapi_api_base_url", "aiosession"],
+        ["serper_api_key", "aiosession"],
     ),
     "serpapi": (
         _get_serpapi,
