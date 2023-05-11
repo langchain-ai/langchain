@@ -32,9 +32,6 @@ _EXPECTED = [
     "load_agent",
     "load_tools",
     "tool",
-    "PlanAndExecute",
-    "load_chat_planner",
-    "load_agent_executor",
 ]
 
 

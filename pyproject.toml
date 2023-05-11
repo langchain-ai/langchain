@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.163"
+version = "0.0.165"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -77,6 +77,10 @@ pexpect = {version = "^4.8.0", optional = true}
 pyvespa = {version = "^0.33.0", optional = true}
 O365 = {version = "^2.0.26", optional = true}
 jq = {version = "^1.4.1", optional = true}
+pdfminer-six = {version = "^20221105", optional = true}
+docarray = {version="^0.31.0", optional=true}
+protobuf = {version="3.19", optional=true}
+hnswlib = {version="^0.7.0", optional=true}
 
 
 [tool.poetry.group.docs.dependencies]
@@ -158,9 +162,13 @@ llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifes
 qdrant = ["qdrant-client"]
 openai = ["openai"]
 cohere = ["cohere"]
+in_memory_store = ["docarray"]
+hnswlib = ["docarray", "protobuf", "hnswlib"]
 embeddings = ["sentence-transformers"]
 azure = ["azure-identity", "azure-cosmos", "openai", "azure-core"]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "lark", "pexpect", "pyvespa", "O365", "jq"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "lark", "pexpect", "pyvespa", "O365", "jq", "docarray", "protobuf", "hnswlib"]
+# An extra used to be able to add extended testing.
+extended_testing = ["pypdf", "pdfminer.six"]
 
 [tool.ruff]
 select = [
