@@ -24,3 +24,7 @@ class ItemParsedListOutputParser(BaseOutputParser[list[T]], Generic[T]):
             return f'Write each {self.item_name} separated by a single "{self.separator}". Do not include any other text in your answer.'
         else:
             return f'Write each {self.item_name} separated by a single "{self.separator}". Each {self.item_name} should be formatted as follows:\n{self.item_parser.get_format_instructions()}'
+
+    @property
+    def _type(self) -> str:
+        return "item_parsed_list_output_parser"

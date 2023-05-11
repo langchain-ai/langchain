@@ -148,3 +148,7 @@ class StitchedOutputParser(BaseOutputParser[str]):
             if not self.completion_validator(chunk):
                 return False
         return True
+
+    @property
+    def _type(self) -> str:
+        return "stitched_output_parser"

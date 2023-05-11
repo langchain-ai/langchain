@@ -53,3 +53,7 @@ class CodeOutputParser(BaseOutputParser[str]):
 
     def get_format_instructions(self) -> str:
         return "Write the code. Do not include any other text in your answer."
+
+    @property
+    def _type(self) -> str:
+        return "code_output_parser"

@@ -1,12 +1,9 @@
 import inspect
 from textwrap import dedent
 from langchain.output_parsers.code import CodeOutputParser
-
-from langchain.output_parsers.code import CodeOutputParser
 from langchain.schema import OutputParserException
 
 
-def test_code_output_parser_parse() -> None:
 def test_code_output_parser_parse() -> None:
     parser = CodeOutputParser()
 

@@ -44,3 +44,7 @@ class ChoiceOutputParser(BaseOutputParser[str]):
             raise OutputParserException(
                 f"Response '{response}' does not match any options within the min_distance {self.max_distance}"
             )
+
+    @property
+    def _type(self) -> str:
+        return "choice_output_parser"

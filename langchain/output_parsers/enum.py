@@ -10,9 +10,7 @@ class EnumOutputParser(ChoiceOutputParser):
 
     @classmethod
     def from_enum(cls, enum: Type[Enum], **kwargs):
-        assert all(
-            isinstance(e.value, str) for e in enum
-        ), "Enum values must be strings"
+        assert all(isinstance(e.value, str) for e in enum), "Enum values must be strings"
         return cls(options=[e.value for e in enum], enum=enum, **kwargs)
 
     def parse(self, response: str) -> Any:
@@ -23,3 +21,7 @@ class EnumOutputParser(ChoiceOutputParser):
             raise OutputParserException(
                 f"Response '{response}' is not one of the expected values: {[e.value for e in self.enum]}"
             )
+
+    @property
+    def _type(self) -> str:
+        return "enum_output_parser"

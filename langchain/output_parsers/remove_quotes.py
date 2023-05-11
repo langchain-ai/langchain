@@ -34,3 +34,7 @@ class RemoveQuotesOutputParser(BaseOutputParser[list[T]], Generic[T]):
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
+
+    @property
+    def _type(self) -> str:
+        return "remove_quotes_output_parser"
