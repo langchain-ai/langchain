@@ -1,7 +1,7 @@
 """Wrapper around Huggingface text generation inference API."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -24,6 +24,7 @@ class HuggingFaceTextGenInference(LLM):
     - stop_sequences: A list of stop sequences to use when generating text.
     - seed: The seed to use when generating text.
     - inference_server_url: The URL of the inference server to use.
+    - timeout: The timeout value in seconds to use while connecting to inference server.
     - client: The client object used to communicate with the inference server.
 
     Methods:
@@ -47,14 +48,15 @@ class HuggingFaceTextGenInference(LLM):
     """
 
     max_new_tokens: int = 512
-    top_k: int | None = None
-    top_p: float | None = 0.95
-    typical_p: float | None = 0.95
+    top_k: Optional[int] = None
+    top_p: Optional[float] = 0.95
+    typical_p: Optional[float] = 0.95
     temperature: float = 0.8
-    repetition_penalty: float | None = None
-    stop_sequences: list[str] = []
-    seed: int | None = None
+    repetition_penalty: Optional[float] = None
+    stop_sequences: list[str] = Field(default_factory=list)
+    seed: Optional[int] = None
     inference_server_url: str = ""
+    timeout: int = 120
     client: Any
 
     class Config:
@@ -70,7 +72,7 @@ class HuggingFaceTextGenInference(LLM):
             import text_generation
 
             values["client"] = text_generation.Client(
-                values["inference_server_url"], timeout=1000
+                values["inference_server_url"], timeout=values["timeout"]
             )
         except ImportError:
             raise ValueError(
@@ -82,7 +84,7 @@ class HuggingFaceTextGenInference(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "hf-textgen-inference"
+        return "hf_textgen_inference"
 
     def _call(
         self,
