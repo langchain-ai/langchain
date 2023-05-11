@@ -1,4 +1,4 @@
-"""An agent designed to hold a conversation with a character in addition to using tools."""
+"""An agent designed to hold a conversation as a given character in addition to using tools."""
 from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence, Tuple

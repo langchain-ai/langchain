@@ -1,1 +1,1 @@
-"""An agent designed to hold a conversation with a character in addition to using tools."""
+"""An agent designed to hold a conversation as a given character in addition to using tools."""
