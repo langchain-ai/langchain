@@ -153,12 +153,18 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
         else:
             from unstructured.partition.api import partition_multiple_via_api
 
-            return partition_multiple_via_api(
+            _doc_elements = partition_multiple_via_api(
                 filenames=self.file_paths,
                 api_key=self.api_key,
                 api_url=self.url,
                 **self.unstructured_kwargs,
             )
+
+            elements = []
+            for _elements in _doc_elements:
+                elements.extend(_elements)
+
+            return elements
 
 
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
