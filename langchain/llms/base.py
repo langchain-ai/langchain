@@ -171,7 +171,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             run_manager = callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts, **params
+                {"name": self.__class__.__name__}, prompts, invocation_params=params
             )
             try:
                 output = (
@@ -186,7 +186,9 @@ class BaseLLM(BaseLanguageModel, ABC):
             return output
         if len(missing_prompts) > 0:
             run_manager = callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, missing_prompts, **params
+                {"name": self.__class__.__name__},
+                missing_prompts,
+                invocation_params=params,
             )
             try:
                 new_results = (
@@ -235,7 +237,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             run_manager = await callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts, **params
+                {"name": self.__class__.__name__}, prompts, invocation_params=params
             )
             try:
                 output = (
@@ -252,7 +254,7 @@ class BaseLLM(BaseLanguageModel, ABC):
             run_manager = await callback_manager.on_llm_start(
                 {"name": self.__class__.__name__},
                 missing_prompts,
-                **params,
+                invocation_params=params,
             )
             try:
                 new_results = (
