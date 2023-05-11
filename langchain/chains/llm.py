@@ -17,7 +17,7 @@ from langchain.chains.base import Chain
 from langchain.input import get_colored_text
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import LLMResult, PromptValue
+from langchain.schema import LLMResult, PromptValue, Generation
 
 
 class LLMChain(Chain):
@@ -38,6 +38,11 @@ class LLMChain(Chain):
     """Prompt object to use."""
     llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
+
+    # Expose raw prompt which can't be easily re-constructed in deeply nested chain.
+    prompt_template_cache_key = ""
+    prompt_cache: dict = {}
+    populate_prompt_cache: bool = False
 
     class Config:
         """Configuration for this pydantic object."""
@@ -76,6 +81,15 @@ class LLMChain(Chain):
     ) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list, run_manager=run_manager)
+
+        if self.populate_prompt_cache:
+            for template, prompt in zip(input_list, prompts):
+                if self.prompt_template_cache_key in template:
+                    key = template[self.prompt_template_cache_key]
+                    self.prompt_cache[key] = prompt.to_string()
+
+            return LLMResult(generations=[[Generation(text="Shunted generation!")]])
+
         return self.llm.generate_prompt(
             prompts, stop, callbacks=run_manager.get_child() if run_manager else None
         )
