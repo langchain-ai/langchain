@@ -48,8 +48,9 @@ runs:
     - run: pipx install poetry==${{ inputs.poetry-version }} --python python${{ inputs.python-version }}
       shell: bash
 
-    - uses: actions/cache@v3
-      id: cache-poetry
+    - name: Restore Python Environment
+      id: cache-env-restore
+      uses: actions/cache/restore@v3
       env:
         SEGMENT_DOWNLOAD_TIMEOUT_MIN: "15"
       with:
@@ -59,6 +60,19 @@ runs:
           ~/.cache/pypoetry/artifacts
         key: poetry-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}-${{ inputs.cache-key }}-${{ hashFiles('poetry.lock') }}
 
-    - run: ${{ inputs.install-command }}
+    - name: Install dependencies
+      run: ${{ inputs.install-command }}
+      if: steps.cache-poetry.outputs.cache-hit != 'true'
       working-directory: ${{ inputs.working-directory }}
       shell: bash
+
+    - name: Restore Python Environment (Master Only)
+      if: ${{ github.ref == 'refs/heads/master' && steps.cache-env-restore.outputs.cache-hit != 'true' }}
+      id: cache-env-save
+      uses: actions/cache/save@v3
+      with:
+        path: |
+          ~/.cache/pypoetry/virtualenvs
+          ~/.cache/pypoetry/cache
+          ~/.cache/pypoetry/artifacts
+        key: poetry-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}-${{ inputs.cache-key }}-${{ hashFiles('poetry.lock') }}
