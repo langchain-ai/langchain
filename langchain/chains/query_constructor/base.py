@@ -61,7 +61,7 @@ def _format_attribute_info(info: Sequence[AttributeInfo]) -> str:
     for i in info:
         i_dict = dict(i)
         info_dicts[i_dict.pop("name")] = i_dict
-    return json.dumps(info_dicts, indent=2).replace("{", "{{").replace("}", "}}")
+    return json.dumps(info_dicts, indent=4).replace("{", "{{").replace("}", "}}")
 
 
 def _get_prompt(

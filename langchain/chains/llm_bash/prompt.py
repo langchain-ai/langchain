@@ -52,6 +52,10 @@ class BashOutputParser(BaseOutputParser):
 
         return code_blocks
 
+    @property
+    def _type(self) -> str:
+        return "bash"
+
 
 PROMPT = PromptTemplate(
     input_variables=["question"],
