@@ -42,6 +42,9 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
     only_extended = config.getoption("--only-extended") or False
     only_core = config.getoption("--only-core") or False
 
+    if only_extended and only_core:
+        raise ValueError("Cannot specify both `--only-extended` and `--only-core`.")
+
     for item in items:
         requires_marker = item.get_closest_marker("requires")
         if requires_marker is not None:
@@ -59,10 +62,12 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
 
                 if not required_pkgs_info[pkg]:
                     if only_extended:
-                        raise ValueError(
+                        pytest.fail(
                             f"Package `{pkg}` is not installed but is required for "
-                            f"extended tests."
+                            f"extended tests. Please install the given package and "
+                            f"try again.",
                         )
+
                     else:
                         # If the package is not installed, we immediately break
                         # and mark the test as skipped.
