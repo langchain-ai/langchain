@@ -1,5 +1,5 @@
 """Fake Chat Model wrapper for testing purposes."""
-from typing import List, Optional
+from typing import Any, List, Mapping, Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -30,3 +30,11 @@ class FakeChatModel(SimpleChatModel):
         message = AIMessage(content=output_str)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
+
+    @property
+    def _llm_type(self) -> str:
+        return "fake-chat-model"
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        return {"key": "fake"}
