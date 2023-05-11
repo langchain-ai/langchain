@@ -114,7 +114,6 @@ class SerpAPIWrapper(BaseModel):
             if self.serpapi_api_base_url:
                 params["serp_api_base_url"] = self.serpapi_api_base_url
             params["output"] = "json"
-            # url = "https://serpapi.com/search"
             return url, params
 
         url, params = construct_url_and_params()
