@@ -1,10 +1,10 @@
 import inspect
-from langchain.concise.rulex import RulEx, Rule
+
+from langchain.concise.rulex import Rule, RulEx
 from langchain.llms.fake import FakeListLLM
 
 
 def test_rulex():
-
     rules = [
         Rule(
             name="add comments",

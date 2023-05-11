@@ -4,7 +4,6 @@ from langchain.schema import Document
 
 
 def test_chunk():
-
     # Test with string
     text = "The quick brown fox jumps over the lazy dog."
     result = chunk(text)

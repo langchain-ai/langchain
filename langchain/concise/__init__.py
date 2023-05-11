@@ -11,9 +11,9 @@ from langchain.concise.config import (
 )
 from langchain.concise.decide import decide
 from langchain.concise.gemplate import gemplate
-from langchain.concise.template import template
 from langchain.concise.generate import generate
 from langchain.concise.rulex import rulex
+from langchain.concise.template import template
 
 __all__ = [
     "choice",

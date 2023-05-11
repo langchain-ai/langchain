@@ -10,7 +10,9 @@ class EnumOutputParser(ChoiceOutputParser):
 
     @classmethod
     def from_enum(cls, enum: Type[Enum], **kwargs):
-        assert all(isinstance(e.value, str) for e in enum), "Enum values must be strings"
+        assert all(
+            isinstance(e.value, str) for e in enum
+        ), "Enum values must be strings"
         return cls(options=[e.value for e in enum], enum=enum, **kwargs)
 
     def parse(self, response: str) -> Any:

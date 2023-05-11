@@ -1,4 +1,5 @@
 from enum import Enum
+
 from langchain.output_parsers.enum import EnumOutputParser
 from langchain.schema import OutputParserException
 

@@ -2,7 +2,6 @@
 import os
 import re
 from typing import Any, Callable, Dict, Literal, Optional, Tuple
-from typing import Any
 
 from requests import HTTPError, Response
 
@@ -164,7 +163,10 @@ def render_prompt_and_examples(
                 ),
                 AIMessage(
                     output_prompt_template.format(
-                        **{output_key: example[output_key] for output_key in output_keys}
+                        **{
+                            output_key: example[output_key]
+                            for output_key in output_keys
+                        }
                     )
                 ),
             ]
@@ -231,7 +233,9 @@ def extract_input_variables(template: str, template_format: str) -> list[str]:
 
     # Remove loop variables
     loop_variables = (
-        {match[0] for match in for_loop_matches} if template_format == "jinja" else set()
+        {match[0] for match in for_loop_matches}
+        if template_format == "jinja"
+        else set()
     )
 
     # Extract variable names, excluding those created in for loops

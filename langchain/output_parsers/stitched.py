@@ -1,6 +1,7 @@
 from typing import Any, Callable
 
 from langchain.chat_models.base import BaseChatModel
+from langchain.llms.base import BaseLanguageModel
 from langchain.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatMessagePromptTemplate,
@@ -9,7 +10,6 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.schema import BaseOutputParser, PromptValue
-from langchain.llms.base import BaseLanguageModel
 from langchain.wrappers.chat_model_facade import ChatModelFacade
 from langchain.wrappers.llm_facade import LLMFacade
 

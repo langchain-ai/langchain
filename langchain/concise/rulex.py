@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import attr
 from textwrap import dedent
-from langchain.concise.config import get_default_text_splitter
+
+import attr
 from pydantic import BaseModel, Field, validator
 
 from langchain.base_language import BaseLanguageModel
+from langchain.concise.config import get_default_text_splitter
 from langchain.concise.generate import generate
 from langchain.output_parsers import PydanticOutputParser
 from langchain.output_parsers.choice import ChoiceOutputParser
@@ -45,7 +46,9 @@ class RulEx(BaseModel):
         choice_parser = ChoiceOutputParser(
             options=[rule.pattern for rule in rules] + [RulEx._NO_RULE_MATCH], llm=llm
         )
-        return cls(rules=rules, text_splitter=text_splitter, choice_parser=choice_parser)
+        return cls(
+            rules=rules, text_splitter=text_splitter, choice_parser=choice_parser
+        )
 
     @classmethod
     def _parse_rules(cls, rules, llm):
