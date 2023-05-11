@@ -9,7 +9,6 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.router.base import MultiRouteChain
 from langchain.chains.router.llm_router import LLMRouterChain, RouterOutputParser
 from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMPLATE
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 
 
@@ -54,9 +53,7 @@ class MultiPromptChain(MultiRouteChain):
             prompt = PromptTemplate(template=prompt_template, input_variables=["input"])
             chain = LLMChain(llm=llm, prompt=prompt)
             destination_chains[name] = chain
-        _default_chain = default_chain or ConversationChain(
-            llm=ChatOpenAI(), output_key="text"
-        )
+        _default_chain = default_chain or ConversationChain(llm=llm, output_key="text")
         return cls(
             router_chain=router_chain,
             destination_chains=destination_chains,
