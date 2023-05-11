@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 import pytest
 from freezegun import freeze_time
 
+from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.tracers.base import (
     BaseTracer,
     ChainRun,
@@ -93,6 +94,33 @@ def test_tracer_llm_run() -> None:
     tracer.new_session()
     tracer.on_llm_start(serialized={}, prompts=[], run_id=uuid)
     tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=uuid)
+    assert tracer.runs == [compare_run]
+
+
+@freeze_time("2023-01-01")
+def test_tracer_chat_model_run() -> None:
+    """Test tracer on a Chat Model run."""
+    uuid = uuid4()
+    compare_run = LLMRun(
+        uuid=str(uuid),
+        parent_uuid=None,
+        start_time=datetime.utcnow(),
+        end_time=datetime.utcnow(),
+        extra={},
+        execution_order=1,
+        child_execution_order=1,
+        serialized={},
+        prompts=[""],
+        response=LLMResult(generations=[[]]),
+        session_id=TEST_SESSION_ID,
+        error=None,
+    )
+    tracer = FakeTracer()
+
+    tracer.new_session()
+    manager = CallbackManager(handlers=[tracer])
+    run_manager = manager.on_chat_model_start(serialized={}, messages=[[]], run_id=uuid)
+    run_manager.on_llm_end(response=LLMResult(generations=[[]]))
     assert tracer.runs == [compare_run]
 
 
