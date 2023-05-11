@@ -65,46 +65,40 @@ def test_redis_add_texts_to_existing() -> None:
     assert drop(TEST_INDEX_NAME)
 
 
-class TestRedisDistanceMetrics:
-    """Test using different distance metrics for new indices.
-
-    For simple texts, the distance metrics should not matter much as they'll
-    usually return the same results and orderings. However, the scores the produce
-    do differ by metric, so we can use these to assert the intended metric is being
-    used.
-    """
-
+def test_cosine() -> None:
+    """Test cosine distance."""
     texts = ["foo", "bar", "baz"]
+    docsearch = Redis.from_texts(
+        texts,
+        FakeEmbeddings(),
+        redis_url=TEST_REDIS_URL,
+        distance_metric="COSINE",
+    )
+    output = docsearch.similarity_search_with_score("far", k=2)
+    _, score = output[1]
+    assert score == COSINE_SCORE
+    assert drop(docsearch.index_name)
 
-    def test_cosine(self) -> None:
-        """Test cosine distance."""
-        docsearch = Redis.from_texts(
-            self.texts,
-            FakeEmbeddings(),
-            redis_url=TEST_REDIS_URL,
-            distance_metric="COSINE",
-        )
-        output = docsearch.similarity_search_with_score("far", k=2)
-        _, score = output[1]
-        assert score == COSINE_SCORE
-        assert drop(docsearch.index_name)
 
-    def test_l2(self) -> None:
-        """Test Flat L2 distance."""
-        docsearch = Redis.from_texts(
-            self.texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, distance_metric="L2"
-        )
-        output = docsearch.similarity_search_with_score("far", k=2)
-        _, score = output[1]
-        assert score == EUCLIDEAN_SCORE
-        assert drop(docsearch.index_name)
+def test_l2() -> None:
+    """Test Flat L2 distance."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Redis.from_texts(
+        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, distance_metric="L2"
+    )
+    output = docsearch.similarity_search_with_score("far", k=2)
+    _, score = output[1]
+    assert score == EUCLIDEAN_SCORE
+    assert drop(docsearch.index_name)
 
-    def test_ip(self) -> None:
-        """Test inner product distance."""
-        docsearch = Redis.from_texts(
-            self.texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, distance_metric="IP"
-        )
-        output = docsearch.similarity_search_with_score("far", k=2)
-        _, score = output[1]
-        assert score == IP_SCORE
-        assert drop(docsearch.index_name)
+
+def test_ip() -> None:
+    """Test inner product distance."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Redis.from_texts(
+        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, distance_metric="IP"
+    )
+    output = docsearch.similarity_search_with_score("far", k=2)
+    _, score = output[1]
+    assert score == IP_SCORE
+    assert drop(docsearch.index_name)
