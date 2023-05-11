@@ -113,10 +113,10 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
     def __init__(
         self,
         file_path: str = "",
-        file_paths: Optional[List[str]] = None,
         mode: str = "single",
         url: str = "https://api.unstructured.io/general/v0/general",
         api_key: str = "",
+        file_paths: Optional[List[str]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
