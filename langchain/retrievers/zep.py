@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from langchain.schema import BaseRetriever, Document
 
+if TYPE_CHECKING:
+    from zep_python import SearchResult
+
 
 class ZepRetriever(BaseRetriever):
-    """A Retriever implementation for the Zep long-term memory store. Search your user's long-term
-    chat history with Zep.
+    """A Retriever implementation for the Zep long-term memory store. Search your
+    user's long-term chat history with Zep.
 
     Note: You will need to provide the user's `session_id` to use this retriever.
 
@@ -42,7 +45,7 @@ class ZepRetriever(BaseRetriever):
         self.url = url
         self.top_k = top_k
 
-    def _search_result_to_doc(self, results) -> List[Document]:
+    def _search_result_to_doc(self, results: List[SearchResult]) -> List[Document]:
         return [
             Document(
                 page_content=r.message["content"],
@@ -59,7 +62,7 @@ class ZepRetriever(BaseRetriever):
         ]
 
     def get_relevant_documents(self, query: str) -> List[Document]:
-        from zep_python.models import SearchPayload, SearchResult
+        from zep_python import SearchPayload, SearchResult
 
         payload: SearchPayload = SearchPayload(text=query)
 
@@ -70,7 +73,7 @@ class ZepRetriever(BaseRetriever):
         return self._search_result_to_doc(results)
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
-        from zep_python.models import SearchPayload, SearchResult
+        from zep_python import SearchPayload, SearchResult
 
         payload: SearchPayload = SearchPayload(text=query)
 
