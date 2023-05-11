@@ -11,42 +11,40 @@ from pydantic import BaseModel, Field
 from langchain.schema import LLMResult
 
 
-class TracerSessionBase(BaseModel):
-    """Base class for TracerSession."""
+class TracerSessionV1Base(BaseModel):
+    """Base class for TracerSessionV1."""
 
     start_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     name: Optional[str] = None
     extra: Optional[Dict[str, Any]] = None
 
 
-class TracerSessionCreate(TracerSessionBase):
-    """Create class for TracerSession."""
+class TracerSessionV1Create(TracerSessionV1Base):
+    """Create class for TracerSessionV1."""
 
     pass
 
 
-class TracerSession(TracerSessionBase):
-    """TracerSession schema."""
+class TracerSessionV1(TracerSessionV1Base):
+    """TracerSessionV1 schema."""
 
     id: int
 
 
-class TracerSessionV2Base(TracerSessionBase):
-    """A creation class for TracerSessionV2."""
+class TracerSessionBase(TracerSessionV1Base):
+    """A creation class for TracerSession."""
 
     tenant_id: UUID
 
 
-class TracerSessionV2Create(TracerSessionV2Base):
-    """A creation class for TracerSessionV2."""
+class TracerSessionCreate(TracerSessionBase):
+    """A creation class for TracerSession."""
 
     id: Optional[UUID]
 
-    pass
 
-
-class TracerSessionV2(TracerSessionV2Base):
-    """TracerSession schema for the V2 API."""
+class TracerSession(TracerSessionBase):
+    """TracerSessionV1 schema for the V2 API."""
 
     id: UUID
 
@@ -111,26 +109,25 @@ class RunBase(BaseModel):
     extra: dict
     error: Optional[str]
     execution_order: int
+    child_execution_order: int
     serialized: dict
     inputs: dict
     outputs: Optional[dict]
-    session_id: UUID
     reference_example_id: Optional[UUID]
     run_type: RunTypeEnum
     parent_run_id: Optional[UUID]
-
-
-class RunCreate(RunBase):
-    """Schema to create a run in the DB."""
-
-    name: Optional[str]
-    child_runs: List[RunCreate] = Field(default_factory=list)
 
 
 class Run(RunBase):
     """Run schema when loading from the DB."""
 
     name: str
+    child_runs: List[Run] = Field(default_factory=list)
+
+
+class RunCreate(RunBase):
+    name: str
+    session_id: UUID
 
 
 ChainRun.update_forward_refs()
