@@ -38,7 +38,7 @@ jobs:
                 echo "Running extended tests, installing dependencies with poetry..."
                 poetry install -E extended_testing
               fi
-      - name: Run $${{matrix.test_type}} tests
+      - name: Run ${{matrix.test_type}} tests
         run: |
-          make tests
+          make test
         shell: bash
