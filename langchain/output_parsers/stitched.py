@@ -29,14 +29,14 @@ CONTINUE_INCOMPLETE_PLEASE_CONTINUE_PROMPT_TEMPLATE = (
     "Sorry, your response was incomplete. Please finish your response:"
 )
 
-SYSTEM_PROMPT = ChatMessagePromptTemplate.from_template(template=SYSTEM_PROMPT_TEMPLATE)
+SYSTEM_PROMPT = SystemMessagePromptTemplate.from_template(template=SYSTEM_PROMPT_TEMPLATE)
 CONTINUE_INCOMPLETE_PROMPT = HumanMessagePromptTemplate.from_template(
     template=CONTINUE_INCOMPLETE_PROMPT_TEMPLATE
 )
 MERGE_INCOMPLETE_RESPONSES_PROMPT = HumanMessagePromptTemplate.from_template(
     template=MERGE_INCOMPLETE_RESPONSES_PROMPT_TEMPLATE
 )
-CONTINUE_INCOMPLETE_PLEASE_CONTINUE_PROMPT = SystemMessagePromptTemplate.from_template(
+CONTINUE_INCOMPLETE_PLEASE_CONTINUE_PROMPT = HumanMessagePromptTemplate.from_template(
     template=CONTINUE_INCOMPLETE_PLEASE_CONTINUE_PROMPT_TEMPLATE
 )
 
