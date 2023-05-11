@@ -1,7 +1,7 @@
-from __future__ import annotations
-
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
+
+from zep_python import Memory, Message, NotFoundError, SearchPayload, SearchResult
 
 from langchain.schema import (
     AIMessage,
@@ -10,9 +10,6 @@ from langchain.schema import (
     HumanMessage,
 )
 
-if TYPE_CHECKING:
-    from zep_python import Memory, Message, NotFoundError, SearchResult
-    
 logger = logging.getLogger(__name__)
 
 
@@ -91,7 +88,6 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
 
     def _get_memory(self) -> Optional[Memory]:
         """Retrieve memory from Zep"""
-        from zep_python import NotFoundError
         try:
             zep_memory: Memory = self.zep_client.get_memory(self.session_id)[0]
         except NotFoundError:
@@ -107,8 +103,6 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
 
     def append(self, message: BaseMessage) -> None:
         """Append the message to the Zep memory history"""
-        from zep_python import Memory, Message
-        
         zep_message: Message
         if isinstance(message, HumanMessage):
             zep_message = Message(content=message.content, role="human")
@@ -121,7 +115,6 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
 
     def search(self, query: str, limit: Optional[int] = None) -> List[SearchResult]:
         """Search Zep memory for messages matching the query"""
-        from zep_python import SearchPayload
         payload: SearchPayload = SearchPayload(text=query)
 
         return self.zep_client.search_memory(self.session_id, payload, limit=limit)
