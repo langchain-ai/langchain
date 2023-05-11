@@ -187,3 +187,7 @@ class MultiAttemptRetryWithErrorOutputParser(RetryWithErrorOutputParser):
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
+
+    @property
+    def _type(self) -> str:
+        return "multi_attempt_retry_with_error"
