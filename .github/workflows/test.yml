@@ -18,17 +18,27 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+        test_type:
+          - "core"
+          - "extended"
+    name: Python ${{ matrix.python-version }} ${{ matrix.test_type }}
     steps:
       - uses: actions/checkout@v3
-      - name: Install poetry
-        run: pipx install poetry==$POETRY_VERSION
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-      - name: Install dependencies
-        run: poetry install
-      - name: Run unit tests
+          poetry-version: "1.4.2"
+          cache-key: ${{ matrix.test_type }}
+          install-command: |
+              if [ "${{ matrix.test_type }}" == "core" ]; then
+                echo "Running core tests, installing dependencies with poetry..."
+                poetry install
+              else
+                echo "Running extended tests, installing dependencies with poetry..."
+                poetry install -E extended_testing
+              fi
+      - name: Run ${{matrix.test_type}} tests
         run: |
           make test
+        shell: bash
