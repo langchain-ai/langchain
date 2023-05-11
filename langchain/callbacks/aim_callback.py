@@ -268,9 +268,13 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         inputs_res = deepcopy(inputs)
 
-        self._run.track(
-            aim.Text(inputs_res["query"]), name="on_chain_start", context=resp
-        )
+        for inputs_key, inputs_value in inputs_res.items():
+            if isinstance(inputs_value, str):
+                self._run.track(
+                    aim.Text(inputs_value),
+                    name=f"on_chain_start_{inputs_key}",
+                    context=resp,
+                )
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
@@ -284,9 +288,13 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         outputs_res = deepcopy(outputs)
 
-        self._run.track(
-            aim.Text(outputs_res["result"]), name="on_chain_end", context=resp
-        )
+        for outputs_key, outputs_value in outputs_res.items():
+            if isinstance(outputs_value, str):
+                self._run.track(
+                    aim.Text(outputs_value),
+                    name=f"on_chain_end_{outputs_key}",
+                    context=resp,
+                )
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
