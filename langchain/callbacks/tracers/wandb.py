@@ -18,10 +18,10 @@ from wandb.sdk.lib import telemetry as wb_telemetry
 from wandb.sdk.lib.paths import StrPath
 
 if TYPE_CHECKING:
-    from langchain.callbacks.tracers.schemas import BaseRun, TracerSessionCreate
+    from langchain.base_language import BaseLanguageModel
+    from langchain.callbacks.tracers.schemas import BaseRun, TracerSessionBase
     from langchain.chains.base import Chain
     from langchain.llms.base import BaseLLM
-    from langchain.schema import BaseLanguageModel
     from langchain.tools.base import BaseTool
     from wandb import Settings as WBSettings
     from wandb.wandb_run import Run as WBRun
@@ -110,7 +110,7 @@ def _convert_llm_run_to_wb_span(run: "LLMRun") -> "trace_tree.Span":
     base_span = _convert_run_to_wb_span(run)
 
     if run.response is not None:
-        base_span.attributes["llm_output"] = run.response.llm_output
+        base_span.add_attribute("llm_output", run.response.llm_output)
     base_span.results = [
         trace_tree.Result(
             inputs={"prompt": prompt},
@@ -156,7 +156,7 @@ def _convert_chain_run_to_wb_span(run: "ChainRun") -> "trace_tree.Span":
 def _convert_tool_run_to_wb_span(run: "ToolRun") -> "trace_tree.Span":
     base_span = _convert_run_to_wb_span(run)
 
-    base_span.attributes["action"] = run.action
+    base_span.add_attribute("action", run.action)
     base_span.results = [
         trace_tree.Result(
             inputs={"input": run.tool_input}, outputs={"output": run.output}
@@ -294,9 +294,10 @@ class WandbTracer(BaseTracer):
             root_span=root_span,
             model_dict=model_dict,
         )
-        wandb.run.log({"langchain_trace": model_trace})
+        if wandb.run is not None:
+            wandb.run.log({"langchain_trace": model_trace})
 
-    def _ensure_run(self, should_print_url=False) -> None:
+    def _ensure_run(self, should_print_url: bool = False) -> None:
         """Ensures an active W&B run exists.
 
         If not, will start a new run with the provided run_args.
@@ -314,7 +315,7 @@ class WandbTracer(BaseTracer):
             # Start the run and add the stream table
             wandb.init(**run_args)
 
-            if should_print_url:
+            if should_print_url and wandb.run is not None:
                 print_wandb_init_message(wandb.run.settings.run_url)
 
         with wb_telemetry.context(wandb.run) as tel:
@@ -338,9 +339,7 @@ class WandbTracer(BaseTracer):
             # Silently ignore errors to not break user code
             pass
 
-    def _persist_session(
-        self, session_create: "TracerSessionCreate"
-    ) -> "TracerSession":
+    def _persist_session(self, session_create: "TracerSessionBase") -> "TracerSession":
         """Persist a session."""
         try:
             return TracerSession(id=1, **session_create.dict())
