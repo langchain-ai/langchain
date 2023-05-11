@@ -17,7 +17,8 @@ TD_NAME = "{http://www.w3.org/1999/xhtml}td"
 TABLE_NAME = "{http://www.w3.org/1999/xhtml}table"
 
 XPATH_KEY = "xpath"
-DOCUMENT_ID_KEY = "documentId"
+DOCUMENT_ID_KEY = "id"
+DOCUMENT_NAME_KEY = "name"
 STRUCTURE_KEY = "structure"
 TAG_KEY = "tag"
 PROJECTS_KEY = "projects"
@@ -39,8 +40,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
     docset_id: Optional[str]
     document_ids: Optional[List[str]]
     file_paths: Optional[List[Path]]
-    max_chunk_size: int = 1024
-    min_chunk_size: int = 10
+    min_chunk_size: int = 32  # appended to the next chunk to avoid over-chunking
 
     @root_validator
     def validate_local_or_remote(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -56,9 +56,18 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
         return values
 
-    def _xpath_for_chunk(self, chunk: Any) -> str:
-        ancestor_chain = chunk.xpath("ancestor-or-self::*")
+    def _parse_dgml(
+        self, document: Dict, content: bytes, doc_metadata: Optional[Dict] = None
+    ) -> List[Document]:
+        try:
+            from lxml import etree
+        except ImportError:
+            raise ValueError(
+                "Could not import lxml python package. "
+                "Please install it with `pip install lxml`."
+            )
 
+        # helpers
         def _xpath_qname_for_chunk(chunk: Any) -> str:
             qname = f"{chunk.prefix}:{chunk.tag.split('}')[-1]}"
 
@@ -71,30 +80,38 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
             return qname
 
-        return "/" + "/".join(_xpath_qname_for_chunk(x) for x in ancestor_chain)
+        def _xpath_for_chunk(chunk: Any) -> str:
+            ancestor_chain = chunk.xpath("ancestor-or-self::*")
+            return "/" + "/".join(_xpath_qname_for_chunk(x) for x in ancestor_chain)
 
-    def _parse_dgml(
-        self, document_id: str, content: bytes, project_metadata: Optional[List] = None
-    ) -> List[Document]:
-        try:
-            from lxml import etree
-        except ImportError:
-            raise ValueError(
-                "Could not import lxml python package. "
-                "Please install it with `pip install lxml`."
+        def _structure_value(node: Any) -> str:
+            structure = (
+                "table"
+                if node.tag == TABLE_NAME
+                else node.attrib["structure"]
+                if "structure" in node.attrib
+                else None
             )
+            return structure
 
-        # helper functions
-        def _is_structural(node):
-            return "structure" in node.attrib
+        def _is_structural(node: Any) -> bool:
+            return _structure_value(node) is not None
 
-        def _get_text(node):
+        def _is_heading(node: Any) -> bool:
+            structure = _structure_value(node)
+            return structure is not None and structure.lower().startswith("h")
+
+        def _get_text(node: Any) -> str:
             return " ".join(node.itertext()).strip()
 
-        def _leaf_structural_nodes(node):
-            if _is_structural(node) and not any(
-                _is_structural(child) for child in node
-            ):
+        def _has_structural_descendant(node: Any) -> bool:
+            for child in node:
+                if _is_structural(child) or _has_structural_descendant(child):
+                    return True
+            return False
+
+        def _leaf_structural_nodes(node: Any) -> List:
+            if _is_structural(node) and not _has_structural_descendant(node):
                 return [node]
             else:
                 leaf_nodes = []
@@ -102,47 +119,49 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     leaf_nodes.extend(_leaf_structural_nodes(child))
                 return leaf_nodes
 
-        # combine metadata across projects for this document
-        doc_metadata = []
-        if project_metadata:
-            for metadata in project_metadata:
-                project_doc_metadata = metadata.get(document_id)
-                if project_doc_metadata:
-                    doc_metadata.append(project_doc_metadata)
+        def _create_doc(node: Any, text: str) -> Document:
+            metadata = {
+                XPATH_KEY: _xpath_for_chunk(node),
+                DOCUMENT_ID_KEY: document["id"],
+                DOCUMENT_NAME_KEY: document["name"],
+                STRUCTURE_KEY: node.attrib.get("structure", ""),
+                TAG_KEY: re.sub(r"\{.*\}", "", node.tag),
+            }
+
+            if doc_metadata:
+                metadata.update(doc_metadata)
+
+            return Document(
+                page_content=text,
+                metadata=metadata,
+            )
 
         # parse the tree and return chunks
         tree = etree.parse(io.BytesIO(content))
         root = tree.getroot()
 
         chunks: List[Document] = []
+        prev_small_chunk_text = None
         for node in _leaf_structural_nodes(root):
             text = _get_text(node)
-            if (
-                len(text) < self.min_chunk_size
-                and len(chunks) > 0
-                and len(chunks[-1].page_content + text) < self.max_chunk_size
-            ):
-                # node is leaf structural, but too small, so append to previous chunk
-                # as long as this will not push previous chunk itself past max size.
-                chunks[-1].page_content += " " + text
+            if prev_small_chunk_text:
+                text = prev_small_chunk_text + " " + text
+                prev_small_chunk_text = None
+
+            if _is_heading(node) or len(text) < self.min_chunk_size:
+                # Save headings or other small chunks to be appended to the next chunk
+                prev_small_chunk_text = text
             else:
-                chunks.append(
-                    Document(
-                        page_content=text,
-                        metadata={
-                            XPATH_KEY: self._xpath_for_chunk(node),
-                            DOCUMENT_ID_KEY: document_id,
-                            STRUCTURE_KEY: node.attrib.get("structure", ""),
-                            TAG_KEY: re.sub(r"\{.*\}", "", node.tag),
-                            PROJECTS_KEY: doc_metadata,
-                        },
-                    )
-                )
+                chunks.append(_create_doc(node, text))
+
+        if prev_small_chunk_text and len(chunks) > 0:
+            # small chunk at the end left over, just append to last chunk
+            chunks[-1].page_content += " " + prev_small_chunk_text
 
         return chunks
 
-    def _document_ids_for_docset_id(self, docset_id: str) -> List[str]:
-        """Gets all document IDs for the given docset ID"""
+    def _document_details_for_docset_id(self, docset_id: str) -> List[Dict]:
+        """Gets all document details for the given docset ID"""
         url = f"{self.api}/docsets/{docset_id}/documents"
         response = requests.request(
             "GET",
@@ -152,7 +171,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         )
         if response.ok:
             # TODO: pagination
-            return [doc["id"] for doc in response.json()["documents"]]
+            return response.json()["documents"]
         else:
             raise Exception(
                 f"Failed to download {url} (status: {response.status_code})"
@@ -176,10 +195,8 @@ class DocugamiLoader(BaseLoader, BaseModel):
             )
 
     def _metadata_for_project(self, project: Dict) -> Dict:
-        """Gets project metadata"""
+        """Gets project metadata for all files"""
         project_id = project.get("id")
-        project_name = project.get("name")
-        project_type = project.get("type")
 
         per_file_metadata = {}
         url = f"{self.api}/projects/{project_id}/artifacts/latest"
@@ -203,11 +220,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     and artifact_doc
                 ):
                     doc_id = artifact_doc["id"]
-                    metadata: Dict = {
-                        "projectType": project_type,
-                        "projectTitle": project_name,
-                        "entries": [],
-                    }
+                    metadata: Dict = {}
 
                     # the evaluated XML for each document is named after the project
                     response = requests.request(
@@ -231,17 +244,10 @@ class DocugamiLoader(BaseLoader, BaseModel):
                         entries = artifact_root.xpath("//wp:Entry", namespaces=ns)
                         for entry in entries:
                             heading = entry.xpath("./wp:Heading", namespaces=ns)[0].text
-                            xpath = entry.xpath("./wp:XPath", namespaces=ns)[0].text
                             value = " ".join(
                                 entry.xpath("./wp:Value", namespaces=ns)[0].itertext()
                             ).strip()
-                            metadata["entries"].append(  # pylint: disable
-                                {
-                                    "heading": heading,
-                                    "xpath": xpath,
-                                    "value": value,
-                                }
-                            )
+                            metadata[heading] = value
                         per_file_metadata[doc_id] = metadata
                     else:
                         raise Exception(
@@ -255,9 +261,10 @@ class DocugamiLoader(BaseLoader, BaseModel):
                 f"Failed to download {url} (status: {response.status_code})"
             )
 
-    def _load_chunks_for_document_id(
-        self, docset_id: str, document_id: str, project_metadata: Optional[List] = None
+    def _load_chunks_for_document(
+        self, docset_id: str, document: Dict, doc_metadata: Optional[Dict] = None
     ) -> List[Document]:
+        document_id = document["id"]
         url = f"{self.api}/docsets/{docset_id}/documents/{document_id}/dgml"
 
         response = requests.request(
@@ -268,7 +275,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         )
 
         if response.ok:
-            return self._parse_dgml(document_id, response.content, project_metadata)
+            return self._parse_dgml(document, response.content, doc_metadata)
         else:
             raise Exception(
                 f"Failed to download {url} (status: {response.status_code})"
@@ -280,27 +287,35 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
         if self.access_token and self.docset_id:
             # remote mode
-            _document_ids = self.document_ids
-            if not _document_ids:
-                # no document IDs specified, default to all docs in docset
-                _document_ids = self._document_ids_for_docset_id(self.docset_id)
+            _document_details = self._document_details_for_docset_id(self.docset_id)
+            if self.document_ids:
+                _document_details = [
+                    d for d in _document_details if d["id"] in self.document_ids
+                ]
 
             _project_details = self._project_details_for_docset_id(self.docset_id)
-            project_metadatas = []
+            combined_project_metadata = {}
             if _project_details:
                 # if there are any projects for this docset, load project metadata
                 for project in _project_details:
                     metadata = self._metadata_for_project(project)
-                    project_metadatas.append(metadata)
+                    combined_project_metadata.update(metadata)
 
-            for doc_id in _document_ids:
-                chunks += self._load_chunks_for_document_id(
-                    self.docset_id, doc_id, project_metadatas
+            for doc in _document_details:
+                doc_metadata = combined_project_metadata.get(doc["id"])
+                chunks += self._load_chunks_for_document(
+                    self.docset_id, doc, doc_metadata
                 )
         elif self.file_paths:
             # local mode (for integration testing, or pre-downloaded XML)
             for path in self.file_paths:
                 with open(path, "rb") as file:
-                    chunks += self._parse_dgml(path.name, file.read())
+                    chunks += self._parse_dgml(
+                        {
+                            DOCUMENT_ID_KEY: path.name,
+                            DOCUMENT_NAME_KEY: path.name,
+                        },
+                        file.read(),
+                    )
 
         return chunks

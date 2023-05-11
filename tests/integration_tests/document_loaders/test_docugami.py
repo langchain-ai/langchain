@@ -9,13 +9,13 @@ def test_docugami_loader_local() -> None:
     loader = DocugamiLoader(file_paths=[file_path])
     docs = loader.load()
 
-    assert len(docs) == 45
+    assert len(docs) == 19
 
     xpath = docs[0].metadata.get("xpath")
-    assert str(xpath).endswith("/docset:MutualNon-disclosure")
-    assert docs[0].metadata["structure"] == "h1"
-    assert docs[0].metadata["tag"] == "MutualNon-disclosure"
-    assert docs[0].page_content == "MUTUAL NON-DISCLOSURE AGREEMENT"
+    assert str(xpath).endswith("/docset:Preamble")
+    assert docs[0].metadata["structure"] == "p"
+    assert docs[0].metadata["tag"] == "Preamble"
+    assert docs[0].page_content.startswith("MUTUAL NON-DISCLOSURE AGREEMENT")
 
 
 def test_docugami_loader_remote_init() -> None:
