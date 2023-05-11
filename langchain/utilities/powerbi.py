@@ -193,6 +193,7 @@ class PowerBIDataset(BaseModel):
 
     def run(self, command: str) -> Any:
         """Execute a DAX command and return a json representing the results."""
+        _LOGGER.debug("Running command: %s", command)
         result = requests.post(
             self.request_url,
             json=self._create_json_content(command),
@@ -203,6 +204,7 @@ class PowerBIDataset(BaseModel):
 
     async def arun(self, command: str) -> Any:
         """Execute a DAX command and return the result asynchronously."""
+        _LOGGER.debug("Running command: %s", command)
         if self.aiosession:
             async with self.aiosession.post(
                 self.request_url,
