@@ -1,4 +1,5 @@
 """Util that calls Arxiv."""
+import os
 import logging
 from typing import Any, Dict, List
 
@@ -141,6 +142,7 @@ class ArxivAPIWrapper(BaseModel):
                             ),
                         )
                         docs.append(doc)
+                    os.remove(doc_file_name)
                 except FileNotFoundError as f_ex:
                     logger.debug(f_ex)
             return docs
