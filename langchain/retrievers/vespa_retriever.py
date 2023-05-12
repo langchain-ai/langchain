@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
 
 from langchain.schema import BaseRetriever, Document
 
@@ -57,7 +57,7 @@ class VespaRetriever(BaseRetriever):
         raise NotImplementedError
 
     def get_relevant_documents_with_filter(
-        self, query: str, _filter: Optional[str] = None
+        self, query: str, *, _filter: Optional[str] = None
     ) -> List[Document]:
         body = self._query_body.copy()
         _filter = f" and {_filter}" if _filter else ""
@@ -70,13 +70,30 @@ class VespaRetriever(BaseRetriever):
         cls,
         url: str,
         content_field: str,
+        *,
         k: Optional[int] = None,
-        metadata_fields: Union[Sequence[str], str] = (),
-        sources: Union[Sequence[str], str, None] = None,
+        metadata_fields: Union[Sequence[str], Literal["*"]] = (),
+        sources: Union[Sequence[str], Literal["*"], None] = None,
         _filter: Optional[str] = None,
         yql: Optional[str] = None,
         **kwargs: Any,
     ) -> VespaRetriever:
+        """Instantiate retriever from params.
+
+        Args:
+            url (str): Vespa app URL.
+            content_field (str): Field in results to return as Document page_content.
+            k (Optional[int]): Number of Documents to return. Defaults to None.
+            metadata_fields(Sequence[str] or "*"): Fields in results to include in
+                document metadata. Defaults to empty tuple ().
+            sources (Sequence[str] or "*" or None): Sources to retrieve
+                from. Defaults to None.
+            _filter (Optional[str]): Document filter condition expressed in YQL.
+                Defaults to None.
+            yql (Optional[str]): Full YQL query to be used. Should not be specified
+                if _filter or sources are specified. Defaults to None.
+            kwargs (Any): Keyword arguments added to query body.
+        """
         try:
             from vespa.application import Vespa
         except ImportError:
@@ -84,18 +101,22 @@ class VespaRetriever(BaseRetriever):
                 "pyvespa is not installed, please install with `pip install pyvespa`"
             )
         app = Vespa(url)
-        if yql:
-            if sources or _filter:
-                raise ValueError("")
+        body = kwargs.copy()
+        if yql and (sources or _filter):
+            raise ValueError(
+                "yql should only be specified if both sources and _filter are not "
+                "specified."
+            )
         else:
             if metadata_fields == "*":
                 _fields = "*"
+                body["summary"] = "short"
             else:
                 _fields = ", ".join([content_field] + list(metadata_fields or []))
             _sources = ", ".join(sources) if isinstance(sources, Sequence) else "*"
             _filter = f" and {_filter}" if _filter else ""
             yql = f"select {_fields} from sources {_sources} where userQuery(){_filter}"
-        body: Dict[str, Any] = {"yql": yql, **kwargs}
+        body["yql"] = yql
         if k:
             body["hits"] = k
         return cls(app, body, content_field, metadata_fields=metadata_fields)
