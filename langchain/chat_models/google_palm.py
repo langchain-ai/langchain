@@ -1,7 +1,7 @@
 """Wrapper around Google's PaLM Chat API."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, root_validator
 
@@ -256,3 +256,18 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         )
 
         return _response_to_result(response, stop)
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "model_name": self.model_name,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
+            "n": self.n,
+        }
+
+    @property
+    def _llm_type(self) -> str:
+        return "google-palm-chat"
