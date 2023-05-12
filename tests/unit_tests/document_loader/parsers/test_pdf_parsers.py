@@ -7,8 +7,6 @@ from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
     PDFMinerParser,
-    PyMuPDFParser,
-    PyPDFium2Parser,
     PyPDFParser,
 )
 from tests.data import HELLO_PDF, LAYOUT_PARSER_PAPER_PDF
