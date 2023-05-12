@@ -39,6 +39,7 @@ _EXPECTED = [
     "ReadFileTool",
     "SceneXplainTool",
     "ShellTool",
+    "SteamshipImageGenerationTool",
     "StructuredTool",
     "Tool",
     "VectorStoreQATool",

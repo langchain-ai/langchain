@@ -36,6 +36,7 @@ from langchain.tools.playwright import (
 from langchain.tools.plugin import AIPluginTool
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.shell.tool import ShellTool
+from langchain.tools.steamship_image_generation import SteamshipImageGenerationTool
 from langchain.tools.vectorstore.tool import (
     VectorStoreQATool,
     VectorStoreQAWithSourcesTool,
@@ -63,6 +64,7 @@ __all__ = [
     "ExtractTextTool",
     "FileSearchTool",
     "GetElementsTool",
+    "SteamshipImageGenerationTool",
     "GmailCreateDraft",
     "GmailGetMessage",
     "GmailGetThread",
