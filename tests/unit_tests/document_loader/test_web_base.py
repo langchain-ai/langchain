@@ -2,7 +2,7 @@ from langchain.document_loaders.web_base import WebBaseLoader
 
 
 class TestWebBaseLoader:
-    def test_respect_user_specified_user_agent(self):
+    def test_respect_user_specified_user_agent(self) -> None:
         user_specified_user_agent = 'user_specified_user_agent'
         header_template = {
             'User-Agent': user_specified_user_agent
