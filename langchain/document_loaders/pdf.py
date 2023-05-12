@@ -17,6 +17,7 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
     PDFMinerParser,
+    PDFPlumberParser,
     PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
@@ -362,3 +363,26 @@ class MathpixPDFLoader(BasePDFLoader):
             contents = self.clean_pdf(contents)
         metadata = {"source": self.source, "file_path": self.source}
         return [Document(page_content=contents, metadata=metadata)]
+
+
+class PDFPlumberLoader(BasePDFLoader):
+    """Loader that uses pdfplumber to load PDF files."""
+
+    def __init__(self, file_path: str) -> None:
+        """Initialize with file path."""
+        try:
+            import pdfplumber  # noqa:F401
+        except ImportError:
+            raise ValueError(
+                "pdfplumber package not found, please install it with "
+                "`pip install pdfplumber`"
+            )
+
+        super().__init__(file_path)
+
+    def load(self, **kwargs: Optional[Any]) -> List[Document]:
+        """Load file."""
+
+        parser = PDFPlumberParser(text_kwargs=kwargs)
+        blob = Blob.from_path(self.file_path)
+        return parser.parse(blob)
