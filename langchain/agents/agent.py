@@ -37,7 +37,7 @@ from langchain.schema import (
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 
-from pprint import pprint  # ZITRONE
+from pprint import pprint  # DEBUG
 
 logger = logging.getLogger(__name__)
 
@@ -423,23 +423,8 @@ class Agent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        # Zitrone -- DEBUG for me
-        print("AGENT.PLAN: Action history =")
-        for action in intermediate_steps:
-            print(action[0].tool, " with ", action[0].tool_input)
-
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
-
-        # Zitrone -- DEBUG for me
-        #print("AGENT.PLAN: full input =")
-        #pprint(full_inputs)
-        #print()
-
         full_output = self.llm_chain.predict(callbacks=callbacks, **full_inputs)
-
-        # Zitrone -- DEBUG for me
-        print(f"AGENT.PLAN: full output = ###{full_output}###\n\n\n")
-
         return self.output_parser.parse(full_output)
 
     async def aplan(
