@@ -10024,7 +10024,7 @@ all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api
 azure = ["azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["pdfminer-six", "pypdf", "tqdm"]
+extended-testing = ["chardet", "pdfminer-six", "pypdf", "tqdm"]
 hnswlib = ["docarray", "hnswlib", "protobuf"]
 in-memory-store = ["docarray"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "torch", "transformers"]
@@ -10035,4 +10035,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5cba09d8e3153c466aced4763e838df2a81f39a87e9578fc56404088fb1e1cb1"
+content-hash = "6aa8b1e18b690223f337de8b345023edd3a9cacc923ea5773baec1eae67b4c44"
