@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Coroutine
 
 from pydantic import Extra, Field, root_validator
 
