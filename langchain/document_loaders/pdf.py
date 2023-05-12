@@ -384,6 +384,6 @@ class PDFPlumberLoader(BasePDFLoader):
     def load(self) -> List[Document]:
         """Load file."""
 
-        parser = PDFPlumberParser(text_kwargs=kwargs)
+        parser = PDFPlumberParser(text_kwargs=self.text_kwargs)
         blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
