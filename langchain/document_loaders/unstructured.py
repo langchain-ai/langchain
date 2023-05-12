@@ -1,4 +1,5 @@
 """Loader that uses unstructured to load files."""
+import os
 from abc import ABC, abstractmethod
 from typing import IO, Any, List
 
@@ -65,6 +66,18 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
     def _get_metadata(self) -> dict:
         """Get metadata."""
 
+    @abstractmethod
+    def _get_file_mod_date(self) -> str:
+        """Get file modified date and time."""
+
+    @abstractmethod
+    def _get_file_create_date(self) -> str:
+        """Get file creation date and time."""
+
+    @abstractmethod
+    def _convert_unix_to_utc(self, unix_timestamp: float) -> str:
+        """Convert unix timestamp to utc."""
+
     def load(self) -> List[Document]:
         """Load file."""
         elements = self._get_elements()
@@ -104,7 +117,45 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
         return partition(filename=self.file_path, **self.unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
-        return {"source": self.file_path}
+        from unstructured.file_utils.filetype import detect_filetype
+
+        metadata = {
+            "source": self.file_path,
+            "filetype": detect_filetype(filename=self.file_path).name,
+            "file_mod_date": self._get_file_mod_date(),
+            "file_create_date": self._get_file_create_date(),
+        }
+
+        return metadata
+
+    def _get_file_create_date(self) -> str:
+        import platform
+
+        """
+        Try to get the date that a file was created. Generally possible with 
+        Windows file systems. However, the same cannot be said for some UNIX 
+        file systems, although most modern ones do store creation time. Even so, 
+        the system call is not exposed in Python. (Anyone is welcome to write a wrapper
+        around it). To avoid the trouble, we can simply fall back to modified time for 
+        UNIX file systems.
+        """
+        if platform.system() == "Windows":
+            unix_timestamp = os.path.getctime(self.file_path)
+            date_time = self._convert_unix_to_utc(unix_timestamp)
+            return date_time
+        else:
+            return self._get_file_mod_date()
+
+    def _get_file_mod_date(self) -> str:
+        unix_timestamp = os.path.getmtime(self.file_path)
+        date_time = self._convert_unix_to_utc(unix_timestamp)
+
+        return date_time
+
+    def _convert_unix_to_utc(self, unix_timestamp: float) -> str:
+        from datetime import datetime
+
+        return datetime.utcfromtimestamp(unix_timestamp).strftime("%Y-%m-%d %H:%M:%S")
 
 
 class UnstructuredAPIFileLoader(UnstructuredFileLoader):
