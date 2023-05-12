@@ -26,24 +26,29 @@ class ChoiceOutputParser(BaseOutputParser[str]):
 
     def parse(self, response):
         response = response.strip()
+        min_distance, closest_option = self._get_min_dist_and_closest(response)
+        if min_distance <= self.max_distance or self.max_distance is None:
+            return closest_option
+        else:
+            # handle answers that add extra words
+            for word in response.split():
+                min_distance, closest_option = self._get_min_dist_and_closest(word)
+                if min_distance <= self.max_distance:
+                    return closest_option
+        raise OutputParserException(
+            f"Response '{response}' does not match any options within the min_distance {self.max_distance}"
+        )
 
+    def _get_min_dist_and_closest(self, word):
         # do Levenshtein distance matching
         closest_option, min_distance = None, math.inf
         for option in self.options:
             levenshtein_distance = _import_levenshtein_distance()
-            distance = levenshtein_distance(response, option)
+            distance = levenshtein_distance(word, option)
             if distance <= min_distance:
                 min_distance = distance
                 closest_option = option
-
-        print(f"min_distance: {min_distance}")
-        print(f"closest_option: {closest_option}")
-        if min_distance <= self.max_distance or self.max_distance is None:
-            return closest_option
-        else:
-            raise OutputParserException(
-                f"Response '{response}' does not match any options within the min_distance {self.max_distance}"
-            )
+        return min_distance, closest_option
 
     @property
     def _type(self) -> str:

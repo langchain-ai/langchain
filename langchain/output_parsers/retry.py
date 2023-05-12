@@ -106,17 +106,12 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
 
     def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
         try:
-            print("ABCABC")
             parsed_completion = self.parser.parse(completion)
-            print("DEFDEF")
         except OutputParserException as e:
-            print("GHI")
             new_completion = self.retry_chain.run(
                 prompt=prompt_value.to_string(), completion=completion, error=repr(e)
             )
-            print("JKL")
             parsed_completion = self.parser.parse(new_completion)
-            print("MNO")
 
         return parsed_completion
 

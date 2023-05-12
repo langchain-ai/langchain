@@ -131,16 +131,18 @@ def generate(
         pass
 
     print(123123)
-    retry_with_error_parser = MultiAttemptRetryWithErrorOutputParser.from_llm(
-        parser=parser,
-        llm=llm,
-        attempts=attempts,
-        additional_validator=additional_validator,
+    multi_attempt_retry_with_error_parser = (
+        MultiAttemptRetryWithErrorOutputParser.from_llm(
+            parser=parser,
+            llm=llm,
+            attempts=attempts,
+            additional_validator=additional_validator,
+        )
     )
     print(456456)
     response = _generate(input, llm=llm, stop=stop)
     print(789789)
-    return retry_with_error_parser.parse_with_prompt(
+    return multi_attempt_retry_with_error_parser.parse_with_prompt(
         response,
         prompt_value=StringPromptValue(text=input)
         if isinstance(input, str)

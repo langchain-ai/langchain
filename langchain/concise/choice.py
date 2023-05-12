@@ -6,6 +6,7 @@ from langchain.concise.pattern import pattern
 from langchain.llms.base import BaseLanguageModel
 from langchain.output_parsers.choice import ChoiceOutputParser
 from langchain.output_parsers.enum import EnumOutputParser
+from langchain.schema import OutputParserException
 
 
 def choice(
@@ -14,6 +15,7 @@ def choice(
     options: list[str] | Type[Enum] = [],
     examples: list[tuple[str, str]] = [],
     llm: BaseLanguageModel = None,
+    default=None,
 ) -> bool:
     """Choose an option from a list of options based on the item and query.
 
@@ -37,11 +39,17 @@ def choice(
             f"options must be a list of strings or an enum, not {type(options)}"
         )
 
-    return pattern(
-        input=input,
-        query=query,
-        pattern_name="choice",
-        parser=parser,
-        examples=examples,
-        llm=llm,
-    )
+    try:
+        return pattern(
+            input=input,
+            query=query,
+            pattern_name="choice",
+            parser=parser,
+            examples=examples,
+            llm=llm,
+        )
+    except (ValueError, OutputParserException) as e:
+        if default is not None:
+            return default
+        else:
+            raise e

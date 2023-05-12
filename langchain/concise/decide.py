@@ -2,6 +2,7 @@ from langchain.concise import config
 from langchain.concise.pattern import pattern
 from langchain.llms.base import BaseLanguageModel
 from langchain.output_parsers.smart_boolean import SmartBooleanOutputParser
+from langchain.schema import OutputParserException
 
 
 def decide(
@@ -11,6 +12,7 @@ def decide(
     false_examples: list[str] = [],
     examples: list[tuple[str, bool]] = [],
     llm: BaseLanguageModel = None,
+    default=None,
 ) -> bool:
     """Decide whether a statement is true or false based on the input and query.
 
@@ -35,11 +37,17 @@ def decide(
         for input, output in examples
     ]
 
-    return pattern(
-        input=input,
-        query=query,
-        pattern_name="decide",
-        parser=parser,
-        examples=examples,
-        llm=llm,
-    )
+    try:
+        return pattern(
+            input=input,
+            query=query,
+            pattern_name="decide",
+            parser=parser,
+            examples=examples,
+            llm=llm,
+        )
+    except (ValueError, OutputParserException) as e:
+        if default is not None:
+            return default
+        else:
+            raise e
