@@ -8,7 +8,18 @@ logger = logging.getLogger(__name__)
 
 
 class TextLoader(BaseLoader):
-    """Load text files."""
+    """Load text files.
+
+
+    Args:
+        file_path: Path to the file to load.
+
+        encoding: File encoding to use. If `None`, the file will be loaded
+        with the default system encoding.
+
+        autodetect_encoding: Whether to try to autodetect the file encoding
+            if the specified encoding fails.
+    """
 
     def __init__(
         self,
@@ -29,7 +40,7 @@ class TextLoader(BaseLoader):
                 text = f.read()
             except UnicodeDecodeError as e:
                 if self.autodetect_encoding:
-                    detected_encodings = self.detect_file_encodings()
+                    detected_encodings = detect_file_encodings(self.file_path)
                     for encoding in detected_encodings:
                         logger.debug("Trying encoding: ", encoding["encoding"])
                         try:
@@ -48,15 +59,17 @@ class TextLoader(BaseLoader):
         metadata = {"source": self.file_path}
         return [Document(page_content=text, metadata=metadata)]
 
-    def detect_file_encodings(self, timeout: int = 5) -> List[dict]:
-        """Try to detect the file encoding."""
-        import chardet
+def detect_file_encodings(file_path: str) -> List[dict]:
+    """Try to detect the file encoding."""
+    import chardet
 
-        with open(self.file_path, "rb") as f:
-            rawdata = f.read()
-        encodings = chardet.detect_all(rawdata)
 
-        if all(encoding["encoding"] is None for encoding in encodings):
-            raise RuntimeError(f"Could not detect encoding for {self.file_path}")
-        res = [encoding for encoding in encodings if encoding["encoding"] is not None]
-        return cast(List[dict], res)
+    with open(file_path, "rb") as f:
+        rawdata = f.read()
+    encodings = chardet.detect_all(rawdata)
+
+
+    if all(encoding["encoding"] is None for encoding in encodings):
+        raise RuntimeError(f"Could not detect encoding for {file_path}")
+    res = [encoding for encoding in encodings if encoding["encoding"] is not None]
+    return cast(List[dict], res)
