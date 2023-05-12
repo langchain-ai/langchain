@@ -7,7 +7,7 @@ from langchain.document_loaders.base import BaseLoader
 class TextLoader(BaseLoader):
     """Load text files."""
 
-    def __init__(self, file_path: str, encoding: Optional[str] = None):
+    def __init__(self, file_path: str, encoding: str = "UTF-8"):
         """Initialize with file path."""
         self.file_path = file_path
         self.encoding = encoding

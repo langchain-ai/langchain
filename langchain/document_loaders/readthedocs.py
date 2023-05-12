@@ -12,7 +12,7 @@ class ReadTheDocsLoader(BaseLoader):
     def __init__(
         self,
         path: str,
-        encoding: Optional[str] = None,
+        encoding: str = "UTF-8",
         errors: Optional[str] = None,
         **kwargs: Optional[Any]
     ):
