@@ -1,5 +1,4 @@
 """Wrapper around a Power BI endpoint."""
-
 from __future__ import annotations
 
 import logging
@@ -10,14 +9,13 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 import aiohttp
 import requests
 from aiohttp import ServerTimeoutError
+from azure.core.credentials import TokenCredential
 from pydantic import BaseModel, Field, root_validator
 from requests.exceptions import Timeout
 
 _LOGGER = logging.getLogger(__name__)
 
 BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg")
-
-from azure.core.credentials import TokenCredential
 
 
 class PowerBIDataset(BaseModel):
@@ -66,8 +64,8 @@ class PowerBIDataset(BaseModel):
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + self.token,
             }
-        from azure.core.exceptions import (  # pylint: disable=import-outside-toplevel
-            ClientAuthenticationError,
+        from azure.core.exceptions import (
+            ClientAuthenticationError,  # pylint: disable=import-outside-toplevel
         )
 
         if self.credential:

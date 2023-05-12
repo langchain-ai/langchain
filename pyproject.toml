@@ -105,6 +105,8 @@ responses = "^0.22.0"
 pytest-asyncio = "^0.20.3"
 lark = "^1.1.5"
 pytest-mock  = "^3.10.0"
+azure-core = "^1.26.4"
+azure-identity = "^1.12.0"
 
 [tool.poetry.group.test_integration]
 optional = true
