@@ -379,6 +379,7 @@ class PDFPlumberLoader(BasePDFLoader):
             )
 
         super().__init__(file_path)
+        self.text_kwargs = text_kwargs or {}
 
     def load(self) -> List[Document]:
         """Load file."""
