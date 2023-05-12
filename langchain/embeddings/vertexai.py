@@ -9,7 +9,7 @@ from langchain.utilities.vertexai import raise_vertex_import_error
 
 
 class VertexAIEmbeddings(_VertexAICommon, Embeddings):
-    model_name: Optional[str] = "textembedding-gecko@001"
+    model_name: Optional[str] = "textembedding-gecko"
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

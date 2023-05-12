@@ -72,7 +72,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     installed.
     """
 
-    model_name: str = "chat-bison@001"
+    model_name: str = "chat-bison"
     chat: Any = None  #: :meta private:
 
     @root_validator()

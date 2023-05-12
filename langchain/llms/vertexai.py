@@ -15,7 +15,7 @@ from langchain.utilities.vertexai import (
 
 class _VertexAICommon(BaseModel):
     client: Any = None  #: :meta private:
-    model_name: Optional[str] = "text-bison@001"
+    model_name: Optional[str] = "text-bison"
     """Model name to use."""
     temperature: float = 0.7
     """Sampling temperature, it controls the degree of randomness in token selection."""
