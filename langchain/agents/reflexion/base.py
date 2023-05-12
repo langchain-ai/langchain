@@ -1,7 +1,6 @@
 # TODO
 # - clean up inheritance structure
 # - integrate callback manager, run manager, ...
-# - remove debug log statements 
 # - create a short default prompt for reflexion?
 # - test, document, lint, ...
 
@@ -16,13 +15,11 @@ from langchain.agents.react.base import DocstoreExplorer, ReActChain
 from langchain.agents.react.base import ReActDocstoreAgent
 from langchain.agents.reflexion.alfworld_prompt import ALFWORLD_PROMPT
 from langchain.agents.reflexion.output_parser import ReflexionOutputParser
-from langchain.agents.utils import validate_tools_single_input
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.docstore.base import Docstore
-from langchain.docstore.document import Document
 from langchain.input import get_color_mapping
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import AgentAction, AgentFinish
@@ -100,17 +97,14 @@ class ReflexerDocstoreAgent(ReActDocstoreAgent):
             inputs: Dict[str, str],
             intermediate_steps: List[Tuple[AgentAction, str]],
             next_trial_no: int,
-            run_manager: Optional[CallbackManagerForChainRun] = None,
+            callbacks: Callbacks = None,
             **kwargs: Any,) -> str:
         """ returns full relection notes  """
 
-        # TODO: include run_manager
-
-        # DEBUG
-        print(f"ReflexerDocstoreAgent._reflect: inputs = {inputs}")
-
         full_inputs = self.get_full_inputs(intermediate_steps, **inputs, **kwargs)
-        full_output = self.reflexion_llm_chain.predict(callbacks=None, **full_inputs)
+        full_output = self.reflexion_llm_chain.predict(
+            callbacks=callbacks, **full_inputs
+        )
         reflexion = self.reflexion_output_parser.parse(full_output)
 
         return (self._construct_scratchpad(intermediate_steps) +
@@ -170,9 +164,6 @@ class ReflexionChain(ReActChain):
             _max_action_repetition: Optional[int] = None,
             _max_iterations_per_trial: Optional[int] = None,
             _max_time_elapsed_per_trial: Optional[float] = None,) -> bool:
-        
-        # DEBUG ZTRONE
-        print(f"ReflexionChain._should_reflect: {iterations_in_trial} / {_max_iterations_per_trial} iterations in trial")
 
         # We reflect when ...
         # ... we have too many iterations in current trial, or
@@ -238,13 +229,6 @@ class ReflexionChain(ReActChain):
             input_with_reflection_notes = inputs.copy()
             input_with_reflection_notes["input"] += "\n" + reflexion_notes
 
-            # DEBUG
-            print("---- Taking next step with:")
-            print("Inputs:")
-            pprint(input_with_reflection_notes)
-            print("Intermediate Steps:")
-            pprint(intermediate_steps)
-
             next_step_output = self._take_next_step(
                 name_to_tool_map,
                 color_mapping,
@@ -282,24 +266,12 @@ class ReflexionChain(ReActChain):
             )
 
             if trial_failed:
-                # DEBUG
-                print("---- Reflecting with:")
-                print("Inputs:")
-                pprint(inputs)
-                print("Intermediate Steps:")
-                pprint(intermediate_steps)
-
                 new_reflection_notes = self.agent._reflect(inputs, intermediate_steps,
                                                            next_trial_no=trials+1)
                 reflexion_notes += "\n" + new_reflection_notes
 
-                # DEBUG
-                print("New reflexion notes:")
-                print(reflexion_notes)
-                print()
+                # TODO: Add to some log / manager that new trial started
 
-                # start new trial
-                print(">>> ReflexionChain._call: Starting new trial")
                 trials += 1
                 trial_iterations = 0
                 trial_time_elapsed = 0.0
