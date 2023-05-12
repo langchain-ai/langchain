@@ -31,9 +31,8 @@ from langchain.callbacks.tracers.langchain import LangChainTracerV2
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.client.models import Dataset, DatasetCreate, Example, ExampleCreate
-from langchain.client.utils import parse_chat_messages
 from langchain.llms.base import BaseLLM
-from langchain.schema import ChatResult, LLMResult
+from langchain.schema import ChatResult, LLMResult, messages_from_dict
 from langchain.utils import raise_for_status_with_text, xor_args
 
 if TYPE_CHECKING:
@@ -96,7 +95,6 @@ class LangChainPlusClient(BaseSettings):
                 "Unable to get seeded tenant ID. Please manually provide."
             ) from e
         results: List[dict] = response.json()
-        breakpoint()
         if len(results) == 0:
             raise ValueError("No seeded tenant found")
         return results[0]["id"]
@@ -296,14 +294,16 @@ class LangChainPlusClient(BaseSettings):
         langchain_tracer: LangChainTracerV2,
     ) -> Union[LLMResult, ChatResult]:
         if isinstance(llm, BaseLLM):
-            llm_prompts: List[str] = inputs["prompts"]
-            llm_output = await llm.agenerate(llm_prompts, callbacks=[langchain_tracer])
+            if "prompt" not in inputs:
+                raise ValueError(f"LLM Run requires 'prompt' input. Got {inputs}")
+            llm_prompt: str = inputs["prompt"]
+            llm_output = await llm.agenerate([llm_prompt], callbacks=[langchain_tracer])
         elif isinstance(llm, BaseChatModel):
-            chat_prompts: List[str] = inputs["prompts"]
-            messages = [
-                parse_chat_messages(chat_prompt) for chat_prompt in chat_prompts
-            ]
-            llm_output = await llm.agenerate(messages, callbacks=[langchain_tracer])
+            if "messages" not in inputs:
+                raise ValueError(f"Chat Run requires 'messages' input. Got {inputs}")
+            raw_messages: List[dict] = inputs["messages"]
+            messages = messages_from_dict(raw_messages)
+            llm_output = await llm.agenerate([messages], callbacks=[langchain_tracer])
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
         return llm_output
@@ -454,14 +454,18 @@ class LangChainPlusClient(BaseSettings):
     ) -> Union[LLMResult, ChatResult]:
         """Run the language model on the example."""
         if isinstance(llm, BaseLLM):
-            llm_prompts: List[str] = inputs["prompts"]
-            llm_output = llm.generate(llm_prompts, callbacks=[langchain_tracer])
+            if "prompt" not in inputs:
+                raise ValueError(f"LLM Run must contain 'prompt' key. Got {inputs}")
+            llm_prompt: str = inputs["prompt"]
+            llm_output = llm.generate([llm_prompt], callbacks=[langchain_tracer])
         elif isinstance(llm, BaseChatModel):
-            chat_prompts: List[str] = inputs["prompts"]
-            messages = [
-                parse_chat_messages(chat_prompt) for chat_prompt in chat_prompts
-            ]
-            llm_output = llm.generate(messages, callbacks=[langchain_tracer])
+            if "messages" not in inputs:
+                raise ValueError(
+                    f"Chat Model Run must contain 'messages' key. Got {inputs}"
+                )
+            raw_messages: List[dict] = inputs["messages"]
+            messages = messages_from_dict(raw_messages)
+            llm_output = llm.generate([messages], callbacks=[langchain_tracer])
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
         return llm_output
@@ -525,7 +529,7 @@ class LangChainPlusClient(BaseSettings):
                 f"{dataset_name}-{llm_or_chain.__class__.__name__}-{current_time}"
             )
         dataset = self.read_dataset(dataset_name=dataset_name)
-        examples = self.list_examples(dataset_id=str(dataset.id))
+        examples = list(self.list_examples(dataset_id=str(dataset.id)))
         results: Dict[str, Any] = {}
         with tracing_v2_enabled(session_name=session_name) as session:
             tracer = LangChainTracerV2()

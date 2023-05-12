@@ -20,6 +20,8 @@ from langchain.prompts.chat import (
 from langchain.schema import AgentAction
 from langchain.tools import BaseTool
 
+HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
+
 
 class StructuredChatAgent(Agent):
     output_parser: AgentOutputParser = Field(
@@ -71,6 +73,7 @@ class StructuredChatAgent(Agent):
         tools: Sequence[BaseTool],
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
+        human_message_template: str = HUMAN_MESSAGE_TEMPLATE,
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
     ) -> BasePromptTemplate:
@@ -84,7 +87,7 @@ class StructuredChatAgent(Agent):
         template = "\n\n".join([prefix, formatted_tools, format_instructions, suffix])
         messages = [
             SystemMessagePromptTemplate.from_template(template),
-            HumanMessagePromptTemplate.from_template("{input}\n\n{agent_scratchpad}"),
+            HumanMessagePromptTemplate.from_template(human_message_template),
         ]
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
@@ -99,6 +102,7 @@ class StructuredChatAgent(Agent):
         output_parser: Optional[AgentOutputParser] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
+        human_message_template: str = HUMAN_MESSAGE_TEMPLATE,
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
         **kwargs: Any,
@@ -109,6 +113,7 @@ class StructuredChatAgent(Agent):
             tools,
             prefix=prefix,
             suffix=suffix,
+            human_message_template=human_message_template,
             format_instructions=format_instructions,
             input_variables=input_variables,
         )
