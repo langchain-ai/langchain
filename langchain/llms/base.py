@@ -149,6 +149,14 @@ class BaseLLM(BaseLanguageModel, ABC):
                 "Argument 'prompts' is expected to be of type List[str], received"
                 f" argument of type {type(prompts)}."
             )
+        params = self.dict()
+        params["stop"] = stop
+        (
+            existing_prompts,
+            llm_string,
+            missing_prompt_idxs,
+            missing_prompts,
+        ) = get_prompts(params, prompts)
         disregard_cache = self.cache is not None and not self.cache
         callback_manager = CallbackManager.configure(
             callbacks, self.callbacks, self.verbose
@@ -163,7 +171,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             run_manager = callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts
+                {"name": self.__class__.__name__}, prompts, invocation_params=params
             )
             try:
                 output = (
@@ -176,17 +184,11 @@ class BaseLLM(BaseLanguageModel, ABC):
                 raise e
             run_manager.on_llm_end(output)
             return output
-        params = self.dict()
-        params["stop"] = stop
-        (
-            existing_prompts,
-            llm_string,
-            missing_prompt_idxs,
-            missing_prompts,
-        ) = get_prompts(params, prompts)
         if len(missing_prompts) > 0:
             run_manager = callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, missing_prompts
+                {"name": self.__class__.__name__},
+                missing_prompts,
+                invocation_params=params,
             )
             try:
                 new_results = (
@@ -213,6 +215,14 @@ class BaseLLM(BaseLanguageModel, ABC):
         callbacks: Callbacks = None,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
+        params = self.dict()
+        params["stop"] = stop
+        (
+            existing_prompts,
+            llm_string,
+            missing_prompt_idxs,
+            missing_prompts,
+        ) = get_prompts(params, prompts)
         disregard_cache = self.cache is not None and not self.cache
         callback_manager = AsyncCallbackManager.configure(
             callbacks, self.callbacks, self.verbose
@@ -227,7 +237,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             run_manager = await callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts
+                {"name": self.__class__.__name__}, prompts, invocation_params=params
             )
             try:
                 output = (
@@ -240,18 +250,11 @@ class BaseLLM(BaseLanguageModel, ABC):
                 raise e
             await run_manager.on_llm_end(output, verbose=self.verbose)
             return output
-        params = self.dict()
-        params["stop"] = stop
-        (
-            existing_prompts,
-            llm_string,
-            missing_prompt_idxs,
-            missing_prompts,
-        ) = get_prompts(params, prompts)
         if len(missing_prompts) > 0:
             run_manager = await callback_manager.on_llm_start(
                 {"name": self.__class__.__name__},
                 missing_prompts,
+                invocation_params=params,
             )
             try:
                 new_results = (
