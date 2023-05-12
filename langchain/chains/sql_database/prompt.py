@@ -224,6 +224,7 @@ _clickhouse_prompt = """You are a ClickHouse expert. Given an input question, fi
 Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per ClickHouse. You can order the results to return the most informative data in the database.
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
 Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
+Pay attention to use today() function to get the current date, if the question involves "today".
 
 Use the following format:
 
@@ -242,6 +243,28 @@ CLICKHOUSE_PROMPT = PromptTemplate(
     template=_clickhouse_prompt,
 )
 
+_prestodb_prompt = """You are a PrestoDB expert. Given an input question, first create a syntactically correct PrestoDB query to run, then look at the results of the query and return the answer to the input question.
+Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per PrestoDB. You can order the results to return the most informative data in the database.
+Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
+Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
+
+Use the following format:
+
+Question: "Question here"
+SQLQuery: "SQL Query to run"
+SQLResult: "Result of the SQLQuery"
+Answer: "Final answer here"
+
+Only use the following tables:
+{table_info}
+
+Question: {input}"""
+
+PRESTODB_PROMPT = PromptTemplate(
+    input_variables=["input", "table_info", "top_k"],
+    template=_prestodb_prompt,
+)
+
 
 SQL_PROMPTS = {
     "duckdb": DUCKDB_PROMPT,
@@ -253,4 +276,5 @@ SQL_PROMPTS = {
     "postgresql": POSTGRES_PROMPT,
     "sqlite": SQLITE_PROMPT,
     "clickhouse": CLICKHOUSE_PROMPT,
+    "prestodb": PRESTODB_PROMPT,
 }
