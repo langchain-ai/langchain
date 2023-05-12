@@ -5,6 +5,7 @@ from pydantic import root_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.llms.vertexai import _VertexAICommon
+from langchain.utilities.vertexai import raise_vertex_import_error
 
 
 class VertexAIEmbeddings(_VertexAICommon, Embeddings):
@@ -13,13 +14,11 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the python package exists in environment."""
+        cls._try_init_vertexai(values)
         try:
-            import vertexai
             from vertexai.preview.language_models import TextEmbeddingModel
-
-            vertexai.init()
         except ImportError:
-            cls._raise_import_error()
+            raise_vertex_import_error()
         values["client"] = TextEmbeddingModel.from_pretrained(values["model_name"])
         return values
 

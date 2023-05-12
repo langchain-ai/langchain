@@ -18,6 +18,7 @@ from langchain.schema import (
     HumanMessage,
     SystemMessage,
 )
+from langchain.utilities.vertexai import raise_vertex_import_error
 
 
 @dataclass
@@ -77,13 +78,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the python package exists in environment."""
+        cls._try_init_vertexai(values)
         try:
-            import vertexai
             from vertexai.preview.language_models import ChatModel
-
-            vertexai.init()
         except ImportError:
-            cls._raise_import_error()
+            raise_vertex_import_error()
         values["client"] = ChatModel.from_pretrained(values["model_name"])
         return values
 

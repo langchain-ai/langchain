@@ -6,6 +6,11 @@ from pydantic import BaseModel, root_validator
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.utilities.vertexai import (
+    init_vertexai,
+    is_tuned_model,
+    raise_vertex_import_error,
+)
 
 
 class _VertexAICommon(BaseModel):
@@ -22,6 +27,12 @@ class _VertexAICommon(BaseModel):
     top_k: int = 40
     """How the model selects tokens for output, the next token is selected from "
     "among the top-k most probable tokens."""
+    project: Optional[str] = None
+    """The default GCP project to use when making Vertex API calls."""
+    location: Optional[str] = None
+    """The default location to use when making API calls."""
+    credentials_json_path: Optional[str] = None
+    """The default staging bucket to use to stage artifacts when making API calls."""
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -48,12 +59,12 @@ class _VertexAICommon(BaseModel):
         """Return type of llm."""
         return "vertexai"
 
-    @staticmethod
-    def _raise_import_error() -> ValueError:
-        sdk = "google-cloud-aiplatform>=1.25.0"
-        raise ImportError(
-            "Could not import VertexAI. Please, install it with " f"pip install {sdk} "
-        )
+    @classmethod
+    def _try_init_vertexai(cls, values: Dict) -> None:
+        allowed_params = ["project", "location", "credentials_json_path"]
+        params = {k: v for k, v in values.items() if v in allowed_params}
+        init_vertexai(**params)
+        return None
 
 
 class VertexAI(_VertexAICommon, LLM):
@@ -62,14 +73,16 @@ class VertexAI(_VertexAICommon, LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
+        cls._try_init_vertexai(values)
         try:
-            import vertexai
             from vertexai.preview.language_models import TextGenerationModel
-
-            vertexai.init()
         except ImportError:
-            cls._raise_import_error()
-        values["client"] = TextGenerationModel.from_pretrained(values["model_name"])
+            raise_vertex_import_error()
+        is_tuned = is_tuned_model(values["model_name"])
+        if is_tuned:
+            values["client"] = TextGenerationModel.get_tuned_model(values["model_name"])
+        else:
+            values["client"] = TextGenerationModel.from_pretrained(values["model_name"])
         return values
 
     def _call(
