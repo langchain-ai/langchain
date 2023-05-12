@@ -59,7 +59,7 @@ class SparkSQL:
     @classmethod
     def from_uri(
         cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
-    ) -> SQLDatabase:
+    ) -> SparkSQL:
         """Creating a remote Spark Session via Spark connect.
         For example: SparkSQL.from_uri("sc://localhost:15002")
         """
