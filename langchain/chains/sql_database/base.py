@@ -108,7 +108,7 @@ class SQLDatabaseChain(Chain):
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
             "table_info": table_info,
-            "stop": ["\n", "SQLResult:"],
+            "stop": ["\nSQLResult:"],
         }
         intermediate_steps: List = []
         try:
