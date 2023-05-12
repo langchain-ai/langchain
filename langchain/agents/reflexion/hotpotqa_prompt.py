@@ -76,7 +76,10 @@ page could not be found. Instead I should have tried to search the similar resul
 name to see and they were made in """,
 ]
 SUFFIX = """\nQuestion: {input}
-{agent_scratchpad}"""
+\n{agent_scratchpad}
+\nSTATUS: FAIL
+\nNew plan:
+"""
 
 HOTPOTQA_PROMPT = PromptTemplate.from_examples(
     EXAMPLES, SUFFIX, ["input", "agent_scratchpad"]
