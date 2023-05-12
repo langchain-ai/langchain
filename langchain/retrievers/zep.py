@@ -42,7 +42,6 @@ class ZepRetriever(BaseRetriever):
 
         self.zep_client = ZepClient(base_url=url)
         self.session_id = session_id
-        self.url = url
         self.top_k = top_k
 
     def _search_result_to_doc(self, results: List[SearchResult]) -> List[Document]:
