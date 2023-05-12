@@ -36,24 +36,24 @@ class TextLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load from file path."""
         text = ""
-        with open(self.file_path, encoding=self.encoding) as f:
-            try:
+        try:
+            with open(self.file_path, encoding=self.encoding) as f:
                 text = f.read()
-            except UnicodeDecodeError as e:
-                if self.autodetect_encoding:
-                    detected_encodings = detect_file_encodings(self.file_path)
-                    for encoding in detected_encodings:
-                        logger.debug("Trying encoding: ", encoding.encoding)
-                        try:
-                            with open(self.file_path, encoding=encoding.encoding) as f:
-                                text = f.read()
-                            break
-                        except UnicodeDecodeError:
-                            continue
-                else:
-                    raise RuntimeError(f"Error loading {self.file_path}") from e
-            except Exception as e:
+        except UnicodeDecodeError as e:
+            if self.autodetect_encoding:
+                detected_encodings = detect_file_encodings(self.file_path)
+                for encoding in detected_encodings:
+                    logger.debug("Trying encoding: ", encoding.encoding)
+                    try:
+                        with open(self.file_path, encoding=encoding.encoding) as f:
+                            text = f.read()
+                        break
+                    except UnicodeDecodeError:
+                        continue
+            else:
                 raise RuntimeError(f"Error loading {self.file_path}") from e
+        except Exception as e:
+            raise RuntimeError(f"Error loading {self.file_path}") from e
 
         metadata = {"source": self.file_path}
         return [Document(page_content=text, metadata=metadata)]
