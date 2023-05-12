@@ -1,6 +1,7 @@
 """This tool allows agents to generate images using Steamship.
 
-Steamship offers access to different third party image generation APIs using a single API key.
+Steamship offers access to different third party image generation APIs
+using a single API key.
 
 Today the following models are supported:
 - Dall-E
@@ -20,9 +21,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
 )
 from langchain.tools import BaseTool
+from langchain.tools.steamship_image_generation.utils import make_image_public
 from langchain.utils import get_from_dict_or_env
-
-from .utils import make_image_public
 
 
 class ModelName(str, Enum):
