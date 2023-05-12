@@ -11,7 +11,7 @@ To use this tool, you must first set as environment variables:
 ```
 """
 from enum import Enum
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 from pydantic import root_validator
 
@@ -21,18 +21,20 @@ from langchain.callbacks.manager import (
 )
 from langchain.tools import BaseTool
 from langchain.utils import get_from_dict_or_env
+
 from .utils import make_image_public
 
 
 class ModelName(str, Enum):
     """Supported Image Models for generation."""
+
     DALL_E = "dall-e"
     STABLE_DIFFUSION = "stable-diffusion"
 
 
 SUPPORTED_IMAGE_SIZES = {
     ModelName.DALL_E: ("256x256", "512x512", "1024x1024"),
-    ModelName.STABLE_DIFFUSION: ("512x512", "768x768")
+    ModelName.STABLE_DIFFUSION: ("512x512", "768x768"),
 }
 
 
@@ -65,7 +67,9 @@ class SteamshipImageGenerationTool(BaseTool):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        steamship_api_key = get_from_dict_or_env(values, "steamship_api_key", "STEAMSHIP_API_KEY")
+        steamship_api_key = get_from_dict_or_env(
+            values, "steamship_api_key", "STEAMSHIP_API_KEY"
+        )
 
         try:
             from steamship import Steamship
@@ -85,15 +89,14 @@ class SteamshipImageGenerationTool(BaseTool):
         return values
 
     def _run(
-            self,
-            query: str,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
 
         image_generator = self.steamship.use_plugin(
-            plugin_handle=self.model_name.value,
-            config={"n": 1, "size": self.size}
+            plugin_handle=self.model_name.value, config={"n": 1, "size": self.size}
         )
 
         task = image_generator.generate(text=query, append_output_to_file=True)
@@ -108,9 +111,9 @@ class SteamshipImageGenerationTool(BaseTool):
         raise RuntimeError(f"[{self.name}] Tool unable to generate image!")
 
     async def _arun(
-            self,
-            query: str,
-            run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("GenerateImageTool does not support async")
