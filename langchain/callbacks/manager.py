@@ -72,8 +72,11 @@ def tracing_enabled(
 
 @contextmanager
 def tracing_v2_enabled(
-    session_name: str = "default",
+    session_name: Optional[str] = None,
+    *,
     example_id: Optional[Union[str, UUID]] = None,
+    tenant_id: Optional[str] = None,
+    session_extra: Optional[Dict[str, Any]] = None,
 ) -> Generator[TracerSession, None, None]:
     """Get the experimental tracer handler in a context manager."""
     # Issue a warning that this is experimental
@@ -83,8 +86,13 @@ def tracing_v2_enabled(
     )
     if isinstance(example_id, str):
         example_id = UUID(example_id)
-    cb = LangChainTracer(example_id=example_id)
-    session = cast(TracerSession, cb.new_session(session_name))
+    cb = LangChainTracer(
+        tenant_id=tenant_id,
+        session_name=session_name,
+        example_id=example_id,
+        session_extra=session_extra,
+    )
+    session = cb.ensure_session()
     tracing_v2_callback_var.set(cb)
     yield session
     tracing_v2_callback_var.set(None)
@@ -831,7 +839,7 @@ def _configure(
     tracer_session = os.environ.get("LANGCHAIN_SESSION")
     if tracer_session is None:
         tracer_session = "default"
-    if verbose or tracing_enabled_ or open_ai is not None:
+    if verbose or tracing_enabled_ or tracing_v2_enabled_ or open_ai is not None:
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
             for handler in callback_manager.handlers
@@ -855,8 +863,8 @@ def _configure(
                 callback_manager.add_handler(tracer_v2, True)
             else:
                 try:
-                    handler = LangChainTracer()
-                    handler.load_session(tracer_session)
+                    handler = LangChainTracer(session_name=tracer_session)
+                    handler.ensure_session()
                     callback_manager.add_handler(handler, True)
                 except Exception as e:
                     logger.debug("Unable to load requested LangChainTracer", e)

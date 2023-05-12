@@ -4,19 +4,14 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from typing import Tuple
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import pytest
 from freezegun import freeze_time
 
 from langchain.callbacks.tracers.langchain import LangChainTracer
-from langchain.callbacks.tracers.schemas import (
-    Run,
-    RunTypeEnum,
-    TracerSession,
-    TracerSessionCreate,
-)
+from langchain.callbacks.tracers.schemas import Run, RunTypeEnum, TracerSession
 from langchain.schema import LLMResult
 
 _SESSION_ID = UUID("4fbf7c55-2727-4711-8964-d821ed4d4e2a")
@@ -36,29 +31,6 @@ def lang_chain_tracer_v2(monkeypatch: pytest.MonkeyPatch) -> LangChainTracer:
 @pytest.fixture
 def sample_tracer_session_v2() -> TracerSession:
     return TracerSession(id=_SESSION_ID, name="Sample session", tenant_id=_TENANT_ID)
-
-
-def test_get_default_query_params(lang_chain_tracer_v2: LangChainTracer) -> None:
-    expected = {"tenant_id": "test-tenant-id"}
-    result = lang_chain_tracer_v2._get_default_query_params()
-    assert result == expected
-
-
-@patch("langchain.callbacks.tracers.langchain.requests.get")
-def test_load_session(
-    mock_requests_get: Mock,
-    lang_chain_tracer_v2: LangChainTracer,
-    sample_tracer_session_v2: TracerSession,
-) -> None:
-    """Test that load_session method returns a TracerSession object."""
-    mock_requests_get.return_value.json.return_value = [sample_tracer_session_v2.dict()]
-    result = lang_chain_tracer_v2.load_session("test-session-name")
-    mock_requests_get.assert_called_with(
-        "http://test-endpoint.com/sessions",
-        headers={"Content-Type": "application/json", "x-api-key": "foo"},
-        params={"tenant_id": "test-tenant-id", "name": "test-session-name"},
-    )
-    assert result == sample_tracer_session_v2
 
 
 @freeze_time("2023-01-01")
@@ -160,33 +132,3 @@ def test_persist_run_with_example_id(
         assert not posted_data[1].get("reference_example_id")
         assert posted_data[2]["id"] == str(llm_run.id)
         assert not posted_data[2].get("reference_example_id")
-
-
-@patch("langchain.callbacks.tracers.langchain.requests.post")
-def test_persist_session(
-    mock_requests_post: Mock,
-    lang_chain_tracer_v2: LangChainTracer,
-    sample_tracer_session_v2: TracerSession,
-) -> None:
-    """Test persist_session returns a TracerSession with the updated ID."""
-    session_create = TracerSessionCreate(**sample_tracer_session_v2.dict())
-    new_id = str(uuid4())
-    mock_requests_post.return_value.json.return_value = {"id": new_id}
-    result = lang_chain_tracer_v2._persist_session(session_create)
-    assert isinstance(result, TracerSession)
-    res = sample_tracer_session_v2.dict()
-    res["id"] = UUID(new_id)
-    assert result.dict() == res
-
-
-@patch("langchain.callbacks.tracers.langchain.LangChainTracer.load_session")
-def test_load_default_session(
-    mock_load_session: Mock,
-    lang_chain_tracer_v2: LangChainTracer,
-    sample_tracer_session_v2: TracerSession,
-) -> None:
-    """Test load_default_session attempts to load with the default name."""
-    mock_load_session.return_value = sample_tracer_session_v2
-    result = lang_chain_tracer_v2.load_default_session()
-    assert result == sample_tracer_session_v2
-    mock_load_session.assert_called_with("default")

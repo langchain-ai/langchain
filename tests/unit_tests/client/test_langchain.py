@@ -196,10 +196,8 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             {"result": f"Result for example {example.id}"} for _ in range(n_repetitions)
         ]
 
-    def mock_load_session(
-        self: Any, name: str, *args: Any, **kwargs: Any
-    ) -> TracerSession:
-        return TracerSession(name=name, tenant_id=_TENANT_ID, id=uuid.uuid4())
+    def mock_ensure_session(self: Any, *args: Any, **kwargs: Any) -> TracerSession:
+        return TracerSession(name="test_session", tenant_id=_TENANT_ID, id=uuid.uuid4())
 
     with mock.patch.object(
         LangChainPlusClient, "read_dataset", new=mock_read_dataset
@@ -208,7 +206,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     ), mock.patch.object(
         LangChainPlusClient, "_arun_llm_or_chain", new=mock_arun_chain
     ), mock.patch.object(
-        LangChainTracer, "load_session", new=mock_load_session
+        LangChainTracer, "ensure_session", new=mock_ensure_session
     ):
         monkeypatch.setenv("LANGCHAIN_TENANT_ID", _TENANT_ID)
         client = LangChainPlusClient(

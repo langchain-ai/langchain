@@ -8,7 +8,7 @@ from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
-from langchain.schema import BaseMessage, LLMResult, messages_to_dict
+from langchain.schema import LLMResult
 
 
 class TracerException(Exception):
@@ -97,33 +97,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         )
         self._start_trace(llm_run)
         self._on_llm_start(llm_run)
-
-    def on_chat_model_start(
-        self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Start a trace for an LLM run."""
-        parent_run_id_ = str(parent_run_id) if parent_run_id else None
-        execution_order = self._get_execution_order(parent_run_id_)
-        chat_model_run = Run(
-            id=run_id,
-            name=serialized.get("name"),
-            parent_run_id=parent_run_id,
-            serialized=serialized,
-            inputs={"messages": messages_to_dict(batch) for batch in messages},
-            extra=kwargs,
-            start_time=datetime.utcnow(),
-            execution_order=execution_order,
-            child_execution_order=execution_order,
-            run_type=RunTypeEnum.llm,
-        )
-        self._start_trace(chat_model_run)
-        self._on_chat_model_start(chat_model_run)
 
     def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> None:
         """End a trace for an LLM run."""
