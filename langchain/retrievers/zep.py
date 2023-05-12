@@ -22,10 +22,6 @@ class ZepRetriever(BaseRetriever):
     For server installation instructions, see: https://github.com/getzep/zep
     """
 
-    url: str
-    session_id: str
-    top_k: Optional[int]
-
     def __init__(
         self,
         session_id: str,
