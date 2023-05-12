@@ -368,7 +368,7 @@ class MathpixPDFLoader(BasePDFLoader):
 class PDFPlumberLoader(BasePDFLoader):
     """Loader that uses pdfplumber to load PDF files."""
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str, text_kwargs: Optional[Mapping[str, Any]]=None) -> None:
         """Initialize with file path."""
         try:
             import pdfplumber  # noqa:F401
