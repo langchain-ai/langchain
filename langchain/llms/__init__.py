@@ -16,6 +16,7 @@ from langchain.llms.gpt4all import GPT4All
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain.llms.human import HumanInputLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.modal import Modal
@@ -67,6 +68,7 @@ __all__ = [
     "RWKV",
     "PredictionGuard",
     "HumanInputLLM",
+    "HuggingFaceTextGenInference",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -99,4 +101,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "stochasticai": StochasticAI,
     "writer": Writer,
     "rwkv": RWKV,
+    "huggingface_textgen_inference": HuggingFaceTextGenInference,
 }
