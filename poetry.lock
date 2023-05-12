@@ -419,7 +419,7 @@ name = "arxiv"
 version = "1.4.7"
 description = "Python wrapper for the arXiv API: http://arxiv.org/help/api/"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "arxiv-1.4.7-py3-none-any.whl", hash = "sha256:22b8f610957bb6859a25fac9dc205ab6ba76d521791119a5762ea52625e398a0"},
@@ -1896,7 +1896,7 @@ name = "feedparser"
 version = "6.0.10"
 description = "Universal feed parser, handles RSS 0.9x, RSS 1.0, RSS 2.0, CDF, Atom 0.3, and Atom 1.0 feeds"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "feedparser-6.0.10-py3-none-any.whl", hash = "sha256:79c257d526d13b944e965f6095700587f27388e50ea16fd245babe4dfae7024f"},
@@ -7656,7 +7656,7 @@ name = "sgmllib3k"
 version = "1.0.0"
 description = "Py3k port of sgmllib."
 category = "main"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "sgmllib3k-1.0.0.tar.gz", hash = "sha256:7868fb1c8bfa764c1ac563d3cf369c381d1325d36124933a726f29fcdaa812e9"},
@@ -9998,14 +9998,14 @@ all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api
 azure = ["azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["pdfminer-six", "pypdf"]
+extended-testing = ["pdfminer-six", "pypdf", "tqdm"]
 hnswlib = ["docarray", "hnswlib", "protobuf"]
 in-memory-store = ["docarray"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "torch", "transformers"]
-openai = ["openai"]
+openai = ["openai", "tiktoken"]
 qdrant = ["qdrant-client"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "62b7e066979d91e6baf921af79ac1fd0f44d9c0809b697dd511ac7c0fb3a09cc"
+content-hash = "6d5c4aa06539e6f7c7531c30d73cbf08fbdea75486bf4b81c106b9e678a13b45"
