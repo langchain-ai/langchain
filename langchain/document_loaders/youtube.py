@@ -146,8 +146,9 @@ class YoutubeLoader(BaseLoader):
     def extract_video_id(youtube_url: str) -> str:
         """Extract video id from common YT urls."""
         match = YT_URL_RE.match(youtube_url)
-        assert match
-        return match.group('id')
+        if not match:
+            raise ValueError(f"Could not determine the video ID for the URL {youtube_url}")
+        return match.group("id")
 
     @classmethod
     def from_youtube_url(cls, youtube_url: str, **kwargs: Any) -> YoutubeLoader:
