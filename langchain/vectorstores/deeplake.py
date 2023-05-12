@@ -100,12 +100,14 @@ class DeepLake(VectorStore):
         read_only: Optional[bool] = False,
         ingestion_batch_size: int = 1024,
         num_workers: int = 0,
+        checkpoint_interval: Optional[int] = None,
         verbose: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize with Deep Lake client."""
         self.ingestion_batch_size = ingestion_batch_size
         self.num_workers = num_workers
+        self.checkpoint_interval = checkpoint_interval
         self.verbose = verbose
 
         try:
@@ -245,10 +247,18 @@ class DeepLake(VectorStore):
             elements[i : i + batch_size] for i in range(0, len(elements), batch_size)
         ]
 
+        num_workers = min(self.num_workers, len(batched) // max(self.num_workers, 1))
+
+        checkpoint_interval = self.checkpoint_interval
+        if checkpoint_interval is None:
+            nworkers = max(num_workers, 1)
+            checkpoint_interval = int(((0.1 * len(batched)) // nworkers) * nworkers)
+
         ingest().eval(
             batched,
             self.ds,
-            num_workers=min(self.num_workers, len(batched) // max(self.num_workers, 1)),
+            num_workers=num_workers,
+            checkpoint_interval=checkpoint_interval,
             **kwargs,
         )
         self.ds.commit(allow_empty=True)
