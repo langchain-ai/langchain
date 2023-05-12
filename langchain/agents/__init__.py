@@ -23,7 +23,11 @@ from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.agents.initialize import initialize_agent
-from langchain.agents.load_tools import get_all_tool_names, load_tools
+from langchain.agents.load_tools import (
+    get_all_tool_names,
+    load_huggingface_tool,
+    load_tools,
+)
 from langchain.agents.loading import load_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
 from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
@@ -61,6 +65,7 @@ __all__ = [
     "get_all_tool_names",
     "initialize_agent",
     "load_agent",
+    "load_huggingface_tool",
     "load_tools",
     "tool",
 ]
