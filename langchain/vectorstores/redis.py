@@ -11,6 +11,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Mapping,
     Optional,
     Tuple,
@@ -38,6 +39,9 @@ REDIS_REQUIRED_MODULES = [
     {"name": "search", "ver": 20400},
     {"name": "searchlight", "ver": 20400},
 ]
+
+# distance mmetrics
+REDIS_DISTANCE_METRICS = Literal["COSINE", "IP", "L2"]
 
 
 def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -> None:
@@ -81,6 +85,10 @@ def _redis_prefix(index_name: str) -> str:
     return f"doc:{index_name}"
 
 
+def _default_relevance_score(val: float) -> float:
+    return 1 - val
+
+
 class Redis(VectorStore):
     """Wrapper around Redis vector database.
 
@@ -108,6 +116,9 @@ class Redis(VectorStore):
         content_key: str = "content",
         metadata_key: str = "metadata",
         vector_key: str = "content_vector",
+        relevance_score_fn: Optional[
+            Callable[[float], float]
+        ] = _default_relevance_score,
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
@@ -133,8 +144,11 @@ class Redis(VectorStore):
         self.content_key = content_key
         self.metadata_key = metadata_key
         self.vector_key = vector_key
+        self.relevance_score_fn = relevance_score_fn
 
-    def _create_index(self, dim: int = 1536) -> None:
+    def _create_index(
+        self, dim: int = 1536, distance_metric: REDIS_DISTANCE_METRICS = "COSINE"
+    ) -> None:
         try:
             from redis.commands.search.field import TextField, VectorField
             from redis.commands.search.indexDefinition import IndexDefinition, IndexType
@@ -146,10 +160,7 @@ class Redis(VectorStore):
 
         # Check if index exists
         if not _check_index_exists(self.client, self.index_name):
-            # Constants
-            distance_metric = (
-                "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
-            )
+            # Define schema
             schema = (
                 TextField(name=self.content_key),
                 TextField(name=self.metadata_key),
@@ -328,6 +339,24 @@ class Redis(VectorStore):
 
         return docs
 
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores, normalized on a scale from 0 to 1.
+
+        0 is dissimilar, 1 is most similar.
+        """
+        if self.relevance_score_fn is None:
+            raise ValueError(
+                "relevance_score_fn must be provided to"
+                " Weaviate constructor to normalize scores"
+            )
+        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
+
     @classmethod
     def from_texts(
         cls: Type[Redis],
@@ -338,6 +367,7 @@ class Redis(VectorStore):
         content_key: str = "content",
         metadata_key: str = "metadata",
         vector_key: str = "content_vector",
+        distance_metric: REDIS_DISTANCE_METRICS = "COSINE",
         **kwargs: Any,
     ) -> Redis:
         """Create a Redis vectorstore from raw documents.
@@ -381,7 +411,7 @@ class Redis(VectorStore):
         embeddings = embedding.embed_documents(texts)
 
         # Create the search index
-        instance._create_index(dim=len(embeddings[0]))
+        instance._create_index(dim=len(embeddings[0]), distance_metric=distance_metric)
 
         # Add data to Redis
         instance.add_texts(texts, metadatas, embeddings)

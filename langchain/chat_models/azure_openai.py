@@ -115,6 +115,15 @@ class AzureChatOpenAI(ChatOpenAI):
             "engine": self.deployment_name,
         }
 
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {**self._default_params}
+
+    @property
+    def _llm_type(self) -> str:
+        return "azure-openai-chat"
+      
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         generations = []
         for res in response["choices"]:
