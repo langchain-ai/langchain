@@ -5,7 +5,6 @@ from typing import Generator
 from urllib.request import urlretrieve
 
 from langchain.llms import LlamaCpp
-
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -68,3 +67,23 @@ def test_llamacpp_streaming_callback() -> None:
     )
     llm("Q: Can you count to 10? A:'1, ")
     assert callback_handler.llm_streams <= MAX_TOKENS + OFF_BY_ONE
+
+
+def test_llamacpp_max_tokens() -> None:
+    """Test that maximum token count is returned correctly if max_tokens is set to -1."""
+    llm = LlamaCpp(
+        model_path=get_model(),
+        n_ctx=2048,
+        max_tokens=-1,
+        streaming=False,
+    )
+    output = llm._get_max_tokens("Q: Can you count to 10? A:'1, ")
+    assert output == 2032
+    llm = LlamaCpp(
+        model_path=get_model(),
+        n_ctx=512,
+        max_tokens=-1,
+        streaming=False,
+    )
+    output = llm._get_max_tokens("Q: Can you count to 10? A:'1, ")
+    assert output == 496
