@@ -53,7 +53,7 @@ class HuggingFaceTextGenInference(LLM):
     typical_p: Optional[float] = 0.95
     temperature: float = 0.8
     repetition_penalty: Optional[float] = None
-    stop_sequences: list[str] = Field(default_factory=list)
+    stop_sequences: List[str] = Field(default_factory=list)
     seed: Optional[int] = None
     inference_server_url: str = ""
     timeout: int = 120
