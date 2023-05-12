@@ -231,7 +231,6 @@ class LlamaCpp(LLM):
         else:
             params = self._get_parameters(stop)
 
-            """Set max tokens."""
             if params["max_tokens"] < 0:
                 params["max_tokens"] = self._get_max_tokens(prompt)
 
