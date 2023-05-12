@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.165"
+version = "0.0.166"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -161,7 +161,7 @@ setuptools = "^67.6.1"
 [tool.poetry.extras]
 llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 qdrant = ["qdrant-client"]
-openai = ["openai"]
+openai = ["openai", "tiktoken"]
 cohere = ["cohere"]
 in_memory_store = ["docarray"]
 hnswlib = ["docarray", "protobuf", "hnswlib"]
