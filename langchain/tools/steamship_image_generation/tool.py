@@ -11,8 +11,10 @@ To use this tool, you must first set as environment variables:
     STEAMSHIP_API_KEY
 ```
 """
+from __future__ import annotations
+
 from enum import Enum
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 from pydantic import root_validator
 
@@ -23,6 +25,9 @@ from langchain.callbacks.manager import (
 from langchain.tools import BaseTool
 from langchain.tools.steamship_image_generation.utils import make_image_public
 from langchain.utils import get_from_dict_or_env
+
+if TYPE_CHECKING:
+    pass
 
 
 class ModelName(str, Enum):
@@ -39,7 +44,10 @@ SUPPORTED_IMAGE_SIZES = {
 
 
 class SteamshipImageGenerationTool(BaseTool):
-    from steamship import Steamship
+    try:
+        from steamship import Steamship
+    except ImportError:
+        pass
 
     """Tool used to generate images from a text-prompt."""
     model_name: ModelName
