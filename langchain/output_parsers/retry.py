@@ -106,12 +106,17 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
 
     def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
         try:
+            print("ABCABC")
             parsed_completion = self.parser.parse(completion)
+            print("DEFDEF")
         except OutputParserException as e:
+            print("GHI")
             new_completion = self.retry_chain.run(
                 prompt=prompt_value.to_string(), completion=completion, error=repr(e)
             )
+            print("JKL")
             parsed_completion = self.parser.parse(new_completion)
+            print("MNO")
 
         return parsed_completion
 
@@ -137,7 +142,7 @@ class MultiAttemptRetryWithErrorOutputParser(RetryWithErrorOutputParser):
     parser: BaseOutputParser[T]
     retry_chain: LLMChain
     attempts: int
-    additional_validator: Callable[[str], None]
+    additional_validator: Callable[[str], None] | None
 
     @classmethod
     def from_llm(
@@ -159,7 +164,8 @@ class MultiAttemptRetryWithErrorOutputParser(RetryWithErrorOutputParser):
     def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
         try:
             parsed_completion = self.parser.parse(completion)
-            self.additional_validator(new_completion)
+            if self.additional_validator is not None:
+                self.additional_validator(parsed_completion)
         except OutputParserException as e:
             for _ in range(self.attempts):
                 try:
@@ -171,7 +177,8 @@ class MultiAttemptRetryWithErrorOutputParser(RetryWithErrorOutputParser):
                     parsed_completion = self.parser.parse_with_prompt(
                         new_completion, StringPromptValue(text=prompt_value.to_string())
                     )
-                    self.additional_validator(new_completion)
+                    if self.additional_validator is not None:
+                        self.additional_validator(new_completion)
                     break
                 except OutputParserException as e:
                     continue

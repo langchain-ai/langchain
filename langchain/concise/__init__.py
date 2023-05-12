@@ -12,7 +12,8 @@ from langchain.concise.config import (
 from langchain.concise.decide import decide
 from langchain.concise.gemplate import gemplate
 from langchain.concise.generate import generate
-from langchain.concise.rulex import rulex
+from langchain.concise.rulex import Rule
+from langchain.concise.rulex import RulEx
 from langchain.concise.template import template
 
 __all__ = [
@@ -26,7 +27,8 @@ __all__ = [
     "get_default_max_tokens",
     "get_default_model",
     "get_default_text_splitter",
-    "rulex",
+    "Rule",
+    "RulEx",
     "set_default_max_tokens",
     "set_default_model",
     "set_default_text_splitter",

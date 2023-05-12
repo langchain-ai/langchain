@@ -1,6 +1,7 @@
+from langchain.concise import config
 from langchain.concise.pattern import pattern
 from langchain.output_parsers.boolean import BooleanOutputParser
-from langchain.schema import BaseLanguageModel
+from langchain.llms.base import BaseLanguageModel
 
 
 def decide(
@@ -24,6 +25,7 @@ def decide(
     Returns:
         bool: The boolean value of the evaluated statement.
     """
+    llm = llm or config.get_default_model()
     parser = BooleanOutputParser()
     examples.extend([(ex, True) for ex in true_examples])
     examples.extend([(ex, False) for ex in false_examples])

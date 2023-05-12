@@ -21,7 +21,6 @@ def pattern(
     llm: BaseLanguageModel = None,
 ) -> T:
     llm = llm or config.get_default_llm()
-
     if examples and len(examples[0]) == 2:
         examples = [(pattern_name, item, result) for item, result in examples]
     examples = [
@@ -31,7 +30,6 @@ def pattern(
     assert all(
         len(example) == 3 for example in examples
     ), "Examples must be a list of tuples of length 3."
-
     input_msgs = render_prompt_and_examples(
         system_prompt=query,
         input_prompt_template=input_format_template,

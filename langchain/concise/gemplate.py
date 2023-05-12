@@ -1,8 +1,9 @@
 from collections import OrderedDict
 
 from attr import NOTHING
+from langchain.concise import config
 
-from langchain.concise._utils.templates import (
+from langchain.utils import (
     extract_input_variables,
     infer_template_format,
 )
@@ -11,6 +12,7 @@ from langchain.prompts import PromptTemplate
 
 
 def gemplate(template, parser=None, llm=None):
+    llm = llm or config.get_default_model()
     template_format = infer_template_format(template)
     template_vars = extract_input_variables(template, template_format)
     prompt = PromptTemplate(

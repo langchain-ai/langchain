@@ -6,7 +6,7 @@ import attr
 from pydantic import BaseModel, Field, validator
 
 from langchain.base_language import BaseLanguageModel
-from langchain.concise.config import get_default_text_splitter
+from langchain.concise.config import get_default_model, get_default_text_splitter
 from langchain.concise.generate import generate
 from langchain.output_parsers import PydanticOutputParser
 from langchain.output_parsers.choice import ChoiceOutputParser
@@ -15,39 +15,44 @@ from langchain.schema import OutputParserException
 from langchain.text_splitter import TextSplitter, TokenTextSplitter
 
 
-class Rule(BaseModel):
-    name: str = Field(description="Name of the rule.")
-    pattern: str = Field(description="Natural language description of what to replace.")
-    replacement: str = Field(
-        description="Natural language description of what to replace it with or how to rewrite it."
-    )
+@attr.s(auto_attribs=True)
+class Rule:
+    # Name of the rule.
+    name: str = attr.ib()
+    # Natural language description of what to replace.
+    pattern: str = attr.ib()
+    # Natural language description of what to replace it with or how to rewrite it.
+    replacement: str = attr.ib()
 
     def __str__(self) -> str:
         return f"{self.name}: {self.pattern} -> {self.replacement}"
 
 
-class RulEx(BaseModel):
-    _NO_RULE_MATCH = "No match"
+@attr.s(auto_attribs=True)
+class RulEx:
 
-    rules: list[Rule]
-    choice_parser: ChoiceOutputParser
-    text_splitter: TextSplitter
-    replacements_per_chunk: int = 5
+    rules: list[Rule] = attr.ib()
+    choice_parser: ChoiceOutputParser = attr.ib()
+    replacements_per_chunk: int = attr.ib(default=5)
+    llm: BaseLanguageModel = attr.ib(factory=get_default_model)
+    text_splitter: TextSplitter = attr.ib(factory=get_default_text_splitter)
+    _NO_RULE_MATCH: str = "No match"
 
     @classmethod
     def create(
         cls,
         rules: str | list[str] | list[tuple[str, str]] | list[Rule],
-        text_splitter: TextSplitter,
-        llm: BaseLanguageModel,
+        text_splitter: TextSplitter = None,
+        llm: BaseLanguageModel = None,
     ) -> RulEx:
-        rules = cls._parse_rules(rules, llm)
         text_splitter = text_splitter or get_default_text_splitter()
+        llm = llm or get_default_model()
+        rules = cls._parse_rules(rules, llm)
         choice_parser = ChoiceOutputParser(
             options=[rule.pattern for rule in rules] + [RulEx._NO_RULE_MATCH], llm=llm
         )
         return cls(
-            rules=rules, text_splitter=text_splitter, choice_parser=choice_parser
+            rules=rules, text_splitter=text_splitter, choice_parser=choice_parser, llm=llm
         )
 
     @classmethod
