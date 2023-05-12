@@ -1,4 +1,4 @@
-"""Toolkit for interacting with a SQL database."""
+"""Toolkit for interacting with Spark SQL."""
 from typing import List
 
 from pydantic import Field
@@ -16,7 +16,7 @@ from langchain.tools.spark_sql.tool import (
 
 
 class SparkSQLToolkit(BaseToolkit):
-    """Toolkit for interacting with SQL databases."""
+    """Toolkit for interacting with Spark SQL."""
 
     db: SparkSQL = Field(exclude=True)
     llm: BaseLanguageModel = Field(exclude=True)

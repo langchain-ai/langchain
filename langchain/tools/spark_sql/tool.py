@@ -31,11 +31,11 @@ class BaseSparkSQLTool(BaseModel):
 
 
 class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
-    """Tool for querying a Spark SQL database."""
+    """Tool for querying a Spark SQL."""
 
     name = "query_sql_db"
     description = """
-    Input to this tool is a detailed and correct SQL query, output is a result from the database.
+    Input to this tool is a detailed and correct SQL query, output is a result from the Spark SQL.
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
     """
@@ -57,7 +57,7 @@ class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
 
 
 class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):
-    """Tool for getting metadata about a Spark SQL database."""
+    """Tool for getting metadata about a Spark SQL."""
 
     name = "schema_sql_db"
     description = """
@@ -87,7 +87,7 @@ class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for getting tables names."""
 
     name = "list_tables_sql_db"
-    description = "Input is an empty string, output is a comma separated list of tables in the database."
+    description = "Input is an empty string, output is a comma separated list of tables in the Spark SQL."
 
     def _run(
         self,
