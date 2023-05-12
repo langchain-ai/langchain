@@ -145,9 +145,9 @@ def _convert_chain_run_to_wb_span(run: "ChainRun") -> "trace_tree.Span":
         ]
     ]
     base_span.span_kind = (
-        trace_tree.SpanKind.AGENT
-        # if isinstance(safely_get_span_producing_model(run), BaseSingleActionAgent)
-        # else trace_tree.SpanKind.CHAIN
+        trace_tree.SpanKind.CHAIN
+        if "chain" in run.serialized.get("name", "").lower()
+        else trace_tree.SpanKind.AGENT
     )
 
     return base_span
