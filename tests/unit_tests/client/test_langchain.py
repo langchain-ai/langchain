@@ -218,7 +218,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         num_repetitions = 3
         results = await client.arun_on_dataset(
             dataset_name="test",
-            llm_or_chain=chain,
+            llm_or_chain_factory=lambda: chain,
             concurrency_level=2,
             session_name="test_session",
             num_repetitions=num_repetitions,
