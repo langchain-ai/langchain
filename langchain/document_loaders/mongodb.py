@@ -1,7 +1,7 @@
 import asyncio
 from typing import List
 
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient # type: ignore
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader

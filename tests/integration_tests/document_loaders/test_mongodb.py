@@ -1,7 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from motor.motor_asyncio import AsyncIOMotorClient
 
 from langchain.docstore.document import Document
 from langchain.document_loaders import MongodbLoader
@@ -31,19 +30,35 @@ def expected_documents():
 
 @pytest.fixture
 def mock_mongodb(mocker, raw_docs):
-    async def mock_find():
-        for doc in raw_docs:
-            yield doc
+    try:
+        from motor.motor_asyncio import AsyncIOMotorClient # type: ignore
 
-    mock_collection = MagicMock()
-    mock_db = MagicMock()
-    mock_client = MagicMock()
+        try:
 
-    mocker.patch.object(mock_collection, "find", return_value=mock_find())
-    mocker.patch.object(AsyncIOMotorClient, "get_database", return_value=mock_db)
-    mocker.patch.object(mock_db, "get_collection", return_value=mock_collection)
-    mocker.patch("motor.motor_asyncio.AsyncIOMotorClient", return_value=mock_client)
+            async def mock_find():
+                for doc in raw_docs:
+                    yield doc
 
+            mock_collection = MagicMock()
+            mock_db = MagicMock()
+            mock_client = MagicMock()
+
+            mocker.patch.object(mock_collection, "find", return_value=mock_find())
+            mocker.patch.object(
+                AsyncIOMotorClient, "get_database", return_value=mock_db
+            )
+            mocker.patch.object(mock_db, "get_collection", return_value=mock_collection)
+            mocker.patch(
+                "motor.motor_asyncio.AsyncIOMotorClient", return_value=mock_client
+            )
+        except Exception as e:
+            raise ValueError("Could not mock motor. ") from e
+
+    except ImportError:
+        raise ValueError(
+            "Could not import AsyncIOMotorClient package. "
+            "Please install it with `pip install motor`."
+        )
     return mocker
 
 
