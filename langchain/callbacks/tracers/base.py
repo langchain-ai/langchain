@@ -8,7 +8,7 @@ from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
-from langchain.schema import LLMResult
+from langchain.schema import BaseMessage, LLMResult, messages_to_dict
 
 
 class TracerException(Exception):
@@ -96,6 +96,34 @@ class BaseTracer(BaseCallbackHandler, ABC):
             run_type=RunTypeEnum.llm,
         )
         self._start_trace(llm_run)
+        self._on_llm_start(llm_run)
+
+    def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Start a trace for an LLM run."""
+        parent_run_id_ = str(parent_run_id) if parent_run_id else None
+        execution_order = self._get_execution_order(parent_run_id_)
+        chat_model_run = Run(
+            id=run_id,
+            name=serialized.get("name"),
+            parent_run_id=parent_run_id,
+            serialized=serialized,
+            inputs={"messages": messages_to_dict(batch) for batch in messages},
+            extra=kwargs,
+            start_time=datetime.utcnow(),
+            execution_order=execution_order,
+            child_execution_order=execution_order,
+            run_type=RunTypeEnum.llm,
+        )
+        self._start_trace(chat_model_run)
+        self._on_chat_model_start(chat_model_run)
 
     def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> None:
         """End a trace for an LLM run."""
@@ -109,6 +137,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run.outputs = response.dict()
         llm_run.end_time = datetime.utcnow()
         self._end_trace(llm_run)
+        self._on_llm_end(llm_run)
 
     def on_llm_error(
         self,
@@ -128,6 +157,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run.error = repr(error)
         llm_run.end_time = datetime.utcnow()
         self._end_trace(llm_run)
+        self._on_chain_error(llm_run)
 
     def on_chain_start(
         self,
@@ -155,6 +185,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             run_type=RunTypeEnum.chain,
         )
         self._start_trace(chain_run)
+        self._on_chain_start(chain_run)
 
     def on_chain_end(
         self, outputs: Dict[str, Any], *, run_id: UUID, **kwargs: Any
@@ -169,6 +200,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         chain_run.outputs = outputs
         chain_run.end_time = datetime.utcnow()
         self._end_trace(chain_run)
+        self._on_chain_end(chain_run)
 
     def on_chain_error(
         self,
@@ -187,6 +219,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         chain_run.error = repr(error)
         chain_run.end_time = datetime.utcnow()
         self._end_trace(chain_run)
+        self._on_chain_error(chain_run)
 
     def on_tool_start(
         self,
@@ -214,6 +247,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             run_type=RunTypeEnum.tool,
         )
         self._start_trace(tool_run)
+        self._on_tool_start(tool_run)
 
     def on_tool_end(self, output: str, *, run_id: UUID, **kwargs: Any) -> None:
         """End a trace for a tool run."""
@@ -226,6 +260,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tool_run.outputs = {"output": output}
         tool_run.end_time = datetime.utcnow()
         self._end_trace(tool_run)
+        self._on_tool_end(tool_run)
 
     def on_tool_error(
         self,
@@ -244,6 +279,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tool_run.error = repr(error)
         tool_run.end_time = datetime.utcnow()
         self._end_trace(tool_run)
+        self._on_tool_error(tool_run)
 
     def __deepcopy__(self, memo: dict) -> BaseTracer:
         """Deepcopy the tracer."""
@@ -252,3 +288,33 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def __copy__(self) -> BaseTracer:
         """Copy the tracer."""
         return self
+
+    def _on_llm_start(self, run: Run) -> None:
+        """Process the LLM Run upon start."""
+
+    def _on_llm_end(self, run: Run) -> None:
+        """Process the LLM Run."""
+
+    def _on_llm_error(self, run: Run) -> None:
+        """Process the LLM Run upon error."""
+
+    def _on_chain_start(self, run: Run) -> None:
+        """Process the Chain Run upon start."""
+
+    def _on_chain_end(self, run: Run) -> None:
+        """Process the Chain Run."""
+
+    def _on_chain_error(self, run: Run) -> None:
+        """Process the Chain Run upon error."""
+
+    def _on_tool_start(self, run: Run) -> None:
+        """Process the Tool Run upon start."""
+
+    def _on_tool_end(self, run: Run) -> None:
+        """Process the Tool Run."""
+
+    def _on_tool_error(self, run: Run) -> None:
+        """Process the Tool Run upon error."""
+
+    def _on_chat_model_start(self, run: Run) -> None:
+        """Process the Chat Model Run upon start."""

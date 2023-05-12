@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 
@@ -13,12 +12,10 @@ from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import (
     Run,
     RunCreate,
-    RunTypeEnum,
     TracerSession,
     TracerSessionCreate,
     TracerSessionV1Base,
 )
-from langchain.schema import BaseMessage, messages_to_dict
 from langchain.utils import raise_for_status_with_text
 
 
@@ -130,32 +127,6 @@ class LangChainTracer(BaseTracer):
     def load_default_session(self) -> TracerSession:
         """Load the default tracing session and set it as the Tracer's session."""
         return self.load_session("default")
-
-    def on_chat_model_start(
-        self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Start a trace for an LLM run."""
-        parent_run_id_ = str(parent_run_id) if parent_run_id else None
-        execution_order = self._get_execution_order(parent_run_id_)
-        llm_run = Run(
-            id=run_id,
-            name=serialized.get("name"),
-            parent_run_id=parent_run_id,
-            serialized=serialized,
-            inputs={"messages": messages_to_dict(batch) for batch in messages},
-            extra=kwargs,
-            start_time=datetime.utcnow(),
-            execution_order=execution_order,
-            child_execution_order=execution_order,
-            run_type=RunTypeEnum.llm,
-        )
-        self._start_trace(llm_run)
 
     def _persist_run_nested(self, run: Run) -> None:
         """Persist a run."""
