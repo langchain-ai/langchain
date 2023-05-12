@@ -49,8 +49,6 @@ class ChatModelFacade(SimpleChatModel):
     ) -> Coroutine[Any, Any, ChatResult]:
         return super()._agenerate(messages, stop, run_manager)
 
-    # `_type` req'd to pass `test_all_subclasses_implement_unique_type` test: FAILED tests/unit_tests/output_parsers/test_base_output_parser.py::test_all_subclasses_implement_unique_type - AssertionError: Duplicate types: {<property object at 0x7f300b31a7f0>}
-
     @property
-    def _type(self) -> str:
+    def _llm_type(self) -> str:
         return "chat_model_facade"
