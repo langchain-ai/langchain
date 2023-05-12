@@ -4,6 +4,7 @@ from typing import Dict, Type
 from langchain.llms.ai21 import AI21
 from langchain.llms.aleph_alpha import AlephAlpha
 from langchain.llms.anthropic import Anthropic
+from langchain.llms.anyscale import Anyscale
 from langchain.llms.bananadev import Banana
 from langchain.llms.base import BaseLLM
 from langchain.llms.cerebriumai import CerebriumAI
@@ -37,6 +38,7 @@ from langchain.llms.writer import Writer
 __all__ = [
     "Anthropic",
     "AlephAlpha",
+    "Anyscale",
     "Banana",
     "CerebriumAI",
     "Cohere",
@@ -75,6 +77,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ai21": AI21,
     "aleph_alpha": AlephAlpha,
     "anthropic": Anthropic,
+    "anyscale": Anyscale,
     "bananadev": Banana,
     "cerebriumai": CerebriumAI,
     "cohere": Cohere,
