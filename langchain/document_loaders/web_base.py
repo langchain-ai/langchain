@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 default_header_template = {
     "User-Agent": "",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*"
-    ";q=0.8",
+              ";q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
     "Referer": "https://www.google.com/",
     "DNT": "1",
@@ -48,7 +48,7 @@ class WebBaseLoader(BaseLoader):
     """Default parser to use for BeautifulSoup."""
 
     def __init__(
-        self, web_path: Union[str, List[str]], header_template: Optional[dict] = None
+            self, web_path: Union[str, List[str]], header_template: Optional[dict] = None
     ):
         """Initialize with webpage path."""
 
@@ -68,17 +68,17 @@ class WebBaseLoader(BaseLoader):
                 "bs4 package not found, please install it with " "`pip install bs4`"
             )
 
-        try:
-            from fake_useragent import UserAgent
-
-            headers = header_template or default_header_template
-            headers["User-Agent"] = UserAgent().random
-            self.session.headers = dict(headers)
-        except ImportError:
-            logger.info(
-                "fake_useragent not found, using default user agent."
-                "To get a realistic header for requests, `pip install fake_useragent`."
-            )
+        headers = header_template or default_header_template
+        if not headers.get("User-Agent"):
+            try:
+                from fake_useragent import UserAgent
+                headers["User-Agent"] = UserAgent().random
+            except ImportError:
+                logger.info(
+                    "fake_useragent not found, using default user agent."
+                    "To get a realistic header for requests, `pip install fake_useragent`."
+                )
+        self.session.headers = dict(headers)
 
     @property
     def web_path(self) -> str:
@@ -87,13 +87,13 @@ class WebBaseLoader(BaseLoader):
         return self.web_paths[0]
 
     async def _fetch(
-        self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
+            self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
     ) -> str:
         async with aiohttp.ClientSession() as session:
             for i in range(retries):
                 try:
                     async with session.get(
-                        url, headers=self.session.headers
+                            url, headers=self.session.headers
                     ) as response:
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:
@@ -104,11 +104,11 @@ class WebBaseLoader(BaseLoader):
                             f"Error fetching {url} with attempt "
                             f"{i + 1}/{retries}: {e}. Retrying..."
                         )
-                        await asyncio.sleep(cooldown * backoff**i)
+                        await asyncio.sleep(cooldown * backoff ** i)
         raise ValueError("retry count exceeded")
 
     async def _fetch_with_rate_limit(
-        self, url: str, semaphore: asyncio.Semaphore
+            self, url: str, semaphore: asyncio.Semaphore
     ) -> str:
         async with semaphore:
             return await self._fetch(url)
