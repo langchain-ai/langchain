@@ -83,7 +83,7 @@ def tracing_v2_enabled(
     )
     if isinstance(example_id, str):
         example_id = UUID(example_id)
-    cb = LangChainTracer.from_env(example_id=example_id)
+    cb = LangChainTracer(example_id=example_id)
     session = cast(TracerSession, cb.new_session(session_name))
     tracing_v2_callback_var.set(cb)
     yield session
@@ -855,7 +855,7 @@ def _configure(
                 callback_manager.add_handler(tracer_v2, True)
             else:
                 try:
-                    handler = LangChainTracer.from_env()
+                    handler = LangChainTracer()
                     handler.load_session(tracer_session)
                     callback_manager.add_handler(handler, True)
                 except Exception as e:

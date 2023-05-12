@@ -50,21 +50,18 @@ class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
     def __init__(
-        self, tenant_id: str, example_id: Optional[UUID] = None, **kwargs: Any
+        self,
+        tenant_id: Optional[str] = None,
+        example_id: Optional[UUID] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer."""
         super().__init__(**kwargs)
         self.session: Optional[TracerSession] = None
         self._endpoint = get_endpoint()
         self._headers = get_headers()
-        self.tenant_id = tenant_id
+        self.tenant_id = tenant_id or _get_tenant_id()
         self.example_id = example_id
-
-    @classmethod
-    def from_env(cls, **kwargs: Any) -> LangChainTracer:
-        """Initialize the LangChain tracer from environment variables."""
-        tenant_id = kwargs.pop("tenant_id", _get_tenant_id())
-        return cls(tenant_id, **kwargs)
 
     def new_session(self, name: Optional[str] = None, **kwargs: Any) -> TracerSession:
         """NOT thread safe, do not call this method from multiple threads."""
@@ -80,7 +77,7 @@ class LangChainTracer(BaseTracer):
         session: Optional[TracerSession] = None
         try:
             r = requests.post(
-                f"{self._endpoint}/sessions",
+                f"{self._endpoint}/sessions?upsert=true",
                 data=session_create.json(),
                 headers=self._headers,
             )

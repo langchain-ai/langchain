@@ -399,7 +399,7 @@ class LangChainPlusClient(BaseSettings):
         """
         job_state = {"num_processed": 0}
         with tracing_v2_enabled(session_name=session_name) as session:
-            tracer = LangChainTracer.from_env()
+            tracer = LangChainTracer()
             tracer.session = session
             return tracer, job_state
 
@@ -551,7 +551,7 @@ class LangChainPlusClient(BaseSettings):
         examples = list(self.list_examples(dataset_id=str(dataset.id)))
         results: Dict[str, Any] = {}
         with tracing_v2_enabled(session_name=session_name) as session:
-            tracer = LangChainTracer.from_env()
+            tracer = LangChainTracer()
             tracer.session = session
 
             for i, example in enumerate(examples):
