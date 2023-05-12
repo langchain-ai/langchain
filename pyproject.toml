@@ -170,7 +170,7 @@ llms = [
   "transformers",
 ]
 qdrant = ["qdrant-client"]
-openai = ["openai"]
+openai = ["openai", "tiktoken"]
 cohere = ["cohere"]
 in_memory_store = ["docarray"]
 hnswlib = ["docarray", "protobuf", "hnswlib"]

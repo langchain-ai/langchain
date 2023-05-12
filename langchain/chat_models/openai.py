@@ -347,6 +347,11 @@ class ChatOpenAI(BaseChatModel):
         """Get the identifying parameters."""
         return {**{"model_name": self.model_name}, **self._default_params}
 
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+        return "openai-chat"
+
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
         # tiktoken NOT supported for Python 3.7 or below
