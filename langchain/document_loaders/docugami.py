@@ -163,103 +163,114 @@ class DocugamiLoader(BaseLoader, BaseModel):
     def _document_details_for_docset_id(self, docset_id: str) -> List[Dict]:
         """Gets all document details for the given docset ID"""
         url = f"{self.api}/docsets/{docset_id}/documents"
-        response = requests.request(
-            "GET",
-            url,
-            headers={"Authorization": f"Bearer {self.access_token}"},
-            data={},
-        )
-        if response.ok:
-            # TODO: pagination
-            return response.json()["documents"]
-        else:
-            raise Exception(
-                f"Failed to download {url} (status: {response.status_code})"
+        all_documents = []
+
+        while url:
+            response = requests.get(
+                url,
+                headers={"Authorization": f"Bearer {self.access_token}"},
             )
+            if response.ok:
+                data = response.json()
+                all_documents.extend(data["documents"])
+                url = data.get("next", None)
+            else:
+                raise Exception(
+                    f"Failed to download {url} (status: {response.status_code})"
+                )
+
+        return all_documents
 
     def _project_details_for_docset_id(self, docset_id: str) -> List[Dict]:
         """Gets all project details for the given docset ID"""
         url = f"{self.api}/projects?docset.id={docset_id}"
-        response = requests.request(
-            "GET",
-            url,
-            headers={"Authorization": f"Bearer {self.access_token}"},
-            data={},
-        )
-        if response.ok:
-            # TODO: pagination
-            return response.json()["projects"]
-        else:
-            raise Exception(
-                f"Failed to download {url} (status: {response.status_code})"
+        all_projects = []
+
+        while url:
+            response = requests.request(
+                "GET",
+                url,
+                headers={"Authorization": f"Bearer {self.access_token}"},
+                data={},
             )
+            if response.ok:
+                data = response.json()
+                all_projects.extend(data["projects"])
+                url = data.get("next", None)
+            else:
+                raise Exception(
+                    f"Failed to download {url} (status: {response.status_code})"
+                )
+
+        return all_projects
 
     def _metadata_for_project(self, project: Dict) -> Dict:
         """Gets project metadata for all files"""
         project_id = project.get("id")
 
-        per_file_metadata = {}
         url = f"{self.api}/projects/{project_id}/artifacts/latest"
-        response = requests.request(
-            "GET",
-            url,
-            headers={"Authorization": f"Bearer {self.access_token}"},
-            data={},
-        )
-        if response.ok:
-            # TODO: pagination
-            artifacts = response.json()["artifacts"]
-            for artifact in artifacts:
-                artifact_name = artifact.get("name")
-                artifact_url = artifact.get("url")
-                artifact_doc = artifact.get("document")
+        all_artifacts = []
 
-                if (
-                    artifact_name == f"{project_id}.xml"
-                    and artifact_url
-                    and artifact_doc
-                ):
-                    doc_id = artifact_doc["id"]
-                    metadata: Dict = {}
+        while url:
+            response = requests.request(
+                "GET",
+                url,
+                headers={"Authorization": f"Bearer {self.access_token}"},
+                data={},
+            )
+            if response.ok:
+                data = response.json()
+                all_artifacts.extend(data["artifacts"])
+                url = data.get("next", None)
+            else:
+                raise Exception(
+                    f"Failed to download {url} (status: {response.status_code})"
+                )
 
-                    # the evaluated XML for each document is named after the project
-                    response = requests.request(
-                        "GET",
-                        f"{artifact_url}/content",
-                        headers={"Authorization": f"Bearer {self.access_token}"},
-                        data={},
+        per_file_metadata = {}
+        for artifact in all_artifacts:
+            artifact_name = artifact.get("name")
+            artifact_url = artifact.get("url")
+            artifact_doc = artifact.get("document")
+
+            if artifact_name == f"{project_id}.xml" and artifact_url and artifact_doc:
+                doc_id = artifact_doc["id"]
+                metadata: Dict = {}
+
+                # the evaluated XML for each document is named after the project
+                response = requests.request(
+                    "GET",
+                    f"{artifact_url}/content",
+                    headers={"Authorization": f"Bearer {self.access_token}"},
+                    data={},
+                )
+
+                if response.ok:
+                    try:
+                        from lxml import etree
+                    except ImportError:
+                        raise ValueError(
+                            "Could not import lxml python package. "
+                            "Please install it with `pip install lxml`."
+                        )
+                    artifact_tree = etree.parse(io.BytesIO(response.content))
+                    artifact_root = artifact_tree.getroot()
+                    ns = artifact_root.nsmap
+                    entries = artifact_root.xpath("//wp:Entry", namespaces=ns)
+                    for entry in entries:
+                        heading = entry.xpath("./wp:Heading", namespaces=ns)[0].text
+                        value = " ".join(
+                            entry.xpath("./wp:Value", namespaces=ns)[0].itertext()
+                        ).strip()
+                        metadata[heading] = value
+                    per_file_metadata[doc_id] = metadata
+                else:
+                    raise Exception(
+                        f"Failed to download {artifact_url}/content "
+                        + "(status: {response.status_code})"
                     )
 
-                    if response.ok:
-                        try:
-                            from lxml import etree
-                        except ImportError:
-                            raise ValueError(
-                                "Could not import lxml python package. "
-                                "Please install it with `pip install lxml`."
-                            )
-                        artifact_tree = etree.parse(io.BytesIO(response.content))
-                        artifact_root = artifact_tree.getroot()
-                        ns = artifact_root.nsmap
-                        entries = artifact_root.xpath("//wp:Entry", namespaces=ns)
-                        for entry in entries:
-                            heading = entry.xpath("./wp:Heading", namespaces=ns)[0].text
-                            value = " ".join(
-                                entry.xpath("./wp:Value", namespaces=ns)[0].itertext()
-                            ).strip()
-                            metadata[heading] = value
-                        per_file_metadata[doc_id] = metadata
-                    else:
-                        raise Exception(
-                            f"Failed to download {artifact_url}/content "
-                            + "(status: {response.status_code})"
-                        )
-
-            return per_file_metadata
-        else:
-            raise Exception(
-                f"Failed to download {url} (status: {response.status_code})"
-            )
+        return per_file_metadata
 
     def _load_chunks_for_document(
         self, docset_id: str, document: Dict, doc_metadata: Optional[Dict] = None
