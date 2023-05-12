@@ -28,8 +28,6 @@ class NotionDBLoader(BaseLoader):
             raise ValueError("integration_token must be provided")
         if not database_id:
             raise ValueError("database_id must be provided")
-        if request_timeout_sec > 30:
-            raise ValueError("request timeout cannot exceed 30s")
 
         self.token = integration_token
         self.database_id = database_id
