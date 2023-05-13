@@ -2,10 +2,11 @@ import pathlib
 import os
 import time
 
-from pytest_mock import MockerFixture
+import pytest
+
 from langchain.document_loaders import EverNoteLoader
 
-
+@pytest.mark.requires("lxml", "html2text")
 class TestEverNoteLoader:
 
     @staticmethod
@@ -18,14 +19,50 @@ class TestEverNoteLoader:
         documents = loader.load()
         assert len(documents) == 2
 
-    def test_evernoteloader_loadnotebook_eachnotehasexpectedcontent(self) -> None:
+    def test_evernoteloader_loadnotebook_eachnotehasexpectedcontentwithleadingandtrailingremoved(self) -> None:
         documents = EverNoteLoader(self.example_notebook_path("sample_notebook.enex")).load()
 
         content_note1 = documents[0].page_content
-        assert content_note1 == "abc\n\n"
+        assert content_note1 == "abc"
 
         content_note2 = documents[1].page_content
-        assert content_note2 == "**Jan - March 2022**\n\n"
+        assert content_note2 == "**Jan - March 2022**"
+
+    def test_evernoteloader_loademptynotebook_emptylistreturned(self) -> None:
+        documents = EverNoteLoader(self.example_notebook_path("empty_export.enex")).load()
+        assert len(documents) == 0
+
+    def test_evernoteloader_loadnotewithemptycontent_emptydocumentcontent(self) -> None:
+        documents = EverNoteLoader(self.example_notebook_path("sample_notebook_emptynote.enex")).load()
+        note = documents[0]
+        assert note.page_content == ""
+
+    def test_evernoteloader_loadnotewithmissingcontenttag_emptylistreturned(self) -> None:
+        documents = EverNoteLoader(self.example_notebook_path("sample_notebook_missingcontenttag.enex")).load()
+        assert len(documents) == 0
+
+    def test_evernoteloader_loadnotewithnometadata_documentreturnedwithsourceonly(self) -> None:
+        documents = EverNoteLoader(self.example_notebook_path("sample_notebook_missingmetadata.enex")).load()
+        note = documents[0]
+
+        assert note.page_content == "I only have content, no metadata"
+
+        assert len(note.metadata) == 1
+        assert "source" in note.metadata
+        assert "sample_notebook_missingmetadata.enex" in note.metadata["source"]
+
+    def test_evernoteloader_loadnotebookwithnotecontainingimage_notehasplaintextonlywithresourcesremoved(self) -> None:
+        documents = EverNoteLoader(self.example_notebook_path("sample_notebook_with_media.enex")).load()
+
+        note = documents[0]
+        assert note.page_content == """When you pick this mug up with your thumb on top and middle finger through the
+loop, your ring finger slides into the mug under the loop where it is too hot
+to touch and burns you.
+
+  
+
+If you try and pick it up with your thumb and index finger you can’t hold the
+mug."""
 
     def test_evernoteloader_loadnotebook_eachnotehasexpectedmetadata(self) -> None:
 
@@ -36,6 +73,9 @@ class TestEverNoteLoader:
         assert "created" in metadata_note1.keys()
         assert "updated" in metadata_note1.keys()
         assert "note-attributes.author" in metadata_note1.keys()
+        assert "content" not in metadata_note1.keys()  # This should be in the content of the document instead
+        assert "content-raw" not in metadata_note1.keys()  # This is too large to be stored as metadata
+        assert "resource" not in metadata_note1.keys()  # This is too large to be stored as metadata
 
         assert metadata_note1["title"] == "Test"
         assert metadata_note1["note-attributes.author"] == "Michael McGarry"
@@ -58,6 +98,9 @@ class TestEverNoteLoader:
         assert "updated" not in metadata_note2.keys()
         assert "note-attributes.author" in metadata_note2.keys()
         assert "note-attributes.source" in metadata_note2.keys()
+        assert "content" not in metadata_note2.keys()
+        assert "content-raw" not in metadata_note2.keys()
+        assert "resource" not in metadata_note2.keys()  # This is too large to be stored as metadata
 
         assert metadata_note2["title"] == "Summer Training Program"
         assert metadata_note2["note-attributes.author"] == "Mike McGarry"

@@ -8,8 +8,6 @@ from time import strptime
 from typing import Any, Dict, List, Iterator, Optional
 import logging
 
-import html2text
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -18,6 +16,10 @@ class EverNoteLoader(BaseLoader):
     """EverNote Loader.
     Loads an EverNote notebook export file e.g. my_notebook.enex into Documents. Instructions on producing this
     file can be found at https://help.evernote.com/hc/en-us/articles/209005557-Export-notes-and-notebooks-as-ENEX-or-HTML
+
+    Currently only the plain text in the note is extracted and stored as the contents of the Document, any non content
+    metadata (e.g. 'author', 'created', 'updated' etc. but not 'content-raw' or 'resource') tags on the note will be
+    extracted and stored as metadata on the Document.
 
     Args:
         file_path (str): The path to the notebook export with a .enex extension
@@ -33,7 +35,7 @@ class EverNoteLoader(BaseLoader):
             Document(
                 page_content=note["content"],
                 metadata={
-                    **{key: value for key, value in note.items() if key != "content"},
+                    **{key: value for key, value in note.items() if key not in ["content", "content-raw", "resource"]},
                     **{"source": self.file_path}
                 })
             for note in self._parse_note_xml(self.file_path) if note.get("content") is not None
@@ -43,7 +45,7 @@ class EverNoteLoader(BaseLoader):
     def _parse_content(content: str) -> str:
         try:
             import html2text
-            return html2text.html2text(content)
+            return html2text.html2text(content).strip()
         except ImportError as e:
             logging.error("Could not import `html2text`. Although it is not a required package to use Langchain, using the EverNote loader requires `html2text`. Please install `html2text` via `pip install html2text` and try again.")
             raise e
@@ -61,8 +63,8 @@ class EverNoteLoader(BaseLoader):
 
         return rsc_dict
 
-    @classmethod
-    def _parse_note(cls, note: List, prefix: Optional[str] = None) -> dict:
+    @staticmethod
+    def _parse_note(note: List, prefix: Optional[str] = None) -> dict:
         note_dict: Dict[str, Any] = {}
         resources = []
 
@@ -73,15 +75,15 @@ class EverNoteLoader(BaseLoader):
 
         for elem in note:
             if elem.tag == "content":
-                note_dict[elem.tag] = cls._parse_content(elem.text)
+                note_dict[elem.tag] = EverNoteLoader._parse_content(elem.text)
                 # A copy of original content
                 note_dict["content-raw"] = elem.text
             elif elem.tag == "resource":
-                resources.append(cls._parse_resource(elem))
+                resources.append(EverNoteLoader._parse_resource(elem))
             elif elem.tag == "created" or elem.tag == "updated":
                 note_dict[elem.tag] = strptime(elem.text, "%Y%m%dT%H%M%SZ")
             elif elem.tag == "note-attributes":
-                additional_attributes = cls._parse_note(elem, elem.tag)  # Recursively enter the note-attributes tag
+                additional_attributes = EverNoteLoader._parse_note(elem, elem.tag)  # Recursively enter the note-attributes tag
                 note_dict.update(additional_attributes)
             else:
                 note_dict[elem.tag] = elem.text
@@ -93,8 +95,8 @@ class EverNoteLoader(BaseLoader):
             add_prefix(key): value for key, value in note_dict.items()
         }
 
-    @classmethod
-    def _parse_note_xml(cls, xml_file: str) -> Iterator[Dict[str, Any]]:
+    @staticmethod
+    def _parse_note_xml(xml_file: str) -> Iterator[Dict[str, Any]]:
         """Parse Evernote xml."""
         # Without huge_tree set to True, parser may complain about huge text node
         # Try to recover, because there may be "&nbsp;", which will cause
@@ -111,4 +113,4 @@ class EverNoteLoader(BaseLoader):
 
         for action, elem in context:
             if elem.tag == "note":
-                yield cls._parse_note(elem)
+                yield EverNoteLoader._parse_note(elem)
