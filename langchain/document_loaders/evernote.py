@@ -23,15 +23,19 @@ class EverNoteLoader(BaseLoader):
 
     Args:
         file_path (str): The path to the notebook export with a .enex extension
+        load_single_document (bool): Whether or not to concatenate the content of all notes into a single long Document.
+        If this is set to True (default) then the only metadata on the document will be the 'source' which contains
+        the file name of the export.
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, load_single_document: bool = True):
         """Initialize with file path."""
         self.file_path = file_path
+        self.load_single_document = load_single_document
 
     def load(self) -> List[Document]:
         """Load documents from EverNote export file."""
-        return [
+        documents = [
             Document(
                 page_content=note["content"],
                 metadata={
@@ -40,6 +44,16 @@ class EverNoteLoader(BaseLoader):
                 })
             for note in self._parse_note_xml(self.file_path) if note.get("content") is not None
         ]
+
+        if not self.load_single_document:
+            return documents
+
+        return [Document(
+            page_content="".join([document.page_content for document in documents]),
+            metadata={
+                "source": self.file_path
+            }
+        )]
 
     @staticmethod
     def _parse_content(content: str) -> str:
