@@ -27,23 +27,21 @@ PROMPT_FOR_GENERATION_FORMAT = """{intro}
 )
 
 
-class MosaicLLM(LLM):
+class MosaicML(LLM):
     """Wrapper around MosaicML's LLM inference service.
 
     To use, you should have the
     environment variable ``MOSAICML_API_TOKEN`` set with your API token, or pass
     it as a named parameter to the constructor.
 
-    Only supports `text-generation` for now.
-
     Example:
         .. code-block:: python
 
-            from langchain.llms import MosaicLLM
+            from langchain.llms import MosaicML
             endpoint_url = (
                 "https://models.hosted-on.mosaicml.hosting/mpt-7b-instruct/v1/predict"
             )
-            mosaic_llm = MosaicLLM(
+            mosaic_llm = MosaicML(
                 endpoint_url=endpoint_url,
                 mosaicml_api_token="my-api-key"
             )
@@ -124,9 +122,8 @@ class MosaicLLM(LLM):
 
         prompt = self._transform_prompt(prompt)
 
-        # payload samples
-        parameter_payload = {"input_strings": [prompt]}
-        parameter_payload.update(_model_kwargs)
+        payload = {"input_strings": [prompt]}
+        payload.update(_model_kwargs)
 
         # HTTP headers for authorization
         headers = {
@@ -137,7 +134,7 @@ class MosaicLLM(LLM):
         # send request
         try:
             response = requests.post(
-                self.endpoint_url, headers=headers, json=parameter_payload
+                self.endpoint_url, headers=headers, json=payload
             )
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
@@ -155,7 +152,7 @@ class MosaicLLM(LLM):
 
         text = generated_text[0][len(prompt) :]
 
-        # TODO: replace when MosaicML supports stop tokens
+        # TODO: replace when MosaicML supports custom stop tokens natively
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         return text

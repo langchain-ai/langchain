@@ -9,22 +9,20 @@ from langchain.utils import get_from_dict_or_env
 
 
 class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
-    """Wrapper around MosaicML's LLM inference service.
+    """Wrapper around MosaicML's embedding inference service.
 
     To use, you should have the
     environment variable ``MOSAICML_API_TOKEN`` set with your API token, or pass
     it as a named parameter to the constructor.
 
-    Only supports `text-generation` for now.
-
     Example:
         .. code-block:: python
 
-            from langchain.llms import MosaicLLM
+            from langchain.llms import MosaicMLInstructorEmbeddings
             endpoint_url = (
                 "https://models.hosted-on.mosaicml.hosting/instructor-large/v1/predict"
             )
-            mosaic_llm = MosaicLLM(
+            mosaic_llm = MosaicMLInstructorEmbeddings(
                 endpoint_url=endpoint_url,
                 mosaicml_api_token="my-api-key"
             )
@@ -69,8 +67,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         }
 
     def _embed(self, input: List[Tuple[str, str]]) -> List[List[float]]:
-        # payload samples
-        parameter_payload = {"input_strings": input}
+        payload = {"input_strings": input}
 
         # HTTP headers for authorization
         headers = {
@@ -81,7 +78,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         # send request
         try:
             response = requests.post(
-                self.endpoint_url, headers=headers, json=parameter_payload
+                self.endpoint_url, headers=headers, json=payload
             )
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
@@ -100,7 +97,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         return embeddings
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Compute doc embeddings using a HuggingFace instruct model.
+        """Embed documents using a MosaicML deployed instructor embedding model.
 
         Args:
             texts: The list of texts to embed.
@@ -113,7 +110,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
-        """Compute query embeddings using a HuggingFace instruct model.
+        """Embed a query using a MosaicML deployed instructor embedding model.
 
         Args:
             text: The text to embed.
