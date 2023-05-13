@@ -8,7 +8,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 
-class MosaicLLMInstructorEmbeddings(BaseModel, Embeddings):
+class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
     """Wrapper around MosaicML's LLM inference service.
 
     To use, you should have the
