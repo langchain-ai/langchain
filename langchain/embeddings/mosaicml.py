@@ -108,7 +108,7 @@ class MosaicLLMInstructorEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        instruction_pairs = [[self.embed_instruction, text] for text in texts]
+        instruction_pairs = [(self.embed_instruction, text) for text in texts]
         embeddings = self._embed(instruction_pairs)
         return embeddings
 
@@ -121,6 +121,6 @@ class MosaicLLMInstructorEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        instruction_pair = [self.query_instruction, text]
+        instruction_pair = (self.query_instruction, text)
         embedding = self._embed([instruction_pair])[0]
         return embedding

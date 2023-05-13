@@ -101,6 +101,7 @@ class MosaicLLM(LLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
         """Call out to a MosaicML LLM inference endpoint.
 
@@ -116,6 +117,9 @@ class MosaicLLM(LLM):
 
                 response = mosaic_llm("Tell me a joke.")
         """
+        if run_manager is not None:
+            raise NotImplementedError("run_manager is not currently supported for MosaicLLM.")
+
         _model_kwargs = self.model_kwargs or {}
 
         prompt = self._transform_prompt(prompt)
