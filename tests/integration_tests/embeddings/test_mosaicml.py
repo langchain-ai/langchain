@@ -31,13 +31,17 @@ def test_mosaicml_embedding_query() -> None:
     output = embedding.embed_query(document)
     assert len(output) == 768
 
+
 def test_mosaicml_embedding_endpoint() -> None:
     """Test MosaicML embeddings with a different endpoint"""
     documents = ["foo bar"]
-    embedding = MosaicLLMInstructorEmbeddings(endpoint_url="https://models.hosted-on.mosaicml.hosting/instructor-xl/v1/predict")
+    embedding = MosaicLLMInstructorEmbeddings(
+        endpoint_url="https://models.hosted-on.mosaicml.hosting/instructor-xl/v1/predict"
+    )
     output = embedding.embed_documents(documents)
     assert len(output) == 1
     assert len(output[0]) == 768
+
 
 def test_mosaicml_embedding_query_instruction() -> None:
     """Test MosaicML embeddings with a different query instruction."""
@@ -45,6 +49,7 @@ def test_mosaicml_embedding_query_instruction() -> None:
     embedding = MosaicLLMInstructorEmbeddings(query_instruction="Embed this query:")
     output = embedding.embed_query(document)
     assert len(output) == 768
+
 
 def test_mosaicml_embedding_document_instruction() -> None:
     """Test MosaicML embeddings with a different query instruction."""

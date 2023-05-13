@@ -7,12 +7,13 @@ from pydantic import Extra, root_validator, BaseModel
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 
+
 class MosaicLLMInstructorEmbeddings(BaseModel, Embeddings):
     """Wrapper around MosaicML's LLM inference service.
 
     To use, you should have the
     environment variable ``MOSAICML_API_TOKEN`` set with your API token, or pass
-    it as a named parameter to the constructor. 
+    it as a named parameter to the constructor.
 
     Only supports `text-generation` for now.
 
@@ -29,11 +30,15 @@ class MosaicLLMInstructorEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    endpoint_url: str = "https://models.hosted-on.mosaicml.hosting/instructor-large/v1/predict"
+    endpoint_url: str = (
+        "https://models.hosted-on.mosaicml.hosting/instructor-large/v1/predict"
+    )
     """Endpoint URL to use."""
     embed_instruction: str = "Represent the document for retrieval: "
     """Instruction used to embed documents."""
-    query_instruction: str = "Represent the question for retrieving supporting documents: "
+    query_instruction: str = (
+        "Represent the question for retrieving supporting documents: "
+    )
     """Instruction used to embed the query."""
 
     mosaicml_api_token: Optional[str] = None
@@ -62,7 +67,7 @@ class MosaicLLMInstructorEmbeddings(BaseModel, Embeddings):
         return {
             **{"endpoint_url": self.endpoint_url},
         }
-    
+
     def _embed(self, input: List[Tuple[str, str]]) -> List[List[float]]:
         # payload samples
         parameter_payload = {"input_strings": input}
@@ -80,9 +85,9 @@ class MosaicLLMInstructorEmbeddings(BaseModel, Embeddings):
             )
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
-        
+
         try:
-            embeddings = response.json()['data']
+            embeddings = response.json()["data"]
             if "error" in embeddings:
                 raise ValueError(
                     f"Error raised by inference API: {embeddings['error']}"
@@ -91,7 +96,7 @@ class MosaicLLMInstructorEmbeddings(BaseModel, Embeddings):
             raise ValueError(
                 f"Error raised by inference API: {e}.\nResponse: {response.text}"
             )
-        
+
         return embeddings
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

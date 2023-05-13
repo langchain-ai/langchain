@@ -23,12 +23,13 @@ PROMPT_FOR_GENERATION_FORMAT = """{intro}
     response_key=RESPONSE_KEY,
 )
 
+
 class MosaicLLM(LLM):
     """Wrapper around MosaicML's LLM inference service.
 
     To use, you should have the
     environment variable ``MOSAICML_API_TOKEN`` set with your API token, or pass
-    it as a named parameter to the constructor. 
+    it as a named parameter to the constructor.
 
     Only supports `text-generation` for now.
 
@@ -45,7 +46,9 @@ class MosaicLLM(LLM):
             )
     """
 
-    endpoint_url: str = "https://models.hosted-on.mosaicml.hosting/mpt-7b-instruct/v1/predict"
+    endpoint_url: str = (
+        "https://models.hosted-on.mosaicml.hosting/mpt-7b-instruct/v1/predict"
+    )
     """Endpoint URL to use."""
     inject_instruction_format: bool = False
     """Whether to inject the instruction format into the prompt."""
@@ -85,7 +88,7 @@ class MosaicLLM(LLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "mosaicml_llm"
-    
+
     def _transform_prompt(self, prompt: str) -> str:
         """Transform prompt."""
         if self.inject_instruction_format:
@@ -134,9 +137,9 @@ class MosaicLLM(LLM):
             )
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
-        
+
         try:
-            generated_text = response.json()['data']
+            generated_text = response.json()["data"]
             if "error" in generated_text:
                 raise ValueError(
                     f"Error raised by inference API: {generated_text['error']}"
@@ -146,8 +149,8 @@ class MosaicLLM(LLM):
                 f"Error raised by inference API: {e}.\nResponse: {response.text}"
             )
 
-        text = generated_text[0][len(prompt):]
-        
+        text = generated_text[0][len(prompt) :]
+
         # TODO: replace when MosaicML supports stop tokens
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
