@@ -130,11 +130,7 @@ class GPT4All(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
         try:
-            backend = values["backend"]
-            if backend == "llama" or backend == "gptj":
-                from gpt4all import GPT4All as GPT4AllModel
-            else:
-                raise ValueError(f"Incorrect gpt4all backend {cls.backend}")
+            from gpt4all import GPT4All as GPT4AllModel
 
             full_path = values["model"]
             model_path, delimiter, model_name = full_path.rpartition("/")
@@ -143,7 +139,7 @@ class GPT4All(LLM):
             values["client"] = GPT4AllModel(
                 model_name=model_name,
                 model_path=model_path,
-                model_type=backend,
+                model_type=values["backend"],
                 allow_download=False,
             )
 
