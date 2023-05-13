@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
 
 from langchain.schema import LLMResult
 
@@ -123,6 +123,13 @@ class Run(RunBase):
 
     name: str
     child_runs: List[Run] = Field(default_factory=list)
+
+    @root_validator(pre=True)
+    def assign_name(cls, values: dict) -> dict:
+        """Assign name to the run."""
+        if "name" not in values:
+            values["name"] = values["serialized"]["name"]
+        return values
 
 
 class RunCreate(RunBase):
