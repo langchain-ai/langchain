@@ -1,5 +1,5 @@
 """Util that calls Google Search using the Serper.dev API."""
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
@@ -101,17 +101,17 @@ class GoogleSerperAPIWrapper(BaseModel):
 
         return self._parse_results(results)
 
-    def _parse_results(self, results: dict) -> str:
+    def _parse_snippets(self, results: dict) -> List[str]:
         snippets = []
 
         if results.get("answerBox"):
             answer_box = results.get("answerBox", {})
             if answer_box.get("answer"):
-                return answer_box.get("answer")
+                return [answer_box.get("answer")]
             elif answer_box.get("snippet"):
-                return answer_box.get("snippet").replace("\n", " ")
+                return [answer_box.get("snippet").replace("\n", " ")]
             elif answer_box.get("snippetHighlighted"):
-                return ", ".join(answer_box.get("snippetHighlighted"))
+                return answer_box.get("snippetHighlighted")
 
         if results.get("knowledgeGraph"):
             kg = results.get("knowledgeGraph", {})
@@ -132,9 +132,11 @@ class GoogleSerperAPIWrapper(BaseModel):
                 snippets.append(f"{attribute}: {value}.")
 
         if len(snippets) == 0:
-            return "No good Google Search Result was found"
+            return ["No good Google Search Result was found"]
+        return snippets
 
-        return " ".join(snippets)
+    def _parse_results(self, results: dict) -> str:
+        return " ".join(self._parse_snippets(results))
 
     def _google_serper_search_results(
         self, search_term: str, search_type: str = "search", **kwargs: Any
