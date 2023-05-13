@@ -135,8 +135,8 @@ class HuggingFaceTextGenInference(LLM):
             for stop_seq in stop:
                 if stop_seq in res.generated_text:
                     res.generated_text = res.generated_text[
-                                         : res.generated_text.index(stop_seq)
-                                         ]
+                        : res.generated_text.index(stop_seq)
+                    ]
             text = res.generated_text
         else:
             text_callback = None
