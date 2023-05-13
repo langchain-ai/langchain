@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional
 
-from pyspark.errors import PySparkException
-
 if TYPE_CHECKING:
+    from pyspark.errors import PySparkException
     from pyspark.sql import DataFrame, Row, SparkSession
 
 
