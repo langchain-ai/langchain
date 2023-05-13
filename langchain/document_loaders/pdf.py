@@ -195,7 +195,7 @@ class PDFMinerLoader(BasePDFLoader):
             from pdfminer.high_level import extract_text  # noqa:F401
         except ImportError:
             raise ValueError(
-                "pdfminer package not found, please install it with "
+                "`pdfminer` package not found, please install it with "
                 "`pip install pdfminer.six`"
             )
 
@@ -223,7 +223,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
             from pdfminer.high_level import extract_text_to_fp  # noqa:F401
         except ImportError:
             raise ValueError(
-                "pdfminer package not found, please install it with "
+                "`pdfminer` package not found, please install it with "
                 "`pip install pdfminer.six`"
             )
 
@@ -257,7 +257,7 @@ class PyMuPDFLoader(BasePDFLoader):
             import fitz  # noqa:F401
         except ImportError:
             raise ValueError(
-                "PyMuPDF package not found, please install it with "
+                "`PyMuPDF` package not found, please install it with "
                 "`pip install pymupdf`"
             )
 

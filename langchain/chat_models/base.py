@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import warnings
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra, Field, root_validator
 
@@ -24,7 +24,6 @@ from langchain.schema import (
     HumanMessage,
     LLMResult,
     PromptValue,
-    get_buffer_string,
 )
 
 
@@ -66,12 +65,14 @@ class BaseChatModel(BaseLanguageModel, ABC):
     ) -> LLMResult:
         """Top Level call"""
 
+        params = self.dict()
+        params["stop"] = stop
+
         callback_manager = CallbackManager.configure(
             callbacks, self.callbacks, self.verbose
         )
-        message_strings = [get_buffer_string(m) for m in messages]
-        run_manager = callback_manager.on_llm_start(
-            {"name": self.__class__.__name__}, message_strings
+        run_manager = callback_manager.on_chat_model_start(
+            {"name": self.__class__.__name__}, messages, invocation_params=params
         )
 
         new_arg_supported = inspect.signature(self._generate).parameters.get(
@@ -100,13 +101,14 @@ class BaseChatModel(BaseLanguageModel, ABC):
         callbacks: Callbacks = None,
     ) -> LLMResult:
         """Top Level call"""
+        params = self.dict()
+        params["stop"] = stop
 
         callback_manager = AsyncCallbackManager.configure(
             callbacks, self.callbacks, self.verbose
         )
-        message_strings = [get_buffer_string(m) for m in messages]
-        run_manager = await callback_manager.on_llm_start(
-            {"name": self.__class__.__name__}, message_strings
+        run_manager = await callback_manager.on_chat_model_start(
+            {"name": self.__class__.__name__}, messages, invocation_params=params
         )
 
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
@@ -183,6 +185,22 @@ class BaseChatModel(BaseLanguageModel, ABC):
     def call_as_llm(self, message: str, stop: Optional[List[str]] = None) -> str:
         result = self([HumanMessage(content=message)], stop=stop)
         return result.content
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {}
+
+    @property
+    @abstractmethod
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return a dictionary of the LLM."""
+        starter_dict = dict(self._identifying_params)
+        starter_dict["_type"] = self._llm_type
+        return starter_dict
 
 
 class SimpleChatModel(BaseChatModel):

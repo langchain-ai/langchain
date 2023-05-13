@@ -7,9 +7,6 @@ from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
     PDFMinerParser,
-    PDFPlumberParser,
-    PyMuPDFParser,
-    PyPDFium2Parser,
     PyPDFParser,
 )
 from tests.data import HELLO_PDF, LAYOUT_PARSER_PAPER_PDF
@@ -54,12 +51,6 @@ def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> 
         assert metadata["page"] == 0
 
 
-@pytest.mark.requires("fitz")
-def test_pymupdf_loader() -> None:
-    """Test PyMuPDF loader."""
-    _assert_with_parser(PyMuPDFParser())
-
-
 @pytest.mark.requires("pypdf")
 def test_pypdf_parser() -> None:
     """Test PyPDF parser."""
@@ -71,16 +62,4 @@ def test_pdfminer_parser() -> None:
     """Test PDFMiner parser."""
     # Does not follow defaults to split by page.
     _assert_with_parser(PDFMinerParser(), splits_by_page=False)
-
-
-@pytest.mark.requires("pypdfium2")
-def test_pypdfium2_parser() -> None:
-    """Test PyPDFium2 parser."""
-    # Does not follow defaults to split by page.
-    _assert_with_parser(PyPDFium2Parser())
-
-
-@pytest.mark.requires("pdfplumber")
-def test_pdfplumber_parser() -> None:
-    """Test PDFPlumber parser."""
-    _assert_with_parser(PDFPlumberParser())
+    

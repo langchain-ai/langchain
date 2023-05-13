@@ -31,15 +31,16 @@ from langchain.callbacks.tracers.langchain import LangChainTracerV2
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.client.models import Dataset, DatasetCreate, Example, ExampleCreate
-from langchain.client.utils import parse_chat_messages
 from langchain.llms.base import BaseLLM
-from langchain.schema import ChatResult, LLMResult
+from langchain.schema import ChatResult, LLMResult, messages_from_dict
 from langchain.utils import raise_for_status_with_text, xor_args
 
 if TYPE_CHECKING:
     import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+MODEL_OR_CHAIN_FACTORY = Union[Callable[[], Chain], BaseLanguageModel]
 
 
 def _get_link_stem(url: str) -> str:
@@ -96,10 +97,24 @@ class LangChainPlusClient(BaseSettings):
                 "Unable to get seeded tenant ID. Please manually provide."
             ) from e
         results: List[dict] = response.json()
-        breakpoint()
         if len(results) == 0:
             raise ValueError("No seeded tenant found")
         return results[0]["id"]
+
+    @staticmethod
+    def _get_session_name(
+        session_name: Optional[str],
+        llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+        dataset_name: str,
+    ) -> str:
+        if session_name is not None:
+            return session_name
+        current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        if isinstance(llm_or_chain_factory, BaseLanguageModel):
+            model_name = llm_or_chain_factory.__class__.__name__
+        else:
+            model_name = llm_or_chain_factory().__class__.__name__
+        return f"{dataset_name}-{model_name}-{current_time}"
 
     def _repr_html_(self) -> str:
         """Return an HTML representation of the instance with a link to the URL."""
@@ -296,14 +311,16 @@ class LangChainPlusClient(BaseSettings):
         langchain_tracer: LangChainTracerV2,
     ) -> Union[LLMResult, ChatResult]:
         if isinstance(llm, BaseLLM):
-            llm_prompts: List[str] = inputs["prompts"]
-            llm_output = await llm.agenerate(llm_prompts, callbacks=[langchain_tracer])
+            if "prompt" not in inputs:
+                raise ValueError(f"LLM Run requires 'prompt' input. Got {inputs}")
+            llm_prompt: str = inputs["prompt"]
+            llm_output = await llm.agenerate([llm_prompt], callbacks=[langchain_tracer])
         elif isinstance(llm, BaseChatModel):
-            chat_prompts: List[str] = inputs["prompts"]
-            messages = [
-                parse_chat_messages(chat_prompt) for chat_prompt in chat_prompts
-            ]
-            llm_output = await llm.agenerate(messages, callbacks=[langchain_tracer])
+            if "messages" not in inputs:
+                raise ValueError(f"Chat Run requires 'messages' input. Got {inputs}")
+            raw_messages: List[dict] = inputs["messages"]
+            messages = messages_from_dict(raw_messages)
+            llm_output = await llm.agenerate([messages], callbacks=[langchain_tracer])
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
         return llm_output
@@ -312,7 +329,7 @@ class LangChainPlusClient(BaseSettings):
     async def _arun_llm_or_chain(
         example: Example,
         langchain_tracer: LangChainTracerV2,
-        llm_or_chain: Union[Chain, BaseLanguageModel],
+        llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
         n_repetitions: int,
     ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
         """Run the chain asynchronously."""
@@ -321,12 +338,13 @@ class LangChainPlusClient(BaseSettings):
         outputs = []
         for _ in range(n_repetitions):
             try:
-                if isinstance(llm_or_chain, BaseLanguageModel):
+                if isinstance(llm_or_chain_factory, BaseLanguageModel):
                     output: Any = await LangChainPlusClient._arun_llm(
-                        llm_or_chain, example.inputs, langchain_tracer
+                        llm_or_chain_factory, example.inputs, langchain_tracer
                     )
                 else:
-                    output = await llm_or_chain.arun(
+                    chain = llm_or_chain_factory()
+                    output = await chain.arun(
                         example.inputs, callbacks=[langchain_tracer]
                     )
                 outputs.append(output)
@@ -388,7 +406,8 @@ class LangChainPlusClient(BaseSettings):
     async def arun_on_dataset(
         self,
         dataset_name: str,
-        llm_or_chain: Union[Chain, BaseLanguageModel],
+        llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+        *,
         concurrency_level: int = 5,
         num_repetitions: int = 1,
         session_name: Optional[str] = None,
@@ -399,7 +418,9 @@ class LangChainPlusClient(BaseSettings):
 
         Args:
             dataset_name: Name of the dataset to run the chain on.
-            llm_or_chain: Chain or language model to run over the dataset.
+            llm_or_chain_factory: Language model or Chain constructor to run
+                over the dataset. The Chain constructor is used to permit
+                independent calls on each example without carrying over state.
             concurrency_level: The number of async tasks to run concurrently.
             num_repetitions: Number of times to run the model on each example.
                 This is useful when testing success rates or generating confidence
@@ -411,11 +432,9 @@ class LangChainPlusClient(BaseSettings):
         Returns:
             A dictionary mapping example ids to the model outputs.
         """
-        if session_name is None:
-            current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-            session_name = (
-                f"{dataset_name}-{llm_or_chain.__class__.__name__}-{current_time}"
-            )
+        session_name = LangChainPlusClient._get_session_name(
+            session_name, llm_or_chain_factory, dataset_name
+        )
         dataset = self.read_dataset(dataset_name=dataset_name)
         examples = self.list_examples(dataset_id=str(dataset.id))
         results: Dict[str, List[Any]] = {}
@@ -427,7 +446,7 @@ class LangChainPlusClient(BaseSettings):
             result = await LangChainPlusClient._arun_llm_or_chain(
                 example,
                 tracer,
-                llm_or_chain,
+                llm_or_chain_factory,
                 num_repetitions,
             )
             results[str(example.id)] = result
@@ -454,14 +473,18 @@ class LangChainPlusClient(BaseSettings):
     ) -> Union[LLMResult, ChatResult]:
         """Run the language model on the example."""
         if isinstance(llm, BaseLLM):
-            llm_prompts: List[str] = inputs["prompts"]
-            llm_output = llm.generate(llm_prompts, callbacks=[langchain_tracer])
+            if "prompt" not in inputs:
+                raise ValueError(f"LLM Run must contain 'prompt' key. Got {inputs}")
+            llm_prompt: str = inputs["prompt"]
+            llm_output = llm.generate([llm_prompt], callbacks=[langchain_tracer])
         elif isinstance(llm, BaseChatModel):
-            chat_prompts: List[str] = inputs["prompts"]
-            messages = [
-                parse_chat_messages(chat_prompt) for chat_prompt in chat_prompts
-            ]
-            llm_output = llm.generate(messages, callbacks=[langchain_tracer])
+            if "messages" not in inputs:
+                raise ValueError(
+                    f"Chat Model Run must contain 'messages' key. Got {inputs}"
+                )
+            raw_messages: List[dict] = inputs["messages"]
+            messages = messages_from_dict(raw_messages)
+            llm_output = llm.generate([messages], callbacks=[langchain_tracer])
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
         return llm_output
@@ -470,7 +493,7 @@ class LangChainPlusClient(BaseSettings):
     def run_llm_or_chain(
         example: Example,
         langchain_tracer: LangChainTracerV2,
-        llm_or_chain: Union[Chain, BaseLanguageModel],
+        llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
         n_repetitions: int,
     ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
         """Run the chain synchronously."""
@@ -479,14 +502,13 @@ class LangChainPlusClient(BaseSettings):
         outputs = []
         for _ in range(n_repetitions):
             try:
-                if isinstance(llm_or_chain, BaseLanguageModel):
+                if isinstance(llm_or_chain_factory, BaseLanguageModel):
                     output: Any = LangChainPlusClient.run_llm(
-                        llm_or_chain, example.inputs, langchain_tracer
+                        llm_or_chain_factory, example.inputs, langchain_tracer
                     )
                 else:
-                    output = llm_or_chain.run(
-                        example.inputs, callbacks=[langchain_tracer]
-                    )
+                    chain = llm_or_chain_factory()
+                    output = chain.run(example.inputs, callbacks=[langchain_tracer])
                 outputs.append(output)
             except Exception as e:
                 logger.warning(f"Chain failed for example {example.id}. Error: {e}")
@@ -498,7 +520,8 @@ class LangChainPlusClient(BaseSettings):
     def run_on_dataset(
         self,
         dataset_name: str,
-        llm_or_chain: Union[Chain, BaseLanguageModel],
+        llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+        *,
         num_repetitions: int = 1,
         session_name: Optional[str] = None,
         verbose: bool = False,
@@ -507,7 +530,9 @@ class LangChainPlusClient(BaseSettings):
 
         Args:
             dataset_name: Name of the dataset to run the chain on.
-            llm_or_chain: Chain or language model to run over the dataset.
+            llm_or_chain_factory: Language model or Chain constructor to run
+                over the dataset. The Chain constructor is used to permit
+                independent calls on each example without carrying over state.
             concurrency_level: Number of async workers to run in parallel.
             num_repetitions: Number of times to run the model on each example.
                 This is useful when testing success rates or generating confidence
@@ -519,13 +544,11 @@ class LangChainPlusClient(BaseSettings):
         Returns:
             A dictionary mapping example ids to the model outputs.
         """
-        if session_name is None:
-            current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-            session_name = (
-                f"{dataset_name}-{llm_or_chain.__class__.__name__}-{current_time}"
-            )
+        session_name = LangChainPlusClient._get_session_name(
+            session_name, llm_or_chain_factory, dataset_name
+        )
         dataset = self.read_dataset(dataset_name=dataset_name)
-        examples = self.list_examples(dataset_id=str(dataset.id))
+        examples = list(self.list_examples(dataset_id=str(dataset.id)))
         results: Dict[str, Any] = {}
         with tracing_v2_enabled(session_name=session_name) as session:
             tracer = LangChainTracerV2()
@@ -535,7 +558,7 @@ class LangChainPlusClient(BaseSettings):
                 result = self.run_llm_or_chain(
                     example,
                     tracer,
-                    llm_or_chain,
+                    llm_or_chain_factory,
                     num_repetitions,
                 )
                 if verbose:
