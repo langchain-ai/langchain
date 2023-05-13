@@ -11,7 +11,10 @@ from langchain.utils import get_from_dict_or_env
 
 INSTRUCTION_KEY = "### Instruction:"
 RESPONSE_KEY = "### Response:"
-INTRO_BLURB = "Below is an instruction that describes a task. Write a response that appropriately completes the request."
+INTRO_BLURB = (
+    "Below is an instruction that describes a task. "
+    "Write a response that appropriately completes the request."
+)
 PROMPT_FOR_GENERATION_FORMAT = """{intro}
 {instruction_key}
 {instruction}
