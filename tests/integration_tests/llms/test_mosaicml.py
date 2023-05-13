@@ -1,5 +1,5 @@
 """Test MosaicML API wrapper."""
-from langchain.llms.mosaicml import MosaicLLM
+from langchain.llms.mosaicml import MosaicLLM, PROMPT_FOR_GENERATION_FORMAT
 
 
 def test_mosaicml_llm_call() -> None:
@@ -33,8 +33,9 @@ def test_mosaicml_extra_kwargs() -> None:
 def test_instruct_prompt() -> None:
     """Test instruct prompt."""
     llm = MosaicLLM(inject_instruction_format=True, model_kwargs={"do_sample": False})
-    prompt = "Repeat the word foo"
-    prompt = llm._transform_prompt(prompt)
-    assert prompt.endswith("### Response:\n")
+    instruction = "Repeat the word foo"
+    prompt = llm._transform_prompt(instruction)
+    expected_prompt = PROMPT_FOR_GENERATION_FORMAT.format(instruction=instruction)
+    assert prompt == expected_prompt
     output = llm(prompt)
     assert isinstance(output, str)
