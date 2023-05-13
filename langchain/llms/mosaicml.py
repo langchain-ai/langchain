@@ -133,9 +133,7 @@ class MosaicML(LLM):
 
         # send request
         try:
-            response = requests.post(
-                self.endpoint_url, headers=headers, json=payload
-            )
+            response = requests.post(self.endpoint_url, headers=headers, json=payload)
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
