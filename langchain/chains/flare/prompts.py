@@ -15,17 +15,17 @@ class FinishedOutputParser(BaseOutputParser[Tuple[str, bool]]):
 
 PROMPT_TEMPLATE = """\
 Respond to the user message using any relevant context. \
+If context is provided, you should ground your answer in that context. \
 Once you're done responding return FINISHED.
 
-USER INPUT: {user_input}
-CONTEXT: {context}
-RESPONSE: {response}\
+>>> CONTEXT: {context}
+>>> USER INPUT: {user_input}
+>>> RESPONSE: {response}\
 """
 
 PROMPT = PromptTemplate(
     template=PROMPT_TEMPLATE,
     input_variables=["user_input", "context", "response"],
-    output_parser=FinishedOutputParser(),
 )
 
 
@@ -33,8 +33,8 @@ QUESTION_GENERATOR_PROMPT_TEMPLATE = """\
 Given a user input and an existing partial response as context, \
 ask a question to which the answer is the given term/entity/phrase:
 
-USER INPUT: {user_input}
-EXISTING PARTIAL RESPONSE: {current_response}
+>>> USER INPUT: {user_input}
+>>> EXISTING PARTIAL RESPONSE: {current_response}
 
 The question to which the answer is the term/entity/phrase "{uncertain_span}" is:"""
 QUESTION_GENERATOR_PROMPT = PromptTemplate(

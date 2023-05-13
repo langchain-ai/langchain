@@ -1,4 +1,3 @@
-""""""
 from __future__ import annotations
 
 import re
@@ -6,36 +5,30 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
-from pydantic import Field, root_validator
+from pydantic import Field
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.callbacks.manager import (
+    CallbackManagerForChainRun,
+)
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
-from langchain.chains.flare.prompts import PROMPT, QUESTION_GENERATOR_PROMPT
+from langchain.chains.flare.prompts import (
+    PROMPT,
+    QUESTION_GENERATOR_PROMPT,
+    FinishedOutputParser,
+)
 from langchain.llms import OpenAI
 from langchain.prompts import BasePromptTemplate
 from langchain.schema import BaseRetriever, Generation
 
 
-class ResponseChain(LLMChain):
-    """"""
-
+class _ResponseChain(LLMChain):
     prompt: BasePromptTemplate = PROMPT
-
-    @root_validator()
-    def validate_prompt(cls, values: Dict) -> Dict:
-        prompt = values["prompt"]
-        prompt_inputs = set(prompt.input_variables)
-        if prompt_inputs.difference(["user_input", "context", "response"]):
-            raise ValueError
-        if prompt.output_parser is None:
-            raise ValueError
-        return values
 
     @property
     def input_keys(self) -> List[str]:
-        return ["user_input", "context", "response"]
+        return self.prompt.input_variables
 
     def generate_tokens_and_log_probs(
         self,
@@ -50,14 +43,15 @@ class ResponseChain(LLMChain):
     def _extract_tokens_and_log_probs(
         self, generations: List[Generation]
     ) -> Tuple[Sequence[str], Sequence[float]]:
-        """"""
+        """Extract tokens and log probs from response."""
 
 
-class _OpenAIResponseChain(ResponseChain):
+class _OpenAIResponseChain(_ResponseChain):
     llm: OpenAI = Field(
-        default_factory=lambda: OpenAI(max_tokens=64, model_kwargs={"logprobs": 1})
+        default_factory=lambda: OpenAI(
+            max_tokens=32, model_kwargs={"logprobs": 1}, temperature=0
+        )
     )
-    """"""
 
     def _extract_tokens_and_log_probs(
         self, generations: List[Generation]
@@ -87,8 +81,8 @@ def _low_confidence_spans(
     min_token_gap: int,
     num_pad_tokens: int,
 ) -> List[str]:
-    low_idx = np.where(np.exp(log_probs) < min_prob)[0]
-    low_idx = [i for i in low_idx if re.search(r"\w", tokens[i])]
+    _low_idx = np.where(np.exp(log_probs) < min_prob)[0]
+    low_idx = [i for i in _low_idx if re.search(r"\w", tokens[i])]
     if len(low_idx) == 0:
         return []
     spans = [[low_idx[0], low_idx[0] + num_pad_tokens + 1]]
@@ -102,22 +96,15 @@ def _low_confidence_spans(
 
 
 class FlareChain(Chain):
-    """"""
-
     question_generator_chain: QuestionGeneratorChain
-    """"""
-    response_chain: ResponseChain = Field(default_factory=_OpenAIResponseChain)
-    """"""
+    response_chain: _ResponseChain = Field(default_factory=_OpenAIResponseChain)
+    output_parser: FinishedOutputParser = Field(default_factory=FinishedOutputParser)
     retriever: BaseRetriever
-    """"""
-    min_prob: float = 0.1
-    """"""
+    min_prob: float = 0.2
     min_token_gap: int = 5
-    """"""
     num_pad_tokens: int = 2
-    """"""
     max_iter: int = 10
-    """"""
+    start_with_retrieval: bool = True
 
     @property
     def input_keys(self) -> List[str]:
@@ -127,16 +114,71 @@ class FlareChain(Chain):
     def output_keys(self) -> List[str]:
         return ["response"]
 
+    def _do_generation(
+        self,
+        questions: List[str],
+        user_input: str,
+        response: str,
+        _run_manager: CallbackManagerForChainRun,
+    ) -> Tuple[str, bool]:
+        callbacks = _run_manager.get_child()
+        docs = []
+        for question in questions:
+            docs.extend(self.retriever.get_relevant_documents(question))
+        context = "\n\n".join(d.page_content for d in docs)
+        result = self.response_chain.predict(
+            user_input=user_input,
+            context=context,
+            response=response,
+            callbacks=callbacks,
+        )
+        marginal, finished = self.output_parser.parse(result)
+        return marginal, finished
+
+    def _do_retrieval(
+        self,
+        low_confidence_spans: List[str],
+        _run_manager: CallbackManagerForChainRun,
+        user_input: str,
+        response: str,
+        initial_response: str,
+    ) -> Tuple[str, bool]:
+        question_gen_inputs = [
+            {
+                "user_input": user_input,
+                "current_response": initial_response,
+                "uncertain_span": span,
+            }
+            for span in low_confidence_spans
+        ]
+        callbacks = _run_manager.get_child()
+        question_gen_outputs = self.question_generator_chain.apply(
+            question_gen_inputs, callbacks=callbacks
+        )
+        questions = [
+            output[self.question_generator_chain.output_keys[0]]
+            for output in question_gen_outputs
+        ]
+        _run_manager.on_text(
+            f"Generated Questions: {questions}", color="yellow", end="\n"
+        )
+        return self._do_generation(questions, user_input, response, _run_manager)
+
     def _call(
         self,
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        callbacks = _run_manager.get_child()
+
         user_input = inputs[self.input_keys[0]]
+
         response = ""
-        for _ in range(self.max_iter):
+
+        for i in range(self.max_iter):
+            _run_manager.on_text(
+                f"Current Response: {response}", color="blue", end="\n"
+            )
             _input = {"user_input": user_input, "context": "", "response": response}
             tokens, log_probs = self.response_chain.generate_tokens_and_log_probs(
                 _input, run_manager=_run_manager
@@ -148,37 +190,37 @@ class FlareChain(Chain):
                 self.min_token_gap,
                 self.num_pad_tokens,
             )
+            initial_response = response.strip() + " " + "".join(tokens)
             if not low_confidence_spans:
-                response += "".join(tokens)
+                response = initial_response
+                final_response, finished = self.output_parser.parse(response)
+                if finished:
+                    return {self.output_keys[0]: final_response}
                 continue
-            question_gen_inputs = [
-                {
-                    "user_input": user_input,
-                    "current_response": response,
-                    "uncertain_span": span,
-                }
-                for span in low_confidence_spans
-            ]
-            question_gen_outputs = self.question_generator_chain.apply(
-                question_gen_inputs, callbacks=callbacks
+
+            marginal, finished = self._do_retrieval(
+                low_confidence_spans,
+                _run_manager,
+                user_input,
+                response,
+                initial_response,
             )
-            docs = []
-            for output in question_gen_outputs:
-                question = output[self.question_generator_chain.output_keys[0]]
-                docs.extend(self.retriever.get_relevant_documents(question))
-            context = "\n\n".join(d.page_content for d in docs)
-            marginal, finished = self.response_chain.predict_and_parse(
-                user_input=user_input,
-                context=context,
-                response=response,
-                callbacks=callbacks,
-            )
-            response += marginal
+            response = response.strip() + " " + marginal
             if finished:
                 break
         return {self.output_keys[0]: response}
 
     @classmethod
-    def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> FlareChain:
+    def from_llm(
+        cls, llm: BaseLanguageModel, max_generation_len: int = 32, **kwargs: Any
+    ) -> FlareChain:
         question_gen_chain = QuestionGeneratorChain(llm=llm)
-        return cls(question_generator_chain=question_gen_chain, **kwargs)
+        response_llm = OpenAI(
+            max_tokens=max_generation_len, model_kwargs={"logprobs": 1}, temperature=0
+        )
+        response_chain = _OpenAIResponseChain(llm=response_llm)
+        return cls(
+            question_generator_chain=question_gen_chain,
+            response_chain=response_chain,
+            **kwargs,
+        )
