@@ -102,7 +102,8 @@ class PythonAstREPLTool(BaseTool):
                     output = mystdout.getvalue()
                 except Exception as e:
                     sys.stdout = old_stdout
-                    output = str(e)
+                    output = repr(e)
+                    print(output)
                 return output
         except Exception as e:
             return "{}: {}".format(type(e).__name__, str(e))
