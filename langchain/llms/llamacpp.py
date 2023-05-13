@@ -41,6 +41,9 @@ class LlamaCpp(LLM):
     """Number of parts to split the model into.
     If -1, the number of parts is automatically determined."""
 
+    n_gpu_layers: int = Field(0, alias="n_gpu_layers")
+    """Number of layers to keep on the GPU."""
+
     seed: int = Field(-1, alias="seed")
     """Seed. If -1, a random seed is used."""
 
@@ -108,6 +111,7 @@ class LlamaCpp(LLM):
         lora_base = values["lora_base"]
         n_ctx = values["n_ctx"]
         n_parts = values["n_parts"]
+        n_gpu_layers = values["n_gpu_layers"]
         seed = values["seed"]
         f16_kv = values["f16_kv"]
         logits_all = values["logits_all"]
@@ -127,6 +131,7 @@ class LlamaCpp(LLM):
                 lora_path=lora_path,
                 n_ctx=n_ctx,
                 n_parts=n_parts,
+                n_gpu_layers=n_gpu_layers,
                 seed=seed,
                 f16_kv=f16_kv,
                 logits_all=logits_all,
