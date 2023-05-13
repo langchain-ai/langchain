@@ -101,7 +101,7 @@ class GoogleSerperAPIWrapper(BaseModel):
 
         return self._parse_results(results)
 
-    def _parse_results(self, results: dict) -> str:
+    def _parse_snippets(self, results: dict) -> str:
         snippets = []
 
         if results.get("answerBox"):
@@ -133,7 +133,10 @@ class GoogleSerperAPIWrapper(BaseModel):
 
         if len(snippets) == 0:
             return "No good Google Search Result was found"
+        return snippets
 
+    def _parse_results(self, results: dict) -> str:
+        snippets = self._parse_snippets(results)
         return " ".join(snippets)
 
     def _google_serper_search_results(
