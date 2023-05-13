@@ -130,7 +130,8 @@ class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
 
         if values["llm_chain"].prompt.input_variables != ["query"]:
             raise ValueError(
-                "LLM chain for QueryCheckerTool must have input variables ['query']"
+                "LLM chain for QueryCheckerTool need to use ['query'] as input_variables "
+                "for the embedded prompt"
             )
 
         return values
