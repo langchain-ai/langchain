@@ -1,6 +1,4 @@
 """Test mosaicml embeddings."""
-import numpy as np
-
 from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
 
 
