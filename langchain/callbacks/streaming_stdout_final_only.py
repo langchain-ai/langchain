@@ -8,7 +8,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
     """Callback handler for streaming in agents.
     Only works with agents using LLMs that support streaming.
-    
+
     Only the final output of the agent will be streamed.
     """
 
@@ -36,7 +36,7 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
 
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
         self.last_tokens.append(token)
-        if (len(self.last_tokens) > len(self.answer_prefix_tokens)):
+        if len(self.last_tokens) > len(self.answer_prefix_tokens):
             self.last_tokens.pop(0)
 
         # Check if the last n tokens match the answer_prefix_tokens list ...
