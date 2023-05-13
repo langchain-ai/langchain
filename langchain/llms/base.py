@@ -4,7 +4,7 @@ import json
 import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import yaml
 from pydantic import Extra, Field, root_validator, validator
@@ -293,14 +293,22 @@ class BaseLLM(BaseLanguageModel, ABC):
             .text
         )
 
-    def predict(self, text: str, stop: Optional[List[str]] = None) -> str:
-        return self(text, stop=stop)
+    def predict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        return self(text, stop=_stop)
 
     def predict_messages(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
     ) -> BaseMessage:
         text = get_buffer_string(messages)
-        content = self(text, stop)
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        content = self(text, stop=_stop)
         return AIMessage(content=content)
 
     @property
