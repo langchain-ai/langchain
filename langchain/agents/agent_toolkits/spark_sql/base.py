@@ -9,6 +9,7 @@ from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
+from langchain.memory import ConversationBufferMemory
 
 
 def create_spark_sql_agent(
@@ -25,11 +26,17 @@ def create_spark_sql_agent(
     early_stopping_method: str = "force",
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    enable_memory: bool = False,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a sql agent from an LLM and tools."""
     tools = toolkit.get_tools()
     prefix = prefix.format(top_k=top_k)
+    memory = None
+    if input_variables is None and enable_memory:
+        memory = ConversationBufferMemory(memory_key="chat_history")
+        input_variables = ["input", "chat_history", "agent_scratchpad"]
+    # otherwise, None input_variables will get the default during prompt creation.
     prompt = ZeroShotAgent.create_prompt(
         tools,
         prefix=prefix,
@@ -51,6 +58,7 @@ def create_spark_sql_agent(
         verbose=verbose,
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
+        memory=memory,
         early_stopping_method=early_stopping_method,
         **(agent_executor_kwargs or {}),
     )
