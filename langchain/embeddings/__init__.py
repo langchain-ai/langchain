@@ -39,8 +39,7 @@ __all__ = [
     "TensorflowHubEmbeddings",
     "SagemakerEndpointEmbeddings",
     "HuggingFaceInstructEmbeddings",
-    "MosaicMLInstructorEmbeddings"
-    "SelfHostedEmbeddings",
+    "MosaicMLInstructorEmbeddings" "SelfHostedEmbeddings",
     "SelfHostedHuggingFaceEmbeddings",
     "SelfHostedHuggingFaceInstructEmbeddings",
     "FakeEmbeddings",
