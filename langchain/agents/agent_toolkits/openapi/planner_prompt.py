@@ -29,7 +29,7 @@ DELETE /users/{{id}}/cart to delete a user's cart
 User query: tell me a joke
 Plan: Sorry, this API's domain is shopping, not comedy.
 
-Usery query: I want to buy a couch
+User query: I want to buy a couch
 Plan: 1. GET /products with a query param to search for couches
 2. GET /user to find the user's id
 3. POST /users/{{id}}/cart to add a couch to the user's cart
