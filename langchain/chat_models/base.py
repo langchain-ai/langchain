@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from pydantic import Extra, Field, root_validator
 
@@ -185,14 +185,22 @@ class BaseChatModel(BaseLanguageModel, ABC):
     def call_as_llm(self, message: str, stop: Optional[List[str]] = None) -> str:
         return self.predict(message, stop=stop)
 
-    def predict(self, text: str, stop: Optional[List[str]] = None) -> str:
-        result = self([HumanMessage(content=text)], stop=stop)
+    def predict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        result = self([HumanMessage(content=text)], stop=_stop)
         return result.content
 
     def predict_messages(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
     ) -> BaseMessage:
-        return self(messages, stop=stop)
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        return self(messages, stop=_stop)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 from pydantic import BaseModel
 
@@ -52,12 +52,12 @@ class BaseLanguageModel(BaseModel, ABC):
         """Take in a list of prompt values and return an LLMResult."""
 
     @abstractmethod
-    def predict(self, text: str, stop: Optional[List[str]] = None) -> str:
+    def predict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
         """Predict text from text."""
 
     @abstractmethod
     def predict_messages(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
     ) -> BaseMessage:
         """Predict message from messages."""
 
