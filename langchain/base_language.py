@@ -51,6 +51,16 @@ class BaseLanguageModel(BaseModel, ABC):
     ) -> LLMResult:
         """Take in a list of prompt values and return an LLMResult."""
 
+    @abstractmethod
+    def predict(self, text: str, stop: Optional[List[str]] = None) -> str:
+        """Predict text from text."""
+
+    @abstractmethod
+    def predict_messages(
+        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+    ) -> BaseMessage:
+        """Predict message from messages."""
+
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text."""
         return _get_num_tokens_default_method(text)

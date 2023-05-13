@@ -19,7 +19,14 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
-from langchain.schema import Generation, LLMResult, PromptValue
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    Generation,
+    LLMResult,
+    PromptValue,
+    get_buffer_string,
+)
 
 
 def _get_verbosity() -> bool:
@@ -285,6 +292,16 @@ class BaseLLM(BaseLanguageModel, ABC):
             .generations[0][0]
             .text
         )
+
+    def predict(self, text: str, stop: Optional[List[str]] = None) -> str:
+        return self(text, stop=stop)
+
+    def predict_messages(
+        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+    ) -> BaseMessage:
+        text = get_buffer_string(messages)
+        content = self(text, stop)
+        return AIMessage(content=content)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

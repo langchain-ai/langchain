@@ -183,8 +183,16 @@ class BaseChatModel(BaseLanguageModel, ABC):
             raise ValueError("Unexpected generation type")
 
     def call_as_llm(self, message: str, stop: Optional[List[str]] = None) -> str:
-        result = self([HumanMessage(content=message)], stop=stop)
+        return self.predict(message, stop=stop)
+
+    def predict(self, text: str, stop: Optional[List[str]] = None) -> str:
+        result = self([HumanMessage(content=text)], stop=stop)
         return result.content
+
+    def predict_messages(
+        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+    ) -> BaseMessage:
+        return self(messages, stop=stop)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
