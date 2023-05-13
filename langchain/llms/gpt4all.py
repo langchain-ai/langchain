@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -11,7 +12,7 @@ from langchain.llms.utils import enforce_stop_tokens
 class GPT4All(LLM):
     r"""Wrapper around GPT4All language models.
 
-    To use, you should have the ``pyllamacpp`` python package installed, the
+    To use, you should have the ``pygpt4all`` python package installed, the
     pre-trained model file, and the model's config information.
 
     Example:
@@ -26,6 +27,8 @@ class GPT4All(LLM):
 
     model: str
     """Path to the pre-trained GPT4All model file."""
+
+    backend: str = Field("llama", alias="backend")
 
     n_ctx: int = Field(512, alias="n_ctx")
     """Token context window."""
@@ -92,16 +95,23 @@ class GPT4All(LLM):
 
         extra = Extra.forbid
 
-    @property
-    def _default_params(self) -> Dict[str, Any]:
+    def _llama_default_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
-            "seed": self.seed,
             "n_predict": self.n_predict,
             "n_threads": self.n_threads,
-            "n_batch": self.n_batch,
             "repeat_last_n": self.repeat_last_n,
             "repeat_penalty": self.repeat_penalty,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
+            "temp": self.temp,
+        }
+
+    def _gptj_default_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "n_predict": self.n_predict,
+            "n_threads": self.n_threads,
             "top_k": self.top_k,
             "top_p": self.top_p,
             "temp": self.temp,
@@ -121,23 +131,50 @@ class GPT4All(LLM):
             "embedding",
         }
 
+    @staticmethod
+    def _gptj_param_names() -> Set[str]:
+        """Get the identifying parameters."""
+        return set()
+
+    @staticmethod
+    def _model_param_names(backend: str) -> Set[str]:
+        if backend == "llama":
+            return GPT4All._llama_param_names()
+        else:
+            return GPT4All._gptj_param_names()
+
+    def _default_params(self) -> Dict[str, Any]:
+        if self.backend == "llama":
+            return self._llama_default_params()
+        else:
+            return self._gptj_default_params()
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
         try:
-            from pyllamacpp.model import Model as GPT4AllModel
+            backend = values["backend"]
+            if backend == "llama":
+                from pygpt4all import GPT4All as GPT4AllModel
+            elif backend == "gptj":
+                from pygpt4all import GPT4All_J as GPT4AllModel
+            else:
+                raise ValueError(f"Incorrect gpt4all backend {cls.backend}")
 
-            llama_keys = cls._llama_param_names()
-            model_kwargs = {k: v for k, v in values.items() if k in llama_keys}
+            model_kwargs = {
+                k: v
+                for k, v in values.items()
+                if k in GPT4All._model_param_names(backend)
+            }
             values["client"] = GPT4AllModel(
-                ggml_model=values["model"],
+                model_path=values["model"],
                 **model_kwargs,
             )
 
         except ImportError:
             raise ValueError(
-                "Could not import pyllamacpp python package. "
-                "Please install it with `pip install pyllamacpp`."
+                "Could not import pygpt4all python package. "
+                "Please install it with `pip install pygpt4all`."
             )
         return values
 
@@ -146,11 +183,11 @@ class GPT4All(LLM):
         """Get the identifying parameters."""
         return {
             "model": self.model,
-            **self._default_params,
+            **self._default_params(),
             **{
                 k: v
                 for k, v in self.__dict__.items()
-                if k in GPT4All._llama_param_names()
+                if k in self._model_param_names(self.backend)
             },
         }
 
@@ -159,7 +196,12 @@ class GPT4All(LLM):
         """Return the type of llm."""
         return "gpt4all"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         r"""Call out to GPT4All's generate method.
 
         Args:
@@ -175,14 +217,14 @@ class GPT4All(LLM):
                 prompt = "Once upon a time, "
                 response = model(prompt, n_predict=55)
         """
-        text_callback = partial(
-            self.callback_manager.on_llm_new_token, verbose=self.verbose
-        )
-        text = self.client.generate(
-            prompt,
-            new_text_callback=text_callback,
-            **self._default_params,
-        )
+        text_callback = None
+        if run_manager:
+            text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
+        text = ""
+        for token in self.client.generate(prompt, **self._default_params()):
+            if text_callback:
+                text_callback(token)
+            text += token
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         return text

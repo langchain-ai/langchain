@@ -9,15 +9,17 @@ from langchain.document_loaders.html_bs import BSHTMLLoader
 def test_bs_html_loader() -> None:
     """Test unstructured loader."""
     file_path = Path(__file__).parent.parent / "examples/example.html"
-    loader = BSHTMLLoader(str(file_path))
+    loader = BSHTMLLoader(str(file_path), get_text_separator="|")
     docs = loader.load()
 
     assert len(docs) == 1
 
     metadata = docs[0].metadata
+    content = docs[0].page_content
 
     assert metadata["title"] == "Chew dad's slippers"
     assert metadata["source"] == str(file_path)
+    assert content[:2] == "\n|"
 
 
 @pytest.mark.skipif(

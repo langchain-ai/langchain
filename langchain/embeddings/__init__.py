@@ -8,6 +8,7 @@ from langchain.embeddings.aleph_alpha import (
 )
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.embeddings.fake import FakeEmbeddings
+from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.huggingface import (
     HuggingFaceEmbeddings,
     HuggingFaceInstructEmbeddings,
@@ -22,6 +23,7 @@ from langchain.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceEmbeddings,
     SelfHostedHuggingFaceInstructEmbeddings,
 )
+from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 
 logger = logging.getLogger(__name__)
@@ -42,6 +44,8 @@ __all__ = [
     "FakeEmbeddings",
     "AlephAlphaAsymmetricSemanticEmbedding",
     "AlephAlphaSymmetricSemanticEmbedding",
+    "SentenceTransformerEmbeddings",
+    "GooglePalmEmbeddings",
 ]
 
 

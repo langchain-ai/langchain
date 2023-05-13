@@ -5,6 +5,7 @@ from typing import Any, List, Mapping, Optional
 
 from pydantic import Extra
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -114,7 +115,10 @@ class HuggingFacePipeline(LLM):
                     "can be a positive integer associated with CUDA device id.",
                     cuda_device_count,
                 )
-
+        if "trust_remote_code" in _model_kwargs:
+            _model_kwargs = {
+                k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"
+            }
         pipeline = hf_pipeline(
             task=task,
             model=model,
@@ -146,7 +150,12 @@ class HuggingFacePipeline(LLM):
     def _llm_type(self) -> str:
         return "huggingface_pipeline"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         response = self.pipeline(prompt)
         if self.pipeline.task == "text-generation":
             # Text generation return includes the starter text.

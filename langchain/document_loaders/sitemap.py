@@ -1,6 +1,7 @@
 """Loader that fetches a sitemap and loads those URLs."""
+import itertools
 import re
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Generator, Iterable, List, Optional
 
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.schema import Document
@@ -8,6 +9,16 @@ from langchain.schema import Document
 
 def _default_parsing_function(content: Any) -> str:
     return str(content.get_text())
+
+
+def _default_meta_function(meta: dict, _content: Any) -> dict:
+    return {"source": meta["loc"], **meta}
+
+
+def _batch_block(iterable: Iterable, size: int) -> Generator[List[dict], None, None]:
+    it = iter(iterable)
+    while item := list(itertools.islice(it, size)):
+        yield item
 
 
 class SitemapLoader(WebBaseLoader):
@@ -18,6 +29,9 @@ class SitemapLoader(WebBaseLoader):
         web_path: str,
         filter_urls: Optional[List[str]] = None,
         parsing_function: Optional[Callable] = None,
+        blocksize: Optional[int] = None,
+        blocknum: int = 0,
+        meta_function: Optional[Callable] = None,
     ):
         """Initialize with webpage path and optional filter URLs.
 
@@ -26,7 +40,18 @@ class SitemapLoader(WebBaseLoader):
             filter_urls: list of strings or regexes that will be applied to filter the
                 urls that are parsed and loaded
             parsing_function: Function to parse bs4.Soup output
+            blocksize: number of sitemap locations per block
+            blocknum: the number of the block that should be loaded - zero indexed
+            meta_function: Function to parse bs4.Soup output for metadata
+                remember when setting this method to also copy metadata["loc"]
+                to metadata["source"] if you are using this field
         """
+
+        if blocksize is not None and blocksize < 1:
+            raise ValueError("Sitemap blocksize should be at least 1")
+
+        if blocknum < 0:
+            raise ValueError("Sitemap blocknum can not be lower then 0")
 
         try:
             import lxml  # noqa:F401
@@ -39,6 +64,9 @@ class SitemapLoader(WebBaseLoader):
 
         self.filter_urls = filter_urls
         self.parsing_function = parsing_function or _default_parsing_function
+        self.meta_function = meta_function or _default_meta_function
+        self.blocksize = blocksize
+        self.blocknum = blocknum
 
     def parse_sitemap(self, soup: Any) -> List[dict]:
         """Parse sitemap xml and load into a list of dicts."""
@@ -61,6 +89,13 @@ class SitemapLoader(WebBaseLoader):
                 }
             )
 
+        for sitemap in soup.find_all("sitemap"):
+            loc = sitemap.find("loc")
+            if not loc:
+                continue
+            soup_child = self.scrape_all([loc.text], "xml")[0]
+
+            els.extend(self.parse_sitemap(soup_child))
         return els
 
     def load(self) -> List[Document]:
@@ -69,12 +104,22 @@ class SitemapLoader(WebBaseLoader):
 
         els = self.parse_sitemap(soup)
 
+        if self.blocksize is not None:
+            elblocks = list(_batch_block(els, self.blocksize))
+            blockcount = len(elblocks)
+            if blockcount - 1 < self.blocknum:
+                raise ValueError(
+                    "Selected sitemap does not contain enough blocks for given blocknum"
+                )
+            else:
+                els = elblocks[self.blocknum]
+
         results = self.scrape_all([el["loc"].strip() for el in els if "loc" in el])
 
         return [
             Document(
                 page_content=self.parsing_function(results[i]),
-                metadata={**{"source": els[i]["loc"]}, **els[i]},
+                metadata=self.meta_function(els[i], results[i]),
             )
             for i in range(len(results))
         ]

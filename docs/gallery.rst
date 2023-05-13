@@ -280,6 +280,17 @@ Proprietary
 
     ---
 
+    .. link-button:: https://anysummary.app
+        :type: url
+        :text: Summarize any file with AI
+        :classes: stretched-link btn-lg
+
+    +++
+
+    Summarize not only long docs, interview audio or video files quickly, but also entire websites and YouTube videos. Share or download your generated summaries to collaborate with others, or revisit them at any time! Bonus: `@anysummary <https://twitter.com/anysummary>`_ on Twitter will also summarize any thread it is tagged in.
+    
+    ---
+
     .. link-button:: https://twitter.com/dory111111/status/1608406234646052870?s=20&t=XYlrbKM0ornJsrtGa0br-g
         :type: url
         :text: AI Assisted SQL Query Generator
@@ -332,4 +343,12 @@ Proprietary
     +++
 
     A journaling app for self-care that uses AI to uncover insights and patterns over time.
-    
+
+
+Articles on **Google Scholar**
+-----------------------------
+
+LangChain is used in many scientific and research projects.
+
+**Google Scholar** presents a `list of the papers <https://scholar.google.com/scholar?q=%22langchain%22&hl=en&as_sdt=0,5&as_vis=1>`_
+with references to LangChain.
