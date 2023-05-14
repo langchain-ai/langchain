@@ -56,7 +56,7 @@ class Pinecone(VectorStore):
         self._index = index
         self._embedding_function = embedding_function
         self._text_key = text_key
-        self.filter = filter,
+        self.filter = filter
         self._namespace = namespace
 
     def add_texts(
@@ -114,6 +114,7 @@ class Pinecone(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
+        filter = filter or self.filter
         query_obj = self._embedding_function(query)
         docs = []
         results = self._index.query(
@@ -154,6 +155,7 @@ class Pinecone(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        filter = filter or self.filter
         docs_and_scores = self.similarity_search_with_score(
             query, k=k, filter=filter, namespace=namespace, **kwargs
         )
