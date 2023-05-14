@@ -5,10 +5,10 @@ from typing import Any, Dict, List, Optional
 
 from langchain import LLMChain
 from langchain.base_language import BaseLanguageModel
-from langchain.experimental.generative_agents.mock_datetime import mock_now
 from langchain.prompts import PromptTemplate
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.schema import BaseMemory, Document
+from langchain.utils import mock_now
 
 logger = logging.getLogger(__name__)
 
