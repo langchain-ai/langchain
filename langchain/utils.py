@@ -3,7 +3,6 @@ import contextlib
 import datetime
 import os
 from typing import Any, Callable, Dict, Optional, Tuple
-from typing import Any
 
 from requests import HTTPError, Response
 

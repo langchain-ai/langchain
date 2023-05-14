@@ -1,5 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from time import sleep
+
 from langchain.output_parsers.datetime import DatetimeOutputParser
 
 
@@ -40,7 +41,6 @@ def test_boolean_output_parser_parse() -> None:
     # Test invalid input
     try:
         sleep(0.001)
-        different_date = datetime.now()
         datestr = date.strftime(parser.format)
         result = parser.parse(datestr)
         assert result == date
