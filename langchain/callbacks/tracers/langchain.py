@@ -88,7 +88,7 @@ class LangChainTracer(BaseTracer):
             name=serialized.get("name"),
             parent_run_id=parent_run_id,
             serialized=serialized,
-            inputs={"messages": messages_to_dict(batch) for batch in messages},
+            inputs={"messages": [messages_to_dict(batch) for batch in messages]},
             extra=kwargs,
             start_time=datetime.utcnow(),
             execution_order=execution_order,
