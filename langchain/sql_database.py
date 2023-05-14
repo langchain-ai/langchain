@@ -55,9 +55,27 @@ class SQLDatabase:
             + (self._inspector.get_view_names(schema=schema) if view_support else [])
         )
 
-        self._init_table_options(
-            ignore_tables, include_tables, sample_rows_in_table_info
-        )
+        self._include_tables = set(include_tables) if include_tables else set()
+        if self._include_tables:
+            missing_tables = self._include_tables - self._all_tables
+            if missing_tables:
+                raise ValueError(
+                    f"include_tables {missing_tables} not found in database"
+                )
+        self._ignore_tables = set(ignore_tables) if ignore_tables else set()
+        if self._ignore_tables:
+            missing_tables = self._ignore_tables - self._all_tables
+            if missing_tables:
+                raise ValueError(
+                    f"ignore_tables {missing_tables} not found in database"
+                )
+        usable_tables = self.get_usable_table_names()
+        self._usable_tables = set(usable_tables) if usable_tables else self._all_tables
+
+        if not isinstance(sample_rows_in_table_info, int):
+            raise TypeError("sample_rows_in_table_info must be an integer")
+
+        self._sample_rows_in_table_info = sample_rows_in_table_info
         self._indexes_in_table_info = indexes_in_table_info
 
         self._custom_table_info = custom_table_info
@@ -83,34 +101,6 @@ class SQLDatabase:
             only=list(self._usable_tables),
             schema=self._schema,
         )
-
-    def _init_table_options(
-        self,
-        ignore_tables: Optional[List[str]] = None,
-        include_tables: Optional[List[str]] = None,
-        sample_rows_in_table_info: int = 3,
-    ) -> None:
-        self._include_tables = set(include_tables) if include_tables else set()
-        if self._include_tables:
-            missing_tables = self._include_tables - self._all_tables
-            if missing_tables:
-                raise ValueError(
-                    f"include_tables {missing_tables} not found in database"
-                )
-        self._ignore_tables = set(ignore_tables) if ignore_tables else set()
-        if self._ignore_tables:
-            missing_tables = self._ignore_tables - self._all_tables
-            if missing_tables:
-                raise ValueError(
-                    f"ignore_tables {missing_tables} not found in database"
-                )
-        usable_tables = self.get_usable_table_names()
-        self._usable_tables = set(usable_tables) if usable_tables else self._all_tables
-
-        if not isinstance(sample_rows_in_table_info, int):
-            raise TypeError("sample_rows_in_table_info must be an integer")
-
-        self._sample_rows_in_table_info = sample_rows_in_table_info
 
     @classmethod
     def from_uri(
