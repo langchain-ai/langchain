@@ -312,6 +312,12 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
     def input_keys(self) -> List[str]:
         return list(set(self.llm_chain.input_keys) - {"intermediate_steps"})
 
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of agent."""
+        _dict = super().dict()
+        del _dict["output_parser"]
+        return _dict
+
     def plan(
         self,
         intermediate_steps: List[Tuple[AgentAction, str]],
@@ -380,6 +386,12 @@ class Agent(BaseSingleActionAgent):
     llm_chain: LLMChain
     output_parser: AgentOutputParser
     allowed_tools: Optional[List[str]] = None
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of agent."""
+        _dict = super().dict()
+        del _dict["output_parser"]
+        return _dict
 
     def get_allowed_tools(self) -> Optional[List[str]]:
         return self.allowed_tools
