@@ -17,7 +17,6 @@ from langchain.callbacks.tracers.schemas import (
     TracerSession,
     TracerSessionCreate,
 )
-from langchain.env import get_runtime_environment
 from langchain.schema import BaseMessage, messages_to_dict
 from langchain.utils import raise_for_status_with_text
 
@@ -132,6 +131,7 @@ class LangChainTracer(BaseTracer):
         run_dict = run.dict()
         del run_dict["child_runs"]
         run_create = RunCreate(**run_dict, session_id=session.id)
+        run_create.extra["langchain_runtime"] = get_env_info()
         try:
             response = requests.post(
                 f"{self._endpoint}/runs",
