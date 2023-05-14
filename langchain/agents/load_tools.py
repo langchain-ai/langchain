@@ -18,6 +18,7 @@ from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.metaphor_search.tool import MetaphorSearchResults
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
@@ -38,6 +39,7 @@ from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
@@ -225,6 +227,10 @@ def _get_bing_search(**kwargs: Any) -> BaseTool:
     return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
 
 
+def _get_metaphor_search(**kwargs: Any) -> BaseTool:
+    return MetaphorSearchResults(api_wrapper=MetaphorSearchAPIWrapper(**kwargs))
+
+
 def _get_ddg_search(**kwargs: Any) -> BaseTool:
     return DuckDuckGoSearchRun(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
 
@@ -258,6 +264,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["searx_host", "engines", "num_results", "aiosession"],
     ),
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
+    "metaphor-search": (_get_metaphor_search, ["metaphor_api_key"]),
     "ddg-search": (_get_ddg_search, []),
     "google-serper": (_get_google_serper, ["serper_api_key", "aiosession"]),
     "google-serper-results-json": (
@@ -294,6 +301,40 @@ def _handle_callbacks(
             )
         return callback_manager
     return callbacks
+
+
+def load_huggingface_tool(
+    task_or_repo_id: str,
+    model_repo_id: Optional[str] = None,
+    token: Optional[str] = None,
+    remote: bool = False,
+    **kwargs: Any,
+) -> BaseTool:
+    try:
+        from transformers import load_tool
+    except ImportError:
+        raise ValueError(
+            "HuggingFace tools require the libraries `transformers>=4.29.0`"
+            " and `huggingface_hub>=0.14.1` to be installed."
+            " Please install it with"
+            " `pip install --upgrade transformers huggingface_hub`."
+        )
+    hf_tool = load_tool(
+        task_or_repo_id,
+        model_repo_id=model_repo_id,
+        token=token,
+        remote=remote,
+        **kwargs,
+    )
+    outputs = hf_tool.outputs
+    if set(outputs) != {"text"}:
+        raise NotImplementedError("Multimodal outputs not supported yet.")
+    inputs = hf_tool.inputs
+    if set(inputs) != {"text"}:
+        raise NotImplementedError("Multimodal inputs not supported yet.")
+    return Tool.from_function(
+        hf_tool.__call__, name=hf_tool.name, description=hf_tool.description
+    )
 
 
 def load_tools(

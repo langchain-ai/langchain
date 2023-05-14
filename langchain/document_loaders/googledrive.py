@@ -68,10 +68,10 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             from google_auth_oauthlib.flow import InstalledAppFlow
         except ImportError:
             raise ImportError(
-                "You must run"
+                "You must run "
                 "`pip install --upgrade "
                 "google-api-python-client google-auth-httplib2 "
-                "google-auth-oauthlib`"
+                "google-auth-oauthlib` "
                 "to use the Google Drive loader."
             )
 
