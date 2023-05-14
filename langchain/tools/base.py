@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
 
@@ -14,7 +13,6 @@ from pydantic import (
     create_model,
     root_validator,
     validate_arguments,
-    validator,
 )
 from pydantic.main import ModelMetaclass
 
@@ -134,9 +132,9 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     verbose: bool = False
     """Whether to log the tool's progress."""
 
-    callbacks: Callbacks = None
+    callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to be called during tool execution."""
-    callback_manager: Optional[BaseCallbackManager] = None
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """Deprecated. Please use callbacks instead."""
 
     class Config:
@@ -148,7 +146,8 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     @property
     def is_single_input(self) -> bool:
         """Whether the tool only accepts a single input."""
-        return len(self.args) == 1
+        keys = {k for k in self.args if k != "kwargs"}
+        return len(keys) == 1
 
     @property
     def args(self) -> dict:
@@ -161,16 +160,19 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     def _parse_input(
         self,
         tool_input: Union[str, Dict],
-    ) -> None:
+    ) -> Union[str, Dict[str, Any]]:
         """Convert tool input to pydantic model."""
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
                 key_ = next(iter(input_args.__fields__.keys()))
                 input_args.validate({key_: tool_input})
+            return tool_input
         else:
             if input_args is not None:
-                input_args.validate(tool_input)
+                result = input_args.parse_obj(tool_input)
+                return {k: v for k, v in result.dict().items() if k in tool_input}
+        return tool_input
 
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -225,7 +227,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
-        self._parse_input(tool_input)
+        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -242,7 +244,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             **kwargs,
         )
         try:
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
                 self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
                 if new_arg_supported
@@ -264,7 +266,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
-        self._parse_input(tool_input)
+        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -281,7 +283,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         )
         try:
             # We then call the tool on the tool input to get an observation
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
                 await self._arun(*tool_args, run_manager=run_manager, **tool_kwargs)
                 if new_arg_supported
@@ -308,13 +310,6 @@ class Tool(BaseTool):
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
-
-    @validator("func", pre=True, always=True)
-    def validate_func_not_partial(cls, func: Callable) -> Callable:
-        """Check that the function is not a partial."""
-        if isinstance(func, partial):
-            raise ValueError("Partial functions not yet supported in tools.")
-        return func
 
     @property
     def args(self) -> dict:

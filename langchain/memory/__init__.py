@@ -5,7 +5,9 @@ from langchain.memory.buffer import (
 from langchain.memory.buffer_window import ConversationBufferWindowMemory
 from langchain.memory.chat_message_histories.cosmos_db import CosmosDBChatMessageHistory
 from langchain.memory.chat_message_histories.dynamodb import DynamoDBChatMessageHistory
+from langchain.memory.chat_message_histories.file import FileChatMessageHistory
 from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
+from langchain.memory.chat_message_histories.mongodb import MongoDBChatMessageHistory
 from langchain.memory.chat_message_histories.postgres import PostgresChatMessageHistory
 from langchain.memory.chat_message_histories.redis import RedisChatMessageHistory
 from langchain.memory.combined import CombinedMemory
@@ -42,4 +44,6 @@ __all__ = [
     "PostgresChatMessageHistory",
     "VectorStoreRetrieverMemory",
     "CosmosDBChatMessageHistory",
+    "FileChatMessageHistory",
+    "MongoDBChatMessageHistory",
 ]

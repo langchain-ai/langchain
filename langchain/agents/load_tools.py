@@ -7,6 +7,7 @@ from mypy_extensions import Arg, KwArg
 from langchain.agents.tools import Tool
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
@@ -17,6 +18,8 @@ from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.metaphor_search.tool import MetaphorSearchResults
+from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import (
@@ -36,6 +39,7 @@ from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
@@ -190,11 +194,11 @@ def _get_arxiv(**kwargs: Any) -> BaseTool:
 
 
 def _get_google_serper(**kwargs: Any) -> BaseTool:
-    return Tool(
-        name="Serper Search",
-        func=GoogleSerperAPIWrapper(**kwargs).run,
-        description="A low-cost Google Search API. Useful for when you need to answer questions about current events. Input should be a search query.",
-    )
+    return GoogleSerperRun(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
+
+
+def _get_google_serper_results_json(**kwargs: Any) -> BaseTool:
+    return GoogleSerperResults(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
 
 
 def _get_google_search_results_json(**kwargs: Any) -> BaseTool:
@@ -221,6 +225,10 @@ def _get_searx_search_results_json(**kwargs: Any) -> BaseTool:
 
 def _get_bing_search(**kwargs: Any) -> BaseTool:
     return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
+
+
+def _get_metaphor_search(**kwargs: Any) -> BaseTool:
+    return MetaphorSearchResults(api_wrapper=MetaphorSearchAPIWrapper(**kwargs))
 
 
 def _get_ddg_search(**kwargs: Any) -> BaseTool:
@@ -256,8 +264,13 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["searx_host", "engines", "num_results", "aiosession"],
     ),
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
+    "metaphor-search": (_get_metaphor_search, ["metaphor_api_key"]),
     "ddg-search": (_get_ddg_search, []),
-    "google-serper": (_get_google_serper, ["serper_api_key"]),
+    "google-serper": (_get_google_serper, ["serper_api_key", "aiosession"]),
+    "google-serper-results-json": (
+        _get_google_serper_results_json,
+        ["serper_api_key", "aiosession"],
+    ),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
@@ -274,10 +287,60 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
 }
 
 
+def _handle_callbacks(
+    callback_manager: Optional[BaseCallbackManager], callbacks: Callbacks
+) -> Callbacks:
+    if callback_manager is not None:
+        warnings.warn(
+            "callback_manager is deprecated. Please use callbacks instead.",
+            DeprecationWarning,
+        )
+        if callbacks is not None:
+            raise ValueError(
+                "Cannot specify both callback_manager and callbacks arguments."
+            )
+        return callback_manager
+    return callbacks
+
+
+def load_huggingface_tool(
+    task_or_repo_id: str,
+    model_repo_id: Optional[str] = None,
+    token: Optional[str] = None,
+    remote: bool = False,
+    **kwargs: Any,
+) -> BaseTool:
+    try:
+        from transformers import load_tool
+    except ImportError:
+        raise ValueError(
+            "HuggingFace tools require the libraries `transformers>=4.29.0`"
+            " and `huggingface_hub>=0.14.1` to be installed."
+            " Please install it with"
+            " `pip install --upgrade transformers huggingface_hub`."
+        )
+    hf_tool = load_tool(
+        task_or_repo_id,
+        model_repo_id=model_repo_id,
+        token=token,
+        remote=remote,
+        **kwargs,
+    )
+    outputs = hf_tool.outputs
+    if set(outputs) != {"text"}:
+        raise NotImplementedError("Multimodal outputs not supported yet.")
+    inputs = hf_tool.inputs
+    if set(inputs) != {"text"}:
+        raise NotImplementedError("Multimodal inputs not supported yet.")
+    return Tool.from_function(
+        hf_tool.__call__, name=hf_tool.name, description=hf_tool.description
+    )
+
+
 def load_tools(
     tool_names: List[str],
     llm: Optional[BaseLanguageModel] = None,
-    callback_manager: Optional[BaseCallbackManager] = None,
+    callbacks: Callbacks = None,
     **kwargs: Any,
 ) -> List[BaseTool]:
     """Load tools based on their name.
@@ -285,13 +348,16 @@ def load_tools(
     Args:
         tool_names: name of tools to load.
         llm: Optional language model, may be needed to initialize certain tools.
-        callback_manager: Optional callback manager. If not provided, default global callback manager will be used.
+        callbacks: Optional callback manager or list of callback handlers.
+            If not provided, default global callback manager will be used.
 
     Returns:
         List of tools.
     """
     tools = []
-
+    callbacks = _handle_callbacks(
+        callback_manager=kwargs.get("callback_manager"), callbacks=callbacks
+    )
     for name in tool_names:
         if name == "requests":
             warnings.warn(
@@ -311,8 +377,6 @@ def load_tools(
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
             tool = _LLM_TOOLS[name](llm)
-            if callback_manager is not None:
-                tool.callback_manager = callback_manager
             tools.append(tool)
         elif name in _EXTRA_LLM_TOOLS:
             if llm is None:
@@ -326,18 +390,17 @@ def load_tools(
                 )
             sub_kwargs = {k: kwargs[k] for k in extra_keys}
             tool = _get_llm_tool_func(llm=llm, **sub_kwargs)
-            if callback_manager is not None:
-                tool.callback_manager = callback_manager
             tools.append(tool)
         elif name in _EXTRA_OPTIONAL_TOOLS:
             _get_tool_func, extra_keys = _EXTRA_OPTIONAL_TOOLS[name]
             sub_kwargs = {k: kwargs[k] for k in extra_keys if k in kwargs}
             tool = _get_tool_func(**sub_kwargs)
-            if callback_manager is not None:
-                tool.callback_manager = callback_manager
             tools.append(tool)
         else:
             raise ValueError(f"Got unknown tool {name}")
+    if callbacks is not None:
+        for tool in tools:
+            tool.callbacks = callbacks
     return tools
 
 

@@ -115,7 +115,10 @@ class HuggingFacePipeline(LLM):
                     "can be a positive integer associated with CUDA device id.",
                     cuda_device_count,
                 )
-
+        if "trust_remote_code" in _model_kwargs:
+            _model_kwargs = {
+                k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"
+            }
         pipeline = hf_pipeline(
             task=task,
             model=model,

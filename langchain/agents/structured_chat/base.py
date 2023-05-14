@@ -20,6 +20,8 @@ from langchain.prompts.chat import (
 from langchain.schema import AgentAction
 from langchain.tools import BaseTool
 
+HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
+
 
 class StructuredChatAgent(Agent):
     output_parser: AgentOutputParser = Field(
@@ -71,8 +73,10 @@ class StructuredChatAgent(Agent):
         tools: Sequence[BaseTool],
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
+        human_message_template: str = HUMAN_MESSAGE_TEMPLATE,
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
+        memory_prompts: Optional[List[BasePromptTemplate]] = None,
     ) -> BasePromptTemplate:
         tool_strings = []
         for tool in tools:
@@ -82,12 +86,14 @@ class StructuredChatAgent(Agent):
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
         template = "\n\n".join([prefix, formatted_tools, format_instructions, suffix])
-        messages = [
-            SystemMessagePromptTemplate.from_template(template),
-            HumanMessagePromptTemplate.from_template("{input}\n\n{agent_scratchpad}"),
-        ]
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
+        _memory_prompts = memory_prompts or []
+        messages = [
+            SystemMessagePromptTemplate.from_template(template),
+            *_memory_prompts,
+            HumanMessagePromptTemplate.from_template(human_message_template),
+        ]
         return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
     @classmethod
@@ -99,8 +105,10 @@ class StructuredChatAgent(Agent):
         output_parser: Optional[AgentOutputParser] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
+        human_message_template: str = HUMAN_MESSAGE_TEMPLATE,
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
+        memory_prompts: Optional[List[BasePromptTemplate]] = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
@@ -109,8 +117,10 @@ class StructuredChatAgent(Agent):
             tools,
             prefix=prefix,
             suffix=suffix,
+            human_message_template=human_message_template,
             format_instructions=format_instructions,
             input_variables=input_variables,
+            memory_prompts=memory_prompts,
         )
         llm_chain = LLMChain(
             llm=llm,
