@@ -17,6 +17,7 @@ from langchain.callbacks.tracers.schemas import (
     TracerSession,
     TracerSessionCreate,
 )
+from langchain.env import get_runtime_environment
 from langchain.schema import BaseMessage, messages_to_dict
 from langchain.utils import raise_for_status_with_text
 
