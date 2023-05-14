@@ -3,6 +3,7 @@ import contextlib
 import datetime
 import os
 from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any
 
 from requests import HTTPError, Response
 
@@ -80,6 +81,10 @@ def stringify_dict(data: dict) -> str:
     for key, value in data.items():
         text += key + ": " + stringify_value(value) + "\n"
     return text
+
+
+def comma_list(items: list[Any]) -> str:
+    return ", ".join(str(item) for item in items)
 
 
 @contextlib.contextmanager
