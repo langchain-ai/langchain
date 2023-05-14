@@ -88,7 +88,9 @@ Relevant context:
         q2 = f"{entity_name} is {entity_action}"
         return self.chain(prompt=prompt).run(q1=q1, queries=[q1, q2]).strip()
 
-    def _generate_reaction(self, observation: str, suffix: str) -> str:
+    def _generate_reaction(
+        self, observation: str, suffix: str, now: Optional[datetime] = None
+    ) -> str:
         """React to a given observation or dialogue act."""
         prompt = PromptTemplate.from_template(
             "{agent_summary_description}"
@@ -101,9 +103,13 @@ Relevant context:
             + "\n\n"
             + suffix
         )
-        agent_summary_description = self.get_summary()
+        agent_summary_description = self.get_summary(now=now)
         relevant_memories_str = self.summarize_related_memories(observation)
-        current_time_str = datetime.now().strftime("%B %d, %Y, %I:%M %p")
+        current_time_str = (
+            datetime.now().strftime("%B %d, %Y, %I:%M %p")
+            if now is None
+            else now.strftime("%B %d, %Y, %I:%M %p")
+        )
         kwargs: Dict[str, Any] = dict(
             agent_summary_description=agent_summary_description,
             current_time=current_time_str,
@@ -121,7 +127,9 @@ Relevant context:
     def _clean_response(self, text: str) -> str:
         return re.sub(f"^{self.name} ", "", text.strip()).strip()
 
-    def generate_reaction(self, observation: str) -> Tuple[bool, str]:
+    def generate_reaction(
+        self, observation: str, now: Optional[datetime] = None
+    ) -> Tuple[bool, str]:
         """React to a given observation."""
         call_to_action_template = (
             "Should {agent_name} react to the observation, and if so,"
@@ -130,14 +138,17 @@ Relevant context:
             + "\notherwise, write:\nREACT: {agent_name}'s reaction (if anything)."
             + "\nEither do nothing, react, or say something but not both.\n\n"
         )
-        full_result = self._generate_reaction(observation, call_to_action_template)
+        full_result = self._generate_reaction(
+            observation, call_to_action_template, now=now
+        )
         result = full_result.strip().split("\n")[0]
         # AAA
         self.memory.save_context(
             {},
             {
                 self.memory.add_memory_key: f"{self.name} observed "
-                f"{observation} and reacted by {result}"
+                f"{observation} and reacted by {result}",
+                self.memory.now_key: now,
             },
         )
         if "REACT:" in result:
@@ -149,14 +160,18 @@ Relevant context:
         else:
             return False, result
 
-    def generate_dialogue_response(self, observation: str) -> Tuple[bool, str]:
+    def generate_dialogue_response(
+        self, observation: str, now: Optional[datetime] = None
+    ) -> Tuple[bool, str]:
         """React to a given observation."""
         call_to_action_template = (
             "What would {agent_name} say? To end the conversation, write:"
             ' GOODBYE: "what to say". Otherwise to continue the conversation,'
             ' write: SAY: "what to say next"\n\n'
         )
-        full_result = self._generate_reaction(observation, call_to_action_template)
+        full_result = self._generate_reaction(
+            observation, call_to_action_template, now=now
+        )
         result = full_result.strip().split("\n")[0]
         if "GOODBYE:" in result:
             farewell = self._clean_response(result.split("GOODBYE:")[-1])
@@ -164,7 +179,8 @@ Relevant context:
                 {},
                 {
                     self.memory.add_memory_key: f"{self.name} observed "
-                    f"{observation} and said {farewell}"
+                    f"{observation} and said {farewell}",
+                    self.memory.now_key: now,
                 },
             )
             return False, f"{self.name} said {farewell}"
@@ -174,7 +190,8 @@ Relevant context:
                 {},
                 {
                     self.memory.add_memory_key: f"{self.name} observed "
-                    f"{observation} and said {response_text}"
+                    f"{observation} and said {response_text}",
+                    self.memory.now_key: now,
                 },
             )
             return True, f"{self.name} said {response_text}"
@@ -203,9 +220,11 @@ Relevant context:
             .strip()
         )
 
-    def get_summary(self, force_refresh: bool = False) -> str:
+    def get_summary(
+        self, force_refresh: bool = False, now: Optional[datetime] = None
+    ) -> str:
         """Return a descriptive summary of the agent."""
-        current_time = datetime.now()
+        current_time = datetime.now() if now is None else now
         since_refresh = (current_time - self.last_refreshed).seconds
         if (
             not self.summary
@@ -221,10 +240,13 @@ Relevant context:
             + f"\n{self.summary}"
         )
 
-    def get_full_header(self, force_refresh: bool = False) -> str:
+    def get_full_header(
+        self, force_refresh: bool = False, now: Optional[datetime] = None
+    ) -> str:
         """Return a full header of the agent's status, summary, and current time."""
-        summary = self.get_summary(force_refresh=force_refresh)
-        current_time_str = datetime.now().strftime("%B %d, %Y, %I:%M %p")
+        now = datetime.now() if now is None else now
+        summary = self.get_summary(force_refresh=force_refresh, now=now)
+        current_time_str = now.strftime("%B %d, %Y, %I:%M %p")
         return (
             f"{summary}\nIt is {current_time_str}.\n{self.name}'s status: {self.status}"
         )
