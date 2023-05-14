@@ -80,9 +80,9 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
                 results[buffer_idx] = (doc, relevance)
         return results
 
-    def get_relevant_documents(self, query: str, now: Optional[datetime] = None) -> List[Document]:
+    def get_relevant_documents(self, query: str) -> List[Document]:
         """Return documents that are relevant to the query."""
-        current_time = datetime.now() if now is None else now
+        current_time = datetime.now()
         docs_and_scores = {
             doc.metadata["buffer_idx"]: (doc, self.default_salience)
             for doc in self.memory_stream[-self.k :]
@@ -110,7 +110,6 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""
         current_time = kwargs.get("current_time", datetime.now())
-        current_time = datetime.now() if current_time is None else current_time
         # Avoid mutating input documents
         dup_docs = [deepcopy(d) for d in documents]
         for i, doc in enumerate(dup_docs):
@@ -127,7 +126,6 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     ) -> List[str]:
         """Add documents to vectorstore."""
         current_time = kwargs.get("current_time", datetime.now())
-        current_time = datetime.now() if current_time is None else current_time
         # Avoid mutating input documents
         dup_docs = [deepcopy(d) for d in documents]
         for i, doc in enumerate(dup_docs):

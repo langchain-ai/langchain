@@ -1,10 +1,11 @@
 import logging
 import re
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from langchain import LLMChain
 from langchain.base_language import BaseLanguageModel
+from langchain.experimental.generative_agents.mock_datetime import mock_now
 from langchain.prompts import PromptTemplate
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.schema import BaseMemory, Document
@@ -70,7 +71,9 @@ class GenerativeAgentMemory(BaseMemory):
         result = self.chain(prompt).run(observations=observation_str)
         return self._parse_list(result)
 
-    def _get_insights_on_topic(self, topic: str, now: Optional[datetime] = None) -> List[str]:
+    def _get_insights_on_topic(
+        self, topic: str, now: Optional[datetime] = None
+    ) -> List[str]:
         """Generate 'insights' on a topic of reflection, based on pertinent memories."""
         prompt = PromptTemplate.from_template(
             "Statements about {topic}\n"
@@ -124,7 +127,9 @@ class GenerativeAgentMemory(BaseMemory):
         else:
             return 0.0
 
-    def add_memory(self, memory_content: str, now: Optional[datetime] = None) -> List[str]:
+    def add_memory(
+        self, memory_content: str, now: Optional[datetime] = None
+    ) -> List[str]:
         """Add an observation or memory to the agent's memory."""
         importance_score = self._score_memory_importance(memory_content)
         self.aggregate_importance += importance_score
@@ -148,9 +153,15 @@ class GenerativeAgentMemory(BaseMemory):
             self.reflecting = False
         return result
 
-    def fetch_memories(self, observation: str, now: Optional[datetime] = None) -> List[Document]:
+    def fetch_memories(
+        self, observation: str, now: Optional[datetime] = None
+    ) -> List[Document]:
         """Fetch related memories."""
-        return self.memory_retriever.get_relevant_documents(observation, now=now)
+        if now is not None:
+            with mock_now(now):
+                return self.memory_retriever.get_relevant_documents(observation)
+        else:
+            return self.memory_retriever.get_relevant_documents(observation)
 
     def format_memories_detail(self, relevant_memories: List[Document]) -> str:
         content_strs = set()
