@@ -7,6 +7,7 @@ from langchain.agents.agent_toolkits.spark_sql.prompt import (
     FLEXIBLE_SQL_SUFFIX,
     SQL_PREFIX,
     SQL_SUFFIX,
+    SQL_SUFFIX_WITH_MEMORY,
 )
 from langchain.agents.agent_toolkits.spark_sql.spark_freestyle_parser import (
     SparkSQLFreeStyleOutputParser,
@@ -18,7 +19,6 @@ from langchain.agents.agent_toolkits.spark_sql.toolkit import (
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.chains.llm import LLMChain
 from langchain.memory import ConversationBufferMemory
 from langchain.spark_sql import SparkSQL
 from langchain.tools.base import BaseTool
@@ -40,13 +40,14 @@ def create_spark_sql_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     output_parser: Optional[AgentOutputParser] = None,
     enable_memory: bool = False,
-    allow_freestyle: bool = False,
-    **kwargs: Dict[str, Any],
+    enable_freestyle: bool = False,
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a sql agent from an LLM and tools."""
     if tools is None:
         tools = SparkSQLToolkit(db=db, llm=llm).get_tools()
-    if allow_freestyle:
+    if enable_freestyle:
+        enable_memory = True
         tools = SparkFlexibleSQLToolkit(db=db, llm=llm).get_tools()
         prefix = FLEXIBLE_SQL_PREFIX
         suffix = FLEXIBLE_SQL_SUFFIX
@@ -56,23 +57,16 @@ def create_spark_sql_agent(
     if input_variables is None and enable_memory:
         memory = ConversationBufferMemory(memory_key="chat_history")
         input_variables = ["input", "chat_history", "agent_scratchpad"]
+        suffix = SQL_SUFFIX_WITH_MEMORY
     # otherwise, None input_variables will get the default during prompt creation.
-    prompt = ZeroShotAgent.create_prompt(
-        tools,
+    agent = ZeroShotAgent.from_llm_and_tools(
+        llm=llm,
+        tools=tools,
         prefix=prefix,
         suffix=suffix,
         input_variables=input_variables,
-    )
-    llm_chain = LLMChain(
-        llm=llm,
-        prompt=prompt,
-        callback_manager=callback_manager,
-    )
-    tool_names = [tool.name for tool in tools]
-    agent = ZeroShotAgent(
-        llm_chain=llm_chain,
-        allowed_tools=tool_names,
         output_parser=output_parser,
+        callback_manager=callback_manager,
         **kwargs,
     )
     return AgentExecutor.from_agent_and_tools(
