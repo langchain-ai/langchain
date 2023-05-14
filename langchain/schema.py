@@ -227,25 +227,25 @@ class BaseChatMessageHistory(ABC):
             class FileChatMessageHistory(BaseChatMessageHistory):
                 storage_path:  str
                 session_id: str
-               
+
                @property
                def messages(self):
                    with open(os.path.join(storage_path, session_id), 'r:utf-8') as f:
                        messages = json.loads(f.read())
-                    return messages_from_dict(messages)     
-                
+                    return messages_from_dict(messages)
+
                def add_user_message(self, message: str):
                    message_ = HumanMessage(content=message)
                    messages = self.messages.append(_message_to_dict(_message))
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        json.dump(f, messages)
-               
+
                def add_ai_message(self, message: str):
                    message_ = AIMessage(content=message)
                    messages = self.messages.append(_message_to_dict(_message))
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        json.dump(f, messages)
-                       
+
                def clear(self):
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        f.write("[]")
@@ -348,7 +348,10 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
     @property
     def _type(self) -> str:
         """Return the type key."""
-        raise NotImplementedError
+        raise NotImplementedError(
+            f"_type property is not implemented in class {self.__class__.__name__}."
+            " This is required for serialization."
+        )
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of output parser."""

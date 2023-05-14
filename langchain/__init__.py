@@ -26,6 +26,7 @@ from langchain.llms import (
     ForefrontAI,
     GooseAI,
     HuggingFaceHub,
+    HuggingFaceTextGenInference,
     LlamaCpp,
     Modal,
     OpenAI,
@@ -114,4 +115,5 @@ __all__ = [
     "QAWithSourcesChain",
     "PALChain",
     "LlamaCpp",
+    "HuggingFaceTextGenInference",
 ]

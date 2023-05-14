@@ -33,7 +33,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """Model name to use."""
     cache_folder: Optional[str] = None
     """Path to store models. 
-    Can be also set by SENTENCE_TRANSFORMERS_HOME enviroment variable."""
+    Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Key word arguments to pass to the model."""
     encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
