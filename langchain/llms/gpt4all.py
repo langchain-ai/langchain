@@ -12,7 +12,7 @@ from langchain.llms.utils import enforce_stop_tokens
 class GPT4All(LLM):
     r"""Wrapper around GPT4All language models.
 
-    To use, you should have the ``pygpt4all`` python package installed, the
+    To use, you should have the ``gpt4all`` python package installed, the
     pre-trained model file, and the model's config information.
 
     Example:
@@ -155,9 +155,9 @@ class GPT4All(LLM):
         try:
             backend = values["backend"]
             if backend == "llama":
-                from pygpt4all import GPT4All as GPT4AllModel
+                from gpt4all import GPT4All as GPT4AllModel
             elif backend == "gptj":
-                from pygpt4all import GPT4All_J as GPT4AllModel
+                from gpt4all import GPT4All_J as GPT4AllModel
             else:
                 raise ValueError(f"Incorrect gpt4all backend {cls.backend}")
 
@@ -173,8 +173,8 @@ class GPT4All(LLM):
 
         except ImportError:
             raise ValueError(
-                "Could not import pygpt4all python package. "
-                "Please install it with `pip install pygpt4all`."
+                "Could not import gpt4all python package. "
+                "Please install it with `pip install gpt4all`."
             )
         return values
 
