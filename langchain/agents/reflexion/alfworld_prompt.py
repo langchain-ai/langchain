@@ -105,8 +105,6 @@ find the lamp, then look for the bowl under the desklamp""",
 
 SUFFIX = """\nQuestion: {input}
 \n{agent_scratchpad}
-\nSTATUS: FAIL
-\nNew plan:
 """
 
 ALFWORLD_PROMPT = PromptTemplate.from_examples(
