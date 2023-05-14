@@ -23,9 +23,8 @@ from pydantic import BaseModel, root_validator
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -544,11 +543,11 @@ class Redis(VectorStore):
             **kwargs,
         )
 
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+    def as_retriever(self, **kwargs: Any) -> RedisVectorStoreRetriever:
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs)
 
 
-class RedisVectorStoreRetriever(BaseRetriever, BaseModel):
+class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
     vectorstore: Redis
     search_type: str = "similarity"
     k: int = 4
