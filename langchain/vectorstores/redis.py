@@ -446,16 +446,17 @@ class Redis(VectorStore):
                     redis_url="redis://username:password@localhost:6379"
                 )
         """
-        instance, _ = cls.from_texts_return_keys(cls=cls,
-                                    texts=texts,
-                                    embedding=embedding,
-                                    metadatas=metadatas,
-                                    index_name=index_name,
-                                    content_key=content_key,
-                                    metadata_key=metadata_key,
-                                    vector_key=vector_key,
-                                    kwargs=kwargs
-                                    )
+        instance, _ = cls.from_texts_return_keys(
+            cls=cls,
+            texts=texts,
+            embedding=embedding,
+            metadatas=metadatas,
+            index_name=index_name,
+            content_key=content_key,
+            metadata_key=metadata_key,
+            vector_key=vector_key,
+            kwargs=kwargs,
+        )
         return instance
 
     @staticmethod
