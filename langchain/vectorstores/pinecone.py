@@ -8,9 +8,21 @@ from typing import Any, Callable, Iterable, List, Optional, Tuple
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+import math
 
 logger = logging.getLogger(__name__)
-
+def _default_relevance_score_fn(score: float) -> float:
+    """Return a similarity score on a scale [0, 1]."""
+    # The 'correct' relevance function
+    # may differ depending on a few things, including:
+    # - the distance / similarity metric used by the VectorStore
+    # - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+    # - embedding dimensionality
+    # - etc.
+    # This function converts the euclidean norm of normalized embeddings
+    # (0 is most similar, sqrt(2) most dissimilar)
+    # to a similarity function (0 to 1)
+    return 1.0 - score / math.sqrt(2)
 
 class Pinecone(VectorStore):
     """Wrapper around Pinecone vector database.
@@ -39,6 +51,7 @@ class Pinecone(VectorStore):
         text_key: str,
         filter: Optional[dict] = None,
         namespace: Optional[str] = None,
+        relevance_score_fn: Optional[Callable[[float], float]] = _default_relevance_score_fn,
     ):
         """Initialize with Pinecone client."""
         try:
@@ -58,6 +71,25 @@ class Pinecone(VectorStore):
         self._text_key = text_key
         self.filter = filter
         self._namespace = namespace
+
+        self.relevance_score_fn = relevance_score_fn
+
+    def _similarity_search_with_relevance_scores(
+            self,
+            query: str,
+            k: int = 4,
+            filter: Optional[dict] = None,
+            namespace: Optional[str] = None,
+            **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and their similarity scores on a scale from 0 to 1."""
+        if self.relevance_score_fn is None:
+            raise ValueError(
+                "relevance_score_fn must be provided to"
+                " Pinecone constructor to normalize scores"
+            )
+        docs_and_scores = self.similarity_search_with_score(query, k=k, filter=filter, namespace=namespace)
+        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
 
     def add_texts(
         self,
