@@ -319,6 +319,17 @@ class VectorStore(ABC):
         """Return VectorStore initialized from texts and embeddings."""
 
     @classmethod
+    @abstractmethod
+    def from_texts_return_keys(
+        cls: Type[VST],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> Tuple[VST, List[str]]:
+        """Return VectorStore and matching keys initialized from texts and embeddings."""
+
+    @classmethod
     async def afrom_texts(
         cls: Type[VST],
         texts: List[str],
