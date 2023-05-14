@@ -6,7 +6,7 @@ from langchain.agents.initialize import initialize_agent, load_agent
 from langchain.llms.fake import FakeListLLM
 
 
-def test_mrkl_serialization():
+def test_mrkl_serialization() -> None:
     agent = initialize_agent(
         [],
         FakeListLLM(responses=[]),
