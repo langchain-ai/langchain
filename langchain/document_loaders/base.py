@@ -3,12 +3,12 @@ from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional
 
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.schema import Document
+from langchain.schema import BaseRetriever, Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
-class BaseLoader(ABC):
-    """Interface for loading documents.
+class BaseLoader(BaseRetriever):
+    """Base Interface for loading documents.
 
     Implementations should implement the lazy-loading method using generators
     to avoid loading all documents into memory at once.
@@ -17,12 +17,16 @@ class BaseLoader(ABC):
     implementation should be just `list(self.lazy_load())`.
     """
 
+    query: Optional[str] = None
+
     # Sub-classes should implement this method
     # as return list(self.lazy_load()).
     # This method returns a List which is materialized in memory.
     @abstractmethod
     def load(self) -> List[Document]:
-        """Load data into document objects."""
+        """Load data into document objects.
+        If you need a limited number of Documents, use self.query
+        """
 
     def load_and_split(
         self, text_splitter: Optional[TextSplitter] = None
@@ -37,12 +41,38 @@ class BaseLoader(ABC):
 
     # Attention: This method will be upgraded into an abstractmethod once it's
     #            implemented in all the existing subclasses.
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """A lazy loader for document content."""
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement lazy_load()"
+        )
+
+    def get_relevant_documents(self, query: str) -> List[Document]:
+        """Get documents relevant for a query.
+
+        Args:
+            query: string to find relevant documents.
+
+        Returns:
+            List of relevant documents.
+        """
+        # it doesn't replace the class query.
+        cls_query, self.query = self.query, query
+        ret = self.load()
+        self.query = cls_query
+        return ret
+
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        """Get documents relevant for a query.
+
+        Args:
+            query: string to find relevant documents.
+
+        Returns:
+            List of relevant documents
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement aget_relevant_documents()"
         )
 
 

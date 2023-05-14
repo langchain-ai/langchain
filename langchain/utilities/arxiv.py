@@ -84,12 +84,13 @@ class ArxivAPIWrapper(BaseModel):
             f"Summary: {result.summary}"
             for result in results
         ]
-        if docs:
-            return "\n\n".join(docs)[: self.doc_content_chars_max]
-        else:
-            return "No good Arxiv Result was found"
+        return (
+            "\n\n".join(docs)[: self.doc_content_chars_max]
+            if docs
+            else "No good Arxiv Result was found"
+        )
 
-    def load(self, query: str) -> List[Document]:
+    def load(self, query: Optional[str] = "") -> List[Document]:
         """
         Run Arxiv search and get the article texts plus the article meta information.
         See https://lukasschwab.me/arxiv.py/index.html#Search
@@ -104,6 +105,9 @@ class ArxivAPIWrapper(BaseModel):
                 "PyMuPDF package not found, please install it with "
                 "`pip install pymupdf`"
             )
+        if not query:
+            logger.debug("Query is empty, please define it.")
+            return []
 
         try:
             results = self.arxiv_search(  # type: ignore
@@ -122,8 +126,8 @@ class ArxivAPIWrapper(BaseModel):
             except FileNotFoundError as f_ex:
                 logger.debug(f_ex)
                 continue
-            if self.load_all_available_meta:
-                extra_metadata = {
+            extra_metadata = (
+                {
                     "entry_id": result.entry_id,
                     "published_first_time": str(result.published.date()),
                     "comment": result.comment,
@@ -133,17 +137,18 @@ class ArxivAPIWrapper(BaseModel):
                     "categories": result.categories,
                     "links": [link.href for link in result.links],
                 }
-            else:
-                extra_metadata = {}
-            metadata = {
-                "Published": str(result.updated.date()),
-                "Title": result.title,
-                "Authors": ", ".join(a.name for a in result.authors),
-                "Summary": result.summary,
-                **extra_metadata,
-            }
+                if self.load_all_available_meta
+                else {}
+            )
             doc = Document(
-                page_content=text[: self.doc_content_chars_max], metadata=metadata
+                page_content=text[: self.doc_content_chars_max],
+                metadata={
+                    "Published": str(result.updated.date()),
+                    "Title": result.title,
+                    "Authors": ", ".join(a.name for a in result.authors),
+                    "Summary": result.summary,
+                    **extra_metadata,
+                },
             )
             docs.append(doc)
             os.remove(doc_file_name)
