@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from typing import Any, Dict, List, Type
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, Field, root_validator
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
@@ -39,6 +41,22 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
 
     buffer: str = ""
     memory_key: str = "history"  #: :meta private:
+    summarize_step: int = Field(default=2, gt=0)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # Prepare buffer if there are existing messages stored
+        if (self.chat_memory.messages != []) and (self.buffer == ""):
+            message_list = self.chat_memory.messages
+            self.buffer = self.summarize_message_list(message_list)
+
+    def summarize_message_list(self, message_list: List[BaseMessage]) -> str:
+        buffer = ""
+        for i in range(0, len(message_list), self.summarize_step):
+            buffer = self.predict_new_summary(
+                self.chat_memory.messages[i : i + self.summarize_step], buffer
+            )
+        return buffer
 
     @property
     def memory_variables(self) -> List[str]:
