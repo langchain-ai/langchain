@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import yaml
 from pydantic import BaseModel, root_validator
 
+from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import InvalidTool
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
@@ -132,7 +133,11 @@ class BaseSingleActionAgent(BaseModel):
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
         _dict = super().dict()
-        _dict["_type"] = str(self._agent_type)
+        _type = self._agent_type
+        if isinstance(_type, AgentType):
+            _dict["_type"] = str(_type.value)
+        else:
+            _dict["_type"] = _type
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
