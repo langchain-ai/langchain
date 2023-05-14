@@ -172,3 +172,27 @@ class SparkSQL:
         except PySparkException as e:
             """Format the error message"""
             return f"Error: {e}"
+
+    def get_plans(self, query: str) -> str:
+        """Execute a SQL command and return a string representing the results.
+        The logical and physical plans are returned in a formtted string.
+
+        If the statement throws an error, the error message is returned.
+        """
+        try:
+            from pyspark.errors import PySparkException
+            from pyspark.sql import DataFrame
+        except ImportError:
+            raise ValueError(
+                "pyspark is not installed. Please install it with `pip install pyspark`"
+            )
+        try:
+            df: DataFrame = self._spark.sql(query)
+            assert df._sc._jvm is not None
+            return df._sc._jvm.PythonSQLUtils.explainString(
+                df._jdf.queryExecution(),
+                "extended",
+            )
+        except PySparkException as e:
+            """Format the error message"""
+            return f"Error: {e}"

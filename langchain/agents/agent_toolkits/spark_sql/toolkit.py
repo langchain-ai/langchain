@@ -11,6 +11,7 @@ from langchain.tools.spark_sql.tool import (
     FreeStyleTool,
     InfoSparkSQLTool,
     ListSparkSQLTool,
+    LogicalPhysicalPlansSparkSQLTool,
     QueryCheckerTool,
     QuerySparkSQLTool,
 )
@@ -47,5 +48,6 @@ class SparkFlexibleSQLToolkit(SparkSQLToolkit):
             InfoSparkSQLTool(db=self.db),
             ListSparkSQLTool(db=self.db),
             QueryCheckerTool(db=self.db, llm=self.llm),
+            LogicalPhysicalPlansSparkSQLTool(db=self.db),
             FreeStyleTool(),
         ]

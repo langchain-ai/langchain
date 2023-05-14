@@ -38,6 +38,9 @@ Only use the tools below to interact with the database.
 You always follow the tool result to decide next step.
 You MUST double check your query before executing it. If you get an error while executing a query, rewrite the query and try again.
 
+You can NOT optimize the query yourself. You will ALWAYS use Logical Plan and Physical Plan to explain how the query is optimized.
+When the table schema is already recorded in the history, you can use it directly without querying again.
+
 DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
 
 If the question does not seem related to the database, just return "I don't know" as the answer.
@@ -47,5 +50,5 @@ FLEXIBLE_SQL_SUFFIX = """Begin!
 
 {chat_history}
 Question: {input}
-Thought: I should look at the tables in the database to decide how to help.
+Thought: I should look at the question and our chat history to decide next step.
 {agent_scratchpad}"""

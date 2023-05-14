@@ -57,6 +57,34 @@ class BaseSparkSQLTool(BaseModel):
         extra = Extra.forbid
 
 
+class LogicalPhysicalPlansSparkSQLTool(BaseSparkSQLTool, BaseTool):
+    """Tool for fetching spark logical and physical plans from a Spark SQL."""
+
+    name = "get_logical_physical_plans_from_sql_db"
+    description = """
+    Input to this tool is a detailed and correct SQL query, output is the logical and physical plans.
+    Optimization and Efficiency questions should ONLY be answered by the output of this tool.
+    You will provide additional explanations on top of the logical and physical plans.
+    If the query is not correct, an error message will be returned.
+    If an error is returned, rewrite the query, check the query, and try again.
+    """
+
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Execute the query, return the results or an error message."""
+        return self.db.get_plans(query)
+
+    async def _arun(
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
+        raise NotImplementedError("QuerySqlDbTool does not support async")
+
+
 class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for querying a Spark SQL."""
 
