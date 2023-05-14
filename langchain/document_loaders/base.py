@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional
 
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.schema import Document, BaseRetriever
+from langchain.schema import BaseRetriever, Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
@@ -37,9 +37,7 @@ class BaseLoader(BaseRetriever):
 
     # Attention: This method will be upgraded into an abstractmethod once it's
     #            implemented in all the existing subclasses.
-    def lazy_load(
-        self, query: Optional[str] = None
-    ) -> Iterator[Document]:
+    def lazy_load(self, query: Optional[str] = None) -> Iterator[Document]:
         """A lazy loader for document content."""
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement lazy_load()"

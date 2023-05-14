@@ -28,5 +28,5 @@ class ArxivLoader(BaseLoader):
             load_all_available_meta=self.load_all_available_meta,
         )
         query = query or self.query
-        docs = arxiv_client.load(query)
+        docs = arxiv_client.load(query=query)
         return docs

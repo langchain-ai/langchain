@@ -1,6 +1,6 @@
 from typing import List
 
-from langchain.document_loaders.arxiv import ArxivLoader
+from langchain.document_loaders import ArxivLoader
 from langchain.schema import Document
 
 
