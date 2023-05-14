@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional
 
+from pyspark.errors import PySparkException
+
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, Row, SparkSession
 
@@ -126,3 +128,17 @@ class SparkSQL(SQLDatabase):
         if fetch == "one":
             df = df.limit(1)
         return str(self._get_dataframe_results(df))
+
+    def run_no_throw(self, command: str, fetch: str = "all") -> str:
+        """Execute a SQL command and return a string representing the results.
+
+        If the statement returns rows, a string of the results is returned.
+        If the statement returns no rows, an empty string is returned.
+
+        If the statement throws an error, the error message is returned.
+        """
+        try:
+            return self.run(command, fetch)
+        except PySparkException as e:
+            """Format the error message"""
+            return f"Error: {e}"
