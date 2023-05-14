@@ -22,41 +22,13 @@ from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.spark_sql import SparkSQL
-
-
-def create_spark_analytics_agent_verified(
-    schema: str,
-    allow_freestyle: bool = False,
-) -> AgentExecutor:
-    """
-    Construct a spark analytics agent with ChatGPT-4,
-    which is verified during development.
-    """
-    spark_sql = SparkSQL(schema=schema)
-    llm = ChatOpenAI(temperature=0, model_name="gpt-4")
-    toolkit = SparkSQLToolkit(db=spark_sql, llm=llm)
-    prefix: str = SQL_PREFIX
-    suffix: str = SQL_SUFFIX
-    output_parser = None
-    if allow_freestyle:
-        toolkit = SparkFlexibleSQLToolkit(db=spark_sql, llm=llm)
-        prefix = FLEXIBLE_SQL_PREFIX
-        suffix = FLEXIBLE_SQL_SUFFIX
-        output_parser = SparkSQLFreeStyleOutputParser()
-    return create_spark_sql_agent(
-        llm=llm,
-        toolkit=toolkit,
-        enable_memory=True,
-        prefix=prefix,
-        suffix=suffix,
-        output_parser=output_parser,
-        verbose=True,
-    )
+from langchain.tools.base import BaseTool
 
 
 def create_spark_sql_agent(
     llm: BaseLanguageModel,
-    toolkit: SparkSQLToolkit,
+    db: SparkSQL,
+    tools: Optional[List[BaseTool]] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = SQL_PREFIX,
     suffix: str = SQL_SUFFIX,
@@ -69,10 +41,17 @@ def create_spark_sql_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     output_parser: Optional[AgentOutputParser] = None,
     enable_memory: bool = False,
+    allow_freestyle: bool = False,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a sql agent from an LLM and tools."""
-    tools = toolkit.get_tools()
+    if tools is None:
+        tools = SparkSQLToolkit(db=db, llm=llm).get_tools()
+    if allow_freestyle:
+        tools = SparkFlexibleSQLToolkit(db=db, llm=llm).get_tools()
+        prefix = FLEXIBLE_SQL_PREFIX
+        suffix = FLEXIBLE_SQL_SUFFIX
+        output_parser = SparkSQLFreeStyleOutputParser()
     prefix = prefix.format(top_k=top_k)
     memory = None
     if input_variables is None and enable_memory:

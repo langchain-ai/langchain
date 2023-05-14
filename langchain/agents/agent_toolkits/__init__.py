@@ -18,9 +18,7 @@ from langchain.agents.agent_toolkits.powerbi.chat_base import create_pbi_chat_ag
 from langchain.agents.agent_toolkits.powerbi.toolkit import PowerBIToolkit
 from langchain.agents.agent_toolkits.python.base import create_python_agent
 from langchain.agents.agent_toolkits.spark.base import create_spark_dataframe_agent
-from langchain.agents.agent_toolkits.spark_sql.base import (
-    create_spark_analytics_agent_verified,
-    create_spark_sql_agent,
+from langchain.agents.agent_toolkits.spark_sql.base import create_spark_sql_agent
 )
 from langchain.agents.agent_toolkits.sql.base import create_sql_agent
 from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
@@ -53,7 +51,6 @@ __all__ = [
     "VectorStoreInfo",
     "VectorStoreRouterToolkit",
     "create_pandas_dataframe_agent",
-    "create_spark_analytics_agent_verified",
     "create_spark_dataframe_agent",
     "create_spark_sql_agent",
     "create_csv_agent",
