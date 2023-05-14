@@ -53,6 +53,9 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """Number of tokens to process in parallel.
     Should be a number between 1 and n_ctx."""
 
+    n_gpu_layers: Optional[int] = None
+    """Number of layers to store in VRAM."""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -71,6 +74,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
         use_mlock = values["use_mlock"]
         n_threads = values["n_threads"]
         n_batch = values["n_batch"]
+        n_gpu_layers = values["n_gpu_layers"]
 
         try:
             from llama_cpp import Llama
@@ -86,6 +90,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
                 use_mlock=use_mlock,
                 n_threads=n_threads,
                 n_batch=n_batch,
+                n_gpu_layers=n_gpu_layers,
                 embedding=True,
             )
         except ImportError:
