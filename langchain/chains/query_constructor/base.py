@@ -87,7 +87,7 @@ def _get_prompt(
         allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
     )
     return FewShotPromptTemplate(
-        examples=DEFAULT_EXAMPLES,
+        examples=examples,
         example_prompt=EXAMPLE_PROMPT,
         input_variables=["query"],
         suffix=suffix,
