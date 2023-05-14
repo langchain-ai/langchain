@@ -28,7 +28,7 @@ class GPT4All(LLM):
     model: str
     """Path to the pre-trained GPT4All model file."""
 
-    backend: str = Field("llama", alias="backend")
+    backend: Optional[str] = Field(None, alias="backend")
 
     n_ctx: int = Field(512, alias="n_ctx")
     """Token context window."""
@@ -100,7 +100,7 @@ class GPT4All(LLM):
         extra = Extra.forbid
 
     @staticmethod
-    def _model_param_names(backend: str) -> Set[str]:
+    def _model_param_names() -> Set[str]:
         return {
             "n_ctx",
             "n_predict",
@@ -138,10 +138,11 @@ class GPT4All(LLM):
 
             values["client"] = GPT4AllModel(
                 model_name=model_name,
-                model_path=model_path,
+                model_path=model_path or None,
                 model_type=values["backend"],
                 allow_download=False,
             )
+            values["backend"] = values["client"].model.model_type
 
         except ImportError:
             raise ValueError(
@@ -157,9 +158,7 @@ class GPT4All(LLM):
             "model": self.model,
             **self._default_params(),
             **{
-                k: v
-                for k, v in self.__dict__.items()
-                if k in self._model_param_names(self.backend)
+                k: v for k, v in self.__dict__.items() if k in self._model_param_names()
             },
         }
 
