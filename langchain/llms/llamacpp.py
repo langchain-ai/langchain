@@ -100,6 +100,9 @@ class LlamaCpp(LLM):
     streaming: bool = True
     """Whether to stream the results, token by token."""
 
+    n_gpu_layers: Optional[int] = None
+    """Number of layers to store in VRAM."""
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
@@ -117,6 +120,7 @@ class LlamaCpp(LLM):
         n_batch = values["n_batch"]
         use_mmap = values["use_mmap"]
         last_n_tokens_size = values["last_n_tokens_size"]
+        n_gpu_layers = values["n_gpu_layers"]
 
         try:
             from llama_cpp import Llama
@@ -136,6 +140,7 @@ class LlamaCpp(LLM):
                 n_batch=n_batch,
                 use_mmap=use_mmap,
                 last_n_tokens_size=last_n_tokens_size,
+                n_gpu_layers=n_gpu_layers,
             )
         except ImportError:
             raise ModuleNotFoundError(
