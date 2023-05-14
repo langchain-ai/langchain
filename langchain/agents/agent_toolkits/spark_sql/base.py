@@ -19,7 +19,6 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.spark_sql import SparkSQL
 from langchain.tools.base import BaseTool
