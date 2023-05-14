@@ -985,21 +985,23 @@ class AgentExecutor(Chain):
             trial_iterations += 1
             trial_time_elapsed = time.time() - trial_start_time
 
+
             if self.use_reflection:
-                # Check if we trial failed. If yes, we reflect and start a new trial
+                # Check if trial failed. 
                 trial_failed = self.reflector.should_reflect(
                     trial_iterations,
                     trial_time_elapsed,
                     intermediate_steps,
                 )
 
+                # If yes, we reflect and start a new trial
                 if trial_failed:
-                    current_trial = self.agent.get_full_inputs(intermediate_steps)["agent_scratchpad"]
+                    current_trial = (self.agent.get_full_inputs(intermediate_steps)
+                                    ["agent_scratchpad"])
 
                     # TODO: Make more generic (ie dont use inputs["input"])
                     self.reflector.reflect(inputs["input"], current_trial,
-                                            next_trial_no=trials+1)
-
+                                        next_trial_no=trials+1)
                     # TODO: Add to some log / manager that new trial started
 
                     trials += 1

@@ -18,7 +18,7 @@ class ReflexionOutputParser(BaseOutputParser):
         """Parse text into agent action/finish."""
 
 
-class BaseReflector(BaseModel): # TODO: should inherit form what? BaseModel? LLM? Chain?
+class BaseReflector(BaseModel):
     """Agent for the Reflexer chain."""
 
     llm_chain: LLMChain
@@ -53,7 +53,7 @@ class BaseReflector(BaseModel): # TODO: should inherit form what? BaseModel? LLM
         if (self.max_iterations_per_trial is not None
             and iterations_in_trial >= self.max_iterations_per_trial):
             return True
-        # ... current trial took too long, or
+        # ... current trial took too long
         if (self.max_execution_time_per_trial is not None
             and execution_time_in_trial >= self.max_execution_time_per_trial):
             return True
