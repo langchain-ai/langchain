@@ -3,11 +3,11 @@ from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional
 
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.schema import Document
+from langchain.schema import Document, BaseRetriever
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
-class BaseLoader(ABC):
+class BaseLoader(BaseRetriever):
     """Interface for loading documents.
 
     Implementations should implement the lazy-loading method using generators
@@ -21,28 +21,44 @@ class BaseLoader(ABC):
     # as return list(self.lazy_load()).
     # This method returns a List which is materialized in memory.
     @abstractmethod
-    def load(self) -> List[Document]:
+    def load(self, query: Optional[str] = None) -> List[Document]:
         """Load data into document objects."""
 
     def load_and_split(
-        self, text_splitter: Optional[TextSplitter] = None
+        self, text_splitter: Optional[TextSplitter] = None, query: Optional[str] = None
     ) -> List[Document]:
         """Load documents and split into chunks."""
         if text_splitter is None:
             _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()
         else:
             _text_splitter = text_splitter
-        docs = self.load()
+        docs = self.load(query=query)
         return _text_splitter.split_documents(docs)
 
     # Attention: This method will be upgraded into an abstractmethod once it's
     #            implemented in all the existing subclasses.
     def lazy_load(
-        self,
+        self, query: Optional[str] = None
     ) -> Iterator[Document]:
         """A lazy loader for document content."""
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement lazy_load()"
+        )
+
+    def get_relevant_documents(self, query: str) -> List[Document]:
+        return self.load(query=query)
+
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        """Get documents relevant for a query.
+
+        Args:
+            query: string to find relevant documents for
+
+        Returns:
+            List of relevant documents
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement aget_relevant_documents()"
         )
 
 
