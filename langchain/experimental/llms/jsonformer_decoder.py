@@ -1,13 +1,13 @@
 """Experimental implementation of jsonformer wrapped LLM."""
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, List, Optional, cast
 
 from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
-from langchain.llms.utils import enforce_stop_tokens
 
 if TYPE_CHECKING:
     import jsonformer
@@ -30,6 +30,7 @@ class JsonFormer(HuggingFacePipeline):
     max_new_tokens: int = Field(
         default=200, description="Maximum number of new tokens to generate."
     )
+    debug: bool = Field(default=False, description="Debug mode.")
 
     @root_validator
     def check_jsonformer_installation(cls, values: dict) -> dict:
@@ -53,10 +54,7 @@ class JsonFormer(HuggingFacePipeline):
             json_schema=self.json_schema,
             prompt=prompt,
             max_number_tokens=self.max_new_tokens,
+            debug=self.debug,
         )
         text = model()
-        if stop is not None:
-            # This is a bit hacky, but I can't figure out a better way to enforce
-            # stop tokens when making calls to huggingface_hub.
-            text = enforce_stop_tokens(text, stop)
-        return text
+        return json.dumps(text)
