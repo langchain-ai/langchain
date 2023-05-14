@@ -36,5 +36,5 @@ __all__ = [
     "PythonREPL",
     "LambdaWrapper",
     "PowerBIDataset",
-    "MetaphorSearchAPIWrapper"
+    "MetaphorSearchAPIWrapper",
 ]

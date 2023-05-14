@@ -2,14 +2,11 @@
 
 In order to set this up, follow instructions at:
 """
-from typing import Dict, List
-import http
 import json
-import aiohttp
+from typing import Dict, List
 
+import aiohttp
 import requests
-import asyncio
-import http.client
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
@@ -18,8 +15,7 @@ METAPHOR_API_URL = "https://api.metaphor.systems"
 
 
 class MetaphorSearchAPIWrapper(BaseModel):
-    """Wrapper for Metaphor Search API.
-    """
+    """Wrapper for Metaphor Search API."""
 
     metaphor_api_key: str
     k: int = 10
@@ -31,13 +27,12 @@ class MetaphorSearchAPIWrapper(BaseModel):
 
     def _metaphor_search_results(self, query: str, num_results: int) -> List[dict]:
         headers = {"X-Api-Key": self.metaphor_api_key}
-        params = {
-            "numResults": num_results,
-            "query": query
-        }
+        params = {"numResults": num_results, "query": query}
         response = requests.post(
             # type: ignore
-            f"{METAPHOR_API_URL}/search", headers=headers, json=params
+            f"{METAPHOR_API_URL}/search",
+            headers=headers,
+            json=params,
         )
 
         response.raise_for_status()
@@ -67,26 +62,24 @@ class MetaphorSearchAPIWrapper(BaseModel):
                 title - The title of the
                 url - The url
                 author - Author of the content, if applicable. Otherwise, None.
-                date_created - Estimated date created, in YYYY-MM-DD format. Otherwise, None.
+                date_created - Estimated date created,
+                    in YYYY-MM-DD format. Otherwise, None.
         """
         raw_search_results = self._metaphor_search_results(
-            query, num_results=num_results)
+            query, num_results=num_results
+        )
         return self._clean_results(raw_search_results)
 
     async def results_async(self, query: str, num_results: int) -> List[Dict]:
         """Get results from the Metaphor Search API asynchronously."""
+
         # Function to perform the API call
         async def fetch() -> str:
             headers = {"X-Api-Key": self.metaphor_api_key}
-            params = {
-                "numResults": num_results,
-                "query": query
-            }
+            params = {"numResults": num_results, "query": query}
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{METAPHOR_API_URL}/search",
-                    json=params,
-                    headers=headers
+                    f"{METAPHOR_API_URL}/search", json=params, headers=headers
                 ) as res:
                     if res.status == 200:
                         data = await res.text()
