@@ -121,19 +121,3 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
             doc.metadata["buffer_idx"] = len(self.memory_stream) + i
         self.memory_stream.extend(dup_docs)
         return self.vectorstore.add_documents(dup_docs, **kwargs)
-
-    async def aadd_documents(
-        self, documents: List[Document], **kwargs: Any
-    ) -> List[str]:
-        """Add documents to vectorstore."""
-        current_time = kwargs.get("current_time", datetime.now())
-        # Avoid mutating input documents
-        dup_docs = [deepcopy(d) for d in documents]
-        for i, doc in enumerate(dup_docs):
-            if "last_accessed_at" not in doc.metadata:
-                doc.metadata["last_accessed_at"] = current_time
-            if "created_at" not in doc.metadata:
-                doc.metadata["created_at"] = current_time
-            doc.metadata["buffer_idx"] = len(self.memory_stream) + i
-        self.memory_stream.extend(dup_docs)
-        return await self.vectorstore.aadd_documents(dup_docs, **kwargs)
