@@ -122,8 +122,11 @@ class DeepLake(VectorStore):
 
         if (
             deeplake.exists(dataset_path, token=token, **creds_args)
-            and "overwrite" not in kwargs
+            and ( ("overwrite" not in kwargs) or ("overwrite" in kwargs and not kwargs["overwrite"]) )
         ):
+            if "overwrite" in kwargs:
+                del kwargs["overwrite"]
+                
             self.ds = deeplake.load(
                 dataset_path,
                 token=token,
