@@ -6,7 +6,11 @@ from typing import Any, Dict, Mapping
 
 from pydantic import root_validator
 
-from langchain.chat_models.openai import ChatOpenAI
+from langchain.chat_models.openai import ChatOpenAI, _convert_dict_to_message
+from langchain.schema import (
+    ChatGeneration,
+    ChatResult
+)
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -119,3 +123,15 @@ class AzureChatOpenAI(ChatOpenAI):
     @property
     def _llm_type(self) -> str:
         return "azure-openai-chat"
+      
+    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+        generations = []
+        for res in response["choices"]:
+            if res.get("finish_reason", None) == "content_filter":
+                raise ValueError("Azure has not provided the response due to a content"
+                                 " filter being triggered")
+            message = _convert_dict_to_message(res["message"])
+            gen = ChatGeneration(message=message)
+            generations.append(gen)
+        llm_output = {"token_usage": response["usage"], "model_name": self.model_name}
+        return ChatResult(generations=generations, llm_output=llm_output)
