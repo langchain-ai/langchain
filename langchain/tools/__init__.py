@@ -22,6 +22,7 @@ from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearch
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.ifttt import IFTTTWebhook
+from langchain.tools.metaphor_search import MetaphorSearchResults
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 from langchain.tools.playwright import (
@@ -36,6 +37,7 @@ from langchain.tools.playwright import (
 from langchain.tools.plugin import AIPluginTool
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.shell.tool import ShellTool
+from langchain.tools.steamship_image_generation import SteamshipImageGenerationTool
 from langchain.tools.vectorstore.tool import (
     VectorStoreQATool,
     VectorStoreQAWithSourcesTool,
@@ -63,6 +65,7 @@ __all__ = [
     "ExtractTextTool",
     "FileSearchTool",
     "GetElementsTool",
+    "SteamshipImageGenerationTool",
     "GmailCreateDraft",
     "GmailGetMessage",
     "GmailGetThread",
@@ -76,6 +79,7 @@ __all__ = [
     "HumanInputRun",
     "IFTTTWebhook",
     "ListDirectoryTool",
+    "MetaphorSearchResults",
     "MoveFileTool",
     "NavigateBackTool",
     "NavigateTool",

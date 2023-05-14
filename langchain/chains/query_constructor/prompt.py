@@ -4,8 +4,8 @@ from langchain import PromptTemplate
 SONG_DATA_SOURCE = """\
 ```json
 {
-    content: "Lyrics of a song",
-    attributes: {
+    "content": "Lyrics of a song",
+    "attributes": {
         "artist": {
             "type": "string",
             "description": "Name of the song artist"
@@ -33,7 +33,9 @@ FULL_ANSWER = """\
     "query": "teenager love",
     "filter": "and(or(eq(\\"artist\\", \\"Taylor Swift\\"), eq(\\"artist\\", \\"Katy Perry\\")), \
 lt(\\"length\\", 180), eq(\\"genre\\", \\"pop\\"))"
-}}"""
+}}
+```\
+"""
 
 NO_FILTER_ANSWER = """\
 ```json
@@ -103,7 +105,7 @@ A comparison statement takes the form: `comp(attr, val)`:
 A logical operation statement takes the form `op(statement1, statement2, ...)`:
 - `op` ({allowed_operators}): logical operator
 - `statement1`, `statement2`, ... (comparison statements or logical operation \
-statements): one or more statements to appy the operation to
+statements): one or more statements to apply the operation to
 
 Make sure that you only use the comparators and logical operators listed above and \
 no others.
@@ -125,8 +127,8 @@ DEFAULT_SUFFIX = """\
 Data Source:
 ```json
 {{{{
-    content: {content},
-    attributes: {attributes}
+    "content": "{content}",
+    "attributes": {attributes}
 }}}}
 ```
 
