@@ -3,6 +3,11 @@ from langchain.output_parsers.list import CommaSeparatedListOutputParser
 from langchain.prompts.prompt import PromptTemplate
 
 
+PROMPT_SUFFIX = """Only use the following tables:
+{table_info}
+
+Question: {input}"""
+
 _DEFAULT_TEMPLATE = """Given an input question, first create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer. Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most {top_k} results. You can order the results by a relevant column to return the most interesting examples in the database.
 
 Never query for all the columns from a specific table, only ask for a the few relevant columns given the question.
@@ -11,21 +16,18 @@ Pay attention to use only the column names that you can see in the schema descri
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
-Only use the tables listed below.
-
-{table_info}
-
-Question: {input}"""
+"""
 
 PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "dialect", "top_k"],
-    template=_DEFAULT_TEMPLATE,
+    template=_DEFAULT_TEMPLATE + PROMPT_SUFFIX,
 )
+
 
 _DECIDER_TEMPLATE = """Given the below input question and list of potential tables, output a comma separated list of the table names that may be necessary to answer this question.
 
@@ -48,19 +50,16 @@ Pay attention to use today() function to get the current date, if the question i
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
-Only use the following tables:
-{table_info}
-
-Question: {input}"""
+"""
 
 DUCKDB_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_duckdb_prompt,
+    template=_duckdb_prompt + PROMPT_SUFFIX,
 )
 
 _googlesql_prompt = """You are a GoogleSQL expert. Given an input question, first create a syntactically correct GoogleSQL query to run, then look at the results of the query and return the answer to the input question.
@@ -71,19 +70,16 @@ Pay attention to use CURRENT_DATE() function to get the current date, if the que
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
-Only use the following tables:
-{table_info}
-
-Question: {input}"""
+"""
 
 GOOGLESQL_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_googlesql_prompt,
+    template=_googlesql_prompt + PROMPT_SUFFIX,
 )
 
 
@@ -95,18 +91,16 @@ Pay attention to use CAST(GETDATE() as date) function to get the current date, i
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
-Only use the following tables:
-{table_info}
-
-Question: {input}"""
+"""
 
 MSSQL_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"], template=_mssql_prompt
+    input_variables=["input", "table_info", "top_k"],
+    template=_mssql_prompt + PROMPT_SUFFIX,
 )
 
 
@@ -118,19 +112,16 @@ Pay attention to use CURDATE() function to get the current date, if the question
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
-Only use the following tables:
-{table_info}
-
-Question: {input}"""
+"""
 
 MYSQL_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_mysql_prompt,
+    template=_mysql_prompt + PROMPT_SUFFIX,
 )
 
 
@@ -142,19 +133,16 @@ Pay attention to use CURDATE() function to get the current date, if the question
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
-Only use the following tables:
-{table_info}
-
-Question: {input}"""
+"""
 
 MARIADB_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_mariadb_prompt,
+    template=_mariadb_prompt + PROMPT_SUFFIX,
 )
 
 
@@ -166,19 +154,16 @@ Pay attention to use TRUNC(SYSDATE) function to get the current date, if the que
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
-Only use the following tables:
-{table_info}
-
-Question: {input}"""
+"""
 
 ORACLE_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_oracle_prompt,
+    template=_oracle_prompt + PROMPT_SUFFIX,
 )
 
 
@@ -190,18 +175,16 @@ Pay attention to use CURRENT_DATE function to get the current date, if the quest
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
-Only use the following tables:
-{table_info}
-
-Question: {input}"""
+"""
 
 POSTGRES_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"], template=_postgres_prompt
+    input_variables=["input", "table_info", "top_k"],
+    template=_postgres_prompt + PROMPT_SUFFIX,
 )
 
 
@@ -213,19 +196,16 @@ Pay attention to use date('now') function to get the current date, if the questi
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
-Only use the following tables:
-{table_info}
-
-Question: {input}"""
+"""
 
 SQLITE_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_sqlite_prompt,
+    template=_sqlite_prompt + PROMPT_SUFFIX,
 )
 
 _clickhouse_prompt = """You are a ClickHouse expert. Given an input question, first create a syntactically correct Clic query to run, then look at the results of the query and return the answer to the input question.
@@ -241,14 +221,11 @@ SQLQuery: "SQL Query to run"
 SQLResult: "Result of the SQLQuery"
 Answer: "Final answer here"
 
-Only use the following tables:
-{table_info}
-
-Question: {input}"""
+"""
 
 CLICKHOUSE_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_clickhouse_prompt,
+    template=_clickhouse_prompt + PROMPT_SUFFIX,
 )
 
 _prestodb_prompt = """You are a PrestoDB expert. Given an input question, first create a syntactically correct PrestoDB query to run, then look at the results of the query and return the answer to the input question.
@@ -264,14 +241,11 @@ SQLQuery: "SQL Query to run"
 SQLResult: "Result of the SQLQuery"
 Answer: "Final answer here"
 
-Only use the following tables:
-{table_info}
-
-Question: {input}"""
+"""
 
 PRESTODB_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_prestodb_prompt,
+    template=_prestodb_prompt + PROMPT_SUFFIX,
 )
 
 
