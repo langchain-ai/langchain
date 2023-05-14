@@ -100,7 +100,18 @@ def test_deeplake_overwrite_flag() -> None:
 
     docsearch.persist()
 
-    # Get a new VectorStore from the persisted directory, with no overwrite
+
+    # Get a new VectorStore from the persisted directory, with no overwrite (implicit)
+    docsearch = DeepLake(
+        dataset_path=dataset_path,
+        embedding_function=FakeEmbeddings(),
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    # assert page still present
+    assert output == [Document(page_content="foo")]
+
+
+    # Get a new VectorStore from the persisted directory, with no overwrite (explicit)
     docsearch = DeepLake(
         dataset_path=dataset_path,
         embedding_function=FakeEmbeddings(),
