@@ -38,6 +38,7 @@ class DirectoryLoader(BaseLoader):
         recursive: bool = False,
         show_progress: bool = False,
         use_multithreading: bool = False,
+        max_concurrency: int = 4,
     ):
         """Initialize with path to directory and how to glob over it."""
         if loader_kwargs is None:
@@ -51,6 +52,7 @@ class DirectoryLoader(BaseLoader):
         self.recursive = recursive
         self.show_progress = show_progress
         self.use_multithreading = use_multithreading
+        self.max_concurrency = max_concurrency
 
     def load_file(
         self, item: Path, path: Path, docs: List[Document], pbar: Optional[Any]
@@ -92,7 +94,9 @@ class DirectoryLoader(BaseLoader):
                     raise e
 
         if self.use_multithreading:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.max_concurrency
+            ) as executor:
                 executor.map(lambda i: self.load_file(i, p, docs, pbar), items)
         else:
             for i in items:
