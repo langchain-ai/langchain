@@ -21,10 +21,15 @@ def _generate(
     llm: BaseChatModel | BaseLanguageModel = None,
     stop: str | list[str] = None,
 ) -> str:
+    print("_generate:start")
     # handle all 4 combinations of chat and regular llms
     if isinstance(input, list) and all(isinstance(msg, BaseMessage) for msg in input):
         if isinstance(llm, BaseChatModel):
+            print(f"_generate:llm is BaseChatModel and input is list of BaseMessage")
+            print(f"_generate:llm: {llm}")
+            print(f"_generate:input: {input}")
             output = llm(input, stop=stop).content
+            print(f"_generate:output: {output}")
         elif isinstance(llm, BaseLanguageModel):
             output = ChatModelFacade.of(llm)(input, stop=stop)
         else:
@@ -44,6 +49,7 @@ def _generate(
         raise ValueError(
             f"Invalid input type: {type(input)}. Must be a string or list of messages."
         )
+    print("_generate:end")
     return output
 
 
@@ -61,8 +67,9 @@ def generate(
     additional_validator: Callable[[str], None] = None,
     remove_quotes=False,
 ) -> T:
+    print("generate:start")
     llm = llm or get_default_model()
-
+    print("generate:llm")
     if type is not None:
         if issubclass(type, BaseModel):
             parser = PydanticOutputParser(pydantic_object=type)
@@ -109,16 +116,18 @@ def generate(
             raise ValueError(
                 f"Invalid type: {type}. Must be a str, bool, int, float, or BaseModel."
             )
+    print("generate:parser")
     if parser is None:
         return _generate(input, llm=llm, stop=stop)
+    print("generate:parser2")
     if remove_quotes:
         parser = RemoveQuotesOutputParser(parser)
-
+    print("generate:parser3")
     try:
         if isinstance(input, list):
             input.append(
                 HumanMessage(
-                    text=f"Formatting directions: {parser.get_format_instructions()}"
+                    content=f"Formatting directions: {parser.get_format_instructions()}"
                 )
             )
         elif isinstance(input, str):
@@ -139,14 +148,18 @@ def generate(
             additional_validator=additional_validator,
         )
     )
-    print(456456)
+    print(f"generate:before _generate, input", input)
     response = _generate(input, llm=llm, stop=stop)
-    print(789789)
+    print(f"generate:after _generate, response", response)
     return multi_attempt_retry_with_error_parser.parse_with_prompt(
-        response,
+        response
+        if isinstance(response, str)
+        else response.content
+        if isinstance(response, BaseMessage)
+        else None,
         prompt_value=StringPromptValue(text=input)
         if isinstance(input, str)
         else ChatPromptValue(messages=input)
-        if isinstance(input, list)
+        if isinstance(input, list) and all(isinstance(msg, BaseMessage) for msg in input)
         else None,
     )

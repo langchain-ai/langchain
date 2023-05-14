@@ -27,7 +27,7 @@ def gemplate(template, parser=None, llm=None):
         nonlocal template_var_vals
         template_var_vals.update(kwargs)
         if all(v is not NOTHING for v in template_var_vals.values()):
-            rendered = prompt.render(template_var_vals)
+            rendered = prompt.format(**template_var_vals)
             return generate(rendered, parser=parser, llm=llm)
 
     return template_fn

@@ -145,6 +145,8 @@ def render_prompt_and_examples(
     # ]
     ```
     """
+    print("render_prompts_and_examples:start")
+
     input_keys = extract_input_variables(input_prompt_template)
     output_keys = extract_input_variables(output_prompt_template)
 
@@ -179,6 +181,7 @@ def render_prompt_and_examples(
         )
     )
 
+    print("render_prompts_and_examples:end")
     return messages
 
 

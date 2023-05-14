@@ -75,6 +75,7 @@ class StitchedOutputParser(BaseOutputParser[str]):
         continuation_keep_end_chars: int = 500,
         stitch_chars: int = 50,
     ):
+
         continue_prompt = ChatPromptTemplate.from_messages(
             [
                 SYSTEM_PROMPT,

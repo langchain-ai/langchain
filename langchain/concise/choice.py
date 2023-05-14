@@ -31,7 +31,7 @@ def choice(
     """
     llm = llm or config.get_default_model()
     if isinstance(options, type(Enum)):
-        parser = EnumOutputParser(options)
+        parser = EnumOutputParser.from_enum(options, min_distance=1)
     elif isinstance(options, list) and all(isinstance(option, str) for option in options):
         parser = ChoiceOutputParser(options=options, min_distance=1)
     else:
@@ -52,4 +52,5 @@ def choice(
         if default is not None:
             return default
         else:
+            print(e)
             raise e

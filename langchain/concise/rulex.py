@@ -28,6 +28,9 @@ class Rule:
         return f"{self.name}: {self.pattern} -> {self.replacement}"
 
 
+_NO_RULE_MATCH = "No match"
+
+
 @attr.s(auto_attribs=True)
 class RulEx:
 
@@ -36,7 +39,8 @@ class RulEx:
     replacements_per_chunk: int = attr.ib(default=5)
     llm: BaseLanguageModel = attr.ib(factory=get_default_model)
     text_splitter: TextSplitter = attr.ib(factory=get_default_text_splitter)
-    _NO_RULE_MATCH: str = "No match"
+
+    _NO_RULE_MATCH = "No match"
 
     @classmethod
     def create(
@@ -49,7 +53,7 @@ class RulEx:
         llm = llm or get_default_model()
         rules = cls._parse_rules(rules, llm)
         choice_parser = ChoiceOutputParser(
-            options=[rule.pattern for rule in rules] + [RulEx._NO_RULE_MATCH], llm=llm
+            options=[rule.pattern for rule in rules] + [cls._NO_RULE_MATCH], llm=llm
         )
         return cls(
             rules=rules, text_splitter=text_splitter, choice_parser=choice_parser, llm=llm

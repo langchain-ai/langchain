@@ -12,7 +12,7 @@ def get_default_max_tokens() -> int:
     if __MAX_TOKENS is None:
         # has not yet been set, default to the models max tokens
         try:
-            __MAX_TOKENS = get_default_model().max_tokens
+            __MAX_TOKENS = get_default_model().max_tokens or 100
         except AttributeError:
             # model doesn't have a max tokens attribute, default to 100
             __MAX_TOKENS = 100

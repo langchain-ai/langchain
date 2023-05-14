@@ -14,18 +14,15 @@ def pattern(
     input: str,
     query: str = None,
     pattern_name: str = None,
-    input_format_template: str = "{pattern}: {input}",
+    input_format_template: str = "{input}",
     output_format_template: str = "{output}",
     parser: BaseOutputParser[T] = None,
-    examples: list[tuple[str, str]] | tuple[tuple[str, str, str]] = [],
+    examples: list[tuple[str, str]] = [],
     llm: BaseLanguageModel = None,
 ) -> T:
     llm = llm or config.get_default_llm()
-    if examples and len(examples[0]) == 2:
-        examples = [(pattern_name, item, result) for item, result in examples]
     examples = [
-        {"input": ex_input, "output": ex_output, "pattern": ex_query}
-        for ex_query, ex_input, ex_output in examples
+        {"input": ex_input, "output": ex_output} for ex_input, ex_output in examples
     ]
     assert all(
         len(example) == 3 for example in examples
@@ -34,7 +31,7 @@ def pattern(
         system_prompt=query,
         input_prompt_template=input_format_template,
         output_prompt_template=output_format_template,
-        input_obj={"pattern": query, "input": input},
+        input_obj={"input": input},
         examples=examples,
     )
     return generate(input_msgs, llm=llm, parser=parser)
