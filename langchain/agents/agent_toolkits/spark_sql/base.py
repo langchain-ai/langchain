@@ -1,4 +1,4 @@
-"""SQL agent."""
+"""Spark SQL agent."""
 from typing import Any, Dict, List, Optional
 
 from langchain.agents.agent import AgentExecutor
