@@ -1,6 +1,6 @@
 """Util that calls Arxiv."""
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -87,7 +87,7 @@ class ArxivAPIWrapper(BaseModel):
         except self.arxiv_exceptions as ex:
             return f"Arxiv exception: {ex}"
 
-    def load(self, query: str) -> List[Document]:
+    def load(self, query: Optional[str] = "") -> List[Document]:
         """
         Run Arxiv search and get the article texts plus the article meta information.
         See https://lukasschwab.me/arxiv.py/index.html#Search
@@ -102,6 +102,9 @@ class ArxivAPIWrapper(BaseModel):
                 "PyMuPDF package not found, please install it with "
                 "`pip install pymupdf`"
             )
+        if not query:
+            logger.debug("Query is empty, please define it.")
+            return []
 
         try:
             docs: List[Document] = []
