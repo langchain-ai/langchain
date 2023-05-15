@@ -22,7 +22,13 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
-    model: str = "large"
+    # model: str = "large"
+    # Small, Large has been deprecated by cohere
+    # The new models are
+    # embed-english-light-v2.0
+    # embed-english-v2.0
+    # embed-multilingual-v2.0
+    model: str = "embed-english-v2.0"
     """Model name to use."""
 
     truncate: Optional[str] = None
