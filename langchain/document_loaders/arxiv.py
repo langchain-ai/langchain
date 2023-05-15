@@ -26,7 +26,7 @@ class ArxivLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Loads a query result from arxiv.org into a list of Documents."""
-        return list(self.lazy_load(query=query))
+        return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
         """Loads a query result from arxiv.org into a list of Documents."""
@@ -34,6 +34,5 @@ class ArxivLoader(BaseLoader):
             load_max_docs=self.load_max_docs,
             load_all_available_meta=self.load_all_available_meta,
         )
-        query = query or self.query
-        docs = arxiv_client.lazy_load(query=query)
+        docs = arxiv_client.lazy_load()
         return docs
