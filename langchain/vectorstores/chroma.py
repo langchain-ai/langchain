@@ -49,7 +49,7 @@ class Chroma(VectorStore):
                 from langchain.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
-                vectorstore = Chroma("langchain_store", embeddings.embed_query)
+                vectorstore = Chroma("langchain_store", embeddings)
     """
 
     _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
@@ -57,7 +57,7 @@ class Chroma(VectorStore):
     def __init__(
         self,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        embedding_function: Optional[Embeddings] = None,
+        embeddings: Optional[Embeddings] = None,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[Dict] = None,
@@ -87,12 +87,12 @@ class Chroma(VectorStore):
                     )
             self._client = chromadb.Client(self._client_settings)
 
-        self._embedding_function = embedding_function
+        self._embeddings = embeddings
         self._persist_directory = persist_directory
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
-            embedding_function=self._embedding_function.embed_documents
-            if self._embedding_function is not None
+            embedding_function=self._embeddings.embed_documents
+            if self._embeddings is not None
             else None,
             metadata=collection_metadata,
         )
@@ -154,8 +154,8 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
         embeddings = None
-        if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(list(texts))
+        if self._embeddings is not None:
+            embeddings = self._embeddings.embed_documents(list(texts))
         self._collection.add(
             metadatas=metadatas, embeddings=embeddings, documents=texts, ids=ids
         )
@@ -219,12 +219,12 @@ class Chroma(VectorStore):
             List[Tuple[Document, float]]: List of documents most similar to the query
                 text with distance in float.
         """
-        if self._embedding_function is None:
+        if self._embeddings is None:
             results = self.__query_collection(
                 query_texts=[query], n_results=k, where=filter
             )
         else:
-            query_embedding = self._embedding_function.embed_query(query)
+            query_embedding = self._embeddings.embed_query(query)
             results = self.__query_collection(
                 query_embeddings=[query_embedding], n_results=k, where=filter
             )
@@ -298,12 +298,12 @@ class Chroma(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        if self._embedding_function is None:
+        if self._embeddings is None:
             raise ValueError(
                 "For MMR search, you must specify an embedding function on" "creation."
             )
 
-        embedding = self._embedding_function.embed_query(query)
+        embedding = self._embeddings.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
             embedding, k, fetch_k, lambda_mul=lambda_mult, filter=filter
         )
@@ -373,7 +373,7 @@ class Chroma(VectorStore):
         """
         chroma_collection = cls(
             collection_name=collection_name,
-            embedding_function=embedding,
+            embeddings=embedding,
             persist_directory=persist_directory,
             client_settings=client_settings,
             client=client,

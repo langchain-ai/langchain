@@ -115,7 +115,7 @@ def test_chroma_with_persistence() -> None:
     # Get a new VectorStore from the persisted directory
     docsearch = Chroma(
         collection_name=collection_name,
-        embedding_function=FakeEmbeddings(),
+        embeddings=FakeEmbeddings(),
         persist_directory=chroma_persist_dir,
     )
     output = docsearch.similarity_search("foo", k=1)

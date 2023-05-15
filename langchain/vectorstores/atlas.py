@@ -26,7 +26,7 @@ class AtlasDB(VectorStore):
                 from langchain.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
-                vectorstore = AtlasDB("my_project", embeddings.embed_query)
+                vectorstore = AtlasDB("my_project", embeddings)
     """
 
     _ATLAS_DEFAULT_ID_FIELD = "atlas_id"
@@ -34,7 +34,7 @@ class AtlasDB(VectorStore):
     def __init__(
         self,
         name: str,
-        embedding_function: Optional[Embeddings] = None,
+        embeddings: Optional[Embeddings] = None,
         api_key: Optional[str] = None,
         description: str = "A description for your project",
         is_public: bool = True,
@@ -46,9 +46,9 @@ class AtlasDB(VectorStore):
         Args:
             name (str): The name of your project. If the project already exists,
                 it will be loaded.
-            embedding_function (Optional[Callable]): An optional function used for
-                embedding your data. If None, data will be embedded with
-                Nomic's embed model.
+            embeddings (Optional[Embeddings]): An optional model interface for
+                embedding your data. If None, data will be embedded with Nomic's
+                embed model.
             api_key (str): Your nomic API key
             description (str): A description for your project.
             is_public (bool): Whether your project is publicly accessible.
@@ -70,9 +70,9 @@ class AtlasDB(VectorStore):
             raise ValueError("No API key provided. Sign up at atlas.nomic.ai!")
         nomic.login(api_key)
 
-        self._embedding_function = embedding_function
+        self._embeddings = embeddings
         modality = "text"
-        if self._embedding_function is not None:
+        if self._embeddings is not None:
             modality = "embedding"
 
         # Check if the project exists, create it if not
@@ -118,8 +118,8 @@ class AtlasDB(VectorStore):
             ids = [str(uuid.uuid1()) for _ in texts]
 
         # Embedding upload case
-        if self._embedding_function is not None:
-            _embeddings = self._embedding_function.embed_documents(texts)
+        if self._embeddings is not None:
+            _embeddings = self._embeddings.embed_documents(texts)
             embeddings = np.stack(_embeddings)
             if metadatas is None:
                 data = [
@@ -189,12 +189,12 @@ class AtlasDB(VectorStore):
         Returns:
             List[Document]: List of documents most similar to the query text.
         """
-        if self._embedding_function is None:
+        if self._embeddings is None:
             raise NotImplementedError(
-                "AtlasDB requires an embedding_function for text similarity search!"
+                "AtlasDB requires an embeddings interface for text similarity search!"
             )
 
-        _embedding = self._embedding_function.embed_documents([query])[0]
+        _embedding = self._embeddings.embed_documents([query])[0]
         embedding = np.array(_embedding).reshape(1, -1)
         with self.project.wait_for_project_lock():
             neighbors, _ = self.project.projections[0].vector_search(
@@ -257,7 +257,7 @@ class AtlasDB(VectorStore):
         # Build project
         atlasDB = cls(
             name,
-            embedding_function=embedding,
+            embeddings=embedding,
             api_key=api_key,
             description="A description for your project",
             is_public=is_public,
