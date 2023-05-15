@@ -124,7 +124,7 @@ class SQLDatabase:
         **kwargs: Any,
     ) -> SQLDatabase:
         try:
-            from databricks import sql
+            from databricks import sql  # noqa: F401
         except ImportError:
             raise ValueError(
                 "databricks-sql-connector package not found, please install with"
