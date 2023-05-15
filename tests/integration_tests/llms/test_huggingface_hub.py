@@ -23,6 +23,13 @@ def test_huggingface_text2text_generation() -> None:
     assert output == "Albany"
 
 
+def test_huggingface_summarization() -> None:
+    """Test valid call to HuggingFace summarization model."""
+    llm = HuggingFaceHub(repo_id="facebook/bart-large-cnn")
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+
 def test_huggingface_call_error() -> None:
     """Test valid call to HuggingFace that errors."""
     llm = HuggingFaceHub(model_kwargs={"max_new_tokens": -1})
