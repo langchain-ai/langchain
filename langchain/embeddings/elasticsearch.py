@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import List, TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
+
+from langchain.utils import get_from_env
 
 if TYPE_CHECKING:
     from elasticsearch.client import MlClient
@@ -19,7 +21,7 @@ class ElasticsearchEmbeddings(Embeddings):
     In Elasticsearch you need to have an embedding model loaded and deployed.
     - https://www.elastic.co/guide/en/elasticsearch/reference/current/infer-trained-model.html
     - https://www.elastic.co/guide/en/machine-learning/current/ml-nlp-deploy-models.html
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -36,59 +38,55 @@ class ElasticsearchEmbeddings(Embeddings):
                 cluster.
             input_field (str): The name of the key for the input text field in the
                 document. Defaults to 'text_field'.
-
-
-        Example Usage:
-
-            import os
-
-            from elasticsearch import Elasticsearch
-
-            from langchain.embeddings import ElasticsearchEmbeddings
-
-            es_cloudid = os.environ.get("ES_CLOUDID")
-            es_user = os.environ.get("ES_USER")
-            es_pass = os.environ.get("ES_PASS")
-
-            # Connect to Elasticsearch
-            es_connection = Elasticsearch(
-                cloud_id=es_cloudid, basic_auth=(es_user, es_pass)
-            )
-
-            # Define the model ID and input field name (if different from default)
-            model_id = "your_model_id"
-            input_field = "your_input_field"  # Optional, only if different from 'text_field'
-
-            # Initialize the Elasticsearch embeddings instance
-            embeddings_generator = ElasticsearchEmbeddings(
-                es_connection, model_id, input_field=input_field
-            )
-
-            # Generate embeddings for a list of documents
-            documents = [
-                "This is an example document.",
-                "Another example document to generate embeddings for.",
-            ]
-            document_embeddings = embeddings_generator.embed_documents(documents)
-
-            # Print the generated document embeddings
-            for i, doc_embedding in enumerate(document_embeddings):
-                print(f"Embedding for document {i + 1}: {doc_embedding}")
-
-            # Generate an embedding for a single query text
-            query_text = "What is the meaning of life?"
-            query_embedding = embeddings_generator.embed_query(query_text)
-
-            # Print the generated query embedding
-            print(f"Embedding for query: {query_embedding}")
-
         """
         self.client = client
         self.model_id = model_id
         self.input_field = input_field
 
     @classmethod
-    def from_credentials(cls, es_cloud_id: Optional[str] = None, es_user: Optional[str] = None, es_password: Optional[str]=None):
+    def from_credentials(
+        cls,
+        model_id: str,
+        *,
+        es_cloud_id: Optional[str] = None,
+        es_user: Optional[str] = None,
+        es_password: Optional[str] = None,
+        input_field: str = "text_field",
+    ) -> ElasticsearchEmbeddings:
+        """Instantiate embeddings from Elasticsearch credentials.
+
+        Args:
+            model_id (str): The model_id of the model deployed in the Elasticsearch
+                cluster.
+            input_field (str): The name of the key for the input text field in the
+                document. Defaults to 'text_field'.
+            es_cloud_id: (str, optional): The Elasticsearch cloud i
+
+        Example Usage:
+            from langchain.embeddings import ElasticsearchEmbeddings
+
+            # Define the model ID and input field name (if different from default)
+            model_id = "your_model_id"
+            # Optional, only if different from 'text_field'
+            input_field = "your_input_field"
+
+            # Credentials can be passed in two ways. Either set the env vars
+            # ES_CLOUD_ID, ES_USER, ES_PASSWORD and they will be automatically pulled
+            # in, or pass them in directly as kwargs.
+            embeddings = ElasticsearchEmbeddings.from_credentials(
+                model_id,
+                input_field=input_field,
+                # es_cloud_id="foo",
+                # es_user="bar",
+                # es_password="baz",
+            )
+
+            documents = [
+                "This is an example document.",
+                "Another example document to generate embeddings for.",
+            ]
+            embeddings_generator.embed_documents(documents)
+        """
         try:
             from elasticsearch import Elasticsearch
             from elasticsearch.client import MlClient
@@ -99,14 +97,15 @@ class ElasticsearchEmbeddings(Embeddings):
             )
 
         es_cloud_id = es_cloud_id or get_from_env("es_cloud_id", "ES_CLOUD_ID")
-        es_user = os.environ.get("ES_USER")
-        es_pass = os.environ.get("ES_PASS")
+        es_user = es_user or get_from_env("es_user", "ES_USER")
+        es_password = es_password or get_from_env("es_password", "ES_PASSWORD")
 
         # Connect to Elasticsearch
         es_connection = Elasticsearch(
-            cloud_id=es_cloudid, basic_auth=(es_user, es_pass)
+            cloud_id=es_cloud_id, basic_auth=(es_user, es_password)
         )
-
+        client = MlClient(es_connection)
+        return cls(client, model_id, input_field=input_field)
 
     def _embedding_func(self, texts: List[str]) -> List[List[float]]:
         """
@@ -151,4 +150,3 @@ class ElasticsearchEmbeddings(Embeddings):
             List[float]: The embedding for the input query text.
         """
         return self._embedding_func([text])[0]
-
