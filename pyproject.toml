@@ -83,6 +83,8 @@ docarray = {version="^0.31.0", optional=true}
 protobuf = {version="3.19", optional=true}
 hnswlib = {version="^0.7.0", optional=true}
 lxml = {version = "^4.9.2", optional = true}
+pymupdf = {version = "^1.22.3", optional = true}
+pypdfium2 = {version = "^4.10.0", optional = true}
 
 
 [tool.poetry.group.docs.dependencies]
@@ -177,6 +179,8 @@ extended_testing = [
  "jq",
  "pdfminer.six",
  "pypdf",
+ "pymupdf",
+ "pypdfium2",
  "tqdm",
  "lxml",
 ]
