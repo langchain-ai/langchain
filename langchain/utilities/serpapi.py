@@ -30,9 +30,8 @@ class SerpAPIWrapper(BaseModel):
     """Wrapper around SerpAPI.
 
     To use, you should have the ``google-search-results`` python package installed,
-    and the environment variable ``SERPAPI_API_KEY``, ``SERPAPI_BASE_URL``
-    set with your API key, or pass `serpapi_api_key`, `serpapi_base_url`
-    as a named parameter to the constructor.
+    and the environment variable ``SERPAPI_API_KEY`` set with your API key, or pass
+    `serpapi_api_key` as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
@@ -51,7 +50,6 @@ class SerpAPIWrapper(BaseModel):
         }
     )
     serpapi_api_key: Optional[str] = None
-    serpapi_base_url: Optional[str] = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:
@@ -62,20 +60,11 @@ class SerpAPIWrapper(BaseModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key, base url, and python package exists in environment."""
+        """Validate that api key and python package exists in environment."""
         serpapi_api_key = get_from_dict_or_env(
             values, "serpapi_api_key", "SERPAPI_API_KEY"
         )
         values["serpapi_api_key"] = serpapi_api_key
-
-        serpapi_base_url = get_from_dict_or_env(
-            values,
-            "serpapi_base_url",
-            "SERPAPI_BASE_URL",
-            default="https://serpapi.com/search",
-        )
-        values["serpapi_base_url"] = serpapi_base_url
-
         try:
             from serpapi import GoogleSearch
 
@@ -111,9 +100,8 @@ class SerpAPIWrapper(BaseModel):
             params["source"] = "python"
             if self.serpapi_api_key:
                 params["serp_api_key"] = self.serpapi_api_key
-            if self.serpapi_base_url:
-                params["serp_api_base_url"] = self.serpapi_base_url
             params["output"] = "json"
+            url = "https://serpapi.com/search"
             return url, params
 
         url, params = construct_url_and_params()
@@ -131,7 +119,6 @@ class SerpAPIWrapper(BaseModel):
         """Get parameters for SerpAPI."""
         _params = {
             "api_key": self.serpapi_api_key,
-            "api_base_url": self.serpapi_base_url,
             "q": query,
         }
         params = {**self.params, **_params}
