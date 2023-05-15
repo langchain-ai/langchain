@@ -126,3 +126,123 @@ def test_chat_prompt_template_with_messages() -> None:
     )
     prompt_value_messages = prompt_value.to_messages()
     assert prompt_value_messages[-1] == HumanMessage(content="foo")
+
+
+def test_system_message_prompt_template_from_file() -> None:
+    template_file = "tests/unit_tests/data/system_message_prompt_file.txt"
+
+    message_prompt = SystemMessagePromptTemplate(
+        prompt=PromptTemplate(
+            template="Here's some context: {context}",
+            input_variables=["context"],
+        )
+    )
+    messages = message_prompt.format_messages(context="context")
+
+    message_prompt_from_file = SystemMessagePromptTemplate.from_file(
+        template_file=template_file,
+        input_variables=["context"],
+    )
+    messages_from_file = message_prompt_from_file.format_messages(context="context")
+
+    expected_content = "Here's some context: context"
+
+    assert len(messages) == 1
+    assert len(messages_from_file) == 1
+    assert messages_from_file[0].content == messages[0].content
+    assert messages_from_file[0].content == expected_content
+
+
+def test_human_message_prompt_template_from_file() -> None:
+    template_file = "tests/unit_tests/data/human_message_prompt_file.txt"
+
+    message_prompt = HumanMessagePromptTemplate(
+        prompt=PromptTemplate(
+            template="Hello {foo}, I'm {bar}. Thanks for the {context}",
+            input_variables=["foo", "bar", "context"],
+        )
+    )
+    messages = message_prompt.format_messages(
+        foo="foo", bar="bar", context="context"
+    ) 
+
+    message_prompt_from_file = HumanMessagePromptTemplate.from_file(
+        template_file=template_file,
+        input_variables=["foo", "bar", "context"],
+    )
+    messages_from_file = message_prompt_from_file.format_messages(
+        foo="foo", bar="bar", context="context"
+    )
+
+    expected_content = "Hello foo, I'm bar. Thanks for the context"
+
+    assert len(messages) == 1
+    assert len(messages_from_file) == 1
+    assert messages_from_file[0].content == messages[0].content
+    assert messages_from_file[0].content == expected_content
+
+
+def test_ai_message_prompt_template_from_file() -> None:
+    message_prompt = AIMessagePromptTemplate(
+        prompt=PromptTemplate(
+            template="I'm an AI. I'm {foo}. I'm {bar}.",
+            input_variables=["foo", "bar"],
+        )
+    )
+    messages = message_prompt.format_messages(
+        foo="foo", bar="bar"
+    )
+
+    message_prompt_from_file = AIMessagePromptTemplate.from_file(
+        template_file="tests/unit_tests/data/ai_message_prompt_file.txt",
+        input_variables=["foo", "bar"],
+    )
+    messages_from_file = message_prompt_from_file.format_messages(
+        foo="foo", bar="bar"
+    )
+
+    expected_content = "I'm an AI. I'm foo. I'm bar."
+
+    assert len(messages) == 1
+    assert len(messages_from_file) == 1
+    assert messages_from_file[0].content == messages[0].content
+    assert messages_from_file[0].content == expected_content
+
+
+def test_chat_message_prompt_template_from_file() -> None:
+    template_file = "tests/unit_tests/data/chat_message_prompt_file.txt"
+
+    message_prompt = ChatMessagePromptTemplate(
+        role="test",
+        prompt=PromptTemplate(
+            template="I'm a generic message. I'm {foo}. I'm {bar}.",
+            input_variables=["foo", "bar"],
+        ),
+    )
+    messages = message_prompt.format_messages(
+        foo="foo", bar="bar"
+    )
+
+    message_prompt_from_file = ChatMessagePromptTemplate.from_file(
+        template_file=template_file,
+        input_variables=["foo", "bar"],
+    )
+    messages_from_file = message_prompt.format_messages(
+        foo="foo", bar="bar"
+    )
+
+    expected_content = "I'm a generic message. I'm foo. I'm bar." 
+
+    assert len(messages) == 1
+    assert len(messages_from_file) == 1
+    assert messages_from_file[0].content == messages[0].content
+    assert messages_from_file[0].content == expected_content
+
+     
+
+
+
+
+
+
+
