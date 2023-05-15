@@ -81,4 +81,4 @@ class Operation(FilterDirective):
 class StructuredQuery(Expr):
     query: str
     filter: Optional[FilterDirective]
-    k: Optional[int]
+    limit: Optional[int]

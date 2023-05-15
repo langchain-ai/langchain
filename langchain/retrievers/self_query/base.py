@@ -77,8 +77,8 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         new_query, new_kwargs = self.structured_query_translator.visit_structured_query(
             structured_query
         )
-        if structured_query.k is not None:
-            new_kwargs["k"] = structured_query.k
+        if structured_query.limit is not None:
+            new_kwargs["k"] = structured_query.limit
 
         search_kwargs = {**self.search_kwargs, **new_kwargs}
         docs = self.vectorstore.search(query, self.search_type, **search_kwargs)
@@ -96,7 +96,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         metadata_field_info: List[AttributeInfo],
         structured_query_translator: Optional[Visitor] = None,
         chain_kwargs: Optional[Dict] = None,
-        include_k: bool = False,
+        enable_limit: bool = False,
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
         if structured_query_translator is None:
@@ -115,7 +115,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
             llm,
             document_contents,
             metadata_field_info,
-            include_k=include_k,
+            enable_limit=enable_limit,
             **chain_kwargs,
         )
         return cls(

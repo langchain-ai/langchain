@@ -18,7 +18,8 @@ from langchain.chains.query_constructor.prompt import (
     DEFAULT_SCHEMA,
     DEFAULT_SUFFIX,
     EXAMPLE_PROMPT,
-    SCHEMA_WITH_K,
+    EXAMPLES_WITH_LIMIT,
+    SCHEMA_WITH_LIMIT,
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.output_parsers.structured import parse_json_markdown
@@ -40,7 +41,9 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
             else:
                 parsed["filter"] = self.ast_parse(parsed["filter"])
             return StructuredQuery(
-                query=parsed["query"], filter=parsed["filter"], k=parsed.get("k")
+                query=parsed["query"],
+                filter=parsed["filter"],
+                limit=parsed.get("limit"),
             )
         except Exception as e:
             raise OutputParserException(
@@ -73,22 +76,25 @@ def _get_prompt(
     examples: Optional[List] = None,
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
-    include_k: bool = False,
+    enable_limit: bool = False,
 ) -> BasePromptTemplate:
     attribute_str = _format_attribute_info(attribute_info)
-    examples = examples or DEFAULT_EXAMPLES
     allowed_comparators = allowed_comparators or list(Comparator)
     allowed_operators = allowed_operators or list(Operator)
-    if include_k:
-        schema = SCHEMA_WITH_K.format(
+    if enable_limit:
+        schema = SCHEMA_WITH_LIMIT.format(
             allowed_comparators=" | ".join(allowed_comparators),
             allowed_operators=" | ".join(allowed_operators),
         )
+
+        examples = examples or EXAMPLES_WITH_LIMIT
     else:
         schema = DEFAULT_SCHEMA.format(
             allowed_comparators=" | ".join(allowed_comparators),
             allowed_operators=" | ".join(allowed_operators),
         )
+
+        examples = examples or DEFAULT_EXAMPLES
     prefix = DEFAULT_PREFIX.format(schema=schema)
     suffix = DEFAULT_SUFFIX.format(
         i=len(examples) + 1, content=document_contents, attributes=attribute_str
@@ -97,7 +103,7 @@ def _get_prompt(
         allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
     )
     return FewShotPromptTemplate(
-        examples=DEFAULT_EXAMPLES,
+        examples=examples,
         example_prompt=EXAMPLE_PROMPT,
         input_variables=["query"],
         suffix=suffix,
@@ -113,7 +119,7 @@ def load_query_constructor_chain(
     examples: Optional[List] = None,
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
-    include_k: bool = False,
+    enable_limit: bool = False,
     **kwargs: Any,
 ) -> LLMChain:
     prompt = _get_prompt(
@@ -122,6 +128,6 @@ def load_query_constructor_chain(
         examples=examples,
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,
-        include_k=include_k,
+        enable_limit=enable_limit,
     )
     return LLMChain(llm=llm, prompt=prompt, **kwargs)
