@@ -13,38 +13,38 @@ This is the Python specific portion of the documentation. For a purely conceptua
 Getting Started
 ----------------
 
-Checkout the below guide for a walkthrough of how to get started using LangChain to create an Language Model application.
-
-- `Getting Started Documentation <./getting_started/getting_started.html>`_
+Start with a quick walkthrough of how to create a Language Model application using LangChain.
 
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started
    :name: getting_started
-   :hidden:
 
    getting_started/getting_started.md
 
 Modules
 -----------
 
-There are several main modules that LangChain provides support for.
-For each module we provide some examples to get started, how-to guides, reference docs, and conceptual guides.
-These modules are, in increasing order of complexity:
+These modules are the core abstractions which we view as the building blocks of any LLM-powered application.
+For each module LangChain provides standard, extendable interfaces. LanghChain also provides external integrations and even end-to-end implementations for off-the-shelf use.
 
-- `Models <./modules/models.html>`_: The various model types and model integrations LangChain supports.
+The docs for each module contain quickstart examples, how-to guides, reference docs, and conceptual guides.
 
-- `Prompts <./modules/prompts.html>`_: This includes prompt management, prompt optimization, and prompt serialization.
+The modules are (from least to most complex):
 
-- `Memory <./modules/memory.html>`_: Memory is the concept of persisting state between calls of a chain/agent. LangChain provides a standard interface for memory, a collection of memory implementations, and examples of chains/agents that use memory.
+- `Models <./modules/models.html>`_: Supported model types and integrations.
 
-- `Indexes <./modules/indexes.html>`_: Language models are often more powerful when combined with your own text data - this module covers best practices for doing exactly that.
+- `Prompts <./modules/prompts.html>`_: Prompt management, optimization, and serialization.
 
-- `Chains <./modules/chains.html>`_: Chains go beyond just a single LLM call, and are sequences of calls (whether to an LLM or a different utility). LangChain provides a standard interface for chains, lots of integrations with other tools, and end-to-end chains for common applications.
+- `Memory <./modules/memory.html>`_: Memory refers to state that is persisted between calls of a chain/agent.
 
-- `Agents <./modules/agents.html>`_: Agents involve an LLM making decisions about which Actions to take, taking that Action, seeing an Observation, and repeating that until done. LangChain provides a standard interface for agents, a selection of agents to choose from, and examples of end to end agents.
+- `Indexes <./modules/indexes.html>`_: Language models become much more powerful when combined with application-specific data - this module contains interfaces and integrations for loading, querying and updating external data.
 
-- `Callbacks <./modules/callbacks/getting_started.html>`_: It can be difficult to track all that occurs inside a chain or agent - callbacks help add a level of observability and introspection.
+- `Chains <./modules/chains.html>`_: Chains are structured sequences of calls (to an LLM or to a different utility).
+
+- `Agents <./modules/agents.html>`_: An agent is a Chain in which an LLM, given a high-level directive and a set of tools, repeatedly decides an action, executes the action and observes the outcome until the high-level directive is complete.
+
+- `Callbacks <./modules/callbacks/getting_started.html>`_: Callbacks let you log and stream the intermediate steps of any chain, making it easy to observe, debug, and evaluate the internals of an application.
 
 
 .. toctree::
