@@ -44,3 +44,7 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
             raise OutputParserException(
                 f"Could not parse datetime string: {response}"
             ) from e
+
+    @property
+    def _type(self) -> str:
+        return "datetime"
