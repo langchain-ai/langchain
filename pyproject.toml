@@ -178,7 +178,7 @@ extended_testing = [
  "pdfminer.six",
  "pypdf",
  "tqdm",
-  "lxml",
+ "lxml",
 ]
 
 [tool.ruff]
