@@ -2,11 +2,14 @@
 
 This is a collection of `LangChain` videos on `YouTube`.
 
+### ⛓️[Official LangChain YouTube channel](https://www.youtube.com/@LangChain)⛓️
+
 ### Introduction to LangChain with Harrison Chase, creator of LangChain
 - [Building the Future with LLMs, `LangChain`, & `Pinecone`](https://youtu.be/nMniwlGyX-c) by [Pinecone](https://www.youtube.com/@pinecone-io)
 - [LangChain and Weaviate with Harrison Chase and Bob van Luijt - Weaviate Podcast #36](https://youtu.be/lhby7Ql7hbk) by [Weaviate • Vector Database](https://www.youtube.com/@Weaviate)
 - [LangChain Demo + Q&A with Harrison Chase](https://youtu.be/zaYTXQFR0_s?t=788) by [Full Stack Deep Learning](https://www.youtube.com/@FullStackDeepLearning)
 - [LangChain Agents: Build Personal Assistants For Your Data (Q&A with Harrison Chase and Mayo Oshin)](https://youtu.be/gVkF8cwfBLI) by [Chat with data](https://www.youtube.com/@chatwithdata)
+- ⛓️ [LangChain "Agents in Production" Webinar](https://youtu.be/k8GNCCs16F4) by [LangChain](https://www.youtube.com/@LangChain)
 
 ## Videos (sorted by views)
 
@@ -43,3 +46,45 @@ This is a collection of `LangChain` videos on `YouTube`.
 - [Langchain + `Zapier` Agent](https://youtu.be/yribLAb-pxA) by [Merk](https://www.youtube.com/@merksworld)
 - [Connecting the Internet with `ChatGPT` (LLMs) using Langchain And Answers Your Questions](https://youtu.be/9Y0TBC63yZg) by [Kamalraj M M](https://www.youtube.com/@insightbuilder)
 - [Build More Powerful LLM Applications for Business’s with LangChain (Beginners Guide)](https://youtu.be/sp3-WLKEcBg) by[ No Code Blackbox](https://www.youtube.com/@nocodeblackbox)
+- ⛓️ [LangFlow LLM Agent Demo for 🦜🔗LangChain](https://youtu.be/zJxDHaWt-6o) by [Cobus Greyling](https://www.youtube.com/@CobusGreylingZA)
+- ⛓️ [Chatbot Factory: Streamline Python Chatbot Creation with LLMs and Langchain](https://youtu.be/eYer3uzrcuM) by [Finxter](https://www.youtube.com/@CobusGreylingZA)
+- ⛓️ [LangChain Tutorial - ChatGPT mit eigenen Daten](https://youtu.be/0XDLyY90E2c) by [Coding Crashkurse](https://www.youtube.com/@codingcrashkurse6429)
+- ⛓️ [Chat with a `CSV` | LangChain Agents Tutorial (Beginners)](https://youtu.be/tjeti5vXWOU) by [GoDataProf](https://www.youtube.com/@godataprof)
+- ⛓️ [Introdução ao Langchain - #Cortes - Live DataHackers](https://youtu.be/fw8y5VRei5Y) by [Prof. João Gabriel Lima](https://www.youtube.com/@profjoaogabriellima)
+- ⛓️ [LangChain: Level up `ChatGPT` !? | LangChain Tutorial Part 1](https://youtu.be/vxUGx8aZpDE) by [Code Affinity](https://www.youtube.com/@codeaffinitydev)
+- ⛓️ [KI schreibt krasses Youtube Skript 😲😳 | LangChain Tutorial Deutsch](https://youtu.be/QpTiXyK1jus) by [SimpleKI](https://www.youtube.com/@simpleki)
+- ⛓️ [Chat with Audio: Langchain, `Chroma DB`, OpenAI, and `Assembly AI`](https://youtu.be/Kjy7cx1r75g) by [AI Anytime](https://www.youtube.com/@AIAnytime)
+- ⛓️ [QA over documents with Auto vector index selection with Langchain router chains]() by [echohive](https://www.youtube.com/@echohive)
+- ⛓️ [Build your own custom LLM application with `Bubble.io` & Langchain (No Code & Beginner friendly)](https://youtu.be/O7NhQGu1m6c) by [No Code Blackbox](https://www.youtube.com/@nocodeblackbox)
+- ⛓️ [Simple App to Question Your Docs: Leveraging `Streamlit`, `Hugging Face Spaces`, LangChain, and `Claude`!](https://youtu.be/X4YbNECRr7o) by [Chris Alexiuk](https://www.youtube.com/@chrisalexiuk)
+- ⛓️ [LANGCHAIN AI- `ConstitutionalChainAI` + Databutton AI ASSISTANT Web App](https://youtu.be/5zIU6_rdJCU) by [Avra](https://www.youtube.com/@Avra_b)
+- ⛓️ [LANGCHAIN AI AUTONOMOUS AGENT WEB APP - 👶 `BABY AGI` 🤖 with EMAIL AUTOMATION using `DATABUTTON`](https://youtu.be/cvAwOGfeHgw) by [Avra](https://www.youtube.com/@Avra_b)
+- ⛓️ [The Future of Data Analysis: Using A.I. Models in Data Analysis (LangChain)](https://youtu.be/v_LIcVyg5dk) by [Absent Data](https://www.youtube.com/@absentdata)
+- ⛓️ [Memory in LangChain | Deep dive (python)](https://youtu.be/70lqvTFh_Yg) by [Eden Marco](https://www.youtube.com/@EdenMarco)
+- ⛓️ [9 LangChain UseCases | Beginner's Guide | 2023](https://youtu.be/zS8_qosHNMw) by [Data Science Basics](https://www.youtube.com/@datasciencebasics)
+- ⛓️ [Use Large Language Models in Jupyter Notebook | LangChain | Agents & Indexes](https://youtu.be/JSe11L1a_QQ) by [Abhinaw Tiwari](https://www.youtube.com/@AbhinawTiwariAT)
+- ⛓️ [How to Talk to Your Langchain Agent | `11 Labs` + `Whisper`](https://youtu.be/N4k459Zw2PU) by [VRSEN](https://www.youtube.com/@vrsen)
+- ⛓️ [LangChain Deep Dive: 5 FUN AI App Ideas To Build Quickly and Easily](https://youtu.be/mPYEPzLkeks) by [James NoCode](https://www.youtube.com/@jamesnocode)
+- ⛓️ [BEST OPEN Alternative to OPENAI's EMBEDDINGs for Retrieval QA: LangChain](https://youtu.be/ogEalPMUCSY) by [Prompt Engineering](https://www.youtube.com/@engineerprompt)
+- ⛓️ [LangChain 101: Models](https://youtu.be/T6c_XsyaNSQ) by [Mckay Wrigley](https://www.youtube.com/@realmckaywrigley)
+- ⛓️ [LangChain with JavaScript Tutorial #1 | Setup & Using LLMs](https://youtu.be/W3AoeMrg27o) by [Leon van Zyl](https://www.youtube.com/@leonvanzyl)
+- ⛓️ [LangChain Overview & Tutorial for Beginners: Build Powerful AI Apps Quickly & Easily (ZERO CODE)](https://youtu.be/iI84yym473Q) by [James NoCode](https://www.youtube.com/@jamesnocode)
+- ⛓️ [LangChain In Action: Real-World Use Case With Step-by-Step Tutorial](https://youtu.be/UO699Szp82M) by [Rabbitmetrics](https://www.youtube.com/@rabbitmetrics)
+- ⛓️ [Summarizing and Querying Multiple Papers with LangChain](https://youtu.be/p_MQRWH5Y6k) by [Automata Learning Lab](https://www.youtube.com/@automatalearninglab)
+- ⛓️ [Using Langchain (and `Replit`) through `Tana`, ask `Google`/`Wikipedia`/`Wolfram Alpha` to fill out a table](https://youtu.be/Webau9lEzoI) by [Stian Håklev](https://www.youtube.com/@StianHaklev)
+- ⛓️ [Langchain PDF App (GUI) | Create a ChatGPT For Your `PDF` in Python](https://youtu.be/wUAUdEw5oxM) by [Alejandro AO - Software & Ai](https://www.youtube.com/@alejandro_ao)
+- ⛓️ [Auto-GPT with LangChain 🔥 | Create Your Own Personal AI Assistant](https://youtu.be/imDfPmMKEjM) by [Data Science Basics](https://www.youtube.com/@datasciencebasics)
+- ⛓️ [Create Your OWN Slack AI Assistant with Python & LangChain](https://youtu.be/3jFXRNn2Bu8) by [Dave Ebbelaar](https://www.youtube.com/@daveebbelaar)
+- ⛓️ [How to Create LOCAL Chatbots with GPT4All and LangChain [Full Guide]](https://youtu.be/4p1Fojur8Zw) by [Liam Ottley](https://www.youtube.com/@LiamOttley)
+- ⛓️ [Build a `Multilingual PDF` Search App with LangChain, `Cohere` and `Bubble`](https://youtu.be/hOrtuumOrv8) by [Menlo Park Lab](https://www.youtube.com/@menloparklab)
+- ⛓️ [Building a LangChain Agent (code-free!) Using `Bubble` and `Flowise`](https://youtu.be/jDJIIVWTZDE) by [Menlo Park Lab](https://www.youtube.com/@menloparklab)
+- ⛓️ [Build a LangChain-based Semantic PDF Search App with No-Code Tools Bubble and Flowise](https://youtu.be/s33v5cIeqA4) by [Menlo Park Lab](https://www.youtube.com/@menloparklab)
+- ⛓️ [LangChain Memory Tutorial | Building a ChatGPT Clone in Python](https://youtu.be/Cwq91cj2Pnc) by [Alejandro AO - Software & Ai](https://www.youtube.com/@alejandro_ao)
+- ⛓️ [ChatGPT For Your DATA | Chat with Multiple Documents Using LangChain](https://youtu.be/TeDgIDqQmzs) by [Data Science Basics](https://www.youtube.com/@datasciencebasics)
+- ⛓️ [`Llama Index`: Chat with Documentation using URL Loader](https://youtu.be/XJRoDEctAwA) by [Merk](https://www.youtube.com/@merksworld)
+- ⛓️ [Using OpenAI, LangChain, and `Gradio` to Build Custom GenAI Applications](https://youtu.be/1MsmqMg3yUc) by [David Hundley](https://www.youtube.com/@dkhundley)
+
+
+
+---------------------
+⛓ icon marks a new video [last update 2023-05-15]
