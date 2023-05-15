@@ -1,36 +1,37 @@
 Welcome to LangChain
 ==========================
 
-LangChain is a framework for developing applications powered by language models. We believe that the most powerful and differentiated applications will not only call out to a language model via an API, but will also:
+| **LangChain** is a framework for developing applications powered by language models. We believe that the most powerful and differentiated applications will not only call out to a language model, but will also be:
+1. *Data-aware*: connect a language model to other sources of data
+2. *Agentic*: allow a language model to interact with its environment
 
-- *Be data-aware*: connect a language model to other sources of data
-- *Be agentic*: allow a language model to interact with its environment
+| The LangChain framework is designed around these principles.
 
-The LangChain framework is designed with the above principles in mind.
-
-This is the Python specific portion of the documentation. For a purely conceptual guide to LangChain, see `here <https://docs.langchain.com/docs/>`_. For the JavaScript documentation, see `here <https://js.langchain.com/docs/>`_.
+| This is the Python specific portion of the documentation. For a purely conceptual guide to LangChain, see `here <https://docs.langchain.com/docs/>`_. For the JavaScript documentation, see `here <https://js.langchain.com/docs/>`_.
 
 Getting Started
 ----------------
 
-Start with a quick walkthrough of how to create a Language Model application using LangChain.
+| Start here with a quick walkthrough of how to create a language model application using LangChain.
+- `Quickstart Guide <./getting_started/getting_started.html>`_
 
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started
    :name: getting_started
+   :hidden:
 
    getting_started/getting_started.md
 
 Modules
 -----------
 
-These modules are the core abstractions which we view as the building blocks of any LLM-powered application.
+| These modules are the core abstractions which we view as the building blocks of any LLM-powered application.
 For each module LangChain provides standard, extendable interfaces. LanghChain also provides external integrations and even end-to-end implementations for off-the-shelf use.
 
-The docs for each module contain quickstart examples, how-to guides, reference docs, and conceptual guides.
+| The docs for each module contain quickstart examples, how-to guides, reference docs, and conceptual guides.
 
-The modules are (from least to most complex):
+| The modules are (from least to most complex):
 
 - `Models <./modules/models.html>`_: Supported model types and integrations.
 
@@ -45,7 +46,6 @@ The modules are (from least to most complex):
 - `Agents <./modules/agents.html>`_: An agent is a Chain in which an LLM, given a high-level directive and a set of tools, repeatedly decides an action, executes the action and observes the outcome until the high-level directive is complete.
 
 - `Callbacks <./modules/callbacks/getting_started.html>`_: Callbacks let you log and stream the intermediate steps of any chain, making it easy to observe, debug, and evaluate the internals of an application.
-
 
 .. toctree::
    :maxdepth: 1
@@ -64,7 +64,7 @@ The modules are (from least to most complex):
 Use Cases
 ----------
 
-The above modules can be used in a variety of ways. LangChain also provides guidance and assistance in this. Below are some of the common use cases LangChain supports.
+| The above modules can be used in a variety of ways. LangChain also provides guidance and assistance in this. Below are some of the common use cases LangChain supports.
 
 - `Autonomous Agents <./use_cases/autonomous_agents.html>`_: Autonomous agents are long running agents that take many steps in an attempt to accomplish an objective. Examples include AutoGPT and BabyAGI.
 
@@ -111,7 +111,7 @@ The above modules can be used in a variety of ways. LangChain also provides guid
 Reference Docs
 ---------------
 
-All of LangChain's reference documentation, in one place. Full documentation on all methods, classes, installation methods, and integration setups for LangChain.
+| All of LangChain's reference documentation, in one place. Full documentation on all methods, classes, installation methods, and integration setups for LangChain.
 
 
 - `Reference Documentation <./reference.html>`_
@@ -129,7 +129,7 @@ All of LangChain's reference documentation, in one place. Full documentation on 
 LangChain Ecosystem
 -------------------
 
-Guides for how other companies/products can be used with LangChain
+| Guides for how other companies/products can be used with LangChain
 
 - `LangChain Ecosystem <./ecosystem.html>`_
 
@@ -146,7 +146,7 @@ Guides for how other companies/products can be used with LangChain
 Additional Resources
 ---------------------
 
-Additional collection of resources we think may be useful as you develop your application!
+| Additional collection of resources we think may be useful as you develop your application!
 
 - `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: The LangChainHub is a place to share and explore other prompts, chains, and agents.
 
