@@ -10,6 +10,8 @@ _EXPECTED = [
     "ConversationalAgent",
     "ConversationalChatAgent",
     "LLMSingleActionAgent",
+    "Reflector",
+    "ReflexionOutputParser",
     "MRKLChain",
     "ReActChain",
     "ReActTextWorldAgent",

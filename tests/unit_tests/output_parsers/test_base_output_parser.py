@@ -21,7 +21,9 @@ def non_abstract_subclasses(
     return subclasses
 
 
-_PARSERS_TO_SKIP = {"FakeOutputParser", "BaseOutputParser"}
+_PARSERS_TO_SKIP = {
+    "FakeOutputParser", "BaseOutputParser", 
+    "FakeReflexionOutputParser", "ReflexionOutputParser"}
 _NON_ABSTRACT_PARSERS = non_abstract_subclasses(
     BaseOutputParser, to_skip=_PARSERS_TO_SKIP
 )

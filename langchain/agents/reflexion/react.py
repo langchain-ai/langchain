@@ -15,6 +15,10 @@ class ReactReflexionOutputParser(ReflexionOutputParser):
         # The Reflexion prompt asks the LLM to complete after "New plan: ",
         # so the entire result is the reflexion
         return text
+    
+    @property
+    def _type(self) -> str:
+        return "react_reflexion_output_parser"
 
 
 class ReactReflector(Reflector):
@@ -91,7 +95,11 @@ class ReactReflector(Reflector):
             else:
                 break
 
-        return count
+        if count == 0:
+            return 0
+        else:
+            # 1 repitition means the same action was found twice
+            return count+1
 
     def reflect(
         self,

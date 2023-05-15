@@ -144,7 +144,9 @@ def test_agent_stopped_early() -> None:
     assert output == "Agent stopped due to iteration, trial or time limit."
 
     # trial limit
-    agent = _get_agent(max_trials=0, reflector=FakeReflector())  # TODO
+    llm = FakeListLLM(responses=["test response"])
+    reflector = FakeReflector.from_llm(llm=llm)
+    agent = _get_agent(max_trials=0, reflector=reflector)
     output = agent.run("when was langchain made")
     assert output == "Agent stopped due to iteration, trial or time limit."
 
