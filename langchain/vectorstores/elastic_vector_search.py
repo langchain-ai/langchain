@@ -64,6 +64,20 @@ class ElasticVectorSearch(VectorStore, ABC):
                 embedding=embedding
             )
 
+        .. code-block:: python
+
+            from langchain import ElasticVectorSearch
+            from langchain.embeddings import OpenAIEmbeddings
+            from elasticsearch import Elasticsearch
+
+            embedding = OpenAIEmbeddings()
+
+            elasticsearch_client = Elasticsearch(...)
+            elastic_vector_search = ElasticVectorSearch(
+                elasticsearch_client=elasticsearch_client,
+                index_name="test_index",
+                embedding=embedding
+            )
 
     To connect to an Elasticsearch instance that requires login credentials,
     including Elastic Cloud, use the Elasticsearch URL format
@@ -113,25 +127,41 @@ class ElasticVectorSearch(VectorStore, ABC):
     Raises:
         ValueError: If the elasticsearch python package is not installed.
     """
-
-    def __init__(self, elasticsearch_url: str, index_name: str, embedding: Embeddings):
+    def __init__(self, **kw):
         """Initialize with necessary components."""
-        try:
-            import elasticsearch
-        except ImportError:
+        elasticsearch_url = kw.get("elasticsearch_url", None)
+        elasticsearch_client = kw.get("elasticsearch_client", None)
+        index_name = kw.get("index_name", None)
+        embedding = kw.get("embedding", None)
+
+        if index_name is None or embedding is None:
             raise ValueError(
-                "Could not import elasticsearch python package. "
-                "Please install it with `pip install elasticsearch`."
+                "`index_name` or `embedding` is None, pleace check."
             )
-        self.embedding = embedding
-        self.index_name = index_name
-        try:
-            es_client = elasticsearch.Elasticsearch(elasticsearch_url)  # noqa
-        except ValueError as e:
+
+        if elasticsearch_client is None and elasticsearch_url is None:
             raise ValueError(
-                f"Your elasticsearch client string is misformatted. Got error: {e} "
+                "Could not build elasticsearch clinet correctly, pleace check."
             )
-        self.client = es_client
+
+        if elasticsearch_client is None:
+            try:
+                import elasticsearch
+            except ImportError:
+                raise ValueError(
+                    "Could not import elasticsearch python package. "
+                    "Please install it with `pip install elasticsearch`."
+                )
+            self.embedding = embedding
+            self.index_name = index_name
+            try:
+                elasticsearch_client = elasticsearch.Elasticsearch(elasticsearch_url)  # noqa
+            except ValueError as e:
+                raise ValueError(
+                    f"Your elasticsearch client string is misformatted. Got error: {e} "
+                )
+
+        self.client = elasticsearch_client
 
     def add_texts(
         self,
@@ -265,21 +295,24 @@ class ElasticVectorSearch(VectorStore, ABC):
         elasticsearch_url = get_from_dict_or_env(
             kwargs, "elasticsearch_url", "ELASTICSEARCH_URL"
         )
-        try:
-            import elasticsearch
-            from elasticsearch.exceptions import NotFoundError
-            from elasticsearch.helpers import bulk
-        except ImportError:
-            raise ValueError(
-                "Could not import elasticsearch python package. "
-                "Please install it with `pip install elasticsearch`."
-            )
-        try:
-            client = elasticsearch.Elasticsearch(elasticsearch_url)
-        except ValueError as e:
-            raise ValueError(
-                "Your elasticsearch client string is misformatted. " f"Got error: {e} "
-            )
+        elasticsearch_client = kw.get("elasticsearch_client", None)
+
+        if elasticsearch_client is None:
+            try:
+                import elasticsearch
+                from elasticsearch.exceptions import NotFoundError
+                from elasticsearch.helpers import bulk
+            except ImportError:
+                raise ValueError(
+                    "Could not import elasticsearch python package. "
+                    "Please install it with `pip install elasticsearch`."
+                )
+            try:
+                elasticsearch_client = elasticsearch.Elasticsearch(elasticsearch_url)
+            except ValueError as e:
+                raise ValueError(
+                    "Your elasticsearch client string is misformatted. " f"Got error: {e} "
+                )
         index_name = kwargs.get("index_name", uuid.uuid4().hex)
         embeddings = embedding.embed_documents(texts)
         dim = len(embeddings[0])
@@ -287,11 +320,11 @@ class ElasticVectorSearch(VectorStore, ABC):
 
         # check to see if the index already exists
         try:
-            client.indices.get(index=index_name)
+            elasticsearch_client.indices.get(index=index_name)
         except NotFoundError:
             # TODO would be nice to create index before embedding,
             # just to save expensive steps for last
-            client.indices.create(index=index_name, mappings=mapping)
+            elasticsearch_client.indices.create(index=index_name, mappings=mapping)
 
         requests = []
         for i, text in enumerate(texts):
@@ -306,4 +339,4 @@ class ElasticVectorSearch(VectorStore, ABC):
             requests.append(request)
         bulk(client, requests)
         client.indices.refresh(index=index_name)
-        return cls(elasticsearch_url, index_name, embedding)
+        return cls(elasticsearch_url=elasticsearch_url, index_name=index_name, embedding=embedding, elasticsearch_client=elasticsearch_client)
