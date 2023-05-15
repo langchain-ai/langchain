@@ -31,6 +31,8 @@ jobs:
           poetry-version: "1.4.2"
           cache-key: ${{ matrix.test_type }}
           install-command: |
+              echo "Check the poetry lock file."
+              poetry lock --check
               if [ "${{ matrix.test_type }}" == "core" ]; then
                 echo "Running core tests, installing dependencies with poetry..."
                 poetry install
