@@ -14,6 +14,7 @@ from langchain.callbacks.tracers.schemas import (
     Run,
     RunCreate,
     RunTypeEnum,
+    RunUpdate,
     TracerSession,
     TracerSessionCreate,
 )
@@ -52,6 +53,8 @@ def _get_tenant_id(
 
 class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
+
+    _supports_patch = True
 
     def __init__(
         self,
@@ -124,10 +127,13 @@ class LangChainTracer(BaseTracer):
         self.session = TracerSession(**r.json())
         return self.session
 
-    def _persist_run_nested(self, run: Run) -> None:
-        """Persist a run."""
+    def _persist_partial_run(self, run: Run) -> None:
+        """Persist a run on the start of a trace."""
+        if run.parent_run_id is None:
+            # If we are tracing examples in a dataset,
+            # relate only the top-level run to the example.
+            run.reference_example_id = self.example_id
         session = self.ensure_session()
-        child_runs = run.child_runs
         run_dict = run.dict()
         del run_dict["child_runs"]
         run_create = RunCreate(**run_dict, session_id=session.id)
@@ -140,12 +146,16 @@ class LangChainTracer(BaseTracer):
             raise_for_status_with_text(response)
         except Exception as e:
             logging.warning(f"Failed to persist run: {e}")
-        for child_run in child_runs:
-            child_run.parent_run_id = run.id
-            self._persist_run_nested(child_run)
 
     def _persist_run(self, run: Run) -> None:
-        """Persist a run."""
-        run.reference_example_id = self.example_id
-        # TODO: Post first then patch
-        self._persist_run_nested(run)
+        """Update a run on the trace end or error."""
+        update_run = RunUpdate(**run.dict())
+        try:
+            response = requests.patch(
+                f"{self._endpoint}/runs/{run.id}",
+                data=update_run.json(),
+                headers=self._headers,
+            )
+            raise_for_status_with_text(response)
+        except Exception as e:
+            logging.warning(f"Failed to update run: {e}")

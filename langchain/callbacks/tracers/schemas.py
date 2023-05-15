@@ -133,8 +133,21 @@ class Run(RunBase):
 
 
 class RunCreate(RunBase):
+    """Run schema for a create request."""
+
     name: str
     session_id: UUID
+
+
+class RunUpdate(BaseModel):
+    """Schema for a patch request to update a run."""
+
+    end_time: Optional[datetime.datetime]
+    extra: Optional[Dict]
+    error: Optional[str]
+    outputs: Optional[Dict]
+    parent_run_id: Optional[UUID]
+    reference_example_id: Optional[UUID]
 
 
 ChainRun.update_forward_refs()
