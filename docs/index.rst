@@ -13,9 +13,13 @@ This is the Python specific portion of the documentation. For a purely conceptua
 Getting Started
 ----------------
 
-Checkout the below guide for a walkthrough of how to get started using LangChain to create an Language Model application.
+How to get started using LangChain to create an Language Model application.
 
-- `Getting Started Documentation <./getting_started/getting_started.html>`_
+- `Getting Started tutorial <./getting_started/getting_started.html>`_
+
+Tutorials created by community experts and presented on YouTube.
+
+- `Tutorials <./getting_started/tutorials.html>`_
 
 .. toctree::
    :maxdepth: 1
@@ -24,6 +28,8 @@ Checkout the below guide for a walkthrough of how to get started using LangChain
    :hidden:
 
    getting_started/getting_started.md
+   getting_started/tutorials.md
+
 
 Modules
 -----------
