@@ -86,9 +86,7 @@ class HuggingFacePipeline(LLM):
         try:
             if task == "text-generation":
                 model = AutoModelForCausalLM.from_pretrained(model_id, **_model_kwargs)
-            elif task == "text2text-generation":
-                model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **_model_kwargs)
-            elif task == "summarization":
+            elif task in ("text2text-generation", "summarization"):
                 model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **_model_kwargs)
             else:
                 raise ValueError(
