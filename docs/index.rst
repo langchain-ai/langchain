@@ -64,29 +64,29 @@ For each module LangChain provides standard, extendable interfaces. LanghChain a
 Use Cases
 ----------
 
-| The above modules can be used in a variety of ways. LangChain also provides guidance and assistance in this. Below are some of the common use cases LangChain supports.
+| Best practices and built-in implementations for common LangChain use cases:
 
-- `Autonomous Agents <./use_cases/autonomous_agents.html>`_: Autonomous agents are long running agents that take many steps in an attempt to accomplish an objective. Examples include AutoGPT and BabyAGI.
+- `Autonomous Agents <./use_cases/autonomous_agents.html>`_: Autonomous agents are long-running agents that take many steps in an attempt to accomplish an objective. Examples include AutoGPT and BabyAGI.
 
-- `Agent Simulations <./use_cases/agent_simulations.html>`_: Putting agents in a sandbox and observing how they interact with each other or to events can be an interesting way to observe their long-term memory abilities.
+- `Agent Simulations <./use_cases/agent_simulations.html>`_: Putting agents in a sandbox and observing how they interact with each other and react to events can be an effective way to evaluate their long-range reasoning and planning abilities.
 
-- `Personal Assistants <./use_cases/personal_assistants.html>`_: The main LangChain use case. Personal assistants need to take actions, remember interactions, and have knowledge about your data.
+- `Personal Assistants <./use_cases/personal_assistants.html>`_: One of the primary LangChain use cases. Personal assistants need to take actions, remember interactions, and have knowledge about your data.
 
-- `Question Answering <./use_cases/question_answering.html>`_: The second big LangChain use case. Answering questions over specific documents, only utilizing the information in those documents to construct an answer.
+- `Question Answering <./use_cases/question_answering.html>`_: Another common LangChain use case. Answering questions over specific documents, only utilizing the information in those documents to construct an answer.
 
-- `Chatbots <./use_cases/chatbots.html>`_: Since language models are good at producing text, that makes them ideal for creating chatbots.
+- `Chatbots <./use_cases/chatbots.html>`_: Language models love to chat, making this a very natural use of them.
 
-- `Querying Tabular Data <./use_cases/tabular.html>`_: If you want to understand how to use LLMs to query data that is stored in a tabular format (csvs, SQL, dataframes, etc) you should read this page.
+- `Querying Tabular Data <./use_cases/tabular.html>`_: Recommended reading if you want to use language models to query structured data (CSVs, SQL, dataframes, etc).
 
-- `Code Understanding <./use_cases/code.html>`_: If you want to understand how to use LLMs to query source code from github, you should read this page.
+- `Code Understanding <./use_cases/code.html>`_: Recommended reading if you want to use language models to analyze code.
 
-- `Interacting with APIs <./use_cases/apis.html>`_: Enabling LLMs to interact with APIs is extremely powerful in order to give them more up-to-date information and allow them to take actions.
+- `Interacting with APIs <./use_cases/apis.html>`_: Enabling language models to interact with APIs is extremely powerful. It gives them access to up-to-date information and allows them to take actions.
 
 - `Extraction <./use_cases/extraction.html>`_: Extract structured information from text.
 
-- `Summarization <./use_cases/summarization.html>`_: Summarizing longer documents into shorter, more condensed chunks of information. A type of Data Augmented Generation.
+- `Summarization <./use_cases/summarization.html>`_: Compressing longer documents. A type of Data-Augmented Generation.
 
-- `Evaluation <./use_cases/evaluation.html>`_: Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
+- `Evaluation <./use_cases/evaluation.html>`_: Generative models are hard to evaluate with traditional metrics. One promising approach is to use language models themselves to do the evaluation.
 
 
 .. toctree::
@@ -95,9 +95,9 @@ Use Cases
    :name: use_cases
    :hidden:
 
-   ./use_cases/personal_assistants.md
    ./use_cases/autonomous_agents.md
    ./use_cases/agent_simulations.md
+   ./use_cases/personal_assistants.md
    ./use_cases/question_answering.md
    ./use_cases/chatbots.md
    ./use_cases/tabular.rst
@@ -111,7 +111,7 @@ Use Cases
 Reference Docs
 ---------------
 
-| All of LangChain's reference documentation, in one place. Full documentation on all methods, classes, installation methods, and integration setups for LangChain.
+| Full documentation on all methods, classes, installation methods, and integration setups for LangChain.
 
 
 - `Reference Documentation <./reference.html>`_
@@ -129,7 +129,7 @@ Reference Docs
 LangChain Ecosystem
 -------------------
 
-| Guides for how other companies/products can be used with LangChain
+| Guides for how other companies/products can be used with LangChain.
 
 - `LangChain Ecosystem <./ecosystem.html>`_
 
@@ -146,7 +146,7 @@ LangChain Ecosystem
 Additional Resources
 ---------------------
 
-| Additional collection of resources we think may be useful as you develop your application!
+| Additional resources we think may be useful as you develop your application!
 
 - `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: The LangChainHub is a place to share and explore other prompts, chains, and agents.
 
