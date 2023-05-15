@@ -82,6 +82,7 @@ pdfminer-six = {version = "^20221105", optional = true}
 docarray = {version="^0.31.0", optional=true}
 protobuf = {version="3.19", optional=true}
 hnswlib = {version="^0.7.0", optional=true}
+lxml = {version = "^4.9.2", optional = true}
 
 
 [tool.poetry.group.docs.dependencies]
@@ -170,8 +171,14 @@ embeddings = ["sentence-transformers"]
 azure = ["azure-identity", "azure-cosmos", "openai", "azure-core"]
 all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "lark", "pexpect", "pyvespa", "O365", "jq", "docarray", "protobuf", "hnswlib", "steamship", "pdfminer-six"]
 # An extra used to be able to add extended testing.
+# Please use new-line on formatting to make it easier to add new packages without
+# merge-conflicts
 extended_testing = [
-  "pypdf", "pdfminer.six", "tqdm", "jq"
+ "jq",
+ "pdfminer.six",
+ "pypdf",
+ "tqdm",
+ "lxml",
 ]
 
 [tool.ruff]
