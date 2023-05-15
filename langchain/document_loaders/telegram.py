@@ -1,12 +1,17 @@
 """Loader that loads Telegram chat json dump."""
+from __future__ import annotations
+
 import asyncio
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 def concatenate_rows(row: dict) -> str:
@@ -39,16 +44,6 @@ class TelegramChatFileLoader(BaseLoader):
         metadata = {"source": str(p)}
 
         return [Document(page_content=text, metadata=metadata)]
-
-
-try:
-    import pandas as pd
-    from telethon.sync import TelegramClient
-except ImportError:
-    raise ValueError(
-        "pandas is needed for Telegram loader, "
-        "please install with `pip install pandas`"
-    )
 
 
 def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
@@ -100,6 +95,8 @@ class TelegramChatApiLoader(BaseLoader):
 
     async def fetch_data_from_telegram(self) -> None:
         """Fetch data from Telegram API and save it as a JSON file."""
+        from telethon.sync import TelegramClient
+
         data = []
         async with TelegramClient(self.username, self.api_id, self.api_hash) as client:
             async for message in client.iter_messages(self.chat_url):

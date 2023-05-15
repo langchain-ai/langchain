@@ -111,6 +111,9 @@ from langchain.document_loaders.youtube import (
 # Legacy: only for backwards compat. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
 
+# For backwards compatability
+TelegramChatLoader = TelegramChatFileLoader
+
 __all__ = [
     "AZLyricsLoader",
     "AirbyteJSONLoader",
@@ -179,13 +182,10 @@ __all__ = [
     "SeleniumURLLoader",
     "SitemapLoader",
     "SlackDirectoryLoader",
-
     "TelegramChatFileLoader",
     "TelegramChatApiLoader",
-
     "SpreedlyLoader",
     "StripeLoader",
-    
     "TextLoader",
     "TomlLoader",
     "TwitterTweetLoader",
@@ -208,4 +208,5 @@ __all__ = [
     "WhatsAppChatLoader",
     "WikipediaLoader",
     "YoutubeLoader",
+    "TelegramChatLoader",
 ]
