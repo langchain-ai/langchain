@@ -131,7 +131,6 @@ class LangChainTracer(BaseTracer):
         run_dict = run.dict()
         del run_dict["child_runs"]
         run_create = RunCreate(**run_dict, session_id=session.id)
-        run_create.extra["langchain_runtime"] = get_env_info()
         try:
             response = requests.post(
                 f"{self._endpoint}/runs",

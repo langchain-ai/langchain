@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, root_validator
-from langchain.env import get_runtime_environment
 
 from langchain.env import get_runtime_environment
 from langchain.schema import LLMResult
@@ -23,8 +22,6 @@ class TracerSessionV1Base(BaseModel):
 
 class TracerSessionV1Create(TracerSessionV1Base):
     """Create class for TracerSessionV1."""
-
-    pass
 
 
 class TracerSessionV1(TracerSessionV1Base):
