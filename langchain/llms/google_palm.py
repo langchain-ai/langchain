@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -26,7 +26,10 @@ logger = logging.getLogger(__name__)
 
 def _create_retry_decorator() -> Callable[[Any], Any]:
     """Returns a tenacity retry decorator, preconfigured to handle PaLM exceptions"""
-    import google.api_core.exceptions
+    try:
+        import google.api_core.exceptions
+    except ImportError:
+        raise ImportError()
 
     multiplier = 2
     min_seconds = 1
@@ -44,6 +47,17 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
+
+
+def generate_with_retry(llm: GooglePalm, **kwargs: Any) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator()
+
+    @retry_decorator
+    def _completion_with_retry(**kwargs: Any) -> Any:
+        return llm.client.generate_text(**kwargs)
+
+    return _completion_with_retry(**kwargs)
 
 
 def _strip_erroneous_leading_spaces(text: str) -> str:
@@ -79,8 +93,6 @@ class GooglePalm(BaseLLM, BaseModel):
     n: int = 1
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
-    _retry = _create_retry_decorator()
-    """Internal class attribute that holds a tenacity retry decorator"""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -111,7 +123,6 @@ class GooglePalm(BaseLLM, BaseModel):
 
         return values
 
-    @_retry
     def _generate(
         self,
         prompts: List[str],
@@ -120,7 +131,8 @@ class GooglePalm(BaseLLM, BaseModel):
     ) -> LLMResult:
         generations = []
         for prompt in prompts:
-            completion = self.client.generate_text(
+            completion = generate_with_retry(
+                self,
                 model=self.model_name,
                 prompt=prompt,
                 stop_sequences=stop,
@@ -140,7 +152,6 @@ class GooglePalm(BaseLLM, BaseModel):
 
         return LLMResult(generations=generations)
 
-    @_retry
     async def _agenerate(
         self,
         prompts: List[str],
