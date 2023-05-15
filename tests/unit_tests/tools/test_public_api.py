@@ -37,6 +37,7 @@ _EXPECTED = [
     "NavigateBackTool",
     "NavigateTool",
     "OpenAPISpec",
+    "OpenWeatherMapQueryRun",
     "ReadFileTool",
     "SceneXplainTool",
     "ShellTool",
