@@ -70,7 +70,21 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         texts = list(map(lambda x: x.replace("\n", " "), texts))
-        embeddings = self.client.encode(texts, **self.encode_kwargs)
+
+        pool = self.client.start_multi_process_pool()
+        embeddings = self.client.encode_multi_process(texts, pool)
+
+        try:
+            import sentence_transformers
+
+        except ImportError as exc:
+            raise ValueError(
+                "Could not import sentence_transformers python package. "
+                "Please install it with `pip install sentence_transformers`."
+            ) from exc
+
+        sentence_transformers.SentenceTransformer.stop_multi_process_pool(pool)
+
         return embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
