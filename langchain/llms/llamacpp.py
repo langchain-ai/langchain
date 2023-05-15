@@ -64,7 +64,7 @@ class LlamaCpp(LLM):
     """Number of tokens to process in parallel.
     Should be a number between 1 and n_ctx."""
 
-    n_gpu_layers: Optional[int] = 0
+    n_gpu_layers: Optional[int] = Field(0, alias="n_gpu_layers")
     """Number of layers to be loaded into gpu memory. Default 0."""
 
     suffix: Optional[str] = Field(None)
