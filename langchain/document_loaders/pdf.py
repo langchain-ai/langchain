@@ -7,7 +7,7 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, Iterator, List, Optional
+from typing import Any, Iterator, List, Optional, Mapping
 from urllib.parse import urlparse
 
 import requests
