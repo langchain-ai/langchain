@@ -1,5 +1,5 @@
 """Module contains common parsers for PDFs."""
-from typing import Any, Iterator, Mapping, Optional
+from typing import Any, Iterator, Mapping, Optional, List
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
@@ -98,7 +98,7 @@ class PyPDFium2Parser(BaseBlobParser):
         # and closing pdf reader manually.
         # May re-write at some point to use bytes io.
         pdf_reader = pypdfium2.PdfDocument(blob.as_bytes())
-
+        docs: List[Document] = []
         try:
             for page_number, page in enumerate(pdf_reader):
                 content = page.get_textpage().get_text_range()
@@ -106,6 +106,7 @@ class PyPDFium2Parser(BaseBlobParser):
                 yield Document(page_content=str(content), metadata=metadata)
         finally:
             pdf_reader.close()
+        yield from docs
 
 
 class PDFPlumberParser(BaseBlobParser):
