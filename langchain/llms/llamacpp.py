@@ -64,6 +64,9 @@ class LlamaCpp(LLM):
     """Number of tokens to process in parallel.
     Should be a number between 1 and n_ctx."""
 
+    n_gpu_layers: Optional[int] = 0
+    """Number of layers to be loaded into gpu memory. Default 0."""
+
     suffix: Optional[str] = Field(None)
     """A suffix to append to the generated text. If None, no suffix is appended."""
 
@@ -115,6 +118,7 @@ class LlamaCpp(LLM):
         use_mlock = values["use_mlock"]
         n_threads = values["n_threads"]
         n_batch = values["n_batch"]
+        n_gpu_layers = values["n_gpu_layers"]
         use_mmap = values["use_mmap"]
         last_n_tokens_size = values["last_n_tokens_size"]
 
@@ -134,6 +138,7 @@ class LlamaCpp(LLM):
                 use_mlock=use_mlock,
                 n_threads=n_threads,
                 n_batch=n_batch,
+                n_gpu_layers=n_gpu_layers,
                 use_mmap=use_mmap,
                 last_n_tokens_size=last_n_tokens_size,
             )
