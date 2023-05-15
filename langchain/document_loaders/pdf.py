@@ -7,7 +7,7 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, Iterator, List, Optional, Mapping
+from typing import Any, Iterator, List, Mapping, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -368,7 +368,9 @@ class MathpixPDFLoader(BasePDFLoader):
 class PDFPlumberLoader(BasePDFLoader):
     """Loader that uses pdfplumber to load PDF files."""
 
-    def __init__(self, file_path: str, text_kwargs: Optional[Mapping[str, Any]]=None) -> None:
+    def __init__(
+        self, file_path: str, text_kwargs: Optional[Mapping[str, Any]] = None
+    ) -> None:
         """Initialize with file path."""
         try:
             import pdfplumber  # noqa:F401

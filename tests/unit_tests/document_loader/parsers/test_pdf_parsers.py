@@ -62,4 +62,3 @@ def test_pdfminer_parser() -> None:
     """Test PDFMiner parser."""
     # Does not follow defaults to split by page.
     _assert_with_parser(PDFMinerParser(), splits_by_page=False)
-    
