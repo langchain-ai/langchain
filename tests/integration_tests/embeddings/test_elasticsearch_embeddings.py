@@ -4,13 +4,13 @@ import pytest
 
 from elasticsearch import Elasticsearch
 
-from langchain.embeddings.elasticsearch_embeddings import ElasticsearchEmbeddings
+from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
 
 
 @pytest.fixture
-def es_connection() -> Elasticsearch:
+def es_connection() -> ElasticsearchEmbeddings:
     # Replace with your actual Elasticsearch connection details
-    return Elasticsearch("http://localhost:9200")
+    return ElasticsearchEmbeddings("http://localhost:9200")
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def model_id() -> str:
 
 
 def test_elasticsearch_embedding_documents(
-    es_connection: Elasticsearch, model_id: str
+    es_connection: ElasticsearchEmbeddings, model_id: str
 ) -> None:
     """Test Elasticsearch embeddings."""
     documents = ["foo bar"]
@@ -31,7 +31,7 @@ def test_elasticsearch_embedding_documents(
 
 
 def test_elasticsearch_embedding_documents_multiple(
-    es_connection: Elasticsearch, model_id: str
+    es_connection: ElasticsearchEmbeddings, model_id: str
 ) -> None:
     """Test Elasticsearch embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
@@ -44,7 +44,7 @@ def test_elasticsearch_embedding_documents_multiple(
 
 
 def test_elasticsearch_embedding_query(
-    es_connection: Elasticsearch, model_id: str
+    es_connection: ElasticsearchEmbeddings, model_id: str
 ) -> None:
     """Test Elasticsearch embeddings."""
     document = "foo bar"

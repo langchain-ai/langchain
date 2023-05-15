@@ -1,10 +1,14 @@
-from typing import List
+from __future__ import annotations
 
-from elasticsearch import Elasticsearch
-from elasticsearch.client import MlClient
+from typing import List, TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from elasticsearch.client import MlClient
+
+from langchain.embeddings.base import Embeddings
 
 
-class ElasticsearchEmbeddings:
+class ElasticsearchEmbeddings(Embeddings):
     """
     Wrapper around Elasticsearch embedding models.
 
@@ -19,7 +23,7 @@ class ElasticsearchEmbeddings:
 
     def __init__(
         self,
-        es_connection: Elasticsearch,
+        client: MlClient,
         model_id: str,
         input_field: str = "text_field",
     ):
@@ -27,31 +31,38 @@ class ElasticsearchEmbeddings:
         Initialize the ElasticsearchEmbeddings instance.
 
         Args:
-            es_connection (Elasticsearch): An Elasticsearch connection object.
-            model_id (str): The model_id of the model deployed in the Elasticsearch cluster.
-            input_field (str): The name of the key for the input text field in the document.
-                Defaults to 'text_field'.
+            client (MlClient): An Elasticsearch ML client object.
+            model_id (str): The model_id of the model deployed in the Elasticsearch
+                cluster.
+            input_field (str): The name of the key for the input text field in the
+                document. Defaults to 'text_field'.
 
 
         Example Usage:
 
             import os
+
             from elasticsearch import Elasticsearch
-            from langchain.embeddings.elasticsearch_embeddings import ElasticsearchEmbeddings
+
+            from langchain.embeddings import ElasticsearchEmbeddings
 
             es_cloudid = os.environ.get("ES_CLOUDID")
             es_user = os.environ.get("ES_USER")
             es_pass = os.environ.get("ES_PASS")
 
             # Connect to Elasticsearch
-            es_connection = Elasticsearch(cloud_id=es_cloudid, basic_auth=(es_user, es_pass))
+            es_connection = Elasticsearch(
+                cloud_id=es_cloudid, basic_auth=(es_user, es_pass)
+            )
 
             # Define the model ID and input field name (if different from default)
             model_id = "your_model_id"
             input_field = "your_input_field"  # Optional, only if different from 'text_field'
 
-            # Initialize the ElasticsearchEmbeddings instance
-            embeddings_generator = ElasticsearchEmbeddings(es_connection, model_id, input_field)
+            # Initialize the Elasticsearch embeddings instance
+            embeddings_generator = ElasticsearchEmbeddings(
+                es_connection, model_id, input_field=input_field
+            )
 
             # Generate embeddings for a list of documents
             documents = [
@@ -72,10 +83,30 @@ class ElasticsearchEmbeddings:
             print(f"Embedding for query: {query_embedding}")
 
         """
-        self.es_connection = es_connection
-        self.ml_client = MlClient(es_connection)
+        self.client = client
         self.model_id = model_id
         self.input_field = input_field
+
+    @classmethod
+    def from_credentials(cls, es_cloud_id: Optional[str] = None, es_user: Optional[str] = None, es_password: Optional[str]=None):
+        try:
+            from elasticsearch import Elasticsearch
+            from elasticsearch.client import MlClient
+        except ImportError:
+            raise ImportError(
+                "elasticsearch package not found, please install with 'pip install "
+                "elasticsearch'"
+            )
+
+        es_cloud_id = es_cloud_id or get_from_env("es_cloud_id", "ES_CLOUD_ID")
+        es_user = os.environ.get("ES_USER")
+        es_pass = os.environ.get("ES_PASS")
+
+        # Connect to Elasticsearch
+        es_connection = Elasticsearch(
+            cloud_id=es_cloudid, basic_auth=(es_user, es_pass)
+        )
+
 
     def _embedding_func(self, texts: List[str]) -> List[List[float]]:
         """
@@ -85,9 +116,10 @@ class ElasticsearchEmbeddings:
             texts (List[str]): A list of text strings to generate embeddings for.
 
         Returns:
-            List[List[float]]: A list of embeddings, one for each text in the input list.
+            List[List[float]]: A list of embeddings, one for each text in the input
+                list.
         """
-        response = self.ml_client.infer_trained_model(
+        response = self.client.infer_trained_model(
             model_id=self.model_id, docs=[{self.input_field: text} for text in texts]
         )
 
@@ -99,10 +131,12 @@ class ElasticsearchEmbeddings:
         Generate embeddings for a list of documents.
 
         Args:
-            texts (List[str]): A list of document text strings to generate embeddings for.
+            texts (List[str]): A list of document text strings to generate embeddings
+                for.
 
         Returns:
-            List[List[float]]: A list of embeddings, one for each document in the input list.
+            List[List[float]]: A list of embeddings, one for each document in the input
+                list.
         """
         return self._embedding_func(texts)
 
@@ -117,3 +151,4 @@ class ElasticsearchEmbeddings:
             List[float]: The embedding for the input query text.
         """
         return self._embedding_func([text])[0]
+

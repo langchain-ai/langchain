@@ -121,7 +121,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         self.embedding = embedding
         self.index_name = index_name
         try:
-            es_client = elasticsearch.Elasticsearch(elasticsearch_url)  # noqa
+            es_client = elasticsearch.ElasticsearchEmbeddings(elasticsearch_url)  # noqa
         except ValueError as e:
             raise ValueError(
                 f"Your elasticsearch client string is misformatted. Got error: {e} "
@@ -249,7 +249,7 @@ class ElasticVectorSearch(VectorStore, ABC):
                 "Please install it with `pip install elasticsearch`."
             )
         try:
-            client = elasticsearch.Elasticsearch(elasticsearch_url)
+            client = elasticsearch.ElasticsearchEmbeddings(elasticsearch_url)
         except ValueError as e:
             raise ValueError(
                 "Your elasticsearch client string is misformatted. " f"Got error: {e} "
