@@ -156,7 +156,7 @@ Below is a list of all supported tools and relevant information:
 **openweathermap-api**
 
 - Tool Name: OpenWeatherMap
-- Tool Description: A wrapper around OpenWeatherMap API. Useful for fetching current weather information for a specified location. Input should be a location string (e.g. 'London,GB').
+- Tool Description: A wrapper around OpenWeatherMap API. Useful for fetching current weather information for a specified location. Input should be a location string (e.g. London,GB).
 - Notes: A connection to the OpenWeatherMap API (https://api.openweathermap.org), specifically the `/data/2.5/weather` endpoint.
 - Requires LLM: No
 - Extra Parameters: `openweathermap_api_key` (your API key to access this endpoint)

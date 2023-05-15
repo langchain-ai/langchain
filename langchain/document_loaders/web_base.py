@@ -70,14 +70,14 @@ class WebBaseLoader(BaseLoader):
 
         headers = header_template or default_header_template
         if not headers.get("User-Agent"):
-            try:
-                from fake_useragent import UserAgent
-                headers["User-Agent"] = UserAgent().random
-            except ImportError:
-                logger.info(
-                    "fake_useragent not found, using default user agent."
-                    "To get a realistic header for requests, `pip install fake_useragent`."
-                )
+        try:
+            from fake_useragent import UserAgent
+            headers["User-Agent"] = UserAgent().random
+        except ImportError:
+            logger.info(
+                "fake_useragent not found, using default user agent."
+                "To get a realistic header for requests, `pip install fake_useragent`."
+            )
         self.session.headers = dict(headers)
 
     @property
