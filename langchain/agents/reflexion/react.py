@@ -15,7 +15,7 @@ class ReactReflexionOutputParser(ReflexionOutputParser):
         # The Reflexion prompt asks the LLM to complete after "New plan: ",
         # so the entire result is the reflexion
         return text
-    
+
     @property
     def _type(self) -> str:
         return "react_reflexion_output_parser"
@@ -59,7 +59,6 @@ class ReactReflector(Reflector):
         self,
         iterations_in_trial: int,
         execution_time_in_trial: float,
-        intermediate_steps: List[Tuple[AgentAction, str]],
         *args: Any,
         **kwargs: Any
     ) -> bool:
@@ -67,7 +66,12 @@ class ReactReflector(Reflector):
         # we have too many iterations in trial or trial took too long, or
         if super().should_reflect(iterations_in_trial, execution_time_in_trial):
             return True
-        # ... we're stuck in an action loop, or
+        # ... or we're stuck in an action loop, or
+        if "intermediate_steps" not in kwargs:
+            raise ValueError(
+                "ReactReflector.should_reflect expects" " intermediate_steps as kwarg"
+            )
+        intermediate_steps = kwargs["intermediate_steps"]
         if (
             self.max_action_repetition is not None
             and self._count_repetitions(intermediate_steps)
@@ -76,7 +80,9 @@ class ReactReflector(Reflector):
             print("Trial failed due to _max_action_repetition reached")
             return True
         # ... we're done, but the task was not succesful
-        # TODO
+        # TODO for a future version:
+        # When agents finishes, check if outputs answers initia question
+        # (via LLM call or string comparison [e.g. contains "don't know"])
 
         return False
 
@@ -99,7 +105,7 @@ class ReactReflector(Reflector):
             return 0
         else:
             # 1 repitition means the same action was found twice
-            return count+1
+            return count + 1
 
     def reflect(
         self,
@@ -108,18 +114,16 @@ class ReactReflector(Reflector):
         current_trial_no: int,
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> str:
-        """#TODO
-
-        Given input, decided what to do.
+        """
+        Given agent history, decide what agent can do better next time.
 
         Args:
-            intermediate_steps: Steps the LLM has taken to date,
-                along with observations
-            callbacks: Callbacks to run.
-            **kwargs: User inputs.
+            input: user input
+            current_trial: string representation of current trial
+            current_trial_no: number of current trial
 
         Returns:
-            Action specifying what tool to use.
+            Reflection obtained from LLM.
         """
 
         scratchpad = (
@@ -147,18 +151,16 @@ class ReactReflector(Reflector):
         current_trial_no: int,
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> str:
-        """#TODO
-
-        Given input, decided what to do.
+        """
+        Given agent history, decide what agent can do better next time.
 
         Args:
-            intermediate_steps: Steps the LLM has taken to date,
-                along with observations
-            callbacks: Callbacks to run.
-            **kwargs: User inputs.
+            input: user input
+            current_trial: string representation of current trial
+            current_trial_no: number of current trial
 
         Returns:
-            Action specifying what tool to use.
+            Reflection obtained from LLM.
         """
 
         scratchpad = (

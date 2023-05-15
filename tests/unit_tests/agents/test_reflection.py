@@ -54,7 +54,7 @@ def test_should_continue() -> None:
             execution_time_in_trial=5.0,
             intermediate_steps=non_repeating_actions,
         )
-        == True
+        is True
     )
 
     # trial failed due to max execution time exceeded
@@ -64,7 +64,7 @@ def test_should_continue() -> None:
             execution_time_in_trial=20.0,
             intermediate_steps=non_repeating_actions,
         )
-        == True
+        is True
     )
 
     # trial failed due to max action reptetitions exceeded
@@ -74,7 +74,7 @@ def test_should_continue() -> None:
             execution_time_in_trial=5.0,
             intermediate_steps=repeating_actions,
         )
-        == True
+        is True
     )
 
     # trial didn't fail
@@ -84,7 +84,7 @@ def test_should_continue() -> None:
             execution_time_in_trial=5.0,
             intermediate_steps=non_repeating_actions,
         )
-        == False
+        is False
     )
 
 

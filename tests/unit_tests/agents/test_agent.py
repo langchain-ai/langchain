@@ -1,6 +1,6 @@
 """Unit tests for agents."""
 
-from typing import Any, List, Mapping, Optional, Tuple
+from typing import Any, List, Mapping, Optional
 
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.agent import Reflector, ReflexionOutputParser
@@ -9,12 +9,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
     CallbackManagerForLLMRun,
-    Callbacks,
 )
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import AgentAction
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

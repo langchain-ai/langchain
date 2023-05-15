@@ -92,6 +92,10 @@ class BaseSingleActionAgent(BaseModel):
             Action specifying what tool to use.
         """
 
+    @abstractmethod
+    def string_representation(self, history: List[Tuple[AgentAction, str]]) -> str:
+        """String representation of agent run up to this point (for reflection)."""
+
     @property
     @abstractmethod
     def input_keys(self) -> List[str]:
@@ -229,6 +233,10 @@ class BaseMultiActionAgent(BaseModel):
             Actions specifying what tool to use.
         """
 
+    @abstractmethod
+    def string_representation(self, history: List[Tuple[AgentAction, str]]) -> str:
+        """String representation of agent run up to this point (for reflection)."""
+
     @property
     @abstractmethod
     def input_keys(self) -> List[str]:
@@ -346,6 +354,13 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
             **kwargs,
         )
         return self.output_parser.parse(output)
+
+    def string_representation(self, history: List[Tuple[AgentAction, str]]) -> str:
+        if len(history) != 1:
+            ValueError("Agent of type LLMSingleActionAgent should have exactly 1 step")
+
+        # return str-part of 1st ( & only) entry, as this is the LLM output
+        return history[0][1]
 
     async def aplan(
         self,
@@ -490,6 +505,10 @@ class Agent(BaseSingleActionAgent):
         new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
         full_inputs = {**kwargs, **new_inputs}
         return full_inputs
+
+    def string_representation(self, history: List[Tuple[AgentAction, str]]) -> str:
+        # TODO: Does this work for all agent types?
+        return str(self._construct_scratchpad(history))
 
     @property
     def input_keys(self) -> List[str]:
@@ -656,6 +675,10 @@ class Reflector(BaseModel):
     """Reflexion for of each trial"""
     trial_prefix: str = "\nTrial {trial_number}"
     trial_suffix: str = "\nSTATUS: FAIL\nNew plan: "
+
+    def reset(self) -> None:
+        self.trial_history = []
+        self.trial_reflexions = []
 
     def current_trial_prefix(self, trial_number: int) -> str:
         return self.trial_prefix.replace("{trial_number}", str(trial_number))
@@ -1051,6 +1074,8 @@ class AgentExecutor(Chain):
             [tool.name for tool in self.tools], excluded_colors=["green"]
         )
         intermediate_steps: List[Tuple[AgentAction, str]] = []
+        if self.reflector:
+            self.reflector.reset()
         # Let's start tracking the number of iterations and time elapsed
         # for total execution, and for current trial
         total_iterations = 0
@@ -1100,19 +1125,20 @@ class AgentExecutor(Chain):
                 trial_failed = self.reflector.should_reflect(
                     trial_iterations,
                     trial_time_elapsed,
-                    intermediate_steps,
+                    intermediate_steps=intermediate_steps,
                 )
 
                 # If yes, we reflect and start a new trial
                 if trial_failed:
                     if run_manager:
-                        run_manager.on_trial_fail("Trail failed", color="red")
+                        run_manager.on_trial_fail("\nTrail failed", color="red")
 
-                    current_trial = self.agent.get_full_inputs(intermediate_steps)[
-                        "agent_scratchpad"
-                    ]
+                    current_trial = self.agent.string_representation(intermediate_steps)
 
-                    # TODO: Make more generic (ie dont use inputs["input"])
+                    if "input" not in inputs:
+                        raise ValueError(
+                            f"Expected input named 'input', got {inputs.keys()}"
+                        )
                     self.reflector.reflect(
                         inputs["input"],
                         current_trial,
@@ -1127,9 +1153,11 @@ class AgentExecutor(Chain):
                     intermediate_steps = []
 
                     if run_manager:
-                        run_manager.on_trial_fail(
-                            f"Trial {trials} started", color="green"
-                        )
+                        new_trial_text = f"\nTrial {trials} started"
+                        if self.max_trials and trials > self.max_trials:
+                            # Don't show "Trial started" after last trial
+                            new_trial_text = ""
+                        run_manager.on_trial_fail(new_trial_text, color="green")
 
         output = self.agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
@@ -1149,6 +1177,8 @@ class AgentExecutor(Chain):
             [tool.name for tool in self.tools], excluded_colors=["green"]
         )
         intermediate_steps: List[Tuple[AgentAction, str]] = []
+        if self.reflector:
+            self.reflector.reset()
         # Let's start tracking the number of iterations and time elapsed
         # for total execution, and for current trial
         total_iterations = 0
@@ -1204,21 +1234,26 @@ class AgentExecutor(Chain):
                         trial_failed = self.reflector.should_reflect(
                             trial_iterations,
                             trial_time_elapsed,
-                            intermediate_steps,
+                            intermediate_steps=intermediate_steps,
                         )
 
                         # If yes, we reflect and start a new trial
                         if trial_failed:
                             if run_manager:
                                 await run_manager.on_trial_fail(
-                                    "Trail failed", color="red"
+                                    "\nTrail failed", color="red"
                                 )
 
-                            current_trial = self.agent.get_full_inputs(
+                            current_trial = self.agent.string_representation(
                                 intermediate_steps
-                            )["agent_scratchpad"]
+                            )
 
-                            # TODO: Make more generic (ie dont use inputs["input"])
+                            if "input" not in inputs:
+                                raise ValueError(
+                                    "Expected input named 'input', "
+                                    f"got {inputs.keys()}"
+                                )
+
                             await self.reflector.areflect(
                                 inputs["input"],
                                 current_trial,
@@ -1233,8 +1268,12 @@ class AgentExecutor(Chain):
                             intermediate_steps = []
 
                             if run_manager:
+                                new_trial_text = f"\nTrial {trials} started"
+                                if self.max_trials and trials > self.max_trials:
+                                    # Don't show "Trial started" after last trial
+                                    new_trial_text = ""
                                 await run_manager.on_trial_fail(
-                                    f"Trial {trials} started", color="green"
+                                    new_trial_text, color="green"
                                 )
 
                 output = self.agent.return_stopped_response(
