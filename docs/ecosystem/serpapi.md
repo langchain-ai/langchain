@@ -6,6 +6,7 @@ It is broken into two parts: installation and setup, and then references to the 
 ## Installation and Setup
 - Install requirements with `pip install google-search-results`
 - Get a SerpAPI api key and either set it as an environment variable (`SERPAPI_API_KEY`)
+- Optional, if you are using a proxy, set environment variable (`SERPAPI_BASE_URL`) or pass it to the LLM constructor to your proxy url.
 
 ## Wrappers
 
