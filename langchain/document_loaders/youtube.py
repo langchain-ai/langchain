@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-import re
+from urllib.parse import parse_qs, urlparse
 
 from pydantic import root_validator
 from pydantic.dataclasses import dataclass
@@ -97,33 +97,46 @@ class GoogleApiClient:
 
         return creds
 
-YT_URL_RE = re.compile(
-    r"""(?x)^
-     (
-         (?:https?://|//)                                    # http(s):// or protocol-independent URL
-         (?:(?:(?:(?:\w+\.)?[yY][oO][uU][tT][uU][bB][eE](?:-nocookie|kids)?\.com|
-            youtube\.googleapis\.com)/                        # the various hostnames, with wildcard subdomains
-         (?:.*?\#/)?                                          # handle anchor (#/) redirect urls
-         (?:                                                  # the various things that can precede the ID:
-             (?:(?:v|embed|e)/(?!videoseries))                # v/ or embed/ or e/
-             |shorts/
-             |(?:                                             # or the v= param in all its forms
-                 (?:(?:watch|movie)(?:_popup)?(?:\.php)?/?)?  # preceding watch(_popup|.php) or nothing (like /?v=xxxx)
-                 (?:\?|\#!?)                                  # the params delimiter ? or # or #!
-                 (?:.*?[&;])??                                # any other preceding param (like /?s=tuff&v=xxxx or ?s=tuff&amp;v=V36LpHqtcDY)
-                 v=
-             )
-         ))
-         |(?:
-            youtu\.be|                                        # just youtu.be/xxxx
-            vid\.plus|                                        # or vid.plus/xxxx
-         )/
-         )
-     )?                                                       # all until now is optional -> you can pass the naked ID
-     (?P<id>[0-9A-Za-z_-]{11})                                # here is it! the YouTube video ID
-     (?(1).+)?                                                # if we found the ID, everything can follow
-     $"""
-)
+
+ALLOWED_SCHEMAS = {"http", "https"}
+ALLOWED_NETLOCK = {
+    "youtu.be",
+    "m.youtube.com",
+    "youtube.com",
+    "www.youtube.com",
+    "www.youtube-nocookie.com",
+    "vid.plus",
+}
+
+
+def _parse_video_id(url: str) -> Optional[str]:
+    """Parse a youtube url and return the video id if valid, otherwise None."""
+    parsed_url = urlparse(url)
+
+    if parsed_url.scheme not in ALLOWED_SCHEMAS:
+        return None
+
+    if parsed_url.netloc not in ALLOWED_NETLOCK:
+        return None
+
+    path = parsed_url.path
+
+    if path.endswith("/watch"):
+        query = parsed_url.query
+        parsed_query = parse_qs(query)
+        if "v" in parsed_query:
+            ids = parsed_query["v"]
+            video_id = ids if isinstance(ids, str) else ids[0]
+        else:
+            return None
+    else:
+        path = parsed_url.path.lstrip("/")
+        video_id = path.split("/")[-1]
+
+    if len(video_id) != 11:  # Video IDs are 11 characters long
+        return None
+
+    return video_id
 
 
 class YoutubeLoader(BaseLoader):
@@ -145,10 +158,12 @@ class YoutubeLoader(BaseLoader):
     @staticmethod
     def extract_video_id(youtube_url: str) -> str:
         """Extract video id from common YT urls."""
-        match = YT_URL_RE.match(youtube_url)
-        if not match:
-            raise ValueError(f"Could not determine the video ID for the URL {youtube_url}")
-        return match.group("id")
+        video_id = _parse_video_id(youtube_url)
+        if not video_id:
+            raise ValueError(
+                f"Could not determine the video ID for the URL {youtube_url}"
+            )
+        return video_id
 
     @classmethod
     def from_youtube_url(cls, youtube_url: str, **kwargs: Any) -> YoutubeLoader:
