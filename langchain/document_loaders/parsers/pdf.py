@@ -1,5 +1,5 @@
 """Module contains common parsers for PDFs."""
-from typing import Any, Iterator, List, Mapping, Optional
+from typing import Any, Iterator, Mapping, Optional
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
