@@ -87,4 +87,4 @@ This is a collection of `LangChain` videos on `YouTube`.
 
 
 ---------------------
-⛓ icon marks a new video
+⛓ icon marks a new video [last update 2023-05-15]

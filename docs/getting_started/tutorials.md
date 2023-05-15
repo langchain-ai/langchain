@@ -2,7 +2,7 @@
 
 This is a collection of `LangChain` tutorials on `YouTube`.
 
-⛓ icon marks a new tutorial
+⛓ icon marks a new video [last update 2023-05-15]
 
 
 
@@ -103,4 +103,4 @@ LangChain by [Chat with data](https://www.youtube.com/@chatwithdata)
 - ⛓ [Build ChatGPT Chatbots with LangChain Memory: Understanding and Implementing Memory in Conversations](https://youtu.be/CyuUlf54wTs)
 
 ---------------------
-⛓ icon marks a new tutorial
+⛓ icon marks a new video [last update 2023-05-15]
