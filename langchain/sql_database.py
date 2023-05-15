@@ -5,7 +5,6 @@ import warnings
 from typing import Any, Iterable, List, Optional
 
 import sqlalchemy
-from pyspark.errors import IllegalArgumentException
 from sqlalchemy import (
     MetaData,
     Table,
@@ -156,14 +155,12 @@ class SQLDatabase:
             if context:
                 cluster_id = context.clusterId
             else:
-                raise IllegalArgumentException(
+                raise ValueError(
                     "Need to provide either 'warehouse_id' or 'cluster_id'."
                 )
 
         if warehouse_id and cluster_id:
-            raise IllegalArgumentException(
-                "Can't have both 'warehouse_id' or 'cluster_id'."
-            )
+            raise ValueError("Can't have both 'warehouse_id' or 'cluster_id'.")
 
         if warehouse_id:
             http_path = f"/sql/1.0/warehouses/{warehouse_id}"
