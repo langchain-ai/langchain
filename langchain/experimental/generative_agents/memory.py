@@ -1,5 +1,6 @@
 import logging
 import re
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from langchain import LLMChain
@@ -7,6 +8,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.prompts import PromptTemplate
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.schema import BaseMemory, Document
+from langchain.utils import mock_now
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +46,7 @@ class GenerativeAgentMemory(BaseMemory):
     relevant_memories_key: str = "relevant_memories"
     relevant_memories_simple_key: str = "relevant_memories_simple"
     most_recent_memories_key: str = "most_recent_memories"
+    now_key: str = "now"
     reflecting: bool = False
 
     def chain(self, prompt: PromptTemplate) -> LLMChain:
@@ -68,7 +71,9 @@ class GenerativeAgentMemory(BaseMemory):
         result = self.chain(prompt).run(observations=observation_str)
         return self._parse_list(result)
 
-    def _get_insights_on_topic(self, topic: str) -> List[str]:
+    def _get_insights_on_topic(
+        self, topic: str, now: Optional[datetime] = None
+    ) -> List[str]:
         """Generate 'insights' on a topic of reflection, based on pertinent memories."""
         prompt = PromptTemplate.from_template(
             "Statements about {topic}\n"
@@ -76,7 +81,7 @@ class GenerativeAgentMemory(BaseMemory):
             + "What 5 high-level insights can you infer from the above statements?"
             + " (example format: insight (because of 1, 5, 3))"
         )
-        related_memories = self.fetch_memories(topic)
+        related_memories = self.fetch_memories(topic, now=now)
         related_statements = "\n".join(
             [
                 f"{i+1}. {memory.page_content}"
@@ -89,16 +94,16 @@ class GenerativeAgentMemory(BaseMemory):
         # TODO: Parse the connections between memories and insights
         return self._parse_list(result)
 
-    def pause_to_reflect(self) -> List[str]:
+    def pause_to_reflect(self, now: Optional[datetime] = None) -> List[str]:
         """Reflect on recent observations and generate 'insights'."""
         if self.verbose:
             logger.info("Character is reflecting")
         new_insights = []
         topics = self._get_topics_of_reflection()
         for topic in topics:
-            insights = self._get_insights_on_topic(topic)
+            insights = self._get_insights_on_topic(topic, now=now)
             for insight in insights:
-                self.add_memory(insight)
+                self.add_memory(insight, now=now)
             new_insights.extend(insights)
         return new_insights
 
@@ -122,14 +127,16 @@ class GenerativeAgentMemory(BaseMemory):
         else:
             return 0.0
 
-    def add_memory(self, memory_content: str) -> List[str]:
+    def add_memory(
+        self, memory_content: str, now: Optional[datetime] = None
+    ) -> List[str]:
         """Add an observation or memory to the agent's memory."""
         importance_score = self._score_memory_importance(memory_content)
         self.aggregate_importance += importance_score
         document = Document(
             page_content=memory_content, metadata={"importance": importance_score}
         )
-        result = self.memory_retriever.add_documents([document])
+        result = self.memory_retriever.add_documents([document], current_time=now)
 
         # After an agent has processed a certain amount of memories (as measured by
         # aggregate importance), it is time to reflect on recent events to add
@@ -140,15 +147,21 @@ class GenerativeAgentMemory(BaseMemory):
             and not self.reflecting
         ):
             self.reflecting = True
-            self.pause_to_reflect()
+            self.pause_to_reflect(now=now)
             # Hack to clear the importance from reflection
             self.aggregate_importance = 0.0
             self.reflecting = False
         return result
 
-    def fetch_memories(self, observation: str) -> List[Document]:
+    def fetch_memories(
+        self, observation: str, now: Optional[datetime] = None
+    ) -> List[Document]:
         """Fetch related memories."""
-        return self.memory_retriever.get_relevant_documents(observation)
+        if now is not None:
+            with mock_now(now):
+                return self.memory_retriever.get_relevant_documents(observation)
+        else:
+            return self.memory_retriever.get_relevant_documents(observation)
 
     def format_memories_detail(self, relevant_memories: List[Document]) -> str:
         content_strs = set()
@@ -183,9 +196,10 @@ class GenerativeAgentMemory(BaseMemory):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return key-value pairs given the text input to the chain."""
         queries = inputs.get(self.queries_key)
+        now = inputs.get(self.now_key)
         if queries is not None:
             relevant_memories = [
-                mem for query in queries for mem in self.fetch_memories(query)
+                mem for query in queries for mem in self.fetch_memories(query, now=now)
             ]
             return {
                 self.relevant_memories_key: self.format_memories_detail(
@@ -205,12 +219,13 @@ class GenerativeAgentMemory(BaseMemory):
             }
         return {}
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, Any]) -> None:
         """Save the context of this model run to memory."""
         # TODO: fix the save memory key
         mem = outputs.get(self.add_memory_key)
+        now = outputs.get(self.now_key)
         if mem:
-            self.add_memory(mem)
+            self.add_memory(mem, now=now)
 
     def clear(self) -> None:
         """Clear memory contents."""
