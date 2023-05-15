@@ -23,6 +23,7 @@ from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.discord import DiscordChatLoader
+from langchain.document_loaders.docugami import DocugamiLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import (
     OutlookMessageLoader,
@@ -60,6 +61,7 @@ from langchain.document_loaders.pdf import (
     OnlinePDFLoader,
     PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
+    PDFPlumberLoader,
     PyMuPDFLoader,
     PyPDFDirectoryLoader,
     PyPDFium2Loader,
@@ -79,7 +81,10 @@ from langchain.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain.document_loaders.spreedly import SpreedlyLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.stripe import StripeLoader
-from langchain.document_loaders.telegram import TelegramChatLoader
+from langchain.document_loaders.telegram import (
+    TelegramChatApiLoader,
+    TelegramChatFileLoader,
+)
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.toml import TomlLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
@@ -108,6 +113,9 @@ from langchain.document_loaders.youtube import (
 # Legacy: only for backwards compat. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
 
+# For backwards compatability
+TelegramChatLoader = TelegramChatFileLoader
+
 __all__ = [
     "AZLyricsLoader",
     "AirbyteJSONLoader",
@@ -129,6 +137,7 @@ __all__ = [
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
+    "DocugamiLoader",
     "Docx2txtLoader",
     "DuckDBLoader",
     "EverNoteLoader",
@@ -160,6 +169,7 @@ __all__ = [
     "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
+    "PDFPlumberLoader",
     "PagedPDFSplitter",
     "PlaywrightURLLoader",
     "PyMuPDFLoader",
@@ -176,9 +186,10 @@ __all__ = [
     "SeleniumURLLoader",
     "SitemapLoader",
     "SlackDirectoryLoader",
+    "TelegramChatFileLoader",
+    "TelegramChatApiLoader",
     "SpreedlyLoader",
     "StripeLoader",
-    "TelegramChatLoader",
     "TextLoader",
     "TomlLoader",
     "TwitterTweetLoader",
@@ -201,4 +212,5 @@ __all__ = [
     "WhatsAppChatLoader",
     "WikipediaLoader",
     "YoutubeLoader",
+    "TelegramChatLoader",
 ]
