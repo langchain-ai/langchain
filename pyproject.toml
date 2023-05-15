@@ -80,11 +80,12 @@ jq = {version = "^1.4.1", optional = true}
 steamship = {version = "^2.16.9", optional = true}
 pdfminer-six = {version = "^20221105", optional = true}
 docarray = {version="^0.31.0", optional=true}
-protobuf = {version="^3.19", optional=true}
+protobuf = {version="3.19.6", optional=true}
 hnswlib = {version="^0.7.0", optional=true}
 lxml = {version = "^4.9.2", optional = true}
 pymupdf = {version = "^1.22.3", optional = true}
 pypdfium2 = {version = "^4.10.0", optional = true}
+google-generativeai = {version = "^0.1.0rc2", optional = true}
 
 
 [tool.poetry.group.docs.dependencies]
@@ -176,13 +177,14 @@ all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "
 # Please use new-line on formatting to make it easier to add new packages without
 # merge-conflicts
 extended_testing = [
+ "google-generativeai",
  "jq",
+ "lxml",
  "pdfminer.six",
- "pypdf",
  "pymupdf",
+ "pypdf",
  "pypdfium2",
  "tqdm",
- "lxml",
 ]
 
 [tool.ruff]
