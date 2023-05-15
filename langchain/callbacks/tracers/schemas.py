@@ -8,6 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, root_validator
 
+from langchain.env import get_runtime_environment
 from langchain.schema import LLMResult
 
 
@@ -135,6 +136,14 @@ class Run(RunBase):
 class RunCreate(RunBase):
     name: str
     session_id: UUID
+
+    @root_validator(pre=True)
+    def add_runtime_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Add env info to the run."""
+        extra = values.get("extra", {})
+        extra["runtime"] = get_runtime_environment()
+        values["extra"] = extra
+        return values
 
 
 ChainRun.update_forward_refs()
