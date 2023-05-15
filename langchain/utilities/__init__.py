@@ -5,9 +5,11 @@ from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
+from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain.utilities.powerbi import PowerBIDataset
 from langchain.utilities.python import PythonREPL
@@ -21,6 +23,7 @@ __all__ = [
     "ArxivAPIWrapper",
     "BashProcess",
     "TextRequestsWrapper",
+    "DuckDuckGoSearchAPIWrapper",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
     "GooglePlacesAPIWrapper",
@@ -33,4 +36,5 @@ __all__ = [
     "PythonREPL",
     "LambdaWrapper",
     "PowerBIDataset",
+    "MetaphorSearchAPIWrapper",
 ]

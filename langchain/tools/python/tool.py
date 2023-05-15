@@ -36,7 +36,6 @@ class PythonREPLTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
     ) -> Any:
         """Use the tool."""
         if self.sanitize_input:
@@ -47,7 +46,6 @@ class PythonREPLTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-        **kwargs: Any,
     ) -> Any:
         """Use the tool asynchronously."""
         raise NotImplementedError("PythonReplTool does not support async")
@@ -104,7 +102,7 @@ class PythonAstREPLTool(BaseTool):
                     output = mystdout.getvalue()
                 except Exception as e:
                     sys.stdout = old_stdout
-                    output = str(e)
+                    output = repr(e)
                 return output
         except Exception as e:
             return "{}: {}".format(type(e).__name__, str(e))

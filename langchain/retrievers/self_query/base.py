@@ -8,15 +8,17 @@ from langchain.base_language import BaseLanguageModel
 from langchain.chains.query_constructor.base import load_query_constructor_chain
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
+from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.schema import BaseRetriever, Document
-from langchain.vectorstores import Pinecone, VectorStore
+from langchain.vectorstores import Chroma, Pinecone, VectorStore
 
 
 def _get_builtin_translator(vectorstore_cls: Type[VectorStore]) -> Visitor:
     """Get the translator class corresponding to the vector store class."""
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
-        Pinecone: PineconeTranslator
+        Pinecone: PineconeTranslator,
+        Chroma: ChromaTranslator,
     }
     if vectorstore_cls not in BUILTIN_TRANSLATORS:
         raise ValueError(
@@ -66,7 +68,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         Returns:
             List of relevant documents
         """
-        inputs = self.llm_chain.prep_inputs(query)
+        inputs = self.llm_chain.prep_inputs({"query": query})
         structured_query = cast(
             StructuredQuery, self.llm_chain.predict_and_parse(callbacks=None, **inputs)
         )
@@ -75,6 +77,9 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         new_query, new_kwargs = self.structured_query_translator.visit_structured_query(
             structured_query
         )
+        if structured_query.limit is not None:
+            new_kwargs["k"] = structured_query.limit
+
         search_kwargs = {**self.search_kwargs, **new_kwargs}
         docs = self.vectorstore.search(query, self.search_type, **search_kwargs)
         return docs
@@ -91,11 +96,13 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         metadata_field_info: List[AttributeInfo],
         structured_query_translator: Optional[Visitor] = None,
         chain_kwargs: Optional[Dict] = None,
+        enable_limit: bool = False,
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
         if structured_query_translator is None:
             structured_query_translator = _get_builtin_translator(vectorstore.__class__)
         chain_kwargs = chain_kwargs or {}
+
         if "allowed_comparators" not in chain_kwargs:
             chain_kwargs[
                 "allowed_comparators"
@@ -105,7 +112,11 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
                 "allowed_operators"
             ] = structured_query_translator.allowed_operators
         llm_chain = load_query_constructor_chain(
-            llm, document_contents, metadata_field_info, **chain_kwargs
+            llm,
+            document_contents,
+            metadata_field_info,
+            enable_limit=enable_limit,
+            **chain_kwargs,
         )
         return cls(
             llm_chain=llm_chain,

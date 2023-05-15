@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 from pydantic import BaseModel
 
@@ -25,7 +25,7 @@ def _get_num_tokens_default_method(text: str) -> int:
     # create a GPT-2 tokenizer instance
     tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 
-    # tokenize the text using the GPT-3 tokenizer
+    # tokenize the text using the GPT-2 tokenizer
     tokenized_text = tokenizer.tokenize(text)
 
     # calculate the number of tokens in the tokenized text
@@ -50,6 +50,16 @@ class BaseLanguageModel(BaseModel, ABC):
         callbacks: Callbacks = None,
     ) -> LLMResult:
         """Take in a list of prompt values and return an LLMResult."""
+
+    @abstractmethod
+    def predict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+        """Predict text from text."""
+
+    @abstractmethod
+    def predict_messages(
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
+    ) -> BaseMessage:
+        """Predict message from messages."""
 
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text."""
