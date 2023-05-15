@@ -7,7 +7,6 @@ from langchain.schema import (
     BaseChatMessageHistory,
     BaseMessage,
     HumanMessage,
-    _message_to_dict,
     messages_from_dict,
 )
 
@@ -68,9 +67,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         query = sql.SQL("INSERT INTO {} (session_id, message) VALUES (%s, %s);").format(
             sql.Identifier(self.table_name)
         )
-        self.cursor.execute(
-            query, (self.session_id, json.dumps(_message_to_dict(message)))
-        )
+        self.cursor.execute(query, (self.session_id, json.dumps(message.dict())))
         self.connection.commit()
 
     def clear(self) -> None:

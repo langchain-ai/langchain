@@ -5,9 +5,16 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
+from langchain.prompts.chat import (
+    AIMessagePromptTemplate,
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.loading import load_prompt
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
 
 
 @contextmanager
@@ -69,6 +76,23 @@ def test_saving_loading_round_trip(tmp_path: Path) -> None:
     few_shot_prompt.save(file_path=tmp_path / "few_shot.yaml")
     loaded_prompt = load_prompt(tmp_path / "few_shot.yaml")
     assert loaded_prompt == few_shot_prompt
+
+
+def test_saving_chat_loading_round_trip(tmp_path: Path) -> None:
+    """Test equality when saving and loading a chat prompt."""
+    message_list = [
+        [HumanMessage(content="hi"), HumanMessagePromptTemplate.from_template("{foo}")],
+        [AIMessage(content="hi"), AIMessagePromptTemplate.from_template("{foo}")],
+        [
+            SystemMessage(content="hi"),
+            SystemMessagePromptTemplate.from_template("{foo}"),
+        ],
+    ]
+    for messages in message_list:
+        simple_prompt = ChatPromptTemplate.from_messages(messages)
+        simple_prompt.save(file_path=tmp_path / "prompt.yaml")
+        loaded_prompt = load_prompt(tmp_path / "prompt.yaml")
+        assert loaded_prompt == simple_prompt
 
 
 def test_loading_with_template_as_file() -> None:

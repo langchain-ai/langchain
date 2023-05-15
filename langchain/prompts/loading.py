@@ -9,8 +9,15 @@ import yaml
 
 from langchain.output_parsers.regex import RegexParser
 from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.chat import (
+    AIMessagePromptTemplate,
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema import message_from_dict
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
@@ -115,6 +122,33 @@ def _load_prompt(config: dict) -> PromptTemplate:
     return PromptTemplate(**config)
 
 
+def _load_chat_prompt(config: dict) -> ChatPromptTemplate:
+    """Load the prompt template from config."""
+    # Load the template from disk if necessary.
+    config = _load_template("template", config)
+    config = _load_output_parser(config)
+
+    messages = []
+    for message in config["messages"]:
+        _type = message.pop("_type")
+        if _type == "human-message-prompt-template":
+            prompt = load_prompt_from_config(message.pop("prompt"))
+            _message = HumanMessagePromptTemplate(**{"prompt": prompt, **message})
+        elif _type == "ai-message-prompt-template":
+            prompt = load_prompt_from_config(message.pop("prompt"))
+            _message = AIMessagePromptTemplate(**{"prompt": prompt, **message})
+        elif _type == "system-message-prompt-template":
+            prompt = load_prompt_from_config(message.pop("prompt"))
+            _message = SystemMessagePromptTemplate(**{"prompt": prompt, **message})
+        elif _type == "base-message":
+            _message = message_from_dict(message)
+        else:  # role == system
+            raise ValueError
+        messages.append(_message)
+
+    return ChatPromptTemplate.from_messages(messages)
+
+
 def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
     """Unified method for loading a prompt from LangChainHub or local fs."""
     if hub_result := try_load_from_hub(
@@ -159,6 +193,7 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
 
 type_to_loader_dict = {
     "prompt": _load_prompt,
+    "chat_prompt": _load_chat_prompt,
     "few_shot": _load_few_shot_prompt,
     # "few_shot_with_templates": _load_few_shot_with_templates_prompt,
 }
