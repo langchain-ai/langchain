@@ -1,0 +1,7 @@
+tunnels:
+    langchain-backend:
+        addr: langchain-backend:8000
+        proto: http
+version: "2"
+region: us
+console_ui: true
