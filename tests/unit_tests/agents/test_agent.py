@@ -1,11 +1,20 @@
 """Unit tests for agents."""
 
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Tuple
 
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
+from langchain.agents.agent import Reflector, ReflexionOutputParser
 from langchain.agents.tools import Tool
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+    CallbackManagerForLLMRun,
+    Callbacks,
+)
 from langchain.llms.base import LLM
+from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.prompt import PromptTemplate
+from langchain.schema import AgentAction
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -35,6 +44,54 @@ class FakeListLLM(LLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "fake_list"
+
+
+class FakeReflexionOutputParser(ReflexionOutputParser):
+    def parse(self, text: str) -> str:
+        return ""
+
+
+class FakeReflector(Reflector):
+    def get_history(self, trials: int) -> str:
+        return ""
+
+    @classmethod
+    def create_prompt(self) -> BasePromptTemplate:
+        return PromptTemplate(
+            input_variables=[],
+            template="",
+        )
+
+    def should_reflect(
+        self,
+        iterations_in_trial: int,
+        execution_time_in_trial: float,
+        *args: Any,
+        **kwargs: Any,
+    ) -> bool:
+        return False
+
+    def reflect(
+        self,
+        input: str,
+        current_trial: str,
+        current_trial_no: int,
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> str:
+        return ""
+
+    async def areflect(
+        self,
+        input: str,
+        current_trial: str,
+        current_trial_no: int,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> str:
+        return ""
+
+    @classmethod
+    def _get_default_output_parser(cls, **kwargs: Any) -> ReflexionOutputParser:
+        return FakeReflexionOutputParser()
 
 
 def _get_agent(**kwargs: Any) -> AgentExecutor:
@@ -87,7 +144,9 @@ def test_agent_stopped_early() -> None:
     assert output == "Agent stopped due to iteration, trial or time limit."
 
     # trial limit
-    # TODO
+    agent = _get_agent(max_trials=0, reflector=FakeReflector())  # TODO
+    output = agent.run("when was langchain made")
+    assert output == "Agent stopped due to iteration, trial or time limit."
 
 
 def test_agent_with_callbacks() -> None:

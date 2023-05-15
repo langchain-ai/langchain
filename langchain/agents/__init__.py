@@ -7,7 +7,7 @@ from langchain.agents.agent import (
     BaseSingleActionAgent,
     LLMSingleActionAgent,
     Reflector,
-    ReflexionOutputParser
+    ReflexionOutputParser,
 )
 from langchain.agents.agent_toolkits import (
     create_csv_agent,

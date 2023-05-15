@@ -101,3 +101,21 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run on agent end."""
         print_text(finish.log, color=color if self.color else color, end="\n")
+
+    def on_trial_start(
+        self, text: str, color: Optional[str] = None, **kwargs: Any
+    ) -> None:
+        """Run when we use reflection and a trial starts."""
+        print_text(text, color=color if self.color else color, end="\n")
+
+    def on_trial_fail(
+        self, text: str, color: Optional[str] = None, **kwargs: Any
+    ) -> None:
+        """Run when we use reflection and a trial fails."""
+        print_text(text, color=color if self.color else color, end="\n")
+
+    def on_reflection(
+        self, text: str, color: Optional[str] = None, **kwargs: Any
+    ) -> None:
+        """Run when we use reflection and reflection is triggered."""
+        print_text(text, color=color if self.color else color, end="\n")

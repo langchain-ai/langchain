@@ -114,6 +114,40 @@ class ToolManagerMixin:
         """Run when tool errors."""
 
 
+class ReflectionManagerMixin:
+    """Mixin for reflection callbacks."""
+
+    def on_trial_start(
+        self,
+        text: str,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when we use reflection and a trial starts."""
+
+    def on_trial_fail(
+        self,
+        text: str,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when we use reflection and a trial fails."""
+
+    def on_reflection(
+        self,
+        text: str,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when we use reflection and reflection is triggered."""
+
+
 class CallbackManagerMixin:
     """Mixin for callback manager."""
 
@@ -184,6 +218,7 @@ class BaseCallbackHandler(
     ChainManagerMixin,
     ToolManagerMixin,
     CallbackManagerMixin,
+    ReflectionManagerMixin,
     RunManagerMixin,
 ):
     """Base callback handler that can be used to handle callbacks from langchain."""

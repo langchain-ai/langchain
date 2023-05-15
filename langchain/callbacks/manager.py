@@ -406,6 +406,42 @@ class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
             **kwargs,
         )
 
+    def on_trial_start(self, text: str, **kwargs: Any) -> Any:
+        """Run when we use reflection and a trial starts."""
+        _handle_event(
+            self.handlers,
+            "on_trial_start",
+            "ignore_agent",
+            text=text,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+    def on_trial_fail(self, text: str, **kwargs: Any) -> Any:
+        """Run when we use reflection and a trial fails."""
+        _handle_event(
+            self.handlers,
+            "on_trial_fail",
+            "ignore_agent",
+            text=text,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+    def on_reflection(self, text: str, **kwargs: Any) -> Any:
+        """Run when we use reflection and reflection is triggered."""
+        _handle_event(
+            self.handlers,
+            "on_reflection",
+            "ignore_agent",
+            text=text,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
 
 class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
     """Async callback manager for chain run."""
@@ -463,6 +499,42 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
             "on_agent_finish",
             "ignore_agent",
             finish,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+    async def on_trial_start(self, text: str, **kwargs: Any) -> Any:
+        """Run when we use reflection and a trial starts."""
+        await _ahandle_event(
+            self.handlers,
+            "on_trial_start",
+            "ignore_agent",
+            text=text,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+    async def on_trial_fail(self, text: str, **kwargs: Any) -> Any:
+        """Run when we use reflection and a trial fails."""
+        await _ahandle_event(
+            self.handlers,
+            "on_trial_fail",
+            "ignore_agent",
+            text=text,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+    async def on_reflection(self, text: str, **kwargs: Any) -> Any:
+        """Run when we use reflection and reflection is triggered."""
+        await _ahandle_event(
+            self.handlers,
+            "on_reflection",
+            "ignore_agent",
+            text=text,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             **kwargs,

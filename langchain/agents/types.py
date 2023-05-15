@@ -17,5 +17,5 @@ AGENT_TO_CLASS: Dict[AgentType, Type[BaseSingleActionAgent]] = {
     AgentType.CONVERSATIONAL_REACT_DESCRIPTION: ConversationalAgent,
     AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION: ChatAgent,
     AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION: ConversationalChatAgent,
-    AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION: StructuredChatAgent
+    AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION: StructuredChatAgent,
 }
