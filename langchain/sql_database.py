@@ -5,6 +5,7 @@ import warnings
 from typing import Any, Iterable, List, Optional
 
 import sqlalchemy
+from pyspark.errors import IllegalArgumentException
 from sqlalchemy import (
     MetaData,
     Table,
@@ -16,6 +17,8 @@ from sqlalchemy import (
 from sqlalchemy.engine import CursorResult, Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
+
+from langchain import utils
 
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
@@ -109,6 +112,69 @@ class SQLDatabase:
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
         return cls(create_engine(database_uri, **_engine_args), **kwargs)
+
+    @classmethod
+    def from_databricks(
+        cls,
+        catalog: str,
+        schema: str,
+        host: Optional[str] = None,
+        api_token: Optional[str] = None,
+        warehouse_id: Optional[str] = None,
+        cluster_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> SQLDatabase:
+        try:
+            from databricks import sql
+        except ImportError:
+            raise ValueError(
+                "databricks-sql-connector package not found, please install with"
+                " `pip install databricks-sql-connector`"
+            )
+        context = None
+        try:
+            from dbruntime.databricks_repl_context import get_context
+
+            context = get_context()
+        except ImportError:
+            pass
+
+        default_host = context.browserHostName if context else None
+        if host is None:
+            host = utils.get_from_env("host", "DATABRICKS_HOST", default_host)
+
+        default_api_token = context.apiToken if context else None
+        if api_token is None:
+            api_token = utils.get_from_env(
+                "api_token", "DATABRICKS_API_TOKEN", default_api_token
+            )
+
+        if cluster_id is None and context:
+            cluster_id = context.clusterId
+
+        if warehouse_id is None and cluster_id is None:
+            if context:
+                cluster_id = context.clusterId
+            else:
+                raise IllegalArgumentException(
+                    "Need to provide either 'warehouse_id' or 'cluster_id'."
+                )
+
+        if warehouse_id and cluster_id:
+            raise IllegalArgumentException(
+                "Can't have both 'warehouse_id' or 'cluster_id'."
+            )
+
+        if warehouse_id:
+            http_path = f"/sql/1.0/warehouses/{warehouse_id}"
+        else:
+            http_path = f"sql/protocolv1/o/0/{cluster_id}"
+
+        uri = (
+            f"databricks://token:{api_token}@{host}?"
+            f"http_path={http_path}&catalog={catalog}&schema={schema}"
+        )
+        return cls.from_uri(uri, engine_args=None, **kwargs)
 
     @property
     def dialect(self) -> str:
