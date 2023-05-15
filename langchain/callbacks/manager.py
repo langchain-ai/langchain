@@ -20,9 +20,9 @@ from langchain.callbacks.base import (
 )
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
-from langchain.callbacks.tracers.base import TracerSession
-from langchain.callbacks.tracers.langchain import LangChainTracer, LangChainTracerV2
-from langchain.callbacks.tracers.schemas import TracerSessionV2
+from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain.callbacks.tracers.langchain_v1 import LangChainTracerV1, TracerSessionV1
+from langchain.callbacks.tracers.schemas import TracerSession
 from langchain.schema import (
     AgentAction,
     AgentFinish,
@@ -37,11 +37,13 @@ Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
 )
-tracing_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
+tracing_callback_var: ContextVar[
+    Optional[LangChainTracerV1]
+] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
 tracing_v2_callback_var: ContextVar[
-    Optional[LangChainTracerV2]
+    Optional[LangChainTracer]
 ] = ContextVar(  # noqa: E501
     "tracing_callback_v2", default=None
 )
@@ -59,10 +61,10 @@ def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
 @contextmanager
 def tracing_enabled(
     session_name: str = "default",
-) -> Generator[TracerSession, None, None]:
+) -> Generator[TracerSessionV1, None, None]:
     """Get Tracer in a context manager."""
-    cb = LangChainTracer()
-    session = cast(TracerSession, cb.load_session(session_name))
+    cb = LangChainTracerV1()
+    session = cast(TracerSessionV1, cb.load_session(session_name))
     tracing_callback_var.set(cb)
     yield session
     tracing_callback_var.set(None)
@@ -70,9 +72,12 @@ def tracing_enabled(
 
 @contextmanager
 def tracing_v2_enabled(
-    session_name: str = "default",
+    session_name: Optional[str] = None,
+    *,
     example_id: Optional[Union[str, UUID]] = None,
-) -> Generator[TracerSessionV2, None, None]:
+    tenant_id: Optional[str] = None,
+    session_extra: Optional[Dict[str, Any]] = None,
+) -> Generator[TracerSession, None, None]:
     """Get the experimental tracer handler in a context manager."""
     # Issue a warning that this is experimental
     warnings.warn(
@@ -81,11 +86,16 @@ def tracing_v2_enabled(
     )
     if isinstance(example_id, str):
         example_id = UUID(example_id)
-    cb = LangChainTracerV2(example_id=example_id)
-    session = cast(TracerSessionV2, cb.new_session(session_name))
-    tracing_callback_var.set(cb)
+    cb = LangChainTracer(
+        tenant_id=tenant_id,
+        session_name=session_name,
+        example_id=example_id,
+        session_extra=session_extra,
+    )
+    session = cb.ensure_session()
+    tracing_v2_callback_var.set(cb)
     yield session
-    tracing_callback_var.set(None)
+    tracing_v2_callback_var.set(None)
 
 
 def _handle_event(
@@ -829,32 +839,35 @@ def _configure(
     tracer_session = os.environ.get("LANGCHAIN_SESSION")
     if tracer_session is None:
         tracer_session = "default"
-    if verbose or tracing_enabled_ or open_ai is not None:
+    if verbose or tracing_enabled_ or tracing_v2_enabled_ or open_ai is not None:
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(StdOutCallbackHandler(), False)
         if tracing_enabled_ and not any(
-            isinstance(handler, LangChainTracer)
+            isinstance(handler, LangChainTracerV1)
             for handler in callback_manager.handlers
         ):
             if tracer:
                 callback_manager.add_handler(tracer, True)
             else:
-                handler = LangChainTracer()
+                handler = LangChainTracerV1()
                 handler.load_session(tracer_session)
                 callback_manager.add_handler(handler, True)
         if tracing_v2_enabled_ and not any(
-            isinstance(handler, LangChainTracerV2)
+            isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
         ):
             if tracer_v2:
                 callback_manager.add_handler(tracer_v2, True)
             else:
-                handler = LangChainTracerV2()
-                handler.load_session(tracer_session)
-                callback_manager.add_handler(handler, True)
+                try:
+                    handler = LangChainTracer(session_name=tracer_session)
+                    handler.ensure_session()
+                    callback_manager.add_handler(handler, True)
+                except Exception as e:
+                    logger.debug("Unable to load requested LangChainTracer", e)
         if open_ai is not None and not any(
             isinstance(handler, OpenAICallbackHandler)
             for handler in callback_manager.handlers
