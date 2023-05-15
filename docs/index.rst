@@ -16,17 +16,22 @@ Getting Started
 
 - `Quickstart Guide <./getting_started/getting_started.html>`_
 
+| Concepts and terminology.
+
+- `Concepts and terminology <./getting_started/concepts.html>`_
+
 | Tutorials created by community experts and presented on YouTube.
 
 - `Tutorials <./getting_started/tutorials.html>`_
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Getting Started
    :name: getting_started
    :hidden:
 
    getting_started/getting_started.md
+   getting_started/concepts.md
    getting_started/tutorials.md
 
 
@@ -156,8 +161,6 @@ Additional Resources
 | Additional resources we think may be useful as you develop your application!
 
 - `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: The LangChainHub is a place to share and explore other prompts, chains, and agents.
-
-- `Glossary <./glossary.html>`_: A glossary of all related terms, papers, methods, etc. Whether implemented in LangChain or not!
 
 - `Gallery <./gallery.html>`_: A collection of our favorite projects that use LangChain. Useful for finding inspiration or seeing how things were done in other applications.
 
