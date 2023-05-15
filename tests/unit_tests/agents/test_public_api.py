@@ -30,6 +30,7 @@ _EXPECTED = [
     "get_all_tool_names",
     "initialize_agent",
     "load_agent",
+    "load_huggingface_tool",
     "load_tools",
     "tool",
 ]
@@ -37,4 +38,4 @@ _EXPECTED = [
 
 def test_public_api() -> None:
     """Test for regressions or changes in the agents public API."""
-    assert agents_all == sorted(_EXPECTED)
+    assert sorted(agents_all) == sorted(_EXPECTED)

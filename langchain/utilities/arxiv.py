@@ -16,7 +16,9 @@ class ArxivAPIWrapper(BaseModel):
     https://lukasschwab.me/arxiv.py/index.html
     This wrapper will use the Arxiv API to conduct searches and
     fetch document summaries. By default, it will return the document summaries
-    of the top-k results of an input search.
+    of the top-k results.
+    It limits the Document content by doc_content_chars_max.
+    Set doc_content_chars_max=None if you don't want to limit the content size.
 
     Parameters:
         top_k_results: number of the top-scored document used for the arxiv tool
@@ -34,6 +36,7 @@ class ArxivAPIWrapper(BaseModel):
     ARXIV_MAX_QUERY_LENGTH = 300
     load_max_docs: int = 100
     load_all_available_meta: bool = False
+    doc_content_chars_max: int = 4000
 
     class Config:
         """Configuration for this pydantic object."""
@@ -62,10 +65,10 @@ class ArxivAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """
-        Run Arxiv search and get the document meta information.
+        Run Arxiv search and get the article meta information.
         See https://lukasschwab.me/arxiv.py/index.html#Search
         See https://lukasschwab.me/arxiv.py/index.html#Result
-        It uses only the most informative fields of document meta information.
+        It uses only the most informative fields of article meta information.
         """
         try:
             docs = [
@@ -76,16 +79,20 @@ class ArxivAPIWrapper(BaseModel):
                     query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results
                 ).results()
             ]
-            return "\n\n".join(docs) if docs else "No good Arxiv Result was found"
+            return (
+                "\n\n".join(docs)[: self.doc_content_chars_max]
+                if docs
+                else "No good Arxiv Result was found"
+            )
         except self.arxiv_exceptions as ex:
             return f"Arxiv exception: {ex}"
 
     def load(self, query: str) -> List[Document]:
         """
-        Run Arxiv search and get the PDF documents plus the meta information.
+        Run Arxiv search and get the article texts plus the article meta information.
         See https://lukasschwab.me/arxiv.py/index.html#Search
 
-        Returns: a list of documents with the document.page_content in PDF format
+        Returns: a list of documents with the document.page_content in text format
 
         """
         try:
@@ -120,7 +127,7 @@ class ArxivAPIWrapper(BaseModel):
                             else {}
                         )
                         doc = Document(
-                            page_content=text,
+                            page_content=text[: self.doc_content_chars_max],
                             metadata=(
                                 {
                                     "Published": str(result.updated.date()),

@@ -292,3 +292,18 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         )
 
         return _response_to_result(response, stop)
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "model_name": self.model_name,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
+            "n": self.n,
+        }
+
+    @property
+    def _llm_type(self) -> str:
+        return "google-palm-chat"

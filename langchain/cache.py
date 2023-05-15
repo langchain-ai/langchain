@@ -1,8 +1,9 @@
 """Beta Feature: base interface for cache."""
 import hashlib
+import inspect
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
@@ -274,7 +275,12 @@ class RedisSemanticCache(BaseCache):
 class GPTCache(BaseCache):
     """Cache that uses GPTCache as a backend."""
 
-    def __init__(self, init_func: Optional[Callable[[Any], None]] = None):
+    def __init__(
+        self,
+        init_func: Union[
+            Callable[[Any, str], None], Callable[[Any], None], None
+        ] = None,
+    ):
         """Initialize by passing in init function (default: `None`).
 
         Args:
@@ -291,19 +297,17 @@ class GPTCache(BaseCache):
 
             # Avoid multiple caches using the same file,
             causing different llm model caches to affect each other
-            i = 0
-            file_prefix = "data_map"
 
-            def init_gptcache_map(cache_obj: gptcache.Cache):
-                nonlocal i
-                cache_path = f'{file_prefix}_{i}.txt'
+            def init_gptcache(cache_obj: gptcache.Cache, llm str):
                 cache_obj.init(
                     pre_embedding_func=get_prompt,
-                    data_manager=get_data_manager(data_path=cache_path),
+                    data_manager=manager_factory(
+                        manager="map",
+                        data_dir=f"map_cache_{llm}"
+                    ),
                 )
-                i += 1
 
-            langchain.llm_cache = GPTCache(init_gptcache_map)
+            langchain.llm_cache = GPTCache(init_gptcache)
 
         """
         try:
@@ -314,29 +318,37 @@ class GPTCache(BaseCache):
                 "Please install it with `pip install gptcache`."
             )
 
-        self.init_gptcache_func: Optional[Callable[[Any], None]] = init_func
+        self.init_gptcache_func: Union[
+            Callable[[Any, str], None], Callable[[Any], None], None
+        ] = init_func
         self.gptcache_dict: Dict[str, Any] = {}
+
+    def _new_gptcache(self, llm_string: str) -> Any:
+        """New gptcache object"""
+        from gptcache import Cache
+        from gptcache.manager.factory import get_data_manager
+        from gptcache.processor.pre import get_prompt
+
+        _gptcache = Cache()
+        if self.init_gptcache_func is not None:
+            sig = inspect.signature(self.init_gptcache_func)
+            if len(sig.parameters) == 2:
+                self.init_gptcache_func(_gptcache, llm_string)  # type: ignore[call-arg]
+            else:
+                self.init_gptcache_func(_gptcache)  # type: ignore[call-arg]
+        else:
+            _gptcache.init(
+                pre_embedding_func=get_prompt,
+                data_manager=get_data_manager(data_path=llm_string),
+            )
+        return _gptcache
 
     def _get_gptcache(self, llm_string: str) -> Any:
         """Get a cache object.
 
         When the corresponding llm model cache does not exist, it will be created."""
-        from gptcache import Cache
-        from gptcache.manager.factory import get_data_manager
-        from gptcache.processor.pre import get_prompt
 
-        _gptcache = self.gptcache_dict.get(llm_string, None)
-        if _gptcache is None:
-            _gptcache = Cache()
-            if self.init_gptcache_func is not None:
-                self.init_gptcache_func(_gptcache)
-            else:
-                _gptcache.init(
-                    pre_embedding_func=get_prompt,
-                    data_manager=get_data_manager(data_path=llm_string),
-                )
-            self.gptcache_dict[llm_string] = _gptcache
-        return _gptcache
+        return self.gptcache_dict.get(llm_string, self._new_gptcache(llm_string))
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up the cache data.

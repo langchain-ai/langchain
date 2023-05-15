@@ -186,15 +186,24 @@ class BaseOpenAI(BaseLLM):
 
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
+            if field_name in extra:
+                raise ValueError(f"Found {field_name} supplied twice.")
             if field_name not in all_required_field_names:
-                if field_name in extra:
-                    raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
                     f"""WARNING! {field_name} is not default parameter.
-                    {field_name} was transfered to model_kwargs.
+                    {field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)
+
+        disallowed_model_kwargs = all_required_field_names | {"model"}
+        invalid_model_kwargs = disallowed_model_kwargs.intersection(extra.keys())
+        if invalid_model_kwargs:
+            raise ValueError(
+                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
+                f"Instead they were passed in as part of `model_kwargs` parameter."
+            )
+
         values["model_kwargs"] = extra
         return values
 
@@ -422,7 +431,7 @@ class BaseOpenAI(BaseLLM):
     def prep_streaming_params(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
         """Prepare the params for streaming."""
         params = self._invocation_params
-        if params["best_of"] != 1:
+        if "best_of" in params and params["best_of"] != 1:
             raise ValueError("OpenAI only supports best_of == 1 for streaming")
         if stop is not None:
             if "stop" in params:

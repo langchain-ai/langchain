@@ -24,3 +24,7 @@ class ChatOutputParser(AgentOutputParser):
 
         except Exception:
             raise OutputParserException(f"Could not parse LLM output: {text}")
+
+    @property
+    def _type(self) -> str:
+        return "chat"
