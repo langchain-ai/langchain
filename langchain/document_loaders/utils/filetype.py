@@ -18,7 +18,10 @@ def get_mime_type(
         try:
             import magic
 
-            mime_type = magic.from_buffer(file_IO, mime=True)
+            # NOTE: Increased to reading in the first 4096 bytes because otherwise
+            # .xlsx files get detected as a zip file
+            # ref: https://github.com/ahupp/python-magic#usage
+            mime_type = magic.from_buffer(file_IO.read(4096), mime=True)
         except ImportError:
             pass
 
