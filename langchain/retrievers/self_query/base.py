@@ -59,7 +59,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
             )
         return values
 
-    def get_relevant_documents(self, query: str, k: int = 4) -> List[Document]:
+    def get_relevant_documents(self, query: str) -> List[Document]:
         """Get documents relevant for a query.
 
         Args:
@@ -68,17 +68,18 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         Returns:
             List of relevant documents
         """
-        inputs = self.llm_chain.prep_inputs({'query' : query, 'k' : k})
+        inputs = self.llm_chain.prep_inputs({"query": query})
         structured_query = cast(
             StructuredQuery, self.llm_chain.predict_and_parse(callbacks=None, **inputs)
         )
-        structured_query.k = k
         if self.verbose:
             print(structured_query)
         new_query, new_kwargs = self.structured_query_translator.visit_structured_query(
             structured_query
         )
-        
+        if structured_query.k is not None:
+            new_kwargs["k"] = structured_query.k
+
         search_kwargs = {**self.search_kwargs, **new_kwargs}
         docs = self.vectorstore.search(query, self.search_type, **search_kwargs)
         return docs
@@ -95,12 +96,13 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         metadata_field_info: List[AttributeInfo],
         structured_query_translator: Optional[Visitor] = None,
         chain_kwargs: Optional[Dict] = None,
+        include_k: bool = False,
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
         if structured_query_translator is None:
             structured_query_translator = _get_builtin_translator(vectorstore.__class__)
         chain_kwargs = chain_kwargs or {}
-        
+
         if "allowed_comparators" not in chain_kwargs:
             chain_kwargs[
                 "allowed_comparators"
@@ -110,7 +112,11 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
                 "allowed_operators"
             ] = structured_query_translator.allowed_operators
         llm_chain = load_query_constructor_chain(
-            llm, document_contents, metadata_field_info, **chain_kwargs
+            llm,
+            document_contents,
+            metadata_field_info,
+            include_k=include_k,
+            **chain_kwargs,
         )
         return cls(
             llm_chain=llm_chain,
