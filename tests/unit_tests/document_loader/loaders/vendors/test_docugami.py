@@ -1,8 +1,11 @@
+"""Test DocugamiLoader."""
+import pytest
 from pathlib import Path
 
 from langchain.document_loaders import DocugamiLoader
 
 
+@pytest.mark.requires("docugami")
 def test_docugami_loader_local() -> None:
     """Test DocugamiLoader."""
     file_path = Path(__file__).parent / "../examples/docugami-example.xml"
@@ -20,4 +23,4 @@ def test_docugami_loader_local() -> None:
 
 def test_docugami_loader_remote_init() -> None:
     """Test correct initialization in remote mode."""
-    _ = DocugamiLoader(access_token="test", docset_id="123")
+    DocugamiLoader(access_token="test", docset_id="123")

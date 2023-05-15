@@ -7,7 +7,7 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, Iterator, List, Optional
+from typing import Any, Iterator, List, Mapping, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -17,6 +17,7 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
     PDFMinerParser,
+    PDFPlumberParser,
     PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
@@ -362,3 +363,29 @@ class MathpixPDFLoader(BasePDFLoader):
             contents = self.clean_pdf(contents)
         metadata = {"source": self.source, "file_path": self.source}
         return [Document(page_content=contents, metadata=metadata)]
+
+
+class PDFPlumberLoader(BasePDFLoader):
+    """Loader that uses pdfplumber to load PDF files."""
+
+    def __init__(
+        self, file_path: str, text_kwargs: Optional[Mapping[str, Any]] = None
+    ) -> None:
+        """Initialize with file path."""
+        try:
+            import pdfplumber  # noqa:F401
+        except ImportError:
+            raise ValueError(
+                "pdfplumber package not found, please install it with "
+                "`pip install pdfplumber`"
+            )
+
+        super().__init__(file_path)
+        self.text_kwargs = text_kwargs or {}
+
+    def load(self) -> List[Document]:
+        """Load file."""
+
+        parser = PDFPlumberParser(text_kwargs=self.text_kwargs)
+        blob = Blob.from_path(self.file_path)
+        return parser.parse(blob)
