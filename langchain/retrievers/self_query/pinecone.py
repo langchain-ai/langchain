@@ -47,7 +47,10 @@ class PineconeTranslator(Visitor):
         self, structured_query: StructuredQuery
     ) -> Tuple[str, dict]:
         if structured_query.filter is None:
-            kwargs = {}
+            kwargs = {"k": structured_query.k}
         else:
-            kwargs = {"filter": structured_query.filter.accept(self)}
+            kwargs = {
+                "filter": structured_query.filter.accept(self),
+                "k": structured_query.k,
+            }
         return structured_query.query, kwargs

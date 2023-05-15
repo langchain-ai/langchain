@@ -18,6 +18,7 @@ from langchain.chains.query_constructor.prompt import (
     DEFAULT_SCHEMA,
     DEFAULT_SUFFIX,
     EXAMPLE_PROMPT,
+    SCHEMA_WITH_K,
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.output_parsers.structured import parse_json_markdown
@@ -38,7 +39,9 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
                 parsed["filter"] = None
             else:
                 parsed["filter"] = self.ast_parse(parsed["filter"])
-            return StructuredQuery(query=parsed["query"], filter=parsed["filter"])
+            return StructuredQuery(
+                query=parsed["query"], filter=parsed["filter"], k=parsed.get("k")
+            )
         except Exception as e:
             raise OutputParserException(
                 f"Parsing text\n{text}\n raised following error:\n{e}"
@@ -70,15 +73,22 @@ def _get_prompt(
     examples: Optional[List] = None,
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
+    include_k: bool = False,
 ) -> BasePromptTemplate:
     attribute_str = _format_attribute_info(attribute_info)
     examples = examples or DEFAULT_EXAMPLES
     allowed_comparators = allowed_comparators or list(Comparator)
     allowed_operators = allowed_operators or list(Operator)
-    schema = DEFAULT_SCHEMA.format(
-        allowed_comparators=" | ".join(allowed_comparators),
-        allowed_operators=" | ".join(allowed_operators),
-    )
+    if include_k:
+        schema = SCHEMA_WITH_K.format(
+            allowed_comparators=" | ".join(allowed_comparators),
+            allowed_operators=" | ".join(allowed_operators),
+        )
+    else:
+        schema = DEFAULT_SCHEMA.format(
+            allowed_comparators=" | ".join(allowed_comparators),
+            allowed_operators=" | ".join(allowed_operators),
+        )
     prefix = DEFAULT_PREFIX.format(schema=schema)
     suffix = DEFAULT_SUFFIX.format(
         i=len(examples) + 1, content=document_contents, attributes=attribute_str
@@ -103,6 +113,7 @@ def load_query_constructor_chain(
     examples: Optional[List] = None,
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
+    include_k: bool = False,
     **kwargs: Any,
 ) -> LLMChain:
     prompt = _get_prompt(
@@ -111,5 +122,6 @@ def load_query_constructor_chain(
         examples=examples,
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,
+        include_k=include_k,
     )
     return LLMChain(llm=llm, prompt=prompt, **kwargs)
