@@ -9,6 +9,12 @@ import yaml
 
 from langchain.output_parsers.regex import RegexParser
 from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.chat import (
+    AIMessagePromptTemplate,
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.utilities.loading import try_load_from_hub
@@ -115,6 +121,26 @@ def _load_prompt(config: dict) -> PromptTemplate:
     return PromptTemplate(**config)
 
 
+def _load_chat_prompt(config: dict) -> ChatPromptTemplate:
+    """Load the prompt template from config."""
+    # Load the template from disk if necessary.
+    config = _load_template("template", config)
+    config = _load_output_parser(config)
+
+    messages = []
+    for message in config["messages"]:
+        role = message["prompt"].get("role")
+        template = message["prompt"]["template"]
+        if role == "human":
+            messages.append(HumanMessagePromptTemplate.from_template(template))
+        elif role == "ai":
+            messages.append(AIMessagePromptTemplate.from_template(template))
+        else:  # role == system
+            messages.append(SystemMessagePromptTemplate.from_template(template))
+
+    return ChatPromptTemplate.from_messages(messages)
+
+
 def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
     """Unified method for loading a prompt from LangChainHub or local fs."""
     if hub_result := try_load_from_hub(
@@ -159,6 +185,7 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
 
 type_to_loader_dict = {
     "prompt": _load_prompt,
+    "chatPrompt": _load_chat_prompt,
     "few_shot": _load_few_shot_prompt,
     # "few_shot_with_templates": _load_few_shot_with_templates_prompt,
 }
