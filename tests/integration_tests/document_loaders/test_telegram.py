@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from langchain.document_loaders import TelegramChatLoader
+from langchain.document_loaders import TelegramChatFileLoader
 
 
-def test_telegram_chat_loader() -> None:
+def test_telegram_chat_file_loader() -> None:
     """Test TelegramChatLoader."""
     file_path = Path(__file__).parent.parent / "examples/telegram.json"
-    loader = TelegramChatLoader(str(file_path))
+    loader = TelegramChatFileLoader(str(file_path))
     docs = loader.load()
 
     assert len(docs) == 1

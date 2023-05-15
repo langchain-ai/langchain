@@ -12,8 +12,13 @@ Welcome to LangChain
 Getting Started
 ----------------
 
-| Start here with a quick walkthrough of how to create a language model application using LangChain.
+| How to get started using LangChain to create an Language Model application.
+
 - `Quickstart Guide <./getting_started/getting_started.html>`_
+
+| Tutorials created by community experts and presented on YouTube.
+
+- `Tutorials <./getting_started/tutorials.html>`_
 
 .. toctree::
    :maxdepth: 1
@@ -22,6 +27,8 @@ Getting Started
    :hidden:
 
    getting_started/getting_started.md
+   getting_started/tutorials.md
+
 
 Modules
 -----------
