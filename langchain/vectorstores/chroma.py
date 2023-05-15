@@ -9,6 +9,7 @@ import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.utils import xor_args
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -96,6 +97,42 @@ class Chroma(VectorStore):
             metadata=collection_metadata,
         )
 
+    @xor_args(("query_texts", "query_embeddings"))
+    def __query_collection(
+        self,
+        query_texts: Optional[List[str]] = None,
+        query_embeddings: Optional[List[List[float]]] = None,
+        n_results: int = 4,
+        where: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Query the chroma collection."""
+        try:
+            import chromadb
+        except ImportError:
+            raise ValueError(
+                "Could not import chromadb python package. "
+                "Please install it with `pip install chromadb`."
+            )
+
+        for i in range(n_results, 0, -1):
+            try:
+                return self._collection.query(
+                    query_texts=query_texts,
+                    query_embeddings=query_embeddings,
+                    n_results=i,
+                    where=where,
+                    **kwargs,
+                )
+            except chromadb.errors.NotEnoughElementsException:
+                logger.error(
+                    f"Chroma collection {self._collection.name} "
+                    f"contains fewer than {i} elements."
+                )
+        raise chromadb.errors.NotEnoughElementsException(
+            f"No documents found for Chroma collection {self._collection.name}"
+        )
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -153,12 +190,13 @@ class Chroma(VectorStore):
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
         Args:
-            embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            embedding (str): Embedding to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
             List of Documents most similar to the query vector.
         """
-        results = self._collection.query(
+        results = self.__query_collection(
             query_embeddings=embedding, n_results=k, where=filter
         )
         return _results_to_docs(results)
@@ -182,12 +220,12 @@ class Chroma(VectorStore):
                 text with distance in float.
         """
         if self._embedding_function is None:
-            results = self._collection.query(
+            results = self.__query_collection(
                 query_texts=[query], n_results=k, where=filter
             )
         else:
             query_embedding = self._embedding_function.embed_query(query)
-            results = self._collection.query(
+            results = self.__query_collection(
                 query_embeddings=[query_embedding], n_results=k, where=filter
             )
 
@@ -198,6 +236,7 @@ class Chroma(VectorStore):
         embedding: List[float],
         k: int = 4,
         fetch_k: int = 20,
+        lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -208,19 +247,26 @@ class Chroma(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
 
-        results = self._collection.query(
+        results = self.__query_collection(
             query_embeddings=embedding,
             n_results=fetch_k,
             where=filter,
             include=["metadatas", "documents", "distances", "embeddings"],
         )
         mmr_selected = maximal_marginal_relevance(
-            np.array(embedding, dtype=np.float32), results["embeddings"][0], k=k
+            np.array(embedding, dtype=np.float32),
+            results["embeddings"][0],
+            k=k,
+            lambda_mult=lambda_mult,
         )
 
         candidates = _results_to_docs(results)
@@ -233,6 +279,7 @@ class Chroma(VectorStore):
         query: str,
         k: int = 4,
         fetch_k: int = 20,
+        lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -243,6 +290,10 @@ class Chroma(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -254,13 +305,17 @@ class Chroma(VectorStore):
 
         embedding = self._embedding_function.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, filter
+            embedding, k, fetch_k, lambda_mul=lambda_mult, filter=filter
         )
         return docs
 
     def delete_collection(self) -> None:
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
+
+    def get(self) -> Chroma:
+        """Gets the collection"""
+        return self._collection.get()
 
     def persist(self) -> None:
         """Persist the collection.
@@ -274,6 +329,17 @@ class Chroma(VectorStore):
                 "creation to persist the collection."
             )
         self._client.persist()
+
+    def update_document(self, document_id: str, document: Document) -> None:
+        """Update a document in the collection.
+
+        Args:
+            document_id (str): ID of the document to update.
+            document (Document): Document to update.
+        """
+        text = document.page_content
+        metadata = document.metadata
+        self._collection.update_document(document_id, text, metadata)
 
     @classmethod
     def from_texts(

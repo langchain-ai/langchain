@@ -6,16 +6,15 @@ First, you should install tracing and set up your environment properly.
 You can use either a locally hosted version of this (uses Docker) or a cloud hosted version (in closed alpha).
 If you're interested in using the hosted platform, please fill out the form [here](https://forms.gle/tRCEMSeopZf6TE3b6).
 
-
 - [Locally Hosted Setup](./tracing/local_installation.md)
 - [Cloud Hosted Setup](./tracing/hosted_installation.md)
 
 ## Tracing Walkthrough
 
-When you first access the UI, you should see a page with your tracing sessions. 
-An initial one "default" should already be created for you. 
-A session is just a way to group traces together. 
-If you click on a session, it will take you to a page with no recorded traces that says "No Runs." 
+When you first access the UI, you should see a page with your tracing sessions.
+An initial one "default" should already be created for you.
+A session is just a way to group traces together.
+If you click on a session, it will take you to a page with no recorded traces that says "No Runs."
 You can create a new session with the new session form.
 
 ![](tracing/homepage.png)
@@ -35,7 +34,7 @@ We can keep on clicking further and further down to explore deeper and deeper.
 
 ![](tracing/explore.png)
 
-We can also click on the "Explore" button of the top level run to dive even deeper. 
+We can also click on the "Explore" button of the top level run to dive even deeper.
 Here, we can see the inputs and outputs in full, as well as all the nested traces.
 
 ![](tracing/explore_trace.png)
@@ -46,11 +45,12 @@ For example, here is the lowest level trace with the exact inputs/outputs to the
 ![](tracing/explore_llm.png)
 
 ## Changing Sessions
+
 1. To initially record traces to a session other than `"default"`, you can set the `LANGCHAIN_SESSION` environment variable to the name of the session you want to record to:
 
 ```python
 import os
-os.environ["LANGCHAIN_HANDLER"] = "langchain"
+os.environ["LANGCHAIN_TRACING"] = "true"
 os.environ["LANGCHAIN_SESSION"] = "my_session" # Make sure this session actually exists. You can create a new session in the UI.
 ```
 

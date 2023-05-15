@@ -29,6 +29,10 @@ from tenacity import (
     wait_exponential,
 )
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
@@ -182,15 +186,24 @@ class BaseOpenAI(BaseLLM):
 
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
+            if field_name in extra:
+                raise ValueError(f"Found {field_name} supplied twice.")
             if field_name not in all_required_field_names:
-                if field_name in extra:
-                    raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
                     f"""WARNING! {field_name} is not default parameter.
-                    {field_name} was transfered to model_kwargs.
+                    {field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)
+
+        disallowed_model_kwargs = all_required_field_names | {"model"}
+        invalid_model_kwargs = disallowed_model_kwargs.intersection(extra.keys())
+        if invalid_model_kwargs:
+            raise ValueError(
+                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
+                f"Instead they were passed in as part of `model_kwargs` parameter."
+            )
+
         values["model_kwargs"] = extra
         return values
 
@@ -242,14 +255,22 @@ class BaseOpenAI(BaseLLM):
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
             "n": self.n,
-            "best_of": self.best_of,
             "request_timeout": self.request_timeout,
             "logit_bias": self.logit_bias,
         }
+
+        # Azure gpt-35-turbo doesn't support best_of
+        # don't specify best_of if it is 1
+        if self.best_of > 1:
+            normal_params["best_of"] = self.best_of
+
         return {**normal_params, **self.model_kwargs}
 
     def _generate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         """Call out to OpenAI's endpoint with k unique prompts.
 
@@ -282,11 +303,12 @@ class BaseOpenAI(BaseLLM):
                 for stream_resp in completion_with_retry(
                     self, prompt=_prompts, **params
                 ):
-                    self.callback_manager.on_llm_new_token(
-                        stream_resp["choices"][0]["text"],
-                        verbose=self.verbose,
-                        logprobs=stream_resp["choices"][0]["logprobs"],
-                    )
+                    if run_manager:
+                        run_manager.on_llm_new_token(
+                            stream_resp["choices"][0]["text"],
+                            verbose=self.verbose,
+                            logprobs=stream_resp["choices"][0]["logprobs"],
+                        )
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])
             else:
@@ -298,7 +320,10 @@ class BaseOpenAI(BaseLLM):
         return self.create_llm_result(choices, prompts, token_usage)
 
     async def _agenerate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         """Call out to OpenAI's endpoint async with k unique prompts."""
         params = self._invocation_params
@@ -317,14 +342,8 @@ class BaseOpenAI(BaseLLM):
                 async for stream_resp in await acompletion_with_retry(
                     self, prompt=_prompts, **params
                 ):
-                    if self.callback_manager.is_async:
-                        await self.callback_manager.on_llm_new_token(
-                            stream_resp["choices"][0]["text"],
-                            verbose=self.verbose,
-                            logprobs=stream_resp["choices"][0]["logprobs"],
-                        )
-                    else:
-                        self.callback_manager.on_llm_new_token(
+                    if run_manager:
+                        await run_manager.on_llm_new_token(
                             stream_resp["choices"][0]["text"],
                             verbose=self.verbose,
                             logprobs=stream_resp["choices"][0]["logprobs"],
@@ -412,7 +431,7 @@ class BaseOpenAI(BaseLLM):
     def prep_streaming_params(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
         """Prepare the params for streaming."""
         params = self._invocation_params
-        if params["best_of"] != 1:
+        if "best_of" in params and params["best_of"] != 1:
             raise ValueError("OpenAI only supports best_of == 1 for streaming")
         if stop is not None:
             if "stop" in params:
@@ -579,6 +598,11 @@ class AzureOpenAI(BaseOpenAI):
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"engine": self.deployment_name}, **super()._invocation_params}
 
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "azure"
+
 
 class OpenAIChat(BaseLLM):
     """Wrapper around OpenAI Chat large language models.
@@ -700,7 +724,10 @@ class OpenAIChat(BaseLLM):
         return messages, params
 
     def _generate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         messages, params = self._get_chat_params(prompts, stop)
         if self.streaming:
@@ -709,10 +736,10 @@ class OpenAIChat(BaseLLM):
             for stream_resp in completion_with_retry(self, messages=messages, **params):
                 token = stream_resp["choices"][0]["delta"].get("content", "")
                 response += token
-                self.callback_manager.on_llm_new_token(
-                    token,
-                    verbose=self.verbose,
-                )
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        token,
+                    )
             return LLMResult(
                 generations=[[Generation(text=response)]],
             )
@@ -730,7 +757,10 @@ class OpenAIChat(BaseLLM):
             )
 
     async def _agenerate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         messages, params = self._get_chat_params(prompts, stop)
         if self.streaming:
@@ -741,15 +771,9 @@ class OpenAIChat(BaseLLM):
             ):
                 token = stream_resp["choices"][0]["delta"].get("content", "")
                 response += token
-                if self.callback_manager.is_async:
-                    await self.callback_manager.on_llm_new_token(
+                if run_manager:
+                    await run_manager.on_llm_new_token(
                         token,
-                        verbose=self.verbose,
-                    )
-                else:
-                    self.callback_manager.on_llm_new_token(
-                        token,
-                        verbose=self.verbose,
                     )
             return LLMResult(
                 generations=[[Generation(text=response)]],

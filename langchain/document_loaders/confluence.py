@@ -92,7 +92,7 @@ class ConfluenceLoader(BaseLoader):
             from atlassian import Confluence  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`atlassian` package not found, please run"
+                "`atlassian` package not found, please run "
                 "`pip install atlassian-python-api`"
             )
 
@@ -124,13 +124,13 @@ class ConfluenceLoader(BaseLoader):
 
         if (api_key and not username) or (username and not api_key):
             errors.append(
-                "If one of `api_key` or `username` is provided,"
+                "If one of `api_key` or `username` is provided, "
                 "the other must be as well."
             )
 
         if (api_key or username) and oauth2:
             errors.append(
-                "Cannot provide a value for `api_key` and/or"
+                "Cannot provide a value for `api_key` and/or "
                 "`username` and provide a value for `oauth2`"
             )
 
@@ -141,8 +141,8 @@ class ConfluenceLoader(BaseLoader):
             "key_cert",
         ]:
             errors.append(
-                "You have either ommited require keys or added extra"
-                "keys to the oauth2 dictionary. key values should be"
+                "You have either ommited require keys or added extra "
+                "keys to the oauth2 dictionary. key values should be "
                 "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']`"
             )
 
@@ -156,6 +156,8 @@ class ConfluenceLoader(BaseLoader):
         page_ids: Optional[List[str]] = None,
         label: Optional[str] = None,
         cql: Optional[str] = None,
+        include_restricted_content: bool = False,
+        include_archived_content: bool = False,
         include_attachments: bool = False,
         include_comments: bool = False,
         limit: Optional[int] = 50,
@@ -170,6 +172,11 @@ class ConfluenceLoader(BaseLoader):
         :type label: Optional[str], optional
         :param cql: CQL Expression, defaults to None
         :type cql: Optional[str], optional
+        :param include_restricted_content: defaults to False
+        :type include_restricted_content: bool, optional
+        :param include_archived_content: Whether to include archived content,
+                                         defaults to False
+        :type include_archived_content: bool, optional
         :param include_attachments: defaults to False
         :type include_attachments: bool, optional
         :param include_comments: defaults to False
@@ -185,22 +192,11 @@ class ConfluenceLoader(BaseLoader):
         """
         if not space_key and not page_ids and not label and not cql:
             raise ValueError(
-                "Must specify at least one among `space_key`, `page_ids`,"
+                "Must specify at least one among `space_key`, `page_ids`, "
                 "`label`, `cql` parameters."
             )
 
-        try:
-            import html2text  # type: ignore
-        except ImportError:
-            raise ImportError(
-                "`html2text` package not found, please run `pip install html2text`"
-            )
-
         docs = []
-
-        text_maker = html2text.HTML2Text()
-        text_maker.ignore_links = True
-        text_maker.ignore_images = True
 
         if space_key:
             pages = self.paginate_request(
@@ -208,13 +204,12 @@ class ConfluenceLoader(BaseLoader):
                 space=space_key,
                 limit=limit,
                 max_pages=max_pages,
+                status="any" if include_archived_content else "current",
                 expand="body.storage.value",
             )
-            for page in pages:
-                doc = self.process_page(
-                    page, include_attachments, include_comments, text_maker
-                )
-                docs.append(doc)
+            docs += self.process_pages(
+                pages, include_restricted_content, include_attachments, include_comments
+            )
 
         if label:
             pages = self.paginate_request(
@@ -222,13 +217,12 @@ class ConfluenceLoader(BaseLoader):
                 label=label,
                 limit=limit,
                 max_pages=max_pages,
-                expand="body.storage.value",
             )
-            for page in pages:
-                doc = self.process_page(
-                    page, include_attachments, include_comments, text_maker
-                )
-                docs.append(doc)
+            ids_by_label = [page["id"] for page in pages]
+            if page_ids:
+                page_ids = list(set(page_ids + ids_by_label))
+            else:
+                page_ids = list(set(ids_by_label))
 
         if cql:
             pages = self.paginate_request(
@@ -236,13 +230,12 @@ class ConfluenceLoader(BaseLoader):
                 cql=cql,
                 limit=limit,
                 max_pages=max_pages,
+                include_archived_spaces=include_archived_content,
                 expand="body.storage.value",
             )
-            for page in pages:
-                doc = self.process_page(
-                    page, include_attachments, include_comments, text_maker
-                )
-                docs.append(doc)
+            docs += self.process_pages(
+                pages, include_restricted_content, include_attachments, include_comments
+            )
 
         if page_ids:
             for page_id in page_ids:
@@ -259,9 +252,9 @@ class ConfluenceLoader(BaseLoader):
                     before_sleep=before_sleep_log(logger, logging.WARNING),
                 )(self.confluence.get_page_by_id)
                 page = get_page(page_id=page_id, expand="body.storage.value")
-                doc = self.process_page(
-                    page, include_attachments, include_comments, text_maker
-                )
+                if not include_restricted_content and not self.is_public_page(page):
+                    continue
+                doc = self.process_page(page, include_attachments, include_comments)
                 docs.append(doc)
 
         return docs
@@ -308,26 +301,60 @@ class ConfluenceLoader(BaseLoader):
             docs.extend(batch)
         return docs[:max_pages]
 
+    def is_public_page(self, page: dict) -> bool:
+        """Check if a page is publicly accessible."""
+        restrictions = self.confluence.get_all_restrictions_for_content(page["id"])
+
+        return (
+            page["status"] == "current"
+            and not restrictions["read"]["restrictions"]["user"]["results"]
+            and not restrictions["read"]["restrictions"]["group"]["results"]
+        )
+
+    def process_pages(
+        self,
+        pages: List[dict],
+        include_restricted_content: bool,
+        include_attachments: bool,
+        include_comments: bool,
+    ) -> List[Document]:
+        """Process a list of pages into a list of documents."""
+        docs = []
+        for page in pages:
+            if not include_restricted_content and not self.is_public_page(page):
+                continue
+            doc = self.process_page(page, include_attachments, include_comments)
+            docs.append(doc)
+
+        return docs
+
     def process_page(
         self,
         page: dict,
         include_attachments: bool,
         include_comments: bool,
-        text_maker: Any,
     ) -> Document:
+        try:
+            from bs4 import BeautifulSoup  # type: ignore
+        except ImportError:
+            raise ImportError(
+                "`beautifulsoup4` package not found, please run "
+                "`pip install beautifulsoup4`"
+            )
+
         if include_attachments:
             attachment_texts = self.process_attachment(page["id"])
         else:
             attachment_texts = []
-        text = text_maker.handle(page["body"]["storage"]["value"]) + "".join(
-            attachment_texts
-        )
+        text = BeautifulSoup(
+            page["body"]["storage"]["value"], "lxml"
+        ).get_text() + "".join(attachment_texts)
         if include_comments:
             comments = self.confluence.get_page_comments(
                 page["id"], expand="body.view.value", depth="all"
             )["results"]
             comment_texts = [
-                text_maker.handle(comment["body"]["view"]["value"])
+                BeautifulSoup(comment["body"]["view"]["value"], "lxml").get_text()
                 for comment in comments
             ]
             text = text + "".join(comment_texts)
@@ -347,7 +374,7 @@ class ConfluenceLoader(BaseLoader):
             from PIL import Image  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `pdf2image` or `Pillow` package not found,"
+                "`pytesseract` or `pdf2image` or `Pillow` package not found, "
                 "please run `pip install pytesseract pdf2image Pillow`"
             )
 
@@ -388,7 +415,7 @@ class ConfluenceLoader(BaseLoader):
             from pdf2image import convert_from_bytes  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `pdf2image` package not found,"
+                "`pytesseract` or `pdf2image` package not found, "
                 "please run `pip install pytesseract pdf2image`"
             )
 
@@ -423,7 +450,7 @@ class ConfluenceLoader(BaseLoader):
             from PIL import Image  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `Pillow` package not found,"
+                "`pytesseract` or `Pillow` package not found, "
                 "please run `pip install pytesseract Pillow`"
             )
 
@@ -504,7 +531,7 @@ class ConfluenceLoader(BaseLoader):
             from svglib.svglib import svg2rlg  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract`, `Pillow`, or `svglib` package not found,"
+                "`pytesseract`, `Pillow`, or `svglib` package not found, "
                 "please run `pip install pytesseract Pillow svglib`"
             )
 

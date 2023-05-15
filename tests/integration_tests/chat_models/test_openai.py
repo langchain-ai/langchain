@@ -3,7 +3,7 @@
 
 import pytest
 
-from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.schema import (
     BaseMessage,
@@ -147,3 +147,27 @@ async def test_async_chat_openai_streaming() -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
+
+
+def test_chat_openai_extra_kwargs() -> None:
+    """Test extra kwargs to chat openai."""
+    # Check that foo is saved in extra_kwargs.
+    llm = ChatOpenAI(foo=3, max_tokens=10)
+    assert llm.max_tokens == 10
+    assert llm.model_kwargs == {"foo": 3}
+
+    # Test that if extra_kwargs are provided, they are added to it.
+    llm = ChatOpenAI(foo=3, model_kwargs={"bar": 2})
+    assert llm.model_kwargs == {"foo": 3, "bar": 2}
+
+    # Test that if provided twice it errors
+    with pytest.raises(ValueError):
+        ChatOpenAI(foo=3, model_kwargs={"foo": 2})
+
+    # Test that if explicit param is specified in kwargs it errors
+    with pytest.raises(ValueError):
+        ChatOpenAI(model_kwargs={"temperature": 0.2})
+
+    # Test that "model" cannot be specified in kwargs
+    with pytest.raises(ValueError):
+        ChatOpenAI(model_kwargs={"model": "text-davinci-003"})

@@ -3,18 +3,18 @@ from typing import Optional, Type
 
 from pydantic import BaseModel
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.graphs.networkx_graph import NetworkxEntityGraph, parse_triples
 from langchain.indexes.prompts.knowledge_triplet_extraction import (
     KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
 )
-from langchain.llms.base import BaseLLM
 
 
 class GraphIndexCreator(BaseModel):
     """Functionality to create graph index."""
 
-    llm: Optional[BaseLLM] = None
+    llm: Optional[BaseLanguageModel] = None
     graph_type: Type[NetworkxEntityGraph] = NetworkxEntityGraph
 
     def from_text(self, text: str) -> NetworkxEntityGraph:

@@ -13,17 +13,28 @@ This is the Python specific portion of the documentation. For a purely conceptua
 Getting Started
 ----------------
 
-Checkout the below guide for a walkthrough of how to get started using LangChain to create an Language Model application.
+How to get started using LangChain to create an Language Model application.
 
-- `Getting Started Documentation <./getting_started/getting_started.html>`_
+- `Getting Started tutorial <./getting_started/getting_started.html>`_
+
+Concepts and terminology.
+
+- `Concepts and terminology <./getting_started/concepts.html>`_
+
+Tutorials created by community experts and presented on YouTube.
+
+- `Tutorials <./getting_started/tutorials.html>`_
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Getting Started
    :name: getting_started
    :hidden:
 
    getting_started/getting_started.md
+   getting_started/concepts.md
+   getting_started/tutorials.md
+
 
 Modules
 -----------
@@ -44,6 +55,8 @@ These modules are, in increasing order of complexity:
 
 - `Agents <./modules/agents.html>`_: Agents involve an LLM making decisions about which Actions to take, taking that Action, seeing an Observation, and repeating that until done. LangChain provides a standard interface for agents, a selection of agents to choose from, and examples of end to end agents.
 
+- `Callbacks <./modules/callbacks/getting_started.html>`_: It can be difficult to track all that occurs inside a chain or agent - callbacks help add a level of observability and introspection.
+
 
 .. toctree::
    :maxdepth: 1
@@ -57,6 +70,7 @@ These modules are, in increasing order of complexity:
    ./modules/memory.md
    ./modules/chains.md
    ./modules/agents.md
+   ./modules/callbacks/getting_started.ipynb
 
 Use Cases
 ----------
@@ -146,8 +160,6 @@ Additional Resources
 Additional collection of resources we think may be useful as you develop your application!
 
 - `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: The LangChainHub is a place to share and explore other prompts, chains, and agents.
-
-- `Glossary <./glossary.html>`_: A glossary of all related terms, papers, methods, etc. Whether implemented in LangChain or not!
 
 - `Gallery <./gallery.html>`_: A collection of our favorite projects that use LangChain. Useful for finding inspiration or seeing how things were done in other applications.
 
