@@ -6,7 +6,6 @@ from langchain.schema import (
     BaseChatMessageHistory,
     BaseMessage,
     HumanMessage,
-    _message_to_dict,
     messages_from_dict,
     messages_to_dict,
 )
@@ -64,7 +63,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         from botocore.exceptions import ClientError
 
         messages = messages_to_dict(self.messages)
-        _message = _message_to_dict(message)
+        _message = message.dict()
         messages.append(_message)
 
         try:

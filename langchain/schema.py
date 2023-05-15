@@ -75,6 +75,13 @@ class BaseMessage(BaseModel):
     def type(self) -> str:
         """Type of the message, used for serialization."""
 
+    def dict(self, *args, **kwargs):
+        return {
+            "type": self.type,
+            "data": super().dict(*args, **kwargs),
+            "_type": "base-message",
+        }
+
 
 class HumanMessage(BaseMessage):
     """Type of message that is spoken by the human."""
@@ -118,15 +125,11 @@ class ChatMessage(BaseMessage):
         return "chat"
 
 
-def _message_to_dict(message: BaseMessage) -> dict:
-    return {"type": message.type, "data": message.dict()}
-
-
 def messages_to_dict(messages: List[BaseMessage]) -> List[dict]:
-    return [_message_to_dict(m) for m in messages]
+    return [m.dict() for m in messages]
 
 
-def _message_from_dict(message: dict) -> BaseMessage:
+def message_from_dict(message: dict) -> BaseMessage:
     _type = message["type"]
     if _type == "human":
         return HumanMessage(**message["data"])
@@ -141,7 +144,7 @@ def _message_from_dict(message: dict) -> BaseMessage:
 
 
 def messages_from_dict(messages: List[dict]) -> List[BaseMessage]:
-    return [_message_from_dict(m) for m in messages]
+    return [message_from_dict(m) for m in messages]
 
 
 class ChatGeneration(Generation):

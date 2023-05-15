@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import json
-import yaml
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Sequence, Tuple, Type, TypeVar, Union
 
+import yaml
 from pydantic import BaseModel, Field
 
 from langchain.memory.buffer import get_buffer_string
@@ -87,6 +87,16 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     def input_variables(self) -> List[str]:
         return self.prompt.input_variables
 
+    @property
+    @abstractmethod
+    def _type(self) -> str:
+        """The type of MessagePromptTemplate."""
+
+    def dict(self, *args, **kwargs):
+        result = super().dict(*args, **kwargs)
+        result["_type"] = self._type
+        return result
+
 
 class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
     role: str
@@ -97,13 +107,21 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
             content=text, role=self.role, additional_kwargs=self.additional_kwargs
         )
 
+    @property
+    def _type(self) -> str:
+        """The type of MessagePromptTemplate."""
+        return "chat-message-prompt-template"
+
 
 class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
-    role: str = "human"
-
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
         return HumanMessage(content=text, additional_kwargs=self.additional_kwargs)
+
+    @property
+    def _type(self) -> str:
+        """The type of MessagePromptTemplate."""
+        return "human-message-prompt-template"
 
 
 class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
@@ -113,6 +131,11 @@ class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
         text = self.prompt.format(**kwargs)
         return AIMessage(content=text, additional_kwargs=self.additional_kwargs)
 
+    @property
+    def _type(self) -> str:
+        """The type of MessagePromptTemplate."""
+        return "ai-message-prompt-template"
+
 
 class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
     role: str = "system"
@@ -120,6 +143,11 @@ class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
         return SystemMessage(content=text, additional_kwargs=self.additional_kwargs)
+
+    @property
+    def _type(self) -> str:
+        """The type of MessagePromptTemplate."""
+        return "system-message-prompt-template"
 
 
 class ChatPromptValue(PromptValue):
@@ -149,15 +177,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
 
 class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     input_variables: List[str]
-    messages: List[
-        Union[
-            BaseMessagePromptTemplate,
-            BaseMessage,
-            AIMessagePromptTemplate,
-            SystemMessagePromptTemplate,
-            HumanMessagePromptTemplate,
-        ]
-    ]
+    messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
 
     @classmethod
     def from_template(cls, template: str, **kwargs: Any) -> ChatPromptTemplate:
@@ -224,19 +244,17 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     @property
     def _prompt_type(self) -> str:
         """Return the prompt type key."""
-        return "chatPrompt"
+        return "chat_prompt"
 
     def dict(self, **kwargs: Any) -> Dict:
-        prompt_dict = json.loads(self.json())
-
-        prompt_dict["_type"] = self._prompt_type
-        for i, message in enumerate(self.messages):
-            if isinstance(message, SystemMessagePromptTemplate):
-                prompt_dict["messages"][i]["prompt"]["role"] = "system"
-            elif isinstance(message, HumanMessagePromptTemplate):
-                prompt_dict["messages"][i]["prompt"]["role"] = "human"
-            elif isinstance(message, AIMessagePromptTemplate):
-                prompt_dict["messages"][i]["prompt"]["role"] = "ai"
+        prompt_dict = super().dict(**kwargs)
+        # for i, message in enumerate(self.messages):
+        #     if isinstance(message, SystemMessagePromptTemplate):
+        #         prompt_dict["messages"][i]["prompt"]["role"] = "system"
+        #     elif isinstance(message, HumanMessagePromptTemplate):
+        #         prompt_dict["messages"][i]["prompt"]["role"] = "human"
+        #     elif isinstance(message, AIMessagePromptTemplate):
+        #         prompt_dict["messages"][i]["prompt"]["role"] = "ai"
 
         return prompt_dict
 

@@ -17,6 +17,7 @@ from langchain.prompts.chat import (
 )
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema import message_from_dict
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
@@ -129,14 +130,21 @@ def _load_chat_prompt(config: dict) -> ChatPromptTemplate:
 
     messages = []
     for message in config["messages"]:
-        role = message["prompt"].get("role")
-        template = message["prompt"]["template"]
-        if role == "human":
-            messages.append(HumanMessagePromptTemplate.from_template(template))
-        elif role == "ai":
-            messages.append(AIMessagePromptTemplate.from_template(template))
+        _type = message.pop("_type")
+        if _type == "human-message-prompt-template":
+            prompt = load_prompt_from_config(message.pop("prompt"))
+            _message = HumanMessagePromptTemplate(**{"prompt": prompt, **message})
+        elif _type == "ai-message-prompt-template":
+            prompt = load_prompt_from_config(message.pop("prompt"))
+            _message = AIMessagePromptTemplate(**{"prompt": prompt, **message})
+        elif _type == "system-message-prompt-template":
+            prompt = load_prompt_from_config(message.pop("prompt"))
+            _message = SystemMessagePromptTemplate(**{"prompt": prompt, **message})
+        elif _type == "base-message":
+            _message = message_from_dict(message)
         else:  # role == system
-            messages.append(SystemMessagePromptTemplate.from_template(template))
+            raise ValueError
+        messages.append(_message)
 
     return ChatPromptTemplate.from_messages(messages)
 
@@ -185,7 +193,7 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
 
 type_to_loader_dict = {
     "prompt": _load_prompt,
-    "chatPrompt": _load_chat_prompt,
+    "chat_prompt": _load_chat_prompt,
     "few_shot": _load_few_shot_prompt,
     # "few_shot_with_templates": _load_few_shot_with_templates_prompt,
 }
