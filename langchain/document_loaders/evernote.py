@@ -39,29 +39,38 @@ class EverNoteLoader(BaseLoader):
             Document(
                 page_content=note["content"],
                 metadata={
-                    **{key: value for key, value in note.items() if key not in ["content", "content-raw", "resource"]},
-                    **{"source": self.file_path}
-                })
-            for note in self._parse_note_xml(self.file_path) if note.get("content") is not None
+                    **{
+                        key: value
+                        for key, value in note.items()
+                        if key not in ["content", "content-raw", "resource"]
+                    },
+                    **{"source": self.file_path},
+                },
+            )
+            for note in self._parse_note_xml(self.file_path)
+            if note.get("content") is not None
         ]
 
         if not self.load_single_document:
             return documents
 
-        return [Document(
-            page_content="".join([document.page_content for document in documents]),
-            metadata={
-                "source": self.file_path
-            }
-        )]
+        return [
+            Document(
+                page_content="".join([document.page_content for document in documents]),
+                metadata={"source": self.file_path},
+            )
+        ]
 
     @staticmethod
     def _parse_content(content: str) -> str:
         try:
             import html2text
+
             return html2text.html2text(content).strip()
         except ImportError as e:
-            logging.error("Could not import `html2text`. Although it is not a required package to use Langchain, using the EverNote loader requires `html2text`. Please install `html2text` via `pip install html2text` and try again.")
+            logging.error(
+                "Could not import `html2text`. Although it is not a required package to use Langchain, using the EverNote loader requires `html2text`. Please install `html2text` via `pip install html2text` and try again."
+            )
             raise e
 
     @staticmethod
@@ -97,7 +106,9 @@ class EverNoteLoader(BaseLoader):
             elif elem.tag == "created" or elem.tag == "updated":
                 note_dict[elem.tag] = strptime(elem.text, "%Y%m%dT%H%M%SZ")
             elif elem.tag == "note-attributes":
-                additional_attributes = EverNoteLoader._parse_note(elem, elem.tag)  # Recursively enter the note-attributes tag
+                additional_attributes = EverNoteLoader._parse_note(
+                    elem, elem.tag
+                )  # Recursively enter the note-attributes tag
                 note_dict.update(additional_attributes)
             else:
                 note_dict[elem.tag] = elem.text
@@ -105,9 +116,7 @@ class EverNoteLoader(BaseLoader):
         if len(resources) > 0:
             note_dict["resource"] = resources
 
-        return {
-            add_prefix(key): value for key, value in note_dict.items()
-        }
+        return {add_prefix(key): value for key, value in note_dict.items()}
 
     @staticmethod
     def _parse_note_xml(xml_file: str) -> Iterator[Dict[str, Any]]:
@@ -118,7 +127,9 @@ class EverNoteLoader(BaseLoader):
         try:
             from lxml import etree
         except ImportError as e:
-            logging.error("Could not import `lxml`. Although it is not a required package to use Langchain, using the EverNote loader requires `lxml`. Please install `lxml` via `pip install lxml` and try again.")
+            logging.error(
+                "Could not import `lxml`. Although it is not a required package to use Langchain, using the EverNote loader requires `lxml`. Please install `lxml` via `pip install lxml` and try again."
+            )
             raise e
 
         context = etree.iterparse(
