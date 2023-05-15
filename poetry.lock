@@ -6692,6 +6692,28 @@ full = ["Pillow", "PyCryptodome"]
 image = ["Pillow"]
 
 [[package]]
+name = "pypdfium2"
+version = "4.10.0"
+description = "Python bindings to PDFium"
+category = "main"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "pypdfium2-4.10.0-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:c775499ab7c43a0e6533067814875f57d5f4c09987653e9e81e49015f17f1769"},
+    {file = "pypdfium2-4.10.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:d3af7d09a49a8901d981f44f5ec8607469376da3713baae35135831f31e3a1eb"},
+    {file = "pypdfium2-4.10.0-py3-none-manylinux_2_26_aarch64.whl", hash = "sha256:0f1347645f7a065fc235e3ab82034897b9924902c8a64f91ec305d5bd7486884"},
+    {file = "pypdfium2-4.10.0-py3-none-manylinux_2_26_armv7l.whl", hash = "sha256:7951e8114d0a01abb19d9087b7effc7aa796d0c2bab39887291693cc67b27a85"},
+    {file = "pypdfium2-4.10.0-py3-none-manylinux_2_26_i686.whl", hash = "sha256:8586cca52424c8a4deb2f3bd95df308a480c17fdc26b5082bb6a855e892f5d66"},
+    {file = "pypdfium2-4.10.0-py3-none-manylinux_2_26_x86_64.whl", hash = "sha256:1ba08a5b13f5bc0ae9d5ced68dc245d6da82e71f7d7f2445dba2bfe8c713ba8a"},
+    {file = "pypdfium2-4.10.0-py3-none-musllinux_1_2_i686.whl", hash = "sha256:36867c9ef7f462c8aa6837f5fdc26de3b7c97440b258b4541857d07376868d66"},
+    {file = "pypdfium2-4.10.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:5869734d80feaa78963709a50bba6383f0ff3a9d5e5d54c34458bf09bcb61ba6"},
+    {file = "pypdfium2-4.10.0-py3-none-win32.whl", hash = "sha256:4485dfcab1d4daca1cefedd04725ca46b9bd52a44ea62dee42c2859fd2b2ae8b"},
+    {file = "pypdfium2-4.10.0-py3-none-win_amd64.whl", hash = "sha256:28de461dbc6bee021cc24039133d075fe4560a1ea83ba35842d34f97633e1455"},
+    {file = "pypdfium2-4.10.0-py3-none-win_arm64.whl", hash = "sha256:5c3679640f31e77d6c3312373c7540fac8b3be3e3ea7b2b03ec759c6cec6cbfe"},
+    {file = "pypdfium2-4.10.0.tar.gz", hash = "sha256:8d11415e660386a1169b8b49f91df81396502e749f6f6db7406c10f21fc787b5"},
+]
+
+[[package]]
 name = "pyrsistent"
 version = "0.19.3"
 description = "Persistent/Functional/Immutable data structures"
@@ -10127,4 +10149,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "2eeb0ab1f26c1aa83158c65e366781c8c0f327c5d940b792d1dc75d0247cbcd7"
+content-hash = "c2edc54bf136f5db45d80e6b29db863e869fbdc946e1cd678fe6003453d0d207"
