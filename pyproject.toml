@@ -180,7 +180,7 @@ extended_testing = [
  "pdfminer.six",
  "pypdf",
  "pymupdf",
- "pypdium2",
+ "pypdfium2",
  "tqdm",
  "lxml",
 ]
