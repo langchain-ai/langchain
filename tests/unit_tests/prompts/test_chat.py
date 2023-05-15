@@ -56,6 +56,30 @@ def create_chat_prompt_template() -> ChatPromptTemplate:
     )
 
 
+def test_create_chat_prompt_template_from_template() -> None:
+    """Create a chat prompt template."""
+    prompt = ChatPromptTemplate.from_template("hi {foo} {bar}")
+    assert prompt.messages == [
+        HumanMessagePromptTemplate.from_template("hi {foo} {bar}")
+    ]
+
+
+def test_create_chat_prompt_template_from_template_partial() -> None:
+    """Create a chat prompt template with partials."""
+    prompt = ChatPromptTemplate.from_template(
+        "hi {foo} {bar}", partial_variables={"foo": "jim"}
+    )
+    expected_prompt = PromptTemplate(
+        template="hi {foo} {bar}",
+        input_variables=["bar"],
+        partial_variables={"foo": "jim"},
+    )
+    assert len(prompt.messages) == 1
+    output_prompt = prompt.messages[0]
+    assert isinstance(output_prompt, HumanMessagePromptTemplate)
+    assert output_prompt.prompt == expected_prompt
+
+
 def test_chat_prompt_template() -> None:
     """Test chat prompt template."""
     prompt_template = create_chat_prompt_template()
