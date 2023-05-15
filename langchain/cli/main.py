@@ -1,12 +1,21 @@
 import argparse
+import logging
+import os
 import shutil
 import subprocess
+from contextlib import contextmanager
 from pathlib import Path
-from typing import List
+from typing import Generator, List, Optional
 
 import requests
+import yaml
 
 from langchain.env import get_runtime_environment
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
+
+_DIR = Path(__file__).parent
 
 
 def get_docker_compose_command() -> List[str]:
@@ -16,12 +25,54 @@ def get_docker_compose_command() -> List[str]:
         return ["docker-compose"]
 
 
-def get_ngrok_url() -> str:
-    """Get the Ngrok URL for the LangChainPlus server."""
+def get_ngrok_url(auth_token: Optional[str]) -> str:
+    """Get the ngrok URL for the LangChainPlus server."""
     ngrok_url = "http://localhost:4040/api/tunnels"
-    response = requests.get(ngrok_url)
-    response.raise_for_status()
-    return response.json()["tunnels"][0]["public_url"]
+    try:
+        response = requests.get(ngrok_url)
+        response.raise_for_status()
+        exposed_url = response.json()["tunnels"][0]["public_url"]
+    except requests.exceptions.HTTPError:
+        raise ValueError("Could not connect to ngrok console.")
+    except (KeyError, IndexError):
+        message = "ngrok failed to start correctly. "
+        if auth_token is not None:
+            message += "Please check that your authtoken is correct."
+        raise ValueError(message)
+    return exposed_url
+
+
+@contextmanager
+def create_ngrok_config(
+    auth_token: Optional[str] = None,
+) -> Generator[Path, None, None]:
+    """Create the ngrok configuration file."""
+    config_path = _DIR / "ngrok_config.yaml"
+    if config_path.exists():
+        # If there was an error in a prior run, it's possible
+        # Docker made this a directory instead of a file
+        if config_path.is_dir():
+            shutil.rmtree(config_path)
+        else:
+            config_path.unlink()
+    ngrok_config = {
+        "tunnels": {
+            "langchain": {
+                "proto": "http",
+                "addr": "langchain-backend:8000",
+            }
+        },
+        "version": "2",
+        "region": "us",
+    }
+    if auth_token is not None:
+        ngrok_config["authtoken"] = auth_token
+    config_path = _DIR / "ngrok_config.yaml"
+    with config_path.open("w") as f:
+        yaml.dump(ngrok_config, f)
+    yield config_path
+    # Delete the config file after use
+    config_path.unlink(missing_ok=True)
 
 
 class ServerCommand:
@@ -34,19 +85,12 @@ class ServerCommand:
         )
         self.ngrok_path = Path(__file__).absolute().parent / "docker-compose.ngrok.yaml"
 
-    def start(self, use_ngrok: bool = False) -> None:
-        """Run the LangChainPlus server locally.
-
-        Args:
-            use_ngrok: If True, expose the server to the internet using Ngrok.
-        """
+    def _start_local(self) -> None:
         command = [
             *self.docker_compose_command,
             "-f",
             str(self.docker_compose_file),
         ]
-        if use_ngrok:
-            command += ["-f", str(self.ngrok_path)]
         subprocess.run(
             [
                 *command,
@@ -56,25 +100,59 @@ class ServerCommand:
                 "--wait",
             ]
         )
-        if use_ngrok:
-            print("NGrok is running. You can view the dashboard at http://0.0.0.0:4040")
-            ngrok_url = get_ngrok_url()
-            print(
-                "LangChain server is running at http://localhost."
-                " To connect remotely, set the following environment variable when running your LangChain application."
-            )
-            print("LANGCHAIN_TRACING_V2=true")
-            print(f"LANGCHAIN_ENDPOINT={ngrok_url}")
-            subprocess.run(["open", "http://localhost"])
-        else:
-            print(
-                "LangChain server is running at http://localhost.  To connect"
-                " locally, set the following environment variable"
-                " when running your LangChain application."
-            )
+        logger.info(
+            "LangChain server is running at http://localhost.  To connect"
+            " locally, set the following environment variable"
+            " when running your LangChain application."
+        )
 
-            print("LANGCHAIN_TRACING_V2=true")
-            subprocess.run(["open", "http://localhost"])
+        logger.info("\tLANGCHAIN_TRACING_V2=true")
+        subprocess.run(["open", "http://localhost"])
+
+    def _start_and_expose(self, auth_token: Optional[str]) -> None:
+        with create_ngrok_config(auth_token=auth_token):
+            command = [
+                *self.docker_compose_command,
+                "-f",
+                str(self.docker_compose_file),
+                "-f",
+                str(self.ngrok_path),
+            ]
+            subprocess.run(
+                [
+                    *command,
+                    "up",
+                    "--pull=always",
+                    "--quiet-pull",
+                    "--wait",
+                ]
+            )
+        logger.info(
+            "ngrok is running. You can view the dashboard at http://0.0.0.0:4040"
+        )
+        ngrok_url = get_ngrok_url(auth_token)
+        logger.info(
+            "LangChain server is running at http://localhost."
+            " To connect remotely, set the following environment"
+            " variable when running your LangChain application."
+        )
+        logger.info("\tLANGCHAIN_TRACING_V2=true")
+        logger.info(f"\tLANGCHAIN_ENDPOINT={ngrok_url}")
+        subprocess.run(["open", "http://localhost"])
+
+    def start(self, *, expose: bool = False, auth_token: Optional[str] = None) -> None:
+        """Run the LangChainPlus server locally.
+
+        Args:
+            expose: If True, expose the server to the internet using ngrok.
+            auth_token: The ngrok authtoken to use (visible in the ngrok dashboard).
+                If not provided, ngrok server session length will be restricted.
+        """
+
+        if expose:
+            self._start_and_expose(auth_token=auth_token)
+        else:
+            self._start_local()
 
     def stop(self) -> None:
         """Stop the LangChainPlus server."""
@@ -93,8 +171,8 @@ class ServerCommand:
 def env() -> None:
     """Print the runtime environment information."""
     env = get_runtime_environment()
-    print("LangChain Environment:")
-    print("\n".join(f"{k}:{v}" for k, v in env.items()))
+    logger.info("LangChain Environment:")
+    logger.info("\n".join(f"{k}:{v}" for k, v in env.items()))
 
 
 def main() -> None:
@@ -110,12 +188,20 @@ def main() -> None:
         "start", description="Start the LangChainPlus server."
     )
     server_start_parser.add_argument(
-        "--use-ngrok",
+        "--expose",
         action="store_true",
-        help="Expose the server to the internet using Ngrok.",
+        help="Expose the server to the internet using ngrok.",
+    )
+    server_start_parser.add_argument(
+        "--ngrok-authtoken",
+        default=os.getenv("NGROK_AUTHTOKEN"),
+        help="The ngrok authtoken to use (visible in the ngrok dashboard)."
+        " If not provided, ngrok server session length will be restricted.",
     )
     server_start_parser.set_defaults(
-        func=lambda args: server_command.start(args.use_ngrok)
+        func=lambda args: server_command.start(
+            expose=args.expose, auth_token=args.ngrok_authtoken
+        )
     )
 
     server_stop_parser = server_subparsers.add_parser(

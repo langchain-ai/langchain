@@ -9,7 +9,7 @@ services:
       - "--config"
       - "/etc/ngrok.yml"
     volumes:
-      - ./ngrok.yaml:/etc/ngrok.yml
+      - ./ngrok_config.yaml:/etc/ngrok.yml
     ports:
       - 4040:4040
   langchain-backend:
