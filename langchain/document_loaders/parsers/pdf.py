@@ -93,20 +93,20 @@ class PyPDFium2Parser(BaseBlobParser):
         """Lazily parse the blob."""
         import pypdfium2
 
-        # There's some finicky behavior with respect to segmentation faults
-        # and closing file descriptors. For the time being, using bytes
-        # and closing pdf reader manually.
-        # May re-write at some point to use bytes io.
-        pdf_reader = pypdfium2.PdfDocument(blob.as_bytes())
-        docs: List[Document] = []
-        try:
-            for page_number, page in enumerate(pdf_reader):
-                content = page.get_textpage().get_text_range()
-                metadata = {"source": blob.source, "page": page_number}
-                yield Document(page_content=str(content), metadata=metadata)
-        finally:
-            pdf_reader.close()
-        yield from docs
+        # pypdfium2 is really finicky with respect to closing things,
+        # if done incorrectly creates seg faults.
+        with blob.as_bytes_io() as file_path:
+            pdf_reader = pypdfium2.PdfDocument(file_path, autoclose=True)
+            try:
+                for page_number, page in enumerate(pdf_reader):
+                    text_page = page.get_textpage()
+                    content = text_page.get_text_range()
+                    text_page.close()
+                    page.close()
+                    metadata = {"source": blob.source, "page": page_number}
+                    yield Document(page_content=content, metadata=metadata)
+            finally:
+                pdf_reader.close()
 
 
 class PDFPlumberParser(BaseBlobParser):
