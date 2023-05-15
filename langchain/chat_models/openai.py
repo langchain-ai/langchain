@@ -119,6 +119,9 @@ class ChatOpenAI(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    """Base URL path for API requests, 
+    leave blank if not using a proxy or service emulator."""
+    openai_api_base: Optional[str] = None
     openai_organization: Optional[str] = None
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
