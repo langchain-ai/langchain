@@ -99,3 +99,42 @@ class PyPDFium2Parser(BaseBlobParser):
                 content = page.get_textpage().get_text_range()
                 metadata = {"source": blob.source, "page": page_number}
                 yield Document(page_content=content, metadata=metadata)
+
+
+class PDFPlumberParser(BaseBlobParser):
+    """Parse PDFs with PDFPlumber."""
+
+    def __init__(self, text_kwargs: Optional[Mapping[str, Any]] = None) -> None:
+        """Initialize the parser.
+
+        Args:
+            text_kwargs: Keyword arguments to pass to ``pdfplumber.Page.extract_text()``
+        """
+        self.text_kwargs = text_kwargs or {}
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+        """Lazily parse the blob."""
+        import pdfplumber
+
+        with blob.as_bytes_io() as file_path:
+            doc = pdfplumber.open(file_path)  # open document
+
+            yield from [
+                Document(
+                    page_content=page.extract_text(**self.text_kwargs),
+                    metadata=dict(
+                        {
+                            "source": blob.source,
+                            "file_path": blob.source,
+                            "page": page.page_number,
+                            "total_pages": len(doc.pages),
+                        },
+                        **{
+                            k: doc.metadata[k]
+                            for k in doc.metadata
+                            if type(doc.metadata[k]) in [str, int]
+                        },
+                    ),
+                )
+                for page in doc.pages
+            ]
