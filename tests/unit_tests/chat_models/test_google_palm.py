@@ -14,8 +14,8 @@ from langchain.schema import (
 )
 
 
+@pytest.mark.requires("google.generativeai")
 def test_messages_to_prompt_dict_with_valid_messages() -> None:
-    pytest.importorskip("google.generativeai")
     result = _messages_to_prompt_dict(
         [
             SystemMessage(content="Prompt"),
@@ -44,8 +44,8 @@ def test_messages_to_prompt_dict_with_valid_messages() -> None:
     assert result == expected
 
 
+@pytest.mark.requires("google.generativeai")
 def test_messages_to_prompt_dict_raises_with_misplaced_system_message() -> None:
-    pytest.importorskip("google.generativeai")
     with pytest.raises(ChatGooglePalmError) as e:
         _messages_to_prompt_dict(
             [
@@ -56,8 +56,8 @@ def test_messages_to_prompt_dict_raises_with_misplaced_system_message() -> None:
     assert "System message must be first" in str(e)
 
 
+@pytest.mark.requires("google.generativeai")
 def test_messages_to_prompt_dict_raises_with_misordered_examples() -> None:
-    pytest.importorskip("google.generativeai")
     with pytest.raises(ChatGooglePalmError) as e:
         _messages_to_prompt_dict(
             [
@@ -68,8 +68,8 @@ def test_messages_to_prompt_dict_raises_with_misordered_examples() -> None:
     assert "AI example message must be immediately preceded" in str(e)
 
 
+@pytest.mark.requires("google.generativeai")
 def test_messages_to_prompt_dict_raises_with_mismatched_examples() -> None:
-    pytest.importorskip("google.generativeai")
     with pytest.raises(ChatGooglePalmError) as e:
         _messages_to_prompt_dict(
             [
@@ -80,8 +80,8 @@ def test_messages_to_prompt_dict_raises_with_mismatched_examples() -> None:
     assert "Human example message must be immediately followed" in str(e)
 
 
+@pytest.mark.requires("google.generativeai")
 def test_messages_to_prompt_dict_raises_with_example_after_real() -> None:
-    pytest.importorskip("google.generativeai")
     with pytest.raises(ChatGooglePalmError) as e:
         _messages_to_prompt_dict(
             [
@@ -93,22 +93,22 @@ def test_messages_to_prompt_dict_raises_with_example_after_real() -> None:
     assert "Message examples must come before other" in str(e)
 
 
+@pytest.mark.requires("google.generativeai")
 def test_chat_google_raises_with_invalid_temperature() -> None:
-    pytest.importorskip("google.generativeai")
     with pytest.raises(ValueError) as e:
         ChatGooglePalm(google_api_key="fake", temperature=2.0)
     assert "must be in the range" in str(e)
 
 
+@pytest.mark.requires("google.generativeai")
 def test_chat_google_raises_with_invalid_top_p() -> None:
-    pytest.importorskip("google.generativeai")
     with pytest.raises(ValueError) as e:
         ChatGooglePalm(google_api_key="fake", top_p=2.0)
     assert "must be in the range" in str(e)
 
 
+@pytest.mark.requires("google.generativeai")
 def test_chat_google_raises_with_invalid_top_k() -> None:
-    pytest.importorskip("google.generativeai")
     with pytest.raises(ValueError) as e:
         ChatGooglePalm(google_api_key="fake", top_k=-5)
     assert "must be positive" in str(e)
