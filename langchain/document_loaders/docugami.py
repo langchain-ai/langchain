@@ -5,7 +5,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 import requests
 from pydantic import BaseModel, root_validator
@@ -38,8 +38,8 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
     access_token: Optional[str] = os.environ.get("DOCUGAMI_API_KEY")
     docset_id: Optional[str]
-    document_ids: Optional[List[str]]
-    file_paths: Optional[List[Path]]
+    document_ids: Optional[Sequence[str]]
+    file_paths: Optional[Sequence[Path]]
     min_chunk_size: int = 32  # appended to the next chunk to avoid over-chunking
 
     @root_validator
@@ -57,8 +57,9 @@ class DocugamiLoader(BaseLoader, BaseModel):
         return values
 
     def _parse_dgml(
-        self, document: Dict, content: bytes, doc_metadata: Optional[Dict] = None
+        self, document: Mapping, content: bytes, doc_metadata: Optional[Mapping] = None
     ) -> List[Document]:
+        """Parse a single DGML document into a list of Documents."""
         try:
             from lxml import etree
         except ImportError:
@@ -69,6 +70,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
         # helpers
         def _xpath_qname_for_chunk(chunk: Any) -> str:
+            """Get the xpath qname for a chunk."""
             qname = f"{chunk.prefix}:{chunk.tag.split('}')[-1]}"
 
             parent = chunk.getparent()
@@ -81,10 +83,12 @@ class DocugamiLoader(BaseLoader, BaseModel):
             return qname
 
         def _xpath_for_chunk(chunk: Any) -> str:
+            """Get the xpath for a chunk."""
             ancestor_chain = chunk.xpath("ancestor-or-self::*")
             return "/" + "/".join(_xpath_qname_for_chunk(x) for x in ancestor_chain)
 
         def _structure_value(node: Any) -> str:
+            """Get the structure value for a node."""
             structure = (
                 "table"
                 if node.tag == TABLE_NAME
@@ -95,22 +99,27 @@ class DocugamiLoader(BaseLoader, BaseModel):
             return structure
 
         def _is_structural(node: Any) -> bool:
+            """Check if a node is structural."""
             return _structure_value(node) is not None
 
         def _is_heading(node: Any) -> bool:
+            """Check if a node is a heading."""
             structure = _structure_value(node)
             return structure is not None and structure.lower().startswith("h")
 
         def _get_text(node: Any) -> str:
+            """Get the text of a node."""
             return " ".join(node.itertext()).strip()
 
         def _has_structural_descendant(node: Any) -> bool:
+            """Check if a node has a structural descendant."""
             for child in node:
                 if _is_structural(child) or _has_structural_descendant(child):
                     return True
             return False
 
         def _leaf_structural_nodes(node: Any) -> List:
+            """Get the leaf structural nodes of a node."""
             if _is_structural(node) and not _has_structural_descendant(node):
                 return [node]
             else:
@@ -120,6 +129,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                 return leaf_nodes
 
         def _create_doc(node: Any, text: str) -> Document:
+            """Create a Document from a node and text."""
             metadata = {
                 XPATH_KEY: _xpath_for_chunk(node),
                 DOCUMENT_ID_KEY: document["id"],
@@ -275,6 +285,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
     def _load_chunks_for_document(
         self, docset_id: str, document: Dict, doc_metadata: Optional[Dict] = None
     ) -> List[Document]:
+        """Load chunks for a document."""
         document_id = document["id"]
         url = f"{self.api}/docsets/{docset_id}/documents/{document_id}/dgml"
 
