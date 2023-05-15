@@ -30,7 +30,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
 
     def parse(self, text: str) -> StructuredQuery:
         try:
-            expected_keys = ["query", "filter"]
+            expected_keys = ["query", "filter", "k"]
             parsed = parse_json_markdown(text, expected_keys)
             if len(parsed["query"]) == 0:
                 parsed["query"] = " "
@@ -38,7 +38,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
                 parsed["filter"] = None
             else:
                 parsed["filter"] = self.ast_parse(parsed["filter"])
-            return StructuredQuery(query=parsed["query"], filter=parsed["filter"])
+            return StructuredQuery(query=parsed["query"], filter=parsed["filter"], k= parsed["k"])
         except Exception as e:
             raise OutputParserException(
                 f"Parsing text\n{text}\n raised following error:\n{e}"
@@ -49,9 +49,10 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         cls,
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
+        k: int = 4
     ) -> StructuredQueryOutputParser:
         ast_parser = get_parser(
-            allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
+            allowed_comparators=allowed_comparators, allowed_operators=allowed_operators, k=k
         )
         return cls(ast_parse=ast_parser.parse)
 
@@ -70,11 +71,13 @@ def _get_prompt(
     examples: Optional[List] = None,
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
+    k: int = 4
 ) -> BasePromptTemplate:
     attribute_str = _format_attribute_info(attribute_info)
     examples = examples or DEFAULT_EXAMPLES
     allowed_comparators = allowed_comparators or list(Comparator)
     allowed_operators = allowed_operators or list(Operator)
+    k = k or int
     schema = DEFAULT_SCHEMA.format(
         allowed_comparators=" | ".join(allowed_comparators),
         allowed_operators=" | ".join(allowed_operators),
@@ -84,12 +87,12 @@ def _get_prompt(
         i=len(examples) + 1, content=document_contents, attributes=attribute_str
     )
     output_parser = StructuredQueryOutputParser.from_components(
-        allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
+        allowed_comparators=allowed_comparators, allowed_operators=allowed_operators, k=k
     )
     return FewShotPromptTemplate(
         examples=DEFAULT_EXAMPLES,
         example_prompt=EXAMPLE_PROMPT,
-        input_variables=["query"],
+        input_variables=["query", "k"],
         suffix=suffix,
         prefix=prefix,
         output_parser=output_parser,
@@ -103,6 +106,7 @@ def load_query_constructor_chain(
     examples: Optional[List] = None,
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
+    k: int = 4,
     **kwargs: Any,
 ) -> LLMChain:
     prompt = _get_prompt(
@@ -111,5 +115,6 @@ def load_query_constructor_chain(
         examples=examples,
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,
+        k=4,
     )
     return LLMChain(llm=llm, prompt=prompt, **kwargs)
