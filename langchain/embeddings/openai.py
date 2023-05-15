@@ -77,8 +77,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             openai = OpenAIEmbeddings(openai_api_key="my-api-key")
 
     In order to use the library with Microsoft Azure endpoints, you need to set
-    the OPENAI_API_TYPE, OPENAI_API_BASE, OPENAI_API_KEY and optionally and
-    API_VERSION.
+    the OPENAI_API_TYPE, OPENAI_API_BASE, OPENAI_API_KEY and OPENAI_API_VERSION.
     The OPENAI_API_TYPE must be set to 'azure' and the others correspond to
     the properties of your endpoint.
     In addition, the deployment name must be passed as the model parameter.
@@ -90,6 +89,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             os.environ["OPENAI_API_TYPE"] = "azure"
             os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
             os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
+            os.environ["OPENAI_API_VERSION"] = "2023-03-15-preview"
 
             from langchain.embeddings.openai import OpenAIEmbeddings
             embeddings = OpenAIEmbeddings(
@@ -106,7 +106,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model  # to support Azure OpenAI Service custom deployment names
-    openai_api_version: str = "2022-12-01"
+    openai_api_version: Optional[str] = None
     # to support Azure OpenAI Service custom endpoints
     openai_api_base: Optional[str] = None
     # to support Azure OpenAI Service custom endpoints
@@ -147,10 +147,15 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_API_TYPE",
             default="",
         )
+        if openai_api_type in ("azure", "azure_ad", "azuread"):
+            default_api_version = "2022-12-01"
+        else:
+            default_api_version = ""
         openai_api_version = get_from_dict_or_env(
             values,
             "openai_api_version",
             "OPENAI_API_VERSION",
+            default=default_api_version,
         )
         openai_organization = get_from_dict_or_env(
             values,
@@ -166,6 +171,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 openai.organization = openai_organization
             if openai_api_base:
                 openai.api_base = openai_api_base
+            if openai_api_type:
                 openai.api_version = openai_api_version
             if openai_api_type:
                 openai.api_type = openai_api_type
