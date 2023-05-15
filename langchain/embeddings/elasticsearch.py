@@ -27,6 +27,7 @@ class ElasticsearchEmbeddings(Embeddings):
         self,
         client: MlClient,
         model_id: str,
+        *,
         input_field: str = "text_field",
     ):
         """
@@ -60,7 +61,9 @@ class ElasticsearchEmbeddings(Embeddings):
                 cluster.
             input_field (str): The name of the key for the input text field in the
                 document. Defaults to 'text_field'.
-            es_cloud_id: (str, optional): The Elasticsearch cloud i
+            es_cloud_id: (str, optional): The Elasticsearch cloud ID to connect to.
+            es_user: (str, optional): Elasticsearch username.
+            es_password: (str, optional): Elasticsearch password.
 
         Example Usage:
             from langchain.embeddings import ElasticsearchEmbeddings
