@@ -41,12 +41,14 @@ class BaseReflector(BaseModel):
     def get_history(self, trials: int) -> str:
         """Return reflexion history, so it can be used in agent execution prompt"""
 
+    @classmethod
     @abstractmethod
     def create_prompt(self) -> BasePromptTemplate:
         """Prompt to pass to LLM."""
 
     def should_reflect(self, iterations_in_trial: int,
-                       execution_time_in_trial: float, *args, **kwargs: Any) -> bool:
+                       execution_time_in_trial: float,
+                       *args: Any, **kwargs: Any) -> bool:
         """Determine if we should reflect, e.g. when current trial failed."""
         # We reflect when ...
         # ... we have too many iterations in current trial, or
