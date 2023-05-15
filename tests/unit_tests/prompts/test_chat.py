@@ -162,9 +162,7 @@ def test_human_message_prompt_template_from_file() -> None:
             input_variables=["foo", "bar", "context"],
         )
     )
-    messages = message_prompt.format_messages(
-        foo="foo", bar="bar", context="context"
-    ) 
+    messages = message_prompt.format_messages(foo="foo", bar="bar", context="context")
 
     message_prompt_from_file = HumanMessagePromptTemplate.from_file(
         template_file=template_file,
@@ -189,17 +187,13 @@ def test_ai_message_prompt_template_from_file() -> None:
             input_variables=["foo", "bar"],
         )
     )
-    messages = message_prompt.format_messages(
-        foo="foo", bar="bar"
-    )
+    messages = message_prompt.format_messages(foo="foo", bar="bar")
 
     message_prompt_from_file = AIMessagePromptTemplate.from_file(
         template_file="tests/unit_tests/data/ai_message_prompt_file.txt",
         input_variables=["foo", "bar"],
     )
-    messages_from_file = message_prompt_from_file.format_messages(
-        foo="foo", bar="bar"
-    )
+    messages_from_file = message_prompt_from_file.format_messages(foo="foo", bar="bar")
 
     expected_content = "I'm an AI. I'm foo. I'm bar."
 
@@ -219,30 +213,21 @@ def test_chat_message_prompt_template_from_file() -> None:
             input_variables=["foo", "bar"],
         ),
     )
-    messages = message_prompt.format_messages(
-        foo="foo", bar="bar"
-    )
+    messages = message_prompt.format_messages(foo="foo", bar="bar")
 
     message_prompt_from_file = ChatMessagePromptTemplate.from_file(
+        role="test",
         template_file=template_file,
         input_variables=["foo", "bar"],
     )
-    messages_from_file = message_prompt.format_messages(
-        foo="foo", bar="bar"
-    )
+    messages_from_file = message_prompt.format_messages(foo="foo", bar="bar")
 
-    expected_content = "I'm a generic message. I'm foo. I'm bar." 
+    expected_content = "I'm a generic message. I'm foo. I'm bar."
+    expected_role = "test"
 
     assert len(messages) == 1
     assert len(messages_from_file) == 1
     assert messages_from_file[0].content == messages[0].content
     assert messages_from_file[0].content == expected_content
-
-     
-
-
-
-
-
-
-
+    assert message_prompt_from_file.role == message_prompt.role
+    assert message_prompt_from_file.role == expected_role
