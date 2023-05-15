@@ -2,7 +2,7 @@
 import contextlib
 import datetime
 import os
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from requests import HTTPError, Response
 
@@ -82,7 +82,7 @@ def stringify_dict(data: dict) -> str:
     return text
 
 
-def comma_list(items: list[Any]) -> str:
+def comma_list(items: List[Any]) -> str:
     return ", ".join(str(item) for item in items)
 
 
