@@ -1,10 +1,10 @@
 """Loader that uses unstructured to load files."""
-import os
 from abc import ABC, abstractmethod
-from typing import IO, Any, List
+from typing import Any, IO, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.utils.metadata import UnstructuredMetadata
 
 
 def satisfies_min_unstructured_version(min_version: str) -> bool:
@@ -66,18 +66,6 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
     def _get_metadata(self) -> dict:
         """Get metadata."""
 
-    @abstractmethod
-    def _get_file_mod_date(self) -> str:
-        """Get file modified date and time."""
-
-    @abstractmethod
-    def _get_file_create_date(self) -> str:
-        """Get file creation date and time."""
-
-    @abstractmethod
-    def _convert_unix_to_utc(self, unix_timestamp: float) -> str:
-        """Convert unix timestamp to utc."""
-
     def load(self) -> List[Document]:
         """Load file."""
         elements = self._get_elements()
@@ -105,10 +93,23 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load files."""
 
     def __init__(
-        self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
+        self,
+        file_path: str,
+        mode: str = "single",
+        get_source: Optional[bool] = True,
+        get_created_at: Optional[bool] = True,
+        get_updated_at: Optional[bool] = True,
+        get_mime_type: Optional[bool] = True,
+        get_extension: Optional[bool] = True,
+        **unstructured_kwargs: Any,
     ):
-        """Initialize with file path."""
+        """Initialize arguments."""
         self.file_path = file_path
+        self.get_source = get_source
+        self.get_created_at = get_created_at
+        self.get_updated_at = get_updated_at
+        self.get_mime_type = get_mime_type
+        self.get_extension = get_extension
         super().__init__(mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
@@ -117,45 +118,30 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
         return partition(filename=self.file_path, **self.unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
-        from unstructured.file_utils.filetype import detect_filetype
+        # Initialise metadata dict
+        metadata = {}
 
-        metadata = {
-            "source": self.file_path,
-            "filetype": detect_filetype(filename=self.file_path).name,
-            "file_mod_date": self._get_file_mod_date(),
-            "file_create_date": self._get_file_create_date(),
-        }
+        # Initialise UnstructuredMetadata class object
+        metadata_cls = UnstructuredMetadata(file_path=self.file_path)
+
+        # Add required metadata to dict
+        if self.get_sourcesource:
+            source = metadata_cls.source()
+            metadata["source"] = source
+        if self.get_created_at:
+            created_at = metadata_cls.created_at()
+            metadata["created_at"] = created_at
+        if self.get_updated_at:
+            updated_at = metadata_cls.updated_at()
+            metadata["updated_at"] = updated_at
+        if self.get_mime_type:
+            mime_type = metadata_cls.mime_type()
+            metadata["mime_type"] = mime_type
+        if self.get_extension:
+            extension = metadata_cls.extension()
+            metadata["extension"] = extension
 
         return metadata
-
-    def _get_file_create_date(self) -> str:
-        import platform
-
-        """
-        Try to get the date that a file was created. Generally possible with 
-        Windows file systems. However, the same cannot be said for some UNIX 
-        file systems, although most modern ones do store creation time. Even so, 
-        the system call is not exposed in Python. (Anyone is welcome to write a wrapper
-        around it). To avoid the trouble, we can simply fall back to modified time for 
-        UNIX file systems.
-        """
-        if platform.system() == "Windows":
-            unix_timestamp = os.path.getctime(self.file_path)
-            date_time = self._convert_unix_to_utc(unix_timestamp)
-            return date_time
-        else:
-            return self._get_file_mod_date()
-
-    def _get_file_mod_date(self) -> str:
-        unix_timestamp = os.path.getmtime(self.file_path)
-        date_time = self._convert_unix_to_utc(unix_timestamp)
-
-        return date_time
-
-    def _convert_unix_to_utc(self, unix_timestamp: float) -> str:
-        from datetime import datetime
-
-        return datetime.utcfromtimestamp(unix_timestamp).strftime("%Y-%m-%d %H:%M:%S")
 
 
 class UnstructuredAPIFileLoader(UnstructuredFileLoader):
@@ -197,9 +183,16 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load file IO objects."""
 
-    def __init__(self, file: IO, mode: str = "single", **unstructured_kwargs: Any):
+    def __init__(
+        self,
+        file: IO,
+        mode: str = "single",
+        get_mime_type: Optional[bool] = True,
+        **unstructured_kwargs: Any,
+    ):
         """Initialize with file path."""
         self.file = file
+        self.get_mime_type = get_mime_type
         super().__init__(mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
@@ -208,7 +201,18 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
         return partition(file=self.file, **self.unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
-        return {}
+        # Initialise metadata dict
+        metadata = {}
+
+        # Initialise UnstructuredMetadata class object
+        metadata_cls = UnstructuredMetadata(file_IO=self.file)
+
+        # Add required metadata to dict
+        if self.get_mime_type:
+            mime_type = metadata_cls.mime_type()
+            metadata["mime_type"] = mime_type
+
+        return metadata
 
 
 class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
