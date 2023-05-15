@@ -1,4 +1,4 @@
-.PHONY: all clean format lint test tests test_watch integration_tests docker_tests help
+.PHONY: all clean format lint test tests test_watch integration_tests docker_tests help extended_tests
 
 all: help
 
@@ -40,6 +40,9 @@ test:
 tests:
 	poetry run pytest $(TEST_FILE)
 
+extended_tests:
+	poetry run pytest --only-extended tests/unit_tests
+
 test_watch:
 	poetry run ptw --now . -- tests/unit_tests
 
@@ -59,7 +62,9 @@ help:
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
 	@echo 'test                         - run unit tests'
+	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
+	@echo 'extended_tests               - run only extended unit tests'
 	@echo 'test_watch                   - run unit tests in watch mode'
 	@echo 'integration_tests            - run integration tests'
 	@echo 'docker_tests                 - run unit tests in docker'

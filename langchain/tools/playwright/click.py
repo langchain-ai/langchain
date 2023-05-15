@@ -36,8 +36,11 @@ class ClickTool(BaseBrowserTool):
             raise ValueError(f"Synchronous browser not provided to {self.name}")
         page = get_current_page(self.sync_browser)
         # Navigate to the desired webpage before using this tool
-        page.click(selector)
-        return f"Clicked element '{selector}'"
+        try:
+            page.click(selector)
+            return f"Clicked element '{selector}'"
+        except Exception as e:
+            return f"Error '{e}'"
 
     async def _arun(
         self,
@@ -49,5 +52,8 @@ class ClickTool(BaseBrowserTool):
             raise ValueError(f"Asynchronous browser not provided to {self.name}")
         page = await aget_current_page(self.async_browser)
         # Navigate to the desired webpage before using this tool
-        await page.click(selector)
-        return f"Clicked element '{selector}'"
+        try:
+            await page.click(selector)
+            return f"Clicked element '{selector}'"
+        except Exception as e:
+            return f"Error '{e}'"

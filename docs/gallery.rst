@@ -220,7 +220,18 @@ Open Source
     
     +++
 
-    Answer questions about the documentation of any project    
+    Answer questions about the documentation of any project
+    
+    ---
+
+    .. link-button:: https://github.com/akshata29/chatpdf
+        :type: url
+        :text: Chat & Ask your data
+        :classes: stretched-link btn-lg
+    
+    +++
+
+    This sample demonstrates a few approaches for creating ChatGPT-like experiences over your own data. It uses OpenAI / Azure OpenAI Service to access the ChatGPT model (gpt-35-turbo and gpt3), and vector store (Pinecone, Redis and others) or Azure cognitive search for data indexing and retrieval.
 
 Misc. Colab Notebooks
 ~~~~~~~~~~~~~~~~~~~~~
