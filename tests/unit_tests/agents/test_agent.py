@@ -79,12 +79,15 @@ def test_agent_stopped_early() -> None:
     # iteration limit
     agent = _get_agent(max_iterations=0)
     output = agent.run("when was langchain made")
-    assert output == "Agent stopped due to iteration limit or time limit."
+    assert output == "Agent stopped due to iteration, trial or time limit."
 
     # execution time limit
     agent = _get_agent(max_execution_time=0.0)
     output = agent.run("when was langchain made")
-    assert output == "Agent stopped due to iteration limit or time limit."
+    assert output == "Agent stopped due to iteration, trial or time limit."
+
+    # trial limit
+    # TODO
 
 
 def test_agent_with_callbacks() -> None:

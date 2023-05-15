@@ -1,7 +1,7 @@
 """Load agent."""
 from typing import Any, Optional, Sequence
 
-from langchain.agents.agent import AgentExecutor
+from langchain.agents.agent import AgentExecutor, Reflector
 from langchain.agents.agent_types import AgentType
 from langchain.agents.loading import AGENT_TO_CLASS, load_agent
 from langchain.base_language import BaseLanguageModel
@@ -13,6 +13,7 @@ def initialize_agent(
     tools: Sequence[BaseTool],
     llm: BaseLanguageModel,
     agent: Optional[AgentType] = None,
+    reflector: Optional[Reflector] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     agent_path: Optional[str] = None,
     agent_kwargs: Optional[dict] = None,
@@ -25,6 +26,7 @@ def initialize_agent(
         llm: Language model to use as the agent.
         agent: Agent type to use. If None and agent_path is also None, will default to
             AgentType.ZERO_SHOT_REACT_DESCRIPTION.
+        reflector: Reflector to use
         callback_manager: CallbackManager to use. Global callback manager is used if
             not provided. Defaults to None.
         agent_path: Path to serialized agent to use.
@@ -64,6 +66,7 @@ def initialize_agent(
     return AgentExecutor.from_agent_and_tools(
         agent=agent_obj,
         tools=tools,
+        reflector=reflector,
         callback_manager=callback_manager,
         **kwargs,
     )

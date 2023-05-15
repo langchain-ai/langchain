@@ -10,11 +10,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import yaml
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, root_validator
 
 from langchain.agents.agent_types import AgentType
-from langchain.agents.reflexion.base import BaseReflector
-from langchain.agents.reflexion.empty import EmptyReflector
 from langchain.agents.tools import InvalidTool
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
@@ -58,6 +56,7 @@ class BaseSingleActionAgent(BaseModel):
     def plan(
         self,
         intermediate_steps: List[Tuple[AgentAction, str]],
+        reflexion_history: str,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
@@ -77,6 +76,7 @@ class BaseSingleActionAgent(BaseModel):
     async def aplan(
         self,
         intermediate_steps: List[Tuple[AgentAction, str]],
+        reflexion_history: str,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
@@ -110,7 +110,7 @@ class BaseSingleActionAgent(BaseModel):
         if early_stopping_method == "force":
             # `force` just returns a constant string
             return AgentFinish(
-                {"output": "Agent stopped due to iteration limit or time limit."}, ""
+                {"output": "Agent stopped due to iteration, trial or time limit."}, ""
             )
         else:
             raise ValueError(
@@ -213,6 +213,7 @@ class BaseMultiActionAgent(BaseModel):
     async def aplan(
         self,
         intermediate_steps: List[Tuple[AgentAction, str]],
+        reflexion_history: str,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[List[AgentAction], AgentFinish]:
@@ -323,6 +324,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
     def plan(
         self,
         intermediate_steps: List[Tuple[AgentAction, str]],
+        reflexion_history: str,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
@@ -348,6 +350,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
     async def aplan(
         self,
         intermediate_steps: List[Tuple[AgentAction, str]],
+        reflexion_history: str,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
@@ -426,6 +429,7 @@ class Agent(BaseSingleActionAgent):
     def plan(
         self,
         intermediate_steps: List[Tuple[AgentAction, str]],
+        reflexion_history: str,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
@@ -441,12 +445,18 @@ class Agent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
+
+        # Pepend agent scratchpad with reflexion history
+        full_inputs["agent_scratchpad"] = (reflexion_history +
+                                           full_inputs["agent_scratchpad"])
+
         full_output = self.llm_chain.predict(callbacks=callbacks, **full_inputs)
         return self.output_parser.parse(full_output)
 
     async def aplan(
         self,
         intermediate_steps: List[Tuple[AgentAction, str]],
+        reflexion_history: str,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
@@ -462,6 +472,11 @@ class Agent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
+
+        # Pepend agent scratchpad with reflexion history
+        full_inputs["agent_scratchpad"] = (reflexion_history +
+                                           full_inputs["agent_scratchpad"])
+
         full_output = await self.llm_chain.apredict(callbacks=callbacks, **full_inputs)
         return self.output_parser.parse(full_output)
 
@@ -560,7 +575,7 @@ class Agent(BaseSingleActionAgent):
         if early_stopping_method == "force":
             # `force` just returns a constant string
             return AgentFinish(
-                {"output": "Agent stopped due to iteration limit or time limit."}, ""
+                {"output": "Agent stopped due to iteration, trial or time limit."}, ""
             )
         elif early_stopping_method == "generate":
             # Generate does one final forward pass
@@ -618,6 +633,91 @@ class ExceptionTool(BaseTool):
         return query
 
 
+class ReflexionOutputParser(BaseOutputParser):
+    @abstractmethod
+    def parse(self, text: str) -> str:
+        """Parse text into agent action/finish."""
+
+
+class Reflector(BaseModel):
+    """Agent for the Reflexer chain."""
+
+    llm_chain: LLMChain
+    output_parser: ReflexionOutputParser
+
+    max_iterations_per_trial: Optional[int] = 15
+    max_execution_time_per_trial: Optional[float] = None
+
+    trial_history: List[str] = []
+    """Full string representation of each trial"""
+    trial_reflexions: List[str] = []
+    """Reflexion for of each trial"""
+    trial_prefix: str = "\nTrial {trial_number}"
+    trial_suffix: str = "\nSTATUS: FAIL\nNew plan: "
+
+    def current_trial_prefix(self, trial_number: int) -> str:
+        return self.trial_prefix.replace("{trial_number}", str(trial_number))
+
+    @abstractmethod
+    def get_history(self, trials: int) -> str:
+        """Return reflexion history, so it can be used in agent execution prompt"""
+
+    @classmethod
+    @abstractmethod
+    def create_prompt(self) -> BasePromptTemplate:
+        """Prompt to pass to LLM."""
+
+    def should_reflect(self, iterations_in_trial: int,
+                       execution_time_in_trial: float,
+                       *args: Any, **kwargs: Any) -> bool:
+        """Determine if we should reflect, e.g. when current trial failed."""
+        # We reflect when ...
+        # ... we have too many iterations in current trial, or
+        if (self.max_iterations_per_trial is not None
+            and iterations_in_trial >= self.max_iterations_per_trial):
+            return True
+        # ... current trial took too long
+        if (self.max_execution_time_per_trial is not None
+            and execution_time_in_trial >= self.max_execution_time_per_trial):
+            return True
+        return False
+
+    @abstractmethod
+    def reflect(
+            self,
+            input: str,
+            current_trial: str,
+            current_trial_no: int,
+            callbacks: Callbacks = None) -> str:
+        """ returns full relection notes  """
+
+    @classmethod
+    def from_llm(
+        cls,
+        llm: BaseLanguageModel,
+        callback_manager: Optional[BaseCallbackManager] = None,
+        output_parser: Optional[ReflexionOutputParser] = None,
+        **kwargs: Any,
+    ) -> Reflector:
+        """Construct a reflector from an LLM."""
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=cls.create_prompt(),
+            callback_manager=callback_manager,
+        )
+        _output_parser = output_parser or cls._get_default_output_parser()
+        return cls(
+            llm_chain=llm_chain,
+            output_parser=_output_parser,
+            **kwargs,
+        )
+
+    @classmethod
+    @abstractmethod
+    def _get_default_output_parser(cls, **kwargs: Any) -> ReflexionOutputParser:
+        """Get default output parser for this class."""
+
+
 class AgentExecutor(Chain):
     """Consists of an agent using tools."""
 
@@ -629,38 +729,28 @@ class AgentExecutor(Chain):
     early_stopping_method: str = "force"
     handle_parsing_errors: bool = False
 
-    reflector: BaseReflector = Field(default=EmptyReflector)
-    use_reflection: bool = False
+    reflector: Optional[Reflector] = None
     max_trials: Optional[int] = 3
+
+    @property
+    def use_reflection(self) -> bool:
+        return self.reflector is not None
 
     @classmethod
     def from_agent_and_tools(
         cls,
         agent: Union[BaseSingleActionAgent, BaseMultiActionAgent],
         tools: Sequence[BaseTool],
+        reflector: Optional[Reflector],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
     ) -> AgentExecutor:
         """Create from agent and tools."""
         return cls(
-            agent=agent, tools=tools, callback_manager=callback_manager, **kwargs
-        )
-    
-    @classmethod
-    def from_agent_and_reflector_and_tools(
-        cls,
-        agent: Union[BaseSingleActionAgent, BaseMultiActionAgent],
-        tools: Sequence[BaseTool],
-        reflector: BaseReflector,
-        callback_manager: Optional[BaseCallbackManager] = None,
-        **kwargs: Any,
-    ) -> AgentExecutor:
-        """Create from agent, reflector and tools."""
-        return cls(
-            agent=agent, reflector=reflector,tools=tools,
+            agent=agent, tools=tools, reflector=reflector,
             callback_manager=callback_manager, **kwargs
         )
-
+    
     @root_validator()
     def validate_tools(cls, values: Dict) -> Dict:
         """Validate that tools are compatible with agent."""
@@ -773,6 +863,7 @@ class AgentExecutor(Chain):
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
+        reflexion_history: str,
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
         """Take a single step in the thought-action-observation loop.
@@ -780,15 +871,10 @@ class AgentExecutor(Chain):
         Override this to take control of how the agent makes and acts on choices.
         """
         try:
-            # If we use reflexion, prepend agent scratchpad with reflexion history
-            if "reflexion_history" in inputs:
-                inputs["agent_scratchpad"] = (inputs["reflexion_history"]
-                                              + inputs["agent_scratchpad"])
-                inputs.pop("reflexion_history")
-
             # Call the LLM to see what to do.
             output = self.agent.plan(
                 intermediate_steps,
+                reflexion_history=reflexion_history,
                 callbacks=run_manager.get_child() if run_manager else None,
                 **inputs,
             )
@@ -853,6 +939,7 @@ class AgentExecutor(Chain):
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
+        reflexion_history: str,
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
         """Take a single step in the thought-action-observation loop.
@@ -863,6 +950,7 @@ class AgentExecutor(Chain):
             # Call the LLM to see what to do.
             output = await self.agent.aplan(
                 intermediate_steps,
+                reflexion_history,
                 callbacks=run_manager.get_child() if run_manager else None,
                 **inputs,
             )
@@ -956,13 +1044,16 @@ class AgentExecutor(Chain):
         # We now enter the agent loop (until it returns something).
         while self._should_continue(total_iterations, total_time_elapsed, trials):
             if self.use_reflection:
-                inputs["reflexion_history"] = self.reflector.get_history(trials)
+                reflexion_history = self.reflector.get_history(trials)
+            else:
+                reflexion_history = ""
 
             next_step_output = self._take_next_step(
                 name_to_tool_map,
                 color_mapping,
                 inputs,
                 intermediate_steps,
+                reflexion_history,
                 run_manager=run_manager,
             )
             if isinstance(next_step_output, AgentFinish):
@@ -985,7 +1076,6 @@ class AgentExecutor(Chain):
             trial_iterations += 1
             trial_time_elapsed = time.time() - trial_start_time
 
-
             if self.use_reflection:
                 # Check if trial failed. 
                 trial_failed = self.reflector.should_reflect(
@@ -1001,7 +1091,7 @@ class AgentExecutor(Chain):
 
                     # TODO: Make more generic (ie dont use inputs["input"])
                     self.reflector.reflect(inputs["input"], current_trial,
-                                        next_trial_no=trials+1)
+                                           current_trial_no=trials+1)
                     # TODO: Add to some log / manager that new trial started
 
                     trials += 1
@@ -1029,18 +1119,29 @@ class AgentExecutor(Chain):
         )
         intermediate_steps: List[Tuple[AgentAction, str]] = []
         # Let's start tracking the number of iterations and time elapsed
-        iterations = 0
-        time_elapsed = 0.0
-        start_time = time.time()
+        # for total execution, and for current trial
+        total_iterations = 0
+        total_time_elapsed = 0.0
+        total_start_time = time.time()
+        trials = 1
+        trial_iterations = 0
+        trial_time_elapsed = 0.0
+        trial_start_time = time.time()
         # We now enter the agent loop (until it returns something).
         async with asyncio_timeout(self.max_execution_time):
             try:
-                while self._should_continue(iterations, time_elapsed):
+                while self._should_continue(total_iterations, total_time_elapsed, trials):
+                    if self.use_reflection:
+                        reflexion_history = self.reflector.get_history(trials)
+                    else:
+                        reflexion_history = ""
+
                     next_step_output = await self._atake_next_step(
                         name_to_tool_map,
                         color_mapping,
                         inputs,
                         intermediate_steps,
+                        reflexion_history,
                         run_manager=run_manager,
                     )
                     if isinstance(next_step_output, AgentFinish):
@@ -1060,8 +1161,34 @@ class AgentExecutor(Chain):
                                 tool_return, intermediate_steps, run_manager=run_manager
                             )
 
-                    iterations += 1
-                    time_elapsed = time.time() - start_time
+                    total_iterations += 1
+                    total_time_elapsed = time.time() - total_start_time
+                    trial_iterations += 1
+                    trial_time_elapsed = time.time() - trial_start_time
+
+                    if self.use_reflection:
+                        # Check if trial failed. 
+                        trial_failed = self.reflector.should_reflect(
+                            trial_iterations,
+                            trial_time_elapsed,intermediate_steps,
+                        )
+
+                        # If yes, we reflect and start a new trial
+                        if trial_failed:
+                            current_trial = (self.agent.get_full_inputs(intermediate_steps)
+                                            ["agent_scratchpad"])
+
+                            # TODO: Make more generic (ie dont use inputs["input"])
+                            self.reflector.reflect(inputs["input"], current_trial,
+                                                current_trial_no=trials+1)
+                            # TODO: Add to some log / manager that new trial started
+
+                            trials += 1
+                            trial_iterations = 0
+                            trial_time_elapsed = 0.0
+                            trial_start_time = time.time()
+                            intermediate_steps = []
+
                 output = self.agent.return_stopped_response(
                     self.early_stopping_method, intermediate_steps, **inputs
                 )

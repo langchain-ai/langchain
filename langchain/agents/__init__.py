@@ -6,6 +6,8 @@ from langchain.agents.agent import (
     BaseMultiActionAgent,
     BaseSingleActionAgent,
     LLMSingleActionAgent,
+    Reflector,
+    ReflexionOutputParser
 )
 from langchain.agents.agent_toolkits import (
     create_csv_agent,
@@ -45,6 +47,8 @@ __all__ = [
     "ConversationalAgent",
     "ConversationalChatAgent",
     "LLMSingleActionAgent",
+    "Reflector",
+    "ReflexionOutputParser",
     "MRKLChain",
     "ReActChain",
     "ReActTextWorldAgent",

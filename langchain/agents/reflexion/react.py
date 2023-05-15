@@ -1,18 +1,23 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
+
+from langchain.agents.agent import Reflector, ReflexionOutputParser
 from langchain.agents.reflexion.alfworld_prompt import ALFWORLD_PROMPT
-from langchain.agents.reflexion.base import BaseReflector, ReflexionOutputParser
 from langchain.callbacks.manager import Callbacks
 from langchain.prompts.base import BasePromptTemplate
-from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AgentAction
 
 
-class ReactReflector(BaseReflector):
+class ReactReflexionOutputParser(ReflexionOutputParser):
+    def parse(self, text: str) -> str:
+        # The Reflexion prompt asks the LLM to complete after "New plan: ",
+        # so the entire result is the reflexion
+        return text
+
+
+class ReactReflector(Reflector):
 
     max_action_repetition: Optional[int] = 2
-
-    def __init__(self) -> None:
-        self.output_parser = ReactReflexionOutputParser()
+    output_parser: ReflexionOutputParser = ReactReflexionOutputParser()
 
     def get_history(self, current_trial_number: int) -> str:
         if current_trial_number==1:
@@ -40,6 +45,7 @@ class ReactReflector(BaseReflector):
 
         return history
 
+    @classmethod
     def create_prompt(self) -> BasePromptTemplate:
         return ALFWORLD_PROMPT
 
@@ -114,9 +120,6 @@ class ReactReflector(BaseReflector):
 
         return reflexion
 
-        
-class ReactReflexionOutputParser(ReflexionOutputParser):
-    def parse(self, text: str) -> str:
-        # The Reflexion prompt asks the LLM to complete after "New plan: ",
-        # so the entire result is the reflexion
-        return text
+    @classmethod
+    def _get_default_output_parser(cls, **kwargs: Any) -> ReflexionOutputParser:
+        return ReactReflexionOutputParser()
