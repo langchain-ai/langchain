@@ -30,8 +30,8 @@ class SerpAPIWrapper(BaseModel):
     """Wrapper around SerpAPI.
 
     To use, you should have the ``google-search-results`` python package installed,
-    and the environment variable ``SERPAPI_API_KEY``, ``SERPAPI_API_BASE_URL``
-    set with your API key, or pass `serpapi_api_key`, `serpapi_api_base_url`
+    and the environment variable ``SERPAPI_API_KEY``, ``SERPAPI_BASE_URL``
+    set with your API key, or pass `serpapi_api_key`, `serpapi_base_url`
     as a named parameter to the constructor.
 
     Example:
@@ -51,7 +51,7 @@ class SerpAPIWrapper(BaseModel):
         }
     )
     serpapi_api_key: Optional[str] = None
-    serpapi_api_base_url: Optional[str] = None
+    serpapi_base_url: Optional[str] = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:
@@ -68,13 +68,13 @@ class SerpAPIWrapper(BaseModel):
         )
         values["serpapi_api_key"] = serpapi_api_key
 
-        serpapi_api_base_url = get_from_dict_or_env(
+        serpapi_base_url = get_from_dict_or_env(
             values,
-            "serpapi_api_base_url",
-            "SERPAPI_API_BASE_URL",
+            "serpapi_base_url",
+            "SERPAPI_BASE_URL",
             default="https://serpapi.com/search",
         )
-        values["serpapi_api_base_url"] = serpapi_api_base_url
+        values["serpapi_base_url"] = serpapi_base_url
 
         try:
             from serpapi import GoogleSearch
@@ -111,8 +111,8 @@ class SerpAPIWrapper(BaseModel):
             params["source"] = "python"
             if self.serpapi_api_key:
                 params["serp_api_key"] = self.serpapi_api_key
-            if self.serpapi_api_base_url:
-                params["serp_api_base_url"] = self.serpapi_api_base_url
+            if self.serpapi_base_url:
+                params["serp_api_base_url"] = self.serpapi_base_url
             params["output"] = "json"
             return url, params
 
@@ -131,7 +131,7 @@ class SerpAPIWrapper(BaseModel):
         """Get parameters for SerpAPI."""
         _params = {
             "api_key": self.serpapi_api_key,
-            "api_base_url": self.serpapi_api_base_url,
+            "api_base_url": self.serpapi_base_url,
             "q": query,
         }
         params = {**self.params, **_params}
