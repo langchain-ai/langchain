@@ -134,7 +134,12 @@ class Weaviate(VectorStore):
                     for key in metadatas[i].keys():
                         data_properties[key] = json_serializable(metadatas[i][key])
 
-                _id = get_valid_uuid(uuid4())
+                # If the UUID of one of the objects already exists
+                # then the existing objectwill be replaced by the new object.
+                if "uuids" in kwargs:
+                    _id = kwargs["uuids"][i]
+                else:
+                    _id = get_valid_uuid(uuid4())
 
                 if self._embedding is not None:
                     embeddings = self._embedding.embed_documents(list(doc))
@@ -385,7 +390,12 @@ class Weaviate(VectorStore):
                     for key in metadatas[i].keys():
                         data_properties[key] = metadatas[i][key]
 
-                _id = get_valid_uuid(uuid4())
+                # If the UUID of one of the objects already exists
+                # then the existing objectwill be replaced by the new object.
+                if "uuids" in kwargs:
+                    _id = kwargs["uuids"][i]
+                else:
+                    _id = get_valid_uuid(uuid4())
 
                 # if an embedding strategy is not provided, we let
                 # weaviate create the embedding. Note that this will only
