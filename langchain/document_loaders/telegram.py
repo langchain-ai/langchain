@@ -161,10 +161,10 @@ class TelegramChatApiLoader(BaseLoader):
             return all_replies
 
         # Filter out parent messages
-        parent_messages = data[data["is_reply"] == False]
+        parent_messages = data[~data["is_reply"]]
 
         # Filter out reply messages and drop rows with NaN in 'reply_to_id'
-        reply_messages = data[data["is_reply"] == True].dropna(subset=["reply_to_id"])
+        reply_messages = data[data["is_reply"]].dropna(subset=["reply_to_id"])
 
         # Convert 'reply_to_id' to integer
         reply_messages["reply_to_id"] = reply_messages["reply_to_id"].astype(int)
