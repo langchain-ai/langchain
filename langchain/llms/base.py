@@ -456,7 +456,7 @@ class BaseSmartLLM(BaseLLM):
     """LLM to use in ideation step. If None given, 'llm' will be used."""
     critique_llm: Optional[BaseLLM] = None
     """LLM to use in critique step. If None given, 'llm' will be used."""
-    resolve_llm: Optional[BaseLLM] = None
+    resolver_llm: Optional[BaseLLM] = None
     """LLM to use in resolve step. If None given, 'llm' will be used."""
     llm: Optional[BaseLLM] = None 
     """LLM to use for each steps, if no specific llm for that step is given. """
@@ -513,14 +513,14 @@ class BaseSmartLLM(BaseLLM):
         """Prompt used in resolve step."""
 
     @abstractmethod
-    def update_history_after_ideation(self, question: str, ideas: List[str]) -> None:
+    def _update_history_after_ideation(self, question: str, ideas: List[str]) -> None:
         """
         SmartLLM is orginially a chat-based method, so we construct a 'chat history'.
         This function return the 'chat history' after completion of the ideation step.
         """
 
     @abstractmethod
-    def update_history_after_critique(self, critique: str) -> None:
+    def _update_history_after_critique(self, critique: str) -> None:
         """
         SmartLLM is orginially a chat-based method, so we construct a 'chat history'.
         This function return the 'chat history' after completion of the critique step.
@@ -536,11 +536,11 @@ class BaseSmartLLM(BaseLLM):
         callbacks = run_manager.handlers if run_manager else None
         generations = []
         for prompt in prompts:
-            ideas = self.ideate(prompt, stop, callbacks)
-            self.update_history_after_ideation(prompt, ideas)
-            critique = self.critique(stop, callbacks)
-            self.update_history_after_critique(critique)
-            resolution = self.resolve(stop, callbacks)
+            ideas = self._ideate(prompt, stop, callbacks)
+            self._update_history_after_ideation(prompt, ideas)
+            critique = self._critique(stop, callbacks)
+            self._update_history_after_critique(critique)
+            resolution = self._resolve(stop, callbacks)
             generations.append(Generation(text=resolution))
         return LLMResult(generations=[generations])
 
@@ -554,11 +554,11 @@ class BaseSmartLLM(BaseLLM):
         callbacks = run_manager.handlers if run_manager else None
         generations = []
         for prompt in prompts:
-            ideas = await self.aideate(prompt, stop, callbacks)
-            self.update_history_after_ideation(prompt, ideas)
-            critique = await self.acritique(stop, callbacks)
-            self.update_history_after_critique(critique)
-            resolution = await self.aresolve(stop, callbacks)
+            ideas = await self._aideate(prompt, stop, callbacks)
+            self._update_history_after_ideation(prompt, ideas)
+            critique = await self._acritique(stop, callbacks)
+            self._update_history_after_critique(critique)
+            resolution = await self._aresolve(stop, callbacks)
             generations.append(Generation(text=resolution))
         return LLMResult(generations=[generations])
 
@@ -574,7 +574,7 @@ class BaseSmartLLM(BaseLLM):
                              "exactly 1 output.")
         return result.generations[0][0].text
 
-    def ideate(self, prompt: str, stop: Optional[List[str]] = None,
+    def _ideate(self, prompt: str, stop: Optional[List[str]] = None,
                callbacks: Callbacks = None) -> List[str]:
         """Generate n_ideas ideas as response to user prompt."""
         llm = self.ideation_llm if self.ideation_llm else self.llm
@@ -590,7 +590,7 @@ class BaseSmartLLM(BaseLLM):
         else:
             raise ValueError("llm is none, which should never happen")
 
-    def critique(self, stop: Optional[List[str]] = None,
+    def _critique(self, stop: Optional[List[str]] = None,
                  callbacks: Callbacks = None) -> str:
         """Critique each of the ideas from ideation stage & select best one."""
         llm = self.critique_llm if self.critique_llm else self.llm
@@ -603,10 +603,10 @@ class BaseSmartLLM(BaseLLM):
         else:
             raise ValueError("llm is none, which should never happen")
 
-    def resolve(self, stop: Optional[List[str]] = None,
+    def _resolve(self, stop: Optional[List[str]] = None,
                 callbacks: Callbacks = None) -> str:
         """Improve upon the best idea as chosen in critique step & return it."""
-        llm = self.resolve_llm if self.resolve_llm else self.llm
+        llm = self.resolver_llm if self.resolver_llm else self.llm
         prompt = self.resolve_prompt().format(history=self.history,
                                               n_ideas=self.n_ideas)
         if llm:
@@ -616,7 +616,7 @@ class BaseSmartLLM(BaseLLM):
         else:
             raise ValueError("llm is none, which should never happen")
     
-    async def aideate(self, prompt: str, stop: Optional[List[str]] = None,
+    async def _aideate(self, prompt: str, stop: Optional[List[str]] = None,
                callbacks: Callbacks = None) -> List[str]:
         """Generate n_ideas ideas as response to user prompt."""
         llm = self.ideation_llm if self.ideation_llm else self.llm
@@ -632,7 +632,7 @@ class BaseSmartLLM(BaseLLM):
         else:
             raise ValueError("llm is none, which should never happen")
 
-    async def acritique(self, stop: Optional[List[str]] = None,
+    async def _acritique(self, stop: Optional[List[str]] = None,
                  callbacks: Callbacks = None) -> str:
         """Critique each of the ideas from ideation stage & select best one."""
         llm = self.critique_llm if self.critique_llm else self.llm
@@ -645,10 +645,10 @@ class BaseSmartLLM(BaseLLM):
         else:
             raise ValueError("llm is none, which should never happen")
 
-    async def aresolve(self, stop: Optional[List[str]] = None,
+    async def _aresolve(self, stop: Optional[List[str]] = None,
                 callbacks: Callbacks = None) -> str:
         """Improve upon the best idea as chosen in critique step & return it."""
-        llm = self.resolve_llm if self.resolve_llm else self.llm
+        llm = self.resolver_llm if self.resolver_llm else self.llm
         prompt = self.resolve_prompt().format(history=self.history,
                                               n_ideas=self.n_ideas)
         if llm:
@@ -660,25 +660,25 @@ class BaseSmartLLM(BaseLLM):
 
     @property
     def _llm_type(self) -> str:
-        if not any([self.ideation_llm, self.critique_llm, self.resolve_llm]):
+        if not any([self.ideation_llm, self.critique_llm, self.resolver_llm]):
             # We're using a single LLM for all steps
             if self.llm:
                 return f"SmartLLM of {self.llm._llm_type}"
             else:
-                raise ValueError("llm, ideation_llm, critique_llm and resolve_llm are "
+                raise ValueError("llm, ideation_llm, critique_llm and resolver_llm are "
                                  "all none, which should never happen")
         else:
             # We're using separate LLMs for all steps
             ideation_llm = self.ideation_llm if self.ideation_llm else self.llm
             critique_llm = self.critique_llm if self.critique_llm else self.llm
-            resolve_llm = self.resolve_llm if self.resolve_llm else self.llm
+            resolver_llm = self.resolver_llm if self.resolver_llm else self.llm
 
-            if ideation_llm and critique_llm and resolve_llm:
+            if ideation_llm and critique_llm and resolver_llm:
                 return (f"SmartLLM of {ideation_llm._llm_type}, "
                         f"{critique_llm._llm_type}, "
-                        f"{resolve_llm._llm_type}, ")
+                        f"{resolver_llm._llm_type}, ")
             else:
-                raise ValueError("llm, ideation_llm, critique_llm and resolve_llm are "
+                raise ValueError("llm, ideation_llm, critique_llm and resolver_llm are "
                                  "all none, which should never happen")
 
 
@@ -714,16 +714,13 @@ class SmartLLM(BaseSmartLLM):
                       "the right answer:")
         )
 
-    def update_history_after_ideation(self, question: str, ideas: List[str]) -> None:
-        print(f"\nSmartLLM.update_history_after_ideation (question={question}, ideas={ideas})\n")
-        print(f"(btw, self.n_ideas = {self.n_ideas})")
+    def _update_history_after_ideation(self, question: str, ideas: List[str]) -> None:
         self.history = self.ideation_prompt().format(question=question) + "\n"
         self.history += "".join([
             f"Response {i+1}:{idea}\n"  for i, idea in enumerate(ideas)]
         )
 
-    def update_history_after_critique(self, critique: str) -> None:
-        print(f"SmartLLM.update_history_after_critique (critique={critique})")
+    def _update_history_after_critique(self, critique: str) -> None:
         self.history = self.critique_prompt().format(
             history=self.history,
             n_ideas=self.n_ideas
