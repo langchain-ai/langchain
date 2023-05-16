@@ -39,11 +39,29 @@ def _strip_erroneous_leading_spaces(text: str) -> str:
 
 
 class GoogleCloudVertexAIPalm(BaseLLM, BaseModel):
+    """Wrapper around Google Cloud's Vertex AI PaLM Text Generation API.
+
+    To use you must have the google-cloud-aiplatform Python package installed and
+    either:
+
+        1. Have credentials configured for your enviornment (gcloud, workload identity, etc...)
+        2. Pass your service account key json using the google_application_credentials kwarg to the ChatGoogle
+           constructor.
+
+        *see: https://cloud.google.com/docs/authentication/application-default-credentials#GAC
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import GoogleVertexAIPalm
+            llm = VertexAIGooglePalm()
+
+    """
     client: Any  #: :meta private:
-    google_api_key: Optional[str]
+    google_application_credentials: Optional[str]
     model_name: str = "models/text-bison@001"
     """Model name to use."""
-    temperature: float = 0.7
+    temperature: float = 0.2
     """Run inference with this temperature. Must by in the closed interval
        [0.0, 1.0]."""
     top_p: Optional[float] = 0.8
