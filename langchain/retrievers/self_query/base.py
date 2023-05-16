@@ -81,7 +81,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
             new_kwargs["k"] = structured_query.limit
 
         search_kwargs = {**self.search_kwargs, **new_kwargs}
-        docs = self.vectorstore.search(query, self.search_type, **search_kwargs)
+        docs = self.vectorstore.search(new_query, self.search_type, **search_kwargs)
         return docs
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
