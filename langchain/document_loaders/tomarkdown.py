@@ -1,8 +1,9 @@
 """Loader that loads HTML to markdown using 2markdown."""
 from __future__ import annotations
 
+from typing import Iterator, List
+
 import requests
-from typing import List, Iterator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
