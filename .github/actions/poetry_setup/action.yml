@@ -50,6 +50,11 @@ runs:
     - run: pipx install poetry==${{ inputs.poetry-version }} --python python${{ inputs.python-version }}
       shell: bash
 
+    - name: Check Poetry File
+      shell: bash
+      run: |
+        poetry check
+
     - name: Check lock file
       shell: bash
       run: |
