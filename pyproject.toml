@@ -80,7 +80,7 @@ jq = {version = "^1.4.1", optional = true}
 steamship = {version = "^2.16.9", optional = true}
 pdfminer-six = {version = "^20221105", optional = true}
 docarray = {version="^0.31.0", optional=true}
-protobuf = {version="3.19", optional=true}
+protobuf = {version="3.19.6", optional=true}
 hnswlib = {version="^0.7.0", optional=true}
 lxml = {version = "^4.9.2", optional = true}
 pymupdf = {version = "^1.22.3", optional = true}
