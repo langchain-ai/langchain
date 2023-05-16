@@ -95,7 +95,7 @@ def create_ngrok_config(
     config_path.unlink(missing_ok=True)
 
 
-class ServerCommand:
+class PlusCommand:
     """Manage the LangChainPlus Tracing server."""
 
     def __init__(self) -> None:
@@ -127,7 +127,7 @@ class ServerCommand:
             ]
         )
         logger.info(
-            "LangChain server is running at http://localhost.  To connect"
+            "langchain plus server is running at http://localhost.  To connect"
             " locally, set the following environment variable"
             " when running your LangChain application."
         )
@@ -158,7 +158,7 @@ class ServerCommand:
         )
         ngrok_url = get_ngrok_url(auth_token)
         logger.info(
-            "LangChain server is running at http://localhost."
+            "langchain plus server is running at http://localhost."
             " To connect remotely, set the following environment"
             " variable when running your LangChain application."
         )
@@ -207,8 +207,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(description="LangChainPlus CLI commands")
 
-    server_command = ServerCommand()
-    server_parser = subparsers.add_parser("server", description=server_command.__doc__)
+    server_command = PlusCommand()
+    server_parser = subparsers.add_parser("plus", description=server_command.__doc__)
     server_subparsers = server_parser.add_subparsers()
 
     server_start_parser = server_subparsers.add_parser(
