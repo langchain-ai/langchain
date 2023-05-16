@@ -1,5 +1,5 @@
 """Loader that loads HuggingFace datasets."""
-from typing import List, Mapping, Optional, Sequence, Union, Iterator
+from typing import Iterator, List, Mapping, Optional, Sequence, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
