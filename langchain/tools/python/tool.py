@@ -15,6 +15,12 @@ def _get_default_python_repl() -> PythonREPL:
     return PythonREPL(_globals=globals(), _locals=None)
 
 
+def sanitize_input(query: str) -> str:
+    query = query.strip().strip("```python")
+    query = query.strip().strip("```")
+    return query
+
+
 class PythonREPLTool(BaseTool):
     """A tool for running python code in a REPL."""
 
@@ -31,8 +37,7 @@ class PythonREPLTool(BaseTool):
     def _run(self, query: str) -> str:
         """Use the tool."""
         if self.sanitize_input:
-            query = query.strip().removeprefix("```python")
-            query = query.strip().strip("```")
+            query = sanitize_input(query)
         return self.python_repl.run(query)
 
     async def _arun(self, query: str) -> str:
@@ -69,9 +74,7 @@ class PythonAstREPLTool(BaseTool):
         """Use the tool."""
         try:
             if self.sanitize_input:
-                # Remove the triple backticks from the query.
-                query = query.strip().removeprefix("```python")
-                query = query.strip().strip("```")
+                query = sanitize_input(query)
             tree = ast.parse(query)
             module = ast.Module(tree.body[:-1], type_ignores=[])
             exec(ast.unparse(module), self.globals, self.locals)  # type: ignore
