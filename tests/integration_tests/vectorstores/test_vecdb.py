@@ -1,4 +1,4 @@
-"""Test Chroma functionality."""
+"""Test VecDB functionality."""
 import pytest
 
 from langchain.docstore.document import Document
@@ -6,7 +6,7 @@ from langchain.vectorstores import VecDB
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
-def test_chroma() -> None:
+def test_vecdb() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = VecDB.from_texts(
@@ -17,7 +17,7 @@ def test_chroma() -> None:
 
 
 @pytest.mark.asyncio
-async def test_chroma_async() -> None:
+async def test_vecdb_async() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = VecDB.from_texts(
@@ -27,7 +27,7 @@ async def test_chroma_async() -> None:
     assert output == [Document(page_content="foo")]
 
 
-def test_chroma_with_metadatas() -> None:
+def test_vecdb_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
@@ -41,7 +41,7 @@ def test_chroma_with_metadatas() -> None:
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
-def test_chroma_with_metadatas_with_scores() -> None:
+def test_vecdb_with_metadatas_with_scores() -> None:
     """Test end to end construction and scored search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
@@ -55,7 +55,7 @@ def test_chroma_with_metadatas_with_scores() -> None:
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
-def test_chroma_search_filter() -> None:
+def test_vecdb_search_filter() -> None:
     """Test end to end construction and search with metadata filtering."""
     texts = ["far", "bar", "baz"]
     metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
@@ -65,46 +65,32 @@ def test_chroma_search_filter() -> None:
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
-    output = docsearch.similarity_search("far", k=1, filter={"first_letter": "f"})
-    assert output == [Document(page_content="far", metadata={"first_letter": "f"})]
-    output = docsearch.similarity_search("far", k=1, filter={"first_letter": "b"})
-    assert output == [Document(page_content="bar", metadata={"first_letter": "b"})]
-
-
-def test_chroma_search_filter_with_scores() -> None:
-    """Test end to end construction and scored search with metadata filtering."""
-    texts = ["far", "bar", "baz"]
-    metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
-    docsearch = VecDB.from_texts(
-        collection_name="test_collection",
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        metadatas=metadatas,
-    )
-    output = docsearch.similarity_search_with_score(
-        "far", k=1, filter={"first_letter": "f"}
+    output = docsearch.similarity_search(
+        "far", k=1, filter=docsearch.dataset["first_letter"] == "f"
     )
     assert output == [
-        (Document(page_content="far", metadata={"first_letter": "f"}), 0.0)
+        Document(page_content="far", metadata=docsearch.dataset["first_letter"] == "f")
     ]
-    output = docsearch.similarity_search_with_score(
-        "far", k=1, filter={"first_letter": "b"}
+    output = docsearch.similarity_search(
+        "far", k=1, filter=docsearch.dataset["first_letter"] == "b"
     )
     assert output == [
-        (Document(page_content="bar", metadata={"first_letter": "b"}), 1.0)
+        Document(page_content="bar", metadata=docsearch.dataset["first_letter"] == "b")
     ]
 
 
-def test_chroma_with_persistence() -> None:
+
+
+def test_vecdb_with_persistence() -> None:
     """Test end to end construction and search, with persistence."""
-    chroma_persist_dir = "./tests/persist_dir"
+    vecdb_persist_dir = "./tests/persist_dir"
     collection_name = "test_collection"
     texts = ["foo", "bar", "baz"]
     docsearch = VecDB.from_texts(
         collection_name=collection_name,
         texts=texts,
         embedding=FakeEmbeddings(),
-        persist_directory=chroma_persist_dir,
+        persist_directory=vecdb_persist_dir,
     )
 
     output = docsearch.similarity_search("foo", k=1)
@@ -116,7 +102,7 @@ def test_chroma_with_persistence() -> None:
     docsearch = VecDB(
         collection_name=collection_name,
         embedding_function=FakeEmbeddings(),
-        persist_directory=chroma_persist_dir,
+        persist_directory=vecdb_persist_dir,
     )
     output = docsearch.similarity_search("foo", k=1)
 
@@ -128,7 +114,7 @@ def test_chroma_with_persistence() -> None:
     # Or on program exit
 
 
-def test_chroma_mmr() -> None:
+def test_vecdb_mmr() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = VecDB.from_texts(
@@ -138,7 +124,7 @@ def test_chroma_mmr() -> None:
     assert output == [Document(page_content="foo")]
 
 
-def test_chroma_mmr_by_vector() -> None:
+def test_vecdb_mmr_by_vector() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     embeddings = FakeEmbeddings()
