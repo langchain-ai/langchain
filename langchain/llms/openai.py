@@ -455,8 +455,8 @@ class BaseOpenAI(BaseLLM):
         """Return type of llm."""
         return "openai"
 
-    def get_tokens(self, text: str) -> list[int]:
-        """Get the tokens present in the text with tiktoken package."""
+    def get_token_ids(self, text: str) -> List[int]:
+        """Get the token IDs using the tiktoken package."""
         # tiktoken NOT supported for Python < 3.8
         if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
@@ -476,10 +476,6 @@ class BaseOpenAI(BaseLLM):
             allowed_special=self.allowed_special,
             disallowed_special=self.disallowed_special,
         )
-
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate num tokens with tiktoken package."""
-        return len(self.get_tokens(text))
 
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
@@ -821,11 +817,10 @@ class OpenAIChat(BaseLLM):
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
         # encode the text using the GPT-3.5-Turbo encoder
-        tokenized_text = enc.encode(
+        token_ids = enc.encode(
             text,
             allowed_special=self.allowed_special,
             disallowed_special=self.disallowed_special,
         )
 
-        # calculate the number of tokens in the encoded text
-        return len(tokenized_text)
+        return len(token_ids)

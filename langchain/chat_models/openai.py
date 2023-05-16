@@ -355,28 +355,23 @@ class ChatOpenAI(BaseChatModel):
         """Return type of chat model."""
         return "openai-chat"
 
-    def get_tokens(self, text: str) -> list[int]:
+    def get_token_ids(self, text: str) -> List[int]:
         """Get the tokens present in the text with tiktoken package."""
         # tiktoken NOT supported for Python 3.7 or below
         if sys.version_info[1] <= 7:
-            return super().get_num_tokens(text)
+            return super().get_token_ids(text)
         try:
             import tiktoken
         except ImportError:
             raise ValueError(
                 "Could not import tiktoken python package. "
-                "This is needed in order to calculate get_num_tokens. "
+                "This is needed in order to calculate get_token_ids. "
                 "Please install it with `pip install tiktoken`."
             )
-        # create a GPT-3.5-Turbo encoder instance
         enc = tiktoken.encoding_for_model(self.model_name)
 
         # encode the text using the GPT-3.5-Turbo encoder
         return enc.encode(text)
-
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate num tokens with tiktoken package."""
-        return len(self.get_tokens(text))
 
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
