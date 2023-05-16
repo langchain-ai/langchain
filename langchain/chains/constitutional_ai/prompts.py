@@ -12,20 +12,13 @@ Critique Request: {critique_request}
 
 Critique: {critique}
 
-Revision request: {revision_request}
-
-If the critique does not identify anything worth changing, ignore the Revision Request and do not make any revisions. Instead, return "No revisions needed".
-
-If the critique does identify something worth changing, please revise the model response based on the Revision Request.
-
-Revision: {revision}""",
+Revision request: {revision_request}""",
     input_variables=[
         "input_prompt",
         "output_from_model",
         "critique_request",
         "critique",
         "revision_request",
-        "revision",
     ],
 )
 
