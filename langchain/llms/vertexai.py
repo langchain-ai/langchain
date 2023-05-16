@@ -36,7 +36,7 @@ class _VertexAICommon(BaseModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling OpenAI API."""
+        """Get the default parameters for calling Vertex AI API."""
         base_params = {
             "temperature": self.temperature,
             "max_output_tokens": self.max_output_tokens,
