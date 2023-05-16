@@ -57,7 +57,7 @@ class TestConfluenceLoader:
 
         with pytest.raises(
             ValueError,
-            match="Must specify at least one among `space_key`, `page_ids`,`label`, `cql` parameters.",  # noqa: E501
+            match="Must specify at least one among `space_key`, `page_ids`, `label`, `cql` parameters.",  # noqa: E501
         ):
             confluence_loader.load()
 
