@@ -17,7 +17,6 @@ The following sections of documentation are provided:
 
 - `Integrations <./llms/integrations.html>`_: A collection of examples on how to integrate different LLM providers with LangChain (OpenAI, Hugging Face, etc).
 
-- `Deploying LLMs in Production <./llms/deploy_llms.html>`_: A guide on how to deploy your own LLMs in production.
 
 - `Reference <../../reference/modules/llms.html>`_: API reference documentation for all LLM classes.
 
@@ -30,5 +29,4 @@ The following sections of documentation are provided:
    ./llms/getting_started.ipynb
    ./llms/how_to_guides.rst
    ./llms/integrations.rst
-   ./llms/deploy_llms.rst
    Reference<../../reference/modules/llms.rst>
