@@ -61,7 +61,7 @@ runs:
         poetry lock --check
 
     - uses: actions/cache@v3
-      id: cache_poetry
+      id: cache-poetry
       env:
         SEGMENT_DOWNLOAD_TIMEOUT_MIN: "15"
       with:
@@ -71,7 +71,7 @@ runs:
           ~/.cache/pypoetry/artifacts
         key: poetry-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}-${{ inputs.cache-key }}-${{ hashFiles('poetry.lock') }}
 
-    - if: cache_poetry.outputs.cache-hit != 'true'
+    - if: steps.cache-poetry.outputs.cache-hit != 'true'
       run: ${{ inputs.install-command }}
       working-directory: ${{ inputs.working-directory }}
       shell: bash
