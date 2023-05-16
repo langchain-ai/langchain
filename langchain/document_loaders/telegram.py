@@ -218,7 +218,6 @@ class TelegramChatApiLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
-        import pandas as pd
 
         if self.chat_entity is not None:
             try:
@@ -227,16 +226,16 @@ class TelegramChatApiLoader(BaseLoader):
                 nest_asyncio.apply()
                 asyncio.run(self.fetch_data_from_telegram())
             except ImportError:
-                raise ValueError(
-                    "please install with `pip install nest_asyncio`,\
-                                 `pip install nest_asyncio` "
-                )
+                raise ValueError("please install with `pip install nest_asyncio`")
 
         p = Path(self.file_path)
 
         with open(p, encoding="utf8") as f:
             d = json.load(f)
-
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ValueError("please install with `pip install pandas`")
         normalized_messages = pd.json_normalize(d)
         df = pd.DataFrame(normalized_messages)
 
