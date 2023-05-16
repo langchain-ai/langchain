@@ -29,17 +29,6 @@ class ConsoleCallbackHandler(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         pass
 
-    def on_chat_model_start(
-        self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        pass
-
     def get_parents(self, run: Run) -> List[Run]:
         parents = []
         current_run = run
