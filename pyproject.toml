@@ -221,6 +221,7 @@ extended_testing = [
  "openai",
  "opensearch-py",
  "pdfminer-six",
+ "pdfplumber",
  "pexpect",
  "pgvector",
  "pinecone-client",

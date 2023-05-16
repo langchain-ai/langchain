@@ -72,3 +72,31 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "pytest-watcher",
         "responses",
     ]
+
+
+def test_extended_testing_group(poetry_conf: Mapping[str, Any]) -> None:
+    """Fails when optional dependency is missing from extended_testing extra.
+
+    If this test fails, please add the missing optional dependencies to the
+    extended_testing extra.
+    """
+    dependencies = poetry_conf["dependencies"]
+
+    optional_dependencies = [
+        package_name
+        for package_name, requirements in dependencies.items()
+        if not isinstance(requirements, str) and requirements.get("optional", False)
+    ]
+
+    extended_testing_groups = poetry_conf["extras"]["extended_testing"]
+
+    missing_optional_dependencies = sorted(
+        set(optional_dependencies) - set(extended_testing_groups)
+    )
+
+    if missing_optional_dependencies:
+        raise AssertionError(
+            f"Please add the following optional "
+            f"dependencies {missing_optional_dependencies} to the "
+            "extended testing extra in pyproject.toml. And run `poetry update`."
+        )
