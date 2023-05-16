@@ -800,8 +800,8 @@ class OpenAIChat(BaseLLM):
         """Return type of llm."""
         return "openai-chat"
 
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate num tokens with tiktoken package."""
+    def get_token_ids(self, text: str) -> List[int]:
+        """Get the token IDs using the tiktoken package."""
         # tiktoken NOT supported for Python < 3.8
         if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
@@ -817,10 +817,8 @@ class OpenAIChat(BaseLLM):
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
         # encode the text using the GPT-3.5-Turbo encoder
-        token_ids = enc.encode(
+        return enc.encode(
             text,
             allowed_special=self.allowed_special,
             disallowed_special=self.disallowed_special,
         )
-
-        return len(token_ids)
