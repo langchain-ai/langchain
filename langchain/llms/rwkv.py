@@ -39,6 +39,7 @@ class RWKV(LLM, BaseModel):
 
     rwkv_verbose: bool = True
     """Print debug information."""
+    streaming: bool = False  #: :meta private:
 
     temperature: float = 1.0
     """The temperature to use for sampling."""
@@ -159,7 +160,7 @@ class RWKV(LLM, BaseModel):
             out, self.model_state = self.client.forward(
                 tokens[: self.CHUNK_LEN], self.model_state
             )
-            tokens = tokens[self.CHUNK_LEN :]
+            tokens = tokens[self.CHUNK_LEN:]
         END_OF_LINE = 187
         out[END_OF_LINE] += newline_adj  # adjust \n probability
 
@@ -180,8 +181,8 @@ class RWKV(LLM, BaseModel):
         for i in range(self.max_tokens_per_generation):
             for n in occurrence:
                 logits[n] -= (
-                    self.penalty_alpha_presence
-                    + occurrence[n] * self.penalty_alpha_frequency
+                        self.penalty_alpha_presence
+                        + occurrence[n] * self.penalty_alpha_frequency
                 )
             token = self.pipeline.sample_logits(
                 logits, temperature=self.temperature, top_p=self.top_p
@@ -197,19 +198,23 @@ class RWKV(LLM, BaseModel):
 
             logits = self.run_rnn([token])
             xxx = self.tokenizer.decode(self.model_tokens[out_last:])
+            print(xxx, end="")
             if "\ufffd" not in xxx:  # avoid utf-8 display issues
                 decoded += xxx
                 out_last = begin + i + 1
                 if i >= self.max_tokens_per_generation - 100:
                     break
-
+            send_msg = self.tokenizer.decode(self.model_tokens[begin:])
+            if '\n\n' in send_msg:
+                send_msg = send_msg.strip()
+                break
         return decoded
 
     def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+            self,
+            prompt: str,
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
         r"""RWKV generation
 
@@ -226,8 +231,59 @@ class RWKV(LLM, BaseModel):
                 prompt = "Once upon a time, "
                 response = model(prompt, n_predict=55)
         """
-        text = self.rwkv_generate(prompt)
+        if self.streaming:
+            combined_text_output = ""
+            for token in self.stream(prompt=prompt, stop=stop, run_manager=run_manager):
+                combined_text_output += token
+            return combined_text_output
+        else:
+            text = self.rwkv_generate(prompt)
 
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
+
         return text
+
+    def stream(
+            self,
+            prompt: str,
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
+        self.model_state = None
+        self.model_tokens = []
+        logits = self.run_rnn(self.tokenizer.encode(prompt).ids)
+        begin = len(self.model_tokens)
+        out_last = begin
+        occurrence: Dict = {}
+        decoded = ""
+        for i in range(self.max_tokens_per_generation):
+            for n in occurrence:
+                logits[n] -= (
+                        self.penalty_alpha_presence
+                        + occurrence[n] * self.penalty_alpha_frequency
+                )
+            token = self.pipeline.sample_logits(
+                logits, temperature=self.temperature, top_p=self.top_p
+            )
+            END_OF_TEXT = 0
+            if token == END_OF_TEXT:
+                break
+            if token not in occurrence:
+                occurrence[token] = 1
+            else:
+                occurrence[token] += 1
+
+            logits = self.run_rnn([token])
+            xxx = self.tokenizer.decode(self.model_tokens[out_last:])
+            if "\ufffd" not in xxx:  # avoid utf-8 display issues
+                if run_manager:
+                    run_manager.on_llm_new_token(xxx)
+                yield xxx
+                out_last = begin + i + 1
+                if i >= self.max_tokens_per_generation - 100:
+                    break
+            send_msg = self.tokenizer.decode(self.model_tokens[begin:])
+            if '\n\n' in send_msg:
+                send_msg = send_msg.strip()
+                break
