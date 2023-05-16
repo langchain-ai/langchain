@@ -162,17 +162,17 @@ Additional Resources
 
 - `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: The LangChainHub is a place to share and explore other prompts, chains, and agents.
 
-- `Gallery <./gallery.html>`_: A collection of our favorite projects that use LangChain. Useful for finding inspiration or seeing how things were done in other applications.
+- `Gallery <./additional_resources/gallery.html>`_: A collection of our favorite projects that use LangChain. Useful for finding inspiration or seeing how things were done in other applications.
 
-- `Deployments <./deployments.html>`_: A collection of instructions, code snippets, and template repositories for deploying LangChain apps.
+- `Deployments <./additional_resources/deployments.html>`_: A collection of instructions, code snippets, and template repositories for deploying LangChain apps.
 
-- `Tracing <./tracing.html>`_: A guide on using tracing in LangChain to visualize the execution of chains and agents.
+- `Tracing <./additional_resources/tracing.html>`_: A guide on using tracing in LangChain to visualize the execution of chains and agents.
 
-- `Model Laboratory <./model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
+- `Model Laboratory <./additional_resources/model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
 
 - `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
 
-- `YouTube <./youtube.html>`_: A collection of the LangChain tutorials and videos.
+- `YouTube <./additional_resources/youtube.html>`_: A collection of the LangChain tutorials and videos.
 
 - `Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>`_: As you move your LangChains into production, we'd love to offer more comprehensive support. Please fill out this form and we'll set up a dedicated support Slack channel.
 
@@ -184,11 +184,10 @@ Additional Resources
    :hidden:
 
    LangChainHub <https://github.com/hwchase17/langchain-hub>
-   ./glossary.md
-   ./gallery.rst
-   ./deployments.md
-   ./tracing.md
-   ./use_cases/model_laboratory.ipynb
+   ./additional_resources/gallery.rst
+   ./additional_resources/deployments.md
+   ./additional_resources/tracing.md
+   ./additional_resources/model_laboratory.ipynb
    Discord <https://discord.gg/6adMQxSpJS>
-   ./youtube.md
+   ./additional_resources/youtube.md
    Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>
