@@ -61,7 +61,6 @@ aleph-alpha-client = {version="^2.15.0", optional = true}
 deeplake = {version = "^3.3.0", optional = true}
 pgvector = {version = "^0.1.6", optional = true}
 psycopg2-binary = {version = "^2.9.5", optional = true}
-#boto3 = {version = "^1.26.96", optional = true} # TODO: fix it, commented because the version failed with deeplake
 pyowm = {version = "^3.3.0", optional = true}
 async-timeout = {version = "^4.0.0", python = "<3.11"}
 azure-identity = {version = "^1.12.0", optional=true}
@@ -81,7 +80,7 @@ jq = {version = "^1.4.1", optional = true}
 steamship = {version = "^2.16.9", optional = true}
 pdfminer-six = {version = "^20221105", optional = true}
 docarray = {version="^0.31.0", optional=true}
-protobuf = {version="3.19", optional=true}
+protobuf = {version="3.19.6", optional=true}
 hnswlib = {version="^0.7.0", optional=true}
 lxml = {version = "^4.9.2", optional = true}
 pymupdf = {version = "^1.22.3", optional = true}
@@ -115,6 +114,7 @@ responses = "^0.22.0"
 pytest-asyncio = "^0.20.3"
 lark = "^1.1.5"
 pytest-mock  = "^3.10.0"
+pytest-socket = "^0.6.0"
 
 [tool.poetry.group.test_integration]
 optional = true
@@ -175,7 +175,7 @@ in_memory_store = ["docarray"]
 hnswlib = ["docarray", "protobuf", "hnswlib"]
 embeddings = ["sentence-transformers"]
 azure = ["azure-identity", "azure-cosmos", "openai", "azure-core"]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "lark", "pexpect", "pyvespa", "O365", "jq", "docarray", "protobuf", "hnswlib", "steamship", "pdfminer-six", "gql"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "lark", "pexpect", "pyvespa", "O365", "jq", "docarray", "protobuf", "hnswlib", "steamship", "pdfminer-six", "gql"]
 # An extra used to be able to add extended testing.
 # Please use new-line on formatting to make it easier to add new packages without
 # merge-conflicts
