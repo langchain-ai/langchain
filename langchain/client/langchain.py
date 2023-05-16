@@ -26,11 +26,17 @@ from pydantic import BaseSettings, Field, root_validator
 from requests import Response
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain.callbacks.tracers.schemas import Run, TracerSession
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
-from langchain.client.models import Dataset, DatasetCreate, Example, ExampleCreate
+from langchain.client.models import (
+    Dataset,
+    DatasetCreate,
+    Example,
+    ExampleCreate,
+    ListRunsQueryParams,
+)
 from langchain.llms.base import BaseLLM
 from langchain.schema import ChatResult, LLMResult, messages_from_dict
 from langchain.utils import raise_for_status_with_text, xor_args
@@ -193,6 +199,71 @@ class LangChainPlusClient(BaseSettings):
             raise ValueError(f"Dataset {file_name} already exists")
         return Dataset(**result)
 
+    def read_run(self, run_id: str) -> Run:
+        """Read a run from the LangChain+ API."""
+        response = self._get(f"/runs/{run_id}")
+        raise_for_status_with_text(response)
+        return Run(**response.json())
+
+    def list_runs(
+        self,
+        *,
+        session_id: Optional[str] = None,
+        session_name: Optional[str] = None,
+        run_type: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Run]:
+        """List runs from the LangChain+ API."""
+        if session_name is not None:
+            if session_id is not None:
+                raise ValueError("Only one of session_id or session_name may be given")
+            session_id = self.read_session(session_name=session_name).id
+        query_params = ListRunsQueryParams(
+            session_id=session_id, run_type=run_type, **kwargs
+        )
+        filtered_params = {
+            k: v for k, v in query_params.dict().items() if v is not None
+        }
+        response = self._get("/runs", params=filtered_params)
+        raise_for_status_with_text(response)
+        return [Run(**run) for run in response.json()]
+
+    @xor_args(("session_id", "session_name"))
+    def read_session(
+        self, *, session_id: Optional[str] = None, session_name: Optional[str] = None
+    ) -> TracerSession:
+        """Read a session from the LangChain+ API."""
+        path = "/sessions"
+        params: Dict[str, Any] = {"limit": 1, "tenant_id": self.tenant_id}
+        if session_id is not None:
+            path += f"/{session_id}"
+        elif session_name is not None:
+            params["name"] = session_name
+        else:
+            raise ValueError("Must provide dataset_name or dataset_id")
+        response = self._get(
+            path,
+            params=params,
+        )
+        raise_for_status_with_text(response)
+        response = self._get(
+            path,
+            params=params,
+        )
+        raise_for_status_with_text(response)
+        result = response.json()
+        if isinstance(result, list):
+            if len(result) == 0:
+                raise ValueError(f"Dataset {session_name} not found")
+            return TracerSession(**result[0])
+        return TracerSession(**response.json())
+
+    def list_sessions(self) -> List[TracerSession]:
+        """List sessions from the LangChain+ API."""
+        response = self._get("/sessions")
+        raise_for_status_with_text(response)
+        return [TracerSession(**session) for session in response.json()]
+
     def create_dataset(self, dataset_name: str, description: str) -> Dataset:
         """Create a dataset in the LangChain+ API."""
         dataset = DatasetCreate(
@@ -351,14 +422,13 @@ class LangChainPlusClient(BaseSettings):
             except Exception as e:
                 logger.warning(f"Chain failed for example {example.id}. Error: {e}")
                 outputs.append({"Error": str(e)})
-            finally:
-                langchain_tracer.example_id = previous_example_id
+        langchain_tracer.example_id = previous_example_id
         return outputs
 
     @staticmethod
     async def _gather_with_concurrency(
         n: int,
-        initializer: Callable[[], Coroutine[Any, Any, Tuple[LangChainTracer, Dict]]],
+        initializer: Callable[[], Coroutine[Any, Any, LangChainTracer]],
         *async_funcs: Callable[[LangChainTracer, Dict], Coroutine[Any, Any, Any]],
     ) -> List[Any]:
         """
@@ -373,21 +443,28 @@ class LangChainPlusClient(BaseSettings):
             A list of results from the coroutines.
         """
         semaphore = asyncio.Semaphore(n)
-        tracer, job_state = await initializer()
+        job_state = {"num_processed": 0}
+
+        tracer_queue: asyncio.Queue[LangChainTracer] = asyncio.Queue()
+        for _ in range(n):
+            tracer_queue.put_nowait(await initializer())
 
         async def run_coroutine_with_semaphore(
             async_func: Callable[[LangChainTracer, Dict], Coroutine[Any, Any, Any]]
         ) -> Any:
             async with semaphore:
-                return await async_func(tracer, job_state)
+                tracer = await tracer_queue.get()
+                try:
+                    result = await async_func(tracer, job_state)
+                finally:
+                    tracer_queue.put_nowait(tracer)
+                return result
 
         return await asyncio.gather(
             *(run_coroutine_with_semaphore(function) for function in async_funcs)
         )
 
-    async def _tracer_initializer(
-        self, session_name: str
-    ) -> Tuple[LangChainTracer, dict]:
+    async def _tracer_initializer(self, session_name: str) -> LangChainTracer:
         """
         Initialize a tracer to share across tasks.
 
@@ -397,11 +474,9 @@ class LangChainPlusClient(BaseSettings):
         Returns:
             A LangChainTracer instance with an active session.
         """
-        job_state = {"num_processed": 0}
-        with tracing_v2_enabled(session_name=session_name) as session:
-            tracer = LangChainTracer()
-            tracer.session = session
-            return tracer, job_state
+        tracer = LangChainTracer(session_name=session_name)
+        tracer.ensure_session()
+        return tracer
 
     async def arun_on_dataset(
         self,
@@ -513,8 +588,7 @@ class LangChainPlusClient(BaseSettings):
             except Exception as e:
                 logger.warning(f"Chain failed for example {example.id}. Error: {e}")
                 outputs.append({"Error": str(e)})
-            finally:
-                langchain_tracer.example_id = previous_example_id
+        langchain_tracer.example_id = previous_example_id
         return outputs
 
     def run_on_dataset(
@@ -550,18 +624,16 @@ class LangChainPlusClient(BaseSettings):
         dataset = self.read_dataset(dataset_name=dataset_name)
         examples = list(self.list_examples(dataset_id=str(dataset.id)))
         results: Dict[str, Any] = {}
-        with tracing_v2_enabled(session_name=session_name) as session:
-            tracer = LangChainTracer()
-            tracer.session = session
-
-            for i, example in enumerate(examples):
-                result = self.run_llm_or_chain(
-                    example,
-                    tracer,
-                    llm_or_chain_factory,
-                    num_repetitions,
-                )
-                if verbose:
-                    print(f"{i+1} processed", flush=True, end="\r")
-            results[str(example.id)] = result
+        tracer = LangChainTracer(session_name=session_name)
+        tracer.ensure_session()
+        for i, example in enumerate(examples):
+            result = self.run_llm_or_chain(
+                example,
+                tracer,
+                llm_or_chain_factory,
+                num_repetitions,
+            )
+            if verbose:
+                print(f"{i+1} processed", flush=True, end="\r")
+        results[str(example.id)] = result
         return results

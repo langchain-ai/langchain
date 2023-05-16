@@ -33,11 +33,13 @@ runs:
   using: composite
   steps:
     - uses: actions/setup-python@v4
+      name: Setup python $${ inputs.python-version }}
       with:
         python-version: ${{ inputs.python-version }}
 
     - uses: actions/cache@v3
       id: cache-pip
+      name: Cache Pip ${{ inputs.python-version }}
       env:
         SEGMENT_DOWNLOAD_TIMEOUT_MIN: "15"
       with:
@@ -47,6 +49,16 @@ runs:
 
     - run: pipx install poetry==${{ inputs.poetry-version }} --python python${{ inputs.python-version }}
       shell: bash
+
+    - name: Check Poetry File
+      shell: bash
+      run: |
+        poetry check
+
+    - name: Check lock file
+      shell: bash
+      run: |
+        poetry lock --check
 
     - uses: actions/cache@v3
       id: cache-poetry

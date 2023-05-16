@@ -11,7 +11,7 @@ from langchain.llms.utils import enforce_stop_tokens
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
-VALID_TASKS = ("text2text-generation", "text-generation")
+VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class HuggingFacePipeline(LLM):
 
     To use, you should have the ``transformers`` python package installed.
 
-    Only supports `text-generation` and `text2text-generation` for now.
+    Only supports `text-generation`, `text2text-generation` and `summarization` for now.
 
     Example using from_model_id:
         .. code-block:: python
@@ -86,7 +86,7 @@ class HuggingFacePipeline(LLM):
         try:
             if task == "text-generation":
                 model = AutoModelForCausalLM.from_pretrained(model_id, **_model_kwargs)
-            elif task == "text2text-generation":
+            elif task in ("text2text-generation", "summarization"):
                 model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **_model_kwargs)
             else:
                 raise ValueError(
@@ -162,6 +162,8 @@ class HuggingFacePipeline(LLM):
             text = response[0]["generated_text"][len(prompt) :]
         elif self.pipeline.task == "text2text-generation":
             text = response[0]["generated_text"]
+        elif self.pipeline.task == "summarization":
+            text = response[0]["summary_text"]
         else:
             raise ValueError(
                 f"Got invalid task {self.pipeline.task}, "
