@@ -12,6 +12,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 if TYPE_CHECKING:
     import pandas as pd
+    from telethon.hints import EntityLike
 
 
 def concatenate_rows(row: dict) -> str:
@@ -82,7 +83,7 @@ class TelegramChatApiLoader(BaseLoader):
 
     def __init__(
         self,
-        chat_entity: Optional[str] = None,
+        chat_entity: Optional[EntityLike] = None,
         api_id: Optional[int] = None,
         api_hash: Optional[str] = None,
         username: Optional[str] = None,
