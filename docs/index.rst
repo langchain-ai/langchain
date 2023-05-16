@@ -166,6 +166,8 @@ Additional Resources
 
 - `Deployments <./additional_resources/deployments.html>`_: A collection of instructions, code snippets, and template repositories for deploying LangChain apps.
 
+- `Deploying LLMs in Production <./additional_resources/deploy_llms.html>`_: A collection of best practices and tutorials for deploying LLMs in production.
+
 - `Tracing <./additional_resources/tracing.html>`_: A guide on using tracing in LangChain to visualize the execution of chains and agents.
 
 - `Model Laboratory <./additional_resources/model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
@@ -186,6 +188,7 @@ Additional Resources
    LangChainHub <https://github.com/hwchase17/langchain-hub>
    ./additional_resources/gallery.rst
    ./additional_resources/deployments.md
+   ./additional_resources/deploy_llms.rst
    ./additional_resources/tracing.md
    ./additional_resources/model_laboratory.ipynb
    Discord <https://discord.gg/6adMQxSpJS>
