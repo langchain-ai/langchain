@@ -119,6 +119,9 @@ class ChatOpenAI(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    """Base URL path for API requests, 
+    leave blank if not using a proxy or service emulator."""
+    openai_api_base: Optional[str] = None
     openai_organization: Optional[str] = None
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
@@ -346,6 +349,11 @@ class ChatOpenAI(BaseChatModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {**{"model_name": self.model_name}, **self._default_params}
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+        return "openai-chat"
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
