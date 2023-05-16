@@ -192,6 +192,8 @@ extended_testing = [
  "pypdfium2",
  "tqdm",
  "lxml",
+ "atlassian-python-api",
+ "beautifulsoup4",
  "pandas",
  "telethon",
 ]
