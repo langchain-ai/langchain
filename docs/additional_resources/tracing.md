@@ -6,8 +6,8 @@ First, you should install tracing and set up your environment properly.
 You can use either a locally hosted version of this (uses Docker) or a cloud hosted version (in closed alpha).
 If you're interested in using the hosted platform, please fill out the form [here](https://forms.gle/tRCEMSeopZf6TE3b6).
 
-- [Locally Hosted Setup](./tracing/local_installation.md)
-- [Cloud Hosted Setup](./tracing/hosted_installation.md)
+- [Locally Hosted Setup](../tracing/local_installation.md)
+- [Cloud Hosted Setup](../tracing/hosted_installation.md)
 
 ## Tracing Walkthrough
 
@@ -17,32 +17,32 @@ A session is just a way to group traces together.
 If you click on a session, it will take you to a page with no recorded traces that says "No Runs."
 You can create a new session with the new session form.
 
-![](tracing/homepage.png)
+![](../tracing/homepage.png)
 
 If we click on the `default` session, we can see that to start we have no traces stored.
 
-![](tracing/default_empty.png)
+![](../tracing/default_empty.png)
 
 If we now start running chains and agents with tracing enabled, we will see data show up here.
-To do so, we can run [this notebook](tracing/agent_with_tracing.ipynb) as an example.
+To do so, we can run [this notebook](../tracing/agent_with_tracing.ipynb) as an example.
 After running it, we will see an initial trace show up.
 
-![](tracing/first_trace.png)
+![](../tracing/first_trace.png)
 
 From here we can explore the trace at a high level by clicking on the arrow to show nested runs.
 We can keep on clicking further and further down to explore deeper and deeper.
 
-![](tracing/explore.png)
+![](../tracing/explore.png)
 
 We can also click on the "Explore" button of the top level run to dive even deeper.
 Here, we can see the inputs and outputs in full, as well as all the nested traces.
 
-![](tracing/explore_trace.png)
+![](../tracing/explore_trace.png)
 
 We can keep on exploring each of these nested traces in more detail.
 For example, here is the lowest level trace with the exact inputs/outputs to the LLM.
 
-![](tracing/explore_llm.png)
+![](../tracing/explore_llm.png)
 
 ## Changing Sessions
 

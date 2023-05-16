@@ -23,6 +23,7 @@ from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.discord import DiscordChatLoader
+from langchain.document_loaders.docugami import DocugamiLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import (
     OutlookMessageLoader,
@@ -60,6 +61,7 @@ from langchain.document_loaders.pdf import (
     OnlinePDFLoader,
     PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
+    PDFPlumberLoader,
     PyMuPDFLoader,
     PyPDFDirectoryLoader,
     PyPDFium2Loader,
@@ -135,6 +137,7 @@ __all__ = [
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
+    "DocugamiLoader",
     "Docx2txtLoader",
     "DuckDBLoader",
     "EverNoteLoader",
@@ -166,6 +169,7 @@ __all__ = [
     "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
+    "PDFPlumberLoader",
     "PagedPDFSplitter",
     "PlaywrightURLLoader",
     "PyMuPDFLoader",
