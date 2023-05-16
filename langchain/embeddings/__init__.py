@@ -8,6 +8,7 @@ from langchain.embeddings.aleph_alpha import (
 )
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.embeddings.fake import FakeEmbeddings
+from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.huggingface import (
     HuggingFaceEmbeddings,
     HuggingFaceInstructEmbeddings,
@@ -44,6 +45,7 @@ __all__ = [
     "AlephAlphaAsymmetricSemanticEmbedding",
     "AlephAlphaSymmetricSemanticEmbedding",
     "SentenceTransformerEmbeddings",
+    "GooglePalmEmbeddings",
 ]
 
 

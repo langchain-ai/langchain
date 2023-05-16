@@ -7,7 +7,7 @@ The applications combine tool usage and long term memory.
 
 At the moment, Autonomous Agents are fairly experimental and based off of other open-source projects.
 By implementing these open source projects in LangChain primitives we can get the benefits of LangChain - 
-easy switching an experimenting with multiple LLMs, usage of different vectorstores as memory, 
+easy switching and experimenting with multiple LLMs, usage of different vectorstores as memory, 
 usage of LangChain's collection of tools.
 
 ## Baby AGI ([Original Repo](https://github.com/yoheinakajima/babyagi))

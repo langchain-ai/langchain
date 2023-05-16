@@ -8,6 +8,11 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
@@ -15,7 +20,7 @@ from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, BaseMessage, BaseRetriever, Document
+from langchain.schema import BaseMessage, BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 # Depending on the memory type and configuration, the chat history format may differ.
@@ -81,14 +86,20 @@ class BaseConversationalRetrievalChain(Chain):
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
         """Get docs."""
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs["question"]
         get_chat_history = self.get_chat_history or _get_chat_history
         chat_history_str = get_chat_history(inputs["chat_history"])
 
         if chat_history_str:
+            callbacks = _run_manager.get_child()
             new_question = self.question_generator.run(
-                question=question, chat_history=chat_history_str
+                question=question, chat_history=chat_history_str, callbacks=callbacks
             )
         else:
             new_question = question
@@ -96,7 +107,9 @@ class BaseConversationalRetrievalChain(Chain):
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        answer = self.combine_docs_chain.run(input_documents=docs, **new_inputs)
+        answer = self.combine_docs_chain.run(
+            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+        )
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:
@@ -106,13 +119,19 @@ class BaseConversationalRetrievalChain(Chain):
     async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
         """Get docs."""
 
-    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs["question"]
         get_chat_history = self.get_chat_history or _get_chat_history
         chat_history_str = get_chat_history(inputs["chat_history"])
         if chat_history_str:
+            callbacks = _run_manager.get_child()
             new_question = await self.question_generator.arun(
-                question=question, chat_history=chat_history_str
+                question=question, chat_history=chat_history_str, callbacks=callbacks
             )
         else:
             new_question = question
@@ -120,7 +139,9 @@ class BaseConversationalRetrievalChain(Chain):
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        answer = await self.combine_docs_chain.arun(input_documents=docs, **new_inputs)
+        answer = await self.combine_docs_chain.arun(
+            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+        )
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:

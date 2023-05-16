@@ -9,7 +9,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 import sqlalchemy
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects.postgresql import JSON, UUID
-from sqlalchemy.orm import Mapped, Session, declarative_base, relationship
+from sqlalchemy.orm import Session, declarative_base, relationship
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -42,7 +42,7 @@ class CollectionStore(BaseModel):
 
     @classmethod
     def get_by_name(cls, session: Session, name: str) -> Optional["CollectionStore"]:
-        return session.query(cls).filter(cls.name == name).first()
+        return session.query(cls).filter(cls.name == name).first()  # type: ignore
 
     @classmethod
     def get_or_create(
@@ -70,7 +70,7 @@ class CollectionStore(BaseModel):
 class EmbeddingStore(BaseModel):
     __tablename__ = "langchain_pg_embedding"
 
-    collection_id: Mapped[UUID] = sqlalchemy.Column(
+    collection_id = sqlalchemy.Column(
         UUID(as_uuid=True),
         sqlalchemy.ForeignKey(
             f"{CollectionStore.__tablename__}.uuid",
@@ -164,10 +164,12 @@ class PGVector(VectorStore):
             self.logger.exception(e)
 
     def create_tables_if_not_exists(self) -> None:
-        Base.metadata.create_all(self._conn)
+        with self._conn.begin():
+            Base.metadata.create_all(self._conn)
 
     def drop_tables(self) -> None:
-        Base.metadata.drop_all(self._conn)
+        with self._conn.begin():
+            Base.metadata.drop_all(self._conn)
 
     def create_collection(self) -> None:
         if self.pre_delete_collection:

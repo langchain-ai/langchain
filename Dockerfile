@@ -1,5 +1,7 @@
 # This is a Dockerfile for running unit tests
 
+ARG POETRY_HOME=/opt/poetry
+
 # Use the Python base image
 FROM python:3.11.2-bullseye AS builder
 
@@ -7,7 +9,7 @@ FROM python:3.11.2-bullseye AS builder
 ARG POETRY_VERSION=1.4.2
 
 # Define the directory to install Poetry to (default is /opt/poetry)
-ARG POETRY_HOME=/opt/poetry
+ARG POETRY_HOME
 
 # Create a Python virtual environment for Poetry and install it
 RUN python3 -m venv ${POETRY_HOME} && \
@@ -22,6 +24,8 @@ WORKDIR /app
 
 # Use a multi-stage build to install dependencies
 FROM builder AS dependencies
+
+ARG POETRY_HOME
 
 # Copy only the dependency files for installation
 COPY pyproject.toml poetry.lock poetry.toml ./
