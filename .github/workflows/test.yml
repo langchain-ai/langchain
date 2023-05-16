@@ -40,5 +40,9 @@ jobs:
               fi
       - name: Run ${{matrix.test_type}} tests
         run: |
-          make test
+          if [ "${{ matrix.test_type }}" == "core" ]; then
+            make test
+          else
+            make extended_tests
+          fi
         shell: bash
