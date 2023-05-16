@@ -125,7 +125,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
         metadata_cls = UnstructuredMetadata(file_path=self.file_path)
 
         # Add required metadata to dict
-        if self.get_sourcesource:
+        if self.get_source:
             source = metadata_cls.source()
             metadata["source"] = source
         if self.get_created_at:
