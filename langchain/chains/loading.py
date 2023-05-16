@@ -307,7 +307,7 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> SQLDatabaseChain:
     if "prompt" in config:
         prompt_config = config.pop("prompt")
         prompt = load_prompt_from_config(prompt_config)
-    return SQLDatabaseChain(database=database, llm=llm, prompt=prompt, **config)
+    return SQLDatabaseChain.from_llm(db=database, llm=llm, prompt=prompt, **config)
 
 
 def _load_vector_db_qa_with_sources_chain(
