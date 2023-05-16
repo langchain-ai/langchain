@@ -226,7 +226,11 @@ class TelegramChatApiLoader(BaseLoader):
                 nest_asyncio.apply()
                 asyncio.run(self.fetch_data_from_telegram())
             except ImportError:
-                raise ValueError("please install with `pip install nest_asyncio`")
+                raise ValueError(
+                    """`nest_asyncio` package not found.
+                    please install with `pip install nest_asyncio`
+                    """
+                )
 
         p = Path(self.file_path)
 
@@ -235,7 +239,11 @@ class TelegramChatApiLoader(BaseLoader):
         try:
             import pandas as pd
         except ImportError:
-            raise ValueError("please install with `pip install pandas`")
+            raise ValueError(
+                """`pandas` package not found. 
+                please install with `pip install pandas`
+                """
+            )
         normalized_messages = pd.json_normalize(d)
         df = pd.DataFrame(normalized_messages)
 
