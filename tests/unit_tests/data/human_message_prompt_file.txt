@@ -1,1 +1,0 @@
-Hello {foo}, I'm {bar}. Thanks for the {context}

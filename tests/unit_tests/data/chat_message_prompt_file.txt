@@ -1,1 +1,0 @@
-I'm a generic message. I'm {foo}. I'm {bar}.

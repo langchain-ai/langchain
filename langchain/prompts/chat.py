@@ -75,7 +75,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         return cls(prompt=prompt, **kwargs)
 
     @classmethod
-    def from_file(
+    def from_template_file(
         cls: Type[MessagePromptTemplateT],
         template_file: Union[str, Path],
         input_variables: List[str],
