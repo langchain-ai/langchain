@@ -54,7 +54,7 @@ This is a collection of `LangChain` videos on `YouTube`.
 - ⛓️ [LangChain: Level up `ChatGPT` !? | LangChain Tutorial Part 1](https://youtu.be/vxUGx8aZpDE) by [Code Affinity](https://www.youtube.com/@codeaffinitydev)
 - ⛓️ [KI schreibt krasses Youtube Skript 😲😳 | LangChain Tutorial Deutsch](https://youtu.be/QpTiXyK1jus) by [SimpleKI](https://www.youtube.com/@simpleki)
 - ⛓️ [Chat with Audio: Langchain, `Chroma DB`, OpenAI, and `Assembly AI`](https://youtu.be/Kjy7cx1r75g) by [AI Anytime](https://www.youtube.com/@AIAnytime)
-- ⛓️ [QA over documents with Auto vector index selection with Langchain router chains]() by [echohive](https://www.youtube.com/@echohive)
+- ⛓️ [QA over documents with Auto vector index selection with Langchain router chains](https://youtu.be/9G05qybShv8) by [echohive](https://www.youtube.com/@echohive)
 - ⛓️ [Build your own custom LLM application with `Bubble.io` & Langchain (No Code & Beginner friendly)](https://youtu.be/O7NhQGu1m6c) by [No Code Blackbox](https://www.youtube.com/@nocodeblackbox)
 - ⛓️ [Simple App to Question Your Docs: Leveraging `Streamlit`, `Hugging Face Spaces`, LangChain, and `Claude`!](https://youtu.be/X4YbNECRr7o) by [Chris Alexiuk](https://www.youtube.com/@chrisalexiuk)
 - ⛓️ [LANGCHAIN AI- `ConstitutionalChainAI` + Databutton AI ASSISTANT Web App](https://youtu.be/5zIU6_rdJCU) by [Avra](https://www.youtube.com/@Avra_b)
