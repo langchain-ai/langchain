@@ -1,22 +1,20 @@
 """Chain that combines documents by stuffing into context."""
+from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
     format_document,
+    get_default_document_prompt,
 )
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.prompts.base import BasePromptTemplate
-from langchain.prompts.prompt import PromptTemplate
-
-
-def _get_default_document_prompt() -> PromptTemplate:
-    return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
 
 class StuffDocumentsChain(BaseCombineDocumentsChain):
@@ -25,7 +23,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     llm_chain: LLMChain
     """LLM wrapper to use after formatting documents."""
     document_prompt: BasePromptTemplate = Field(
-        default_factory=_get_default_document_prompt
+        default_factory=get_default_document_prompt
     )
     """Prompt to use to format each document."""
     document_variable_name: str
@@ -34,11 +32,26 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     document_separator: str = "\n\n"
     """The string with which to join the formatted documents"""
 
+    @classmethod
+    def from_llm(
+        cls, llm: BaseLanguageModel, prompt: BasePromptTemplate, **kwargs: Any
+    ) -> StuffDocumentsChain:
+        """Initialize StuffDocumentsChain from an LLM."""
+        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        return cls(llm_chain=llm_chain, **kwargs)
+
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @property
+    def input_keys(self) -> List[str]:
+        """Return output keys."""
+        all_keys = set([self.input_documents_key] + self.llm_chain.input_keys)
+        internal_keys = [self.document_variable_name]
+        return list(all_keys.difference(internal_keys))
 
     @root_validator(pre=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:

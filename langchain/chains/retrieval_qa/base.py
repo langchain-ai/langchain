@@ -30,6 +30,8 @@ class BaseRetrievalQA(Chain):
     output_key: str = "result"  #: :meta private:
     return_source_documents: bool = False
     """Return the source documents."""
+    combine_documents_chain_question_key: str = "question"
+    """TODO: Find a more general / clean approach."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -62,9 +64,12 @@ class BaseRetrievalQA(Chain):
         cls,
         llm: BaseLanguageModel,
         prompt: Optional[PromptTemplate] = None,
+        document_variable_name: Optional[str] = None,
         **kwargs: Any,
     ) -> BaseRetrievalQA:
         """Initialize from LLM."""
+        _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
+        _document_variable_name = document_variable_name or "context"
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
         llm_chain = LLMChain(llm=llm, prompt=_prompt)
         document_prompt = PromptTemplate(
@@ -72,7 +77,7 @@ class BaseRetrievalQA(Chain):
         )
         combine_documents_chain = StuffDocumentsChain(
             llm_chain=llm_chain,
-            document_variable_name="context",
+            document_variable_name=document_variable_name,
             document_prompt=document_prompt,
         )
 
@@ -97,6 +102,21 @@ class BaseRetrievalQA(Chain):
     def _get_docs(self, question: str) -> List[Document]:
         """Get documents to do question answering over."""
 
+    def _get_combine_documents_chain_inputs(
+        self, docs: List[Document], question: str, **kwargs: Any
+    ) -> Dict[str, Any]:
+        _kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k in self.combine_documents_chain.input_keys
+        }
+        inputs = {
+            self.combine_documents_chain.input_documents_key: docs,
+            self.combine_documents_chain_question_key: question,
+            **_kwargs,
+        }
+        return inputs
+
     def _call(
         self,
         inputs: Dict[str, Any],
@@ -114,11 +134,12 @@ class BaseRetrievalQA(Chain):
         answer, docs = res['result'], res['source_documents']
         """
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        question = inputs[self.input_key]
 
+        question = inputs[self.input_key]
         docs = self._get_docs(question)
+        _inputs = self._get_combine_documents_chain_inputs(docs, question, **inputs)
         answer = self.combine_documents_chain.run(
-            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+            callbacks=_run_manager.get_child(), **_inputs
         )
 
         if self.return_source_documents:
@@ -147,11 +168,12 @@ class BaseRetrievalQA(Chain):
         answer, docs = res['result'], res['source_documents']
         """
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
-        question = inputs[self.input_key]
 
+        question = inputs[self.input_key]
         docs = await self._aget_docs(question)
+        _inputs = self._get_combine_documents_chain_inputs(docs, question, **inputs)
         answer = await self.combine_documents_chain.arun(
-            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+            callbacks=_run_manager.get_child(), **_inputs
         )
 
         if self.return_source_documents:

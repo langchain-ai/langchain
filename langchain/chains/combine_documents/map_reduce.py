@@ -4,10 +4,16 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
-from pydantic import Extra, root_validator
+from mypy_extensions import KwArg
+from pydantic import Extra, Field, root_validator
 
+from langchain import BasePromptTemplate
 from langchain.callbacks.manager import Callbacks
-from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.combine_documents.base import (
+    BaseCombineDocumentsChain,
+    format_document,
+    get_default_document_prompt,
+)
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 
@@ -46,10 +52,8 @@ def _split_list_of_docs(
 
 def _collapse_docs(
     docs: List[Document],
-    combine_document_func: CombineDocsProtocol,
-    **kwargs: Any,
+    combine_docs_result: str,
 ) -> Document:
-    result = combine_document_func(docs, **kwargs)
     combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
     for doc in docs[1:]:
         for k, v in doc.metadata.items():
@@ -57,7 +61,7 @@ def _collapse_docs(
                 combined_metadata[k] += f", {v}"
             else:
                 combined_metadata[k] = str(v)
-    return Document(page_content=result, metadata=combined_metadata)
+    return Document(page_content=combine_docs_result, metadata=combined_metadata)
 
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
@@ -65,6 +69,10 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     llm_chain: LLMChain
     """Chain to apply to each document individually."""
+    document_prompt: BasePromptTemplate = Field(
+        default_factory=get_default_document_prompt
+    )
+    """Prompt to use to format each document."""
     combine_document_chain: BaseCombineDocumentsChain
     """Chain to use to combine results of applying llm_chain to documents."""
     collapse_document_chain: Optional[BaseCombineDocumentsChain] = None
@@ -77,8 +85,23 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     """Return the results of the map steps in the output."""
 
     @property
+    def input_keys(self) -> List[str]:
+        """Return input keys."""
+        all_keys = set(
+            [self.input_documents_key, "token_max"]
+            + self.llm_chain.input_keys
+            + self._collapse_chain.input_keys
+        )
+        internal_keys = [
+            self.document_variable_name,
+            self.combine_document_chain.input_documents_key,
+            self._collapse_chain.input_documents_key,
+        ]
+        return list(set(all_keys).difference(internal_keys))
+
+    @property
     def output_keys(self) -> List[str]:
-        """Expect input key.
+        """Return output keys.
 
         :meta private:
         """
@@ -129,6 +152,13 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         else:
             return self.combine_document_chain
 
+    def _get_llm_chain_inputs(self, docs: List[Document], **kwargs: Any) -> List[dict]:
+        # Format each document according to the prompt
+        doc_strings = [format_document(doc, self.document_prompt) for doc in docs]
+        # Join the documents together to put them in the prompt.
+        _kwargs = {k: v for k, v in kwargs.items() if k in self.llm_chain.input_keys}
+        return [{self.document_variable_name: _doc, **_kwargs} for _doc in doc_strings]
+
     def combine_docs(
         self,
         docs: List[Document],
@@ -141,35 +171,41 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         Combine by mapping first chain over all documents, then reducing the results.
         This reducing can be done recursively if needed (if there are many documents).
         """
-        results = self.llm_chain.apply(
-            # FYI - this is parallelized and so it is fast.
-            [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
-            callbacks=callbacks,
-        )
+        inputs = self._get_llm_chain_inputs(docs, **kwargs)
+        # FYI - this is parallelized and so it is fast.
+        results = self.llm_chain.apply(inputs, callbacks=callbacks)
         return self._process_results(
             results, docs, token_max, callbacks=callbacks, **kwargs
         )
 
     async def acombine_docs(
-        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: List[Document],
+        token_max: int = 3000,
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Tuple[str, dict]:
         """Combine documents in a map reduce manner.
 
         Combine by mapping first chain over all documents, then reducing the results.
         This reducing can be done recursively if needed (if there are many documents).
         """
-        results = await self.llm_chain.aapply(
-            # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
-            callbacks=callbacks,
+        inputs = self._get_llm_chain_inputs(docs, **kwargs)
+        # FYI - this is parallelized and so it is fast.
+        results = await self.llm_chain.aapply(inputs, callbacks=callbacks)
+        return self._process_results(
+            results, docs, token_max, callbacks=callbacks, **kwargs
         )
-        return self._process_results(results, docs, callbacks=callbacks, **kwargs)
+
+    @property
+    def _length_func(self) -> Callable[[List[Document], KwArg(Any)], Optional[int]]:
+        return self.combine_document_chain.prompt_length  # type: ignore
 
     def _process_results(
         self,
         results: List[Dict],
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: int,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[str, dict]:
@@ -179,33 +215,28 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             # This uses metadata from the docs, and the textual results from `results`
             for i, r in enumerate(results)
         ]
-        length_func = self.combine_document_chain.prompt_length
-        num_tokens = length_func(result_docs, **kwargs)
-
-        def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
-            return self._collapse_chain.run(
-                input_documents=docs, callbacks=callbacks, **kwargs
-            )
+        num_tokens = self._length_func(result_docs, **kwargs)
 
         while num_tokens is not None and num_tokens > token_max:
             new_result_doc_list = _split_list_of_docs(
-                result_docs, length_func, token_max, **kwargs
+                result_docs, self._length_func, token_max, **kwargs
             )
             result_docs = []
             for docs in new_result_doc_list:
-                new_doc = _collapse_docs(docs, _collapse_docs_func, **kwargs)
-                result_docs.append(new_doc)
-            num_tokens = self.combine_document_chain.prompt_length(
-                result_docs, **kwargs
-            )
+                inputs = {self._collapse_chain.input_documents_key: docs, **kwargs}
+                result = self._collapse_chain.run(callbacks=callbacks, **inputs)
+                result_docs.append(_collapse_docs(docs, result))
+            num_tokens = self._length_func(result_docs, **kwargs)
         if self.return_intermediate_steps:
             _results = [r[self.llm_chain.output_key] for r in results]
             extra_return_dict = {"intermediate_steps": _results}
         else:
             extra_return_dict = {}
-        output = self.combine_document_chain.run(
-            input_documents=result_docs, callbacks=callbacks, **kwargs
-        )
+        inputs = {
+            self.combine_document_chain.input_documents_key: result_docs,
+            **kwargs,
+        }
+        output = self.combine_document_chain.run(callbacks=callbacks, **inputs)
         return output, extra_return_dict
 
     @property

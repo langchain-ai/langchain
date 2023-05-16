@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field
 
+from langchain import PromptTemplate
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -15,10 +16,13 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
+def get_default_document_prompt() -> PromptTemplate:
+    return PromptTemplate(input_variables=["page_content"], template="{page_content}")
+
+
 def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
     """Format a document into a string based on a prompt template."""
-    base_info = {"page_content": doc.page_content}
-    base_info.update(doc.metadata)
+    base_info = {"page_content": doc.page_content, **doc.metadata}
     missing_metadata = set(prompt.input_variables).difference(base_info)
     if len(missing_metadata) > 0:
         required_metadata = [
@@ -36,16 +40,8 @@ def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
 class BaseCombineDocumentsChain(Chain, ABC):
     """Base interface for chains combining documents."""
 
-    input_key: str = "input_documents"  #: :meta private:
+    input_documents_key: str = "input_documents"  #: :meta private:
     output_key: str = "output_text"  #: :meta private:
-
-    @property
-    def input_keys(self) -> List[str]:
-        """Expect input key.
-
-        :meta private:
-        """
-        return [self.input_key]
 
     @property
     def output_keys(self) -> List[str]:
@@ -78,9 +74,9 @@ class BaseCombineDocumentsChain(Chain, ABC):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        docs = inputs[self.input_key]
+        docs = inputs[self.input_documents_key]
         # Other keys are assumed to be needed for LLM prediction
-        other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
+        other_keys = {k: v for k, v in inputs.items() if k != self.input_documents_key}
         output, extra_return_dict = self.combine_docs(
             docs, callbacks=_run_manager.get_child(), **other_keys
         )
@@ -93,9 +89,9 @@ class BaseCombineDocumentsChain(Chain, ABC):
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
-        docs = inputs[self.input_key]
+        docs = inputs[self.input_documents_key]
         # Other keys are assumed to be needed for LLM prediction
-        other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
+        other_keys = {k: v for k, v in inputs.items() if k != self.input_documents_key}
         output, extra_return_dict = await self.acombine_docs(
             docs, callbacks=_run_manager.get_child(), **other_keys
         )
@@ -136,7 +132,7 @@ class AnalyzeDocumentChain(Chain):
         docs = self.text_splitter.create_documents([document])
         # Other keys are assumed to be needed for LLM prediction
         other_keys: Dict = {k: v for k, v in inputs.items() if k != self.input_key}
-        other_keys[self.combine_docs_chain.input_key] = docs
+        other_keys[self.combine_docs_chain.input_documents_key] = docs
         return self.combine_docs_chain(
             other_keys, return_only_outputs=True, callbacks=_run_manager.get_child()
         )

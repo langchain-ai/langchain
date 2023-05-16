@@ -4,10 +4,15 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from pydantic import Extra, root_validator
+from pydantic import Extra, Field, root_validator
 
+from langchain import BasePromptTemplate
 from langchain.callbacks.manager import Callbacks
-from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.combine_documents.base import (
+    BaseCombineDocumentsChain,
+    format_document,
+    get_default_document_prompt,
+)
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.output_parsers.regex import RegexParser
@@ -18,6 +23,10 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
 
     llm_chain: LLMChain
     """Chain to apply to each document individually."""
+    document_prompt: BasePromptTemplate = Field(
+        default_factory=get_default_document_prompt
+    )
+    """Prompt to use to format each document."""
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
@@ -35,8 +44,15 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         arbitrary_types_allowed = True
 
     @property
+    def input_keys(self) -> List[str]:
+        """Return output keys."""
+        all_keys = set([self.input_documents_key] + self.llm_chain.input_keys)
+        internal_keys = [self.document_variable_name]
+        return list(all_keys.difference(internal_keys))
+
+    @property
     def output_keys(self) -> List[str]:
-        """Expect input key.
+        """Return output keys.
 
         :meta private:
         """
@@ -90,6 +106,13 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                 )
         return values
 
+    def _get_llm_chain_inputs(self, docs: List[Document], **kwargs: Any) -> List[dict]:
+        # Format each document according to the prompt
+        doc_strings = [format_document(doc, self.document_prompt) for doc in docs]
+        # Join the documents together to put them in the prompt.
+        _kwargs = {k: v for k, v in kwargs.items() if k in self.llm_chain.input_keys}
+        return [{self.document_variable_name: _doc, **_kwargs} for _doc in doc_strings]
+
     def combine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
@@ -97,11 +120,9 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
 
         Combine by mapping first chain over all documents, then reranking the results.
         """
-        results = self.llm_chain.apply_and_parse(
-            # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
-            callbacks=callbacks,
-        )
+        inputs = self._get_llm_chain_inputs(docs, **kwargs)
+        # FYI - this is parallelized and so it is fast.
+        results = self.llm_chain.apply_and_parse(inputs, callbacks=callbacks)
         return self._process_results(docs, results)
 
     async def acombine_docs(
@@ -111,11 +132,9 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
 
         Combine by mapping first chain over all documents, then reranking the results.
         """
-        results = await self.llm_chain.aapply_and_parse(
-            # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
-            callbacks=callbacks,
-        )
+        inputs = self._get_llm_chain_inputs(docs, **kwargs)
+        # FYI - this is parallelized and so it is fast.
+        results = await self.llm_chain.aapply_and_parse(inputs, callbacks=callbacks)
         return self._process_results(docs, results)
 
     def _process_results(
