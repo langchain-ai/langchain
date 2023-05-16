@@ -6312,6 +6312,17 @@ files = [
 ]
 
 [[package]]
+name = "pyaes"
+version = "1.6.1"
+description = "Pure-Python Implementation of the AES block-cipher and common modes of operation"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "pyaes-1.6.1.tar.gz", hash = "sha256:02c1b1405c38d3c370b085fb952dd8bea3fadcee6411ad99f312cc129c536d8f"},
+]
+
+[[package]]
 name = "pyarrow"
 version = "12.0.0"
 description = "Python library for Apache Arrow"
@@ -6595,7 +6606,6 @@ files = [
     {file = "pylance-0.4.12-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:2b86fb8dccc03094c0db37bef0d91bda60e8eb0d1eddf245c6971450c8d8a53f"},
     {file = "pylance-0.4.12-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:0bc82914b13204187d673b5f3d45f93219c38a0e9d0542ba251074f639669789"},
     {file = "pylance-0.4.12-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5a4bcce77f99ecd4cbebbadb01e58d5d8138d40eb56bdcdbc3b20b0475e7a472"},
-    {file = "pylance-0.4.12-cp38-abi3-win_amd64.whl", hash = "sha256:9616931c5300030adb9626d22515710a127d1e46a46737a7a0f980b52f13627c"},
 ]
 
 [package.dependencies]
@@ -8605,6 +8615,25 @@ files = [
 redis = ">=4.4.4"
 
 [[package]]
+name = "telethon"
+version = "1.28.5"
+description = "Full-featured Telegram client library for Python 3"
+category = "main"
+optional = true
+python-versions = ">=3.5"
+files = [
+    {file = "Telethon-1.28.5-py3-none-any.whl", hash = "sha256:edc42fd58b8e1569830d3ead564cafa60fd51d684f03ee2a1fdd5f77a5a10438"},
+    {file = "Telethon-1.28.5.tar.gz", hash = "sha256:b3990ec22351a3f3e1af376729c985025bbdd3bdabdde8c156112c3d3dfe1941"},
+]
+
+[package.dependencies]
+pyaes = "*"
+rsa = "*"
+
+[package.extras]
+cryptg = ["cryptg"]
+
+[[package]]
 name = "tenacity"
 version = "8.2.2"
 description = "Retry code until it succeeds"
@@ -10262,7 +10291,7 @@ all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api
 azure = ["azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["jq", "lxml", "pdfminer-six", "pymupdf", "pypdf", "pypdfium2", "tqdm"]
+extended-testing = ["jq", "lxml", "pandas", "pdfminer-six", "pymupdf", "pypdf", "pypdfium2", "telethon", "tqdm"]
 hnswlib = ["docarray", "hnswlib", "protobuf"]
 in-memory-store = ["docarray"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "torch", "transformers"]
@@ -10272,4 +10301,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a41fec88e32b74b859208dd79de58c096466aeda631c17048e6b903100f7ac70"
+content-hash = "b4cc0a605ec9b6ee8752f7d708a5700143815d32f699461ce6470ca44b62701a"
