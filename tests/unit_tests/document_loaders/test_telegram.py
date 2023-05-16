@@ -1,11 +1,13 @@
 from pathlib import Path
 
+import pytest
+
 from langchain.document_loaders import TelegramChatApiLoader, TelegramChatFileLoader
 
 
 def test_telegram_chat_file_loader() -> None:
     """Test TelegramChatFileLoader."""
-    file_path = Path(__file__).parent.parent / "examples/telegram.json"
+    file_path = Path(__file__).parent / "test_docs" / "telegram.json"
     loader = TelegramChatFileLoader(str(file_path))
     docs = loader.load()
 
@@ -18,9 +20,10 @@ def test_telegram_chat_file_loader() -> None:
     )
 
 
+@pytest.mark.requires("telethon", "pandas")
 def test_telegram_channel_loader_parsing() -> None:
     """Test TelegramChatApiLoader."""
-    file_path = Path(__file__).parent.parent / "examples/telegram_channel.json"
+    file_path = Path(__file__).parent / "test_docs" / "telegram_channel.json"
     # if we don't provide any value, it will skip fetching from telegram
     # and will check the parsing logic.
     loader = TelegramChatApiLoader(file_path=str(file_path))
