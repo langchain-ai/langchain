@@ -10,12 +10,24 @@ but potentially an unknown chain that depends on the user's input.
 In these types of chains, there is a “agent” which has access to a suite of tools.
 Depending on the user input, the agent can then decide which, if any, of these tools to call.
 
+At the moment, there are two main types of agents:
+
+1. "Action Agents": these agents decide an action to take and take that action one step at a time
+2. "Plan-and-Execute Agents": these agents first decide a plan of actions to take, and then execute those actions one at a time.
+
+When should you use each one? Action Agents are more conventional, and good for small tasks.
+For more complex or long running tasks, the initial planning step helps to maintain long term objectives and focus. However, that comes at the expense of generally more calls and higher latency.
+These two agents are also not mutually exclusive - in fact, it is often best to have an Action Agent be in change of the execution for the Plan and Execute agent.
+
+Action Agents
+-------------
+
 High level pseudocode of agents looks something like:
 
 - Some user input is received
 - The `agent` decides which `tool` - if any - to use, and what the input to that tool should be
-- That `tool` is then called with that `tool input`, and an `observation` is recorded (this is just the output of calling that tool with that tool input.
-- That history of `tool`, `tool input`, and `observation` is passed back into the `agent`, and it decides what steps to take next
+- That `tool` is then called with that `tool input`, and an `observation` is recorded (this is just the output of calling that tool with that tool input)
+- That history of `tool`, `tool input`, and `observation` is passed back into the `agent`, and it decides what step to take next
 - This is repeated until the `agent` decides it no longer needs to use a `tool`, and then it responds directly to the user.
 
 The different abstractions involved in agents are as follows:
@@ -69,8 +81,7 @@ In this section we go over the Agent Executor class, which is responsible for ca
 the agent and tools in a loop. We go over different ways to customize this, and options you
 can use for more control.
 
-Go Deeper
----------
+**Go Deeper**
 
 .. toctree::
    :maxdepth: 1
@@ -79,3 +90,23 @@ Go Deeper
    ./agents/agents.rst
    ./agents/toolkits.rst
    ./agents/agent_executors.rst
+
+Plan-and-Execute Agents
+-----------------------
+
+High level pseudocode of agents looks something like:
+
+- Some user input is received
+- The planner lists out the steps to take
+- The executor goes through the list of steps, executing them
+
+The most typical implementation is to have the planner be a language model,
+and the executor be an action agent.
+
+**Go Deeper**
+
+.. toctree::
+   :maxdepth: 1
+
+   ./agents/plan_and_execute.ipynb
+
