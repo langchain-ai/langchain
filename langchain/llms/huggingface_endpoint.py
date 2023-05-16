@@ -9,7 +9,7 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
-VALID_TASKS = ("text2text-generation", "text-generation")
+VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 
 class HuggingFaceEndpoint(LLM):
@@ -37,7 +37,8 @@ class HuggingFaceEndpoint(LLM):
     endpoint_url: str = ""
     """Endpoint URL to use."""
     task: Optional[str] = None
-    """Task to call the model with. Should be a task that returns `generated_text`."""
+    """Task to call the model with.
+    Should be a task that returns `generated_text` or `summary_text`."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
@@ -73,6 +74,7 @@ class HuggingFaceEndpoint(LLM):
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
+        values["huggingfacehub_api_token"] = huggingfacehub_api_token
         return values
 
     @property
@@ -137,6 +139,8 @@ class HuggingFaceEndpoint(LLM):
             text = generated_text[0]["generated_text"][len(prompt) :]
         elif self.task == "text2text-generation":
             text = generated_text[0]["generated_text"]
+        elif self.task == "summarization":
+            text = generated_text[0]["summary_text"]
         else:
             raise ValueError(
                 f"Got invalid task {self.task}, "

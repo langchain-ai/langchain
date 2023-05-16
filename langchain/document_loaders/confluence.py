@@ -92,7 +92,7 @@ class ConfluenceLoader(BaseLoader):
             from atlassian import Confluence  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`atlassian` package not found, please run"
+                "`atlassian` package not found, please run "
                 "`pip install atlassian-python-api`"
             )
 
@@ -124,13 +124,13 @@ class ConfluenceLoader(BaseLoader):
 
         if (api_key and not username) or (username and not api_key):
             errors.append(
-                "If one of `api_key` or `username` is provided,"
+                "If one of `api_key` or `username` is provided, "
                 "the other must be as well."
             )
 
         if (api_key or username) and oauth2:
             errors.append(
-                "Cannot provide a value for `api_key` and/or"
+                "Cannot provide a value for `api_key` and/or "
                 "`username` and provide a value for `oauth2`"
             )
 
@@ -141,8 +141,8 @@ class ConfluenceLoader(BaseLoader):
             "key_cert",
         ]:
             errors.append(
-                "You have either ommited require keys or added extra"
-                "keys to the oauth2 dictionary. key values should be"
+                "You have either ommited require keys or added extra "
+                "keys to the oauth2 dictionary. key values should be "
                 "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']`"
             )
 
@@ -192,7 +192,7 @@ class ConfluenceLoader(BaseLoader):
         """
         if not space_key and not page_ids and not label and not cql:
             raise ValueError(
-                "Must specify at least one among `space_key`, `page_ids`,"
+                "Must specify at least one among `space_key`, `page_ids`, "
                 "`label`, `cql` parameters."
             )
 
@@ -217,11 +217,12 @@ class ConfluenceLoader(BaseLoader):
                 label=label,
                 limit=limit,
                 max_pages=max_pages,
-                expand="body.storage.value",
             )
-            docs += self.process_pages(
-                pages, include_restricted_content, include_attachments, include_comments
-            )
+            ids_by_label = [page["id"] for page in pages]
+            if page_ids:
+                page_ids = list(set(page_ids + ids_by_label))
+            else:
+                page_ids = list(set(ids_by_label))
 
         if cql:
             pages = self.paginate_request(
@@ -337,8 +338,8 @@ class ConfluenceLoader(BaseLoader):
             from bs4 import BeautifulSoup  # type: ignore
         except ImportError:
             raise ImportError(
-                "`beautifulsoup4` package not found, please run"
-                " `pip install beautifulsoup4`"
+                "`beautifulsoup4` package not found, please run "
+                "`pip install beautifulsoup4`"
             )
 
         if include_attachments:
@@ -373,7 +374,7 @@ class ConfluenceLoader(BaseLoader):
             from PIL import Image  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `pdf2image` or `Pillow` package not found,"
+                "`pytesseract` or `pdf2image` or `Pillow` package not found, "
                 "please run `pip install pytesseract pdf2image Pillow`"
             )
 
@@ -414,7 +415,7 @@ class ConfluenceLoader(BaseLoader):
             from pdf2image import convert_from_bytes  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `pdf2image` package not found,"
+                "`pytesseract` or `pdf2image` package not found, "
                 "please run `pip install pytesseract pdf2image`"
             )
 
@@ -449,7 +450,7 @@ class ConfluenceLoader(BaseLoader):
             from PIL import Image  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `Pillow` package not found,"
+                "`pytesseract` or `Pillow` package not found, "
                 "please run `pip install pytesseract Pillow`"
             )
 
@@ -530,7 +531,7 @@ class ConfluenceLoader(BaseLoader):
             from svglib.svglib import svg2rlg  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract`, `Pillow`, or `svglib` package not found,"
+                "`pytesseract`, `Pillow`, or `svglib` package not found, "
                 "please run `pip install pytesseract Pillow svglib`"
             )
 

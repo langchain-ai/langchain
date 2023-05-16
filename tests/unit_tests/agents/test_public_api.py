@@ -23,12 +23,14 @@ _EXPECTED = [
     "create_pandas_dataframe_agent",
     "create_pbi_agent",
     "create_pbi_chat_agent",
+    "create_spark_dataframe_agent",
     "create_sql_agent",
     "create_vectorstore_agent",
     "create_vectorstore_router_agent",
     "get_all_tool_names",
     "initialize_agent",
     "load_agent",
+    "load_huggingface_tool",
     "load_tools",
     "tool",
 ]
@@ -36,4 +38,4 @@ _EXPECTED = [
 
 def test_public_api() -> None:
     """Test for regressions or changes in the agents public API."""
-    assert agents_all == sorted(_EXPECTED)
+    assert sorted(agents_all) == sorted(_EXPECTED)

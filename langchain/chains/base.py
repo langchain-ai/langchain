@@ -29,8 +29,8 @@ class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[BaseMemory] = None
-    callbacks: Callbacks = None
-    callback_manager: Optional[BaseCallbackManager] = None
+    callbacks: Callbacks = Field(default=None, exclude=True)
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     verbose: bool = Field(
         default_factory=_get_verbosity
     )  # Whether to print the response text
@@ -76,18 +76,16 @@ class Chain(BaseModel, ABC):
     def output_keys(self) -> List[str]:
         """Output keys this chain expects."""
 
-    def _validate_inputs(self, inputs: Dict[str, str]) -> None:
+    def _validate_inputs(self, inputs: Dict[str, Any]) -> None:
         """Check that all inputs are present."""
         missing_keys = set(self.input_keys).difference(inputs)
         if missing_keys:
             raise ValueError(f"Missing some input keys: {missing_keys}")
 
-    def _validate_outputs(self, outputs: Dict[str, str]) -> None:
-        if set(outputs) != set(self.output_keys):
-            raise ValueError(
-                f"Did not get output keys that were expected. "
-                f"Got: {set(outputs)}. Expected: {set(self.output_keys)}."
-            )
+    def _validate_outputs(self, outputs: Dict[str, Any]) -> None:
+        missing_keys = set(self.output_keys).difference(outputs)
+        if missing_keys:
+            raise ValueError(f"Missing some output keys: {missing_keys}")
 
     @abstractmethod
     def _call(
@@ -239,6 +237,12 @@ class Chain(BaseModel, ABC):
 
         if kwargs and not args:
             return self(kwargs, callbacks=callbacks)[self.output_keys[0]]
+
+        if not kwargs and not args:
+            raise ValueError(
+                "`run` supported with either positional arguments or keyword arguments,"
+                " but none were provided."
+            )
 
         raise ValueError(
             f"`run` supported with either positional arguments or keyword arguments"

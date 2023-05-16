@@ -4,9 +4,9 @@ import json
 import re
 from typing import Any
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.api.openapi.prompts import REQUEST_TEMPLATE
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser
 
@@ -31,6 +31,10 @@ class APIRequesterOutputParser(BaseOutputParser):
             return f"MESSAGE: {message_match.group(1).strip()}"
         return "ERROR making request"
 
+    @property
+    def _type(self) -> str:
+        return "api_requester"
+
 
 class APIRequesterChain(LLMChain):
     """Get the request parser."""
@@ -38,7 +42,7 @@ class APIRequesterChain(LLMChain):
     @classmethod
     def from_llm_and_typescript(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         typescript_definition: str,
         verbose: bool = True,
         **kwargs: Any,
