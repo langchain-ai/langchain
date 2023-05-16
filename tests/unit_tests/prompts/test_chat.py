@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List
 
 from langchain.prompts import PromptTemplate
@@ -78,6 +79,21 @@ def test_create_chat_prompt_template_from_template_partial() -> None:
     output_prompt = prompt.messages[0]
     assert isinstance(output_prompt, HumanMessagePromptTemplate)
     assert output_prompt.prompt == expected_prompt
+
+
+def test_message_prompt_template_from_template_file() -> None:
+    expected = ChatMessagePromptTemplate(
+        prompt=PromptTemplate(
+            template="Question: {question}\nAnswer:", input_variables=["question"]
+        ),
+        role="human",
+    )
+    actual = ChatMessagePromptTemplate.from_template_file(
+        Path(__file__).parent.parent / "data" / "prompt_file.txt",
+        ["question"],
+        role="human",
+    )
+    assert expected == actual
 
 
 def test_chat_prompt_template() -> None:
