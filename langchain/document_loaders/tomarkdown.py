@@ -1,9 +1,8 @@
 """Loader that loads HTML to markdown using 2markdown."""
 from __future__ import annotations
 
-from typing import List
-
 import requests
+from typing import List, Iterator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -17,13 +16,10 @@ class ToMarkdownLoader(BaseLoader):
         self.url = url
         self.api_key = api_key
 
-    @classmethod
-    def from_api_key(cls, url: str, api_key: str) -> ToMarkdownLoader:
-        """Future proofing in case they add a client."""
-        return cls(url, api_key)
-
-    def load(self) -> List[Document]:
-        """Load file."""
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        """Lazily load the file."""
         response = requests.post(
             "https://2markdown.com/api/2md",
             headers={"X-Api-Key": self.api_key},
@@ -31,4 +27,8 @@ class ToMarkdownLoader(BaseLoader):
         )
         text = response.json()["article"]
         metadata = {"url": self.url}
-        return [Document(page_content=text, metadata=metadata)]
+        yield Document(page_content=text, metadata=metadata)
+
+    def load(self) -> List[Document]:
+        """Load file."""
+        return list(self.lazy_load())
