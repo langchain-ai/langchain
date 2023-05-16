@@ -18,16 +18,12 @@ class CohereEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain.embeddings import CohereEmbeddings
-            cohere = CohereEmbeddings(model="medium", cohere_api_key="my-api-key")
+            cohere = CohereEmbeddings(
+                model="embed-english-light-v2.0", cohere_api_key="my-api-key"
+            )
     """
 
     client: Any  #: :meta private:
-    # model: str = "large"
-    # Small, Large has been deprecated by cohere
-    # The new models are
-    # embed-english-light-v2.0
-    # embed-english-v2.0
-    # embed-multilingual-v2.0
     model: str = "embed-english-v2.0"
     """Model name to use."""
 
