@@ -117,6 +117,8 @@ lark = "^1.1.5"
 pytest-mock  = "^3.10.0"
 atlassian-python-api = "^3.36.0"
 html2text = "^2020.1.16"
+beautifulsoup4 = "^4.12.2"
+lxml = "^4.9.2"
 
 [tool.poetry.group.test_integration]
 optional = true
