@@ -4,6 +4,10 @@ from langchain.base_language import _get_tokens_default_method
 
 
 class TestTokenCountingWithGPT2Tokenizer:
+    def test_tokenization(self) -> None:
+        # Check that the tokenization is consistent with the GPT-2 tokenizer
+        assert _get_tokens_default_method("This is a test") == [1212, 318, 257, 1332]
+
     def test_empty_token(self) -> None:
         assert len(_get_tokens_default_method("")) == 0
 

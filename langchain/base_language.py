@@ -26,7 +26,7 @@ def _get_tokens_default_method(text: str) -> list[int]:
     tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 
     # tokenize the text using the GPT-2 tokenizer
-    return tokenizer.tokenize(text)
+    return tokenizer.encode(text)
 
 
 class BaseLanguageModel(BaseModel, ABC):
