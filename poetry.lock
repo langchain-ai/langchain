@@ -870,6 +870,58 @@ files = [
 ]
 
 [[package]]
+name = "cassandra-driver"
+version = "3.27.0"
+description = "DataStax Driver for Apache Cassandra"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "cassandra-driver-3.27.0.tar.gz", hash = "sha256:3f43b6023d3d2b34ceaea0a33abf9d9602c41cf316f283f651d835d0c4924124"},
+    {file = "cassandra_driver-3.27.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:1f96d3b187e212b35937e6bd76fd2f1029d2278e50654eedbf85781222439695"},
+    {file = "cassandra_driver-3.27.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d879cf61395b4682a4a14c73bb4b24cd6e697175197d658c40d1ec863354fcb1"},
+    {file = "cassandra_driver-3.27.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:d68d2eaa70df65497a38227ff977f1a43bba74dee7830b87798f2f4723feb602"},
+    {file = "cassandra_driver-3.27.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e7d2f6e04a87a511e7278b0c90eaccb40ec110374ab7dbfa0c6b62ca3f49e0ee"},
+    {file = "cassandra_driver-3.27.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d6ba6c857d163a8b4c1a56632c71de88801a4e5775650a83e05e63707c28da98"},
+    {file = "cassandra_driver-3.27.0-cp310-cp310-win32.whl", hash = "sha256:73566188aadc975618a3eb26dc11d44228039a5b140ad172d550459c4a1456ed"},
+    {file = "cassandra_driver-3.27.0-cp310-cp310-win_amd64.whl", hash = "sha256:11655738056ad40a0f62ff10bc80af20216021f7dc7b74184555b2789e8c54e8"},
+    {file = "cassandra_driver-3.27.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:4ceb8d45502b5e49e294040c0615e588fa1940edb9cf0c778fb200d02e6de6f4"},
+    {file = "cassandra_driver-3.27.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:4b6a6e59ac30da449851384601d1c8425b2ed83d99108aadc44eefbc4ea8f5b7"},
+    {file = "cassandra_driver-3.27.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:30e308134f925604f7cd7b623d6e431a43c64637f806b62032755a731a21b6ce"},
+    {file = "cassandra_driver-3.27.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:099b190fb1edf1b9dbb277aedb2ec7eb8e914c95fdba64705a41f680668d4e13"},
+    {file = "cassandra_driver-3.27.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7d6ffde813e2493408e05145172957e4eb34b3034bc04e6b2dc0806d222986d9"},
+    {file = "cassandra_driver-3.27.0-cp311-cp311-win32.whl", hash = "sha256:2ffa0ec39dd524668d0b8cd40e9d0da1088a463ef8e93ee58d66ae36f59e7439"},
+    {file = "cassandra_driver-3.27.0-cp311-cp311-win_amd64.whl", hash = "sha256:15023d9dd803ac9fd4b139b4fcec845711e9cf30bdeb64b07c6f887c461f1421"},
+    {file = "cassandra_driver-3.27.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:71ca75df8ba135663018137c1e526d53801eb7c5f8027894627cd60f6c0e66cd"},
+    {file = "cassandra_driver-3.27.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:15993cb71da6e5c03c2bf78289381492e938aab6501adc1fde663956abcf18c0"},
+    {file = "cassandra_driver-3.27.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6eb1cf024b8cea6ada586b9372032f67143aba2e1b96e7a204e269ffb18e2722"},
+    {file = "cassandra_driver-3.27.0-cp37-cp37m-win32.whl", hash = "sha256:6a2145b46a0da3fc2bb5f699b8de5a0915b7e61c8ada4bfa1ed5cd4f25642f39"},
+    {file = "cassandra_driver-3.27.0-cp37-cp37m-win_amd64.whl", hash = "sha256:1e10f3b037dff16af9447aa1fbe41be12c5eabfb9a11220c19f060728ce36264"},
+    {file = "cassandra_driver-3.27.0-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:6a4896b2171bedd596ed6e4bb7eec094eba271e65207427651611c2ee70218c4"},
+    {file = "cassandra_driver-3.27.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:9e025bbe5b8f8dafbeef4f5d77d179242bc64d3dc746e53163e93016453d84e9"},
+    {file = "cassandra_driver-3.27.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:05028c38b1e6aaf5d88182ed77a3ce4b0d251d11e125869f50934c6accac927f"},
+    {file = "cassandra_driver-3.27.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0eb547fa02cc00cc8f63584a45809709d3ff8a90bfa09700b84d0eaed54c78d9"},
+    {file = "cassandra_driver-3.27.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a4b2cab7c4d4e0224202cda927a923488ecebb19e5abbe87f1f46cc92add16e3"},
+    {file = "cassandra_driver-3.27.0-cp38-cp38-win32.whl", hash = "sha256:2d70eb16b74b63c73852943e2a3293b8ac24a1f433988aa7debf687d40d75547"},
+    {file = "cassandra_driver-3.27.0-cp38-cp38-win_amd64.whl", hash = "sha256:032d5a2636a633df92a8f9977420c088567d2379d0267ad97f0c5ad8245c36e7"},
+    {file = "cassandra_driver-3.27.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:522bad089c05344824fdc7495d4a66b821757d40cbd5c3f43c482124586deed2"},
+    {file = "cassandra_driver-3.27.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:addf792e95b41c46c1a06df2ca33c52d4fdc43ab1bf3df3a8a8f34eff0d83a32"},
+    {file = "cassandra_driver-3.27.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:9d8e2acc3d21bb387e4d369b711f02ac4014ef5aa23756757e17f478b314010c"},
+    {file = "cassandra_driver-3.27.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:62c2ecb0772ad602dbaf73482e1a142ad999b06af061e6a68137e00cab0ee4c1"},
+    {file = "cassandra_driver-3.27.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:66f7011679d9a1c691f1321a4758477a72d5913d13beb42c226e69be37b2127e"},
+    {file = "cassandra_driver-3.27.0-cp39-cp39-win32.whl", hash = "sha256:9d59b037c6dc5065f80d3733c204b3cdc9b153744a699d4473f6e2d22a04f7f9"},
+    {file = "cassandra_driver-3.27.0-cp39-cp39-win_amd64.whl", hash = "sha256:cb37501e693450f00d2409c7e0a47c439ce09608d0055ad8f979446f1c11692d"},
+]
+
+[package.dependencies]
+cryptography = ">=35.0"
+geomet = ">=0.1,<0.3"
+six = ">=1.9"
+
+[package.extras]
+graph = ["gremlinpython (==3.4.6)"]
+
+[[package]]
 name = "catalogue"
 version = "2.0.8"
 description = "Super lightweight function registries for your library"
@@ -2120,6 +2172,22 @@ files = [
     {file = "geojson-2.5.0-py2.py3-none-any.whl", hash = "sha256:ccbd13368dd728f4e4f13ffe6aaf725b6e802c692ba0dde628be475040c534ba"},
     {file = "geojson-2.5.0.tar.gz", hash = "sha256:6e4bb7ace4226a45d9c8c8b1348b3fc43540658359f93c3f7e03efa9f15f658a"},
 ]
+
+[[package]]
+name = "geomet"
+version = "0.2.1.post1"
+description = "GeoJSON <-> WKT/WKB conversion utilities"
+category = "dev"
+optional = false
+python-versions = ">2.6, !=3.3.*, <4"
+files = [
+    {file = "geomet-0.2.1.post1-py3-none-any.whl", hash = "sha256:a41a1e336b381416d6cbed7f1745c848e91defaa4d4c1bdc1312732e46ffad2b"},
+    {file = "geomet-0.2.1.post1.tar.gz", hash = "sha256:91d754f7c298cbfcabd3befdb69c641c27fe75e808b27aa55028605761d17e95"},
+]
+
+[package.dependencies]
+click = "*"
+six = "*"
 
 [[package]]
 name = "google-api-core"
@@ -6526,6 +6594,7 @@ files = [
     {file = "pylance-0.4.12-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:2b86fb8dccc03094c0db37bef0d91bda60e8eb0d1eddf245c6971450c8d8a53f"},
     {file = "pylance-0.4.12-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:0bc82914b13204187d673b5f3d45f93219c38a0e9d0542ba251074f639669789"},
     {file = "pylance-0.4.12-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5a4bcce77f99ecd4cbebbadb01e58d5d8138d40eb56bdcdbc3b20b0475e7a472"},
+    {file = "pylance-0.4.12-cp38-abi3-win_amd64.whl", hash = "sha256:9616931c5300030adb9626d22515710a127d1e46a46737a7a0f980b52f13627c"},
 ]
 
 [package.dependencies]
@@ -10187,4 +10256,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "209e2cb579599084e5bcbc30c597f6e0f2825fc33c2c06d17edcdaa3c9902f30"
+content-hash = "7b928ba4816f2f3be07a19d9636539c48318d958cc68c88a76672479f5b1d9e4"
