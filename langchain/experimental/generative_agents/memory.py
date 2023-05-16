@@ -123,7 +123,7 @@ class GenerativeAgentMemory(BaseMemory):
             logger.info(f"Importance score: {score}")
         match = re.search(r"^\D*(\d+)", score)
         if match:
-            return (float(score[0]) / 10) * self.importance_weight
+            return (float(match.group(1)) / 10) * self.importance_weight
         else:
             return 0.0
 
