@@ -54,10 +54,10 @@ def generate_with_retry(llm: GooglePalm, **kwargs: Any) -> Any:
     retry_decorator = _create_retry_decorator()
 
     @retry_decorator
-    def _completion_with_retry(**kwargs: Any) -> Any:
+    def _generate_with_retry(**kwargs: Any) -> Any:
         return llm.client.generate_text(**kwargs)
 
-    return _completion_with_retry(**kwargs)
+    return _generate_with_retry(**kwargs)
 
 
 def _strip_erroneous_leading_spaces(text: str) -> str:

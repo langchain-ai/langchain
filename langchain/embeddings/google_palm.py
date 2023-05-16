@@ -1,4 +1,6 @@
 """Wrapper arround Google's PaLM Embeddings APIs."""
+from __future__ import annotations
+
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
@@ -39,13 +41,24 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
     )
 
 
+def embed_with_retry(
+    embeddings: GooglePalmEmbeddings, *args: Any, **kwargs: Any
+) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator()
+
+    @retry_decorator
+    def _embed_with_retry(*args: Any, **kwargs: Any) -> Any:
+        return embeddings.client.generate_embeddings(*args, **kwargs)
+
+    return _embed_with_retry(*args, **kwargs)
+
+
 class GooglePalmEmbeddings(BaseModel, Embeddings):
     client: Any
     google_api_key: Optional[str]
     model_name: str = "models/embedding-gecko-001"
     """Model name to use."""
-    _retry = _create_retry_decorator()
-    """Internal class attribute that holds a tenacity retry decorator"""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -67,8 +80,7 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         return [self.embed_query(text) for text in texts]
 
-    @_retry
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
-        embedding = self.client.generate_embeddings(self.model_name, text)
+        embedding = embed_with_retry(self, self.model_name, text)
         return embedding["embedding"]
