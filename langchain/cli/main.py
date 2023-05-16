@@ -5,6 +5,7 @@ import shutil
 import subprocess
 from contextlib import contextmanager
 from pathlib import Path
+from subprocess import CalledProcessError
 from typing import Generator, List, Optional
 
 import requests
@@ -19,10 +20,29 @@ _DIR = Path(__file__).parent
 
 
 def get_docker_compose_command() -> List[str]:
-    if shutil.which("docker-compose") is None:
+    """Get the correct docker compose command for this system."""
+    try:
+        subprocess.check_call(
+            ["docker", "compose", "--version"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         return ["docker", "compose"]
-    else:
-        return ["docker-compose"]
+    except (CalledProcessError, FileNotFoundError):
+        try:
+            subprocess.check_call(
+                ["docker-compose", "--version"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return ["docker-compose"]
+        except (CalledProcessError, FileNotFoundError):
+            raise ValueError(
+                "Neither 'docker compose' nor 'docker-compose'"
+                " commands are available. Please install the Docker"
+                " server following the instructions for your operating"
+                " system at https://docs.docker.com/engine/install/"
+            )
 
 
 def get_ngrok_url(auth_token: Optional[str]) -> str:
@@ -85,6 +105,12 @@ class ServerCommand:
         )
         self.ngrok_path = Path(__file__).absolute().parent / "docker-compose.ngrok.yaml"
 
+    def _open_browser(self, url: str) -> None:
+        try:
+            subprocess.run(["open", url])
+        except FileNotFoundError:
+            pass
+
     def _start_local(self) -> None:
         command = [
             *self.docker_compose_command,
@@ -107,7 +133,7 @@ class ServerCommand:
         )
 
         logger.info("\tLANGCHAIN_TRACING_V2=true")
-        subprocess.run(["open", "http://localhost"])
+        self._open_browser("http://localhost")
 
     def _start_and_expose(self, auth_token: Optional[str]) -> None:
         with create_ngrok_config(auth_token=auth_token):
@@ -138,7 +164,8 @@ class ServerCommand:
         )
         logger.info("\tLANGCHAIN_TRACING_V2=true")
         logger.info(f"\tLANGCHAIN_ENDPOINT={ngrok_url}")
-        subprocess.run(["open", "http://localhost"])
+        self._open_browser("http://0.0.0.0:4040")
+        self._open_browser("http://localhost")
 
     def start(self, *, expose: bool = False, auth_token: Optional[str] = None) -> None:
         """Run the LangChainPlus server locally.
