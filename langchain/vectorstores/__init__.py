@@ -5,6 +5,7 @@ from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.deeplake import DeepLake
+from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.lancedb import LanceDB
@@ -42,4 +43,6 @@ __all__ = [
     "Tair",
     "LanceDB",
     "VecDB",
+    "DocArrayHnswSearch",
+    "DocArrayInMemorySearch",
 ]
