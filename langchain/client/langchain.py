@@ -27,9 +27,16 @@ from requests import Response
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain.callbacks.tracers.schemas import Run, TracerSession
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
-from langchain.client.models import Dataset, DatasetCreate, Example, ExampleCreate
+from langchain.client.models import (
+    Dataset,
+    DatasetCreate,
+    Example,
+    ExampleCreate,
+    ListRunsQueryParams,
+)
 from langchain.llms.base import BaseLLM
 from langchain.schema import ChatResult, LLMResult, messages_from_dict
 from langchain.utils import raise_for_status_with_text, xor_args
@@ -191,6 +198,71 @@ class LangChainPlusClient(BaseSettings):
             file_name = file_name.split("/")[-1]
             raise ValueError(f"Dataset {file_name} already exists")
         return Dataset(**result)
+
+    def read_run(self, run_id: str) -> Run:
+        """Read a run from the LangChain+ API."""
+        response = self._get(f"/runs/{run_id}")
+        raise_for_status_with_text(response)
+        return Run(**response.json())
+
+    def list_runs(
+        self,
+        *,
+        session_id: Optional[str] = None,
+        session_name: Optional[str] = None,
+        run_type: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Run]:
+        """List runs from the LangChain+ API."""
+        if session_name is not None:
+            if session_id is not None:
+                raise ValueError("Only one of session_id or session_name may be given")
+            session_id = self.read_session(session_name=session_name).id
+        query_params = ListRunsQueryParams(
+            session_id=session_id, run_type=run_type, **kwargs
+        )
+        filtered_params = {
+            k: v for k, v in query_params.dict().items() if v is not None
+        }
+        response = self._get("/runs", params=filtered_params)
+        raise_for_status_with_text(response)
+        return [Run(**run) for run in response.json()]
+
+    @xor_args(("session_id", "session_name"))
+    def read_session(
+        self, *, session_id: Optional[str] = None, session_name: Optional[str] = None
+    ) -> TracerSession:
+        """Read a session from the LangChain+ API."""
+        path = "/sessions"
+        params: Dict[str, Any] = {"limit": 1, "tenant_id": self.tenant_id}
+        if session_id is not None:
+            path += f"/{session_id}"
+        elif session_name is not None:
+            params["name"] = session_name
+        else:
+            raise ValueError("Must provide dataset_name or dataset_id")
+        response = self._get(
+            path,
+            params=params,
+        )
+        raise_for_status_with_text(response)
+        response = self._get(
+            path,
+            params=params,
+        )
+        raise_for_status_with_text(response)
+        result = response.json()
+        if isinstance(result, list):
+            if len(result) == 0:
+                raise ValueError(f"Dataset {session_name} not found")
+            return TracerSession(**result[0])
+        return TracerSession(**response.json())
+
+    def list_sessions(self) -> List[TracerSession]:
+        """List sessions from the LangChain+ API."""
+        response = self._get("/sessions")
+        raise_for_status_with_text(response)
+        return [TracerSession(**session) for session in response.json()]
 
     def create_dataset(self, dataset_name: str, description: str) -> Dataset:
         """Create a dataset in the LangChain+ API."""
