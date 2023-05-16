@@ -1,8 +1,8 @@
 """A unit test meant to catch accidental introduction of non-optional dependencies."""
-import pytest
 from pathlib import Path
-from typing import Dict, Mapping, Any
+from typing import Any, Dict, Mapping
 
+import pytest
 import toml
 
 HERE = Path(__file__).parent
