@@ -1,13 +1,10 @@
 from pathlib import Path
-from typing import List, Type
-
-import pytest
+from typing import List
 
 from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
-    BaseStringMessagePromptTemplate,
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     ChatPromptValue,
