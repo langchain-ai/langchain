@@ -316,7 +316,8 @@ class Chroma(VectorStore):
         """Gets the collection.
 
         Args:
-            include (Optional[List[str]]): List of fields to include from db. Defaults to None.
+            include (Optional[List[str]]): List of fields to include from db.
+                Defaults to None.
         """
         if include is not None:
             return self._collection.get(include=include)
