@@ -8,8 +8,8 @@ What follows is a list of template GitHub repositories designed to be easily for
 
 ## [Anyscale](https://www.anyscale.com/model-serving)
 
-Anyscale is a unified compute platform that makes it easy to develop, deploy, and manage scalable LLM applications using Ray.
-With anyscale you can scale the most challenging LLM-based workloads and both develop & deploy LLM-based apps on a single compute platform.
+Anyscale is a unified compute platform that makes it easy to develop, deploy, and manage scalable LLM applications in production using Ray.
+With anyscale you can scale the most challenging LLM-based workloads and both develop and deploy LLM-based apps on a single compute platform.
 
 ## [Streamlit](https://github.com/hwchase17/langchain-streamlit-template)
 
