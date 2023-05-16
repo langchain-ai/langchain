@@ -130,7 +130,7 @@ class SQLDatabaseChain(Chain):
                     template=QUERY_CHECKER, input_variables=["query", "dialect"]
                 )
                 query_checker_chain = LLMChain(
-                    llm=self.llm, prompt=query_checker_prompt
+                    llm=self.llm_chain.llm, prompt=query_checker_prompt
                 )
                 query_checker_inputs = {
                     "query": sql_cmd,
