@@ -17,7 +17,7 @@ class WeaviateTranslator(Visitor):
     allowed_operators = [Operator.AND, Operator.OR]
     """Subset of allowed logical operators."""
 
-    allowed_compartors = [Comparator.EQ]
+    allowed_comparators = [Comparator.EQ]
 
     def _map_func(self, func: Union[Operator, Comparator]) -> str:
         # https://weaviate.io/developers/weaviate/api/graphql/filters
