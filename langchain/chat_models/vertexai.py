@@ -40,7 +40,7 @@ class _ChatHistory:
 def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
     """Parses a sequence of messages into history.
 
-    A sequency should be either (SystemMessage, HumanMessage, AIMessage,
+    A sequence should be either (SystemMessage, HumanMessage, AIMessage,
     HumanMessage, AIMessage, ...) or (HumanMessage, AIMessage, HumanMessage,
     AIMessage, ...).
     """
