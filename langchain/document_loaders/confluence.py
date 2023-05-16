@@ -1,5 +1,6 @@
 """Load Data from a Confluence Space"""
 import logging
+from io import BytesIO
 from typing import Any, Callable, List, Optional, Union
 
 from tenacity import (
@@ -370,12 +371,10 @@ class ConfluenceLoader(BaseLoader):
 
     def process_attachment(self, page_id: str) -> List[str]:
         try:
-            import requests  # noqa: F401
             from PIL import Image  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `pdf2image` or `Pillow` package not found, "
-                "please run `pip install pytesseract pdf2image Pillow`"
+                "`Pillow` package not found, " "please run `pip install Pillow`"
             )
 
         # depending on setup you may also need to set the correct path for
@@ -419,9 +418,6 @@ class ConfluenceLoader(BaseLoader):
                 "please run `pip install pytesseract pdf2image`"
             )
 
-        import pytesseract  # noqa: F811
-        from pdf2image import convert_from_bytes  # noqa: F811
-
         response = self.confluence.request(path=link, absolute=True)
         text = ""
 
@@ -444,8 +440,6 @@ class ConfluenceLoader(BaseLoader):
 
     def process_image(self, link: str) -> str:
         try:
-            from io import BytesIO  # noqa: F401
-
             import pytesseract  # noqa: F401
             from PIL import Image  # noqa: F401
         except ImportError:
@@ -472,8 +466,6 @@ class ConfluenceLoader(BaseLoader):
 
     def process_doc(self, link: str) -> str:
         try:
-            from io import BytesIO  # noqa: F401
-
             import docx2txt  # noqa: F401
         except ImportError:
             raise ImportError(
@@ -522,17 +514,14 @@ class ConfluenceLoader(BaseLoader):
 
     def process_svg(self, link: str) -> str:
         try:
-            from io import BytesIO  # noqa: F401
-
             import pytesseract  # noqa: F401
             from PIL import Image  # noqa: F401
             from reportlab.graphics import renderPM  # noqa: F401
-            from reportlab.graphics.shapes import Drawing  # noqa: F401
             from svglib.svglib import svg2rlg  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract`, `Pillow`, or `svglib` package not found, "
-                "please run `pip install pytesseract Pillow svglib`"
+                "`pytesseract`, `Pillow`, `reportlab` or `svglib` package not found, "
+                "please run `pip install pytesseract Pillow reportlab svglib`"
             )
 
         response = self.confluence.request(path=link, absolute=True)
