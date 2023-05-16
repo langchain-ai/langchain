@@ -19,3 +19,10 @@ def test_sanitize_input() -> None:
     expected = "x = 5"
     actual = sanitize_input(query)
     assert expected == actual
+
+    query = """
+    x = 5
+    """
+    expected = "x = 5"
+    actual = sanitize_input(query)
+    assert expected == actual
