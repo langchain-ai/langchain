@@ -41,7 +41,7 @@ def get_docker_compose_command() -> List[str]:
                 "Neither 'docker compose' nor 'docker-compose'"
                 " commands are available. Please install the Docker"
                 " server following the instructions for your operating"
-                " system at https://docs.docker.com/engine/install/"
+                " system at https://docs.docker.com/get-docker/"
             )
 
 
@@ -127,12 +127,13 @@ class PlusCommand:
             ]
         )
         logger.info(
-            "langchain plus server is running at http://localhost.  To connect"
-            " locally, set the following environment variable"
-            " when running your LangChain application."
+            "TheLangChain Plus server is running at http://localhost. To connect"
+            " locally, set the following environment variables"
+            " before running your LangChain application:\n"
         )
 
         logger.info("\tLANGCHAIN_TRACING_V2=true")
+        logger.info(f"\tLANGCHAIN_ENDPOINT=http://localhost:8000")
         self._open_browser("http://localhost")
 
     def _start_and_expose(self, auth_token: Optional[str]) -> None:
@@ -158,9 +159,10 @@ class PlusCommand:
         )
         ngrok_url = get_ngrok_url(auth_token)
         logger.info(
-            "langchain plus server is running at http://localhost."
-            " To connect remotely, set the following environment"
-            " variable when running your LangChain application."
+            "TheLangChain Plus server is running at http://localhost and"
+            f" exposed at URL {ngrok_url}. To connect remotely,"
+            " set the following environment variables"
+            " before running your LangChain application:\n"
         )
         logger.info("\tLANGCHAIN_TRACING_V2=true")
         logger.info(f"\tLANGCHAIN_ENDPOINT={ngrok_url}")
