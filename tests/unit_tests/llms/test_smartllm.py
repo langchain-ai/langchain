@@ -1,15 +1,6 @@
 """Test SmartLLM."""
-import asyncio
-
 from langchain.llms import FakeListLLM
 from langchain.llms.base import SmartLLM
-
-# Test:
-# - critique: returns str
-# - resolver: returns str
-# - add history 1
-# - add history 2
-# - async
 
 
 def test_ideation() -> None:
@@ -69,10 +60,10 @@ def test_add_history() -> None:
 
 
 def test_all_steps() -> None:
-    ideation_llm = FakeListLLM(responses=[f"Fake ideation response" for _ in range(20)])
-    critique_llm = FakeListLLM(responses=[f"Fake critique response" for _ in range(20)])
+    ideation_llm = FakeListLLM(responses=["Fake ideation response" for _ in range(20)])
+    critique_llm = FakeListLLM(responses=["Fake critique response" for _ in range(20)])
     resolver_llm = FakeListLLM(
-        responses=[f"Fake resolution response" for _ in range(20)]
+        responses=["Fake resolution response" for _ in range(20)]
     )
     smart_llm = SmartLLM(
         ideation_llm=ideation_llm, critique_llm=critique_llm, resolver_llm=resolver_llm

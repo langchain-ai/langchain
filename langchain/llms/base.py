@@ -1,5 +1,4 @@
 """Base interface for large language models to expose."""
-import asyncio
 import inspect
 import json
 import warnings
@@ -8,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import yaml
-from pydantic import BaseModel, Extra, Field, root_validator, validator
+from pydantic import Extra, Field, root_validator, validator
 
 import langchain
 from langchain.base_language import BaseLanguageModel
@@ -20,7 +19,6 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
-from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
