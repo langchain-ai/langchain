@@ -1,6 +1,6 @@
 """Wrapper around Google VertexAI chat-based models."""
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 from pydantic import root_validator
 
@@ -65,15 +65,9 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
 
 
 class ChatVertexAI(_VertexAICommon, BaseChatModel):
-    """Wrapper around Vertex AI large language models.
-
-    To use, you should have the
-    ``google.cloud.aiplatform.private_preview.language_models`` python package
-    installed.
-    """
+    """Wrapper around Vertex AI large language models."""
 
     model_name: str = "chat-bison"
-    chat: Any = None  #: :meta private:
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -85,14 +79,6 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             raise_vertex_import_error()
         values["client"] = ChatModel.from_pretrained(values["model_name"])
         return values
-
-    def send_message(
-        self, message: Union[HumanMessage, str], stop: Optional[List[str]] = None
-    ) -> ChatResult:
-        text = message.content if isinstance(message, BaseMessage) else message
-        response = self.chat.send_message(text)
-        text = self._enforce_stop_words(response.text, stop)
-        return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
 
     def _generate(
         self,
@@ -109,26 +95,15 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             raise ValueError(
                 f"Last message in the list should be from human, got {question.type}."
             )
-        self.start_chat(messages[:-1])
-        return self.send_message(question)
 
-    def start_chat(self, messages: List[BaseMessage]) -> None:
-        """Starts a chat."""
-        history = _parse_chat_history(messages)
+        history = _parse_chat_history(messages[:-1])
         context = history.system_message.content if history.system_message else None
-        self.chat = self.client.start_chat(context=context, **self._default_params)
+        chat = self.client.start_chat(context=context, **self._default_params)
         for pair in history.history:
-            self.chat._history.append((pair.question.content, pair.answer.content))
-
-    @property
-    def history(self) -> List[BaseMessage]:
-        """Chat history."""
-        history: List[BaseMessage] = []
-        if self.chat:
-            for question, answer in self.chat._history:
-                history.append(HumanMessage(content=question))
-                history.append(AIMessage(content=answer))
-        return history
+            chat._history.append((pair.question.content, pair.answer.content))
+        response = chat.send_message(question.content)
+        text = self._enforce_stop_words(response.text, stop)
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
 
     async def _agenerate(
         self,

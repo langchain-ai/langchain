@@ -1,5 +1,5 @@
 """Wrapper around Google VertexAI embedding models."""
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from pydantic import root_validator
 
@@ -9,7 +9,7 @@ from langchain.utilities.vertexai import raise_vertex_import_error
 
 
 class VertexAIEmbeddings(_VertexAICommon, Embeddings):
-    model_name: Optional[str] = "textembedding-gecko"
+    model_name: str = "textembedding-gecko"
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -23,11 +23,25 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed search docs."""
+        """Embeds search docs.
+
+        Args:
+            texts: List[str] The list of texts to embed.
+
+        Returns:
+            List of embeddings, one for each text.
+        """
         embeddings = self.client.get_embeddings(texts)
         return [el.values for el in embeddings]
 
     def embed_query(self, text: str) -> List[float]:
-        """Embed query text."""
+        """Embeds query text.
+
+        Args:
+            text: The text to embed.
+
+        Returns:
+            Embedding for the text.
+        """
         embeddings = self.client.get_embeddings([text])
         return embeddings[0].values
