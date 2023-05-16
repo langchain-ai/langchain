@@ -71,6 +71,7 @@ runs:
           ~/.cache/pypoetry/artifacts
         key: poetry-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}-${{ inputs.cache-key }}-${{ hashFiles('poetry.lock') }}
 
-    - run: ${{ inputs.install-command }}
+    - if: ${{ cache-poetry.outputs.cache-hit != 'true' }}
+      run: ${{ inputs.install-command }}
       working-directory: ${{ inputs.working-directory }}
       shell: bash
