@@ -23,8 +23,6 @@ class TracerSessionV1Base(BaseModel):
 class TracerSessionV1Create(TracerSessionV1Base):
     """Create class for TracerSessionV1."""
 
-    pass
-
 
 class TracerSessionV1(TracerSessionV1Base):
     """TracerSessionV1 schema."""
