@@ -153,7 +153,7 @@ async def _ahandle_event_for_handler(
             message_strings = [get_buffer_string(m) for m in args[1]]
             await _ahandle_event_for_handler(
                 handler,
-                "on_llm",
+                "on_llm_start",
                 "ignore_llm",
                 args[0],
                 message_strings,
