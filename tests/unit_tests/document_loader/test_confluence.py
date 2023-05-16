@@ -14,6 +14,10 @@ def mock_confluence():  # type: ignore
         yield mock_confluence
 
 
+@pytest.mark.requires("atlassian-python-api")
+@pytest.mark.requires("html2text")
+@pytest.mark.requires("beautifulsoup4")
+@pytest.mark.requires("lxml")
 class TestConfluenceLoader:
     CONFLUENCE_URL = "https://example.atlassian.com/wiki"
     MOCK_USERNAME = "user@gmail.com"
