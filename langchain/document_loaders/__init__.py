@@ -87,6 +87,7 @@ from langchain.document_loaders.telegram import (
 )
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.toml import TomlLoader
+from langchain.document_loaders.trello import TrelloLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredAPIFileIOLoader,
@@ -192,6 +193,7 @@ __all__ = [
     "StripeLoader",
     "TextLoader",
     "TomlLoader",
+    "TrelloLoader",
     "TwitterTweetLoader",
     "UnstructuredAPIFileIOLoader",
     "UnstructuredAPIFileLoader",
