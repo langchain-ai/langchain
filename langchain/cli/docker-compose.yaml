@@ -42,5 +42,9 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_DB=postgres
+    volumes:
+      - langchain-db-data:/var/lib/postgresql/data
     ports:
       - 5433:5432
+volumes:
+  langchain-db-data:
