@@ -355,8 +355,8 @@ class ChatOpenAI(BaseChatModel):
         """Return type of chat model."""
         return "openai-chat"
 
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate num tokens with tiktoken package."""
+    def get_tokens(self, text: str) -> list[int]:
+        """Get the tokens present in the text with tiktoken package."""
         # tiktoken NOT supported for Python 3.7 or below
         if sys.version_info[1] <= 7:
             return super().get_num_tokens(text)
@@ -372,10 +372,11 @@ class ChatOpenAI(BaseChatModel):
         enc = tiktoken.encoding_for_model(self.model_name)
 
         # encode the text using the GPT-3.5-Turbo encoder
-        tokenized_text = enc.encode(text)
+        return enc.encode(text)
 
-        # calculate the number of tokens in the encoded text
-        return len(tokenized_text)
+    def get_num_tokens(self, text: str) -> int:
+        """Calculate num tokens with tiktoken package."""
+        return len(self.get_tokens(text))
 
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.

@@ -10,7 +10,7 @@ from langchain.callbacks.manager import Callbacks
 from langchain.schema import BaseMessage, LLMResult, PromptValue, get_buffer_string
 
 
-def _get_num_tokens_default_method(text: str) -> int:
+def _get_tokens_default_method(text: str) -> list[int]:
     """Get the number of tokens present in the text."""
     # TODO: this method may not be exact.
     # TODO: this method may differ based on model (eg codex).
@@ -26,10 +26,7 @@ def _get_num_tokens_default_method(text: str) -> int:
     tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 
     # tokenize the text using the GPT-2 tokenizer
-    tokenized_text = tokenizer.tokenize(text)
-
-    # calculate the number of tokens in the tokenized text
-    return len(tokenized_text)
+    return tokenizer.encode(text)
 
 
 class BaseLanguageModel(BaseModel, ABC):
@@ -61,9 +58,13 @@ class BaseLanguageModel(BaseModel, ABC):
     ) -> BaseMessage:
         """Predict message from messages."""
 
+    def get_tokens(self, text: str) -> list[int]:
+        """Get the tokens present in the text."""
+        return _get_tokens_default_method(text)
+
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text."""
-        return _get_num_tokens_default_method(text)
+        return len(self.get_tokens(text))
 
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Get the number of tokens in the message."""

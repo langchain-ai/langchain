@@ -455,8 +455,8 @@ class BaseOpenAI(BaseLLM):
         """Return type of llm."""
         return "openai"
 
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate num tokens with tiktoken package."""
+    def get_tokens(self, text: str) -> list[int]:
+        """Get the tokens present in the text with tiktoken package."""
         # tiktoken NOT supported for Python < 3.8
         if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
@@ -471,14 +471,15 @@ class BaseOpenAI(BaseLLM):
 
         enc = tiktoken.encoding_for_model(self.model_name)
 
-        tokenized_text = enc.encode(
+        return enc.encode(
             text,
             allowed_special=self.allowed_special,
             disallowed_special=self.disallowed_special,
         )
 
-        # calculate the number of tokens in the encoded text
-        return len(tokenized_text)
+    def get_num_tokens(self, text: str) -> int:
+        """Calculate num tokens with tiktoken package."""
+        return len(self.get_tokens(text))
 
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
