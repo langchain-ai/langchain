@@ -818,6 +818,11 @@ class Milvus(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
+        if self.relevance_score_fn is None:
+            raise ValueError(
+                "normalize_score_fn must be provided to"
+                " milvus constructor to normalize scores"
+            )
 
         docs_and_scores = self.similarity_search_with_score(query, k=k)
         return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
