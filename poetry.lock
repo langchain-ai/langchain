@@ -1109,14 +1109,14 @@ files = [
 
 [[package]]
 name = "chromadb"
-version = "0.3.22"
+version = "0.3.23"
 description = "Chroma."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "chromadb-0.3.22-py3-none-any.whl", hash = "sha256:54b58e562ab8a63194ce3b453633ce351475193de2184845f0577db969f1cf49"},
-    {file = "chromadb-0.3.22.tar.gz", hash = "sha256:41acb262c2c7bb41afecd50737f440dce3fdaa3d3fe1749d0e4be1ffc8699e63"},
+    {file = "chromadb-0.3.23-py3-none-any.whl", hash = "sha256:c1e04fddff0916243895bedeffc1977745328f62404d70981eb1a0cb9dcdfaf3"},
+    {file = "chromadb-0.3.23.tar.gz", hash = "sha256:87fa922c92e2e90fb48234b435e9d4f0c61646fbd1526062f53f63326fc21228"},
 ]
 
 [package.dependencies]
@@ -1510,13 +1510,13 @@ files = [
 
 [[package]]
 name = "deeplake"
-version = "3.4.3"
+version = "3.4.4"
 description = "Activeloop Deep Lake"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "deeplake-3.4.3.tar.gz", hash = "sha256:2d53af7694cc57a85f0817bde1130e191dea4c63aec5c7713b1960014a600cc1"},
+    {file = "deeplake-3.4.4.tar.gz", hash = "sha256:7d044a89862fe6aa4a93abc7db90090be7ecfc611169916e3975e0cd187be1ac"},
 ]
 
 [package.dependencies]
@@ -1533,11 +1533,11 @@ pyjwt = "*"
 tqdm = "*"
 
 [package.extras]
-all = ["IPython", "av (>=8.1.0)", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.52)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
+all = ["IPython", "av (>=8.1.0)", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.53)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
 audio = ["av (>=8.1.0)"]
 av = ["av (>=8.1.0)"]
 dicom = ["nibabel", "pydicom"]
-enterprise = ["libdeeplake (==0.0.52)", "pyjwt"]
+enterprise = ["libdeeplake (==0.0.53)", "pyjwt"]
 gcp = ["google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)"]
 gdrive = ["google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "oauth2client (>=4.1.3,<4.2.0)"]
 medical = ["nibabel", "pydicom"]
@@ -1909,19 +1909,19 @@ files = [
 
 [[package]]
 name = "fastapi"
-version = "0.95.1"
+version = "0.95.2"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "fastapi-0.95.1-py3-none-any.whl", hash = "sha256:a870d443e5405982e1667dfe372663abf10754f246866056336d7f01c21dab07"},
-    {file = "fastapi-0.95.1.tar.gz", hash = "sha256:9569f0a381f8a457ec479d90fa01005cfddaae07546eb1f3fa035bc4797ae7d5"},
+    {file = "fastapi-0.95.2-py3-none-any.whl", hash = "sha256:d374dbc4ef2ad9b803899bd3360d34c534adc574546e25314ab72c0c4411749f"},
+    {file = "fastapi-0.95.2.tar.gz", hash = "sha256:4d9d3e8c71c73f11874bcf5e33626258d143252e329a01002f767306c64fb982"},
 ]
 
 [package.dependencies]
 pydantic = ">=1.6.2,<1.7 || >1.7,<1.7.1 || >1.7.1,<1.7.2 || >1.7.2,<1.7.3 || >1.7.3,<1.8 || >1.8,<1.8.1 || >1.8.1,<2.0.0"
-starlette = ">=0.26.1,<0.27.0"
+starlette = ">=0.27.0,<0.28.0"
 
 [package.extras]
 all = ["email-validator (>=1.1.1)", "httpx (>=0.23.0)", "itsdangerous (>=1.1.0)", "jinja2 (>=2.11.2)", "orjson (>=3.2.1)", "python-multipart (>=0.0.5)", "pyyaml (>=5.3.1)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0)", "uvicorn[standard] (>=0.12.0)"]
@@ -2191,24 +2191,26 @@ six = "*"
 
 [[package]]
 name = "google-api-core"
-version = "2.8.2"
+version = "2.11.0"
 description = "Google API client core library"
 category = "main"
 optional = true
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "google-api-core-2.8.2.tar.gz", hash = "sha256:06f7244c640322b508b125903bb5701bebabce8832f85aba9335ec00b3d02edc"},
-    {file = "google_api_core-2.8.2-py3-none-any.whl", hash = "sha256:93c6a91ccac79079ac6bbf8b74ee75db970cc899278b97d53bc012f35908cf50"},
+    {file = "google-api-core-2.11.0.tar.gz", hash = "sha256:4b9bb5d5a380a0befa0573b302651b8a9a89262c1730e37bf423cec511804c22"},
+    {file = "google_api_core-2.11.0-py3-none-any.whl", hash = "sha256:ce222e27b0de0d7bc63eb043b956996d6dccab14cc3b690aaea91c9cc99dc16e"},
 ]
 
 [package.dependencies]
-google-auth = ">=1.25.0,<3.0dev"
+google-auth = ">=2.14.1,<3.0dev"
 googleapis-common-protos = ">=1.56.2,<2.0dev"
-protobuf = ">=3.15.0,<5.0.0dev"
+protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
 requests = ">=2.18.0,<3.0.0dev"
 
 [package.extras]
-grpc = ["grpcio (>=1.33.2,<2.0dev)", "grpcio-status (>=1.33.2,<2.0dev)"]
+grpc = ["grpcio (>=1.33.2,<2.0dev)", "grpcio (>=1.49.1,<2.0dev)", "grpcio-status (>=1.33.2,<2.0dev)", "grpcio-status (>=1.49.1,<2.0dev)"]
+grpcgcp = ["grpcio-gcp (>=0.2.2,<1.0dev)"]
+grpcio-gcp = ["grpcio-gcp (>=0.2.2,<1.0dev)"]
 
 [[package]]
 name = "google-api-python-client"
@@ -2323,21 +2325,21 @@ requests = "*"
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.56.4"
+version = "1.59.0"
 description = "Common protobufs used in Google APIs"
 category = "main"
 optional = true
 python-versions = ">=3.7"
 files = [
-    {file = "googleapis-common-protos-1.56.4.tar.gz", hash = "sha256:c25873c47279387cfdcbdafa36149887901d36202cb645a0e4f29686bf6e4417"},
-    {file = "googleapis_common_protos-1.56.4-py2.py3-none-any.whl", hash = "sha256:8eb2cbc91b69feaf23e32452a7ae60e791e09967d81d4fcc7fc388182d1bd394"},
+    {file = "googleapis-common-protos-1.59.0.tar.gz", hash = "sha256:4168fcb568a826a52f23510412da405abd93f4d23ba544bb68d943b14ba3cb44"},
+    {file = "googleapis_common_protos-1.59.0-py2.py3-none-any.whl", hash = "sha256:b287dc48449d1d41af0c69f4ea26242b5ae4c3d7249a38b0984c86a4caffff1f"},
 ]
 
 [package.dependencies]
-protobuf = ">=3.15.0,<5.0.0dev"
+protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
 
 [package.extras]
-grpc = ["grpcio (>=1.0.0,<2.0.0dev)"]
+grpc = ["grpcio (>=1.44.0,<2.0.0dev)"]
 
 [[package]]
 name = "gptcache"
@@ -5747,6 +5749,23 @@ docs = ["sphinx", "sphinx-argparse"]
 image = ["Pillow"]
 
 [[package]]
+name = "pdfplumber"
+version = "0.9.0"
+description = "Plumb a PDF for detailed information about each char, rectangle, and line."
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "pdfplumber-0.9.0-py3-none-any.whl", hash = "sha256:b396f2919670eb863124f649a907dc846c8653bbb6ba8024fe274952de121077"},
+    {file = "pdfplumber-0.9.0.tar.gz", hash = "sha256:a43a213e125ed72b2358c0d3428f9b72f83939109ec33b77ef9325eeab9846f0"},
+]
+
+[package.dependencies]
+"pdfminer.six" = "20221105"
+Pillow = ">=9.1"
+Wand = ">=0.6.10"
+
+[[package]]
 name = "pexpect"
 version = "4.8.0"
 description = "Pexpect allows easy control of interactive console applications."
@@ -6801,24 +6820,24 @@ image = ["Pillow"]
 
 [[package]]
 name = "pypdfium2"
-version = "4.10.0"
+version = "4.11.0"
 description = "Python bindings to PDFium"
 category = "main"
 optional = true
 python-versions = ">=3.6"
 files = [
-    {file = "pypdfium2-4.10.0-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:c775499ab7c43a0e6533067814875f57d5f4c09987653e9e81e49015f17f1769"},
-    {file = "pypdfium2-4.10.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:d3af7d09a49a8901d981f44f5ec8607469376da3713baae35135831f31e3a1eb"},
-    {file = "pypdfium2-4.10.0-py3-none-manylinux_2_26_aarch64.whl", hash = "sha256:0f1347645f7a065fc235e3ab82034897b9924902c8a64f91ec305d5bd7486884"},
-    {file = "pypdfium2-4.10.0-py3-none-manylinux_2_26_armv7l.whl", hash = "sha256:7951e8114d0a01abb19d9087b7effc7aa796d0c2bab39887291693cc67b27a85"},
-    {file = "pypdfium2-4.10.0-py3-none-manylinux_2_26_i686.whl", hash = "sha256:8586cca52424c8a4deb2f3bd95df308a480c17fdc26b5082bb6a855e892f5d66"},
-    {file = "pypdfium2-4.10.0-py3-none-manylinux_2_26_x86_64.whl", hash = "sha256:1ba08a5b13f5bc0ae9d5ced68dc245d6da82e71f7d7f2445dba2bfe8c713ba8a"},
-    {file = "pypdfium2-4.10.0-py3-none-musllinux_1_2_i686.whl", hash = "sha256:36867c9ef7f462c8aa6837f5fdc26de3b7c97440b258b4541857d07376868d66"},
-    {file = "pypdfium2-4.10.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:5869734d80feaa78963709a50bba6383f0ff3a9d5e5d54c34458bf09bcb61ba6"},
-    {file = "pypdfium2-4.10.0-py3-none-win32.whl", hash = "sha256:4485dfcab1d4daca1cefedd04725ca46b9bd52a44ea62dee42c2859fd2b2ae8b"},
-    {file = "pypdfium2-4.10.0-py3-none-win_amd64.whl", hash = "sha256:28de461dbc6bee021cc24039133d075fe4560a1ea83ba35842d34f97633e1455"},
-    {file = "pypdfium2-4.10.0-py3-none-win_arm64.whl", hash = "sha256:5c3679640f31e77d6c3312373c7540fac8b3be3e3ea7b2b03ec759c6cec6cbfe"},
-    {file = "pypdfium2-4.10.0.tar.gz", hash = "sha256:8d11415e660386a1169b8b49f91df81396502e749f6f6db7406c10f21fc787b5"},
+    {file = "pypdfium2-4.11.0-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:00ef3de857d805b88ae2bca2476b009851da6bd983ea570abb143f05acc34d31"},
+    {file = "pypdfium2-4.11.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:3997e7fa2d06ed44569ca8e7b53da8324cd9c667e3d74e9bbb789816b4e4ea38"},
+    {file = "pypdfium2-4.11.0-py3-none-manylinux_2_26_aarch64.whl", hash = "sha256:35a024794a37e424de83dfb11f346223fdd3ff0fb57a51a4aa3c5cba633bc251"},
+    {file = "pypdfium2-4.11.0-py3-none-manylinux_2_26_armv7l.whl", hash = "sha256:4d5b4465ddf6cf90454ece306969045c4c3de197089b8d42fbfed9e5d090e00e"},
+    {file = "pypdfium2-4.11.0-py3-none-manylinux_2_26_i686.whl", hash = "sha256:57e877858ba0b3c823128f1edb7c14a6e1acdb0b2337d9f074a42f654e96cd4f"},
+    {file = "pypdfium2-4.11.0-py3-none-manylinux_2_26_x86_64.whl", hash = "sha256:067afde1c3e2cc244f566183eb1c9b0a84f7b628ab457ca5c84135fdfc6ff15c"},
+    {file = "pypdfium2-4.11.0-py3-none-musllinux_1_2_i686.whl", hash = "sha256:40faac6dcece1c0f7e83246eacd4d2a33c15fd48f1ec9e6c2c3802ec38e887d7"},
+    {file = "pypdfium2-4.11.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:9ee58064ba1d287dba8cae91f24078b4ac133fbab99dfc1caeab0c4d80d02014"},
+    {file = "pypdfium2-4.11.0-py3-none-win32.whl", hash = "sha256:32796faad63dbba82011788a92f1037d6d31caa53a0123671e1bae42f9351455"},
+    {file = "pypdfium2-4.11.0-py3-none-win_amd64.whl", hash = "sha256:e8e584504ce8e620bee7b762857792f6265002c2e763ce9dc0d5bf1d6682274d"},
+    {file = "pypdfium2-4.11.0-py3-none-win_arm64.whl", hash = "sha256:0b41e0e198c605a2c5fea266be70b95ca4905734d3eefc0928a05e6cb3f98722"},
+    {file = "pypdfium2-4.11.0.tar.gz", hash = "sha256:f1d3bd0841f0c2e9db417075896dafc5906bbd7c0ccdc2b6e2b3f44d61d49f46"},
 ]
 
 [[package]]
@@ -8523,14 +8542,14 @@ tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 
 [[package]]
 name = "starlette"
-version = "0.26.1"
+version = "0.27.0"
 description = "The little ASGI library that shines."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "starlette-0.26.1-py3-none-any.whl", hash = "sha256:e87fce5d7cbdde34b76f0ac69013fd9d190d581d80681493016666e6f96c6d5e"},
-    {file = "starlette-0.26.1.tar.gz", hash = "sha256:41da799057ea8620e4667a3e69a5b1923ebd32b1819c8fa75634bbe8d8bea9bd"},
+    {file = "starlette-0.27.0-py3-none-any.whl", hash = "sha256:918416370e846586541235ccd38a474c08b80443ed31c578a418e2209b3eef91"},
+    {file = "starlette-0.27.0.tar.gz", hash = "sha256:6a6b0d042acb8d469a01eba54e9cda6cbd24ac602c4cd016723117d6a7e73b75"},
 ]
 
 [package.dependencies]
@@ -8727,18 +8746,18 @@ files = [
 
 [[package]]
 name = "tensorflow-hub"
-version = "0.12.0"
+version = "0.13.0"
 description = "TensorFlow Hub is a library to foster the publication, discovery, and consumption of reusable parts of machine learning models."
 category = "main"
 optional = true
 python-versions = "*"
 files = [
-    {file = "tensorflow_hub-0.12.0-py2.py3-none-any.whl", hash = "sha256:822fe5f7338c95efcc3a534011c6689e4309ba2459def87194179c4de8a6e1fc"},
+    {file = "tensorflow_hub-0.13.0-py2.py3-none-any.whl", hash = "sha256:3544f4fd9fd99e4eeb6da1b5b5320e4a2dbdef7f9bb778f66f76d6790f32dd65"},
 ]
 
 [package.dependencies]
 numpy = ">=1.12.0"
-protobuf = ">=3.8.0"
+protobuf = ">=3.19.6"
 
 [package.extras]
 make-image-classifier = ["keras-preprocessing[image]"]
@@ -9628,6 +9647,22 @@ wrapt = "*"
 yarl = "*"
 
 [[package]]
+name = "wand"
+version = "0.6.11"
+description = "Ctypes-based simple MagickWand API binding for Python"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "Wand-0.6.11-py2.py3-none-any.whl", hash = "sha256:1b77e25439ace57f665d1ccc6cff2766fad0834005b89ae3e7aaf3ba12b124b0"},
+    {file = "Wand-0.6.11.tar.gz", hash = "sha256:b661700da9f8f1e931e52726e4fc643a565b9514f5883d41b773e3c37c9fa995"},
+]
+
+[package.extras]
+doc = ["Sphinx (>=5.3.0)"]
+test = ["pytest (>=7.2.0)"]
+
+[[package]]
 name = "wasabi"
 version = "1.1.1"
 description = "A lightweight console printing and formatting toolkit"
@@ -10262,7 +10297,7 @@ all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api
 azure = ["azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["jq", "lxml", "pdfminer-six", "pymupdf", "pypdf", "pypdfium2", "tqdm"]
+extended-testing = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "azure-core", "azure-cosmos", "azure-identity", "beautifulsoup4", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-search-results", "gptcache", "gql", "hnswlib", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "lark", "lxml", "manifest-ml", "networkx", "nlpcloud", "nltk", "nomic", "openai", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "protobuf", "psycopg2-binary", "pymupdf", "pyowm", "pypdf", "pypdfium2", "pytesseract", "pyvespa", "qdrant-client", "redis", "sentence-transformers", "spacy", "steamship", "tensorflow-text", "tiktoken", "torch", "tqdm", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 hnswlib = ["docarray", "hnswlib", "protobuf"]
 in-memory-store = ["docarray"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "torch", "transformers"]
@@ -10272,4 +10307,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a41fec88e32b74b859208dd79de58c096466aeda631c17048e6b903100f7ac70"
+content-hash = "132c641479f97b471bacf36d1d85a4d3fb4d720c38658bf50a999a0ba7e77a6d"
