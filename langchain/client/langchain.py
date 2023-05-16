@@ -39,7 +39,7 @@ from langchain.client.models import (
     ListRunsQueryParams,
 )
 from langchain.llms.base import BaseLLM
-from langchain.schema import ChatResult, LLMResult, messages_from_dict
+from langchain.schema import BaseMessage, ChatResult, LLMResult, messages_from_dict
 from langchain.utils import raise_for_status_with_text, xor_args
 
 if TYPE_CHECKING:
@@ -390,21 +390,40 @@ class LangChainPlusClient(BaseSettings):
         return [Example(**dataset) for dataset in response.json()]
 
     @staticmethod
+    def _get_prompt(
+        inputs: Dict[str, Any],
+    ) -> str:
+        if "prompt" in inputs:
+            return inputs["prompt"]
+        if len(inputs) == 1:
+            return next(iter(inputs.values()))
+        raise ValueError(f"LLM Run requires string prompt input. Got {inputs}")
+
+    @staticmethod
+    def _get_messages(
+        inputs: Dict[str, Any],
+    ) -> List[BaseMessage]:
+        if "messages" in inputs:
+            raw_messages: List[dict] = inputs["messages"]
+        elif len(inputs) == 1:
+            raw_messages = next(iter(inputs.values()))
+        else:
+            raise ValueError(
+                f"Chat Run expects List[dict] 'messages' input. Got {inputs}"
+            )
+        return messages_from_dict(raw_messages)
+
+    @staticmethod
     async def _arun_llm(
         llm: BaseLanguageModel,
         inputs: Dict[str, Any],
         langchain_tracer: LangChainTracer,
     ) -> Union[LLMResult, ChatResult]:
         if isinstance(llm, BaseLLM):
-            if "prompt" not in inputs:
-                raise ValueError(f"LLM Run requires 'prompt' input. Got {inputs}")
-            llm_prompt: str = inputs["prompt"]
+            llm_prompt = LangChainPlusClient._get_prompt(inputs)
             llm_output = await llm.agenerate([llm_prompt], callbacks=[langchain_tracer])
         elif isinstance(llm, BaseChatModel):
-            if "messages" not in inputs:
-                raise ValueError(f"Chat Run requires 'messages' input. Got {inputs}")
-            raw_messages: List[dict] = inputs["messages"]
-            messages = messages_from_dict(raw_messages)
+            messages = LangChainPlusClient._get_messages(inputs)
             llm_output = await llm.agenerate([messages], callbacks=[langchain_tracer])
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
@@ -562,17 +581,14 @@ class LangChainPlusClient(BaseSettings):
     ) -> Union[LLMResult, ChatResult]:
         """Run the language model on the example."""
         if isinstance(llm, BaseLLM):
-            if "prompt" not in inputs:
-                raise ValueError(f"LLM Run must contain 'prompt' key. Got {inputs}")
-            llm_prompt: str = inputs["prompt"]
+            llm_prompt = LangChainPlusClient._get_prompt(inputs)
             llm_output = llm.generate([llm_prompt], callbacks=[langchain_tracer])
         elif isinstance(llm, BaseChatModel):
             if "messages" not in inputs:
                 raise ValueError(
                     f"Chat Model Run must contain 'messages' key. Got {inputs}"
                 )
-            raw_messages: List[dict] = inputs["messages"]
-            messages = messages_from_dict(raw_messages)
+            messages = LangChainPlusClient._get_messages(inputs)
             llm_output = llm.generate([messages], callbacks=[langchain_tracer])
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
