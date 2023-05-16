@@ -108,6 +108,7 @@ We need access tokens and sometime other parameters to get access to these datas
    ./document_loaders/examples/confluence.ipynb
    ./document_loaders/examples/diffbot.ipynb
    ./document_loaders/examples/discord_loader.ipynb
+   ./document_loaders/examples/docugami.ipynb
    ./document_loaders/examples/duckdb.ipynb
    ./document_loaders/examples/figma.ipynb
    ./document_loaders/examples/gitbook.ipynb
