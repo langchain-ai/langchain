@@ -52,7 +52,7 @@ class QAGenerationChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, List]:
         docs = self.text_splitter.create_documents([inputs[self.input_key]])
-        results = self.llm_chain.generate(
+        _, results = self.llm_chain.generate(
             [{"text": d.page_content} for d in docs], run_manager=run_manager
         )
         qa = [json.loads(res[0].text) for res in results.generations]
