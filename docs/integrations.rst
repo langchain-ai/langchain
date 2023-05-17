@@ -1,12 +1,13 @@
-LangChain Ecosystem
+Integrations
 ===================
 
-Guides for how other companies/products can be used with LangChain
+LangChain integrates with many LLMs, systems, and products.
 
-Groups
-----------
+Integrations with LangChain Modules
+-----------------------------------
 
-LangChain provides integration with many LLMs and systems:
+Examples how LangChain Modules are integrated with LLMs, systems and product:
+
 
 - `LLM Providers <./modules/models/llms/integrations.html>`_
 - `Chat Model Providers <./modules/models/chat/integrations.html>`_
@@ -18,12 +19,15 @@ LangChain provides integration with many LLMs and systems:
 - `Tool Providers <./modules/agents/tools.html>`_
 - `Toolkit Integrations <./modules/agents/toolkits.html>`_
 
-Companies / Products
---------------------
+
+Integrations with LLMs / Systems / Products
+-------------------------------------------
+
+A comprehensive list of LLMs, systems, and products integrated with LangChain:
 
 
 .. toctree::
    :maxdepth: 1
    :glob:
 
-   ecosystem/*
+   integrations/*
