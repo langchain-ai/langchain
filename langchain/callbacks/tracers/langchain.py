@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 import requests
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import (
@@ -33,6 +34,7 @@ def get_endpoint() -> str:
     return os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
 
 
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
 def _get_tenant_id(
     tenant_id: Optional[str], endpoint: Optional[str], headers: Optional[dict]
 ) -> str:
@@ -106,6 +108,7 @@ class LangChainTracer(BaseTracer):
         self.tenant_id = tenant_id
         return tenant_id
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def ensure_session(self) -> TracerSession:
         """Upsert a session."""
         if self.session is not None:
