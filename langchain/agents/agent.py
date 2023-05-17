@@ -773,7 +773,7 @@ class AgentExecutor(Chain):
                 observation = "Invalid or incomplete response"
             elif isinstance(self.handle_parsing_errors, str):
                 observation = self.handle_parsing_errors
-            elif callable(self.handle_parsing_errors):
+            elif isinstance(self.handle_parsing_errors, Callable):
                 observation = self.handle_parsing_errors(text)
             else:
                 raise ValueError("Got unexpected type of `handle_parsing_errors`")
