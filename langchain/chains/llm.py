@@ -86,7 +86,7 @@ class LLMChain(Chain):
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> LLMResult:
         """Generate LLM result from inputs."""
-        prompts, stop = await self.aprep_prompts(input_list)
+        prompts, stop = await self.aprep_prompts(input_list, run_manager=run_manager)
         return await self.llm.agenerate_prompt(
             prompts, stop, callbacks=run_manager.get_child() if run_manager else None
         )
