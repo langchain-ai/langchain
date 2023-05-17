@@ -1,12 +1,14 @@
 """A Tracer implementation that records to LangChain endpoint."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 from uuid import UUID
 
+import aiohttp
 import requests
 from tenacity import retry, stop_after_attempt, wait_fixed
 
@@ -72,6 +74,7 @@ class LangChainTracer(BaseTracer):
         self.example_id = example_id
         self.session_name = session_name or os.getenv("LANGCHAIN_SESSION", "default")
         self.session_extra = session_extra
+        self._persist_tasks: Set[asyncio.Task] = set()
 
     def on_chat_model_start(
         self,
@@ -127,7 +130,7 @@ class LangChainTracer(BaseTracer):
         self.session = TracerSession(**r.json())
         return self.session
 
-    def _persist_run_nested(self, run: Run) -> None:
+    async def _persist_run_nested(self, run: Run) -> None:
         """Persist a run."""
         session = self.ensure_session()
         child_runs = run.child_runs
@@ -135,20 +138,23 @@ class LangChainTracer(BaseTracer):
         del run_dict["child_runs"]
         run_create = RunCreate(**run_dict, session_id=session.id)
         try:
-            response = requests.post(
-                f"{self._endpoint}/runs",
-                data=run_create.json(),
-                headers=self._headers,
-            )
-            raise_for_status_with_text(response)
+            async with aiohttp.ClientSession() as client_session:
+                async with client_session.post(
+                    f"{self._endpoint}/runs",
+                    data=run_create.json(),
+                    headers=self._headers,
+                ) as response:
+                    response.raise_for_status()
         except Exception as e:
             logging.warning(f"Failed to persist run: {e}")
         for child_run in child_runs:
             child_run.parent_run_id = run.id
-            self._persist_run_nested(child_run)
+            await self._persist_run_nested(child_run)
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
         run.reference_example_id = self.example_id
         # TODO: Post first then patch
-        self._persist_run_nested(run)
+        task = asyncio.get_event_loop().create_task(self._persist_run_nested(run))
+        self._persist_tasks.add(task)
+        task.add_done_callback(self._persist_tasks.discard)
