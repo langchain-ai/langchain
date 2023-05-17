@@ -1,7 +1,7 @@
 """Loader that uses bs4 to load HTML files, enriching metadata with page title."""
 
 import logging
-from typing import Dict, Union, Iterator, Optional, Mapping, Any
+from typing import Any, Dict, Iterator, Mapping, Optional, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class BS4HTMLParser(BaseBlobParser):
-    """Loader that uses beautiful soup to parse HTML files."""
+    """Parser that uses beautiful soup to parse HTML files."""
 
     def __init__(
         self,
@@ -19,8 +19,7 @@ class BS4HTMLParser(BaseBlobParser):
         bs_kwargs: Optional[Mapping[str, Any]] = None,
         get_text_separator: str = "",
     ) -> None:
-        """Initialise with path, and optionally, file encoding to use, and any kwargs
-        to pass to the BeautifulSoup object."""
+        """Initialize a bs4 based HTML parser."""
         try:
             import bs4  # noqa:F401
         except ImportError:
@@ -29,7 +28,7 @@ class BS4HTMLParser(BaseBlobParser):
                 "`pip install beautifulsoup4`"
             )
 
-        if "features" in bs_kwargs:
+        if bs_kwargs and "features" in bs_kwargs:
             raise ValueError("features cannot be set in bs_kwargs")
 
         _bs_kwargs = bs_kwargs or {}
@@ -54,4 +53,4 @@ class BS4HTMLParser(BaseBlobParser):
             "source": blob.source,
             "title": title,
         }
-        return [Document(page_content=text, metadata=metadata)]
+        yield Document(page_content=text, metadata=metadata)

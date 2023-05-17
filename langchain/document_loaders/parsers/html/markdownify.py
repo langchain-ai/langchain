@@ -1,8 +1,9 @@
 """Load and chunk HTMLs with potential pre-processing to clean the html."""
 
 import re
+from typing import Iterator, Tuple
+
 from bs4 import BeautifulSoup
-from typing import Tuple, Iterator
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob

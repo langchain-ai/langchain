@@ -6,7 +6,6 @@ from typing import Dict, List, Union
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-
 logger = logging.getLogger(__name__)
 
 
