@@ -16,7 +16,7 @@ def assert_docs(docs: List[Document], all_meta: bool = False) -> None:
     for doc in docs:
         assert doc.page_content
         assert doc.metadata
-        main_meta = {"title", "summary"}
+        main_meta = {"title", "summary", "source"}
         assert set(doc.metadata).issuperset(main_meta)
         if all_meta:
             assert len(set(doc.metadata)) > len(main_meta)

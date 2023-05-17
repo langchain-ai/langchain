@@ -17,34 +17,43 @@ class BaseLoader(BaseRetriever):
     implementation should be just `list(self.lazy_load())`.
     """
 
+    # query can be used inside load() to adjust to the get_relevant_documents query
+    query: Optional[str] = None
+
     # Sub-classes should implement this method
     # as return list(self.lazy_load()).
     # This method returns a List which is materialized in memory.
     @abstractmethod
-    def load(self, query: Optional[str] = None) -> List[Document]:
-        """Load data into document objects."""
+    def load(self) -> List[Document]:
+        """Load data into document objects.
+        If you need a query, use self.query
+        """
 
     def load_and_split(
-        self, text_splitter: Optional[TextSplitter] = None, query: Optional[str] = None
+        self, text_splitter: Optional[TextSplitter] = None
     ) -> List[Document]:
         """Load documents and split into chunks."""
         if text_splitter is None:
             _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()
         else:
             _text_splitter = text_splitter
-        docs = self.load(query=query)
+        docs = self.load()
         return _text_splitter.split_documents(docs)
 
     # Attention: This method will be upgraded into an abstractmethod once it's
     #            implemented in all the existing subclasses.
-    def lazy_load(self, query: Optional[str] = None) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """A lazy loader for document content."""
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement lazy_load()"
         )
 
     def get_relevant_documents(self, query: str) -> List[Document]:
-        return self.load(query=query)
+        # it doesn't replace the class query.
+        cls_query, self.query = self.query, query
+        ret = self.load()
+        self.query = cls_query
+        return ret
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
         """Get documents relevant for a query.

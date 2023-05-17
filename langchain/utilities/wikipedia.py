@@ -101,7 +101,7 @@ class WikipediaAPIWrapper(BaseModel):
         ):
             return None
 
-    def load(self, query: str) -> List[Document]:
+    def load(self, query: Optional[str]) -> List[Document]:
         """
         Run Wikipedia search and get the article text plus the meta information.
         See
@@ -109,6 +109,9 @@ class WikipediaAPIWrapper(BaseModel):
         Returns: a list of documents.
 
         """
+        if not query:
+            logger.debug("Query is empty, please define it.")
+            return []
         page_titles = self.wiki_client.search(query[:WIKIPEDIA_MAX_QUERY_LENGTH])
         docs = []
         for page_title in page_titles[: self.top_k_results]:

@@ -14,7 +14,7 @@ class WikipediaLoader(BaseLoader):
 
     def __init__(
         self,
-        query: str,
+        query: Optional[str],
         lang: str = "en",
         load_max_docs: Optional[int] = 100,
         load_all_available_meta: Optional[bool] = False,
@@ -30,5 +30,5 @@ class WikipediaLoader(BaseLoader):
             top_k_results=self.load_max_docs,
             load_all_available_meta=self.load_all_available_meta,
         )
-        docs = client.load(self.query)
+        docs = client.load(query=self.query)
         return docs

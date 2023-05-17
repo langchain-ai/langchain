@@ -1,7 +1,10 @@
+import logging
 from typing import Dict, List, Optional, cast
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+
+logger = logging.getLogger(__name__)
 
 
 class DuckDBLoader(BaseLoader):
@@ -15,7 +18,7 @@ class DuckDBLoader(BaseLoader):
 
     def __init__(
         self,
-        query: str,
+        query: Optional[str],
         database: str = ":memory:",
         read_only: bool = False,
         config: Optional[Dict[str, str]] = None,
@@ -37,6 +40,10 @@ class DuckDBLoader(BaseLoader):
                 "Could not import duckdb python package. "
                 "Please install it with `pip install duckdb`."
             )
+
+        if not self.query:
+            logger.debug("Query is empty, please define it.")
+            return []
 
         docs = []
         with duckdb.connect(
