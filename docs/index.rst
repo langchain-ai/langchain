@@ -39,7 +39,7 @@ Modules
 -----------
 
 | These modules are the core abstractions which we view as the building blocks of any LLM-powered application.
-For each module LangChain provides standard, extendable interfaces. LanghChain also provides external integrations and even end-to-end implementations for off-the-shelf use.
+For each module LangChain provides standard, extendable interfaces. LangChain also provides external integrations and even end-to-end implementations for off-the-shelf use.
 
 | The docs for each module contain quickstart examples, how-to guides, reference docs, and conceptual guides.
 
