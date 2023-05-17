@@ -13,7 +13,7 @@ class BaseLoader(ABC):
     Implementations should implement the lazy-loading method using generators
     to avoid loading all documents into memory at once.
 
-    The `load` method will remain as is for backwards compatibility, but it's
+    The `load` method will remain as is for backwards compatibility, but its
     implementation should be just `list(self.lazy_load())`.
     """
 
