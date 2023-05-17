@@ -107,12 +107,6 @@ class VectorStore(ABC):
     ) -> List[Document]:
         """Return docs most similar to query."""
 
-    @abstractmethod
-    def similarity_search_by_text(
-            self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        """Return docs most similar to query."""
-
     def similarity_search_with_relevance_scores(
         self,
         query: str,
