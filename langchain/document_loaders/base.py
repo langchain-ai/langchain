@@ -1,4 +1,5 @@
 """Abstract interface for document loader implementations."""
+
 from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional
 
@@ -85,3 +86,5 @@ class BaseBlobParser(ABC):
             List of documents
         """
         return list(self.lazy_parse(blob))
+
+
