@@ -24,6 +24,7 @@ from uuid import UUID
 import requests
 from pydantic import BaseSettings, Field, root_validator
 from requests import Response
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.tracers.langchain import LangChainTracer
@@ -69,8 +70,8 @@ class LangChainPlusClient(BaseSettings):
     """Client for interacting with the LangChain+ API."""
 
     api_key: Optional[str] = Field(default=None, env="LANGCHAIN_API_KEY")
-    api_url: str = Field(..., env="LANGCHAIN_ENDPOINT")
-    tenant_id: str = Field(..., env="LANGCHAIN_TENANT_ID")
+    api_url: str = Field(default="http://localhost:8000", env="LANGCHAIN_ENDPOINT")
+    tenant_id: Optional[str] = None
 
     @root_validator(pre=True)
     def validate_api_key_if_hosted(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -82,25 +83,25 @@ class LangChainPlusClient(BaseSettings):
                 raise ValueError(
                     "API key must be provided when using hosted LangChain+ API"
                 )
-        else:
-            tenant_id = values.get("tenant_id")
-            if not tenant_id:
-                values["tenant_id"] = LangChainPlusClient._get_seeded_tenant_id(
-                    api_url, api_key
-                )
+        tenant_id = values.get("tenant_id")
+        if not tenant_id:
+            values["tenant_id"] = LangChainPlusClient._get_seeded_tenant_id(
+                api_url, api_key
+            )
         return values
 
     @staticmethod
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def _get_seeded_tenant_id(api_url: str, api_key: Optional[str]) -> str:
         """Get the tenant ID from the seeded tenant."""
         url = f"{api_url}/tenants"
-        headers = {"authorization": f"Bearer {api_key}"} if api_key else {}
+        headers = {"x-api-key": api_key} if api_key else {}
         response = requests.get(url, headers=headers)
         try:
             raise_for_status_with_text(response)
         except Exception as e:
             raise ValueError(
-                "Unable to get seeded tenant ID. Please manually provide."
+                "Unable to get default tenant ID. Please manually provide."
             ) from e
         results: List[dict] = response.json()
         if len(results) == 0:
@@ -124,7 +125,12 @@ class LangChainPlusClient(BaseSettings):
 
     def _repr_html_(self) -> str:
         """Return an HTML representation of the instance with a link to the URL."""
-        link = _get_link_stem(self.api_url)
+        if _is_localhost(self.api_url):
+            link = "http://localhost"
+        elif "dev" in self.api_url:
+            link = "https://dev.langchain.plus"
+        else:
+            link = "https://www.langchain.plus"
         return f'<a href="{link}", target="_blank" rel="noopener">LangChain+ Client</a>'
 
     def __repr__(self) -> str:
@@ -136,11 +142,11 @@ class LangChainPlusClient(BaseSettings):
         """Get the headers for the API request."""
         headers = {}
         if self.api_key:
-            headers["authorization"] = f"Bearer {self.api_key}"
+            headers["x-api-key"] = self.api_key
         return headers
 
     @property
-    def query_params(self) -> Dict[str, str]:
+    def query_params(self) -> Dict[str, Any]:
         """Get the headers for the API request."""
         return {"tenant_id": self.tenant_id}
 
@@ -199,12 +205,14 @@ class LangChainPlusClient(BaseSettings):
             raise ValueError(f"Dataset {file_name} already exists")
         return Dataset(**result)
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def read_run(self, run_id: str) -> Run:
         """Read a run from the LangChain+ API."""
         response = self._get(f"/runs/{run_id}")
         raise_for_status_with_text(response)
         return Run(**response.json())
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def list_runs(
         self,
         *,
@@ -228,6 +236,7 @@ class LangChainPlusClient(BaseSettings):
         raise_for_status_with_text(response)
         return [Run(**run) for run in response.json()]
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     @xor_args(("session_id", "session_name"))
     def read_session(
         self, *, session_id: Optional[str] = None, session_name: Optional[str] = None
@@ -258,6 +267,7 @@ class LangChainPlusClient(BaseSettings):
             return TracerSession(**result[0])
         return TracerSession(**response.json())
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def list_sessions(self) -> List[TracerSession]:
         """List sessions from the LangChain+ API."""
         response = self._get("/sessions")
@@ -279,6 +289,7 @@ class LangChainPlusClient(BaseSettings):
         raise_for_status_with_text(response)
         return Dataset(**response.json())
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     @xor_args(("dataset_name", "dataset_id"))
     def read_dataset(
         self, *, dataset_name: Optional[str] = None, dataset_id: Optional[str] = None
@@ -303,6 +314,7 @@ class LangChainPlusClient(BaseSettings):
             return Dataset(**result[0])
         return Dataset(**result)
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def list_datasets(self, limit: int = 100) -> Iterable[Dataset]:
         """List the datasets on the LangChain+ API."""
         response = self._get("/datasets", params={"limit": limit})
@@ -353,12 +365,14 @@ class LangChainPlusClient(BaseSettings):
         result = response.json()
         return Example(**result)
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def read_example(self, example_id: str) -> Example:
         """Read an example from the LangChain+ API."""
         response = self._get(f"/examples/{example_id}")
         raise_for_status_with_text(response)
         return Example(**response.json())
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def list_examples(
         self, dataset_id: Optional[str] = None, dataset_name: Optional[str] = None
     ) -> Iterable[Example]:
