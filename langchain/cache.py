@@ -336,6 +336,7 @@ class GPTCache(BaseCache):
                 self.init_gptcache_func(_gptcache, llm_string)  # type: ignore[call-arg]
             else:
                 self.init_gptcache_func(_gptcache)  # type: ignore[call-arg]
+            self.gptcache_dict[llm_string] = _gptcache
         else:
             _gptcache.init(
                 pre_embedding_func=get_prompt,
