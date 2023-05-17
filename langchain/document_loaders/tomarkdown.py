@@ -27,7 +27,7 @@ class ToMarkdownLoader(BaseLoader):
             json={"url": self.url},
         )
         text = response.json()["article"]
-        metadata = {"url": self.url}
+        metadata = {"source": self.url}
         yield Document(page_content=text, metadata=metadata)
 
     def load(self) -> List[Document]:
