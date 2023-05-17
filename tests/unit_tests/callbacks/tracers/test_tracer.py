@@ -98,6 +98,7 @@ def test_persist_run(
             lang_chain_tracer_v2.run_map[str(run.id)] = run
         for run in sample_runs:
             lang_chain_tracer_v2._end_trace(run)
+        lang_chain_tracer_v2._executor.shutdown(wait=True)
 
         assert post.call_count == 3
         assert get.call_count == 0
