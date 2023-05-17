@@ -73,8 +73,6 @@ class GoogleCloudVertexAIPalm(BaseLLM, BaseModel):
     max_output_tokens: Optional[int] = 256
     """Maximum number of tokens to include in a candidate. Must be greater than zero.
        If unset, will default to 256."""
-    location: Optional[str] = "us-central1"
-    """GCP region where your project is located. By default, we use us-central1"""
     tuned_model: Optional[bool] = False
     """Whether or not the model_name referenced is a fine-tuned model. Defaults to False."""
 
