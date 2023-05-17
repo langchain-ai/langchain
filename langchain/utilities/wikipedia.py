@@ -41,7 +41,7 @@ class WikipediaAPIWrapper(BaseModel):
             wikipedia.set_lang(values["lang"])
             values["wiki_client"] = wikipedia
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import wikipedia python package. "
                 "Please install it with `pip install wikipedia`."
             )
@@ -69,7 +69,7 @@ class WikipediaAPIWrapper(BaseModel):
             "summary": wiki_page.summary,
             "source": wiki_page.url,
         }
-        add_meta = (
+        extra_metadata = (
             {
                 "categories": wiki_page.categories,
                 "page_url": wiki_page.url,
@@ -87,7 +87,7 @@ class WikipediaAPIWrapper(BaseModel):
             page_content=wiki_page.content[: self.doc_content_chars_max],
             metadata={
                 **main_meta,
-                **add_meta,
+                **extra_metadata,
             },
         )
         return doc

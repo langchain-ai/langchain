@@ -141,17 +141,13 @@ class ArxivAPIWrapper(BaseModel):
             )
             doc = Document(
                 page_content=text[: self.doc_content_chars_max],
-                metadata=(
-                    {
-                        "Published": str(result.updated.date()),
-                        "Title": result.title,
-                        "Authors": ", ".join(
-                            a.name for a in result.authors
-                        ),
-                        "Summary": result.summary,
-                        **extra_metadata,
-                    }
-                ),
+                metadata={
+                    "Published": str(result.updated.date()),
+                    "Title": result.title,
+                    "Authors": ", ".join(a.name for a in result.authors),
+                    "Summary": result.summary,
+                    **extra_metadata,
+                },
             )
             docs.append(doc)
             os.remove(doc_file_name)
