@@ -105,10 +105,10 @@ def test_from_filesystem_using_default_parser(toy_dir: str) -> None:
     """Use the default generic parser."""
     loader = GenericLoader.from_filesystem(
         toy_dir,
-        suffixes=[".txt", ".html"],
+        suffixes=[".txt"],
     )
     docs = loader.load()
-    assert len(docs) == 1
+    assert len(docs) == 3
     # Glob order seems to be deterministic with recursion. If this test becomes flaky,
     # we can sort the docs by page content.
     assert docs[0].page_content == "This is a test.txt file."
