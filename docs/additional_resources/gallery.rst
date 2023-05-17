@@ -357,7 +357,7 @@ Proprietary
 
 
 Articles on **Google Scholar**
------------------------------
+------------------------------
 
 LangChain is used in many scientific and research projects.
 
