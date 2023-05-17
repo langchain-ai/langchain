@@ -1,5 +1,5 @@
 """Loader that loads HuggingFace datasets."""
-from typing import List, Mapping, Optional, Sequence, Union
+from typing import Iterator, List, Mapping, Optional, Sequence, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -23,8 +23,7 @@ class HuggingFaceDatasetLoader(BaseLoader):
         use_auth_token: Optional[Union[bool, str]] = None,
         num_proc: Optional[int] = None,
     ):
-        """
-        Initialize the HuggingFaceDatasetLoader.
+        """Initialize the HuggingFaceDatasetLoader.
 
         Args:
             path: Path or name of the dataset.
@@ -50,8 +49,10 @@ class HuggingFaceDatasetLoader(BaseLoader):
         self.use_auth_token = use_auth_token
         self.num_proc = num_proc
 
-    def load(self) -> List[Document]:
-        """Load documents."""
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        """Load documents lazily."""
         try:
             from datasets import load_dataset
         except ImportError:
@@ -72,13 +73,15 @@ class HuggingFaceDatasetLoader(BaseLoader):
             num_proc=self.num_proc,
         )
 
-        docs = [
+        yield from (
             Document(
                 page_content=row.pop(self.page_content_column),
                 metadata=row,
             )
             for key in dataset.keys()
             for row in dataset[key]
-        ]
+        )
 
-        return docs
+    def load(self) -> List[Document]:
+        """Load documents."""
+        return list(self.lazy_load())
