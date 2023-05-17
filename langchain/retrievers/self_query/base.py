@@ -85,7 +85,21 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         return docs
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
-        raise NotImplementedError
+        inputs = self.llm_chain.prep_inputs({"query": query})
+        structured_query = cast(
+            StructuredQuery, await self.llm_chain.apredict_and_parse(callbacks=None, **inputs)
+        )
+        if self.verbose:
+            print(structured_query)
+        new_query, new_kwargs = self.structured_query_translator.visit_structured_query(
+            structured_query
+        )
+        if structured_query.limit is not None:
+            new_kwargs["k"] = structured_query.limit
+
+        search_kwargs = {**self.search_kwargs, **new_kwargs}
+        docs = await self.vectorstore.asearch(query, self.search_type, **search_kwargs)
+        return docs
 
     @classmethod
     def from_llm(
