@@ -1,5 +1,6 @@
 """Loader that loads Obsidian directory dump."""
 import re
+import yaml
 from pathlib import Path
 from typing import List
 
@@ -27,14 +28,7 @@ class ObsidianLoader(BaseLoader):
         match = self.FRONT_MATTER_REGEX.search(content)
         front_matter = {}
         if match:
-            lines = match.group(1).split("\n")
-            for line in lines:
-                if ":" in line:
-                    key, value = line.split(":", 1)
-                    front_matter[key.strip()] = value.strip()
-                else:
-                    # Skip lines without a colon
-                    continue
+            front_matter = yaml.safe_load(match)
         return front_matter
 
     def _remove_front_matter(self, content: str) -> str:
@@ -45,20 +39,20 @@ class ObsidianLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
-        ps = list(Path(self.file_path).glob("**/*.md"))
+        obsidian_notes = list(Path(self.file_path).glob("**/*.md"))
         docs = []
-        for p in ps:
-            with open(p, encoding=self.encoding) as f:
-                text = f.read()
+        for note in obsidian_notes:
+            with open(note, encoding=self.encoding) as file_stream:
+                text = file_stream.read()
 
             front_matter = self._parse_front_matter(text)
             text = self._remove_front_matter(text)
             metadata = {
-                "source": str(p.name),
-                "path": str(p),
-                "created": p.stat().st_ctime,
-                "last_modified": p.stat().st_mtime,
-                "last_accessed": p.stat().st_atime,
+                "source": str(note.name),
+                "path": str(note),
+                "created": note.stat().st_ctime,
+                "last_modified": note.stat().st_mtime,
+                "last_accessed": note.stat().st_atime,
                 **front_matter,
             }
             docs.append(Document(page_content=text, metadata=metadata))
