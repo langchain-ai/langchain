@@ -1,12 +1,10 @@
 """Wrapper arround Google Cloud Platform Vertex AI PaLM Text APIs."""
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List, Optional
 
-import logging
-
 from pydantic import BaseModel, root_validator
-
 from tenacity import (
     before_sleep_log,
     retry,
@@ -20,7 +18,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms import BaseLLM
 from langchain.schema import Generation, LLMResult
-from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +39,12 @@ class GoogleCloudVertexAIPalm(BaseLLM, BaseModel):
     """Wrapper around Google Cloud's Vertex AI PaLM Text Generation API.
 
     To use you must have the google-cloud-aiplatform Python package installed and
-    either:
+        either:
 
-        1. Have credentials configured for your enviornment (gcloud, workload identity, etc...)
-        2. Pass your service account key json using the google_application_credentials kwarg to the ChatGoogle
-           constructor.
-
-        *see: https://cloud.google.com/docs/authentication/application-default-credentials#GAC
+        1. Have credentials configured for your environment -
+            (gcloud, workload identity, etc...)
+        2. Store the path to a service account JSON file
+            as the GOOGLE_APPLICATION_CREDENTIALS environment variable
 
     Example:
         .. code-block:: python
@@ -57,9 +53,9 @@ class GoogleCloudVertexAIPalm(BaseLLM, BaseModel):
             llm = VertexAIGooglePalm()
 
     """
+
     client: Any  #: :meta private:
-    google_application_credentials: Optional[str]
-    model_name: str = "models/text-bison@001"
+    model_name: str = "text-bison@001"
     """Model name to use."""
     temperature: float = 0.2
     """Run inference with this temperature. Must by in the closed interval
@@ -74,19 +70,24 @@ class GoogleCloudVertexAIPalm(BaseLLM, BaseModel):
     """Maximum number of tokens to include in a candidate. Must be greater than zero.
        If unset, will default to 256."""
     tuned_model: Optional[bool] = False
-    """Whether or not the model_name referenced is a fine-tuned model. Defaults to False."""
+    """Whether or not the model_name referenced is a fine-tuned model. 
+    Defaults to False."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate api key, python package exists."""
-        google_auth = get_from_dict_or_env(
-            values, "google_application_credentials", "GOOGLE_APPLICATION_CREDENTIALS"
-        )
+        """Validate auth and that the python package exists."""
+        import google.auth
+
+        credentials, project_id = google.auth.default()
+
         try:
             from vertexai.preview.language_models import TextGenerationModel
 
         except ImportError:
-            raise ImportError("Could not import vertexai python package. Try running `pip install google-cloud-aiplatform>=1.25.0`")
+            raise ImportError(
+                "Could not import vertexai python package."
+                "Try running `pip install google-cloud-aiplatform>=1.25.0`"
+            )
 
         if values["tuned_model"]:
             values["client"] = TextGenerationModel.get_tuned_model(values["model_name"])
@@ -118,23 +119,18 @@ class GoogleCloudVertexAIPalm(BaseLLM, BaseModel):
             completion_with_retry = retry(
                 reraise=True,
                 stop=stop_after_attempt(3),
-                wait=wait_exponential(
-                    multiplier=1,
-                    min=4,
-                    max=10
-                ),
+                wait=wait_exponential(multiplier=1, min=4, max=10),
                 before_sleep=before_sleep_log(logger, logging.WARNING),
             )(self.client.predict)
             result = completion_with_retry(
                 prompt,
-                self.max_output_tokens,
-                self.temperature,
-                self.top_k,
-                self.top_p
+                max_output_tokens=self.max_output_tokens,
+                temperature=self.temperature,
+                top_k=self.top_k,
+                top_p=self.top_p,
             )
-
             stripped_text = _strip_erroneous_leading_spaces(result.text)
-            generations.append(Generation(text=stripped_text))
+            generations.append([Generation(text=stripped_text)])
 
         return LLMResult(generations=generations)
 
