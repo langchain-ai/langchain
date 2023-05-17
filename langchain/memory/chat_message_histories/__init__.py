@@ -24,4 +24,5 @@ __all__ = [
     "MongoDBChatMessageHistory",
     "ZepChatMessageHistory",
     "CassandraChatMessageHistory",
+    "ZepChatMessageHistory",
 ]
