@@ -86,6 +86,7 @@ from langchain.document_loaders.telegram import (
     TelegramChatFileLoader,
 )
 from langchain.document_loaders.text import TextLoader
+from langchain.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain.document_loaders.toml import TomlLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
@@ -213,4 +214,5 @@ __all__ = [
     "WikipediaLoader",
     "YoutubeLoader",
     "TelegramChatLoader",
+    "ToMarkdownLoader",
 ]

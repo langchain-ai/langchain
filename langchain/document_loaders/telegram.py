@@ -12,6 +12,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 if TYPE_CHECKING:
     import pandas as pd
+    from telethon.hints import EntityLike
 
 
 def concatenate_rows(row: dict) -> str:
@@ -82,16 +83,18 @@ class TelegramChatApiLoader(BaseLoader):
 
     def __init__(
         self,
-        chat_url: Optional[str] = None,
+        chat_entity: Optional[EntityLike] = None,
         api_id: Optional[int] = None,
         api_hash: Optional[str] = None,
         username: Optional[str] = None,
+        file_path: str = "telegram_data.json",
     ):
         """Initialize with API parameters."""
-        self.chat_url = chat_url
+        self.chat_entity = chat_entity
         self.api_id = api_id
         self.api_hash = api_hash
         self.username = username
+        self.file_path = file_path
 
     async def fetch_data_from_telegram(self) -> None:
         """Fetch data from Telegram API and save it as a JSON file."""
@@ -99,7 +102,7 @@ class TelegramChatApiLoader(BaseLoader):
 
         data = []
         async with TelegramClient(self.username, self.api_id, self.api_hash) as client:
-            async for message in client.iter_messages(self.chat_url):
+            async for message in client.iter_messages(self.chat_entity):
                 is_reply = message.reply_to is not None
                 reply_to_id = message.reply_to.reply_to_msg_id if is_reply else None
                 data.append(
@@ -113,10 +116,8 @@ class TelegramChatApiLoader(BaseLoader):
                     }
                 )
 
-        with open("telegram_data.json", "w", encoding="utf-8") as f:
+        with open(self.file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
-
-        self.file_path = "telegram_data.json"
 
     def _get_message_threads(self, data: pd.DataFrame) -> dict:
         """Create a dictionary of message threads from the given data.
@@ -160,10 +161,10 @@ class TelegramChatApiLoader(BaseLoader):
             return all_replies
 
         # Filter out parent messages
-        parent_messages = data[data["is_reply"] is False]
+        parent_messages = data[~data["is_reply"]]
 
         # Filter out reply messages and drop rows with NaN in 'reply_to_id'
-        reply_messages = data[data["is_reply"] is True].dropna(subset=["reply_to_id"])
+        reply_messages = data[data["is_reply"]].dropna(subset=["reply_to_id"])
 
         # Convert 'reply_to_id' to integer
         reply_messages["reply_to_id"] = reply_messages["reply_to_id"].astype(int)
@@ -217,24 +218,32 @@ class TelegramChatApiLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
-        if self.chat_url is not None:
+
+        if self.chat_entity is not None:
             try:
                 import nest_asyncio
-                import pandas as pd
 
                 nest_asyncio.apply()
                 asyncio.run(self.fetch_data_from_telegram())
             except ImportError:
                 raise ValueError(
-                    "please install with `pip install nest_asyncio`,\
-                                 `pip install nest_asyncio` "
+                    """`nest_asyncio` package not found.
+                    please install with `pip install nest_asyncio`
+                    """
                 )
 
         p = Path(self.file_path)
 
         with open(p, encoding="utf8") as f:
             d = json.load(f)
-
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ValueError(
+                """`pandas` package not found. 
+                please install with `pip install pandas`
+                """
+            )
         normalized_messages = pd.json_normalize(d)
         df = pd.DataFrame(normalized_messages)
 

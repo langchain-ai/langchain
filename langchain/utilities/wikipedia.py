@@ -67,6 +67,7 @@ class WikipediaAPIWrapper(BaseModel):
         main_meta = {
             "title": page_title,
             "summary": wiki_page.summary,
+            "source": wiki_page.url,
         }
         add_meta = (
             {
