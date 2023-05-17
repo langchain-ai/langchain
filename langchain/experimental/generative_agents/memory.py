@@ -121,7 +121,7 @@ class GenerativeAgentMemory(BaseMemory):
         score = self.chain(prompt).run(memory_content=memory_content).strip()
         if self.verbose:
             logger.info(f"Importance score: {score}")
-        match = re.search(r"^\D*(\d+)", score)
+        match = re.search(r"\D*(\d+)", score)
         if match:
             return (float(match.group(1)) / 10) * self.importance_weight
         else:

@@ -302,17 +302,17 @@ class BaseRetriever(ABC):
 
 Memory = BaseMemory
 
-T = TypeVar("T")
+PARSED_T = TypeVar("PARSED_T")
 
 
-class BaseOutputParser(BaseModel, ABC, Generic[T]):
+class BaseOutputParser(BaseModel, ABC, Generic[PARSED_T]):
     """Class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
     """
 
     @abstractmethod
-    def parse(self, text: str) -> T:
+    def parse(self, text: str) -> PARSED_T:
         """Parse the output of an LLM call.
 
         A method which takes in a string (assumed output of language model )

@@ -19,9 +19,9 @@ distance_metric_map = {
     "l2": lambda a, b: np.linalg.norm(a - b, axis=1, ord=2),
     "l1": lambda a, b: np.linalg.norm(a - b, axis=1, ord=1),
     "max": lambda a, b: np.linalg.norm(a - b, axis=1, ord=np.inf),
-    "cos": lambda a, b: np.dot(a, b.T)
+    "cos": lambda a, b: np.dot(a, b.PARSED_T)
     / (np.linalg.norm(a) * np.linalg.norm(b, axis=1)),
-    "dot": lambda a, b: np.dot(a, b.T),
+    "dot": lambda a, b: np.dot(a, b.PARSED_T),
 }
 
 

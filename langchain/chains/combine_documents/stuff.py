@@ -94,6 +94,25 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         # Call predict on the LLM.
         return await self.llm_chain.apredict(callbacks=callbacks, **inputs), {}
 
+    def combine_docs_and_parse(
+        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
+    ) -> Tuple[Any, dict]:
+        """Stuff all documents into one prompt and pass to LLM."""
+        inputs = self._get_inputs(docs, **kwargs)
+        # Call predict on the LLM.
+        return self.llm_chain.predict_and_parse(callbacks=callbacks, **inputs), {}
+
+    async def acombine_docs_and_parse(
+        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
+    ) -> Tuple[str, dict]:
+        """Stuff all documents into one prompt and pass to LLM."""
+        inputs = self._get_inputs(docs, **kwargs)
+        # Call predict on the LLM.
+        return (
+            await self.llm_chain.apredict_and_parse(callbacks=callbacks, **inputs),
+            {},
+        )
+
     @property
     def _chain_type(self) -> str:
         return "stuff_documents_chain"
