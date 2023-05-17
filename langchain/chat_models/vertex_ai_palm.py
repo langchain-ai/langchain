@@ -3,7 +3,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
 
+import logging
+
 from pydantic import BaseModel, root_validator
+
+from tenacity import (
+    before_sleep_log,
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+)
+
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -13,13 +23,14 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
     BaseMessage,
-    ChatGeneration,
     ChatMessage,
     ChatResult,
     HumanMessage,
     SystemMessage,
 )
 from langchain.utils import get_from_dict_or_env
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import google.generativeai as genai
@@ -43,56 +54,15 @@ def _truncate_at_stop_tokens(
             text = text[:stop_token_idx]
     return text
 
-
-def _response_to_result(
-    response: genai.types.ChatResponse,
-    stop: Optional[List[str]],
-) -> ChatResult:
-    """Converts a PaLM API response into a LangChain ChatResult."""
-    if not response.candidates:
-        raise ChatGooglePalmError("ChatResponse must have at least one candidate.")
-
-    generations: List[ChatGeneration] = []
-    for candidate in response.candidates:
-        author = candidate.get("author")
-        if author is None:
-            raise ChatGooglePalmError(f"ChatResponse must have an author: {candidate}")
-
-        content = _truncate_at_stop_tokens(candidate.get("content", ""), stop)
-        if content is None:
-            raise ChatGooglePalmError(f"ChatResponse must have a content: {candidate}")
-
-        if author == "ai":
-            generations.append(
-                ChatGeneration(text=content, message=AIMessage(content=content))
-            )
-        elif author == "human":
-            generations.append(
-                ChatGeneration(
-                    text=content,
-                    message=HumanMessage(content=content),
-                )
-            )
-        else:
-            generations.append(
-                ChatGeneration(
-                    text=content,
-                    message=ChatMessage(role=author, content=content),
-                )
-            )
-
-    return ChatResult(generations=generations)
-
-
 def _messages_to_prompt_dict(
     input_messages: List[BaseMessage],
-) -> genai.types.MessagePromptDict:
-    """Converts a list of LangChain messages into a PaLM API MessagePrompt structure."""
-    import google.generativeai as genai
-
+) -> dict:
+    """Converts a list of LangChain messages into a PaLM API-compatible structure."""
+    from vertexai.preview.language_models import InputOutputTextPair
     context: str = ""
-    examples: List[genai.types.MessageDict] = []
-    messages: List[genai.types.MessageDict] = []
+    examples: List[dict] = []
+    history: List[tuple] = []
+    prompt: str = ""
 
     remaining = list(enumerate(input_messages))
 
@@ -110,16 +80,7 @@ def _messages_to_prompt_dict(
                 )
             _, next_input_message = remaining.pop(0)
             if isinstance(next_input_message, AIMessage) and next_input_message.example:
-                examples.extend(
-                    [
-                        genai.types.MessageDict(
-                            author="human", content=input_message.content
-                        ),
-                        genai.types.MessageDict(
-                            author="ai", content=next_input_message.content
-                        ),
-                    ]
-                )
+                examples.append(InputOutputTextPair(input_message.content, next_input_message.content))
             else:
                 raise ChatGooglePalmError(
                     "Human example message must be immediately followed by an "
@@ -130,31 +91,26 @@ def _messages_to_prompt_dict(
                 "AI example message must be immediately preceded by a Human "
                 "example message."
             )
-        elif isinstance(input_message, AIMessage):
-            messages.append(
-                genai.types.MessageDict(author="ai", content=input_message.content)
-            )
         elif isinstance(input_message, HumanMessage):
-            messages.append(
-                genai.types.MessageDict(author="human", content=input_message.content)
-            )
-        elif isinstance(input_message, ChatMessage):
-            messages.append(
-                genai.types.MessageDict(
-                    author=input_message.role, content=input_message.content
+            _, next_input_message = remaining.pop(0)
+            if isinstance(next_input_message, AIMessage):
+                history.append(InputOutputTextPair(input_message.content, next_input_message.content))
+            else:
+                raise ChatGooglePalmError(
+                    "Human historical message must be immediately followed by an "
+                    " AI historical response."
                 )
-            )
-        else:
-            raise ChatGooglePalmError(
-                "Messages without an explicit role not supported by PaLM API."
-            )
+        elif isinstance(input_message, HumanMessage):
+            prompt = input_message.content
+        elif isinstance(input_message, AIMessage) or isinstance(input_message, ChatMessage):
+            raise ChatGooglePalmError("vertexai.preview.langugagemodel.ChatModel.start_chat.message expects a user message as input")
 
-    return genai.types.MessagePromptDict(
-        context=context,
-        examples=examples,
-        messages=messages,
-    )
-
+    return {
+        "context": context,
+        "examples": examples,
+        "history": history,
+        "prompt": prompt
+    }
 
 class ChatVertexAIGooglePalm(BaseChatModel, BaseModel):
     """Wrapper around Google Cloud's Vertex AI PaLM Chat API.
@@ -192,8 +148,6 @@ class ChatVertexAIGooglePalm(BaseChatModel, BaseModel):
     max_output_tokens: Optional[int] = 256
     """Maximum number of tokens to include in a candidate. Must be greater than zero.
        If unset, will default to 256."""
-    location: Optional[str] = "us-central1"
-    """GCP region where your project is located. By default, we use us-central1"""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -206,8 +160,6 @@ class ChatVertexAIGooglePalm(BaseChatModel, BaseModel):
 
         except ImportError:
             raise ImportError("Could not import vertexai python package. Try running `pip install google-cloud-aiplatform>=1.25.0`")
-        
-        values["client"] = ChatModel.from_pretrained(values["model_name"])
     
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")
@@ -217,6 +169,14 @@ class ChatVertexAIGooglePalm(BaseChatModel, BaseModel):
 
         if values["top_k"] is not None and values["top_k"] <= 0:
             raise ValueError("top_k must be positive")
+        
+        model =  ChatModel.from_pretrained(values["model_name"])
+        values["client"] = model.start_chat(
+            max_output_tokens=values["max_output_tokens"],
+            temperature = values["temperature"],
+            top_k = values["top_k"],
+            top_p = values["top_p"]
+            )
 
         return values
 
@@ -226,37 +186,41 @@ class ChatVertexAIGooglePalm(BaseChatModel, BaseModel):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> ChatResult:
-        prompt = _messages_to_prompt_dict(messages)
+        prompt_dict = _messages_to_prompt_dict(messages)
 
-        response: genai.types.ChatResponse = self.client.chat(
-            model=self.model_name,
-            prompt=prompt,
-            temperature=self.temperature,
-            top_p=self.top_p,
-            top_k=self.top_k,
-            candidate_count=self.n,
+        self.client._history = prompt_dict["history"]
+        self.client._context = prompt_dict["context"]
+        self.client._examples = prompt_dict["examples"]
+        prompt = prompt_dict["prompt"]
+
+        completion_with_retry = retry(
+                reraise=True,
+                stop=stop_after_attempt(3),
+                wait=wait_exponential(
+                    multiplier=1,
+                    min=4,
+                    max=10
+                ),
+                before_sleep=before_sleep_log(logger, logging.WARNING),
+            )(self.client.predict)
+        response = completion_with_retry(
+            prompt,
+            self.max_output_tokens,
+            self.temperature,
+            self.top_k,
+            self.top_p
         )
 
-        return _response_to_result(response, stop)
+        return _truncate_at_stop_tokens(response.text, stop)
 
     async def _agenerate(
         self,
-        messages: List[BaseMessage],
+        prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> ChatResult:
-        prompt = _messages_to_prompt_dict(messages)
+        raise NotImplementedError()
 
-        response: genai.types.ChatResponse = await self.client.chat_async(
-            model=self.model_name,
-            prompt=prompt,
-            temperature=self.temperature,
-            top_p=self.top_p,
-            top_k=self.top_k,
-            candidate_count=self.n,
-        )
-
-        return _response_to_result(response, stop)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -266,7 +230,7 @@ class ChatVertexAIGooglePalm(BaseChatModel, BaseModel):
             "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k": self.top_k,
-            "n": self.n,
+            "max_output_tokens": self.max_output_tokens,
         }
 
     @property
