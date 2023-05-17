@@ -147,8 +147,8 @@ Ecosystem
 .. toctree::
    :maxdepth: 2
    :glob:
-   :caption: Integrations
-   :name: integrations
+   :caption: Ecosystem
+   :name: ecosystem
    :hidden:
 
    ./integrations.rst
