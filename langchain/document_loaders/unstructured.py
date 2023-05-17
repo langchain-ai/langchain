@@ -1,6 +1,6 @@
 """Loader that uses unstructured to load files."""
 from abc import ABC, abstractmethod
-from typing import IO, Any, List, Optional
+from typing import IO, Any, List, Optional, Sequence
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -111,7 +111,7 @@ def get_elements_from_api(
     file_path: Optional[str] = None,
     file_paths: Optional[List[str]] = None,
     file: Optional[IO] = None,
-    files: Optional[List[IO]] = None,
+    files: Optional[Sequence[IO]] = None,
     api_url: str = "https://api.unstructured.io/general/v0/general",
     api_key: str = "",
     **unstructured_kwargs: Any,
@@ -222,7 +222,7 @@ class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
         mode: str = "single",
         url: str = "https://api.unstructured.io/general/v0/general",
         api_key: str = "",
-        files: Optional[List[IO]] = None,
+        files: Optional[Sequence[IO]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
