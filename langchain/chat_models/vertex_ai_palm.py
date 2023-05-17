@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     import google.generativeai as genai
 
 
-class ChatGooglePalmError(Exception):
+class ChatGoogleVertexAIPalmError(Exception):
     pass
 
 
@@ -71,23 +71,23 @@ def _messages_to_prompt_dict(
 
         if isinstance(input_message, SystemMessage):
             if index != 0:
-                raise ChatGooglePalmError("System message must be first input message.")
+                raise ChatGoogleVertexAIPalmError("System message must be first input message.")
             context = input_message.content
         elif isinstance(input_message, HumanMessage) and input_message.example:
-            if messages:
-                raise ChatGooglePalmError(
+            if prompt:
+                raise ChatGoogleVertexAIPalmError(
                     "Message examples must come before other messages."
                 )
             _, next_input_message = remaining.pop(0)
             if isinstance(next_input_message, AIMessage) and next_input_message.example:
                 examples.append(InputOutputTextPair(input_message.content, next_input_message.content))
             else:
-                raise ChatGooglePalmError(
+                raise ChatGoogleVertexAIPalmError(
                     "Human example message must be immediately followed by an "
                     " AI example response."
                 )
         elif isinstance(input_message, AIMessage) and input_message.example:
-            raise ChatGooglePalmError(
+            raise ChatGoogleVertexAIPalmError(
                 "AI example message must be immediately preceded by a Human "
                 "example message."
             )
@@ -96,14 +96,14 @@ def _messages_to_prompt_dict(
             if isinstance(next_input_message, AIMessage):
                 history.append(InputOutputTextPair(input_message.content, next_input_message.content))
             else:
-                raise ChatGooglePalmError(
+                raise ChatGoogleVertexAIPalmError(
                     "Human historical message must be immediately followed by an "
                     " AI historical response."
                 )
         elif isinstance(input_message, HumanMessage):
             prompt = input_message.content
         elif isinstance(input_message, AIMessage) or isinstance(input_message, ChatMessage):
-            raise ChatGooglePalmError("vertexai.preview.langugagemodel.ChatModel.start_chat.message expects a user message as input")
+            raise ChatGoogleVertexAIPalmError("vertexai.preview.langugagemodel.ChatModel.start_chat.message expects a user message as input")
 
     return {
         "context": context,
