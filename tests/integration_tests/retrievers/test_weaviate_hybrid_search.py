@@ -104,7 +104,6 @@ class TestWeaviateHybridSearchRetriever:
             attributes=["page"],
         )
         for i, text in enumerate(texts):
-            # hoge
             retriever.add_documents(
                 [Document(page_content=text, metadata=metadatas[i])], uuids=[uuids[i]]
             )
