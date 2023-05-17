@@ -2,7 +2,7 @@
 
 This module contains some logic to help assemble more sophisticated parsers.
 """
-from typing import Iterator, Mapping, Optional
+from typing import Iterator, Mapping, Optional, Any
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders.schema import Blob
@@ -34,6 +34,7 @@ class MimeTypeBasedParser(BaseBlobParser):
     def __init__(
         self,
         handlers: Mapping[str, BaseBlobParser],
+        *,
         fallback_parser: Optional[BaseBlobParser] = None,
     ) -> None:
         """Define a parser that uses mime-types to determine how to parse a blob.
