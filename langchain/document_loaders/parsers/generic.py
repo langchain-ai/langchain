@@ -2,7 +2,7 @@
 
 This module contains some logic to help assemble more sophisticated parsers.
 """
-from typing import Iterator, Mapping, Optional, Any
+from typing import Iterator, Mapping, Optional
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders.schema import Blob

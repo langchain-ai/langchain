@@ -86,5 +86,3 @@ class BaseBlobParser(ABC):
             List of documents
         """
         return list(self.lazy_parse(blob))
-
-

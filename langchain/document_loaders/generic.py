@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterator, Union, Optional, Sequence, List
+from typing import Iterator, List, Optional, Sequence, Union
 
-from langchain.document_loaders.base import BaseLoader, BaseBlobParser
-from langchain.document_loaders.blob_loaders import FileSystemBlobLoader, BlobLoader
+from langchain.document_loaders.base import BaseBlobParser, BaseLoader
+from langchain.document_loaders.blob_loaders import BlobLoader, FileSystemBlobLoader
 from langchain.document_loaders.parsers.registry import get_parser
 from langchain.schema import Document
 from langchain.text_splitter import TextSplitter
@@ -24,7 +24,6 @@ class GenericLoader(BaseLoader):
 
         from langchain.document_loaders import GenericLoader
         from langchain.document_loaders.blob_loaders import FileSystemBlobLoader
-        from langchain.document_loaders.parsers import BaseBlobParser
 
         loader = GenericLoader.from_filesystem(
             path="path/to/directory",
@@ -36,18 +35,31 @@ class GenericLoader(BaseLoader):
         docs = loader.lazy_load()
         next(docs)
 
-        Example instantiations for FileSystemBlobLoader:
+        Example instantiations to change which files are loaded:
 
         ... code-block:: python
 
             # Recursively load all text files in a directory.
-            loader = GenericLoader.from_filesystem("/path/to/directory", glob="**/*.txt")
+            loader = GenericLoader.from_filesystem("/path/to/dir", glob="**/*.txt")
 
             # Recursively load all non-hidden files in a directory.
-            loader = GenericLoader.from_filesystem("/path/to/directory", glob="**/[!.]*")
+            loader = GenericLoader.from_filesystem("/path/to/dir", glob="**/[!.]*")
 
             # Load all files in a directory without recursion.
-            loader = GenericLoader.from_filesystem("/path/to/directory", glob="*")
+            loader = GenericLoader.from_filesystem("/path/to/dir", glob="*")
+
+        Example instantiations to change which parser is used:
+
+        ... code-block:: python
+
+            from langchain.document_loaders.parsers.pdf import PyPDFParser
+
+            # Recursively load all text files in a directory.
+            loader = GenericLoader.from_filesystem(
+                "/path/to/dir",
+                glob="**/*.pdf",
+                parser=PyPDFParser()
+            )
     """
 
     def __init__(
@@ -67,7 +79,7 @@ class GenericLoader(BaseLoader):
     def lazy_load(
         self,
     ) -> Iterator[Document]:
-        """Load documents lazily."""
+        """Load documents lazily. Use this when working at a large scale."""
         for blob in self.blob_loader.yield_blobs():
             yield from self.blob_parser.lazy_parse(blob)
 
