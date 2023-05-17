@@ -29,8 +29,8 @@ class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[BaseMemory] = None
-    callbacks: Callbacks = None
-    callback_manager: Optional[BaseCallbackManager] = None
+    callbacks: Callbacks = Field(default=None, exclude=True)
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     verbose: bool = Field(
         default_factory=_get_verbosity
     )  # Whether to print the response text

@@ -190,8 +190,9 @@ class Chroma(VectorStore):
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
         Args:
-            embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            embedding (str): Embedding to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
             List of Documents most similar to the query vector.
         """
@@ -312,9 +313,17 @@ class Chroma(VectorStore):
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
 
-    def get(self) -> Chroma:
-        """Gets the collection"""
-        return self._collection.get()
+    def get(self, include: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Gets the collection.
+
+        Args:
+            include (Optional[List[str]]): List of fields to include from db.
+                Defaults to None.
+        """
+        if include is not None:
+            return self._collection.get(include=include)
+        else:
+            return self._collection.get()
 
     def persist(self) -> None:
         """Persist the collection.
