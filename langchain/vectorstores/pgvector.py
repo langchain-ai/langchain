@@ -291,8 +291,15 @@ class PGVector(VectorStore):
         if filter is not None:
             filter_clauses = []
             for key, value in filter.items():
-                filter_by_metadata = EmbeddingStore.cmetadata[key].astext == str(value)
-                filter_clauses.append(filter_by_metadata)
+                IN = "IN"
+                if isinstance(value, str):
+                    filter_by_metadata = EmbeddingStore.cmetadata[
+                        key].astext == str(value)
+                    filter_clauses.append(filter_by_metadata)
+                elif isinstance(value, dict) and IN in value:
+                    filter_by_metadata = EmbeddingStore.cmetadata[
+                        key].astext.in_(value[IN])
+                    filter_clauses.append(filter_by_metadata)
 
             filter_by = sqlalchemy.and_(filter_by, *filter_clauses)
 
