@@ -24,6 +24,7 @@ from uuid import UUID
 import requests
 from pydantic import BaseSettings, Field, root_validator
 from requests import Response
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.tracers.langchain import LangChainTracer
@@ -40,7 +41,6 @@ from langchain.client.models import (
 from langchain.llms.base import BaseLLM
 from langchain.schema import ChatResult, LLMResult, messages_from_dict
 from langchain.utils import raise_for_status_with_text, xor_args
-from tenacity import retry, stop_after_attempt, wait_fixed
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -146,7 +146,7 @@ class LangChainPlusClient(BaseSettings):
         return headers
 
     @property
-    def query_params(self) -> Dict[str, str]:
+    def query_params(self) -> Dict[str, Any]:
         """Get the headers for the API request."""
         return {"tenant_id": self.tenant_id}
 
