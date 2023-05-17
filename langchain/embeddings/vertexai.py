@@ -23,10 +23,10 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embeds search docs.
+        """Embed a list of strings.
 
         Args:
-            texts: List[str] The list of texts to embed.
+            texts: List[str] The list of strings to embed.
 
         Returns:
             List of embeddings, one for each text.
@@ -35,7 +35,7 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         return [el.values for el in embeddings]
 
     def embed_query(self, text: str) -> List[float]:
-        """Embeds query text.
+        """Embed a text.
 
         Args:
             text: The text to embed.

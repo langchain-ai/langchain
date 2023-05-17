@@ -8,16 +8,16 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utilities.vertexai import (
     init_vertexai,
-    is_tuned_model,
     raise_vertex_import_error,
 )
 
 if TYPE_CHECKING:
     from google.auth.credentials import Credentials
+    from vertexai.language_models._language_models import _LanguageModel
 
 
 class _VertexAICommon(BaseModel):
-    client: Any = None  #: :meta private:
+    client: "_LanguageModel" = None  #: :meta private:
     model_name: str
     "Model name to use."
     temperature: float = 0.0
@@ -40,7 +40,6 @@ class _VertexAICommon(BaseModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Vertex AI API."""
         base_params = {
             "temperature": self.temperature,
             "max_output_tokens": self.max_output_tokens,
@@ -60,7 +59,6 @@ class _VertexAICommon(BaseModel):
 
     @property
     def _llm_type(self) -> str:
-        """Return type of llm."""
         return "vertexai"
 
     @classmethod
@@ -75,6 +73,8 @@ class VertexAI(_VertexAICommon, LLM):
     """Wrapper around Google Vertex AI large language models."""
 
     model_name: str = "text-bison"
+    is_tuned_model: bool = False
+    "Whether to use a tuned or a base model."
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -84,7 +84,7 @@ class VertexAI(_VertexAICommon, LLM):
             from vertexai.preview.language_models import TextGenerationModel
         except ImportError:
             raise_vertex_import_error()
-        is_tuned = is_tuned_model(values["model_name"])
+        is_tuned = values["is_tuned_model"]
         if is_tuned:
             values["client"] = TextGenerationModel.get_tuned_model(values["model_name"])
         else:
@@ -97,7 +97,8 @@ class VertexAI(_VertexAICommon, LLM):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
-        """Call out to Vertex AI's create endpoint.
+        """Call Vertex model to get predictions based on the prompt.
+
         Args:
             prompt: The prompt to pass into the model.
             stop: A list of stop words (optional).
