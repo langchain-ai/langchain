@@ -108,7 +108,7 @@ class RunBase(BaseModel):
     extra: dict
     error: Optional[str]
     execution_order: int
-    child_execution_order: int
+    child_execution_order: Optional[int]
     serialized: dict
     inputs: dict
     outputs: Optional[dict]
