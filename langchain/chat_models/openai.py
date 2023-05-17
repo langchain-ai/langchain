@@ -143,12 +143,7 @@ class ChatOpenAI(BaseChatModel):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = set()
-        for field in cls.__fields__.values():
-            all_required_field_names.add(field.name)
-            if field.has_alias:
-                all_required_field_names.add(field.alias)
-
+        all_required_field_names = cls.all_required_field_names()
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
@@ -161,8 +156,7 @@ class ChatOpenAI(BaseChatModel):
                 )
                 extra[field_name] = values.pop(field_name)
 
-        disallowed_model_kwargs = all_required_field_names
-        invalid_model_kwargs = disallowed_model_kwargs.intersection(extra.keys())
+        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
         if invalid_model_kwargs:
             raise ValueError(
                 f"Parameters {invalid_model_kwargs} should be specified explicitly. "
