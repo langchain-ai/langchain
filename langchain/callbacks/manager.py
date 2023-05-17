@@ -86,7 +86,7 @@ def tracing_enabled(
 @contextmanager
 def wandb_tracing_enabled(
     session_name: str = "default",
-) -> Generator[TracerSession, None, None]:
+) -> Generator[None, None, None]:
     """Get WandbTracer in a context manager."""
     cb = WandbTracer()
     wandb_tracing_callback_var.set(cb)
@@ -903,7 +903,7 @@ def _configure(
         if wandb_tracing_enabled_ and not any(
             isinstance(handler, WandbTracer) for handler in callback_manager.handlers
         ):
-            if tracer:
+            if wandb_tracer:
                 callback_manager.add_handler(wandb_tracer, True)
             else:
                 handler = WandbTracer()

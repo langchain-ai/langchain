@@ -139,7 +139,7 @@ def _convert_chain_run_to_wb_span(run: "Run") -> "trace_tree.Span":
     ]
     base_span.span_kind = (
         trace_tree.SpanKind.AGENT
-        if "agent" in run.serialized.get("name").lower()
+        if "agent" in run.serialized.get("name", "").lower()
         else trace_tree.SpanKind.CHAIN
     )
 
@@ -148,8 +148,6 @@ def _convert_chain_run_to_wb_span(run: "Run") -> "trace_tree.Span":
 
 def _convert_tool_run_to_wb_span(run: "Run") -> "trace_tree.Span":
     base_span = _convert_run_to_wb_span(run)
-
-    base_span.attributes["input"] = run.inputs["input"]
     base_span.results = [trace_tree.Result(inputs=run.inputs, outputs=run.outputs)]
     base_span.child_spans = [
         _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
@@ -231,22 +229,6 @@ class WandbTracer(BaseTracer):
     _run: Optional["WBRun"] = None
     _run_args: Optional[WandbRunArgs] = None
 
-    @classmethod
-    def init(
-        cls,
-        run_args: Optional[WandbRunArgs] = None,
-        include_stdout: bool = True,
-        additional_handlers: Optional[List["BaseCallbackHandler"]] = None,
-    ) -> None:
-        """Method provided for backwards compatibility. Please directly construct `WandbTracer` instead."""
-        message = """Global autologging is not currently supported for the LangChain integration.
-Please directly construct a `WandbTracer` and add it to the list of callbacks. For example:
-
-LLMChain(llm, callbacks=[WandbTracer()])
-# end of notebook / script:
-WandbTracer.finish()"""
-        wandb.termlog(message)
-
     def __init__(self, run_args: Optional[WandbRunArgs] = None, **kwargs: Any) -> None:
         """Initializes the WandbTracer.
 
@@ -295,7 +277,7 @@ WandbTracer.finish()"""
         )
         wandb.run.log({"langchain_trace": model_trace})
 
-    def _ensure_run(self, should_print_url=False) -> None:
+    def _ensure_run(self, should_print_url: bool = False) -> None:
         """Ensures an active W&B run exists.
 
         If not, will start a new run with the provided run_args.
