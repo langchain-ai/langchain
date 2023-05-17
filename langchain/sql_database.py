@@ -165,7 +165,7 @@ class SQLDatabase:
         if warehouse_id:
             http_path = f"/sql/1.0/warehouses/{warehouse_id}"
         else:
-            http_path = f"sql/protocolv1/o/0/{cluster_id}"
+            http_path = f"/sql/protocolv1/o/0/{cluster_id}"
 
         uri = (
             f"databricks://token:{api_token}@{host}?"
