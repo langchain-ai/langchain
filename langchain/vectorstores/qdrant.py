@@ -197,6 +197,7 @@ class Qdrant(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[MetadataFilter] = None,
+        score_threshold: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
@@ -205,15 +206,16 @@ class Qdrant(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
+            score_threshold: Use to filter out results with a low similarity score. Defaults to None.
 
         Returns:
             List of Documents most similar to the query.
         """
-        results = self.similarity_search_with_score(query, k, filter)
+        results = self.similarity_search_with_score(query, k, filter, score_threshold)
         return list(map(itemgetter(0), results))
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, filter: Optional[MetadataFilter] = None
+        self, query: str, k: int = 4, filter: Optional[MetadataFilter] = None, score_threshold: Optional[float] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -221,6 +223,7 @@ class Qdrant(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
+            score_threshold: Use to filter out results with a low similarity score. Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each.
@@ -232,6 +235,7 @@ class Qdrant(VectorStore):
             query_filter=self._qdrant_filter_from_dict(filter),
             with_payload=True,
             limit=k,
+            score_threshold=score_threshold
         )
         return [
             (
