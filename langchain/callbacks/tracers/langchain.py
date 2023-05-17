@@ -155,6 +155,6 @@ class LangChainTracer(BaseTracer):
         """Persist a run."""
         run.reference_example_id = self.example_id
         # TODO: Post first then patch
-        task = asyncio.get_event_loop().create_task(self._persist_run_nested(run))
-        self._persist_tasks.add(task)
-        task.add_done_callback(self._persist_tasks.discard)
+        task = asyncio.create_task(self._persist_run_nested(run))
+        # self._persist_tasks.add(task)
+        # task.add_done_callback(self._persist_tasks.discard)
