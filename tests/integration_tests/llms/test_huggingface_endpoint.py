@@ -33,6 +33,16 @@ def test_huggingface_endpoint_text2text_generation() -> None:
     assert output == "Albany"
 
 
+@unittest.skip(
+    "This test requires an inference endpoint. Tested with Hugging Face endpoints"
+)
+def test_huggingface_endpoint_summarization() -> None:
+    """Test valid call to HuggingFace summarization model."""
+    llm = HuggingFaceEndpoint(endpoint_url="", task="summarization")
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+
 def test_huggingface_endpoint_call_error() -> None:
     """Test valid call to HuggingFace that errors."""
     llm = HuggingFaceEndpoint(model_kwargs={"max_new_tokens": -1})

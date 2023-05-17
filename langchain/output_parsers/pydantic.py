@@ -22,7 +22,7 @@ class PydanticOutputParser(BaseOutputParser[T]):
             json_str = ""
             if match:
                 json_str = match.group()
-            json_object = json.loads(json_str)
+            json_object = json.loads(json_str, strict=False)
             return self.pydantic_object.parse_obj(json_object)
 
         except (json.JSONDecodeError, ValidationError) as e:
