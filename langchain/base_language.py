@@ -61,6 +61,16 @@ class BaseLanguageModel(BaseModel, ABC):
     ) -> BaseMessage:
         """Predict message from messages."""
 
+    @abstractmethod
+    async def apredict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+        """Predict text from text."""
+
+    @abstractmethod
+    async def apredict_messages(
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
+    ) -> BaseMessage:
+        """Predict message from messages."""
+
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text."""
         return _get_num_tokens_default_method(text)
