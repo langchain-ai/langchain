@@ -23,12 +23,13 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
     summarizes, embeds, indexes, and enriches conversational AI chat
     histories, and exposes them via simple, low-latency APIs.
 
-    For server installation instructions, see: https://github.com/getzep/zep
+    For server installation instructions and more, see: https://getzep.github.io/
 
     This class is a thin wrapper around the zep-python package. Additional
     Zep functionality is exposed via the `zep_summary` and `zep_messages`
     properties.
 
+    For more information on the zep-python package, see:
     https://github.com/getzep/zep-python
     """
 
@@ -91,6 +92,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
     def _get_memory(self) -> Optional[Memory]:
         """Retrieve memory from Zep"""
         from zep_python import NotFoundError
+
         try:
             zep_memory: Memory = self.zep_client.get_memory(self.session_id)
         except NotFoundError:
@@ -123,7 +125,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
     def search(self, query: str, limit: Optional[int] = None) -> List[SearchResult]:
         """Search Zep memory for messages matching the query"""
         from zep_python import SearchPayload
-        
+
         payload: SearchPayload = SearchPayload(text=query)
 
         return self.zep_client.search_memory(self.session_id, payload, limit=limit)
