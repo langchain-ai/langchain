@@ -88,6 +88,7 @@ class Weaviate(VectorStore):
         relevance_score_fn: Optional[
             Callable[[float], float]
         ] = _default_score_normalizer,
+        by_text: bool = True,
     ):
         """Initialize with Weaviate client."""
         try:
@@ -107,6 +108,7 @@ class Weaviate(VectorStore):
         self._text_key = text_key
         self._query_attrs = [self._text_key]
         self._relevance_score_fn = relevance_score_fn
+        self._by_text = by_text
         if attributes is not None:
             self._query_attrs.extend(attributes)
 
@@ -159,6 +161,29 @@ class Weaviate(VectorStore):
         return ids
 
     def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+        if self._by_text:
+            return self.similarity_search_by_text(query, k, **kwargs)
+        else:
+            if self._embedding is None:
+                raise ValueError(
+                    "_embedding cannot be None for similarity_search when "
+                    "_by_text=False"
+                )
+            embedding = self._embedding.embed_query(query)
+            return self.similarity_search_by_vector(embedding, k, **kwargs)
+
+    def similarity_search_by_text(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query.
@@ -291,6 +316,10 @@ class Weaviate(VectorStore):
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
+        if self._embedding is None:
+            raise ValueError(
+                "_embedding cannot be None for similarity_search_with_score"
+            )
         content: Dict[str, Any] = {"concepts": [query]}
         if kwargs.get("search_distance"):
             content["certainty"] = kwargs.get("search_distance")
@@ -305,10 +334,6 @@ class Weaviate(VectorStore):
             raise ValueError(f"Error during query: {result['errors']}")
 
         docs_and_scores = []
-        if self._embedding is None:
-            raise ValueError(
-                "_embedding cannot be None for similarity_search_with_score"
-            )
         for res in result["data"]["Get"][self._index_name]:
             text = res.pop(self._text_key)
             score = np.dot(
@@ -332,7 +357,7 @@ class Weaviate(VectorStore):
                 "relevance_score_fn must be provided to"
                 " Weaviate constructor to normalize scores"
             )
-        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        docs_and_scores = self.similarity_search_with_score(query, k=k, **kwargs)
         return [
             (doc, self._relevance_score_fn(score)) for doc, score in docs_and_scores
         ]
@@ -413,4 +438,6 @@ class Weaviate(VectorStore):
 
             batch.flush()
 
-        return cls(client, index_name, text_key, embedding, attributes)
+        return cls(
+            client, index_name, text_key, embedding=embedding, attributes=attributes
+        )
