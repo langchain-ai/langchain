@@ -137,7 +137,7 @@ Reference Docs
    ./reference.rst
 
 
-Integrations
+Ecosystem
 ------------
 
 | Guides for how other products integrated with LangChain.
