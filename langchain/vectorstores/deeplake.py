@@ -15,53 +15,6 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
 
-distance_metric_map = {
-    "l2": lambda a, b: np.linalg.norm(a - b, axis=1, ord=2),
-    "l1": lambda a, b: np.linalg.norm(a - b, axis=1, ord=1),
-    "max": lambda a, b: np.linalg.norm(a - b, axis=1, ord=np.inf),
-    "cos": lambda a, b: np.dot(a, b.T)
-    / (np.linalg.norm(a) * np.linalg.norm(b, axis=1)),
-    "dot": lambda a, b: np.dot(a, b.T),
-}
-
-
-def vector_search(
-    query_embedding: np.ndarray,
-    data_vectors: np.ndarray,
-    distance_metric: str = "L2",
-    k: Optional[int] = 4,
-) -> Tuple[List, List]:
-    """Naive search for nearest neighbors
-
-    args:
-        query_embedding: np.ndarray
-        data_vectors: np.ndarray
-        k (int): number of nearest neighbors
-        distance_metric: distance function 'L2' for Euclidean, 'L1' for Nuclear, 'Max'
-            l-infinity distnace, 'cos' for cosine similarity, 'dot' for dot product
-
-    returns:
-        nearest_indices: List, indices of nearest neighbors
-    """
-    if data_vectors.shape[0] == 0:
-        return [], []
-
-    # Calculate the distance between the query_vector and all data_vectors
-    distances = distance_metric_map[distance_metric](query_embedding, data_vectors)
-    nearest_indices = np.argsort(distances)
-
-    nearest_indices = (
-        nearest_indices[::-1][:k] if distance_metric in ["cos"] else nearest_indices[:k]
-    )
-
-    return nearest_indices.tolist(), distances[nearest_indices].tolist()
-
-
-def dp_filter(x: dict, filter: Dict[str, str]) -> bool:
-    """Filter helper function for Deep Lake"""
-    metadata = x["metadata"].data()["value"]
-    return all(k in metadata and v == metadata[k] for k, v in filter.items())
-
 
 class DeepLake(VectorStore):
     """Wrapper around Deep Lake, a data lake for deep learning applications.
@@ -100,80 +53,29 @@ class DeepLake(VectorStore):
         read_only: Optional[bool] = False,
         ingestion_batch_size: int = 1024,
         num_workers: int = 0,
+        verbose: Optional[bool] = False,
+        exec_option: str = "python",
         **kwargs: Any,
     ) -> None:
         """Initialize with Deep Lake client."""
-        self.ingestion_batch_size = ingestion_batch_size
-        self.num_workers = num_workers
-
         try:
-            import deeplake
-            from deeplake.constants import MB
+            from deeplake.core.vectorstore import DeepLakeVectorStore
         except ImportError:
             raise ValueError(
                 "Could not import deeplake python package. "
                 "Please install it with `pip install deeplake`."
             )
-        self._deeplake = deeplake
-        self.dataset_path = dataset_path
-        creds_args = {"creds": kwargs["creds"]} if "creds" in kwargs else {}
-
-        if (
-            deeplake.exists(dataset_path, token=token, **creds_args)
-            and "overwrite" not in kwargs
-        ):
-            self.ds = deeplake.load(
-                dataset_path, token=token, read_only=read_only, **kwargs
-            )
-            logger.warning(
-                f"Deep Lake Dataset in {dataset_path} already exists, "
-                f"loading from the storage"
-            )
-            self.ds.summary()
-        else:
-            if "overwrite" in kwargs:
-                del kwargs["overwrite"]
-
-            self.ds = deeplake.empty(
-                dataset_path, token=token, overwrite=True, **kwargs
-            )
-
-            with self.ds:
-                self.ds.create_tensor(
-                    "text",
-                    htype="text",
-                    create_id_tensor=False,
-                    create_sample_info_tensor=False,
-                    create_shape_tensor=False,
-                    chunk_compression="lz4",
-                )
-                self.ds.create_tensor(
-                    "metadata",
-                    htype="json",
-                    create_id_tensor=False,
-                    create_sample_info_tensor=False,
-                    create_shape_tensor=False,
-                    chunk_compression="lz4",
-                )
-                self.ds.create_tensor(
-                    "embedding",
-                    htype="generic",
-                    dtype=np.float32,
-                    create_id_tensor=False,
-                    create_sample_info_tensor=False,
-                    max_chunk_size=64 * MB,
-                    create_shape_tensor=True,
-                )
-                self.ds.create_tensor(
-                    "ids",
-                    htype="text",
-                    create_id_tensor=False,
-                    create_sample_info_tensor=False,
-                    create_shape_tensor=False,
-                    chunk_compression="lz4",
-                )
-
-        self._embedding_function = embedding_function
+        self.deeplake_vector_store = DeepLakeVectorStore(
+            dataset_path=dataset_path,
+            token=token,
+            read_only=read_only,
+            ingestion_batch_size=ingestion_batch_size,
+            num_workers=num_workers,
+            verbose=verbose,
+            embedding_function=embedding_function,
+            exec_option=exec_option,
+        )
+        self._embedding_function = embedding_function.from_documents
 
     def add_texts(
         self,
@@ -192,55 +94,30 @@ class DeepLake(VectorStore):
         Returns:
             List[str]: List of IDs of the added texts.
         """
+        from deeplake.constants import MAX_DATASET_LENGTH_FOR_CACHING
+        from deeplake.util.exceptions import FailedIngestionError
 
-        if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
-
-        text_list = list(texts)
-
-        if metadatas is None:
-            metadatas = [{}] * len(text_list)
-
-        elements = list(zip(text_list, metadatas, ids))
-
-        @self._deeplake.compute
-        def ingest(sample_in: list, sample_out: list) -> None:
-            text_list = [s[0] for s in sample_in]
-
-            embeds: Sequence[Optional[np.ndarray]] = []
-
-            if self._embedding_function is not None:
-                embeddings = self._embedding_function.embed_documents(text_list)
-                embeds = [np.array(e, dtype=np.float32) for e in embeddings]
-            else:
-                embeds = [None] * len(text_list)
-
-            for s, e in zip(sample_in, embeds):
-                sample_out.append(
-                    {
-                        "text": s[0],
-                        "metadata": s[1],
-                        "ids": s[2],
-                        "embedding": e,
-                    }
+        embeddings = None
+        if len(self.deeplake_vector_store) < MAX_DATASET_LENGTH_FOR_CACHING:
+            try:
+                embeddings = self._embedding_function.from_documents(texts)
+            except Exception:
+                raise Exception(
+                    "Specified embedding function raised an exception. "
+                    "Try again later or use another embedding_function."
                 )
+            self.deeplake_vector_store.embedding_function = None
 
-        batch_size = min(self.ingestion_batch_size, len(elements))
-        if batch_size == 0:
-            return []
+        try:
+            ids = self.deeplake_vector_store.add(
+                texts=texts,
+                metadatas=metadatas,
+                ids=ids,
+                embeddings=embeddings,
+            )
+        except FailedIngestionError as e:
+            raise Exception(f"Data ingestion failed. {str(e)}")
 
-        batched = [
-            elements[i : i + batch_size] for i in range(0, len(elements), batch_size)
-        ]
-
-        ingest().eval(
-            batched,
-            self.ds,
-            num_workers=min(self.num_workers, len(batched) // max(self.num_workers, 1)),
-            **kwargs,
-        )
-        self.ds.commit(allow_empty=True)
-        self.ds.summary()
         return ids
 
     def search(
@@ -253,6 +130,7 @@ class DeepLake(VectorStore):
         fetch_k: Optional[int] = 20,
         filter: Optional[Any[Dict[str, str], Callable, str]] = None,
         return_score: Optional[bool] = False,
+        exec_option: Optional[str] = None,
         **kwargs: Any,
     ) -> Any[List[Document], List[Tuple[Document, float]]]:
         """Return docs most similar to query.
@@ -278,48 +156,33 @@ class DeepLake(VectorStore):
             List of Documents selected by the specified distance metric,
             if return_score True, return a tuple of (Document, score)
         """
-        view = self.ds
+        view, indices, scores = self.search(
+            query=query,
+            embedding=embedding,
+            k=fetch_k if use_maximal_marginal_relevance else k,
+            distance_metric=distance_metric,
+            filter=filter,
+            exec_option=exec_option,
+        )
 
-        # attribute based filtering
-        if filter is not None:
-            if isinstance(filter, dict):
-                filter = partial(dp_filter, filter=filter)
+        emb = embedding or self._embedding_function.embed_query(query)  # type: ignore
+        query_emb = np.array(emb, dtype=np.float32)
 
-            view = view.filter(filter)
-            if len(view) == 0:
-                return []
-
-        if self._embedding_function is None:
-            view = view.filter(lambda x: query in x["text"].data()["value"])
-            scores = [1.0] * len(view)
-
-            if use_maximal_marginal_relevance:
-                raise ValueError(
-                    "For MMR search, you must specify an embedding function on"
-                    "creation."
-                )
-
-        else:
-            emb = embedding or self._embedding_function.embed_query(
-                query
-            )  # type: ignore
-            query_emb = np.array(emb, dtype=np.float32)
-            embeddings = view.embedding.numpy(fetch_chunks=True)
-            k_search = fetch_k if use_maximal_marginal_relevance else k
-            indices, scores = vector_search(
-                query_emb,
-                embeddings,
-                k=k_search,
-                distance_metric=distance_metric.lower(),
+        if use_maximal_marginal_relevance:
+            logger.warning(
+                "Using maximal marginal relevance with big datasets is discouraged as it may lead to performance issues."
             )
+            embeddings = view.embedding.numpy()
 
+            lambda_mult = kwargs.get("lambda_mult", 0.5)
+            indices = maximal_marginal_relevance(
+                query_emb,
+                embeddings[indices],
+                k=min(k, len(indices)),
+                lambda_mult=lambda_mult,
+            )
             view = view[indices]
-            if use_maximal_marginal_relevance:
-                indices = maximal_marginal_relevance(
-                    query_emb, embeddings[indices], k=min(k, len(indices))
-                )
-                view = view[indices]
-                scores = [scores[i] for i in indices]
+            scores = [scores[i] for i in indices]
 
         docs = [
             Document(
@@ -507,26 +370,11 @@ class DeepLake(VectorStore):
             delete_all (Optional[bool], optional): Whether to drop the dataset.
                 Defaults to None.
         """
-        if delete_all:
-            self.ds.delete(large_ok=True)
-            return True
-
-        view = None
-        if ids:
-            view = self.ds.filter(lambda x: x["ids"].data()["value"] in ids)
-            ids = list(view.sample_indices)
-
-        if filter:
-            if view is None:
-                view = self.ds
-            view = view.filter(partial(dp_filter, filter=filter))
-            ids = list(view.sample_indices)
-
-        with self.ds:
-            for id in sorted(ids)[::-1]:
-                self.ds.pop(id)
-
-            self.ds.commit(f"deleted {len(ids)} samples", allow_empty=True)
+        self.deeplake_vector_store.delete(
+            ids=ids,
+            filter=filter,
+            delete_all=delete_all,
+        )
 
         return True
 
