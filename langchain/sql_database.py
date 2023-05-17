@@ -124,43 +124,41 @@ class SQLDatabase:
         **kwargs: Any,
     ) -> SQLDatabase:
         """
-        Class method to create an SQLDatabase instance from a Databricks connection. This
-        method requires the 'databricks-sql-connector' package. If not already installed,
-        it can be added using `pip install databricks-sql-connector`.
+        Class method to create an SQLDatabase instance from a Databricks connection.
+        This method requires the 'databricks-sql-connector' package. If not already
+        installed, it can be added using `pip install databricks-sql-connector`.
 
         Args:
             catalog (str): The catalog name in the Databricks database.
             schema (str): The schema name in the catalog.
             host (Optional[str]): The host URL of the Databricks instance. If not
-                                  provided, it will be fetched from the environment
-                                  variable 'DATABRICKS_HOST' or from the current
-                                  Databricks REPL context. Defaults to None.
-            api_token (Optional[str]): The API token for the Databricks instance. If not
-                                       provided, it will be fetched from the environment
-                                       variable 'DATABRICKS_API_TOKEN' or from the current
-                                       Databricks REPL context. Defaults to None.
-            warehouse_id (Optional[str]): The warehouse ID in the Databricks SQL. If
-                                          provided, the method will configure the connection
-                                          to use this warehouse. Cannot be used in
-                                          conjunction with 'cluster_id'. Defaults to None.
-            cluster_id (Optional[str]): The cluster ID in the Databricks Runtime. If
-                                        provided, the method will configure the connection
-                                        to use this cluster. Cannot be used in conjunction
-                                        with 'warehouse_id'. If both 'warehouse_id' and
-                                        'cluster_id' are None, it will use the cluster ID
-                                        from the current Databricks REPL context. Defaults
-                                        to None.
+                provided, it will be fetched from the environment variable
+                'DATABRICKS_HOST' or from the current Databricks REPL context.
+                Defaults to None.
+            api_token (Optional[str]): The API token for the Databricks instance.
+                If not provided, it will be fetched from the environment variable
+                'DATABRICKS_API_TOKEN' or from the current Databricks REPL context.
+                Defaults to None.
+            warehouse_id (Optional[str]): The warehouse ID in the Databricks SQL.
+                If provided, the method will configure the connection to use this
+                warehouse. Cannot be used in conjunction with 'cluster_id'. Defaults
+                to None.
+            cluster_id (Optional[str]): The cluster ID in the Databricks Runtime.
+                If provided, the method will configure the connection to use this
+                cluster. Cannot be used in conjunction with 'warehouse_id'. If both
+                'warehouse_id' and 'cluster_id' are None, it will use the cluster ID
+                from the current Databricks REPL context. Defaults to None.
             **kwargs (Any): Additional keyword arguments for the `from_uri` method.
 
         Returns:
-            SQLDatabase: An instance of SQLDatabase configured with the provided Databricks
-                         connection details.
+            SQLDatabase: An instance of SQLDatabase configured with the provided
+                Databricks connection details.
 
         Raises:
-            ValueError: If the 'databricks-sql-connector' package is not found, or if both
-                        'warehouse_id' and 'cluster_id' are provided, or if neither
-                        'warehouse_id' nor 'cluster_id' are provided and there is no current
-                        Databricks REPL context to get the cluster ID from.
+            ValueError: If the 'databricks-sql-connector' package is not found, or
+                if both 'warehouse_id' and 'cluster_id' are provided, or if neither
+                'warehouse_id' nor 'cluster_id' are provided and there is no current
+                Databricks REPL context to get the cluster ID from.
         """
         try:
             from databricks import sql  # noqa: F401
