@@ -83,12 +83,12 @@ class Weaviate(VectorStore):
         client: Any,
         index_name: str,
         text_key: str,
-        by_text: bool = True,
         embedding: Optional[Embeddings] = None,
         attributes: Optional[List[str]] = None,
         relevance_score_fn: Optional[
             Callable[[float], float]
         ] = _default_score_normalizer,
+        by_text: bool = True,
     ):
         """Initialize with Weaviate client."""
         try:
@@ -106,9 +106,9 @@ class Weaviate(VectorStore):
         self._index_name = index_name
         self._embedding = embedding
         self._text_key = text_key
-        self._by_text = by_text
         self._query_attrs = [self._text_key]
         self._relevance_score_fn = relevance_score_fn
+        self._by_text = by_text
         if attributes is not None:
             self._query_attrs.extend(attributes)
 
@@ -438,4 +438,6 @@ class Weaviate(VectorStore):
 
             batch.flush()
 
-        return cls(client, index_name, text_key, embedding, attributes)
+        return cls(
+            client, index_name, text_key, embedding=embedding, attributes=attributes
+        )
