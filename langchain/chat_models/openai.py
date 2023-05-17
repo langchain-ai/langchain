@@ -3,7 +3,17 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from pydantic import Extra, Field, root_validator
 from tenacity import (
@@ -29,13 +39,14 @@ from langchain.schema import (
     SystemMessage,
 )
 from langchain.utils import get_from_dict_or_env
+
 if TYPE_CHECKING:
     import tiktoken
 
 logger = logging.getLogger(__name__)
 
 
-def _import_tiktoken() -> tiktoken:
+def _import_tiktoken() -> Any:
     try:
         import tiktoken
     except ImportError:
@@ -369,7 +380,7 @@ class ChatOpenAI(BaseChatModel):
         return "openai-chat"
 
     def _get_encoding_model(self) -> Tuple[str, tiktoken.Encoding]:
-        tiktoken = _import_tiktoken()
+        tiktoken_ = _import_tiktoken()
         model = self.model_name
         if model == "gpt-3.5-turbo":
             # gpt-3.5-turbo may change over time.
@@ -381,11 +392,11 @@ class ChatOpenAI(BaseChatModel):
             model = "gpt-4-0314"
         # Returns the number of tokens used by a list of messages.
         try:
-            encoding = tiktoken.encoding_for_model(model)
+            encoding = tiktoken_.encoding_for_model(model)
         except KeyError:
             logger.warning("Warning: model not found. Using cl100k_base encoding.")
             model = "cl100k_base"
-            encoding = tiktoken.get_encoding(model)
+            encoding = tiktoken_.get_encoding(model)
         return model, encoding
 
     def get_token_ids(self, text: str) -> List[int]:
@@ -394,11 +405,7 @@ class ChatOpenAI(BaseChatModel):
         if sys.version_info[1] <= 7:
             return super().get_token_ids(text)
         _, encoding_model = self._get_encoding_model()
-        return encoding_model.encode(
-            text,
-            allowed_special=self.allowed_special,
-            disallowed_special=self.disallowed_special,
-        )
+        return encoding_model.encode(text)
 
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
