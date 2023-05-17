@@ -11,7 +11,7 @@ from langchain.schema import BaseMessage, LLMResult, PromptValue, get_buffer_str
 
 
 def _get_token_ids_default_method(text: str) -> List[int]:
-    """Get the number of tokens present in the text."""
+    """Encode the text into token IDs."""
     # TODO: this method may not be exact.
     # TODO: this method may differ based on model (eg codex).
     try:
