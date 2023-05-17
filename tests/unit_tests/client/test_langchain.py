@@ -72,7 +72,7 @@ def test_headers() -> None:
         LangChainPlusClient, "_get_seeded_tenant_id", new=mock_get_seeded_tenant_id
     ):
         client = LangChainPlusClient(api_url="http://localhost:8000", api_key="123")
-        assert client._headers == {"authorization": "Bearer 123"}
+        assert client._headers == {"x-api-key": "123"}
 
     with mock.patch.object(
         LangChainPlusClient, "_get_seeded_tenant_id", new=mock_get_seeded_tenant_id
