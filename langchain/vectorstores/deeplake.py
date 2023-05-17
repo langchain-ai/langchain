@@ -120,10 +120,12 @@ class DeepLake(VectorStore):
         self.dataset_path = dataset_path
         creds_args = {"creds": kwargs["creds"]} if "creds" in kwargs else {}
 
-        if (
-            deeplake.exists(dataset_path, token=token, **creds_args)
-            and "overwrite" not in kwargs
+        if deeplake.exists(dataset_path, token=token, **creds_args) and not kwargs.get(
+            "overwrite", False
         ):
+            if "overwrite" in kwargs:
+                del kwargs["overwrite"]
+
             self.ds = deeplake.load(
                 dataset_path,
                 token=token,

@@ -26,6 +26,7 @@ from langchain.llms import (
     ForefrontAI,
     GooseAI,
     HuggingFaceHub,
+    HuggingFaceTextGenInference,
     LlamaCpp,
     Modal,
     OpenAI,
@@ -61,6 +62,7 @@ except metadata.PackageNotFoundError:
 del metadata  # optional, avoids polluting the results of dir(__package__)
 
 verbose: bool = False
+debug: bool = False
 llm_cache: Optional[BaseCache] = None
 
 # For backwards compatibility
@@ -114,4 +116,5 @@ __all__ = [
     "QAWithSourcesChain",
     "PALChain",
     "LlamaCpp",
+    "HuggingFaceTextGenInference",
 ]
