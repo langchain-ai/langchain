@@ -331,6 +331,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         elif self.file_paths:
             # local mode (for integration testing, or pre-downloaded XML)
             for path in self.file_paths:
+                path = Path(path)
                 with open(path, "rb") as file:
                     chunks += self._parse_dgml(
                         {
