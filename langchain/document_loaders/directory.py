@@ -30,21 +30,21 @@ class DirectoryLoader(BaseLoader):
     def __init__(
         self,
         path: str,
-        glob: str = "**/[!.]*",
-        silent_errors: bool = False,
-        load_hidden: bool = False,
-        loader_cls: FILE_LOADER_TYPE = UnstructuredFileLoader,
-        loader_kwargs: Union[dict, None] = None,
-        recursive: bool = False,
-        show_progress: bool = False,
-        use_multithreading: bool = False,
-        max_concurrency: int = 4,
+        file_pattern: Optional[set] = None,
+        silent_errors: Optional[bool] = False,
+        load_hidden: Optional[bool] = False,
+        loader_cls: Optional[FILE_LOADER_TYPE] = UnstructuredFileLoader,
+        loader_kwargs: Optional[Union[dict, None]] = None,
+        recursive: Optional[bool] = False,
+        show_progress: Optional[bool] = False,
+        use_multithreading: Optional[bool] = False,
+        max_concurrency: Optional[int] = 4,
     ):
-        """Initialize with path to directory and how to glob over it."""
+        """Initialize with path to directory and how to glob as per file_patterns."""
         if loader_kwargs is None:
             loader_kwargs = {}
         self.path = path
-        self.glob = glob
+        self.file_pattern = file_pattern
         self.load_hidden = load_hidden
         self.loader_cls = loader_cls
         self.loader_kwargs = loader_kwargs
@@ -75,7 +75,34 @@ class DirectoryLoader(BaseLoader):
         """Load documents."""
         p = Path(self.path)
         docs: List[Document] = []
-        items = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
+
+        # Glob specified file pattern(s)
+        if self.file_pattern:
+            # Add "." prefix in case user did not include it
+            self.file_pattern = {
+                pattern if pattern[0] == "." else f".{pattern}"
+                for pattern in self.file_pattern
+            }
+
+            # Recursive glob
+            if self.recursive:
+                items = list(
+                    pattern.resolve()
+                    for pattern in p.rglob("*")
+                    if pattern.suffix in self.file_pattern
+                )
+
+            # Normal glob
+            else:
+                items = list(
+                    pattern.resolve()
+                    for pattern in p.glob("**/*")
+                    if pattern.suffix in self.file_pattern
+                )
+
+        # Else glob all
+        else:
+            items = list(p.rglob("*[!.]*") if self.recursive else p.glob("**/[!.]*"))
 
         pbar = None
         if self.show_progress:
