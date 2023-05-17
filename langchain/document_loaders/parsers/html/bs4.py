@@ -15,9 +15,10 @@ class BS4HTMLParser(BaseBlobParser):
 
     def __init__(
         self,
+        *,
         features: str = "lxml",
-        bs_kwargs: Optional[Mapping[str, Any]] = None,
         get_text_separator: str = "",
+        **kwargs,
     ) -> None:
         """Initialize a bs4 based HTML parser."""
         try:
@@ -28,11 +29,7 @@ class BS4HTMLParser(BaseBlobParser):
                 "`pip install beautifulsoup4`"
             )
 
-        if bs_kwargs and "features" in bs_kwargs:
-            raise ValueError("features cannot be set in bs_kwargs")
-
-        _bs_kwargs = bs_kwargs or {}
-        self.bs_kwargs = {"features": features, **_bs_kwargs}
+        self.bs_kwargs = {"features": features, **kwargs}
         self.get_text_separator = get_text_separator
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
