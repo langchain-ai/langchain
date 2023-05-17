@@ -32,7 +32,7 @@ def test_unstructured_api_file_loader_multiple_files() -> None:
     ]
 
     loader = UnstructuredAPIFileLoader(
-        file_paths=file_paths,
+        file_path=file_paths,
         api_key="FAKE_API_KEY",
         strategy="fast",
         mode="elements",
@@ -70,7 +70,7 @@ def test_unstructured_api_file_loader_io_multiple_files() -> None:
         files = [stack.enter_context(open(file_path, "rb")) for file_path in file_paths]
 
         loader = UnstructuredAPIFileIOLoader(
-            files=files,  # type: ignore
+            file=files,  # type: ignore
             api_key="FAKE_API_KEY",
             strategy="fast",
             mode="elements",

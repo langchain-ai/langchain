@@ -1,6 +1,7 @@
 """Loader that uses unstructured to load files."""
+import collections
 from abc import ABC, abstractmethod
-from typing import IO, Any, List, Optional, Sequence
+from typing import IO, Any, List, Optional, Sequence, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -92,7 +93,10 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load files."""
 
     def __init__(
-        self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
+        self,
+        file_path: Union[str, List[str]],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
         self.file_path = file_path
@@ -108,31 +112,19 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
 
 def get_elements_from_api(
-    file_path: Optional[str] = None,
-    file_paths: Optional[List[str]] = None,
-    file: Optional[IO] = None,
-    files: Optional[Sequence[IO]] = None,
+    file_path: Union[str, List[str], None] = None,
+    file: Union[IO, Sequence[IO], None] = None,
     api_url: str = "https://api.unstructured.io/general/v0/general",
     api_key: str = "",
     **unstructured_kwargs: Any,
 ) -> List:
     """Retrieves a list of elements from the Unstructured API."""
-    if file or file_path:
-        from unstructured.partition.api import partition_via_api
-
-        return partition_via_api(
-            filename=file_path,
-            file=file,
-            api_key=api_key,
-            api_url=api_url,
-            **unstructured_kwargs,
-        )
-    else:
+    if isinstance(file, collections.abc.Sequence) or isinstance(file_path, list):
         from unstructured.partition.api import partition_multiple_via_api
 
         _doc_elements = partition_multiple_via_api(
-            filenames=file_paths,
-            files=files,
+            filenames=file_path,
+            files=file,
             api_key=api_key,
             api_url=api_url,
             **unstructured_kwargs,
@@ -143,6 +135,16 @@ def get_elements_from_api(
             elements.extend(_elements)
 
         return elements
+    else:
+        from unstructured.partition.api import partition_via_api
+
+        return partition_via_api(
+            filename=file_path,
+            file=file,
+            api_key=api_key,
+            api_url=api_url,
+            **unstructured_kwargs,
+        )
 
 
 class UnstructuredAPIFileLoader(UnstructuredFileLoader):
@@ -150,7 +152,7 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
 
     def __init__(
         self,
-        file_path: str = "",
+        file_path: Union[str, List[str]] = "",
         mode: str = "single",
         url: str = "https://api.unstructured.io/general/v0/general",
         api_key: str = "",
@@ -159,35 +161,22 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
     ):
         """Initialize with file path."""
 
-        if not file_path and not file_paths:
-            raise ValueError(
-                "At least one of file_path and file_paths must be specified."
-            )
-
-        if file_path and file_paths:
-            raise ValueError("Only one of file_path and file_paths can be specified.")
-
-        if file_path:
+        if isinstance(file_path, str):
             validate_unstructured_version(min_unstructured_version="0.6.2")
         else:
             validate_unstructured_version(min_unstructured_version="0.6.3")
 
         self.url = url
         self.api_key = api_key
-        self.file_paths = file_paths
 
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
-        if self.file_path:
-            return {"source": self.file_path}
-        else:
-            return {"sources": self.file_paths}
+        return {"source": self.file_path}
 
     def _get_elements(self) -> List:
         return get_elements_from_api(
             file_path=self.file_path,
-            file_paths=self.file_paths,
             api_key=self.api_key,
             api_url=self.url,
             **self.unstructured_kwargs,
@@ -198,7 +187,10 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load file IO objects."""
 
     def __init__(
-        self, file: Optional[IO], mode: str = "single", **unstructured_kwargs: Any
+        self,
+        file: Union[IO, Sequence[IO]],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
         self.file = file
@@ -218,36 +210,27 @@ class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
 
     def __init__(
         self,
-        file: Optional[IO] = None,
+        file: Union[IO, Sequence[IO]],
         mode: str = "single",
         url: str = "https://api.unstructured.io/general/v0/general",
         api_key: str = "",
-        files: Optional[Sequence[IO]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
 
-        if not file and not files:
-            raise ValueError("At least one of file and files must be specified.")
-
-        if file and files:
-            raise ValueError("Only one of file and files can be specified.")
-
+        if isinstance(file, collections.abc.Sequence):
+            validate_unstructured_version(min_unstructured_version="0.6.3")
         if file:
             validate_unstructured_version(min_unstructured_version="0.6.2")
-        else:
-            validate_unstructured_version(min_unstructured_version="0.6.3")
 
         self.url = url
         self.api_key = api_key
-        self.files = files
 
         super().__init__(file=file, mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
         return get_elements_from_api(
             file=self.file,
-            files=self.files,
             api_key=self.api_key,
             api_url=self.url,
             **self.unstructured_kwargs,
