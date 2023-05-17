@@ -138,7 +138,7 @@ class SQLDatabase:
             api_token (Optional[str]): The API token for the Databricks instance. If not provided,
                                        it will be fetched from the environment variable
                                        'DATABRICKS_API_TOKEN' or from the current Databricks REPL
-                                       context. Defaults to None.
+                                       context. The lookup logic is evolving. Defaults to None.
             warehouse_id (Optional[str]): The warehouse ID in the Databricks SQL. If provided,
                                           the method will configure the connection to use this
                                           warehouse. Cannot be used in conjunction with 'cluster_id'.
