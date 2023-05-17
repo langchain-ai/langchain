@@ -5,11 +5,13 @@ from langchain.document_loaders.parsers.pdf import (
     PyPDFium2Parser,
     PyPDFParser,
 )
+from langchain.document_loaders.parsers.html import BS4HTMLParser
 
 __all__ = [
-    "PyPDFParser",
+    "BS4HTMLParser",
     "PDFMinerParser",
+    "PDFPlumberParser",
     "PyMuPDFParser",
     "PyPDFium2Parser",
-    "PDFPlumberParser",
+    "PyPDFParser",
 ]

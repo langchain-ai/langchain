@@ -5,10 +5,13 @@ import pytest
 
 from langchain.document_loaders.html_bs import BSHTMLLoader
 
+HERE = Path(__file__).parent
+EXAMPLES = HERE.parent.parent / "integration_tests" / "examples"
+
 
 def test_bs_html_loader() -> None:
     """Test unstructured loader."""
-    file_path = Path(__file__).parent.parent / "examples/example.html"
+    file_path = EXAMPLES / "example.html"
     loader = BSHTMLLoader(str(file_path), get_text_separator="|")
     docs = loader.load()
 
@@ -28,7 +31,7 @@ def test_bs_html_loader() -> None:
 )
 def test_bs_html_loader_non_utf8() -> None:
     """Test providing encoding to BSHTMLLoader."""
-    file_path = Path(__file__).parent.parent / "examples/example-utf8.html"
+    file_path = EXAMPLES / "example-utf8.html"
 
     with pytest.raises(UnicodeDecodeError):
         BSHTMLLoader(str(file_path)).load()
