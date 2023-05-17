@@ -1,6 +1,6 @@
 # LangChain Tracing
 
-LangChain Plus helps you visualize, monitor, and evaluate your LangChain components. To get started, use the local quickstart below or install using one of the following guides.
+LangChain Plus helps you visualize, monitor, and evaluate LLM applications. To get started, use the local quickstart below or install using one of the following guides.
 
 - [Locally Hosted Tracing](../tracing/local_installation.md)
 - [Cloud Hosted Tracing](../tracing/hosted_installation.md)
@@ -10,6 +10,7 @@ _Our hosted alpha is currently invite-only. To sign up for the wait list, please
 
 ## Local QuickStart
 
+Ensure [Docker](https://docs.docker.com/get-docker/) is installed and running on your system, then run the following:
 
 ```bash
 pip install -U "langchain[openai]"
@@ -19,18 +20,64 @@ LANGCHAIN_TRACING_V2=true python -c "from langchain.chat_models import ChatOpenA
 
 ## Saving Traces
 
-Once you've either launched the local tracing server or made an account and retrieved an API key to the hosted solution, the easiest way to start logging traces is:
+Once you've launched the local tracing server or made an account and retrieved an API key to the hosted solution, your LangChain application will automatically log traces as long as
+you set the following environment variables:
 
 ```bash
 export LANGCHAIN_TRACING_V2="true"
-# export LANGCHAIN_ENDPOINT="https://api.langchain.plus" # Uncomment if using hosted if logging traces to a hosted server
-# export LANGCHAIN_API_KEY="my api key" # Uncomment add add your API key generated from the settings page if logging traces to a hosted server
+# export LANGCHAIN_SESSION="my session name" # Otherwise, traces are stored in the "default" session
+# export LANGCHAIN_ENDPOINT="https://api.langchain.plus" # Uncomment if using hosted server
+# export LANGCHAIN_API_KEY="my api key" # Uncomment and add your API key generated from the settings page if using a hosted server
 ```
+
+As long as these variables are correctly set, and the server is online, all your LangChain runs will be saved. You can interact with these traces in the UI or using the `LangChainPlus` client.
+
+## Tracing UI Walkthrough
+
+When you first access the LangChain Plus UI (and after signing in, if you are using the hosted version), you should be greeted by the home screen with more instructions on how to get started.
+From here, you can navigate to the `Sessions` and `Datasets` pages. For more information on using datasets in LangChain Plus, check out the [Datasets](../tracing/datasets.md) guide.
+
+Traces from your LangChain runs can be found in the `Sessions` page. A "default" session should already be created for you. 
+
+A session is just a way to group traces together. If you click on a session, it will take you to a page that with no recorded runs.
+You can create and save traces to new sessions by specifying the `LANGCHAIN_SESSION` environment variable in your LangChain application. You can check out the [Chainging Sessions](#changing-sessions) section below for more configuration options.
+
+<!-- TODO Add screenshots when the UI settles down a bit -->
+<!-- ![](../tracing/homepage.png) -->
+
+If we click on the `default` session, we can see that to start we have no traces stored.
+
+<!-- TODO Add screenshots when the UI settles down a bit -->
+<!-- ![](../tracing/default_empty.png) -->
+
+If we now start running chains and agents with tracing enabled, we will see data show up here.
+
+<!-- To do so, we can run [this notebook](../tracing/agent_with_tracing.ipynb) as an example. After running it, we will see an initial trace show up. -->
+
+<!-- TODO Add screenshots when the UI settles down a bit -->
+
+From here we can explore the trace at a high level by clicking on the arrow to show nested runs.
+We can keep on clicking further and further down to explore deeper and deeper.
+
+<!-- TODO Add screenshots when the UI settles down a bit -->
+<!-- ![](../tracing/explore.png) -->
+
+We can also click on the "Explore" button of the top level run to dive even deeper.
+Here, we can see the inputs and outputs in full, as well as all the nested traces.
+
+<!-- TODO Add screenshots when the UI settles down a bit -->
+<!-- ![](../tracing/explore_trace.png) -->
+
+We can keep on exploring each of these nested traces in more detail.
+For example, here is the lowest level trace with the exact inputs/outputs to the LLM.
+
+<!-- TODO Add screenshots when the UI settles down a bit -->
+<!-- ![](../tracing/explore_llm.png) -->
 
 
 ## Changing Sessions
 
-1. To initially record traces to a session other than `"default"`, you can set the `LANGCHAIN_SESSION` environment variable to the name of the session you want to record to:
+1. To record traces to a session other than `"default"`, you can set the `LANGCHAIN_SESSION` environment variable to the name of the session you want to record to:
 
     ```python
     import os
@@ -68,49 +115,3 @@ export LANGCHAIN_TRACING_V2="true"
     os.environ["LANGCHAIN_SESSION"] = "My New Session"
     # ... traces logged to "My New Session" ...
     ```
-
-## Tracing UI Walkthrough
-
-When you first access the LangChain Plus UI (and after signing in, if you are using the hosted version), you should be greeted by the home screen with more instructions on how to get started.
-
-Traces from your LangChain runs can be found in the `Sessions` page. A "default" session should already be created for you. 
-
-A session is just a way to group traces together. If you click on a session, it will take you to a page with no recorded traces.
-You can create a new session with the `Create Session` form, or by specifying a new session in when capturing traces in LangChain.
-
-<!-- TODO Add screenshots when the UI settles down a bit -->
-<!-- ![](../tracing/homepage.png) -->
-
-If we click on the `default` session, we can see that to start we have no traces stored.
-
-<!-- TODO Add screenshots when the UI settles down a bit -->
-<!-- ![](../tracing/default_empty.png) -->
-
-If we now start running chains and agents with tracing enabled, we will see data show up here.
-
-<!-- To do so, we can run [this notebook](../tracing/agent_with_tracing.ipynb) as an example. After running it, we will see an initial trace show up. -->
-
-<!-- TODO Add screenshots when the UI settles down a bit -->
-
-From here we can explore the trace at a high level by clicking on the arrow to show nested runs.
-We can keep on clicking further and further down to explore deeper and deeper.
-
-<!-- TODO Add screenshots when the UI settles down a bit -->
-<!-- ![](../tracing/explore.png) -->
-
-We can also click on the "Explore" button of the top level run to dive even deeper.
-Here, we can see the inputs and outputs in full, as well as all the nested traces.
-
-<!-- TODO Add screenshots when the UI settles down a bit -->
-<!-- ![](../tracing/explore_trace.png) -->
-
-We can keep on exploring each of these nested traces in more detail.
-For example, here is the lowest level trace with the exact inputs/outputs to the LLM.
-
-<!-- TODO Add screenshots when the UI settles down a bit -->
-<!-- ![](../tracing/explore_llm.png) -->
-
-
-
-## Using the LangChainPlus Client
-

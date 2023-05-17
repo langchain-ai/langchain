@@ -4,11 +4,11 @@ This guide provides instructions for installing and setting up your environment 
 
 ## Installation
 
-1. Ensure Docker is installed and running on your system. To install Docker, refer to the [Get Docker](https://docs.docker.com/get-docker/) documentation.
-2. Install the latest version of `langchain` by running the following command:
+1. Install the latest version of `langchain` by running the following command:
    ```bash
    pip install -U langchain
    ```
+2. Ensure Docker is installed and running on your system. To install Docker, refer to the [Get Docker](https://docs.docker.com/get-docker/) documentation.
 3. Start the LangChain Plus tracing server by executing the following command in your terminal:
    ```bash
    langchain plus start
@@ -16,8 +16,7 @@ This guide provides instructions for installing and setting up your environment 
    _Note: The `langchain` command was installed when you installed the LangChain library using (`pip install langchain`)._
 
 4. After the server has started, it will open the [Local UI](http://localhost). In the terminal, it will also display environment variables that you can configure to send your traces to the server. For more details on this, refer to the Environment Setup section below.
-
-5. To stop the server, run the following command in your terminal:
+5. To stop the server, you can run the following command in your terminal:
    ```bash
    langchain plus stop
    ```

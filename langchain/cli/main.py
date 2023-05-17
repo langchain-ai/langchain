@@ -127,7 +127,7 @@ class PlusCommand:
             ]
         )
         logger.info(
-            "TheLangChain Plus server is running at http://localhost. To connect"
+            "The LangChain Plus server is running at http://localhost. To connect"
             " locally, set the following environment variables"
             " before running your LangChain application:\n"
         )
@@ -159,7 +159,7 @@ class PlusCommand:
         )
         ngrok_url = get_ngrok_url(auth_token)
         logger.info(
-            "TheLangChain Plus server is running at http://localhost and"
+            "The LangChain Plus server is running at http://localhost and"
             f" exposed at URL {ngrok_url}. To connect remotely,"
             " set the following environment variables"
             " before running your LangChain application:\n"

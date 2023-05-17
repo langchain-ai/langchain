@@ -229,6 +229,7 @@ class LangChainPlusClient(BaseSettings):
         *,
         session_id: Optional[str] = None,
         session_name: Optional[str] = None,
+        execution_order: Optional[int] = 1,
         run_type: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Run]:
@@ -238,7 +239,10 @@ class LangChainPlusClient(BaseSettings):
                 raise ValueError("Only one of session_id or session_name may be given")
             session_id = self.read_session(session_name=session_name).id
         query_params = ListRunsQueryParams(
-            session_id=session_id, run_type=run_type, **kwargs
+            session_id=session_id,
+            run_type=run_type,
+            execution_order=execution_order,
+            **kwargs,
         )
         filtered_params = {
             k: v for k, v in query_params.dict().items() if v is not None
