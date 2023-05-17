@@ -161,7 +161,7 @@ class FAISS(VectorStore):
         """Return docs most similar to query.
 
         Args:
-            query: Text to look up documents similar to.
+            embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
 
         Returns:
