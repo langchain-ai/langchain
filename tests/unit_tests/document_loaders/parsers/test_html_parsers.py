@@ -1,6 +1,7 @@
 """Tests for the HTML parsers."""
-import pytest
 from pathlib import Path
+
+import pytest
 
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.html import BS4HTMLParser
