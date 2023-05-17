@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 from pydantic import Extra, Field, root_validator
 from tenacity import (
@@ -29,8 +29,22 @@ from langchain.schema import (
     SystemMessage,
 )
 from langchain.utils import get_from_dict_or_env
+if TYPE_CHECKING:
+    import tiktoken
 
 logger = logging.getLogger(__name__)
+
+
+def _import_tiktoken() -> tiktoken:
+    try:
+        import tiktoken
+    except ImportError:
+        raise ValueError(
+            "Could not import tiktoken python package. "
+            "This is needed in order to calculate get_token_ids. "
+            "Please install it with `pip install tiktoken`."
+        )
+    return tiktoken
 
 
 def _create_retry_decorator(llm: ChatOpenAI) -> Callable[[Any], Any]:
@@ -354,38 +368,8 @@ class ChatOpenAI(BaseChatModel):
         """Return type of chat model."""
         return "openai-chat"
 
-    def get_token_ids(self, text: str) -> List[int]:
-        """Get the tokens present in the text with tiktoken package."""
-        # tiktoken NOT supported for Python 3.7 or below
-        if sys.version_info[1] <= 7:
-            return super().get_token_ids(text)
-        try:
-            import tiktoken
-        except ImportError:
-            raise ValueError(
-                "Could not import tiktoken python package. "
-                "This is needed in order to calculate get_token_ids. "
-                "Please install it with `pip install tiktoken`."
-            )
-        enc = tiktoken.encoding_for_model(self.model_name)
-
-        # encode the text using the GPT-3.5-Turbo encoder
-        return enc.encode(text)
-
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
-        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
-
-        Official documentation: https://github.com/openai/openai-cookbook/blob/
-        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
-        try:
-            import tiktoken
-        except ImportError:
-            raise ValueError(
-                "Could not import tiktoken python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please install it with `pip install tiktoken`."
-            )
-
+    def _get_encoding_model(self) -> Tuple[str, tiktoken.Encoding]:
+        tiktoken = _import_tiktoken()
         model = self.model_name
         if model == "gpt-3.5-turbo":
             # gpt-3.5-turbo may change over time.
@@ -395,14 +379,33 @@ class ChatOpenAI(BaseChatModel):
             # gpt-4 may change over time.
             # Returning num tokens assuming gpt-4-0314.
             model = "gpt-4-0314"
-
         # Returns the number of tokens used by a list of messages.
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
             logger.warning("Warning: model not found. Using cl100k_base encoding.")
-            encoding = tiktoken.get_encoding("cl100k_base")
+            model = "cl100k_base"
+            encoding = tiktoken.get_encoding(model)
+        return model, encoding
 
+    def get_token_ids(self, text: str) -> List[int]:
+        """Get the tokens present in the text with tiktoken package."""
+        # tiktoken NOT supported for Python 3.7 or below
+        if sys.version_info[1] <= 7:
+            return super().get_token_ids(text)
+        _, encoding_model = self._get_encoding_model()
+        return encoding_model.encode(
+            text,
+            allowed_special=self.allowed_special,
+            disallowed_special=self.disallowed_special,
+        )
+
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
+
+        Official documentation: https://github.com/openai/openai-cookbook/blob/
+        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
+        model, encoding = self._get_encoding_model()
         if model == "gpt-3.5-turbo-0301":
             # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_message = 4

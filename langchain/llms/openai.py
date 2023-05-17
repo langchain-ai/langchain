@@ -375,7 +375,7 @@ class BaseOpenAI(BaseLLM):
                 )
             params["max_tokens"] = self.max_tokens_for_prompt(prompts[0])
         sub_prompts = [
-            prompts[i : i + self.batch_size]
+            prompts[i: i + self.batch_size]
             for i in range(0, len(prompts), self.batch_size)
         ]
         return sub_prompts
@@ -386,7 +386,7 @@ class BaseOpenAI(BaseLLM):
         """Create the LLMResult from the choices and prompts."""
         generations = []
         for i, _ in enumerate(prompts):
-            sub_choices = choices[i * self.n : (i + 1) * self.n]
+            sub_choices = choices[i * self.n: (i + 1) * self.n]
             generations.append(
                 [
                     Generation(
@@ -803,7 +803,7 @@ class OpenAIChat(BaseLLM):
         """Get the token IDs using the tiktoken package."""
         # tiktoken NOT supported for Python < 3.8
         if sys.version_info[1] < 8:
-            return super().get_num_tokens(text)
+            return super().get_token_ids(text)
         try:
             import tiktoken
         except ImportError:
@@ -812,10 +812,8 @@ class OpenAIChat(BaseLLM):
                 "This is needed in order to calculate get_num_tokens. "
                 "Please install it with `pip install tiktoken`."
             )
-        # create a GPT-3.5-Turbo encoder instance
-        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
-        # encode the text using the GPT-3.5-Turbo encoder
+        enc = tiktoken.encoding_for_model(self.model_name)
         return enc.encode(
             text,
             allowed_special=self.allowed_special,
