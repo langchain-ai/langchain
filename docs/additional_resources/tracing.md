@@ -1,22 +1,12 @@
 # LangChain Tracing
 
-LangChain Plus helps you visualize, monitor, and evaluate LLM applications. To get started, use the local quickstart below or install using one of the following guides.
+LangChain Plus helps you visualize, monitor, and evaluate LLM applications. To get started with local or hosted tracing, use one of the following guides.
 
 - [Locally Hosted Tracing](../tracing/local_installation.md)
 - [Cloud Hosted Tracing](../tracing/hosted_installation.md)
 
 _Our hosted alpha is currently invite-only. To sign up for the wait list, please fill out the form [here](https://forms.gle/tRCEMSeopZf6TE3b6)._
 
-
-## Local QuickStart
-
-Ensure [Docker](https://docs.docker.com/get-docker/) is installed and running on your system, then run the following:
-
-```bash
-pip install -U "langchain[openai]"
-langchain plus start
-LANGCHAIN_TRACING_V2=true python -c "from langchain.chat_models import ChatOpenAI; print(ChatOpenAI().predict('Hello, world!'))"
-```
 
 ## Saving Traces
 

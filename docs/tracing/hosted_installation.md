@@ -67,6 +67,9 @@ with tracing_v2_enabled("My Session Name"):
 ```
 
 
-## Navigating the LangChainPlus UI
+## Congratulations!
 
-You can check out an overview of the LangChainPlus UI in the [LangChain Tracing](../additional_resources/tracing.md) guide.
+Now that you've signed in, you can use the server to help debug, monitor, and evaluate your LangChain applications. What's next?
+
+- For an overview of the LangChain Plus UI check out the [LangChain Tracing](../additional_resources/tracing.md) guide.
+- For information on how to use your traces as datasets for testing and evaluation, check out the [Datasets](./datasets.md) guide.

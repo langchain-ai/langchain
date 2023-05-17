@@ -2,6 +2,15 @@
 
 This guide provides instructions for installing and setting up your environment to use the locally hosted version of the LangChain Plus tracing server. For instructions on a hosted tracing solution, please reference the [Hosted Tracing Setup](./hosted_installation.md) guide.
 
+If you have docker running, the below snippet is all you need to run a tracing "Hello, World!". Otherwise, continue with the Installation instructions.
+
+```bash
+pip install -U "langchain[openai]"
+langchain plus start
+LANGCHAIN_TRACING_V2=true python -c "from langchain.chat_models import ChatOpenAI; print(ChatOpenAI().predict('Hello, world!'))"
+```
+
+
 ## Installation
 
 1. Install the latest version of `langchain` by running the following command:
@@ -24,17 +33,6 @@ This guide provides instructions for installing and setting up your environment 
 ## Environment Configuration
 
 With the LangChain Plus tracing server running, you can begin sending traces by setting the `LANGCHAIN_TRACING_V2` environment variable:
-
-```bash
-export LANGCHAIN_TRACING_V2=true
-```
-
-Or at the top of every python script:
-```python
-import os
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-```
-
 
 Here's an example of adding all relevant environment variables:
 
@@ -63,7 +61,7 @@ with tracing_v2_enabled("My Session Name"):
 
 ## Connecting from a Remote Server
 
-To connect to LangChainPlus when running applications on a remote server, such as a [Google Colab notebook](https://colab.research.google.com/) or a [HuggingFace Space](https://huggingface.co/docs/hub/spaces), we offer two simple options:
+To connect to LangChainPlus when running applications on a remote server, such as a [Google Colab notebook](https://colab.research.google.com/), we offer two simple options:
 
 1. Use our [hosted tracing](./hosted_installation.md) server.
 2. Expose a public URL to your local tracing service.
@@ -107,6 +105,9 @@ Below are the full instructions to expose start a local LangChainPlus server and
    langchain plus stop
    ```
 
-## Navigating the LangChainPlus UI
+## Congratulations!
 
-You can check out an overview of the LangChainPlus UI in the [LangChain Tracing](../additional_resources/tracing.md) guide.
+Now that you've set up the tracing server, you can use it to debug, monitor, and evaluate your LangChain applications. What's next?
+
+- For an overview of the LangChain Plus UI check out the [LangChain Tracing](../additional_resources/tracing.md) guide.
+- For information on how to use your traces as datasets for testing and evaluation, check out the [Datasets](./datasets.md) guide.
