@@ -23,13 +23,13 @@ from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
-class GoogleVertexAIPalmEmbeddings(BaseModel, Embeddings):
+class GoogleCloudVertexAIPalmEmbeddings(BaseModel, Embeddings):
     """Wrapper around Google Vertex AI's PaLM embedding models.
    
     To use you must have the google-cloud-aiplatform Python package installed and
     either:
 
-        1. Have credentials configured for your enviornment (gcloud, workload identity, etc...)
+        1. Have credentials configured for your environment (gcloud, workload identity, etc...)
         2. Pass your service account key json using the google_application_credentials kwarg to the ChatGoogle
            constructor.
 
@@ -38,8 +38,8 @@ class GoogleVertexAIPalmEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from langchain.embeddings import GoogleVertexAIPalmEmbeddings
-            embeddings = GoogleVertexAIPalmEmbeddings()
+            from langchain.embeddings import GoogleCloudVertexAIPalmEmbeddings
+            embeddings = GoogleCloudVertexAIPalmEmbeddings()
             text = "This is a test query."
             query_result = embeddings.embed_query(text)
     """

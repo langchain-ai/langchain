@@ -112,7 +112,7 @@ def _messages_to_prompt_dict(
         "prompt": prompt
     }
 
-class ChatVertexAIGooglePalm(BaseChatModel, BaseModel):
+class ChatGoogleCloudVertexAIPalm(BaseChatModel, BaseModel):
     """Wrapper around Google Cloud's Vertex AI PaLM Chat API.
 
     To use you must have the google-cloud-aiplatform Python package installed and
@@ -128,7 +128,7 @@ class ChatVertexAIGooglePalm(BaseChatModel, BaseModel):
         .. code-block:: python
 
             from langchain.chat_models import ChatGoogleVertexAIPalm
-            chat = ChatVertexAIGooglePalm()
+            chat = ChatGoogleCloudVertexAIPalm()
 
     """
 
