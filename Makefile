@@ -1,5 +1,8 @@
 .PHONY: all clean format lint test tests test_watch integration_tests docker_tests help extended_tests
 
+GIT_HASH ?= $(shell git rev-parse --short HEAD)
+LANGCHAIN_VERSION := $(shell grep '^version' pyproject.toml | cut -d '=' -f2 | tr -d '"')
+
 all: help
 
 coverage:
@@ -37,8 +40,7 @@ TEST_FILE ?= tests/unit_tests/
 test:
 	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
-tests: 
-	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+tests: test
 
 extended_tests:
 	poetry run pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
@@ -67,4 +69,17 @@ help:
 	@echo 'extended_tests               - run only extended unit tests'
 	@echo 'test_watch                   - run unit tests in watch mode'
 	@echo 'integration_tests            - run integration tests'
+ifneq ($(shell command -v docker 2> /dev/null),)
 	@echo 'docker_tests                 - run unit tests in docker'
+	@echo 'docker                       - build and run the docker dev image'
+	@echo 'docker.run                   - run the docker dev image'
+	@echo 'docker.build                 - build the docker dev image'
+	@echo 'docker.force_build           - force a rebuild of the docker development image'
+endif
+
+# include the following makefile if the docker executable is available
+ifeq ($(shell command -v docker 2> /dev/null),)
+	$(info Docker not found, skipping docker-related targets)
+else
+include docker/Makefile
+endif

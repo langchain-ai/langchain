@@ -1,0 +1,15 @@
+version: "3.7"
+
+services:
+  langchain:
+    hostname: langchain
+    image: langchain/dev:latest
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION}
+
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:8888:8888

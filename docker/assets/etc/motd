@@ -1,0 +1,9 @@
+The dependencies have been installed in the current shell.
+There is no virtualenv or a need for `poetry` inside the
+container.
+
+Running the command `make docker.run` at the root directory
+of the project will build the container the first time. On
+the next runs, it will use the cached image or rebuild it if
+a change is made on the source code.
+

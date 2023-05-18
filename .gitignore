@@ -108,6 +108,7 @@ celerybeat.pid
 # Environments
 .env
 .envrc
+!docker/.env
 .venv
 .venvs
 env/
@@ -150,3 +151,4 @@ wandb/
 # integration test artifacts
 data_map*
 \[('_type', 'fake'), ('stop', None)]
+docker.build

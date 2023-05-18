@@ -161,6 +161,37 @@ poetry run jupyter notebook
 
 When you run `poetry install`, the `langchain` package is installed as editable in the virtualenv, so your new logic can be imported into the notebook.
 
+## Using Docker
+
+To quickly get started, run the command `make docker`.
+
+If docker is installed the Makefile will export extra targets in the fomrat `docker.*` to build and run the docker image. Type `make` for a list of common tasks.
+
+### Building the development image
+
+- use `make docker.run` will build the dev image if it does not exist.
+- `make docker.build` 
+
+#### Image caching
+
+The Dockerfile is optimized to cache the poetry install step. A rebuild is triggered when there a change to the source code.
+
+### Examples
+
+All commands that in the python env are available by default in the container.
+
+A few examples:
+```bash
+# run jupyter notebook
+docker run --rm -it IMG jupyter notebook
+
+# run ipython
+docker run --rm -it IMG ipython
+
+# start web server
+docker run --rm -p 8888:8888 IMG python -m http.server 8888
+```
+
 ## Documentation
 
 ### Contribute Documentation
