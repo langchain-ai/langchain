@@ -315,7 +315,7 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
     def parse(self, text: str) -> T:
         """Parse the output of an LLM call.
 
-        A method which takes in a string (assumed output of language model )
+        A method which takes in a string (assumed output of a language model )
         and parses it into some structure.
 
         Args:
