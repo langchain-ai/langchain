@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+import os
 import pickle
 import uuid
 from pathlib import Path
@@ -17,10 +18,24 @@ from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 
-def dependable_faiss_import() -> Any:
-    """Import faiss if available, otherwise raise error."""
+def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
+    """
+    Import faiss if available, otherwise raise error.
+    If FAISS_NO_AVX2 environment variable is set, it will be considered
+    to load FAISS with no AVX2 optimization.
+
+    Args:
+        no_avx2: Load FAISS strictly with no AVX2 optimization
+            so that the vectorstore is portable and compatible with other devices.
+    """
+    if no_avx2 is None and "FAISS_NO_AVX2" in os.environ:
+        no_avx2 = bool(os.getenv("FAISS_NO_AVX2"))
+
     try:
-        import faiss
+        if no_avx2:
+            from faiss import swigfaiss as faiss
+        else:
+            import faiss
     except ImportError:
         raise ValueError(
             "Could not import faiss python package. "
@@ -161,7 +176,7 @@ class FAISS(VectorStore):
         """Return docs most similar to query.
 
         Args:
-            query: Text to look up documents similar to.
+            embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
 
         Returns:
