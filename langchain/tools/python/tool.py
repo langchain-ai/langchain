@@ -19,9 +19,14 @@ def _get_default_python_repl() -> PythonREPL:
     return PythonREPL(_globals=globals(), _locals=None)
 
 
+_MD_PY_BLOCK = "```python"
+
+
 def sanitize_input(query: str) -> str:
-    query = query.strip().strip("```python")
-    query = query.strip().strip("```")
+    query = query.strip()
+    if query[: len(_MD_PY_BLOCK)] == _MD_PY_BLOCK:
+        query = query[len(_MD_PY_BLOCK) :].strip()
+    query = query.strip("`").strip()
     return query
 
 

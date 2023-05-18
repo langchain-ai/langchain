@@ -3,7 +3,11 @@ import sys
 
 import pytest
 
-from langchain.tools.python.tool import PythonAstREPLTool, PythonREPLTool
+from langchain.tools.python.tool import (
+    PythonAstREPLTool,
+    PythonREPLTool,
+    sanitize_input,
+)
 
 
 def test_python_repl_tool_single_input() -> None:
@@ -21,3 +25,30 @@ def test_python_ast_repl_tool_single_input() -> None:
     tool = PythonAstREPLTool()
     assert tool.is_single_input
     assert tool.run("1 + 1") == 2
+
+
+def test_sanitize_input() -> None:
+    query = """
+    ```
+        p = 5
+    ```
+    """
+    expected = "p = 5"
+    actual = sanitize_input(query)
+    assert expected == actual
+
+    query = """
+       ```python
+        p = 5
+    ```
+    """
+    expected = "p = 5"
+    actual = sanitize_input(query)
+    assert expected == actual
+
+    query = """
+    p = 5
+    """
+    expected = "p = 5"
+    actual = sanitize_input(query)
+    assert expected == actual
