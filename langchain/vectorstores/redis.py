@@ -446,7 +446,6 @@ class Redis(VectorStore):
                 )
         """
         instance, _ = cls.from_texts_return_keys(
-            cls=cls,
             texts=texts,
             embedding=embedding,
             metadatas=metadatas,
