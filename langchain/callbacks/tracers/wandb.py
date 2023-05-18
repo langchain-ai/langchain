@@ -302,14 +302,6 @@ class WandbTracer(BaseTracer):
             tel.feature.langchain_tracer = True
 
     # Start of required methods (these methods are required by the BaseCallbackHandler interface)
-    @property
-    def always_verbose(self) -> bool:
-        """Whether to call verbose callbacks even if verbose is False."""
-        return True
-
-    def _generate_id(self) -> Optional[Union[int, str]]:
-        """Generate an id for a run."""
-        return None
 
     def _persist_run(self, run: "Run") -> None:
         """Persist a run."""

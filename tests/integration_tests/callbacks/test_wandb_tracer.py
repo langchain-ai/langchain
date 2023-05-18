@@ -77,27 +77,6 @@ async def test_tracing_concurrent() -> None:
     await aiosession.close()
 
 
-@pytest.mark.asyncio
-async def test_tracing_concurrent_bw_compat_environ() -> None:
-    if "LANGCHAIN_WANDB_TRACING" in os.environ:
-        del os.environ["LANGCHAIN_WANDB_TRACING"]
-    aiosession = ClientSession()
-    llm = OpenAI(temperature=0)
-    async_tools = load_tools(
-        ["llm-math", "serpapi"],
-        llm=llm,
-        aiosession=aiosession,
-    )
-    agent = initialize_agent(
-        async_tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
-    )
-    tasks = [agent.arun(q) for q in questions[:3]]
-    await asyncio.gather(*tasks)
-    await aiosession.close()
-    if "LANGCHAIN_HANDLER" in os.environ:
-        del os.environ["LANGCHAIN_HANDLER"]
-
-
 def test_tracing_context_manager() -> None:
     llm = OpenAI(temperature=0)
     tools = load_tools(
