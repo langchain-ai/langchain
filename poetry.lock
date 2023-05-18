@@ -1023,6 +1023,18 @@ files = [
 pycparser = "*"
 
 [[package]]
+name = "chardet"
+version = "5.1.0"
+description = "Universal encoding detector for Python 3"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "chardet-5.1.0-py3-none-any.whl", hash = "sha256:362777fb014af596ad31334fde1e8c327dfdb076e1960d1694662d46a6917ab9"},
+    {file = "chardet-5.1.0.tar.gz", hash = "sha256:0d62712b956bc154f85fb0a266e2a3c5913c2967e00348701b32411d6def31e5"},
+]
+
+[[package]]
 name = "charset-normalizer"
 version = "3.1.0"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
@@ -1510,13 +1522,13 @@ files = [
 
 [[package]]
 name = "deeplake"
-version = "3.4.4"
+version = "3.5.0"
 description = "Activeloop Deep Lake"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "deeplake-3.4.4.tar.gz", hash = "sha256:7d044a89862fe6aa4a93abc7db90090be7ecfc611169916e3975e0cd187be1ac"},
+    {file = "deeplake-3.5.0.tar.gz", hash = "sha256:ae640f75b1fec4eed9598a4e8d6b80e7243af87d9f39f0d34f01ce2c6f7c194f"},
 ]
 
 [package.dependencies]
@@ -3138,13 +3150,13 @@ testing = ["flake8 (<5)", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-chec
 
 [[package]]
 name = "jcloud"
-version = "0.2.8"
+version = "0.2.9"
 description = "Simplify deploying and managing Jina projects on Jina Cloud"
 category = "main"
 optional = true
 python-versions = "*"
 files = [
-    {file = "jcloud-0.2.8.tar.gz", hash = "sha256:cdd30c85c0a857573651ebc329f52a8de9e43c3e0f276dc85975914006295639"},
+    {file = "jcloud-0.2.9.tar.gz", hash = "sha256:eaf8da685f8907e153ff752e6a4b945aeff548b8d94dfd650a035d8450ed547e"},
 ]
 
 [package.dependencies]
@@ -3297,14 +3309,14 @@ websockets = ["websockets"]
 
 [[package]]
 name = "jina-hubble-sdk"
-version = "0.36.0"
+version = "0.37.1"
 description = "SDK for Hubble API at Jina AI."
 category = "main"
 optional = true
 python-versions = ">=3.7.0"
 files = [
-    {file = "jina-hubble-sdk-0.36.0.tar.gz", hash = "sha256:ba1a72c7a5c14963fdad9af1ff4c3bba26a03ddcced08111bd11a95b153249ec"},
-    {file = "jina_hubble_sdk-0.36.0-py3-none-any.whl", hash = "sha256:56db142147d7c72142ed1b6505020c3b4d8070b1603d07ff796e56d491dde294"},
+    {file = "jina-hubble-sdk-0.37.1.tar.gz", hash = "sha256:5b6bd9e13f97c8c77be822e9ae49f87a0f16ef8195011f25db2552006a5ca2a0"},
+    {file = "jina_hubble_sdk-0.37.1-py3-none-any.whl", hash = "sha256:bc54a60ed120508e231fbed28b0fff394c288312d2ffa865c7865c03dbbbb502"},
 ]
 
 [package.dependencies]
@@ -6608,6 +6620,7 @@ files = [
     {file = "pylance-0.4.12-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:2b86fb8dccc03094c0db37bef0d91bda60e8eb0d1eddf245c6971450c8d8a53f"},
     {file = "pylance-0.4.12-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:0bc82914b13204187d673b5f3d45f93219c38a0e9d0542ba251074f639669789"},
     {file = "pylance-0.4.12-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5a4bcce77f99ecd4cbebbadb01e58d5d8138d40eb56bdcdbc3b20b0475e7a472"},
+    {file = "pylance-0.4.12-cp38-abi3-win_amd64.whl", hash = "sha256:9616931c5300030adb9626d22515710a127d1e46a46737a7a0f980b52f13627c"},
 ]
 
 [package.dependencies]
@@ -9368,6 +9381,18 @@ doc = ["cairosvg (>=2.5.2,<3.0.0)", "mdx-include (>=1.4.1,<2.0.0)", "mkdocs (>=1
 test = ["black (>=22.3.0,<23.0.0)", "coverage (>=6.2,<7.0)", "isort (>=5.0.6,<6.0.0)", "mypy (==0.910)", "pytest (>=4.4.0,<8.0.0)", "pytest-cov (>=2.10.0,<5.0.0)", "pytest-sugar (>=0.9.4,<0.10.0)", "pytest-xdist (>=1.32.0,<4.0.0)", "rich (>=10.11.0,<13.0.0)", "shellingham (>=1.3.0,<2.0.0)"]
 
 [[package]]
+name = "types-chardet"
+version = "5.0.4.6"
+description = "Typing stubs for chardet"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-chardet-5.0.4.6.tar.gz", hash = "sha256:caf4c74cd13ccfd8b3313c314aba943b159de562a2573ed03137402b2bb37818"},
+    {file = "types_chardet-5.0.4.6-py3-none-any.whl", hash = "sha256:ea832d87e798abf1e4dfc73767807c2b7fee35d0003ae90348aea4ae00fb004d"},
+]
+
+[[package]]
 name = "types-pyopenssl"
 version = "23.1.0.3"
 description = "Typing stubs for pyOpenSSL"
@@ -9762,14 +9787,14 @@ files = [
 
 [[package]]
 name = "weaviate-client"
-version = "3.18.0"
+version = "3.19.1"
 description = "A python native weaviate client"
 category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "weaviate-client-3.18.0.tar.gz", hash = "sha256:423a526518a32505c5293328e5f252e6cbbf20e4b3124733f70d10fc0d6823c9"},
-    {file = "weaviate_client-3.18.0-py3-none-any.whl", hash = "sha256:42b324286a4b4436317e5d2c6ba48c07da6cf01518efdd47ee097e7a8cc7584c"},
+    {file = "weaviate-client-3.19.1.tar.gz", hash = "sha256:8528926b0b545225ab75583481d67cccf9494d2dc01cb62f1165a8f187b41ebb"},
+    {file = "weaviate_client-3.19.1-py3-none-any.whl", hash = "sha256:6b4aae86cd955543fcc6328bc1462fbbae053dc50f7b6822287b05b98fec0d27"},
 ]
 
 [package.dependencies]
@@ -10309,14 +10334,15 @@ all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api
 azure = ["azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "jq", "lxml", "pandas", "pdfminer-six", "pymupdf", "pypdf", "pypdfium2", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "chardet", "jq", "lxml", "pandas", "pdfminer-six", "pymupdf", "pypdf", "pypdfium2", "telethon", "tqdm", "zep-python"]
 hnswlib = ["docarray", "hnswlib", "protobuf"]
 in-memory-store = ["docarray"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
 qdrant = ["qdrant-client"]
+text-helpers = ["chardet"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "055d65314e800e0731b086471d357e5fb6bbd265ee9fa2bd3762470152cc3b85"
+content-hash = "2b19b9deca7f83ca14af1f7bc7808bbe7873a91ce4c95381eaad8ea84fe04c0b"
