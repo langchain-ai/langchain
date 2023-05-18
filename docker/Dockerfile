@@ -32,6 +32,9 @@ VOLUME /src
 #######################
 FROM lchain-base AS lchain-base-builder
 
+ARG POETRY_EXTRA_PACKAGES=${POETRY_EXTRA_PACKAGES}
+ENV POETRY_EXTRA_PACKAGES=$POETRY_EXTRA_PACKAGES
+
 ENV HOME=/root
 ENV POETRY_HOME=/root/.poetry
 ENV POETRY_VIRTUALENVS_IN_PROJECT=false
@@ -44,6 +47,7 @@ WORKDIR /root
 
 RUN apt-get update && \
     apt-get install -y \
+    build-essential \
     git \
     curl
 
@@ -61,7 +65,7 @@ COPY poetry.* pyproject.toml ./
 
 RUN mkdir /pip-prefix
 
-RUN poetry export --with dev -f requirements.txt --output requirements.txt --without-hashes && \
+RUN poetry export $POETRY_EXTRA_PACKAGES --with dev -f requirements.txt --output requirements.txt --without-hashes && \
     pip install --no-cache-dir --disable-pip-version-check --prefix /pip-prefix -r requirements.txt
 
 
@@ -70,8 +74,6 @@ COPY docker/assets/etc/motd /tmp/motd
 RUN cat /tmp/motd > /etc/motd
 
 RUN printf "\n%s\n%s\n" "$(poetry version)" "$(python --version)" >> /etc/motd
-
-
 
 ###################
 ## Runtime Image

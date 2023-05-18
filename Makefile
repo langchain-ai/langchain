@@ -73,8 +73,10 @@ ifneq ($(shell command -v docker 2> /dev/null),)
 	@echo 'docker_tests                 - run unit tests in docker'
 	@echo 'docker                       - build and run the docker dev image'
 	@echo 'docker.run                   - run the docker dev image'
+	@echo 'docker.jupyter 	            - start a jupyter notebook inside container'
 	@echo 'docker.build                 - build the docker dev image'
 	@echo 'docker.force_build           - force a rebuild of the docker development image'
+	@echo 'docker.clean 	            - remove the docker dev image'
 endif
 
 # include the following makefile if the docker executable is available
