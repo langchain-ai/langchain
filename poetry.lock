@@ -1510,13 +1510,13 @@ files = [
 
 [[package]]
 name = "deeplake"
-version = "3.5.0"
+version = "3.4.4"
 description = "Activeloop Deep Lake"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "deeplake-3.5.0.tar.gz", hash = "sha256:ae640f75b1fec4eed9598a4e8d6b80e7243af87d9f39f0d34f01ce2c6f7c194f"},
+    {file = "deeplake-3.4.4.tar.gz", hash = "sha256:7d044a89862fe6aa4a93abc7db90090be7ecfc611169916e3975e0cd187be1ac"},
 ]
 
 [package.dependencies]
@@ -10310,7 +10310,7 @@ all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api
 azure = ["azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "jq", "lxml", "pandas", "pdfminer-six", "pymupdf", "pypdf", "pypdfium2", "telethon", "tqdm"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "jq", "lxml", "pandas", "pdfminer-six", "pymupdf", "pypdf", "pypdfium2", "telethon", "tqdm"]
 hnswlib = ["docarray", "hnswlib", "protobuf"]
 in-memory-store = ["docarray"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "torch", "transformers"]
@@ -10320,4 +10320,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "8c88a3e41883a2bebd50f715f529560d4551e19e77a7d1de6db4e56100252160"
+content-hash = "978f11abc5819e182271024a5cbdbe15c2238bd24e00b5cf64a63ce7a8366822"
