@@ -8,10 +8,10 @@ Docugami converts business documents into a Document XML Knowledge Graph, genera
 
 ## Quick start
 
-1. Create a Docugami workspace: http://www.docugami.com (free trials available)
+1. Create a Docugami workspace: <a href="http://www.docugami.com">http://www.docugami.com</a> (free trials available)
 2. Add your documents (PDF, DOCX or DOC) and allow Docugami to ingest and cluster them into sets of similar documents, e.g. NDAs, Lease Agreements, and Service Agreements. There is no fixed set of document types supported by the system, the clusters created depend on your particular documents, and you can [change the docset assignments](https://help.docugami.com/home/working-with-the-doc-sets-view) later.
 3. Create an access token via the Developer Playground for your workspace. Detailed instructions: https://help.docugami.com/home/docugami-api
-4. Explore the Docugami API at https://api-docs.docugami.com/ to get a list of your processed docset IDs, or just the document IDs for a particular docset. 
+4. Explore the Docugami API at <a href="https://api-docs.docugami.com">https://api-docs.docugami.com</a> to get a list of your processed docset IDs, or just the document IDs for a particular docset. 
 6. Use the DocugamiLoader as detailed in [this notebook](../modules/indexes/document_loaders/examples/docugami.ipynb), to get rich semantic chunks for your documents.
 7. Optionally, build and publish one or more [reports or abstracts](https://help.docugami.com/home/reports). This helps Docugami improve the semantic XML with better tags based on your preferences, which are then added to the DocugamiLoader output as metadata. Use techniques like [self-querying retriever](https://python.langchain.com/en/latest/modules/indexes/retrievers/examples/self_query_retriever.html) to do high accuracy Document QA.
 
