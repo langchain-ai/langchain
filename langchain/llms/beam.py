@@ -192,11 +192,7 @@ class Beam(LLM):
         with open(script_name, "w") as file:
             file.write(script.format(model_name=self.model_name))
 
-    def _deploy(
-        self,
-        stop: Optional[list] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-    ) -> None:
+    def _deploy(self) -> None:
         """Deploy and call to Beam."""
         try:
             import beam  # type: ignore
