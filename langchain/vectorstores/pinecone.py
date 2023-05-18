@@ -4,7 +4,8 @@ from __future__ import annotations
 import itertools
 import logging
 import uuid
-from typing import Any, Iterable, List, Optional, Tuple, cast
+import warnings
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Union, cast
 
 from tqdm.auto import tqdm
 
@@ -38,7 +39,7 @@ class Pinecone(VectorStore):
     def __init__(
         self,
         index: Any,
-        embedding: Embeddings,
+        embedding: Union[Embeddings, Callable],
         text_key: str,
         namespace: Optional[str] = None,
     ):
@@ -55,10 +56,28 @@ class Pinecone(VectorStore):
                 f"client should be an instance of pinecone.index.Index, "
                 f"got {type(index)}"
             )
+        if not isinstance(embedding, Embeddings):
+            warnings.warn(
+                "Passing in a callable that embeds a single string as 'embedding' "
+                "argument to Pinecone is deprecated. Pinecone now expects an argument "
+                "of type Embeddings."
+            )
         self._index = index
         self._embedding = embedding
         self._text_key = text_key
         self._namespace = namespace
+
+    def _embed_query(self, query: str) -> List[float]:
+        if isinstance(self._embedding, Embeddings):
+            return self._embedding.embed_query(query)
+        else:
+            return self._embedding(query)
+
+    def _embed_documents(self, documents: List[str]) -> List[List[float]]:
+        if isinstance(self._embedding, Embeddings):
+            return self._embedding.embed_documents(documents)
+        else:
+            return [self._embedding(doc) for doc in documents]
 
     def add_texts(
         self,
@@ -115,7 +134,7 @@ class Pinecone(VectorStore):
             docs_batch: list = list(
                 zip(
                     ids_batch,
-                    self._embedding.embed_documents(text_batch),
+                    self._embed_documents(text_batch),
                     metadata_batch,
                 )
             )
@@ -145,7 +164,7 @@ class Pinecone(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
-        query_obj = self._embedding.embed_query(query)
+        query_obj = self._embed_query(query)
         docs = []
         results = self._index.query(
             [query_obj],
