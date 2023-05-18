@@ -99,7 +99,10 @@ class IFixitLoader(BaseLoader):
         output.append("# " + title)
         output.append(soup.select_one(".post-content .post-text").text.strip())
 
-        output.append("\n## " + soup.find("div", "post-answers-header").text.strip())
+        answersHeader = soup.find("div", "post-answers-header")
+        if answersHeader:
+            output.append("\n## " + answersHeader.text.strip())
+
         for answer in soup.select(".js-answers-list .post.post-answer"):
             if answer.has_attr("itemprop") and "acceptedAnswer" in answer["itemprop"]:
                 output.append("\n### Accepted Answer")

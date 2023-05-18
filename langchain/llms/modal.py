@@ -3,15 +3,16 @@ import logging
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
 
 
-class Modal(LLM, BaseModel):
+class Modal(LLM):
     """Wrapper around Modal large language models.
 
     To use, you should have the ``modal-client`` python package installed.
@@ -69,7 +70,12 @@ class Modal(LLM, BaseModel):
         """Return type of llm."""
         return "modal"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call to Modal endpoint."""
         params = self.model_kwargs or {}
         response = requests.post(

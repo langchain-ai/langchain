@@ -7,8 +7,8 @@ This page contains instructions for installing and then setting up the environme
 1. Ensure you have Docker installed (see [Get Docker](https://docs.docker.com/get-docker/)) and that it’s running.
 2. Install the latest version of `langchain`: `pip install langchain` or `pip install langchain -U` to upgrade your
    existing version.
-3. Run `langchain-server`
-    1. This will spin up the server in the terminal.
+3. Run `langchain-server`. This command was installed automatically when you ran the above command (`pip install langchain`).
+    1. This will spin up the server in the terminal, hosted on port `4137` by default.
     2. Once you see the terminal
        output `langchain-langchain-frontend-1 | ➜ Local: [http://localhost:4173/](http://localhost:4173/)`, navigate
        to [http://localhost:4173/](http://localhost:4173/)

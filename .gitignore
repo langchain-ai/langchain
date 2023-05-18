@@ -1,3 +1,4 @@
+.vs/
 .vscode/
 .idea/
 # Byte-compiled / optimized / DLL files
@@ -135,3 +136,17 @@ dmypy.json
 
 # macOS display setting files
 .DS_Store
+
+# Wandb directory
+wandb/
+
+# asdf tool versions
+.tool-versions
+/.ruff_cache/
+
+*.pkl
+*.bin
+
+# integration test artifacts
+data_map*
+\[('_type', 'fake'), ('stop', None)]

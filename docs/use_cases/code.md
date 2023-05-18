@@ -1,0 +1,26 @@
+# Code Understanding
+
+Overview
+
+LangChain is a useful tool designed to parse GitHub code repositories. By leveraging VectorStores, Conversational RetrieverChain, and GPT-4, it can answer questions in the context of an entire GitHub repository or generate new code. This documentation page outlines the essential components of the system and guides using LangChain for better code comprehension, contextual question answering, and code generation in GitHub repositories.
+
+## Conversational Retriever Chain
+
+Conversational RetrieverChain is a retrieval-focused system that interacts with the data stored in a VectorStore. Utilizing advanced techniques, like context-aware filtering and ranking, it retrieves the most relevant code snippets and information for a given user query. Conversational RetrieverChain is engineered to deliver high-quality, pertinent results while considering conversation history and context.
+
+LangChain Workflow for Code Understanding and Generation
+
+1. Index the code base: Clone the target repository, load all files within, chunk the files, and execute the indexing process. Optionally, you can skip this step and use an already indexed dataset.
+
+2. Embedding and Code Store: Code snippets are embedded using a code-aware embedding model and stored in a VectorStore.
+Query Understanding: GPT-4 processes user queries, grasping the context and extracting relevant details.
+
+3. Construct the Retriever: Conversational RetrieverChain searches the VectorStore to identify the most relevant code snippets for a given query.
+
+4. Build the Conversational Chain: Customize the retriever settings and define any user-defined filters as needed. 
+
+5. Ask questions: Define a list of questions to ask about the codebase, and then use the ConversationalRetrievalChain to generate context-aware answers. The LLM (GPT-4) generates comprehensive, context-aware answers based on retrieved code snippets and conversation history.
+
+The full tutorial is available below.
+- [Twitter the-algorithm codebase analysis with Deep Lake](code/twitter-the-algorithm-analysis-deeplake.ipynb): A notebook walking through how to parse github source code and run queries conversation.
+- [LangChain codebase analysis with Deep Lake](code/code-analysis-deeplake.ipynb): A notebook walking through how to analyze and do question answering over THIS code base.

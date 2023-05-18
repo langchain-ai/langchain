@@ -1,0 +1,111 @@
+{
+   "openapi": "3.0.1",
+   "info": {
+      "title": "Calculator Plugin",
+      "description": "A plugin that allows the user to perform basic arithmetic operations like addition, subtraction, multiplication, division, power, and square root using ChatGPT.",
+      "version": "v1"
+   },
+   "servers": [
+      {
+         "url": "https://chat-calculator-plugin.supportmirage.repl.co"
+      }
+   ],
+   "paths": {
+      "/calculator/{operation}/{a}/{b}": {
+         "get": {
+            "operationId": "calculate",
+            "summary": "Perform a calculation",
+            "parameters": [
+               {
+                  "in": "path",
+                  "name": "operation",
+                  "schema": {
+                     "type": "string",
+                     "enum": [
+                        "add",
+                        "subtract",
+                        "multiply",
+                        "divide",
+                        "power"
+                     ]
+                  },
+                  "required": true,
+                  "description": "The operation to perform."
+               },
+               {
+                  "in": "path",
+                  "name": "a",
+                  "schema": {
+                     "type": "number"
+                  },
+                  "required": true,
+                  "description": "The first operand."
+               },
+               {
+                  "in": "path",
+                  "name": "b",
+                  "schema": {
+                     "type": "number"
+                  },
+                  "required": true,
+                  "description": "The second operand."
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "OK",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/calculateResponse"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      },
+      "/calculator/sqrt/{a}": {
+         "get": {
+            "operationId": "sqrt",
+            "summary": "Find the square root of a number",
+            "parameters": [
+               {
+                  "in": "path",
+                  "name": "a",
+                  "schema": {
+                     "type": "number"
+                  },
+                  "required": true,
+                  "description": "The number to find the square root of."
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "OK",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/calculateResponse"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   },
+   "components": {
+      "schemas": {
+         "calculateResponse": {
+            "type": "object",
+            "properties": {
+               "result": {
+                  "type": "number",
+                  "description": "The result of the calculation."
+               }
+            }
+         }
+      }
+   }
+}

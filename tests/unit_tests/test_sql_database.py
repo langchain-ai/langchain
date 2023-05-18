@@ -34,9 +34,10 @@ def test_table_info() -> None:
             user_name VARCHAR(16) NOT NULL,
             PRIMARY KEY (user_id)
     )
-
-    SELECT * FROM 'user' LIMIT 3;
+    /*
+    3 rows from user table:
     user_id user_name
+    /*
 
 
     CREATE TABLE company (
@@ -44,9 +45,10 @@ def test_table_info() -> None:
             company_location VARCHAR NOT NULL,
             PRIMARY KEY (company_id)
     )
-
-    SELECT * FROM 'company' LIMIT 3;
+    /*
+    3 rows from company table:
     company_id company_location
+    */
     """
 
     assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
@@ -74,21 +76,22 @@ def test_table_info_w_sample_rows() -> None:
         company_location VARCHAR NOT NULL,
         PRIMARY KEY (company_id)
 )
-
-        SELECT * FROM 'company' LIMIT 2;
+        /*
+        2 rows from company table:
         company_id company_location
-
+        */
 
         CREATE TABLE user (
         user_id INTEGER NOT NULL,
         user_name VARCHAR(16) NOT NULL,
         PRIMARY KEY (user_id)
         )
-
-        SELECT * FROM 'user' LIMIT 2;
+        /*
+        2 rows from user table:
         user_id user_name
         13 Harrison
         14 Chase
+        */
         """
 
     assert sorted(output.split()) == sorted(expected_output.split())
