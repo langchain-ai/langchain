@@ -144,3 +144,4 @@ dmypy.json
 docker/
 !docker/assets/
 .dockerignore
+docker.build

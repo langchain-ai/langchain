@@ -9,6 +9,8 @@ services:
       dockerfile: docker/Dockerfile
       args:
         PYTHON_VERSION: ${PYTHON_VERSION}
+        POETRY_EXTRA_PACKAGES: ${POETRY_EXTRA_PACKAGES}
+        POETRY_DEPENDENCIES: ${POETRY_DEPENDENCIES}
 
     restart: unless-stopped
     ports:

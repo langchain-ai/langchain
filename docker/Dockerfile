@@ -32,8 +32,8 @@ VOLUME /src
 #######################
 FROM lchain-base AS lchain-base-builder
 
-ARG POETRY_EXTRA_PACKAGES=${POETRY_EXTRA_PACKAGES}
-ENV POETRY_EXTRA_PACKAGES=$POETRY_EXTRA_PACKAGES
+ARG POETRY_EXTRA_PACKAGES=$POETRY_EXTRA_PACKAGES
+ARG POETRY_DEPENDENCIES=$POETRY_DEPENDENCIES
 
 ENV HOME=/root
 ENV POETRY_HOME=/root/.poetry
@@ -65,7 +65,7 @@ COPY poetry.* pyproject.toml ./
 
 RUN mkdir /pip-prefix
 
-RUN poetry export $POETRY_EXTRA_PACKAGES --with dev,test,lint -f requirements.txt --output requirements.txt --without-hashes && \
+RUN poetry export $POETRY_EXTRA_PACKAGES --with $POETRY_DEPENDENCIES -f requirements.txt --output requirements.txt --without-hashes && \
     pip install --no-cache-dir --disable-pip-version-check --prefix /pip-prefix -r requirements.txt
 
 
