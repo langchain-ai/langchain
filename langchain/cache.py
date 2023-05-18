@@ -341,7 +341,7 @@ class GPTCache(BaseCache):
                 pre_embedding_func=get_prompt,
                 data_manager=get_data_manager(data_path=llm_string),
             )
-            
+
         self.gptcache_dict[llm_string] = _gptcache
         return _gptcache
 
