@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterator, List, Optional, Sequence, Union, Literal
+from typing import Iterator, List, Literal, Optional, Sequence, Union
 
 from langchain.document_loaders.base import BaseBlobParser, BaseLoader
 from langchain.document_loaders.blob_loaders import BlobLoader, FileSystemBlobLoader
