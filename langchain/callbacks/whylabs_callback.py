@@ -132,3 +132,4 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run on agent end."""
         self.logger.close()
+        logger.info("Closing WhyLabs logger, see you next time!")
