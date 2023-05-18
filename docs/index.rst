@@ -140,7 +140,7 @@ Reference Docs
 Ecosystem
 ------------
 
-LangChain integrates a lot of different LLMs, systems, and products.
+| LangChain integrates a lot of different LLMs, systems, and products.
 From the other side, many systems and products depend on LangChain.
 It creates a vibrant and thriving ecosystem.
 
