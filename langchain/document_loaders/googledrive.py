@@ -200,7 +200,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         return Document(page_content=text, metadata=metadata)
 
     def _load_documents_from_folder(
-        self, folder_id: str, file_types: Optional[Sequence[str]] = None
+        self, folder_id: str, *, file_types: Optional[Sequence[str]] = None
     ) -> List[Document]:
         """Load documents from a folder."""
         from googleapiclient.discovery import build
@@ -208,10 +208,14 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
         files = self._fetch_files_recursive(service, folder_id)
+        # If file types filter is provided, we'll filter by the file type.
         if file_types:
-            files = [f for f in files if f["mimeType"] in file_types]  # type: ignore
+            _files = [f for f in files if f["mimeType"] in file_types]  # type: ignore
+        else:
+            _files = files
+
         returns = []
-        for file in files:
+        for file in _files:
             if file["mimeType"] == "application/vnd.google-apps.document":
                 returns.append(self._load_document_from_id(file["id"]))  # type: ignore
             elif file["mimeType"] == "application/vnd.google-apps.spreadsheet":
@@ -303,7 +307,9 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     def load(self) -> List[Document]:
         """Load documents."""
         if self.folder_id:
-            return self._load_documents_from_folder(self.folder_id, self.file_types)
+            return self._load_documents_from_folder(
+                self.folder_id, file_types=self.file_types
+            )
         elif self.document_ids:
             return self._load_documents_from_ids()
         else:
