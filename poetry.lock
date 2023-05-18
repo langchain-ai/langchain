@@ -10320,4 +10320,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "978f11abc5819e182271024a5cbdbe15c2238bd24e00b5cf64a63ce7a8366822"
+content-hash = "da2a7d76efd3e883877f67e27802f633c6993112dd5033ee185d6fdcca74fc67"
