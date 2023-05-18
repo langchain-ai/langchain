@@ -23,5 +23,5 @@ def test_beam_call() -> None:
         ],
         max_length="5",
     )
-    output = llm._call(prompt="Your prompt goes here")
+    output = llm._deploy(prompt="Your prompt goes here")
     assert isinstance(output, str)
