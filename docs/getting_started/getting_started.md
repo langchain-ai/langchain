@@ -9,6 +9,8 @@ To get started, install LangChain with the following command:
 
 ```bash
 pip install langchain
+# or
+conda install langchain -c conda-forge
 ```
 
 
@@ -35,6 +37,12 @@ import os
 os.environ["OPENAI_API_KEY"] = "..."
 ```
 
+If you want to set the API key dynamically, you can use the openai_api_key parameter when initiating OpenAI class—for instance, each user's API key.
+
+```python
+from langchain.llms import OpenAI
+llm = OpenAI(openai_api_key="OPENAI_API_KEY")
+```
 
 ## Building a Language Model Application: LLMs
 
@@ -44,7 +52,7 @@ LangChain provides many modules that can be used to build language model applica
 
 
 
-`````{dropdown} LLMs: Get predictions from a language model
+## LLMs: Get predictions from a language model
 
 The most basic building block of LangChain is calling an LLM on some input.
 Let's walk through a simple example of how to do this. 
@@ -75,10 +83,9 @@ Feetful of Fun
 ```
 
 For more details on how to use LLMs within LangChain, see the [LLM getting started guide](../modules/models/llms/getting_started.ipynb).
-`````
 
 
-`````{dropdown} Prompt Templates: Manage prompts for LLMs
+## Prompt Templates: Manage prompts for LLMs
 
 Calling an LLM is a great first step, but it's just the beginning.
 Normally when you use an LLM in an application, you are not sending user input directly to the LLM.
@@ -113,11 +120,10 @@ What is a good name for a company that makes colorful socks?
 
 [For more details, check out the getting started guide for prompts.](../modules/prompts/chat_prompt_template.ipynb)
 
-`````
 
 
 
-`````{dropdown} Chains: Combine LLMs and prompts in multi-step workflows
+## Chains: Combine LLMs and prompts in multi-step workflows
 
 Up until now, we've worked with the PromptTemplate and LLM primitives by themselves. But of course, a real application is not just one primitive, but rather a combination of them.
 
@@ -157,10 +163,7 @@ This is one of the simpler types of chains, but understanding how it works will 
 
 [For more details, check out the getting started guide for chains.](../modules/chains/getting_started.ipynb)
 
-`````
-
-
-`````{dropdown} Agents: Dynamically Call Chains Based on User Input
+## Agents: Dynamically Call Chains Based on User Input
 
 So far the chains we've looked at run in a predetermined order.
 
@@ -175,9 +178,9 @@ In order to load agents, you should understand the following concepts:
 - LLM: The language model powering the agent.
 - Agent: The agent to use. This should be a string that references a support agent class. Because this notebook focuses on the simplest, highest level API, this only covers using the standard supported agents. If you want to implement a custom agent, see the documentation for custom agents (coming soon).
 
-**Agents**: For a list of supported agents and their specifications, see [here](../modules/agents/agents.md).
+**Agents**: For a list of supported agents and their specifications, see [here](../modules/agents/getting_started.ipynb).
 
-**Tools**: For a list of predefined tools and their specifications, see [here](../modules/agents/tools.md).
+**Tools**: For a list of predefined tools and their specifications, see [here](../modules/agents/tools/getting_started.md).
 
 For this example, you will also need to install the SerpAPI Python package.
 
@@ -197,6 +200,7 @@ Now we can get started!
 ```python
 from langchain.agents import load_tools
 from langchain.agents import initialize_agent
+from langchain.agents import AgentType
 from langchain.llms import OpenAI
 
 # First, let's load the language model we're going to use to control the agent.
@@ -207,7 +211,7 @@ tools = load_tools(["serpapi", "llm-math"], llm=llm)
 
 
 # Finally, let's initialize an agent with the tools, the language model, and the type of agent we want to use.
-agent = initialize_agent(tools, llm, agent="zero-shot-react-description", verbose=True)
+agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
 
 # Now let's test it out!
 agent.run("What was the high temperature in SF yesterday in Fahrenheit? What is that number raised to the .023 power?")
@@ -231,10 +235,8 @@ Final Answer: The high temperature in SF yesterday in Fahrenheit raised to the .
 ```
 
 
-`````
 
-
-`````{dropdown} Memory: Add State to Chains and Agents
+## Memory: Add State to Chains and Agents
 
 So far, all the chains and agents we've gone through have been stateless. But often, you may want a chain or agent to have some concept of "memory" so that it may remember information about its previous interactions. The clearest and simple example of this is when designing a chatbot - you want it to remember previous messages so it can use context from that to have a better conversation. This would be a type of "short-term memory". On the more complex side, you could imagine a chain/agent remembering key pieces of information over time - this would be a form of "long-term memory". For more concrete ideas on the latter, see this [awesome paper](https://memprompt.com/).
 
@@ -248,7 +250,8 @@ from langchain import OpenAI, ConversationChain
 llm = OpenAI(temperature=0)
 conversation = ConversationChain(llm=llm, verbose=True)
 
-conversation.predict(input="Hi there!")
+output = conversation.predict(input="Hi there!")
+print(output)
 ```
 
 ```pycon
@@ -266,7 +269,8 @@ AI:
 ```
 
 ```python
-conversation.predict(input="I'm doing well! Just having a conversation with an AI.")
+output = conversation.predict(input="I'm doing well! Just having a conversation with an AI.")
+print(output)
 ```
 
 ```pycon
@@ -284,7 +288,6 @@ AI:
 > Finished chain.
 " That's great! What would you like to talk about?"
 ```
-`````
 
 ## Building a Language Model Application: Chat Models
 
@@ -292,8 +295,8 @@ Similarly, you can use chat models instead of LLMs. Chat models are a variation 
 
 Chat model APIs are fairly new, so we are still figuring out the correct abstractions.
 
+## Get Message Completions from a Chat Model
 
-`````{dropdown} Get Message Completions from a Chat Model
 You can get chat completions by passing one or more messages to the chat model. The response will be a message. The types of messages currently supported in LangChain are `AIMessage`, `HumanMessage`, `SystemMessage`, and `ChatMessage` -- `ChatMessage` takes in an arbitrary role parameter. Most of the time, you'll just be dealing with `HumanMessage`, `AIMessage`, and `SystemMessage`.
 
 ```python
@@ -319,7 +322,7 @@ You can also pass in multiple messages for OpenAI's gpt-3.5-turbo and gpt-4 mode
 ```python
 messages = [
     SystemMessage(content="You are a helpful assistant that translates English to French."),
-    HumanMessage(content="Translate this sentence from English to French. I love programming.")
+    HumanMessage(content="I love programming.")
 ]
 chat(messages)
 # -> AIMessage(content="J'aime programmer.", additional_kwargs={})
@@ -330,41 +333,43 @@ You can go one step further and generate completions for multiple sets of messag
 batch_messages = [
     [
         SystemMessage(content="You are a helpful assistant that translates English to French."),
-        HumanMessage(content="Translate this sentence from English to French. I love programming.")
+        HumanMessage(content="I love programming.")
     ],
     [
         SystemMessage(content="You are a helpful assistant that translates English to French."),
-        HumanMessage(content="Translate this sentence from English to French. I love artificial intelligence.")
+        HumanMessage(content="I love artificial intelligence.")
     ],
 ]
 result = chat.generate(batch_messages)
 result
-# -> LLMResult(generations=[[ChatGeneration(text="J'aime programmer.", generation_info=None, message=AIMessage(content="J'aime programmer.", additional_kwargs={}))], [ChatGeneration(text="J'aime l'intelligence artificielle.", generation_info=None, message=AIMessage(content="J'aime l'intelligence artificielle.", additional_kwargs={}))]], llm_output={'token_usage': {'prompt_tokens': 71, 'completion_tokens': 18, 'total_tokens': 89}})
+# -> LLMResult(generations=[[ChatGeneration(text="J'aime programmer.", generation_info=None, message=AIMessage(content="J'aime programmer.", additional_kwargs={}))], [ChatGeneration(text="J'aime l'intelligence artificielle.", generation_info=None, message=AIMessage(content="J'aime l'intelligence artificielle.", additional_kwargs={}))]], llm_output={'token_usage': {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}})
 ```
 
 You can recover things like token usage from this LLMResult:
 ```
 result.llm_output['token_usage']
-# -> {'prompt_tokens': 71, 'completion_tokens': 18, 'total_tokens': 89}
+# -> {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}
 ```
-`````
 
-`````{dropdown} Chat Prompt Templates
+
+## Chat Prompt Templates
 Similar to LLMs, you can make use of templating by using a `MessagePromptTemplate`. You can build a `ChatPromptTemplate` from one or more `MessagePromptTemplate`s. You can use `ChatPromptTemplate`'s `format_prompt` -- this returns a `PromptValue`, which you can convert to a string or `Message` object, depending on whether you want to use the formatted value as input to an llm or chat model.
 
-For convience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:
+For convenience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:
 
 ```python
+from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
-    AIMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
 
-template="You are a helpful assistant that translates {input_language} to {output_language}."
+chat = ChatOpenAI(temperature=0)
+
+template = "You are a helpful assistant that translates {input_language} to {output_language}."
 system_message_prompt = SystemMessagePromptTemplate.from_template(template)
-human_template="{text}"
+human_template = "{text}"
 human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 
 chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
@@ -373,26 +378,24 @@ chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_mes
 chat(chat_prompt.format_prompt(input_language="English", output_language="French", text="I love programming.").to_messages())
 # -> AIMessage(content="J'aime programmer.", additional_kwargs={})
 ```
-`````
 
-`````{dropdown} Chains with Chat Models
+## Chains with Chat Models
 The `LLMChain` discussed in the above section can be used with chat models as well:
 
 ```python
 from langchain.chat_models import ChatOpenAI
-from langchain import PromptTemplate, LLMChain
+from langchain import LLMChain
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
-    AIMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
 
 chat = ChatOpenAI(temperature=0)
 
-template="You are a helpful assistant that translates {input_language} to {output_language}."
+template = "You are a helpful assistant that translates {input_language} to {output_language}."
 system_message_prompt = SystemMessagePromptTemplate.from_template(template)
-human_template="{text}"
+human_template = "{text}"
 human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 
@@ -400,14 +403,14 @@ chain = LLMChain(llm=chat, prompt=chat_prompt)
 chain.run(input_language="English", output_language="French", text="I love programming.")
 # -> "J'aime programmer."
 ```
-`````
 
-`````{dropdown} Agents with Chat Models
-Agents can also be used with chat models, you can initialize one using `"chat-zero-shot-react-description"` as the agent type.
+## Agents with Chat Models
+Agents can also be used with chat models, you can initialize one using `AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION` as the agent type.
 
 ```python
 from langchain.agents import load_tools
 from langchain.agents import initialize_agent
+from langchain.agents import AgentType
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 
@@ -420,7 +423,7 @@ tools = load_tools(["serpapi", "llm-math"], llm=llm)
 
 
 # Finally, let's initialize an agent with the tools, the language model, and the type of agent we want to use.
-agent = initialize_agent(tools, chat, agent="chat-zero-shot-react-description", verbose=True)
+agent = initialize_agent(tools, chat, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
 
 # Now let's test it out!
 agent.run("Who is Olivia Wilde's boyfriend? What is his current age raised to the 0.23 power?")
@@ -460,9 +463,7 @@ Final Answer: 2.169459462491557
 > Finished chain.
 '2.169459462491557'
 ```
-`````
-
-`````{dropdown} Memory: Add State to Chains and Agents
+## Memory: Add State to Chains and Agents
 You can use Memory with chains and agents initialized with chat models. The main difference between this and Memory for LLMs is that rather than trying to condense all previous messages into a string, we can keep them as their own unique memory object.
 
 ```python
@@ -496,4 +497,4 @@ conversation.predict(input="I'm doing well! Just having a conversation with an A
 conversation.predict(input="Tell me about yourself.")
 # -> "Sure! I am an AI language model created by OpenAI. I was trained on a large dataset of text from the internet, which allows me to understand and generate human-like language. I can answer questions, provide information, and even have conversations like this one. Is there anything else you'd like to know about me?"
 ```
-`````
+

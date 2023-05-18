@@ -5,7 +5,7 @@
 
 Since language models are good at producing text, that makes them ideal for creating chatbots.
 Aside from the base prompts/LLMs, an important concept to know for Chatbots is `memory`.
-Most chat based applications rely on remembering what happened in previous interactions, which is `memory` is designed to help with.
+Most chat based applications rely on remembering what happened in previous interactions, which `memory` is designed to help with.
 
 The following resources exist:
 - [ChatGPT Clone](../modules/agents/agent_executors/examples/chatgpt_clone.ipynb): A notebook walking through how to recreate a ChatGPT-like experience with LangChain.
@@ -16,3 +16,6 @@ The following resources exist:
 Additional related resources include:
 - [Memory Key Concepts](../modules/memory.rst): Explanation of key concepts related to memory.
 - [Memory Examples](../modules/memory/how_to_guides.rst): A collection of how-to examples for working with memory.
+
+More end-to-end examples include:
+- [Voice Assistant](chatbots/voice_assistant.ipynb): A notebook walking through how to create a voice assistant using LangChain.

@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
-from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.callbacks.manager import Callbacks
+from langchain.chains.combine_documents.base import (
+    BaseCombineDocumentsChain,
+    format_document,
+)
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.prompts.base import BasePromptTemplate
@@ -17,7 +21,7 @@ def _get_default_document_prompt() -> PromptTemplate:
     return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
 
-class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
+class RefineDocumentsChain(BaseCombineDocumentsChain):
     """Combine documents by doing a first pass and then refining on more documents."""
 
     initial_llm_chain: LLMChain
@@ -82,29 +86,31 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
                 )
         return values
 
-    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
+    def combine_docs(
+        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
+    ) -> Tuple[str, dict]:
         """Combine by mapping first chain over all, then stuffing into final chain."""
         inputs = self._construct_initial_inputs(docs, **kwargs)
-        res = self.initial_llm_chain.predict(**inputs)
+        res = self.initial_llm_chain.predict(callbacks=callbacks, **inputs)
         refine_steps = [res]
         for doc in docs[1:]:
             base_inputs = self._construct_refine_inputs(doc, res)
             inputs = {**base_inputs, **kwargs}
-            res = self.refine_llm_chain.predict(**inputs)
+            res = self.refine_llm_chain.predict(callbacks=callbacks, **inputs)
             refine_steps.append(res)
         return self._construct_result(refine_steps, res)
 
     async def acombine_docs(
-        self, docs: List[Document], **kwargs: Any
+        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
         """Combine by mapping first chain over all, then stuffing into final chain."""
         inputs = self._construct_initial_inputs(docs, **kwargs)
-        res = await self.initial_llm_chain.apredict(**inputs)
+        res = await self.initial_llm_chain.apredict(callbacks=callbacks, **inputs)
         refine_steps = [res]
         for doc in docs[1:]:
             base_inputs = self._construct_refine_inputs(doc, res)
             inputs = {**base_inputs, **kwargs}
-            res = await self.refine_llm_chain.apredict(**inputs)
+            res = await self.refine_llm_chain.apredict(callbacks=callbacks, **inputs)
             refine_steps.append(res)
         return self._construct_result(refine_steps, res)
 
@@ -116,14 +122,10 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         return res, extra_return_dict
 
     def _construct_refine_inputs(self, doc: Document, res: str) -> Dict[str, Any]:
-        base_info = {"page_content": doc.page_content}
-        base_info.update(doc.metadata)
-        document_info = {k: base_info[k] for k in self.document_prompt.input_variables}
-        base_inputs = {
-            self.document_variable_name: self.document_prompt.format(**document_info),
+        return {
+            self.document_variable_name: format_document(doc, self.document_prompt),
             self.initial_response_name: res,
         }
-        return base_inputs
 
     def _construct_initial_inputs(
         self, docs: List[Document], **kwargs: Any

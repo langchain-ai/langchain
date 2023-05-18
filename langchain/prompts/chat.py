@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, List, Sequence, Tuple, Type, Union
+from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union
 
 from pydantic import BaseModel, Field
 
@@ -58,13 +58,30 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         return [self.variable_name]
 
 
+MessagePromptTemplateT = TypeVar(
+    "MessagePromptTemplateT", bound="BaseStringMessagePromptTemplate"
+)
+
+
 class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     prompt: StringPromptTemplate
     additional_kwargs: dict = Field(default_factory=dict)
 
     @classmethod
-    def from_template(cls, template: str, **kwargs: Any) -> BaseMessagePromptTemplate:
+    def from_template(
+        cls: Type[MessagePromptTemplateT], template: str, **kwargs: Any
+    ) -> MessagePromptTemplateT:
         prompt = PromptTemplate.from_template(template)
+        return cls(prompt=prompt, **kwargs)
+
+    @classmethod
+    def from_template_file(
+        cls: Type[MessagePromptTemplateT],
+        template_file: Union[str, Path],
+        input_variables: List[str],
+        **kwargs: Any,
+    ) -> MessagePromptTemplateT:
+        prompt = PromptTemplate.from_file(template_file, input_variables)
         return cls(prompt=prompt, **kwargs)
 
     @abstractmethod
@@ -119,9 +136,28 @@ class ChatPromptValue(PromptValue):
         return self.messages
 
 
-class ChatPromptTemplate(BasePromptTemplate, ABC):
+class BaseChatPromptTemplate(BasePromptTemplate, ABC):
+    def format(self, **kwargs: Any) -> str:
+        return self.format_prompt(**kwargs).to_string()
+
+    def format_prompt(self, **kwargs: Any) -> PromptValue:
+        messages = self.format_messages(**kwargs)
+        return ChatPromptValue(messages=messages)
+
+    @abstractmethod
+    def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        """Format kwargs into a list of messages."""
+
+
+class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     input_variables: List[str]
     messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
+
+    @classmethod
+    def from_template(cls, template: str, **kwargs: Any) -> ChatPromptTemplate:
+        prompt_template = PromptTemplate.from_template(template, **kwargs)
+        message = HumanMessagePromptTemplate(prompt=prompt_template)
+        return cls.from_messages([message])
 
     @classmethod
     def from_role_strings(
@@ -129,7 +165,7 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
     ) -> ChatPromptTemplate:
         messages = [
             ChatMessagePromptTemplate(
-                content=PromptTemplate.from_template(template), role=role
+                prompt=PromptTemplate.from_template(template), role=role
             )
             for role, template in string_messages
         ]
@@ -140,7 +176,7 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
         cls, string_messages: List[Tuple[Type[BaseMessagePromptTemplate], str]]
     ) -> ChatPromptTemplate:
         messages = [
-            role(content=PromptTemplate.from_template(template))
+            role(prompt=PromptTemplate.from_template(template))
             for role, template in string_messages
         ]
         return cls.from_messages(messages)
@@ -158,7 +194,7 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
     def format(self, **kwargs: Any) -> str:
         return self.format_prompt(**kwargs).to_string()
 
-    def format_prompt(self, **kwargs: Any) -> PromptValue:
+    def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         result = []
         for message_template in self.messages:
@@ -174,7 +210,7 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
                 result.extend(message)
             else:
                 raise ValueError(f"Unexpected input: {message_template}")
-        return ChatPromptValue(messages=result)
+        return result
 
     def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
         raise NotImplementedError

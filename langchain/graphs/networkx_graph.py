@@ -56,7 +56,7 @@ class NetworkxEntityGraph:
         except ImportError:
             raise ValueError(
                 "Could not import networkx python package. "
-                "Please it install it with `pip install networkx`."
+                "Please install it with `pip install networkx`."
             )
         if graph is not None:
             if not isinstance(graph, nx.DiGraph):
@@ -72,7 +72,7 @@ class NetworkxEntityGraph:
         except ImportError:
             raise ValueError(
                 "Could not import networkx python package. "
-                "Please it install it with `pip install networkx`."
+                "Please install it with `pip install networkx`."
             )
         graph = nx.read_gml(gml_path)
         return cls(graph)

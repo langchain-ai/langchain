@@ -5,8 +5,13 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
@@ -14,11 +19,11 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 from langchain.prompts import PromptTemplate
-from langchain.schema import BaseLanguageModel, BaseRetriever, Document
+from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 
-class BaseRetrievalQA(Chain, BaseModel):
+class BaseRetrievalQA(Chain):
     combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
@@ -92,7 +97,11 @@ class BaseRetrievalQA(Chain, BaseModel):
     def _get_docs(self, question: str) -> List[Document]:
         """Get documents to do question answering over."""
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 
         If chain has 'return_source_documents' as 'True', returns
@@ -104,10 +113,46 @@ class BaseRetrievalQA(Chain, BaseModel):
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
         """
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
 
         docs = self._get_docs(question)
-        answer, _ = self.combine_documents_chain.combine_docs(docs, question=question)
+        answer = self.combine_documents_chain.run(
+            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+        )
+
+        if self.return_source_documents:
+            return {self.output_key: answer, "source_documents": docs}
+        else:
+            return {self.output_key: answer}
+
+    @abstractmethod
+    async def _aget_docs(self, question: str) -> List[Document]:
+        """Get documents to do question answering over."""
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        """Run get_relevant_text and llm on input query.
+
+        If chain has 'return_source_documents' as 'True', returns
+        the retrieved documents as well under the key 'source_documents'.
+
+        Example:
+        .. code-block:: python
+
+        res = indexqa({'query': 'This is my query'})
+        answer, docs = res['result'], res['source_documents']
+        """
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        question = inputs[self.input_key]
+
+        docs = await self._aget_docs(question)
+        answer = await self.combine_documents_chain.arun(
+            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+        )
 
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
@@ -115,7 +160,7 @@ class BaseRetrievalQA(Chain, BaseModel):
             return {self.output_key: answer}
 
 
-class RetrievalQA(BaseRetrievalQA, BaseModel):
+class RetrievalQA(BaseRetrievalQA):
     """Chain for question-answering against an index.
 
     Example:
@@ -124,8 +169,9 @@ class RetrievalQA(BaseRetrievalQA, BaseModel):
             from langchain.llms import OpenAI
             from langchain.chains import RetrievalQA
             from langchain.faiss import FAISS
-            vectordb = FAISS(...)
-            retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=vectordb)
+            from langchain.vectorstores.base import VectorStoreRetriever
+            retriever = VectorStoreRetriever(vectorstore=FAISS(...))
+            retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=retriever)
 
     """
 
@@ -134,8 +180,11 @@ class RetrievalQA(BaseRetrievalQA, BaseModel):
     def _get_docs(self, question: str) -> List[Document]:
         return self.retriever.get_relevant_documents(question)
 
+    async def _aget_docs(self, question: str) -> List[Document]:
+        return await self.retriever.aget_relevant_documents(question)
 
-class VectorDBQA(BaseRetrievalQA, BaseModel):
+
+class VectorDBQA(BaseRetrievalQA):
     """Chain for question-answering against a vector database."""
 
     vectorstore: VectorStore = Field(exclude=True, alias="vectorstore")
@@ -176,6 +225,9 @@ class VectorDBQA(BaseRetrievalQA, BaseModel):
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
+
+    async def _aget_docs(self, question: str) -> List[Document]:
+        raise NotImplementedError("VectorDBQA does not support async")
 
     @property
     def _chain_type(self) -> str:

@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Type, Union
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.graphs import NetworkxEntityGraph
 from langchain.graphs.networkx_graph import KnowledgeTriple, get_entities, parse_triples
@@ -13,14 +14,13 @@ from langchain.memory.prompt import (
 from langchain.memory.utils import get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import (
-    BaseLanguageModel,
     BaseMessage,
     SystemMessage,
     get_buffer_string,
 )
 
 
-class ConversationKGMemory(BaseChatMemory, BaseModel):
+class ConversationKGMemory(BaseChatMemory):
     """Knowledge graph memory for storing conversation memory.
 
     Integrates with external knowledge graph to store and retrieve
@@ -41,27 +41,23 @@ class ConversationKGMemory(BaseChatMemory, BaseModel):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
         entities = self._get_current_entities(inputs)
-        summaries = {}
+
+        summary_strings = []
         for entity in entities:
             knowledge = self.kg.get_entity_knowledge(entity)
             if knowledge:
-                summaries[entity] = ". ".join(knowledge) + "."
+                summary = f"On {entity}: {'. '.join(knowledge)}."
+                summary_strings.append(summary)
         context: Union[str, List]
-        if summaries:
-            summary_strings = [
-                f"On {entity}: {summary}" for entity, summary in summaries.items()
+        if not summary_strings:
+            context = [] if self.return_messages else ""
+        elif self.return_messages:
+            context = [
+                self.summary_message_cls(content=text) for text in summary_strings
             ]
-            if self.return_messages:
-                context = [
-                    self.summary_message_cls(content=text) for text in summary_strings
-                ]
-            else:
-                context = "\n".join(summary_strings)
         else:
-            if self.return_messages:
-                context = []
-            else:
-                context = ""
+            context = "\n".join(summary_strings)
+
         return {self.memory_key: context}
 
     @property

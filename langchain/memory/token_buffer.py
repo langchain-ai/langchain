@@ -1,12 +1,11 @@
 from typing import Any, Dict, List
 
-from pydantic import BaseModel
-
+from langchain.base_language import BaseLanguageModel
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.schema import BaseLanguageModel, BaseMessage, get_buffer_string
+from langchain.schema import BaseMessage, get_buffer_string
 
 
-class ConversationTokenBufferMemory(BaseChatMemory, BaseModel):
+class ConversationTokenBufferMemory(BaseChatMemory):
     """Buffer for storing conversation memory."""
 
     human_prefix: str = "Human"

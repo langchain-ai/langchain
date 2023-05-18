@@ -3,12 +3,10 @@ from __future__ import annotations
 import re
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel
-
 from langchain.schema import BaseOutputParser
 
 
-class RegexParser(BaseOutputParser, BaseModel):
+class RegexParser(BaseOutputParser):
     """Class to parse the output into a dictionary."""
 
     regex: str

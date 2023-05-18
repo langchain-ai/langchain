@@ -118,7 +118,7 @@ Below is a list of all supported tools and relevant information:
 - Notes: Uses the Google Custom Search API
 - Requires LLM: No
 - Extra Parameters: `google_api_key`, `google_cse_id`
-- For more information on this, see [this page](../../../ecosystem/google_search.md)
+- For more information on this, see [this page](../../../integrations/google_search.md)
 
 **searx-search**
 
@@ -135,7 +135,7 @@ Below is a list of all supported tools and relevant information:
 - Notes: Calls the [serper.dev](https://serper.dev) Google Search API and then parses results.
 - Requires LLM: No
 - Extra Parameters: `serper_api_key`
-- For more information on this, see [this page](../../../ecosystem/google_serper.md)
+- For more information on this, see [this page](../../../integrations/google_serper.md)
 
 **wikipedia**
 
@@ -152,3 +152,11 @@ Below is a list of all supported tools and relevant information:
 - Notes: A natural language connection to the Listen Notes Podcast API (`https://www.PodcastAPI.com`), specifically the `/search/` endpoint.
 - Requires LLM: Yes
 - Extra Parameters: `listen_api_key` (your api key to access this endpoint)
+
+**openweathermap-api**
+
+- Tool Name: OpenWeatherMap
+- Tool Description: A wrapper around OpenWeatherMap API. Useful for fetching current weather information for a specified location. Input should be a location string (e.g. London,GB).
+- Notes: A connection to the OpenWeatherMap API (https://api.openweathermap.org), specifically the `/data/2.5/weather` endpoint.
+- Requires LLM: No
+- Extra Parameters: `openweathermap_api_key` (your API key to access this endpoint)

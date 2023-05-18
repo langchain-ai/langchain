@@ -3,12 +3,10 @@ from __future__ import annotations
 import re
 from typing import Dict, Optional
 
-from pydantic import BaseModel
-
 from langchain.schema import BaseOutputParser
 
 
-class RegexDictParser(BaseOutputParser, BaseModel):
+class RegexDictParser(BaseOutputParser):
     """Class to parse the output into a dictionary."""
 
     regex_pattern: str = r"{}:\s?([^.'\n']*)\.?"  # : :meta private:

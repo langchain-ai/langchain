@@ -2,6 +2,7 @@
 from langchain.prompts.base import BasePromptTemplate, StringPromptTemplate
 from langchain.prompts.chat import (
     AIMessagePromptTemplate,
+    BaseChatPromptTemplate,
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -27,4 +28,5 @@ __all__ = [
     "AIMessagePromptTemplate",
     "SystemMessagePromptTemplate",
     "ChatMessagePromptTemplate",
+    "BaseChatPromptTemplate",
 ]

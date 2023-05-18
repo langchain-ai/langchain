@@ -37,6 +37,7 @@ class ZapierNLAWrapper(BaseModel):
     """
 
     zapier_nla_api_key: str
+    zapier_nla_oauth_access_token: str
     zapier_nla_api_base: str = "https://nla.zapier.com/api/v1/"
 
     class Config:
@@ -52,7 +53,14 @@ class ZapierNLAWrapper(BaseModel):
                 "Content-Type": "application/json",
             }
         )
-        session.params = {"api_key": self.zapier_nla_api_key}
+
+        if self.zapier_nla_oauth_access_token:
+            session.headers.update(
+                {"Authorization": f"Bearer {self.zapier_nla_oauth_access_token}"}
+            )
+        else:
+            session.params = {"api_key": self.zapier_nla_api_key}
+
         return session
 
     def _get_action_request(
@@ -73,9 +81,24 @@ class ZapierNLAWrapper(BaseModel):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
+
+        zapier_nla_api_key_default = None
+
+        # If there is a oauth_access_key passed in the values
+        # we don't need a nla_api_key it can be blank
+        if "zapier_nla_oauth_access_token" in values:
+            zapier_nla_api_key_default = ""
+        else:
+            values["zapier_nla_oauth_access_token"] = ""
+
+        # we require at least one API Key
         zapier_nla_api_key = get_from_dict_or_env(
-            values, "zapier_nla_api_key", "ZAPIER_NLA_API_KEY"
+            values,
+            "zapier_nla_api_key",
+            "ZAPIER_NLA_API_KEY",
+            zapier_nla_api_key_default,
         )
+
         values["zapier_nla_api_key"] = zapier_nla_api_key
 
         return values

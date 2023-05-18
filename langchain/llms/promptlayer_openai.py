@@ -2,13 +2,15 @@
 import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
-
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
 
 
-class PromptLayerOpenAI(OpenAI, BaseModel):
+class PromptLayerOpenAI(OpenAI):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` and ``promptlayer`` python
@@ -35,13 +37,16 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
     return_pl_id: Optional[bool] = False
 
     def _generate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         """Call OpenAI generate and then call PromptLayer API to log the request."""
         from promptlayer.utils import get_api_key, promptlayer_api_request
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = super()._generate(prompts, stop)
+        generated_responses = super()._generate(prompts, stop, run_manager)
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
@@ -71,12 +76,15 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
         return generated_responses
 
     async def _agenerate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         from promptlayer.utils import get_api_key, promptlayer_api_request_async
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = await super()._agenerate(prompts, stop)
+        generated_responses = await super()._agenerate(prompts, stop, run_manager)
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
@@ -106,7 +114,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
         return generated_responses
 
 
-class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
+class PromptLayerOpenAIChat(OpenAIChat):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` and ``promptlayer`` python
@@ -133,13 +141,16 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
     return_pl_id: Optional[bool] = False
 
     def _generate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         """Call OpenAI generate and then call PromptLayer API to log the request."""
         from promptlayer.utils import get_api_key, promptlayer_api_request
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = super()._generate(prompts, stop)
+        generated_responses = super()._generate(prompts, stop, run_manager)
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
@@ -169,12 +180,15 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
         return generated_responses
 
     async def _agenerate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         from promptlayer.utils import get_api_key, promptlayer_api_request_async
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = await super()._agenerate(prompts, stop)
+        generated_responses = await super()._agenerate(prompts, stop, run_manager)
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]

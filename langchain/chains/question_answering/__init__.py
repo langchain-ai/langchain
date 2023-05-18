@@ -1,6 +1,7 @@
 """Load question answering chains."""
 from typing import Any, Mapping, Optional, Protocol
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
@@ -15,7 +16,6 @@ from langchain.chains.question_answering import (
     stuff_prompt,
 )
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
 
 
 class LoadingCallable(Protocol):
@@ -196,7 +196,7 @@ def load_qa_chain(
     Args:
         llm: Language Model to use in the chain.
         chain_type: Type of document combining chain to use. Should be one of "stuff",
-            "map_reduce", and "refine".
+            "map_reduce", "map_rerank", and "refine".
         verbose: Whether chains should be run in verbose mode or not. Note that this
             applies to all chains that make up the final chain.
         callback_manager: Callback manager to use for the chain.
