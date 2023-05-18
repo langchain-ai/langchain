@@ -10,7 +10,7 @@ HERE = Path(__file__).parent
 EXAMPLES = HERE.parent.parent.parent / "integration_tests" / "examples"
 
 
-@pytest.mark.requires("bs4")
+@pytest.mark.requires("bs4", "lxml")
 def test_bs_html_loader() -> None:
     """Test unstructured loader."""
     file_path = EXAMPLES / "example.html"
