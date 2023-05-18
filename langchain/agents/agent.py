@@ -34,6 +34,7 @@ from langchain.schema import (
     AgentFinish,
     BaseMessage,
     BaseOutputParser,
+    OutputParserException,
 )
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
@@ -625,7 +626,9 @@ class AgentExecutor(Chain):
     max_iterations: Optional[int] = 15
     max_execution_time: Optional[float] = None
     early_stopping_method: str = "force"
-    handle_parsing_errors: Union[bool, str, Callable] = False
+    handle_parsing_errors: Union[
+        bool, str, Callable[[OutputParserException], str]
+    ] = False
 
     @classmethod
     def from_agent_and_tools(
@@ -761,7 +764,7 @@ class AgentExecutor(Chain):
                 callbacks=run_manager.get_child() if run_manager else None,
                 **inputs,
             )
-        except Exception as e:
+        except OutputParserException as e:
             if isinstance(self.handle_parsing_errors, bool):
                 raise_error = not self.handle_parsing_errors
             else:
@@ -774,7 +777,7 @@ class AgentExecutor(Chain):
             elif isinstance(self.handle_parsing_errors, str):
                 observation = self.handle_parsing_errors
             elif callable(self.handle_parsing_errors):
-                observation = self.handle_parsing_errors(text)
+                observation = self.handle_parsing_errors(e)
             else:
                 raise ValueError("Got unexpected type of `handle_parsing_errors`")
             output = AgentAction("_Exception", observation, text)
@@ -846,15 +849,26 @@ class AgentExecutor(Chain):
                 callbacks=run_manager.get_child() if run_manager else None,
                 **inputs,
             )
-        except Exception as e:
-            if not self.handle_parsing_errors:
+        except OutputParserException as e:
+            if isinstance(self.handle_parsing_errors, bool):
+                raise_error = not self.handle_parsing_errors
+            else:
+                raise_error = False
+            if raise_error:
                 raise e
-            text = str(e).split("`")[1]
-            observation = "Invalid or incomplete response"
+            text = str(e)
+            if isinstance(self.handle_parsing_errors, bool):
+                observation = "Invalid or incomplete response"
+            elif isinstance(self.handle_parsing_errors, str):
+                observation = self.handle_parsing_errors
+            elif callable(self.handle_parsing_errors):
+                observation = self.handle_parsing_errors(e)
+            else:
+                raise ValueError("Got unexpected type of `handle_parsing_errors`")
             output = AgentAction("_Exception", observation, text)
             tool_run_kwargs = self.agent.tool_run_logging_kwargs()
             observation = await ExceptionTool().arun(
-                output.tool,
+                output.tool_input,
                 verbose=self.verbose,
                 color=None,
                 callbacks=run_manager.get_child() if run_manager else None,
