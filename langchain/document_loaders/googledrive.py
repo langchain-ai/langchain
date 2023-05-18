@@ -209,7 +209,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         service = build("drive", "v3", credentials=creds)
         files = self._fetch_files_recursive(service, folder_id)
         if file_types:
-            files = [f for f in files if file["mimeType"] in file_types]  # type: ignore
+            files = [f for f in files if f["mimeType"] in file_types]  # type: ignore
         returns = []
         for file in files:
             if file["mimeType"] == "application/vnd.google-apps.document":
