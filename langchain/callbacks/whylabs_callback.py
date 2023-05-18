@@ -13,8 +13,6 @@ def import_langkit() -> Any:
         import langkit.regexes  # noqa: F401
         import langkit.sentiment  # noqa: F401
         import langkit.textstat  # noqa: F401
-        import langkit.themes  # noqa: F401
-        import langkit.toxicity  # noqa: F401
     except ImportError:
         raise ImportError(
             "To use the whylabs callback manager you need to have the `langkit` python "
