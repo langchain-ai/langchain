@@ -75,7 +75,7 @@ class DeepLake(VectorStore):
             embedding_function=embedding_function,
             exec_option=exec_option,
         )
-        self._embedding_function = embedding_function.from_documents
+        self._embedding_function = embedding_function
 
     def add_texts(
         self,
@@ -100,13 +100,18 @@ class DeepLake(VectorStore):
         embeddings = None
         if len(self.deeplake_vector_store) < MAX_DATASET_LENGTH_FOR_CACHING:
             try:
-                embeddings = self._embedding_function.from_documents(texts)
+                embeddings = self._embedding_function.embed_documents(texts)
             except Exception:
                 raise Exception(
                     "Specified embedding function raised an exception. "
                     "Try again later or use another embedding_function."
                 )
             self.deeplake_vector_store.embedding_function = None
+        else:
+            if not callable(self.deeplake_vector_store.embedding_function):
+                self.deeplake_vector_store.embedding_function = (
+                    self.deeplake_vector_store.embedding_function.embed_documents
+                )
 
         try:
             ids = self.deeplake_vector_store.add(
@@ -156,17 +161,25 @@ class DeepLake(VectorStore):
             List of Documents selected by the specified distance metric,
             if return_score True, return a tuple of (Document, score)
         """
-        view, indices, scores = self.search(
+        emb = embedding or self._embedding_function.embed_query(query)  # type: ignore
+        query_emb = np.array(emb, dtype=np.float32)
+
+        if self.deeplake_vector_store.embedding_function is not None and not callable(
+            self.deeplake_vector_store.embedding_function
+        ):
+            self.deeplake_vector_store.embedding_function = (
+                self.deeplake_vector_store.embedding_function.embed_documents
+            )
+
+        view, indices, scores = self.deeplake_vector_store.search(
             query=query,
-            embedding=embedding,
+            embedding=query_emb,
             k=fetch_k if use_maximal_marginal_relevance else k,
             distance_metric=distance_metric,
             filter=filter,
             exec_option=exec_option,
         )
-
-        emb = embedding or self._embedding_function.embed_query(query)  # type: ignore
-        query_emb = np.array(emb, dtype=np.float32)
+        view = view[indices]
 
         if use_maximal_marginal_relevance:
             logger.warning(
@@ -396,4 +409,4 @@ class DeepLake(VectorStore):
 
     def persist(self) -> None:
         """Persist the collection."""
-        self.ds.flush()
+        self.deeplake_vector_store.dataset.flush()

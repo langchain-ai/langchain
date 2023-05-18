@@ -77,7 +77,7 @@ def test_deeplakewith_persistence() -> None:
 
     # Clean up
     docsearch.delete_dataset()
-
+    assert len(docsearch.deeplake_vector_store) == 0
     # Persist doesn't need to be called again
     # Data will be automatically persisted on object deletion
     # Or on program exit
@@ -90,6 +90,7 @@ def test_similarity_search(deeplake_datastore: DeepLake, distance_metric: str) -
     )
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
     deeplake_datastore.delete_dataset()
+    assert len(deeplake_datastore.deeplake_vector_store) == 0
 
 
 def test_similarity_search_by_vector(
@@ -149,10 +150,11 @@ def test_max_marginal_relevance_search(deeplake_datastore: DeepLake) -> None:
 
 def test_delete_dataset_by_ids(deeplake_datastore: DeepLake) -> None:
     """Test delete dataset."""
-    id = deeplake_datastore.ds.ids.data()["value"][0]
+    id = deeplake_datastore.deeplake_vector_store.dataset.ids.data()["value"][0]
     deeplake_datastore.delete(ids=[id])
-    assert deeplake_datastore.similarity_search("foo", k=1, filter={"page": "0"}) == []
-    assert len(deeplake_datastore.ds) == 2
+    with pytest.raises(ValueError):
+        deeplake_datastore.similarity_search("foo", k=1, filter={"page": "0"}) == []
+    assert len(deeplake_datastore.deeplake_vector_store) == 2
 
     deeplake_datastore.delete_dataset()
 
@@ -160,14 +162,15 @@ def test_delete_dataset_by_ids(deeplake_datastore: DeepLake) -> None:
 def test_delete_dataset_by_filter(deeplake_datastore: DeepLake) -> None:
     """Test delete dataset."""
     deeplake_datastore.delete(filter={"page": "1"})
-    assert deeplake_datastore.similarity_search("bar", k=1, filter={"page": "1"}) == []
-    assert len(deeplake_datastore.ds) == 2
+    with pytest.raises(ValueError):
+        deeplake_datastore.similarity_search("bar", k=1, filter={"page": "1"})
+    assert len(deeplake_datastore.deeplake_vector_store) == 2
 
     deeplake_datastore.delete_dataset()
 
 
 def test_delete_by_path(deeplake_datastore: DeepLake) -> None:
     """Test delete dataset."""
-    path = deeplake_datastore.dataset_path
+    path = deeplake_datastore.deeplake_vector_store.dataset.path
     DeepLake.force_delete_by_path(path)
     assert not deeplake.exists(path)
