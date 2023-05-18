@@ -212,11 +212,18 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        results = self.similarity_search_with_score(query, k=k, filter=filter, score_threshold=score_threshold)
+        results = self.similarity_search_with_score(
+            query, k=k, filter=filter, score_threshold=score_threshold
+        )
         return list(map(itemgetter(0), results))
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, filter: Optional[MetadataFilter] = None, *, score_threshold: Optional[float] = None
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[MetadataFilter] = None,
+        *,
+        score_threshold: Optional[float] = None,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -236,7 +243,7 @@ class Qdrant(VectorStore):
             query_filter=self._qdrant_filter_from_dict(filter),
             with_payload=True,
             limit=k,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )
         return [
             (
