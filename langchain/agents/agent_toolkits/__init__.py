@@ -19,9 +19,9 @@ from langchain.agents.agent_toolkits.powerbi.toolkit import PowerBIToolkit
 from langchain.agents.agent_toolkits.python.base import create_python_agent
 from langchain.agents.agent_toolkits.spark.base import create_spark_dataframe_agent
 from langchain.agents.agent_toolkits.spark_sql.base import create_spark_sql_agent
+from langchain.agents.agent_toolkits.spark_sql.toolkit import SparkSQLToolkit
 from langchain.agents.agent_toolkits.sql.base import create_sql_agent
 from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
-from langchain.agents.agent_toolkits.spark_sql.toolkit import SparkSQLToolkit
 from langchain.agents.agent_toolkits.vectorstore.base import (
     create_vectorstore_agent,
     create_vectorstore_router_agent,
@@ -43,6 +43,7 @@ __all__ = [
     "create_vectorstore_agent",
     "JsonToolkit",
     "SQLDatabaseToolkit",
+    "SparkSQLToolkit",
     "NLAToolkit",
     "PowerBIToolkit",
     "OpenAPIToolkit",
