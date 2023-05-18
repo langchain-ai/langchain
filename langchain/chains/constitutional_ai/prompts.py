@@ -10,15 +10,12 @@ Model: {output_from_model}
 
 Critique Request: {critique_request}
 
-Critique: {critique}
-
-Revision request: {revision_request}""",
+Critique: {critique}""",
     input_variables=[
         "input_prompt",
         "output_from_model",
         "critique_request",
         "critique",
-        "revision_request",
     ],
 )
 
@@ -59,7 +56,7 @@ examples = [
 
 CRITIQUE_PROMPT = FewShotPromptTemplate(
     example_prompt=critique_example,
-    examples=examples,
+    examples=[{k:v for k,v in e.items() if k!="revision_request"} for e in examples],
     prefix="Below is a conversation between a human and an AI model. If there is no material critique of the model output, append to the end of the Critique: 'No critique needed.'",
     suffix="""Human: {input_prompt}
 Model: {output_from_model}
