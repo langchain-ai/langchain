@@ -287,10 +287,11 @@ class BaseLLM(BaseLanguageModel, ABC):
         self, prompt: str, stop: Optional[List[str]] = None, callbacks: Callbacks = None
     ) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
-        if isinstance(prompt, list):
+        if not isinstance(prompt, str):
             raise ValueError(
-                "Argument `prompt` is expected to be a single string, not a list. If "
-                "you want to run the LLM on multiple prompts, use `generate` instead."
+                "Argument `prompt` is expected to be a string. Instead found "
+                f"{type(prompt)}. If you want to run the LLM on multiple prompts, use "
+                "`generate` instead."
             )
         return (
             self.generate([prompt], stop=stop, callbacks=callbacks)
