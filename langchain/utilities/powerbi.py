@@ -9,13 +9,20 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 import aiohttp
 import requests
 from aiohttp import ServerTimeoutError
-from azure.core.credentials import TokenCredential
 from pydantic import BaseModel, Field, root_validator
 from requests.exceptions import Timeout
 
 _LOGGER = logging.getLogger(__name__)
 
 BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg")
+
+try:
+    from azure.core.credentials import TokenCredential
+except ImportError:
+    _LOGGER.log(
+        logging.WARNING,
+        "Could not import azure.core python package.",
+    )
 
 
 class PowerBIDataset(BaseModel):
