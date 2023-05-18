@@ -19,7 +19,8 @@ class ZepRetriever(BaseRetriever):
     summarizes, embeds, indexes, and enriches conversational AI chat
     histories, and exposes them via simple, low-latency APIs.
 
-    For server installation instructions, see: https://getzep.github.io/deployment/quickstart/
+    For server installation instructions, see:
+    https://getzep.github.io/deployment/quickstart/
     """
 
     def __init__(
@@ -42,13 +43,16 @@ class ZepRetriever(BaseRetriever):
 
     def _search_result_to_doc(self, results: List[SearchResult]) -> List[Document]:
         return [
-            Document(page_content=r.message.pop("content"), metadata={"score": r.dist, **r.message})
+            Document(
+                page_content=r.message.pop("content"),
+                metadata={"score": r.dist, **r.message},
+            )
             for r in results
             if r.message
         ]
 
     def get_relevant_documents(self, query: str) -> List[Document]:
-        from zep_python import SearchPayload, SearchResult
+        from zep_python import SearchPayload
 
         payload: SearchPayload = SearchPayload(text=query)
 
@@ -59,7 +63,7 @@ class ZepRetriever(BaseRetriever):
         return self._search_result_to_doc(results)
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
-        from zep_python import SearchPayload, SearchResult
+        from zep_python import SearchPayload
 
         payload: SearchPayload = SearchPayload(text=query)
 
