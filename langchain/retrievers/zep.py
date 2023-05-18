@@ -19,7 +19,7 @@ class ZepRetriever(BaseRetriever):
     summarizes, embeds, indexes, and enriches conversational AI chat
     histories, and exposes them via simple, low-latency APIs.
 
-    For server installation instructions, see: https://github.com/getzep/zep
+    For server installation instructions, see: https://getzep.github.io/deployment/quickstart/
     """
 
     def __init__(
