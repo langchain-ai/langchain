@@ -1,7 +1,7 @@
 """Loader that uses bs4 to load HTML files, enriching metadata with page title."""
 
 import logging
-from typing import Any, Dict, Iterator, Mapping, Optional, Union
+from typing import Any, Dict, Iterator, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
@@ -18,7 +18,7 @@ class BS4HTMLParser(BaseBlobParser):
         *,
         features: str = "lxml",
         get_text_separator: str = "",
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Initialize a bs4 based HTML parser."""
         try:
