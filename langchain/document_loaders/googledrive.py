@@ -10,7 +10,7 @@
 #   https://cloud.google.com/iam/docs/service-accounts-create
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from pydantic import BaseModel, root_validator, validator
 
@@ -30,12 +30,12 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     document_ids: Optional[List[str]] = None
     file_ids: Optional[List[str]] = None
     recursive: bool = False
-    file_types: Optional[str] = None
+    file_types: Optional[Sequence[str]] = None
 
     @root_validator
-    def validate_folder_id_or_document_ids(
+    def validate_inputs(
         cls, values: Dict[str, Any]
-    ) -> Dict[str, Any]:        
+    ) -> Dict[str, Any]:
         """Validate that either folder_id or document_ids is set, but not both."""
         if values.get("folder_id") and (
             values.get("document_ids") or values.get("file_ids")
@@ -50,28 +50,34 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             and not values.get("file_ids")
         ):
             raise ValueError("Must specify either folder_id, document_ids, or file_ids")
-        
+
         file_types = values.get("file_types")
         if file_types:
             if values.get("document_ids") or values.get("file_ids"):
-                raise ValueError("file_types can only be given when folder_id is given,"
-                                 " (not when document_ids or file_ids are given).")
+                raise ValueError(
+                    "file_types can only be given when folder_id is given,"
+                    " (not when document_ids or file_ids are given)."
+                )
             type_mapping = {
                 "document": "application/vnd.google-apps.document",
                 "sheet": "application/vnd.google-apps.spreadsheet",
-                "pdf": "application/pdf"
+                "pdf": "application/pdf",
             }
             allowed_types = list(type_mapping.keys()) + list(type_mapping.values())
-            short_names =  ", ".join([f"'{x}'" for x in type_mapping.keys()])
-            full_names =  ", ".join([f"'{x}'" for x in type_mapping.values()])    
+            short_names = ", ".join([f"'{x}'" for x in type_mapping.keys()])
+            full_names = ", ".join([f"'{x}'" for x in type_mapping.values()])
             for file_type in file_types:
                 if file_type not in allowed_types:
-                    raise ValueError(f"Given file type {file_type} is not supported. "
-                                     f"Supported values are: {short_names}; and "
-                                     f"their full-form names: {full_names}")
+                    raise ValueError(
+                        f"Given file type {file_type} is not supported. "
+                        f"Supported values are: {short_names}; and "
+                        f"their full-form names: {full_names}"
+                    )
+
             # replace short-form file types by full-form file types
-            def full_form(x: str) -> str:  
+            def full_form(x: str) -> str:
                 return type_mapping[x] if x in type_mapping else x
+
             values["file_types"] = [full_form(file_type) for file_type in file_types]
         return values
 
@@ -195,8 +201,9 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         }
         return Document(page_content=text, metadata=metadata)
 
-    def _load_documents_from_folder(self, folder_id: str,
-                                    file_types: Optional[str] = None) -> List[Document]:
+    def _load_documents_from_folder(
+        self, folder_id: str, file_types: Optional[Sequence[str]] = None
+    ) -> List[Document]:
         """Load documents from a folder."""
         from googleapiclient.discovery import build
 
@@ -204,7 +211,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         service = build("drive", "v3", credentials=creds)
         files = self._fetch_files_recursive(service, folder_id)
         if file_types:
-            files = [file for file in files if file["mimeType"] in file_types]
+            files = [file for file in files if file["mimeType"] in file_types]  # type: ignore
         returns = []
         for file in files:
             if file["mimeType"] == "application/vnd.google-apps.document":
