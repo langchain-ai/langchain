@@ -26,10 +26,10 @@ RETURN "(:" + label + ")-[:" + property + "]->(:" + toString(other[0]) + ")" AS 
 
 
 class Neo4jGraph:
-    """Neo4j wrapper for entity graph operations."""
+    """Neo4j wrapper for graph operations."""
 
     def __init__(self, url: str, username: str, password: str, database: str = "neo4j") -> None:
-        """Create a new Neo4j graph."""
+        """Create a new Neo4j graph wrapper instance."""
         try:
             import neo4j
         except ImportError:
