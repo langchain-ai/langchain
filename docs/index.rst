@@ -134,25 +134,24 @@ Reference Docs
    :hidden:
 
    ./reference/installation.md
-   ./reference/integrations.md
    ./reference.rst
 
 
-LangChain Ecosystem
--------------------
+Ecosystem
+------------
 
-| Guides for how other companies/products can be used with LangChain.
+| Guides for how other products can be used with LangChain.
 
-- `LangChain Ecosystem <./ecosystem.html>`_
+- `Integrations <./integrations.html>`_
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :glob:
    :caption: Ecosystem
    :name: ecosystem
    :hidden:
 
-   ./ecosystem.rst
+   ./integrations.rst
 
 
 Additional Resources
