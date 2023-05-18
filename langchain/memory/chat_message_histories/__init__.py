@@ -22,7 +22,6 @@ __all__ = [
     "CosmosDBChatMessageHistory",
     "FirestoreChatMessageHistory",
     "MongoDBChatMessageHistory",
-    "ZepChatMessageHistory",
     "CassandraChatMessageHistory",
     "ZepChatMessageHistory",
 ]
