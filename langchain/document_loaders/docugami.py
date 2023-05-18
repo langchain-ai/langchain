@@ -5,7 +5,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import requests
 from pydantic import BaseModel, root_validator
@@ -39,7 +39,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
     access_token: Optional[str] = os.environ.get("DOCUGAMI_API_KEY")
     docset_id: Optional[str]
     document_ids: Optional[Sequence[str]]
-    file_paths: Optional[Sequence[Path]]
+    file_paths: Optional[Sequence[Union[Path, str]]]
     min_chunk_size: int = 32  # appended to the next chunk to avoid over-chunking
 
     @root_validator
@@ -331,6 +331,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         elif self.file_paths:
             # local mode (for integration testing, or pre-downloaded XML)
             for path in self.file_paths:
+                path = Path(path)
                 with open(path, "rb") as file:
                     chunks += self._parse_dgml(
                         {
