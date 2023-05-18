@@ -183,7 +183,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         else:
             raise ValueError("Unexpected generation type")
 
-    async def _acall(
+    async def _call_async(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
@@ -221,7 +221,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
             _stop = None
         else:
             _stop = list(stop)
-        result = await self._acall([HumanMessage(content=text)], stop=_stop)
+        result = await self._call_async([HumanMessage(content=text)], stop=_stop)
         return result.content
 
     async def apredict_messages(
@@ -231,7 +231,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
             _stop = None
         else:
             _stop = list(stop)
-        return await self._acall(messages, stop=_stop)
+        return await self._call_async(messages, stop=_stop)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

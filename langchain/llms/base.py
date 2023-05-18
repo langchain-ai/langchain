@@ -293,7 +293,7 @@ class BaseLLM(BaseLanguageModel, ABC):
             .text
         )
 
-    async def _acall(
+    async def _call_async(
         self, prompt: str, stop: Optional[List[str]] = None, callbacks: Callbacks = None
     ) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
@@ -323,7 +323,7 @@ class BaseLLM(BaseLanguageModel, ABC):
             _stop = None
         else:
             _stop = list(stop)
-        return await self._acall(text, stop=_stop)
+        return await self._call_async(text, stop=_stop)
 
     async def apredict_messages(
         self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
@@ -333,7 +333,7 @@ class BaseLLM(BaseLanguageModel, ABC):
             _stop = None
         else:
             _stop = list(stop)
-        content = await self._acall(text, stop=_stop)
+        content = await self._call_async(text, stop=_stop)
         return AIMessage(content=content)
 
     @property
