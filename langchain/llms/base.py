@@ -421,9 +421,7 @@ class StrInStrOutLLM(BaseLLM):
         """Run the LLM on the given prompt and input."""
         # TODO: add caching here.
         generations = []
-        new_arg_supported = inspect.signature(
-            self._generate_str_in_str_out
-        ).parameters.get("run_manager")
+        new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
         for prompt in prompts:
             text = (
                 self._call(prompt, stop=stop, run_manager=run_manager)
