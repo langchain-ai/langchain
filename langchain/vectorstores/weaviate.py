@@ -126,6 +126,8 @@ class Weaviate(VectorStore):
                 return value.isoformat()
             return value
 
+        embeddings = self._embedding.embed_documents(list(texts))
+
         with self._client.batch as batch:
             ids = []
             for i, doc in enumerate(texts):
@@ -137,19 +139,18 @@ class Weaviate(VectorStore):
                         data_properties[key] = json_serializable(metadatas[i][key])
 
                 # If the UUID of one of the objects already exists
-                # then the existing objectwill be replaced by the new object.
+                # then the existing object will be replaced by the new object.
                 if "uuids" in kwargs:
                     _id = kwargs["uuids"][i]
                 else:
                     _id = get_valid_uuid(uuid4())
 
                 if self._embedding is not None:
-                    embeddings = self._embedding.embed_documents(list(doc))
                     batch.add_data_object(
                         data_object=data_properties,
                         class_name=self._index_name,
                         uuid=_id,
-                        vector=embeddings[0],
+                        vector=embeddings[i],
                     )
                 else:
                     batch.add_data_object(
