@@ -26,7 +26,8 @@ class Beam(LLM):
     to set these is availible here: https://docs.beam.cloud/account/api-keys.
 
     The wrapper can then be called as follows, where the name, cpu, memory, gpu,
-    python version, and python packages can be updated accordingly.
+    python version, and python packages can be updated accordingly. Once deployed,
+    the instance can be called.
         llm = Beam(model_name="gpt2",
             name="langchain-gpt2",
             cpu=8,
@@ -43,7 +44,9 @@ class Beam(LLM):
                 "xformers",],
             max_length=50)
 
-        result = llm._call(prompt=input)
+        depolyResult = llm._deploy(prompt=input)
+
+        callResult = llm._call(prompt=input)
     """
 
     model_name: str = ""
@@ -191,10 +194,9 @@ class Beam(LLM):
 
     def _deploy(
         self,
-        prompt: str,
         stop: Optional[list] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-    ) -> str:
+    ) -> None:
         """Deploy and call to Beam."""
         try:
             import beam  # type: ignore
@@ -208,10 +210,6 @@ class Beam(LLM):
                 "https://raw.githubusercontent.com/slai-labs"
                 "/get-beam/main/get-beam.sh -sSfL | sh`."
             )
-        api_key = self.beam_client_id
-        api_secret = self.beam_client_secret
-        max_length = self.max_length
-        response = ""
 
         self.appCreation()
         self.runCreation()
@@ -234,42 +232,6 @@ class Beam(LLM):
             print("Deployment failed.")
             print("Error:", process.stderr)
 
-        accept = "*/*"
-        encoding = "gzip, deflate"
-        credential_string = (
-            (api_key + ":" + api_secret) if api_key is not None else api_secret
-        )
-        authorization = base64.b64encode(credential_string.encode()).decode()
-        connection = "keep-alive"
-        content_type = "application/json"
-
-        payload = {"prompt": prompt, "max_length": max_length}
-        headers = {
-            "Accept": accept,
-            "Accept-Encoding": encoding,
-            "Authorization": "Basic " + authorization,
-            "Connection": connection,
-            "Content-Type": content_type,
-        }
-
-        completed = False
-        tries = 0
-        while not completed and tries < 100:
-            request = requests.request(
-                "POST",
-                cast(Union[str, bytes], url),
-                headers=headers,
-                data=json.dumps(payload),
-            )
-            if request.status_code == 200:
-                response = request.json()["text"]
-                completed = True
-            else:
-                time.sleep(10)
-                tries += 1
-
-        return response
-    
     def _call(
         self,
         prompt: str,
@@ -289,8 +251,6 @@ class Beam(LLM):
                 "https://raw.githubusercontent.com/slai-labs"
                 "/get-beam/main/get-beam.sh -sSfL | sh`."
             )
-        
-        print("Makng call!")
 
         api_key = self.beam_client_id
         api_secret = self.beam_client_secret
@@ -332,4 +292,3 @@ class Beam(LLM):
                 tries += 1
 
         return response
-
