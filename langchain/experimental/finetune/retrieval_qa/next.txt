@@ -18,7 +18,7 @@ next:
 - run fine-tune in RetrievalQAChain to do a better side-by-side
     - there's no HuggingFaceModel?
     - lora/peft merge
-- some more error analysis, some more scale in data and maybe model
+- some more error analysis, some more scale in data and maybe model (esp. for more realistic retrieval setting, larger chunk size, etc.)
 
 later/not important just noting:
 - LLMChain doesn't expose raw prompt (and in turn any chain wrapping an LLMChain too), so I have some stateful hackery
