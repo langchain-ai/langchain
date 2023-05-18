@@ -18,6 +18,20 @@ logger = logging.getLogger(__name__)
 
 class ZepChatMessageHistory(BaseChatMessageHistory):
     """A ChatMessageHistory implementation that uses Zep as a backend.
+    
+    Recommended usage::
+    
+        # Set up Zep Chat History
+        zep_chat_history = ZepChatMessageHistory(
+            session_id=session_id,
+            url=ZEP_API_URL,
+        )
+        
+        # Use a standard ConversationBufferMemory to encapsulate the Zep chat history
+        memory = ConversationBufferMemory(
+            memory_key="chat_history", chat_memory=zep_chat_history
+        )
+    
 
     Zep provides long-term conversation storage for LLM apps. The server stores,
     summarizes, embeds, indexes, and enriches conversational AI chat
