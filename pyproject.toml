@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.171"
+version = "0.0.172"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -185,6 +185,7 @@ all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "
 # Please use new-line on formatting to make it easier to add new packages without
 # merge-conflicts
 extended_testing = [
+ "beautifulsoup4",
  "jq",
  "pdfminer.six",
  "pypdf",
