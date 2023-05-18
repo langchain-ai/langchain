@@ -51,7 +51,9 @@ class QAGenerationChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, List]:
-        docs = self.text_splitter.create_documents([inputs[self.input_key]])
+        # Passing [inputs] has the effect, not sure if intended, of concat'ing several texts into a single doc...
+        # docs = self.text_splitter.create_documents([inputs[self.input_key]])
+        docs = self.text_splitter.create_documents(inputs[self.input_key])
         results = self.llm_chain.generate(
             [{"text": d.page_content} for d in docs], run_manager=run_manager
         )
