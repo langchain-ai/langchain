@@ -125,33 +125,30 @@ class SQLDatabase:
     ) -> SQLDatabase:
         """
         Class method to create an SQLDatabase instance from a Databricks connection.
-        This method requires the 'databricks-sql-connector' package. If not already
-        installed, it can be added using `pip install databricks-sql-connector`.
+        This method requires the 'databricks-sql-connector' package. If not installed,
+        it can be added using `pip install databricks-sql-connector`.
 
         Args:
             catalog (str): The catalog name in the Databricks database.
             schema (str): The schema name in the catalog.
-            host (Optional[str]): The hostname of the Databricks workspace, which
-                doesn't contain the 'https://' part. If not provided, it will be
-                fetched from the environment variable 'DATABRICKS_HOST'.
-                Otherwise, it will use the hostname of the current Databricks workspace
-                if running inside a Databricks notebook. Defaults to None.
-            api_token (Optional[str]): The Databricks personal access token to access
-                the Databricks SQL warehouse or the cluster.
-                If not provided, it will be fetched from the environment variable
-                'DATABRICKS_API_TOKEN'. Otherwise, if running inside a Databricks
-                notebook, it will generate a temporary token for the current user.
-                Defaults to None.
-            warehouse_id (Optional[str]): The warehouse ID in the Databricks SQL.
-                If provided, the method will configure the connection to use this
-                warehouse. Cannot be used in conjunction with 'cluster_id'. Defaults
-                to None.
-            cluster_id (Optional[str]): The cluster ID in the Databricks Runtime.
-                If provided, the method will configure the connection to use this
-                cluster. Cannot be used in conjunction with 'warehouse_id'. If
-                running inside a Databricks notebook and both 'warehouse_id' and
-                'cluster_id' are None, it will use the ID of the cluster the notebook
-                is attached to. Defaults to None.
+            host (Optional[str]): The Databricks workspace hostname, excluding
+                'https://' part. If not provided, it attempts to fetch from the
+                environment variable 'DATABRICKS_HOST'. If still unavailable and if
+                running in a Databricks notebook, it defaults to the current workspace
+                hostname. Defaults to None.
+            api_token (Optional[str]): The Databricks personal access token for
+                accessing the Databricks SQL warehouse or the cluster. If not provided,
+                it attempts to fetch from 'DATABRICKS_API_TOKEN'. If still unavailable
+                and running in a Databricks notebook, a temporary token for the current
+                user is generated. Defaults to None.
+            warehouse_id (Optional[str]): The warehouse ID in the Databricks SQL. If
+                provided, the method configures the connection to use this warehouse.
+                Cannot be used with 'cluster_id'. Defaults to None.
+            cluster_id (Optional[str]): The cluster ID in the Databricks Runtime. If
+                provided, the method configures the connection to use this cluster.
+                Cannot be used with 'warehouse_id'. If running in a Databricks notebook
+                and both 'warehouse_id' and 'cluster_id' are None, it uses the ID of the
+                cluster the notebook is attached to. Defaults to None.
             **kwargs (Any): Additional keyword arguments for the `from_uri` method.
 
         Returns:
@@ -159,9 +156,9 @@ class SQLDatabase:
                 Databricks connection details.
 
         Raises:
-            ValueError: If the 'databricks-sql-connector' package is not found, or
-                if both 'warehouse_id' and 'cluster_id' are provided, or if neither
-                'warehouse_id' nor 'cluster_id' are provided and it is not running
+            ValueError: If 'databricks-sql-connector' is not found, or if both
+                'warehouse_id' and 'cluster_id' are provided, or if neither
+                'warehouse_id' nor 'cluster_id' are provided and it's not executing
                 inside a Databricks notebook.
         """
         try:
