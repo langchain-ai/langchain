@@ -2,11 +2,16 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.utils import get_from_env
 from langchain.vectorstores.base import VectorStore
+
+if TYPE_CHECKING:
+    from typesense.client import Client
+    from typesense.collection import Collection
 
 
 class Typesense(VectorStore):
@@ -17,49 +22,87 @@ class Typesense(VectorStore):
     Example:
         .. code-block:: python
 
+            from langchain.embedding.openai import OpenAIEmbeddings
             from langchain.vectorstores import Typesense
-            from langchain.embeddings.openai import OpenAIEmbeddings
             import typesense
 
-            typesense_client = typesense.Client({
-              "nodes": [{
+            node = {
                 "host": "localhost",  # For Typesense Cloud use xxx.a1.typesense.net
                 "port": "8108",       # For Typesense Cloud use 443
                 "protocol": "http"    # For Typesense Cloud use https
-              }],
-              "api_key": "<API_KEY>",
-              "connection_timeout_seconds": 2
-            })
+            }
+            typesense_client = typesense.Client(
+                {
+                  "nodes": [node],
+                  "api_key": "<API_KEY>",
+                  "connection_timeout_seconds": 2
+                }
+            )
             typesense_collection_name = "products"
 
-            embeddings = OpenAIEmbeddings()
-            vectorstore = Typesense(typesense_client, typesense_collection_name, embeddings.embed_query, "text")
+            embedding = OpenAIEmbeddings()
+            vectorstore = Typesense(
+                typesense_client,
+                typesense_collection_name,
+                embedding.embed_query,
+                "text",
+            )
     """
 
     def __init__(
         self,
-        typesense_client: Any,
-        typesense_collection_name: str,
-        embedding_function: Callable,
-        text_key: str,
+        typesense_client: Client,
+        embedding: Embeddings,
+        *,
+        typesense_collection_name: Optional[str] = None,
+        text_key: str = "text",
     ):
         """Initialize with Typesense client."""
         try:
-            import typesense
+            from typesense import Client
         except ImportError:
             raise ValueError(
                 "Could not import typesense python package. "
                 "Please install it with `pip install typesense`."
             )
-        if not isinstance(typesense_client, typesense.Client):
+        if not isinstance(typesense_client, Client):
             raise ValueError(
                 f"typesense_client should be an instance of typesense.Client, "
                 f"got {type(typesense_client)}"
             )
-        self.typesense_client = typesense_client
-        self.typesense_collection_name = typesense_collection_name
-        self._embedding_function = embedding_function
+        self._typesense_client = typesense_client
+        self._embedding = embedding
+        self._typesense_collection_name = typesense_collection_name or str(uuid.uuid4())
         self._text_key = text_key
+
+    @property
+    def _collection(self) -> Collection:
+        return self._typesense_client.collections[self._typesense_collection_name]
+
+    def _prep_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]],
+        ids: Optional[List[str]],
+    ) -> List[dict]:
+        """Embed and create the documents"""
+        _ids = ids or (str(uuid.uuid4()) for _ in texts)
+        _metadatas: Iterable[dict] = metadatas or ({} for _ in texts)
+        embedded_texts = self._embedding.embed_documents(list(texts))
+        return [
+            {"id": _id, "vec": vec, "text": text, "metadata": metadata}
+            for _id, vec, text, metadata in zip(_ids, embedded_texts, texts, _metadatas)
+        ]
+
+    def _create_collection(self, num_dim: int) -> None:
+        fields = [
+            {"name": "vec", "type": "float[]", "num_dim": num_dim},
+            {"name": "text", "type": "string"},
+            {"name": ".*", "type": "auto"},
+        ]
+        self._typesense_client.collections.create(
+            {"name": self._typesense_collection_name, "fields": fields}
+        )
 
     def add_texts(
         self,
@@ -68,7 +111,7 @@ class Typesense(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
+        """Run more texts through the embedding and add to the vectorstore.
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
@@ -79,48 +122,16 @@ class Typesense(VectorStore):
             List of ids from adding the texts into the vectorstore.
 
         """
-        import time
+        from typesense.exceptions import ObjectNotFound
 
-        from typesense.exceptions import ObjectAlreadyExists, ObjectNotFound
-
-        # Embed and create the documents
-        docs = []
-        ids = ids or [str(uuid.uuid4()) for _ in texts]
-        for i, text in enumerate(texts):
-            embedding = self._embedding_function(text)
-            metadata = metadatas[i] if metadatas else {}
-            docs.append(
-                {"id": ids[i], "vec": embedding, "text": text, "metadata": metadata}
-            )
-
-        # upsert to Typesense
-        while True:
-            try:
-                self.typesense_client.collections[
-                    self.typesense_collection_name
-                ].documents.import_(docs, {"action": "upsert"})
-            except ObjectNotFound:
-                # Create the collection if it doesn't already exist
-                try:
-                    self.typesense_client.collections.create(
-                        {
-                            "name": self.typesense_collection_name,
-                            "fields": [
-                                {
-                                    "name": "vec",
-                                    "type": "float[]",
-                                    "num_dim": len(docs[0]["vec"]),
-                                },
-                                {"name": "text", "type": "string"},
-                                {"name": ".*", "type": "auto"},
-                            ],
-                        }
-                    )
-                except ObjectAlreadyExists:
-                    continue
-                continue
-            break
-        return ids
+        docs = self._prep_texts(texts, metadatas, ids)
+        try:
+            self._collection.documents.import_(docs, {"action": "upsert"})
+        except ObjectNotFound:
+            # Create the collection if it doesn't already exist
+            self._create_collection(len(docs[0]["vec"]))
+            self._collection.documents.import_(docs, {"action": "upsert"})
+        return [doc["id"] for doc in docs]
 
     def similarity_search_with_score(
         self,
@@ -138,17 +149,14 @@ class Typesense(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        query_obj = self._embedding_function(query)
+        embedded_query = [str(x) for x in self._embedding.embed_query(query)]
+        query_obj = {
+            "q": "*",
+            "vector_query": f'vec:([{",".join(embedded_query)}], k:{k})',
+            "filter_by": filter,
+        }
         docs = []
-        results = self.typesense_client.collections[
-            self.typesense_collection_name
-        ].documents.search(
-            {
-                "q": "*",
-                "vector_query": f'vec:([{",".join(query_obj)}], k:{k})',
-                "filter_by": filter,
-            }
-        )
+        results = self._collection.documents.search(query_obj)
         for res in results["hits"]:
             metadata = res["metadata"]
             text = metadata.pop(self._text_key)
@@ -162,6 +170,7 @@ class Typesense(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[str] = "",
+        **kwargs: Any,
     ) -> List[Document]:
         """Return typesense documents most similar to query.
 
@@ -173,22 +182,60 @@ class Typesense(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        query_obj = self._embedding_function(query)
-        docs = []
-        results = self.typesense_client.collections[
-            self.typesense_collection_name
-        ].documents.search(
-            {
-                "q": "*",
-                "vector_query": f'vec:([{",".join(query_obj)}], k:{k})',
-                "filter_by": filter,
-            }
+        docs_and_score = self.similarity_search_with_score(query, k=k, filter=filter)
+        return [doc for doc, _ in docs_and_score]
+
+    @classmethod
+    def from_client_params(
+        cls,
+        embedding: Embeddings,
+        *,
+        host: str = "localhost",
+        port: Union[str, int] = "8108",
+        protocol: str = "http",
+        typesense_api_key: Optional[str] = None,
+        connection_timeout_seconds: int = 2,
+        **kwargs: Any,
+    ) -> Typesense:
+        """Initialize Typesense directly from client parameters.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.embedding.openai import OpenAIEmbeddings
+                from langchain.vectorstores import Typesense
+
+                # Pass in typesense_api_key as kwarg or set env var "TYPESENSE_API_KEY".
+                vectorstore = Typesense(
+                    OpenAIEmbeddings(),
+                    host="localhost",
+                    port="8108",
+                    protocol="http",
+                    typesense_collection_name="products",
+                )
+        """
+        try:
+            from typesense import Client
+        except ImportError:
+            raise ValueError(
+                "Could not import typesense python package. "
+                "Please install it with `pip install typesense`."
+            )
+
+        node = {
+            "host": host,
+            "port": str(port),
+            "protocol": protocol,
+        }
+        typesense_api_key = typesense_api_key or get_from_env(
+            "typesense_api_key", "TYPESENSE_API_KEY"
         )
-        for res in results["hits"]:
-            metadata = res["metadata"]
-            text = metadata.pop(self._text_key)
-            docs.append(Document(page_content=text, metadata=metadata))
-        return docs
+        client_config = {
+            "nodes": [node],
+            "api_key": typesense_api_key,
+            "connection_timeout_seconds": connection_timeout_seconds,
+        }
+        return cls(Client(client_config), embedding, **kwargs)
 
     @classmethod
     def from_texts(
@@ -197,115 +244,20 @@ class Typesense(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        batch_size: int = 32,
-        text_key: str = "text",
-        typesense_collection_name: Optional[str] = None,
-        typesense_client: Optional[Typesense.Client] = None,
+        typesense_client: Optional[Client] = None,
+        typesense_client_params: Optional[dict] = None,
         **kwargs: Any,
-    ) -> Typesense.Client:
-        """Construct Typesense wrapper from raw documents.
-
-        This is a user-friendly interface that:
-            1. Embeds documents.
-            2. Adds the documents to a provided Typesense collection
-
-        This is intended to be a quick way to get started.
-
-        Example:
-            .. code-block:: python
-
-                from langchain import Typesense
-                from langchain.embeddings import OpenAIEmbeddings
-                import typesense
-
-                embeddings = OpenAIEmbeddings()
-
-                typesense_client = typesense.Client({
-                  "nodes": [{
-                    "host": "localhost",  # For Typesense Cloud use xxx.a1.typesense.net
-                    "port": "8108",       # For Typesense Cloud use 443
-                    "protocol": "http"    # For Typesense Cloud use https
-                  }],
-                  "api_key": "<API_KEY>",
-                  "connection_timeout_seconds": 2
-                })
-
-                Typesense.from_texts(
-                    typesense_client,
-                    texts,
-                    embeddings,
-                    index_name="langchain-demo"
-                )
-        """
-        try:
-            import typesense
-        except ImportError:
-            raise ValueError(
-                "Could not import typesense python package. "
-                "Please install it with `pip install typesense`."
+    ) -> Typesense:
+        """Construct Typesense wrapper from raw text."""
+        if typesense_client:
+            vectorstore = cls(typesense_client, embedding, **kwargs)
+        elif typesense_client_params:
+            vectorstore = cls.from_client_params(
+                embedding, **typesense_client_params, **kwargs
             )
-
-        from typesense.exceptions import ObjectAlreadyExists, ObjectNotFound
-
-        _typesense_collection_name = typesense_collection_name or str(uuid.uuid4())
-
-        for i in range(0, len(texts), batch_size):
-            # set end position of batch
-            i_end = min(i + batch_size, len(texts))
-            # get batch of texts and ids
-            lines_batch = texts[i:i_end]
-            # create ids if not provided
-            if ids:
-                ids_batch = ids[i:i_end]
-            else:
-                ids_batch = [str(uuid.uuid4()) for n in range(i, i_end)]
-            # create embeddings
-            embeds = embedding.embed_documents(lines_batch)
-            # prep metadata and upsert batch
-            if metadatas:
-                metadata = metadatas[i:i_end]
-            else:
-                metadata = [{} for _ in range(i, i_end)]
-            for j, line in enumerate(lines_batch):
-                metadata[j][text_key] = line
-
-            # Prep docs to upsert
-            docs = []
-            for i, text in enumerate(lines_batch):
-                docs.append(
-                    {
-                        "id": ids_batch[i],
-                        "vec": embeds[i],
-                        "text": text,
-                        "metadata": metadatas[i],
-                    }
-                )
-
-            # upsert to Typesense
-            while True:
-                try:
-                    typesense_client.collections[
-                        typesense_collection_name
-                    ].documents.import_(docs, {"action": "upsert"})
-                except ObjectNotFound:
-                    # Create the collection if it doesn't already exist
-                    try:
-                        typesense_client.collections.create(
-                            {
-                                "name": typesense_collection_name,
-                                "fields": [
-                                    {
-                                        "name": "vec",
-                                        "type": "float[]",
-                                        "num_dim": len(docs[0]["vec"]),
-                                    },
-                                    {"name": "text", "type": "string"},
-                                    {"name": ".*", "type": "auto"},
-                                ],
-                            }
-                        )
-                    except ObjectAlreadyExists:
-                        continue
-                    continue
-                break
-        return cls(typesense_client, embedding.embed_query, text_key)
+        else:
+            raise ValueError(
+                "Must specify one of typesense_client or typesense_client_params."
+            )
+        vectorstore.add_texts(texts, metadatas=metadatas, ids=ids)
+        return vectorstore
