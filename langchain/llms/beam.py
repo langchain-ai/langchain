@@ -193,7 +193,7 @@ class Beam(LLM):
             file.write(script.format(model_name=self.model_name))
 
     def _deploy(self) -> None:
-        """Deploy and call to Beam."""
+        """Call to Beam."""
         try:
             import beam  # type: ignore
 
