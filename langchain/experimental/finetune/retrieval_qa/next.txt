@@ -1,0 +1,25 @@
+current:
+- finetune small, easy to operationalize instruction following LM for QA using QAGenerationChain
+- some observations on flan-t5-base, finetuned on ~1000 samples:
+    - dataset:
+        - wrt size, bumping 250->500->1000 samples yield proportional gains in performance
+    - with and without peft/lora
+        - no glaring difference at first glance, tho can easily finetune on collab free
+        - that said, didn't study regression (eg ppl) with full fine-tuning
+    - evaluation
+        - QAEvalChain
+            - have to dig further, sometimes just wrong, sometimes could benefit from more granularity/rubric-style
+        - precision (bleu), recall (rouge) style metrics
+            - quite a bit better on finetune
+        - manual
+            - it's decent, basically seems feasible to adapt a small flan in the style of the gpt-3.5-turbo-synthesized answers
+    
+next:
+- run fine-tune in RetrievalQAChain to do a better side-by-side
+    - there's no HuggingFaceModel?
+    - lora/peft merge
+- some more error analysis, some more scale in data and maybe model
+
+later/not important just noting:
+- LLMChain doesn't expose raw prompt (and in turn any chain wrapping an LLMChain too), so I have some stateful hackery
+- QAGenerationChain is slow => chat completions api has no parallel proc support
