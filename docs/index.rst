@@ -162,7 +162,7 @@ Additional Resources
 
 - `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: The LangChainHub is a place to share and explore other prompts, chains, and agents.
 
-- `Gallery <./additional_resources/gallery.html>`_: A collection of our favorite projects that use LangChain. Useful for finding inspiration or seeing how things were done in other applications.
+- `Gallery <https://github.com/kyrolabs/awesome-langchain>`_: A collection of great projects that use Langchain, compiled by the folks at `Kyrolabs <https://kyrolabs.com>`_. Useful for finding inspiration and example implementations.
 
 - `Deployments <./additional_resources/deployments.html>`_: A collection of instructions, code snippets, and template repositories for deploying LangChain apps.
 
