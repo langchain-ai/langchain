@@ -89,6 +89,8 @@ gql = {version = "^3.4.1", optional = true}
 pandas = {version = "^2.0.1", optional = true}
 telethon = {version = "^1.28.5", optional = true}
 zep-python = {version="^0.25", optional=true}
+chardet = {version="^5.1.0", optional=true}
+
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -156,6 +158,7 @@ ruff = "^0.0.249"
 types-toml = "^0.10.8.1"
 types-redis = "^4.3.21.6"
 black = "^23.1.0"
+types-chardet = "^5.0.4.6"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
@@ -174,6 +177,7 @@ setuptools = "^67.6.1"
 llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
+text_helpers = ["chardet"]
 cohere = ["cohere"]
 in_memory_store = ["docarray"]
 hnswlib = ["docarray", "protobuf", "hnswlib"]
@@ -185,6 +189,7 @@ all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "
 # merge-conflicts
 extended_testing = [
  "beautifulsoup4",
+ "chardet",
  "jq",
  "pdfminer.six",
  "pypdf",
