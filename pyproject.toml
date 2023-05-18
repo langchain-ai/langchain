@@ -195,7 +195,6 @@ extended_testing = [
  "beautifulsoup4",
  "pandas",
  "telethon",
- "zep-python"
 ]
 
 [tool.ruff]

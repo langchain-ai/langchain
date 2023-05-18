@@ -1,13 +1,17 @@
-# type: ignore
+from typing import TYPE_CHECKING
+
 import pytest
 from pytest_mock import MockerFixture
-from zep_python import Memory, Message, Summary, ZepClient
 
 from langchain.memory.chat_message_histories import ZepChatMessageHistory
 from langchain.schema import AIMessage, HumanMessage
 
+if TYPE_CHECKING:
+    from zep_python import ZepClient
+
 
 @pytest.fixture
+@pytest.mark.requires("zep_python")
 def zep_chat(mocker: MockerFixture) -> ZepChatMessageHistory:
     mock_zep_client: ZepClient = mocker.patch("zep_python.ZepClient", autospec=True)
     zep_chat: ZepChatMessageHistory = ZepChatMessageHistory(
@@ -17,7 +21,10 @@ def zep_chat(mocker: MockerFixture) -> ZepChatMessageHistory:
     return zep_chat
 
 
+@pytest.mark.requires("zep_python")
 def test_messages(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> None:
+    from zep_python import Memory, Message, Summary
+
     mock_memory: Memory = Memory(
         summary=Summary(
             content="summary",
@@ -27,7 +34,7 @@ def test_messages(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> Non
             Message(content="message2", role="human"),
         ],
     )
-    zep_chat.zep_client.get_memory.return_value = mock_memory
+    zep_chat.zep_client.get_memory.return_value = mock_memory  # type: ignore
 
     result = zep_chat.messages
 
@@ -37,30 +44,37 @@ def test_messages(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> Non
     assert isinstance(result[2], HumanMessage)
 
 
+@pytest.mark.requires("zep_python")
 def test_add_user_message(
     mocker: MockerFixture, zep_chat: ZepChatMessageHistory
 ) -> None:
     zep_chat.add_user_message("test message")
-    zep_chat.zep_client.add_memory.assert_called_once()
+    zep_chat.zep_client.add_memory.assert_called_once()  # type: ignore
 
 
+@pytest.mark.requires("zep_python")
 def test_add_ai_message(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> None:
     zep_chat.add_ai_message("test message")
-    zep_chat.zep_client.add_memory.assert_called_once()
+    zep_chat.zep_client.add_memory.assert_called_once()  # type: ignore
 
 
+@pytest.mark.requires("zep_python")
 def test_append(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> None:
     zep_chat.append(AIMessage(content="test message"))
-    zep_chat.zep_client.add_memory.assert_called_once()
+    zep_chat.zep_client.add_memory.assert_called_once()  # type: ignore
 
 
+@pytest.mark.requires("zep_python")
 def test_search(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> None:
     zep_chat.search("test query")
-    zep_chat.zep_client.search_memory.assert_called_once_with(
+    zep_chat.zep_client.search_memory.assert_called_once_with(  # type: ignore
         "test_session", mocker.ANY, limit=None
     )
 
 
+@pytest.mark.requires("zep_python")
 def test_clear(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> None:
     zep_chat.clear()
-    zep_chat.zep_client.delete_memory.assert_called_once_with("test_session")
+    zep_chat.zep_client.delete_memory.assert_called_once_with(  # type: ignore
+        "test_session"
+    )
