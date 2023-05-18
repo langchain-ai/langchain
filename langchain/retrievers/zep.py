@@ -42,16 +42,7 @@ class ZepRetriever(BaseRetriever):
 
     def _search_result_to_doc(self, results: List[SearchResult]) -> List[Document]:
         return [
-            Document(
-                page_content=r.message["content"],
-                metadata={
-                    "source": r.message["uuid"],
-                    "score": r.dist,
-                    "role": r.message["role"],
-                    "token_count": r.message["token_count"],
-                    "created_at": r.message["created_at"],
-                },
-            )
+            Document(page_content=r.message.pop("content"), metadata={"score": r.dist, **r.message})
             for r in results
             if r.message
         ]
