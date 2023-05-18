@@ -45,9 +45,7 @@ class TextLoader(BaseLoader):
                     for encoding in detected_encodings:
                         logger.debug("Trying encoding: ", encoding.encoding)
                         try:
-                            with open(
-                                self.file_path, encoding=encoding.encoding
-                            ) as f:
+                            with open(self.file_path, encoding=encoding.encoding) as f:
                                 text = f.read()
                             break
                         except UnicodeDecodeError:
@@ -59,5 +57,3 @@ class TextLoader(BaseLoader):
 
         metadata = {"source": self.file_path}
         return [Document(page_content=text, metadata=metadata)]
-
-
