@@ -16,7 +16,6 @@ If the question does not seem related to the database, just return "I don't know
 
 SQL_SUFFIX = """Begin!
 
-{chat_history}
 Question: {input}
 Thought: I should look at the tables in the database to see what I can query.
 {agent_scratchpad}"""
