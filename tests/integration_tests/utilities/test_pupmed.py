@@ -32,7 +32,7 @@ def test_run_returns_no_result(api_client: PubMedAPIWrapper) -> None:
     """Test that gives no result."""
 
     output = api_client.run("1605.08386WWW")
-    assert "No good Arxiv Result was found" == output
+    assert "No good PubMed Result was found" == output
 
 
 def assert_docs(docs: List[Document]) -> None:
@@ -82,7 +82,7 @@ def test_load_returns_full_set_of_metadata() -> None:
 
 
 def _load_pubmed_from_universal_entry(**kwargs: Any) -> BaseTool:
-    tools = load_tools(["arxiv"], **kwargs)
+    tools = load_tools(["pupmed"], **kwargs)
     assert len(tools) == 1, "loaded more than 1 tool"
     return tools[0]
 
