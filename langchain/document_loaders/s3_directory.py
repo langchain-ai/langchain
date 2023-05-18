@@ -21,7 +21,7 @@ class S3DirectoryLoader(BaseLoader):
         except ImportError:
             raise ValueError(
                 "Could not import boto3 python package. "
-                "Please it install it with `pip install boto3`."
+                "Please install it with `pip install boto3`."
             )
         s3 = boto3.resource("s3")
         bucket = s3.Bucket(self.bucket)

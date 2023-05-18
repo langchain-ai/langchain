@@ -31,8 +31,8 @@ Typically you'd use SequentialChain, here's a basic example:
 
     1. Use NLA to find an email in Gmail
     2. Use LLMChain to generate a draft reply to (1)
-    3. Use NLA to send the draft reply (2) to someone in Slack via direct mesage
-    
+    3. Use NLA to send the draft reply (2) to someone in Slack via direct message
+
 In code, below:
 
 ```python
@@ -61,6 +61,9 @@ from langchain.utilities.zapier import ZapierNLAWrapper
 
 llm = OpenAI(temperature=0)
 zapier = ZapierNLAWrapper()
+## To leverage a nla_oauth_access_token you may pass the value to the ZapierNLAWrapper
+## If you do this there is no need to initialize the ZAPIER_NLA_API_KEY env variable
+# zapier = ZapierNLAWrapper(zapier_nla_oauth_access_token="TOKEN_HERE")
 toolkit = ZapierToolkit.from_zapier_nla_wrapper(zapier)
 agent = initialize_agent(
     toolkit.get_tools(),
@@ -78,6 +81,10 @@ from typing import Any, Dict, Optional
 
 from pydantic import Field, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 from langchain.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain.utilities.zapier import ZapierNLAWrapper
@@ -98,6 +105,7 @@ class ZapierNLARunAction(BaseTool):
     api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
     action_id: str
     params: Optional[dict] = None
+    base_prompt: str = BASE_ZAPIER_TOOL_PROMPT
     zapier_description: str
     params_schema: Dict[str, str] = Field(default_factory=dict)
     name = ""
@@ -109,18 +117,33 @@ class ZapierNLARunAction(BaseTool):
         params_schema = values["params_schema"]
         if "instructions" in params_schema:
             del params_schema["instructions"]
+
+        # Ensure base prompt (if overrided) contains necessary input fields
+        necessary_fields = {"{zapier_description}", "{params}"}
+        if not all(field in values["base_prompt"] for field in necessary_fields):
+            raise ValueError(
+                "Your custom base Zapier prompt must contain input fields for "
+                "{zapier_description} and {params}."
+            )
+
         values["name"] = zapier_description
-        values["description"] = BASE_ZAPIER_TOOL_PROMPT.format(
+        values["description"] = values["base_prompt"].format(
             zapier_description=zapier_description,
             params=str(list(params_schema.keys())),
         )
         return values
 
-    def _run(self, instructions: str) -> str:
+    def _run(
+        self, instructions: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
         return self.api_wrapper.run_as_str(self.action_id, instructions, self.params)
 
-    async def _arun(self, _: str) -> str:
+    async def _arun(
+        self,
+        _: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
         raise NotImplementedError("ZapierNLAListActions does not support async")
 
@@ -145,11 +168,19 @@ class ZapierNLAListActions(BaseTool):
     )
     api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
 
-    def _run(self, _: str) -> str:
+    def _run(
+        self,
+        _: str = "",
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
         return self.api_wrapper.list_as_str()
 
-    async def _arun(self, _: str) -> str:
+    async def _arun(
+        self,
+        _: str = "",
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
         raise NotImplementedError("ZapierNLAListActions does not support async")
 

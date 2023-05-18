@@ -46,6 +46,8 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     control_log_additive: Optional[bool] = True
     """Apply controls on prompt items by adding the log(control_factor) 
     to attention scores."""
+    aleph_alpha_api_key: Optional[str] = None
+    """API key for Aleph Alpha API."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -58,7 +60,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "
-                "Please it install it with `pip install aleph_alpha_client`."
+                "Please install it with `pip install aleph_alpha_client`."
             )
         values["client"] = Client(token=aleph_alpha_api_key)
         return values
@@ -81,7 +83,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "
-                "Please it install it with `pip install aleph_alpha_client`."
+                "Please install it with `pip install aleph_alpha_client`."
             )
         document_embeddings = []
 
@@ -121,7 +123,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "
-                "Please it install it with `pip install aleph_alpha_client`."
+                "Please install it with `pip install aleph_alpha_client`."
             )
         symmetric_params = {
             "prompt": Prompt.from_text(text),
@@ -166,7 +168,7 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "
-                "Please it install it with `pip install aleph_alpha_client`."
+                "Please install it with `pip install aleph_alpha_client`."
             )
         query_params = {
             "prompt": Prompt.from_text(text),

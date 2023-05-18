@@ -23,3 +23,4 @@ Query Understanding: GPT-4 processes user queries, grasping the context and extr
 
 The full tutorial is available below.
 - [Twitter the-algorithm codebase analysis with Deep Lake](code/twitter-the-algorithm-analysis-deeplake.ipynb): A notebook walking through how to parse github source code and run queries conversation.
+- [LangChain codebase analysis with Deep Lake](code/code-analysis-deeplake.ipynb): A notebook walking through how to analyze and do question answering over THIS code base.

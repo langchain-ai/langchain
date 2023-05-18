@@ -5,7 +5,7 @@ from typing import Generator
 
 import pytest
 
-from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.manager import CallbackManager
 from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
@@ -33,6 +33,14 @@ def test_openai_extra_kwargs() -> None:
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
         OpenAI(foo=3, model_kwargs={"foo": 2})
+
+    # Test that if explicit param is specified in kwargs it errors
+    with pytest.raises(ValueError):
+        OpenAI(model_kwargs={"temperature": 0.2})
+
+    # Test that "model" cannot be specified in kwargs
+    with pytest.raises(ValueError):
+        OpenAI(model_kwargs={"model": "text-davinci-003"})
 
 
 def test_openai_llm_output_contains_model_name() -> None:
@@ -211,3 +219,14 @@ async def test_openai_chat_async_streaming_callback() -> None:
     result = await llm.agenerate(["Write me a sentence with 100 words."])
     assert callback_handler.llm_streams != 0
     assert isinstance(result, LLMResult)
+
+
+def test_openai_modelname_to_contextsize_valid() -> None:
+    """Test model name to context size on a valid model."""
+    assert OpenAI().modelname_to_contextsize("davinci") == 2049
+
+
+def test_openai_modelname_to_contextsize_invalid() -> None:
+    """Test model name to context size on an invalid model."""
+    with pytest.raises(ValueError):
+        OpenAI().modelname_to_contextsize("foobar")

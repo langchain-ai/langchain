@@ -45,6 +45,8 @@ The following use cases require specific installs and api keys:
   - Set up Elasticsearch backend. If you want to do locally, [this](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/getting-started.html) is a good guide.
 - _FAISS_:
   - Install requirements with `pip install faiss` for Python 3.7 and `pip install faiss-cpu` for Python 3.10+.
+- _MyScale_
+  - Install requirements with `pip install clickhouse-connect`. For documentations, please refer to [this document](https://docs.myscale.com/en/overview/).
 - _Manifest_:
   - Install requirements with `pip install manifest-ml` (Note: this is only available in Python 3.8+ currently).
 - _OpenSearch_:
@@ -55,6 +57,12 @@ The following use cases require specific installs and api keys:
 - _LlamaCpp_:
   - Install requirements with `pip install llama-cpp-python`
   - Download model and convert following [llama.cpp instructions](https://github.com/ggerganov/llama.cpp)
+- _Milvus_:
+  - Install requirements with `pip install pymilvus`
+  - In order to setup a local cluster, take a look [here](https://milvus.io/docs).
+- _Zilliz_:
+  - Install requirements with `pip install pymilvus`
+  - To get up and running, take a look [here](https://zilliz.com/doc/quick_start).
 
 
 If you are using the `NLTKTextSplitter` or the `SpacyTextSplitter`, you will also need to install the appropriate models. For example, if you want to use the `SpacyTextSplitter`, you will need to install the `en_core_web_sm` model with `python -m spacy download en_core_web_sm`. Similarly, if you want to use the `NLTKTextSplitter`, you will need to install the `punkt` model with `python -m nltk.downloader punkt`.

@@ -6,10 +6,11 @@ from typing import Any, Callable, List, Mapping, Optional
 
 from pydantic import Extra
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def _generate_text(
@@ -208,5 +209,10 @@ class SelfHostedPipeline(LLM):
     def _llm_type(self) -> str:
         return "self_hosted_llm"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         return self.client(pipeline=self.pipeline_ref, prompt=prompt, stop=stop)

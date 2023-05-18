@@ -1,6 +1,7 @@
 """Wrapper around FAISS vector database."""
 from __future__ import annotations
 
+import math
 import pickle
 import uuid
 from pathlib import Path
@@ -29,6 +30,20 @@ def dependable_faiss_import() -> Any:
     return faiss
 
 
+def _default_relevance_score_fn(score: float) -> float:
+    """Return a similarity score on a scale [0, 1]."""
+    # The 'correct' relevance function
+    # may differ depending on a few things, including:
+    # - the distance / similarity metric used by the VectorStore
+    # - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+    # - embedding dimensionality
+    # - etc.
+    # This function converts the euclidean norm of normalized embeddings
+    # (0 is most similar, sqrt(2) most dissimilar)
+    # to a similarity function (0 to 1)
+    return 1.0 - score / math.sqrt(2)
+
+
 class FAISS(VectorStore):
     """Wrapper around FAISS vector database.
 
@@ -48,12 +63,16 @@ class FAISS(VectorStore):
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
+        relevance_score_fn: Optional[
+            Callable[[float], float]
+        ] = _default_relevance_score_fn,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index = index
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
+        self.relevance_score_fn = relevance_score_fn
 
     def __add(
         self,
@@ -208,7 +227,12 @@ class FAISS(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -219,7 +243,10 @@ class FAISS(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -227,7 +254,10 @@ class FAISS(VectorStore):
         # -1 happens when not enough docs are returned.
         embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]
         mmr_selected = maximal_marginal_relevance(
-            np.array([embedding], dtype=np.float32), embeddings, k=k
+            np.array([embedding], dtype=np.float32),
+            embeddings,
+            k=k,
+            lambda_mult=lambda_mult,
         )
         selected_indices = [indices[0][i] for i in mmr_selected]
         docs = []
@@ -243,7 +273,12 @@ class FAISS(VectorStore):
         return docs
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -254,12 +289,17 @@ class FAISS(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
         embedding = self.embedding_function(query)
-        docs = self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k)
+        docs = self.max_marginal_relevance_search_by_vector(
+            embedding, k, fetch_k, lambda_mult=lambda_mult
+        )
         return docs
 
     def merge_from(self, target: FAISS) -> None:
@@ -314,7 +354,7 @@ class FAISS(VectorStore):
         docstore = InMemoryDocstore(
             {index_to_id[i]: doc for i, doc in enumerate(documents)}
         )
-        return cls(embedding.embed_query, index, docstore, index_to_id)
+        return cls(embedding.embed_query, index, docstore, index_to_id, **kwargs)
 
     @classmethod
     def from_texts(
@@ -342,7 +382,13 @@ class FAISS(VectorStore):
                 faiss = FAISS.from_texts(texts, embeddings)
         """
         embeddings = embedding.embed_documents(texts)
-        return cls.__from(texts, embeddings, embedding, metadatas, **kwargs)
+        return cls.__from(
+            texts,
+            embeddings,
+            embedding,
+            metadatas,
+            **kwargs,
+        )
 
     @classmethod
     def from_embeddings(
@@ -367,45 +413,76 @@ class FAISS(VectorStore):
                 from langchain import FAISS
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
-                faiss = FAISS.from_texts(texts, embeddings)
+                text_embeddings = embeddings.embed_documents(texts)
+                text_embedding_pairs = list(zip(texts, text_embeddings))
+                faiss = FAISS.from_embeddings(text_embedding_pairs, embeddings)
         """
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
-        return cls.__from(texts, embeddings, embedding, metadatas, **kwargs)
+        return cls.__from(
+            texts,
+            embeddings,
+            embedding,
+            metadatas,
+            **kwargs,
+        )
 
-    def save_local(self, folder_path: str) -> None:
+    def save_local(self, folder_path: str, index_name: str = "index") -> None:
         """Save FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
             folder_path: folder path to save index, docstore,
                 and index_to_docstore_id to.
+            index_name: for saving with a specific index file name
         """
         path = Path(folder_path)
         path.mkdir(exist_ok=True, parents=True)
 
         # save index separately since it is not picklable
         faiss = dependable_faiss_import()
-        faiss.write_index(self.index, str(path / "index.faiss"))
+        faiss.write_index(
+            self.index, str(path / "{index_name}.faiss".format(index_name=index_name))
+        )
 
         # save docstore and index_to_docstore_id
-        with open(path / "index.pkl", "wb") as f:
+        with open(path / "{index_name}.pkl".format(index_name=index_name), "wb") as f:
             pickle.dump((self.docstore, self.index_to_docstore_id), f)
 
     @classmethod
-    def load_local(cls, folder_path: str, embeddings: Embeddings) -> FAISS:
+    def load_local(
+        cls, folder_path: str, embeddings: Embeddings, index_name: str = "index"
+    ) -> FAISS:
         """Load FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
             folder_path: folder path to load index, docstore,
                 and index_to_docstore_id from.
             embeddings: Embeddings to use when generating queries
+            index_name: for saving with a specific index file name
         """
         path = Path(folder_path)
         # load index separately since it is not picklable
         faiss = dependable_faiss_import()
-        index = faiss.read_index(str(path / "index.faiss"))
+        index = faiss.read_index(
+            str(path / "{index_name}.faiss".format(index_name=index_name))
+        )
 
         # load docstore and index_to_docstore_id
-        with open(path / "index.pkl", "rb") as f:
+        with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
         return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and their similarity scores on a scale from 0 to 1."""
+        if self.relevance_score_fn is None:
+            raise ValueError(
+                "normalize_score_fn must be provided to"
+                " FAISS constructor to normalize scores"
+            )
+        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
