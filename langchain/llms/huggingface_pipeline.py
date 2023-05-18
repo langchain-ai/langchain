@@ -6,7 +6,7 @@ from typing import Any, List, Mapping, Optional
 from pydantic import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 from langchain.llms.utils import enforce_stop_tokens
 
 DEFAULT_MODEL_ID = "gpt2"
@@ -16,7 +16,7 @@ VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 logger = logging.getLogger(__name__)
 
 
-class HuggingFacePipeline(LLM):
+class HuggingFacePipeline(StrInStrOutLLM):
     """Wrapper around HuggingFace Pipeline API.
 
     To use, you should have the ``transformers`` python package installed.
@@ -64,7 +64,7 @@ class HuggingFacePipeline(LLM):
         device: int = -1,
         model_kwargs: Optional[dict] = None,
         **kwargs: Any,
-    ) -> LLM:
+    ) -> StrInStrOutLLM:
         """Construct the pipeline object from model_id and task."""
         try:
             from transformers import (
@@ -150,7 +150,7 @@ class HuggingFacePipeline(LLM):
     def _llm_type(self) -> str:
         return "huggingface_pipeline"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

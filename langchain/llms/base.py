@@ -365,14 +365,32 @@ class BaseLLM(BaseLanguageModel, ABC):
             raise ValueError(f"{save_path} must be json or yaml")
 
 
-class LLM(BaseLLM):
+class StrInStrOutLLM(BaseLLM):
     """LLM class that expect subclasses to implement a simpler call method.
 
     The purpose of this class is to expose a simpler interface for working
     with LLMs, rather than expect the user to implement the full _generate method.
     """
 
-    @abstractmethod
+    def _generate_str_in_str_out(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
+        """Run the LLM on a single input string and return the output as a string."""
+        raise NotImplementedError
+
+    async def _agenerate_str_in_str_out(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    ) -> str:
+        """Run the LLM on a single input string and return the output as a string."""
+        raise NotImplementedError
+
+    # Kept for backwards compatibility
     def _call(
         self,
         prompt: str,
@@ -380,7 +398,9 @@ class LLM(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
         """Run the LLM on the given prompt and input."""
+        return self._generate_str_in_str_out(prompt, stop=stop, run_manager=run_manager)
 
+    # Kept for backwards compatibility
     async def _acall(
         self,
         prompt: str,
@@ -388,7 +408,9 @@ class LLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> str:
         """Run the LLM on the given prompt and input."""
-        raise NotImplementedError("Async generation not implemented for this LLM.")
+        return await self._agenerate_str_in_str_out(
+            prompt, stop=stop, run_manager=run_manager
+        )
 
     def _generate(
         self,
@@ -399,7 +421,9 @@ class LLM(BaseLLM):
         """Run the LLM on the given prompt and input."""
         # TODO: add caching here.
         generations = []
-        new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
+        new_arg_supported = inspect.signature(
+            self._generate_str_in_str_out
+        ).parameters.get("run_manager")
         for prompt in prompts:
             text = (
                 self._call(prompt, stop=stop, run_manager=run_manager)

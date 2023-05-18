@@ -5,7 +5,7 @@ import requests
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 from langchain.utils import get_from_dict_or_env
 
 
@@ -20,7 +20,7 @@ class AI21PenaltyData(BaseModel):
     applyToEmojis: bool = True
 
 
-class AI21(LLM):
+class AI21(StrInStrOutLLM):
     """Wrapper around AI21 large language models.
 
     To use, you should have the environment variable ``AI21_API_KEY``
@@ -107,7 +107,7 @@ class AI21(LLM):
         """Return type of llm."""
         return "ai21"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

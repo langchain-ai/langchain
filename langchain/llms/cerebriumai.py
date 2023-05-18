@@ -5,14 +5,14 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
 
-class CerebriumAI(LLM):
+class CerebriumAI(StrInStrOutLLM):
     """Wrapper around CerebriumAI large language models.
 
     To use, you should have the ``cerebrium`` python package installed, and the
@@ -82,7 +82,7 @@ class CerebriumAI(LLM):
         """Return type of llm."""
         return "cerebriumai"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

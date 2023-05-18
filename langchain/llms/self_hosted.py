@@ -7,7 +7,7 @@ from typing import Any, Callable, List, Mapping, Optional
 from pydantic import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 from langchain.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ def _send_pipeline_to_device(pipeline: Any, device: int) -> Any:
     return pipeline
 
 
-class SelfHostedPipeline(LLM):
+class SelfHostedPipeline(StrInStrOutLLM):
     """Run model inference on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,
@@ -178,7 +178,7 @@ class SelfHostedPipeline(LLM):
         model_reqs: Optional[List[str]] = None,
         device: int = 0,
         **kwargs: Any,
-    ) -> LLM:
+    ) -> StrInStrOutLLM:
         """Init the SelfHostedPipeline from a pipeline object or string."""
         if not isinstance(pipeline, str):
             logger.warning(
@@ -209,7 +209,7 @@ class SelfHostedPipeline(LLM):
     def _llm_type(self) -> str:
         return "self_hosted_llm"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

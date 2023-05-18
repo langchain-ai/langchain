@@ -9,7 +9,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 from langchain.utils import get_from_dict_or_env
 
 
@@ -104,7 +104,7 @@ class _AnthropicCommon(BaseModel):
         return self.count_tokens(text)
 
 
-class Anthropic(LLM, _AnthropicCommon):
+class Anthropic(StrInStrOutLLM, _AnthropicCommon):
     r"""Wrapper around Anthropic's large language models.
 
     To use, you should have the ``anthropic`` python package installed, and the
@@ -162,7 +162,7 @@ class Anthropic(LLM, _AnthropicCommon):
         # As a last resort, wrap the prompt ourselves to emulate instruct-style.
         return f"{self.HUMAN_PROMPT} {prompt}{self.AI_PROMPT} Sure, here you go:\n"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

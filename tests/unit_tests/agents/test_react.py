@@ -7,7 +7,7 @@ from langchain.agents.tools import Tool
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AgentAction
 
@@ -22,7 +22,7 @@ Made in 2022."""
 _FAKE_PROMPT = PromptTemplate(input_variables=["input"], template="{input}")
 
 
-class FakeListLLM(LLM):
+class FakeListLLM(StrInStrOutLLM):
     """Fake LLM for testing that outputs elements of a list."""
 
     responses: List[str]
@@ -33,7 +33,7 @@ class FakeListLLM(LLM):
         """Return type of llm."""
         return "fake_list"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

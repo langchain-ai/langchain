@@ -5,11 +5,11 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 from langchain.llms.utils import enforce_stop_tokens
 
 
-class GPT4All(LLM):
+class GPT4All(StrInStrOutLLM):
     r"""Wrapper around GPT4All language models.
 
     To use, you should have the ``gpt4all`` python package installed, the
@@ -167,7 +167,7 @@ class GPT4All(LLM):
         """Return the type of llm."""
         return "gpt4all"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

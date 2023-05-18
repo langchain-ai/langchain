@@ -5,12 +5,12 @@ import requests
 from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 
-class ForefrontAI(LLM):
+class ForefrontAI(StrInStrOutLLM):
     """Wrapper around ForefrontAI large language models.
 
     To use, you should have the environment variable ``FOREFRONTAI_API_KEY``
@@ -82,7 +82,7 @@ class ForefrontAI(LLM):
         """Return type of llm."""
         return "forefrontai"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

@@ -5,13 +5,13 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
 
-class Replicate(LLM):
+class Replicate(StrInStrOutLLM):
     """Wrapper around Replicate models.
 
     To use, you should have the ``replicate`` python package installed,
@@ -79,7 +79,7 @@ class Replicate(LLM):
         """Return type of model."""
         return "replicate"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

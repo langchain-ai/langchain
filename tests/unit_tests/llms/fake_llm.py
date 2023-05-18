@@ -4,10 +4,10 @@ from typing import Any, List, Mapping, Optional, cast
 from pydantic import validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 
 
-class FakeLLM(LLM):
+class FakeLLM(StrInStrOutLLM):
     """Fake LLM wrapper for testing purposes."""
 
     queries: Optional[Mapping] = None
@@ -29,7 +29,7 @@ class FakeLLM(LLM):
         """Return type of llm."""
         return "fake"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

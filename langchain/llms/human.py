@@ -3,7 +3,7 @@ from typing import Any, Callable, List, Mapping, Optional
 from pydantic import Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 from langchain.llms.utils import enforce_stop_tokens
 
 
@@ -32,7 +32,7 @@ def _collect_user_input(
     return multi_line_input
 
 
-class HumanInputLLM(LLM):
+class HumanInputLLM(StrInStrOutLLM):
     """
     A LLM wrapper which returns user input as the response.
     """
@@ -55,7 +55,7 @@ class HumanInputLLM(LLM):
         """Returns the type of LLM."""
         return "human-input"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

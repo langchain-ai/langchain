@@ -5,13 +5,13 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
 
-class GooseAI(LLM):
+class GooseAI(StrInStrOutLLM):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -131,7 +131,7 @@ class GooseAI(LLM):
         """Return type of llm."""
         return "gooseai"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

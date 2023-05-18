@@ -5,14 +5,14 @@ import requests
 from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import StrInStrOutLLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 
-class HuggingFaceEndpoint(LLM):
+class HuggingFaceEndpoint(StrInStrOutLLM):
     """Wrapper around HuggingFaceHub Inference Endpoints.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
@@ -91,7 +91,7 @@ class HuggingFaceEndpoint(LLM):
         """Return type of llm."""
         return "huggingface_endpoint"
 
-    def _call(
+    def _generate_str_in_str_out(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
