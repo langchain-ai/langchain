@@ -384,14 +384,29 @@ class Chroma(VectorStore):
             include=include,
         )
 
+    def delete(
+        self,
+        ids: Optional[Union[str, List[str]]] = None,
+        where: Optional[Dict[Any, Any]] = None,
+        where_document: Optional[Dict[Any, Any]] = None,
+    ) -> None:
+        """Delete the embeddings based on ids and/or a where filter
+
         Args:
-            include (Optional[List[str]]): List of fields to include from db.
-                Defaults to None.
+        ids: The ids of the embeddings to delete. Optional
+        where: A Where type dict used to filter results by the metadata. Optional.
+                    E.g. {"color" : "red", "price": 4.20}.
+        where_document: A WhereDocument type dict used to filter
+                    the deletion by the document content. Optional.
+                    E.g. {$contains: "hello"}.
+        Returns:
+            None
         """
-        if include is not None:
-            return self._collection.get(include=include)
-        else:
-            return self._collection.get()
+        return self._collection.delete(
+            ids=ids,
+            where=where,
+            where_document=where_document,
+        )
 
     def persist(self) -> None:
         """Persist the collection.
