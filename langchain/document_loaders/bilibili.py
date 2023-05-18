@@ -32,7 +32,7 @@ class BiliBiliLoader(BaseLoader):
         except ImportError:
             raise ValueError(
                 "requests package not found, please install it with "
-                "`pip install bilibili-api`"
+                "`pip install bilibili-api-python`"
             )
 
         bvid = re.search(r"BV\w+", url)

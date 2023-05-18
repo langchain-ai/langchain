@@ -19,7 +19,7 @@ LangChain provides integration with many LLMs and systems:
 - `Toolkit Integrations <./modules/agents/toolkits.html>`_
 
 Companies / Products
-----------
+--------------------
 
 
 .. toctree::

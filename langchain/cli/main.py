@@ -167,7 +167,13 @@ class PlusCommand:
         self._open_browser("http://0.0.0.0:4040")
         self._open_browser("http://localhost")
 
-    def start(self, *, expose: bool = False, auth_token: Optional[str] = None) -> None:
+    def start(
+        self,
+        *,
+        expose: bool = False,
+        auth_token: Optional[str] = None,
+        dev: bool = False,
+    ) -> None:
         """Run the LangChainPlus server locally.
 
         Args:
@@ -175,7 +181,8 @@ class PlusCommand:
             auth_token: The ngrok authtoken to use (visible in the ngrok dashboard).
                 If not provided, ngrok server session length will be restricted.
         """
-
+        if dev:
+            os.environ["_LANGCHAINPLUS_IMAGE_PREFIX"] = "rc-"
         if expose:
             self._start_and_expose(auth_token=auth_token)
         else:
@@ -225,9 +232,14 @@ def main() -> None:
         help="The ngrok authtoken to use (visible in the ngrok dashboard)."
         " If not provided, ngrok server session length will be restricted.",
     )
+    server_start_parser.add_argument(
+        "--dev",
+        action="store_true",
+        help="Use the development version of the LangChainPlus image.",
+    )
     server_start_parser.set_defaults(
         func=lambda args: server_command.start(
-            expose=args.expose, auth_token=args.ngrok_authtoken
+            expose=args.expose, auth_token=args.ngrok_authtoken, dev=args.dev
         )
     )
 
