@@ -91,7 +91,6 @@ telethon = {version = "^1.28.5", optional = true}
 zep-python = {version="^0.25", optional=true}
 langkit = {version = "^0.0.1.dev3", optional = true}
 
-
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
 myst_parser = "^0.18.1"
