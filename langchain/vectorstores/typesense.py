@@ -8,6 +8,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
+
 class Typesense(VectorStore):
     """Wrapper around Typesense vector search.
 
@@ -78,8 +79,9 @@ class Typesense(VectorStore):
             List of ids from adding the texts into the vectorstore.
 
         """
-        from typesense.exceptions import (ObjectNotFound, ObjectAlreadyExists)
         import time
+
+        from typesense.exceptions import ObjectAlreadyExists, ObjectNotFound
 
         # Embed and create the documents
         docs = []
@@ -87,40 +89,33 @@ class Typesense(VectorStore):
         for i, text in enumerate(texts):
             embedding = self._embedding_function(text)
             metadata = metadatas[i] if metadatas else {}
-            docs.append({
-                "id": ids[i],
-                "vec": embedding,
-                "text": text,
-                "metadata": metadata
-            })
+            docs.append(
+                {"id": ids[i], "vec": embedding, "text": text, "metadata": metadata}
+            )
 
         # upsert to Typesense
         while True:
             try:
-                self.typesense_client.collections[self.typesense_collection_name].documents.import_(
-                    docs, {'action': 'upsert'}
-                )
+                self.typesense_client.collections[
+                    self.typesense_collection_name
+                ].documents.import_(docs, {"action": "upsert"})
             except ObjectNotFound:
                 # Create the collection if it doesn't already exist
                 try:
-                    self.typesense_client.collections.create({
-                        "name": self.typesense_collection_name,
-                        "fields": [
-                            {
-                                "name": "vec",
-                                "type": "float[]",
-                                "num_dim": len(docs[0]["vec"])
-                            },
-                            {
-                                "name": "text",
-                                "type": "string"
-                            },
-                            {
-                                "name": ".*",
-                                "type": "auto"
-                            },
-                        ]
-                    })
+                    self.typesense_client.collections.create(
+                        {
+                            "name": self.typesense_collection_name,
+                            "fields": [
+                                {
+                                    "name": "vec",
+                                    "type": "float[]",
+                                    "num_dim": len(docs[0]["vec"]),
+                                },
+                                {"name": "text", "type": "string"},
+                                {"name": ".*", "type": "auto"},
+                            ],
+                        }
+                    )
                 except ObjectAlreadyExists:
                     continue
                 continue
@@ -131,7 +126,7 @@ class Typesense(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[str] = '',
+        filter: Optional[str] = "",
     ) -> List[Tuple[Document, float]]:
         """Return typesense documents most similar to query, along with scores.
 
@@ -145,22 +140,28 @@ class Typesense(VectorStore):
         """
         query_obj = self._embedding_function(query)
         docs = []
-        results = self.typesense_client.collections[self.typesense_collection_name].documents.search({
-            "q": "*",
-            "vector_query": f'vec:([{",".join(query_obj)}], k:{k})',
-            "filter_by": filter
-        })
+        results = self.typesense_client.collections[
+            self.typesense_collection_name
+        ].documents.search(
+            {
+                "q": "*",
+                "vector_query": f'vec:([{",".join(query_obj)}], k:{k})',
+                "filter_by": filter,
+            }
+        )
         for res in results["hits"]:
             metadata = res["metadata"]
             text = metadata.pop(self._text_key)
-            docs.append((Document(page_content=text, metadata=metadata), res["vector_distance"]))
+            docs.append(
+                (Document(page_content=text, metadata=metadata), res["vector_distance"])
+            )
         return docs
 
     def similarity_search(
         self,
         query: str,
         k: int = 4,
-        filter: Optional[str] = '',
+        filter: Optional[str] = "",
     ) -> List[Document]:
         """Return typesense documents most similar to query.
 
@@ -174,11 +175,15 @@ class Typesense(VectorStore):
         """
         query_obj = self._embedding_function(query)
         docs = []
-        results = self.typesense_client.collections[self.typesense_collection_name].documents.search({
-            "q": "*",
-            "vector_query": f'vec:([{",".join(query_obj)}], k:{k})',
-            "filter_by": filter
-        })
+        results = self.typesense_client.collections[
+            self.typesense_collection_name
+        ].documents.search(
+            {
+                "q": "*",
+                "vector_query": f'vec:([{",".join(query_obj)}], k:{k})',
+                "filter_by": filter,
+            }
+        )
         for res in results["hits"]:
             metadata = res["metadata"]
             text = metadata.pop(self._text_key)
@@ -240,7 +245,7 @@ class Typesense(VectorStore):
                 "Please install it with `pip install typesense`."
             )
 
-        from typesense.exceptions import (ObjectNotFound, ObjectAlreadyExists)
+        from typesense.exceptions import ObjectAlreadyExists, ObjectNotFound
 
         _typesense_collection_name = typesense_collection_name or str(uuid.uuid4())
 
@@ -267,40 +272,38 @@ class Typesense(VectorStore):
             # Prep docs to upsert
             docs = []
             for i, text in enumerate(lines_batch):
-                docs.append({
-                    "id": ids_batch[i],
-                    "vec": embeds[i],
-                    "text": text,
-                    "metadata": metadatas[i]
-                })
+                docs.append(
+                    {
+                        "id": ids_batch[i],
+                        "vec": embeds[i],
+                        "text": text,
+                        "metadata": metadatas[i],
+                    }
+                )
 
             # upsert to Typesense
             while True:
                 try:
-                    typesense_client.collections[typesense_collection_name].documents.import_(
-                        docs, {'action': 'upsert'}
-                    )
+                    typesense_client.collections[
+                        typesense_collection_name
+                    ].documents.import_(docs, {"action": "upsert"})
                 except ObjectNotFound:
                     # Create the collection if it doesn't already exist
                     try:
-                        typesense_client.collections.create({
-                            "name": typesense_collection_name,
-                            "fields": [
-                                {
-                                    "name": "vec",
-                                    "type": "float[]",
-                                    "num_dim": len(docs[0]["vec"])
-                                },
-                                {
-                                    "name": "text",
-                                    "type": "string"
-                                },
-                                {
-                                    "name": ".*",
-                                    "type": "auto"
-                                },
-                            ]
-                        })
+                        typesense_client.collections.create(
+                            {
+                                "name": typesense_collection_name,
+                                "fields": [
+                                    {
+                                        "name": "vec",
+                                        "type": "float[]",
+                                        "num_dim": len(docs[0]["vec"]),
+                                    },
+                                    {"name": "text", "type": "string"},
+                                    {"name": ".*", "type": "auto"},
+                                ],
+                            }
+                        )
                     except ObjectAlreadyExists:
                         continue
                     continue
