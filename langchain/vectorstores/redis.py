@@ -33,8 +33,34 @@ if TYPE_CHECKING:
     from redis.commands.search.query import Query
 
 
+# required modules
+REDIS_REQUIRED_MODULES = [
+    {"name": "search", "ver": 20400},
+    {"name": "searchlight", "ver": 20400},
+]
+
 # distance mmetrics
 REDIS_DISTANCE_METRICS = Literal["COSINE", "IP", "L2"]
+
+
+def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -> None:
+    """Check if the correct Redis modules are installed."""
+    installed_modules = client.module_list()
+    installed_modules = {
+        module[b"name"].decode("utf-8"): module for module in installed_modules
+    }
+    for module in required_modules:
+        if module["name"] in installed_modules and int(
+            installed_modules[module["name"]][b"ver"]
+        ) >= int(module["ver"]):
+            return
+    # otherwise raise error
+    error_message = (
+        "You must add the Redis (>= 4.1.0) module from Redis Stack."
+        "Please refer to Redis Stack docs: https://redis.io/docs/stack/"
+    )
+    logging.error(error_message)
+    raise ValueError(error_message)
 
 
 def _check_index_exists(client: RedisType, index_name: str) -> bool:
@@ -108,6 +134,8 @@ class Redis(VectorStore):
         try:
             # connect to redis from url
             redis_client = redis.from_url(redis_url, **kwargs)
+            # check if redis has redisearch module installed
+            _check_redis_module_exist(redis_client, REDIS_REQUIRED_MODULES)
         except ValueError as e:
             raise ValueError(f"Redis failed to connect: {e}")
 
@@ -495,6 +523,8 @@ class Redis(VectorStore):
             if "redis_url" in kwargs:
                 kwargs.pop("redis_url")
             client = redis.from_url(url=redis_url, **kwargs)
+            # check if redis has redisearch module installed
+            _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
             # ensure that the index already exists
             assert _check_index_exists(
                 client, index_name
