@@ -33,9 +33,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     file_types: Optional[Sequence[str]] = None
 
     @root_validator
-    def validate_inputs(
-        cls, values: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that either folder_id or document_ids is set, but not both."""
         if values.get("folder_id") and (
             values.get("document_ids") or values.get("file_ids")
