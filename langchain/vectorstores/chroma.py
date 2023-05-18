@@ -338,8 +338,51 @@ class Chroma(VectorStore):
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
 
-    def get(self, include: Optional[List[str]] = None) -> Dict[str, Any]:
-        """Gets the collection.
+    def get(
+        self,
+        ids: Optional[Union[str, List[str]]] = None,
+        where: Optional[Dict[Any, Any]] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        where_document: Optional[Dict[Any, Any]] = None,
+        include: Optional[List[str]] = ["documents"],
+    ) -> Dict[str, Any]:
+
+        """Get embeddings and their associate data from the data store.
+        If no ids or where filter is provided
+        returns all embeddings up to limit starting at offset.
+
+        Args:
+            ids: The ids of the embeddings to get. Optional.
+            where: A Where type dict used to filter results by the metadata. Optional.
+                    E.g. {"color" : "red", "price": 4.20}.
+            limit: The number of documents to return. Optional.
+            offset: The offset to start returning results from. Optional.
+                    Useful for paging results with limit.
+            where_document: A WhereDocument type dict used to filter by the text.
+                    E.g. {$contains: "hello"}. Optional.
+            include: A list of what to include in the results. Optional.
+                    Can contain "embeddings", "metadatas", "documents".
+                    Ids are always included. Defaults to ["documents"].
+
+        Returns:
+            GetResult: A GetResult object containing the results.
+            A dictionary object with the following keys:
+
+            * ids: The IDs of the text.
+            * embeddings: The embeddings for the text.
+            * documents: The text.
+            * metadatas: The metadata for the text.
+        """
+
+        return self._collection.get(
+            ids=ids,
+            where=where,
+            limit=limit,
+            offset=offset,
+            where_document=where_document,
+            include=include,
+        )
 
         Args:
             include (Optional[List[str]]): List of fields to include from db.
