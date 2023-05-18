@@ -184,7 +184,7 @@ Additional Resources
    :hidden:
 
    LangChainHub <https://github.com/hwchase17/langchain-hub>
-   ./additional_resources/gallery.rst
+   Gallery <https://github.com/kyrolabs/awesome-langchain>
    ./additional_resources/deployments.md
    ./additional_resources/tracing.md
    ./additional_resources/model_laboratory.ipynb
