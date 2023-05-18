@@ -3,7 +3,7 @@ import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type, Union, cast
 
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
@@ -18,7 +18,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.schema import Generation
 from langchain.vectorstores.redis import Redis as RedisVectorstore
 
-RETURN_VAL_TYPE = List[Generation]
+RETURN_VAL_TYPE = Sequence[Generation]
 
 
 def _hash(_input: str) -> str:
