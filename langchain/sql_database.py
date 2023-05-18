@@ -131,13 +131,16 @@ class SQLDatabase:
         Args:
             catalog (str): The catalog name in the Databricks database.
             schema (str): The schema name in the catalog.
-            host (Optional[str]): The host URL of the Databricks instance. If not
-                provided, it will be fetched from the environment variable
-                'DATABRICKS_HOST' or from the current Databricks REPL context.
-                Defaults to None.
-            api_token (Optional[str]): The API token for the Databricks instance.
+            host (Optional[str]): The hostname of the Databricks workspace, which
+                doesn't contain the 'https://' part. If not provided, it will be
+                fetched from the environment variable 'DATABRICKS_HOST'.
+                Otherwise, it will use the hostname of the current Databricks workspace
+                if running inside a Databricks notebook. Defaults to None.
+            api_token (Optional[str]): The Databricks personal access token to access
+                the Databricks SQL warehouse or the cluster.
                 If not provided, it will be fetched from the environment variable
-                'DATABRICKS_API_TOKEN' or from the current Databricks REPL context.
+                'DATABRICKS_API_TOKEN'. Otherwise, if running inside a Databricks
+                notebook, it will generate a temporary token for the current user.
                 Defaults to None.
             warehouse_id (Optional[str]): The warehouse ID in the Databricks SQL.
                 If provided, the method will configure the connection to use this
@@ -145,9 +148,10 @@ class SQLDatabase:
                 to None.
             cluster_id (Optional[str]): The cluster ID in the Databricks Runtime.
                 If provided, the method will configure the connection to use this
-                cluster. Cannot be used in conjunction with 'warehouse_id'. If both
-                'warehouse_id' and 'cluster_id' are None, it will use the cluster ID
-                from the current Databricks REPL context. Defaults to None.
+                cluster. Cannot be used in conjunction with 'warehouse_id'. If
+                running inside a Databricks notebook and both 'warehouse_id' and
+                'cluster_id' are None, it will use the ID of the cluster the notebook
+                is attached to. Defaults to None.
             **kwargs (Any): Additional keyword arguments for the `from_uri` method.
 
         Returns:
@@ -157,8 +161,8 @@ class SQLDatabase:
         Raises:
             ValueError: If the 'databricks-sql-connector' package is not found, or
                 if both 'warehouse_id' and 'cluster_id' are provided, or if neither
-                'warehouse_id' nor 'cluster_id' are provided and there is no current
-                Databricks REPL context to get the cluster ID from.
+                'warehouse_id' nor 'cluster_id' are provided and it is not running
+                inside a Databricks notebook.
         """
         try:
             from databricks import sql  # noqa: F401
