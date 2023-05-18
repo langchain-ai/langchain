@@ -3,7 +3,17 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union
+    )
 
 import numpy as np
 
@@ -50,7 +60,8 @@ class Chroma(VectorStore):
                 from langchain.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
-                vectorstore = Chroma("langchain_store", embeddings)
+                vectorstore = Chroma(collection_name = "langchain_store",
+                                        embedding_function = embeddings)
     """
 
     _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
