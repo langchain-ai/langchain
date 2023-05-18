@@ -330,7 +330,7 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        return VectorStoreRetriever(vectorstore=self, **kwargs)
+        return VectorStoreRetriever(vectorstore=self, search_kwargs=kwargs)
 
 
 class VectorStoreRetriever(BaseRetriever, BaseModel):
