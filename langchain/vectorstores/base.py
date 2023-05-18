@@ -165,7 +165,7 @@ class VectorStore(ABC):
         0 is dissimilar, 1 is most similar.
         """
         raise NotImplementedError
-    
+
     async def asimilarity_search_with_relevance_scores(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
@@ -396,8 +396,10 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
                 query, **self.search_kwargs
             )
         elif self.search_type == "similarity_score_threshold":
-            docs_and_similarities = await self.vectorstore.asimilarity_search_with_relevance_scores(
-                query, **self.search_kwargs
+            docs_and_similarities = (
+                await self.vectorstore.asimilarity_search_with_relevance_scores(
+                    query, **self.search_kwargs
+                )
             )
             docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
