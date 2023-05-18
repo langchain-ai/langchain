@@ -97,12 +97,6 @@ class _AnthropicCommon(BaseModel):
 
         return stop
 
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate number of tokens."""
-        if not self.count_tokens:
-            raise NameError("Please ensure the anthropic package is loaded")
-        return self.count_tokens(text)
-
 
 class Anthropic(LLM, _AnthropicCommon):
     r"""Wrapper around Anthropic's large language models.
@@ -263,3 +257,9 @@ class Anthropic(LLM, _AnthropicCommon):
             stop_sequences=stop,
             **self._default_params,
         )
+
+    def get_num_tokens(self, text: str) -> int:
+        """Calculate number of tokens."""
+        if not self.count_tokens:
+            raise NameError("Please ensure the anthropic package is loaded")
+        return self.count_tokens(text)
