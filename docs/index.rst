@@ -140,7 +140,7 @@ Reference Docs
 Ecosystem
 ------------
 
-| Guides for how other products integrated with LangChain.
+| Guides for how other products can be used with LangChain.
 
 - `Integrations <./integrations.html>`_
 

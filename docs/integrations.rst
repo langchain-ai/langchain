@@ -3,10 +3,10 @@ Integrations
 
 LangChain integrates with many LLMs, systems, and products.
 
-Integrations with LangChain Modules
------------------------------------
+Integrations by Module
+--------------------------------
 
-Examples how LangChain Modules are integrated with LLMs, systems and product:
+Integrations grouped by the core LangChain module they map to:
 
 
 - `LLM Providers <./modules/models/llms/integrations.html>`_
@@ -20,7 +20,7 @@ Examples how LangChain Modules are integrated with LLMs, systems and product:
 - `Toolkit Integrations <./modules/agents/toolkits.html>`_
 
 
-Integrations with LLMs / Systems / Products
+All Integrations
 -------------------------------------------
 
 A comprehensive list of LLMs, systems, and products integrated with LangChain:
