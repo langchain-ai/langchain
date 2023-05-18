@@ -207,7 +207,8 @@ class Qdrant(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
-            score_threshold: Use to filter out results with a low similarity score. Defaults to None.
+            score_threshold: Use to filter out results with a low similarity score.
+            Defaults to None.
 
         Returns:
             List of Documents most similar to the query.
@@ -231,7 +232,8 @@ class Qdrant(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
-            score_threshold: Use to filter out results with a low similarity score. Defaults to None.
+            score_threshold: Use to filter out results with a low similarity score.
+            Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each.
