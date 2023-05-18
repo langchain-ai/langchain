@@ -351,7 +351,7 @@ class Redis(VectorStore):
         if self.relevance_score_fn is None:
             raise ValueError(
                 "relevance_score_fn must be provided to"
-                " Weaviate constructor to normalize scores"
+                " Redis constructor to normalize scores"
             )
         docs_and_scores = self.similarity_search_with_score(query, k=k)
         return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
@@ -446,7 +446,6 @@ class Redis(VectorStore):
                 )
         """
         instance, _ = cls.from_texts_return_keys(
-            cls=cls,
             texts=texts,
             embedding=embedding,
             metadatas=metadatas,

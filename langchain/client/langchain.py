@@ -24,15 +24,29 @@ from uuid import UUID
 import requests
 from pydantic import BaseSettings, Field, root_validator
 from requests import Response
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain.callbacks.tracers.schemas import Run, TracerSession
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
-from langchain.client.models import Dataset, DatasetCreate, Example, ExampleCreate
+from langchain.client.models import (
+    Dataset,
+    DatasetCreate,
+    Example,
+    ExampleCreate,
+    ListRunsQueryParams,
+)
 from langchain.llms.base import BaseLLM
-from langchain.schema import ChatResult, LLMResult, messages_from_dict
+from langchain.schema import (
+    BaseMessage,
+    ChatResult,
+    HumanMessage,
+    LLMResult,
+    get_buffer_string,
+    messages_from_dict,
+)
 from langchain.utils import raise_for_status_with_text, xor_args
 
 if TYPE_CHECKING:
@@ -41,6 +55,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 MODEL_OR_CHAIN_FACTORY = Union[Callable[[], Chain], BaseLanguageModel]
+
+
+class InputFormatError(Exception):
+    """Raised when input format is invalid."""
 
 
 def _get_link_stem(url: str) -> str:
@@ -63,8 +81,8 @@ class LangChainPlusClient(BaseSettings):
     """Client for interacting with the LangChain+ API."""
 
     api_key: Optional[str] = Field(default=None, env="LANGCHAIN_API_KEY")
-    api_url: str = Field(..., env="LANGCHAIN_ENDPOINT")
-    tenant_id: str = Field(..., env="LANGCHAIN_TENANT_ID")
+    api_url: str = Field(default="http://localhost:8000", env="LANGCHAIN_ENDPOINT")
+    tenant_id: Optional[str] = None
 
     @root_validator(pre=True)
     def validate_api_key_if_hosted(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -76,25 +94,25 @@ class LangChainPlusClient(BaseSettings):
                 raise ValueError(
                     "API key must be provided when using hosted LangChain+ API"
                 )
-        else:
-            tenant_id = values.get("tenant_id")
-            if not tenant_id:
-                values["tenant_id"] = LangChainPlusClient._get_seeded_tenant_id(
-                    api_url, api_key
-                )
+        tenant_id = values.get("tenant_id")
+        if not tenant_id:
+            values["tenant_id"] = LangChainPlusClient._get_seeded_tenant_id(
+                api_url, api_key
+            )
         return values
 
     @staticmethod
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def _get_seeded_tenant_id(api_url: str, api_key: Optional[str]) -> str:
         """Get the tenant ID from the seeded tenant."""
         url = f"{api_url}/tenants"
-        headers = {"authorization": f"Bearer {api_key}"} if api_key else {}
+        headers = {"x-api-key": api_key} if api_key else {}
         response = requests.get(url, headers=headers)
         try:
             raise_for_status_with_text(response)
         except Exception as e:
             raise ValueError(
-                "Unable to get seeded tenant ID. Please manually provide."
+                "Unable to get default tenant ID. Please manually provide."
             ) from e
         results: List[dict] = response.json()
         if len(results) == 0:
@@ -118,7 +136,12 @@ class LangChainPlusClient(BaseSettings):
 
     def _repr_html_(self) -> str:
         """Return an HTML representation of the instance with a link to the URL."""
-        link = _get_link_stem(self.api_url)
+        if _is_localhost(self.api_url):
+            link = "http://localhost"
+        elif "dev" in self.api_url:
+            link = "https://dev.langchain.plus"
+        else:
+            link = "https://www.langchain.plus"
         return f'<a href="{link}", target="_blank" rel="noopener">LangChain+ Client</a>'
 
     def __repr__(self) -> str:
@@ -130,11 +153,11 @@ class LangChainPlusClient(BaseSettings):
         """Get the headers for the API request."""
         headers = {}
         if self.api_key:
-            headers["authorization"] = f"Bearer {self.api_key}"
+            headers["x-api-key"] = self.api_key
         return headers
 
     @property
-    def query_params(self) -> Dict[str, str]:
+    def query_params(self) -> Dict[str, Any]:
         """Get the headers for the API request."""
         return {"tenant_id": self.tenant_id}
 
@@ -193,6 +216,75 @@ class LangChainPlusClient(BaseSettings):
             raise ValueError(f"Dataset {file_name} already exists")
         return Dataset(**result)
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    def read_run(self, run_id: str) -> Run:
+        """Read a run from the LangChain+ API."""
+        response = self._get(f"/runs/{run_id}")
+        raise_for_status_with_text(response)
+        return Run(**response.json())
+
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    def list_runs(
+        self,
+        *,
+        session_id: Optional[str] = None,
+        session_name: Optional[str] = None,
+        run_type: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Run]:
+        """List runs from the LangChain+ API."""
+        if session_name is not None:
+            if session_id is not None:
+                raise ValueError("Only one of session_id or session_name may be given")
+            session_id = self.read_session(session_name=session_name).id
+        query_params = ListRunsQueryParams(
+            session_id=session_id, run_type=run_type, **kwargs
+        )
+        filtered_params = {
+            k: v for k, v in query_params.dict().items() if v is not None
+        }
+        response = self._get("/runs", params=filtered_params)
+        raise_for_status_with_text(response)
+        return [Run(**run) for run in response.json()]
+
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    @xor_args(("session_id", "session_name"))
+    def read_session(
+        self, *, session_id: Optional[str] = None, session_name: Optional[str] = None
+    ) -> TracerSession:
+        """Read a session from the LangChain+ API."""
+        path = "/sessions"
+        params: Dict[str, Any] = {"limit": 1, "tenant_id": self.tenant_id}
+        if session_id is not None:
+            path += f"/{session_id}"
+        elif session_name is not None:
+            params["name"] = session_name
+        else:
+            raise ValueError("Must provide dataset_name or dataset_id")
+        response = self._get(
+            path,
+            params=params,
+        )
+        raise_for_status_with_text(response)
+        response = self._get(
+            path,
+            params=params,
+        )
+        raise_for_status_with_text(response)
+        result = response.json()
+        if isinstance(result, list):
+            if len(result) == 0:
+                raise ValueError(f"Dataset {session_name} not found")
+            return TracerSession(**result[0])
+        return TracerSession(**response.json())
+
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    def list_sessions(self) -> List[TracerSession]:
+        """List sessions from the LangChain+ API."""
+        response = self._get("/sessions")
+        raise_for_status_with_text(response)
+        return [TracerSession(**session) for session in response.json()]
+
     def create_dataset(self, dataset_name: str, description: str) -> Dataset:
         """Create a dataset in the LangChain+ API."""
         dataset = DatasetCreate(
@@ -208,6 +300,7 @@ class LangChainPlusClient(BaseSettings):
         raise_for_status_with_text(response)
         return Dataset(**response.json())
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     @xor_args(("dataset_name", "dataset_id"))
     def read_dataset(
         self, *, dataset_name: Optional[str] = None, dataset_id: Optional[str] = None
@@ -232,6 +325,7 @@ class LangChainPlusClient(BaseSettings):
             return Dataset(**result[0])
         return Dataset(**result)
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def list_datasets(self, limit: int = 100) -> Iterable[Dataset]:
         """List the datasets on the LangChain+ API."""
         response = self._get("/datasets", params={"limit": limit})
@@ -282,12 +376,14 @@ class LangChainPlusClient(BaseSettings):
         result = response.json()
         return Example(**result)
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def read_example(self, example_id: str) -> Example:
         """Read an example from the LangChain+ API."""
         response = self._get(f"/examples/{example_id}")
         raise_for_status_with_text(response)
         return Example(**response.json())
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def list_examples(
         self, dataset_id: Optional[str] = None, dataset_name: Optional[str] = None
     ) -> Iterable[Example]:
@@ -305,22 +401,107 @@ class LangChainPlusClient(BaseSettings):
         return [Example(**dataset) for dataset in response.json()]
 
     @staticmethod
+    def _get_prompts(inputs: Dict[str, Any]) -> List[str]:
+        """Get prompts from inputs."""
+        if not inputs:
+            raise InputFormatError("Inputs should not be empty.")
+
+        prompts = []
+
+        if "prompt" in inputs:
+            if not isinstance(inputs["prompt"], str):
+                raise InputFormatError(
+                    "Expected string for 'prompt', got"
+                    f" {type(inputs['prompt']).__name__}"
+                )
+            prompts = [inputs["prompt"]]
+        elif "prompts" in inputs:
+            if not isinstance(inputs["prompts"], list) or not all(
+                isinstance(i, str) for i in inputs["prompts"]
+            ):
+                raise InputFormatError(
+                    "Expected list of strings for 'prompts',"
+                    f" got {type(inputs['prompts']).__name__}"
+                )
+            prompts = inputs["prompts"]
+        elif len(inputs) == 1:
+            prompt_ = next(iter(inputs.values()))
+            if isinstance(prompt_, str):
+                prompts = [prompt_]
+            elif isinstance(prompt_, list) and all(isinstance(i, str) for i in prompt_):
+                prompts = prompt_
+            else:
+                raise InputFormatError(
+                    f"LLM Run expects string prompt input. Got {inputs}"
+                )
+        else:
+            raise InputFormatError(
+                f"LLM Run expects 'prompt' or 'prompts' in inputs. Got {inputs}"
+            )
+
+        return prompts
+
+    @staticmethod
+    def _get_messages(inputs: Dict[str, Any]) -> List[List[BaseMessage]]:
+        """Get Chat Messages from inputs."""
+        if not inputs:
+            raise InputFormatError("Inputs should not be empty.")
+
+        if "messages" in inputs:
+            single_input = inputs["messages"]
+        elif len(inputs) == 1:
+            single_input = next(iter(inputs.values()))
+        else:
+            raise InputFormatError(
+                f"Chat Run expects 'messages' in inputs. Got {inputs}"
+            )
+        if isinstance(single_input, list) and all(
+            isinstance(i, dict) for i in single_input
+        ):
+            raw_messages = [single_input]
+        elif isinstance(single_input, list) and all(
+            isinstance(i, list) for i in single_input
+        ):
+            raw_messages = single_input
+        else:
+            raise InputFormatError(
+                f"Chat Run expects List[dict] or List[List[dict]] 'messages'"
+                f" input. Got {inputs}"
+            )
+        return [messages_from_dict(batch) for batch in raw_messages]
+
+    @staticmethod
     async def _arun_llm(
         llm: BaseLanguageModel,
         inputs: Dict[str, Any],
         langchain_tracer: LangChainTracer,
     ) -> Union[LLMResult, ChatResult]:
         if isinstance(llm, BaseLLM):
-            if "prompt" not in inputs:
-                raise ValueError(f"LLM Run requires 'prompt' input. Got {inputs}")
-            llm_prompt: str = inputs["prompt"]
-            llm_output = await llm.agenerate([llm_prompt], callbacks=[langchain_tracer])
+            try:
+                llm_prompts = LangChainPlusClient._get_prompts(inputs)
+                llm_output = await llm.agenerate(
+                    llm_prompts, callbacks=[langchain_tracer]
+                )
+            except InputFormatError:
+                llm_messages = LangChainPlusClient._get_messages(inputs)
+                buffer_strings = [
+                    get_buffer_string(messages) for messages in llm_messages
+                ]
+                llm_output = await llm.agenerate(
+                    buffer_strings, callbacks=[langchain_tracer]
+                )
         elif isinstance(llm, BaseChatModel):
-            if "messages" not in inputs:
-                raise ValueError(f"Chat Run requires 'messages' input. Got {inputs}")
-            raw_messages: List[dict] = inputs["messages"]
-            messages = messages_from_dict(raw_messages)
-            llm_output = await llm.agenerate([messages], callbacks=[langchain_tracer])
+            try:
+                messages = LangChainPlusClient._get_messages(inputs)
+                llm_output = await llm.agenerate(messages, callbacks=[langchain_tracer])
+            except InputFormatError:
+                prompts = LangChainPlusClient._get_prompts(inputs)
+                converted_messages: List[List[BaseMessage]] = [
+                    [HumanMessage(content=prompt)] for prompt in prompts
+                ]
+                llm_output = await llm.agenerate(
+                    converted_messages, callbacks=[langchain_tracer]
+                )
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
         return llm_output
@@ -351,14 +532,13 @@ class LangChainPlusClient(BaseSettings):
             except Exception as e:
                 logger.warning(f"Chain failed for example {example.id}. Error: {e}")
                 outputs.append({"Error": str(e)})
-            finally:
-                langchain_tracer.example_id = previous_example_id
+        langchain_tracer.example_id = previous_example_id
         return outputs
 
     @staticmethod
     async def _gather_with_concurrency(
         n: int,
-        initializer: Callable[[], Coroutine[Any, Any, Tuple[LangChainTracer, Dict]]],
+        initializer: Callable[[], Coroutine[Any, Any, LangChainTracer]],
         *async_funcs: Callable[[LangChainTracer, Dict], Coroutine[Any, Any, Any]],
     ) -> List[Any]:
         """
@@ -373,21 +553,28 @@ class LangChainPlusClient(BaseSettings):
             A list of results from the coroutines.
         """
         semaphore = asyncio.Semaphore(n)
-        tracer, job_state = await initializer()
+        job_state = {"num_processed": 0}
+
+        tracer_queue: asyncio.Queue[LangChainTracer] = asyncio.Queue()
+        for _ in range(n):
+            tracer_queue.put_nowait(await initializer())
 
         async def run_coroutine_with_semaphore(
             async_func: Callable[[LangChainTracer, Dict], Coroutine[Any, Any, Any]]
         ) -> Any:
             async with semaphore:
-                return await async_func(tracer, job_state)
+                tracer = await tracer_queue.get()
+                try:
+                    result = await async_func(tracer, job_state)
+                finally:
+                    tracer_queue.put_nowait(tracer)
+                return result
 
         return await asyncio.gather(
             *(run_coroutine_with_semaphore(function) for function in async_funcs)
         )
 
-    async def _tracer_initializer(
-        self, session_name: str
-    ) -> Tuple[LangChainTracer, dict]:
+    async def _tracer_initializer(self, session_name: str) -> LangChainTracer:
         """
         Initialize a tracer to share across tasks.
 
@@ -397,11 +584,9 @@ class LangChainPlusClient(BaseSettings):
         Returns:
             A LangChainTracer instance with an active session.
         """
-        job_state = {"num_processed": 0}
-        with tracing_v2_enabled(session_name=session_name) as session:
-            tracer = LangChainTracer()
-            tracer.session = session
-            return tracer, job_state
+        tracer = LangChainTracer(session_name=session_name)
+        tracer.ensure_session()
+        return tracer
 
     async def arun_on_dataset(
         self,
@@ -473,18 +658,27 @@ class LangChainPlusClient(BaseSettings):
     ) -> Union[LLMResult, ChatResult]:
         """Run the language model on the example."""
         if isinstance(llm, BaseLLM):
-            if "prompt" not in inputs:
-                raise ValueError(f"LLM Run must contain 'prompt' key. Got {inputs}")
-            llm_prompt: str = inputs["prompt"]
-            llm_output = llm.generate([llm_prompt], callbacks=[langchain_tracer])
+            try:
+                llm_prompts = LangChainPlusClient._get_prompts(inputs)
+                llm_output = llm.generate(llm_prompts, callbacks=[langchain_tracer])
+            except InputFormatError:
+                llm_messages = LangChainPlusClient._get_messages(inputs)
+                buffer_strings = [
+                    get_buffer_string(messages) for messages in llm_messages
+                ]
+                llm_output = llm.generate(buffer_strings, callbacks=[langchain_tracer])
         elif isinstance(llm, BaseChatModel):
-            if "messages" not in inputs:
-                raise ValueError(
-                    f"Chat Model Run must contain 'messages' key. Got {inputs}"
+            try:
+                messages = LangChainPlusClient._get_messages(inputs)
+                llm_output = llm.generate(messages, callbacks=[langchain_tracer])
+            except InputFormatError:
+                prompts = LangChainPlusClient._get_prompts(inputs)
+                converted_messages: List[List[BaseMessage]] = [
+                    [HumanMessage(content=prompt)] for prompt in prompts
+                ]
+                llm_output = llm.generate(
+                    converted_messages, callbacks=[langchain_tracer]
                 )
-            raw_messages: List[dict] = inputs["messages"]
-            messages = messages_from_dict(raw_messages)
-            llm_output = llm.generate([messages], callbacks=[langchain_tracer])
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
         return llm_output
@@ -513,8 +707,7 @@ class LangChainPlusClient(BaseSettings):
             except Exception as e:
                 logger.warning(f"Chain failed for example {example.id}. Error: {e}")
                 outputs.append({"Error": str(e)})
-            finally:
-                langchain_tracer.example_id = previous_example_id
+        langchain_tracer.example_id = previous_example_id
         return outputs
 
     def run_on_dataset(
@@ -550,18 +743,16 @@ class LangChainPlusClient(BaseSettings):
         dataset = self.read_dataset(dataset_name=dataset_name)
         examples = list(self.list_examples(dataset_id=str(dataset.id)))
         results: Dict[str, Any] = {}
-        with tracing_v2_enabled(session_name=session_name) as session:
-            tracer = LangChainTracer()
-            tracer.session = session
-
-            for i, example in enumerate(examples):
-                result = self.run_llm_or_chain(
-                    example,
-                    tracer,
-                    llm_or_chain_factory,
-                    num_repetitions,
-                )
-                if verbose:
-                    print(f"{i+1} processed", flush=True, end="\r")
-            results[str(example.id)] = result
+        tracer = LangChainTracer(session_name=session_name)
+        tracer.ensure_session()
+        for i, example in enumerate(examples):
+            result = self.run_llm_or_chain(
+                example,
+                tracer,
+                llm_or_chain_factory,
+                num_repetitions,
+            )
+            if verbose:
+                print(f"{i+1} processed", flush=True, end="\r")
+        results[str(example.id)] = result
         return results

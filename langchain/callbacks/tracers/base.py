@@ -56,7 +56,11 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 raise TracerException(
                     f"Parent run with UUID {run.parent_run_id} not found."
                 )
-            if run.child_execution_order > parent_run.child_execution_order:
+            if (
+                run.child_execution_order is not None
+                and parent_run.child_execution_order is not None
+                and run.child_execution_order > parent_run.child_execution_order
+            ):
                 parent_run.child_execution_order = run.child_execution_order
         self.run_map.pop(str(run.id))
 
@@ -68,6 +72,10 @@ class BaseTracer(BaseCallbackHandler, ABC):
         parent_run = self.run_map.get(parent_run_id)
         if parent_run is None:
             raise TracerException(f"Parent run with UUID {parent_run_id} not found.")
+        if parent_run.child_execution_order is None:
+            raise TracerException(
+                f"Parent run with UUID {parent_run_id} has no child execution order."
+            )
 
         return parent_run.child_execution_order + 1
 

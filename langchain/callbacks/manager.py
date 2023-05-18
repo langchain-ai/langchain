@@ -10,6 +10,7 @@ from contextvars import ContextVar
 from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union, cast
 from uuid import UUID, uuid4
 
+import langchain
 from langchain.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
@@ -23,6 +24,7 @@ from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.callbacks.tracers.langchain_v1 import LangChainTracerV1, TracerSessionV1
 from langchain.callbacks.tracers.schemas import TracerSession
+from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.schema import (
     AgentAction,
     AgentFinish,
@@ -47,6 +49,10 @@ tracing_v2_callback_var: ContextVar[
 ] = ContextVar(  # noqa: E501
     "tracing_callback_v2", default=None
 )
+
+
+def _get_debug() -> bool:
+    return langchain.debug
 
 
 @contextmanager
@@ -153,7 +159,7 @@ async def _ahandle_event_for_handler(
             message_strings = [get_buffer_string(m) for m in args[1]]
             await _ahandle_event_for_handler(
                 handler,
-                "on_llm",
+                "on_llm_start",
                 "ignore_llm",
                 args[0],
                 message_strings,
@@ -837,14 +843,29 @@ def _configure(
         os.environ.get("LANGCHAIN_TRACING_V2") is not None or tracer_v2 is not None
     )
     tracer_session = os.environ.get("LANGCHAIN_SESSION")
+    debug = _get_debug()
     if tracer_session is None:
         tracer_session = "default"
-    if verbose or tracing_enabled_ or tracing_v2_enabled_ or open_ai is not None:
+    if (
+        verbose
+        or debug
+        or tracing_enabled_
+        or tracing_v2_enabled_
+        or open_ai is not None
+    ):
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
             for handler in callback_manager.handlers
         ):
-            callback_manager.add_handler(StdOutCallbackHandler(), False)
+            if debug:
+                pass
+            else:
+                callback_manager.add_handler(StdOutCallbackHandler(), False)
+        if debug and not any(
+            isinstance(handler, ConsoleCallbackHandler)
+            for handler in callback_manager.handlers
+        ):
+            callback_manager.add_handler(ConsoleCallbackHandler(), True)
         if tracing_enabled_ and not any(
             isinstance(handler, LangChainTracerV1)
             for handler in callback_manager.handlers
