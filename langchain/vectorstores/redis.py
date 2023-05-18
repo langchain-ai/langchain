@@ -330,7 +330,7 @@ class Redis(VectorStore):
 
     @classmethod
     def from_texts_return_keys(
-        cls: Type[Redis],
+        cls,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
