@@ -39,7 +39,7 @@ Modules
 -----------
 
 | These modules are the core abstractions which we view as the building blocks of any LLM-powered application.
-For each module LangChain provides standard, extendable interfaces. LanghChain also provides external integrations and even end-to-end implementations for off-the-shelf use.
+For each module LangChain provides standard, extendable interfaces. LangChain also provides external integrations and even end-to-end implementations for off-the-shelf use.
 
 | The docs for each module contain quickstart examples, how-to guides, reference docs, and conceptual guides.
 
@@ -162,7 +162,7 @@ Additional Resources
 
 - `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: The LangChainHub is a place to share and explore other prompts, chains, and agents.
 
-- `Gallery <./additional_resources/gallery.html>`_: A collection of our favorite projects that use LangChain. Useful for finding inspiration or seeing how things were done in other applications.
+- `Gallery <https://github.com/kyrolabs/awesome-langchain>`_: A collection of great projects that use Langchain, compiled by the folks at `Kyrolabs <https://kyrolabs.com>`_. Useful for finding inspiration and example implementations.
 
 - `Deployments <./additional_resources/deployments.html>`_: A collection of instructions, code snippets, and template repositories for deploying LangChain apps.
 
@@ -184,7 +184,7 @@ Additional Resources
    :hidden:
 
    LangChainHub <https://github.com/hwchase17/langchain-hub>
-   ./additional_resources/gallery.rst
+   Gallery <https://github.com/kyrolabs/awesome-langchain>
    ./additional_resources/deployments.md
    ./additional_resources/tracing.md
    ./additional_resources/model_laboratory.ipynb
