@@ -54,6 +54,7 @@ class Beam(LLM):
     python_version: str = ""
     python_packages: List[str] = []
     max_length: str = ""
+    url: str = ""
     """model endpoint to use"""
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -188,13 +189,13 @@ class Beam(LLM):
         with open(script_name, "w") as file:
             file.write(script.format(model_name=self.model_name))
 
-    def _call(
+    def _deploy(
         self,
         prompt: str,
         stop: Optional[list] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
-        """Call to Beam endpoint."""
+        """Deploy and call to Beam."""
         try:
             import beam  # type: ignore
 
@@ -227,6 +228,7 @@ class Beam(LLM):
             for line in lines:
                 if line.startswith(" i  Send requests to: "):
                     url = ":".join(line.split(":")[1:]).strip()
+                    self.url = url
 
         else:
             print("Deployment failed.")
@@ -267,3 +269,67 @@ class Beam(LLM):
                 tries += 1
 
         return response
+    
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[list] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
+        """Call to Beam."""
+        try:
+            import beam  # type: ignore
+
+            if (beam.__path__) == "":
+                raise ImportError
+        except ImportError:
+            raise ValueError(
+                "Could not import beam python package. "
+                "Please install it with `curl "
+                "https://raw.githubusercontent.com/slai-labs"
+                "/get-beam/main/get-beam.sh -sSfL | sh`."
+            )
+        
+        print("Makng call!")
+
+        api_key = self.beam_client_id
+        api_secret = self.beam_client_secret
+        max_length = self.max_length
+        response = ""
+
+        accept = "*/*"
+        encoding = "gzip, deflate"
+        credential_string = (
+            (api_key + ":" + api_secret) if api_key is not None else api_secret
+        )
+        authorization = base64.b64encode(credential_string.encode()).decode()
+        connection = "keep-alive"
+        content_type = "application/json"
+        url = self.url
+        payload = {"prompt": prompt, "max_length": max_length}
+        headers = {
+            "Accept": accept,
+            "Accept-Encoding": encoding,
+            "Authorization": "Basic " + authorization,
+            "Connection": connection,
+            "Content-Type": content_type,
+        }
+
+        completed = False
+        tries = 0
+        while not completed and tries < 100:
+            request = requests.request(
+                "POST",
+                cast(Union[str, bytes], url),
+                headers=headers,
+                data=json.dumps(payload),
+            )
+            if request.status_code == 200:
+                response = request.json()["text"]
+                completed = True
+            else:
+                time.sleep(10)
+                tries += 1
+
+        return response
+
