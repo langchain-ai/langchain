@@ -9,34 +9,6 @@ class GradeOutputParser(ListRegexParser[int]):
     _cast = int
 
 
-# Largely taken from
-# https://github.com/langchain-ai/auto-evaluator/blob/main/api/text_utils.py
-WITH_ANSWER_TEMPLATE = """\
-Given the question:
-{question}
-
-Here are some documents retrieved in response to the question:
-{documents}
-
-And here is the answer to the question:
-{answer}
-
-Criteria: 
-  relevance: Are the retrieved documents relevant to the question and do they support the answer?"
-
-Your response should be as follows:
-
-GRADE: (Comma separated score for each document. Scores are from 1 - 5, where 1 \
-indicates the document was not relevant at all and 5 indicates it answered the question exactly.)
-"""  # noqa: E501
-
-GRADE_DOCS_WITH_ANSWER_PROMPT = PromptTemplate(
-    input_variables=["question", "documents", "answer"],
-    template=WITH_ANSWER_TEMPLATE,
-    output_parser=GradeOutputParser(),
-)
-
-
 TEMPLATE = """\
 >> INSTRUCTIONS:
 Given a question and a list of documents, score how relevant each document is to the question. \
@@ -59,5 +31,33 @@ the scores or add any other text. Do not return a score outside the allowed rang
 GRADE_DOCS_PROMPT = PromptTemplate(
     input_variables=["question", "documents"],
     template=TEMPLATE,
+    output_parser=GradeOutputParser(),
+)
+
+
+SINGLE_DOC_TEMPLATE = """\
+>> INSTRUCTIONS:
+Given a question and a document, score how relevant the document is to the question. \
+Return an integer score between 1-5, where 1 means all of the document is completely irrelevant to the question \
+and 5 means that some part of the document answers the question exactly. 
+
+*Remember*, a document is considered to be relevant if *ANY* part of the document is relevant. \
+
+>> FORMATTING INSTRUCTIONS:
+Return a single integer score. Do not label
+the score or add any other text. Do not return a score outside the allowed range.
+
+>> QUESTION: 
+{question}
+>> CANDIDATE DOCUMENT:
+
+{document}
+
+>> RELEVANCE SCORES:
+"""
+
+GRADE_SINGLE_DOC_PROMPT = PromptTemplate(
+    input_variables=["question", "document"],
+    template=SINGLE_DOC_TEMPLATE,
     output_parser=GradeOutputParser(),
 )
