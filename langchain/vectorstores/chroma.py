@@ -104,15 +104,25 @@ class Chroma(VectorStore):
         query_embeddings: Optional[List[List[float]]] = None,
         n_results: int = 4,
         where: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Query the chroma collection."""
+        try:
+            import chromadb
+        except ImportError:
+            raise ValueError(
+                "Could not import chromadb python package. "
+                "Please install it with `pip install chromadb`."
+            )
+
         for i in range(n_results, 0, -1):
             try:
                 return self._collection.query(
                     query_texts=query_texts,
                     query_embeddings=query_embeddings,
-                    n_results=n_results,
+                    n_results=i,
                     where=where,
+                    **kwargs,
                 )
             except chromadb.errors.NotEnoughElementsException:
                 logger.error(
@@ -180,8 +190,9 @@ class Chroma(VectorStore):
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
         Args:
-            embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            embedding (str): Embedding to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
             List of Documents most similar to the query vector.
         """
@@ -301,6 +312,18 @@ class Chroma(VectorStore):
     def delete_collection(self) -> None:
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
+
+    def get(self, include: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Gets the collection.
+
+        Args:
+            include (Optional[List[str]]): List of fields to include from db.
+                Defaults to None.
+        """
+        if include is not None:
+            return self._collection.get(include=include)
+        else:
+            return self._collection.get()
 
     def persist(self) -> None:
         """Persist the collection.

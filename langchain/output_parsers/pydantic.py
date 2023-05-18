@@ -17,12 +17,12 @@ class PydanticOutputParser(BaseOutputParser[T]):
         try:
             # Greedy search for 1st json candidate.
             match = re.search(
-                "\{.*\}", text.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL
+                r"\{.*\}", text.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL
             )
             json_str = ""
             if match:
                 json_str = match.group()
-            json_object = json.loads(json_str)
+            json_object = json.loads(json_str, strict=False)
             return self.pydantic_object.parse_obj(json_object)
 
         except (json.JSONDecodeError, ValidationError) as e:

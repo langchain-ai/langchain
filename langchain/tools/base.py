@@ -1,31 +1,29 @@
 """Base implementation for tools or skills."""
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
 
 from pydantic import (
     BaseModel,
     Extra,
     Field,
     create_model,
+    root_validator,
     validate_arguments,
-    validator,
 )
 from pydantic.main import ModelMetaclass
 
-from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-
-
-def _to_args_and_kwargs(run_input: Union[str, Dict]) -> Tuple[Sequence, dict]:
-    # For backwards compatability, if run_input is a string,
-    # pass as a positional argument.
-    if isinstance(run_input, str):
-        return (run_input,), {}
-    else:
-        return [], run_input
+from langchain.callbacks.manager import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForToolRun,
+    CallbackManager,
+    CallbackManagerForToolRun,
+    Callbacks,
+)
 
 
 class SchemaAnnotationError(TypeError):
@@ -81,16 +79,32 @@ def _create_subset_model(
     return create_model(name, **fields)  # type: ignore
 
 
-def get_filtered_args(inferred_model: Type[BaseModel], func: Callable) -> dict:
+def get_filtered_args(
+    inferred_model: Type[BaseModel],
+    func: Callable,
+) -> dict:
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
     valid_keys = signature(func).parameters
-    return {k: schema[k] for k in valid_keys}
+    return {k: schema[k] for k in valid_keys if k != "run_manager"}
 
 
-def create_schema_from_function(model_name: str, func: Callable) -> Type[BaseModel]:
+class _SchemaConfig:
+    """Configuration for the pydantic model."""
+
+    extra = Extra.forbid
+    arbitrary_types_allowed = True
+
+
+def create_schema_from_function(
+    model_name: str,
+    func: Callable,
+) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature."""
-    inferred_model = validate_arguments(func).model  # type: ignore
+    validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
+    inferred_model = validated.model  # type: ignore
+    if "run_manager" in inferred_model.__fields__:
+        del inferred_model.__fields__["run_manager"]
     # Pydantic adds placeholder virtual fields we need to strip
     filtered_args = get_filtered_args(inferred_model, func)
     return _create_subset_model(
@@ -102,12 +116,26 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     """Interface LangChain tools must implement."""
 
     name: str
+    """The unique name of the tool that clearly communicates its purpose."""
     description: str
+    """Used to tell the model how/when/why to use the tool.
+    
+    You can provide few-shot examples as a part of the description.
+    """
     args_schema: Optional[Type[BaseModel]] = None
     """Pydantic model class to validate and parse the tool's input arguments."""
     return_direct: bool = False
+    """Whether to return the tool's output directly. Setting this to True means
+    
+    that after the tool is called, the AgentExecutor will stop looping.
+    """
     verbose: bool = False
-    callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
+    """Whether to log the tool's progress."""
+
+    callbacks: Callbacks = Field(default=None, exclude=True)
+    """Callbacks to be called during tool execution."""
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    """Deprecated. Please use callbacks instead."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -116,44 +144,78 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         arbitrary_types_allowed = True
 
     @property
+    def is_single_input(self) -> bool:
+        """Whether the tool only accepts a single input."""
+        keys = {k for k in self.args if k != "kwargs"}
+        return len(keys) == 1
+
+    @property
     def args(self) -> dict:
         if self.args_schema is not None:
             return self.args_schema.schema()["properties"]
         else:
-            inferred_model = validate_arguments(self._run).model  # type: ignore
-            return get_filtered_args(inferred_model, self._run)
+            schema = create_schema_from_function(self.name, self._run)
+            return schema.schema()["properties"]
 
     def _parse_input(
         self,
         tool_input: Union[str, Dict],
-    ) -> None:
+    ) -> Union[str, Dict[str, Any]]:
         """Convert tool input to pydantic model."""
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
                 key_ = next(iter(input_args.__fields__.keys()))
                 input_args.validate({key_: tool_input})
+            return tool_input
         else:
             if input_args is not None:
-                input_args.validate(tool_input)
+                result = input_args.parse_obj(tool_input)
+                return {k: v for k, v in result.dict().items() if k in tool_input}
+        return tool_input
 
-    @validator("callback_manager", pre=True, always=True)
-    def set_callback_manager(
-        cls, callback_manager: Optional[BaseCallbackManager]
-    ) -> BaseCallbackManager:
-        """If callback manager is None, set it.
+    @root_validator()
+    def raise_deprecation(cls, values: Dict) -> Dict:
+        """Raise deprecation warning if callback_manager is used."""
+        if values.get("callback_manager") is not None:
+            warnings.warn(
+                "callback_manager is deprecated. Please use callbacks instead.",
+                DeprecationWarning,
+            )
+            values["callbacks"] = values.pop("callback_manager", None)
+        return values
 
-        This allows users to pass in None as callback manager, which is a nice UX.
+    @abstractmethod
+    def _run(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        """Use the tool.
+
+        Add run_manager: Optional[CallbackManagerForToolRun] = None
+        to child implementations to enable tracing,
         """
-        return callback_manager or get_callback_manager()
 
     @abstractmethod
-    def _run(self, *args: Any, **kwargs: Any) -> str:
-        """Use the tool."""
+    async def _arun(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        """Use the tool asynchronously.
 
-    @abstractmethod
-    async def _arun(self, *args: Any, **kwargs: Any) -> str:
-        """Use the tool asynchronously."""
+        Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
+        to child implementations to enable tracing,
+        """
+
+    def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
+        # For backwards compatibility, if run_input is a string,
+        # pass as a positional argument.
+        if isinstance(tool_input, str):
+            return (tool_input,), {}
+        else:
+            return (), tool_input
 
     def run(
         self,
@@ -161,30 +223,37 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
+        callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> str:
+    ) -> Any:
         """Run the tool."""
-        self._parse_input(tool_input)
+        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
             verbose_ = self.verbose
-        self.callback_manager.on_tool_start(
+        callback_manager = CallbackManager.configure(
+            callbacks, self.callbacks, verbose=verbose_
+        )
+        # TODO: maybe also pass through run_manager is _run supports kwargs
+        new_arg_supported = signature(self._run).parameters.get("run_manager")
+        run_manager = callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
-            verbose=verbose_,
             color=start_color,
             **kwargs,
         )
         try:
-            tool_args, tool_kwargs = _to_args_and_kwargs(tool_input)
-            observation = self._run(*tool_args, **tool_kwargs)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
+            observation = (
+                self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
+                if new_arg_supported
+                else self._run(*tool_args, **tool_kwargs)
+            )
         except (Exception, KeyboardInterrupt) as e:
-            self.callback_manager.on_tool_error(e, verbose=verbose_)
+            run_manager.on_tool_error(e)
             raise e
-        self.callback_manager.on_tool_end(
-            observation, verbose=verbose_, color=color, name=self.name, **kwargs
-        )
+        run_manager.on_tool_end(str(observation), color=color, name=self.name, **kwargs)
         return observation
 
     async def arun(
@@ -193,50 +262,306 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
+        callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> str:
+    ) -> Any:
         """Run the tool asynchronously."""
-        self._parse_input(tool_input)
+        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
             verbose_ = self.verbose
-        if self.callback_manager.is_async:
-            await self.callback_manager.on_tool_start(
-                {"name": self.name, "description": self.description},
-                tool_input if isinstance(tool_input, str) else str(tool_input),
-                verbose=verbose_,
-                color=start_color,
-                **kwargs,
-            )
-        else:
-            self.callback_manager.on_tool_start(
-                {"name": self.name, "description": self.description},
-                tool_input if isinstance(tool_input, str) else str(tool_input),
-                verbose=verbose_,
-                color=start_color,
-                **kwargs,
-            )
+        callback_manager = AsyncCallbackManager.configure(
+            callbacks, self.callbacks, verbose=verbose_
+        )
+        new_arg_supported = signature(self._arun).parameters.get("run_manager")
+        run_manager = await callback_manager.on_tool_start(
+            {"name": self.name, "description": self.description},
+            tool_input if isinstance(tool_input, str) else str(tool_input),
+            color=start_color,
+            **kwargs,
+        )
         try:
             # We then call the tool on the tool input to get an observation
-            args, kwargs = _to_args_and_kwargs(tool_input)
-            observation = await self._arun(*args, **kwargs)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
+            observation = (
+                await self._arun(*tool_args, run_manager=run_manager, **tool_kwargs)
+                if new_arg_supported
+                else await self._arun(*tool_args, **tool_kwargs)
+            )
         except (Exception, KeyboardInterrupt) as e:
-            if self.callback_manager.is_async:
-                await self.callback_manager.on_tool_error(e, verbose=verbose_)
-            else:
-                self.callback_manager.on_tool_error(e, verbose=verbose_)
+            await run_manager.on_tool_error(e)
             raise e
-        if self.callback_manager.is_async:
-            await self.callback_manager.on_tool_end(
-                observation, verbose=verbose_, color=color, name=self.name, **kwargs
-            )
-        else:
-            self.callback_manager.on_tool_end(
-                observation, verbose=verbose_, color=color, name=self.name, **kwargs
-            )
+        await run_manager.on_tool_end(
+            str(observation), color=color, name=self.name, **kwargs
+        )
         return observation
 
-    def __call__(self, tool_input: str) -> str:
+    def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
         """Make tool callable."""
-        return self.run(tool_input)
+        return self.run(tool_input, callbacks=callbacks)
+
+
+class Tool(BaseTool):
+    """Tool that takes in function or coroutine directly."""
+
+    description: str = ""
+    func: Callable[..., str]
+    """The function to run when the tool is called."""
+    coroutine: Optional[Callable[..., Awaitable[str]]] = None
+    """The asynchronous version of the function."""
+
+    @property
+    def args(self) -> dict:
+        """The tool's input arguments."""
+        if self.args_schema is not None:
+            return self.args_schema.schema()["properties"]
+        # For backwards compatibility, if the function signature is ambiguous,
+        # assume it takes a single string input.
+        return {"tool_input": {"type": "string"}}
+
+    def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
+        """Convert tool input to pydantic model."""
+        args, kwargs = super()._to_args_and_kwargs(tool_input)
+        # For backwards compatibility. The tool must be run with a single input
+        all_args = list(args) + list(kwargs.values())
+        if len(all_args) != 1:
+            raise ValueError(
+                f"Too many arguments to single-input tool {self.name}."
+                f" Args: {all_args}"
+            )
+        return tuple(all_args), {}
+
+    def _run(
+        self,
+        *args: Any,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Use the tool."""
+        new_argument_supported = signature(self.func).parameters.get("callbacks")
+        return (
+            self.func(
+                *args,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **kwargs,
+            )
+            if new_argument_supported
+            else self.func(*args, **kwargs)
+        )
+
+    async def _arun(
+        self,
+        *args: Any,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Use the tool asynchronously."""
+        if self.coroutine:
+            new_argument_supported = signature(self.coroutine).parameters.get(
+                "callbacks"
+            )
+            return (
+                await self.coroutine(
+                    *args,
+                    callbacks=run_manager.get_child() if run_manager else None,
+                    **kwargs,
+                )
+                if new_argument_supported
+                else await self.coroutine(*args, **kwargs)
+            )
+        raise NotImplementedError("Tool does not support async")
+
+    # TODO: this is for backwards compatibility, remove in future
+    def __init__(
+        self, name: str, func: Callable, description: str, **kwargs: Any
+    ) -> None:
+        """Initialize tool."""
+        super(Tool, self).__init__(
+            name=name, func=func, description=description, **kwargs
+        )
+
+    @classmethod
+    def from_function(
+        cls,
+        func: Callable,
+        name: str,  # We keep these required to support backwards compatibility
+        description: str,
+        return_direct: bool = False,
+        args_schema: Optional[Type[BaseModel]] = None,
+        **kwargs: Any,
+    ) -> Tool:
+        """Initialize tool from a function."""
+        return cls(
+            name=name,
+            func=func,
+            description=description,
+            return_direct=return_direct,
+            args_schema=args_schema,
+            **kwargs,
+        )
+
+
+class StructuredTool(BaseTool):
+    """Tool that can operate on any number of inputs."""
+
+    description: str = ""
+    args_schema: Type[BaseModel] = Field(..., description="The tool schema.")
+    """The input arguments' schema."""
+    func: Callable[..., Any]
+    """The function to run when the tool is called."""
+    coroutine: Optional[Callable[..., Awaitable[Any]]] = None
+    """The asynchronous version of the function."""
+
+    @property
+    def args(self) -> dict:
+        """The tool's input arguments."""
+        return self.args_schema.schema()["properties"]
+
+    def _run(
+        self,
+        *args: Any,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Use the tool."""
+        new_argument_supported = signature(self.func).parameters.get("callbacks")
+        return (
+            self.func(
+                *args,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **kwargs,
+            )
+            if new_argument_supported
+            else self.func(*args, **kwargs)
+        )
+
+    async def _arun(
+        self,
+        *args: Any,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Use the tool asynchronously."""
+        if self.coroutine:
+            new_argument_supported = signature(self.coroutine).parameters.get(
+                "callbacks"
+            )
+            return (
+                await self.coroutine(
+                    *args,
+                    callbacks=run_manager.get_child() if run_manager else None,
+                    **kwargs,
+                )
+                if new_argument_supported
+                else await self.coroutine(*args, **kwargs)
+            )
+        raise NotImplementedError("Tool does not support async")
+
+    @classmethod
+    def from_function(
+        cls,
+        func: Callable,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        return_direct: bool = False,
+        args_schema: Optional[Type[BaseModel]] = None,
+        infer_schema: bool = True,
+        **kwargs: Any,
+    ) -> StructuredTool:
+        name = name or func.__name__
+        description = description or func.__doc__
+        assert (
+            description is not None
+        ), "Function must have a docstring if description not provided."
+
+        # Description example:
+        # search_api(query: str) - Searches the API for the query.
+        description = f"{name}{signature(func)} - {description.strip()}"
+        _args_schema = args_schema
+        if _args_schema is None and infer_schema:
+            _args_schema = create_schema_from_function(f"{name}Schema", func)
+        return cls(
+            name=name,
+            func=func,
+            args_schema=_args_schema,
+            description=description,
+            return_direct=return_direct,
+            **kwargs,
+        )
+
+
+def tool(
+    *args: Union[str, Callable],
+    return_direct: bool = False,
+    args_schema: Optional[Type[BaseModel]] = None,
+    infer_schema: bool = True,
+) -> Callable:
+    """Make tools out of functions, can be used with or without arguments.
+
+    Args:
+        *args: The arguments to the tool.
+        return_direct: Whether to return directly from the tool rather
+            than continuing the agent loop.
+        args_schema: optional argument schema for user to specify
+        infer_schema: Whether to infer the schema of the arguments from
+            the function's signature. This also makes the resultant tool
+            accept a dictionary input to its `run()` function.
+
+    Requires:
+        - Function must be of type (str) -> str
+        - Function must have a docstring
+
+    Examples:
+        .. code-block:: python
+
+            @tool
+            def search_api(query: str) -> str:
+                # Searches the API for the query.
+                return
+
+            @tool("search", return_direct=True)
+            def search_api(query: str) -> str:
+                # Searches the API for the query.
+                return
+    """
+
+    def _make_with_name(tool_name: str) -> Callable:
+        def _make_tool(func: Callable) -> BaseTool:
+            if infer_schema or args_schema is not None:
+                return StructuredTool.from_function(
+                    func,
+                    name=tool_name,
+                    return_direct=return_direct,
+                    args_schema=args_schema,
+                    infer_schema=infer_schema,
+                )
+            # If someone doesn't want a schema applied, we must treat it as
+            # a simple string->string function
+            assert func.__doc__ is not None, "Function must have a docstring"
+            return Tool(
+                name=tool_name,
+                func=func,
+                description=f"{tool_name} tool",
+                return_direct=return_direct,
+            )
+
+        return _make_tool
+
+    if len(args) == 1 and isinstance(args[0], str):
+        # if the argument is a string, then we use the string as the tool name
+        # Example usage: @tool("search", return_direct=True)
+        return _make_with_name(args[0])
+    elif len(args) == 1 and callable(args[0]):
+        # if the argument is a function, then we use the function name as the tool name
+        # Example usage: @tool
+        return _make_with_name(args[0].__name__)(args[0])
+    elif len(args) == 0:
+        # if there are no arguments, then we use the function name as the tool name
+        # Example usage: @tool(return_direct=True)
+        def _partial(func: Callable[[str], str]) -> BaseTool:
+            return _make_with_name(func.__name__)(func)
+
+        return _partial
+    else:
+        raise ValueError("Too many arguments for tool decorator")

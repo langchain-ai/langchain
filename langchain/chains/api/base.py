@@ -5,12 +5,16 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field, root_validator
 
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts import BasePromptTemplate
 from langchain.requests import TextRequestsWrapper
-from langchain.schema import BaseLanguageModel
 
 
 class APIChain(Chain):
@@ -61,16 +65,21 @@ class APIChain(Chain):
             )
         return values
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.question_key]
         api_url = self.api_request_chain.predict(
-            question=question, api_docs=self.api_docs
+            question=question,
+            api_docs=self.api_docs,
+            callbacks=_run_manager.get_child(),
         )
-        self.callback_manager.on_text(
-            api_url, color="green", end="\n", verbose=self.verbose
-        )
+        _run_manager.on_text(api_url, color="green", end="\n", verbose=self.verbose)
         api_response = self.requests_wrapper.get(api_url)
-        self.callback_manager.on_text(
+        _run_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose
         )
         answer = self.api_answer_chain.predict(
@@ -78,19 +87,27 @@ class APIChain(Chain):
             api_docs=self.api_docs,
             api_url=api_url,
             api_response=api_response,
+            callbacks=_run_manager.get_child(),
         )
         return {self.output_key: answer}
 
-    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.question_key]
         api_url = await self.api_request_chain.apredict(
-            question=question, api_docs=self.api_docs
+            question=question,
+            api_docs=self.api_docs,
+            callbacks=_run_manager.get_child(),
         )
-        self.callback_manager.on_text(
+        await _run_manager.on_text(
             api_url, color="green", end="\n", verbose=self.verbose
         )
         api_response = await self.requests_wrapper.aget(api_url)
-        self.callback_manager.on_text(
+        await _run_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose
         )
         answer = await self.api_answer_chain.apredict(
@@ -98,6 +115,7 @@ class APIChain(Chain):
             api_docs=self.api_docs,
             api_url=api_url,
             api_response=api_response,
+            callbacks=_run_manager.get_child(),
         )
         return {self.output_key: answer}
 

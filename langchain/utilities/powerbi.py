@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
 import aiohttp
@@ -12,16 +13,12 @@ from aiohttp import ServerTimeoutError
 from pydantic import BaseModel, Field, root_validator
 from requests.exceptions import Timeout
 
-from langchain.tools.powerbi.prompt import BAD_REQUEST_RESPONSE, UNAUTHORIZED_RESPONSE
-
 _LOGGER = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
-    from azure.core.exceptions import ClientAuthenticationError
-    from azure.identity import ChainedTokenCredential
-    from azure.identity._internal import InteractiveCredential
+BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg")
 
-BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg/datasets/")
+if TYPE_CHECKING:
+    from azure.core.credentials import TokenCredential
 
 
 class PowerBIDataset(BaseModel):
@@ -36,7 +33,7 @@ class PowerBIDataset(BaseModel):
     dataset_id: str
     table_names: List[str]
     group_id: Optional[str] = None
-    credential: Optional[Union[ChainedTokenCredential, InteractiveCredential]] = None
+    credential: Optional[TokenCredential] = None
     token: Optional[str] = None
     impersonated_user_name: Optional[str] = None
     sample_rows_in_table_info: int = Field(default=1, gt=0, le=10)
@@ -59,31 +56,35 @@ class PowerBIDataset(BaseModel):
     def request_url(self) -> str:
         """Get the request url."""
         if self.group_id:
-            return f"{BASE_URL}/{self.group_id}/datasets/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
-        return f"{BASE_URL}/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
+            return f"{BASE_URL}/groups/{self.group_id}/datasets/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
+        return f"{BASE_URL}/datasets/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
 
     @property
     def headers(self) -> Dict[str, str]:
         """Get the token."""
-        token = None
         if self.token:
-            token = self.token
+            return {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + self.token,
+            }
+        from azure.core.exceptions import (  # pylint: disable=import-outside-toplevel
+            ClientAuthenticationError,
+        )
+
         if self.credential:
             try:
                 token = self.credential.get_token(
                     "https://analysis.windows.net/powerbi/api/.default"
                 ).token
+                return {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token,
+                }
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 raise ClientAuthenticationError(
                     "Could not get a token from the supplied credentials."
                 ) from exc
-        if not token:
-            raise ClientAuthenticationError("No credential or token supplied.")
-
-        return {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + token,
-        }
+        raise ClientAuthenticationError("No credential or token supplied.")
 
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
@@ -116,10 +117,16 @@ class PowerBIDataset(BaseModel):
         return self.table_names
 
     def _get_tables_todo(self, tables_todo: List[str]) -> List[str]:
-        for table in tables_todo:
+        """Get the tables that still need to be queried."""
+        todo = deepcopy(tables_todo)
+        for table in todo:
+            if table not in self.table_names:
+                _LOGGER.warning("Table %s not found in dataset.", table)
+                todo.remove(table)
+                continue
             if table in self.schemas:
-                tables_todo.remove(table)
-        return tables_todo
+                todo.remove(table)
+        return todo
 
     def _get_schema_for_tables(self, table_names: List[str]) -> str:
         """Create a string of the table schemas for the supplied tables."""
@@ -135,19 +142,20 @@ class PowerBIDataset(BaseModel):
         tables_requested = self._get_tables_to_query(table_names)
         tables_todo = self._get_tables_todo(tables_requested)
         for table in tables_todo:
+            if " " in table and not table.startswith("'") and not table.endswith("'"):
+                table = f"'{table}'"
             try:
                 result = self.run(
                     f"EVALUATE TOPN({self.sample_rows_in_table_info}, {table})"
                 )
             except Timeout:
                 _LOGGER.warning("Timeout while getting table info for %s", table)
+                self.schemas[table] = "unknown"
                 continue
             except Exception as exc:  # pylint: disable=broad-exception-caught
-                if "bad request" in str(exc).lower():
-                    return BAD_REQUEST_RESPONSE
-                if "unauthorized" in str(exc).lower():
-                    return UNAUTHORIZED_RESPONSE
-                return str(exc)
+                _LOGGER.warning("Error while getting table info for %s: %s", table, exc)
+                self.schemas[table] = "unknown"
+                continue
             self.schemas[table] = json_to_md(result["results"][0]["tables"][0]["rows"])
         return self._get_schema_for_tables(tables_requested)
 
@@ -158,59 +166,61 @@ class PowerBIDataset(BaseModel):
         tables_requested = self._get_tables_to_query(table_names)
         tables_todo = self._get_tables_todo(tables_requested)
         for table in tables_todo:
+            if " " in table and not table.startswith("'") and not table.endswith("'"):
+                table = f"'{table}'"
             try:
                 result = await self.arun(
                     f"EVALUATE TOPN({self.sample_rows_in_table_info}, {table})"
                 )
             except ServerTimeoutError:
                 _LOGGER.warning("Timeout while getting table info for %s", table)
+                self.schemas[table] = "unknown"
                 continue
             except Exception as exc:  # pylint: disable=broad-exception-caught
-                if "bad request" in str(exc).lower():
-                    return BAD_REQUEST_RESPONSE
-                if "unauthorized" in str(exc).lower():
-                    return UNAUTHORIZED_RESPONSE
-                return str(exc)
+                _LOGGER.warning("Error while getting table info for %s: %s", table, exc)
+                self.schemas[table] = "unknown"
+                continue
             self.schemas[table] = json_to_md(result["results"][0]["tables"][0]["rows"])
         return self._get_schema_for_tables(tables_requested)
 
+    def _create_json_content(self, command: str) -> dict[str, Any]:
+        """Create the json content for the request."""
+        return {
+            "queries": [{"query": rf"{command}"}],
+            "impersonatedUserName": self.impersonated_user_name,
+            "serializerSettings": {"includeNulls": True},
+        }
+
     def run(self, command: str) -> Any:
         """Execute a DAX command and return a json representing the results."""
-
+        _LOGGER.debug("Running command: %s", command)
         result = requests.post(
             self.request_url,
-            json={
-                "queries": [{"query": command}],
-                "impersonatedUserName": self.impersonated_user_name,
-                "serializerSettings": {"includeNulls": True},
-            },
+            json=self._create_json_content(command),
             headers=self.headers,
             timeout=10,
         )
-        result.raise_for_status()
         return result.json()
 
     async def arun(self, command: str) -> Any:
         """Execute a DAX command and return the result asynchronously."""
-        json_content = (
-            {
-                "queries": [{"query": command}],
-                "impersonatedUserName": self.impersonated_user_name,
-                "serializerSettings": {"includeNulls": True},
-            },
-        )
+        _LOGGER.debug("Running command: %s", command)
         if self.aiosession:
             async with self.aiosession.post(
-                self.request_url, headers=self.headers, json=json_content, timeout=10
+                self.request_url,
+                headers=self.headers,
+                json=self._create_json_content(command),
+                timeout=10,
             ) as response:
-                response.raise_for_status()
                 response_json = await response.json()
                 return response_json
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                self.request_url, headers=self.headers, json=json_content, timeout=10
+                self.request_url,
+                headers=self.headers,
+                json=self._create_json_content(command),
+                timeout=10,
             ) as response:
-                response.raise_for_status()
                 response_json = await response.json()
                 return response_json
 
