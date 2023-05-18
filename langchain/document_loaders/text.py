@@ -1,8 +1,9 @@
 import logging
-from typing import List, Optional, cast
+from typing import List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.helpers import detect_file_encodings
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +43,10 @@ class TextLoader(BaseLoader):
                 if self.autodetect_encoding:
                     detected_encodings = detect_file_encodings(self.file_path)
                     for encoding in detected_encodings:
-                        logger.debug("Trying encoding: ", encoding["encoding"])
+                        logger.debug("Trying encoding: ", encoding.encoding)
                         try:
                             with open(
-                                self.file_path, encoding=encoding["encoding"]
+                                self.file_path, encoding=encoding.encoding
                             ) as f:
                                 text = f.read()
                             break
@@ -59,17 +60,4 @@ class TextLoader(BaseLoader):
         metadata = {"source": self.file_path}
         return [Document(page_content=text, metadata=metadata)]
 
-def detect_file_encodings(file_path: str) -> List[dict]:
-    """Try to detect the file encoding."""
-    import chardet
 
-
-    with open(file_path, "rb") as f:
-        rawdata = f.read()
-    encodings = chardet.detect_all(rawdata)
-
-
-    if all(encoding["encoding"] is None for encoding in encodings):
-        raise RuntimeError(f"Could not detect encoding for {file_path}")
-    res = [encoding for encoding in encodings if encoding["encoding"] is not None]
-    return cast(List[dict], res)
