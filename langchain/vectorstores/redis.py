@@ -56,7 +56,7 @@ def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -
             return
     # otherwise raise error
     error_message = (
-        "You must add the Redis (>= 4.1.0) module from Redis Stack."
+        "You must add the RediSearch (>= 2.4) module from Redis Stack. "
         "Please refer to Redis Stack docs: https://redis.io/docs/stack/"
     )
     logging.error(error_message)
@@ -126,7 +126,7 @@ class Redis(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
-                "Please install it with `pip install redis`."
+                "Please install it with `pip install redis>=4.1.0`."
             )
 
         self.embedding_function = embedding_function
