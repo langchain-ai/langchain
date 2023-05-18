@@ -6,6 +6,7 @@ from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
     PDFMinerParser,
+    PDFPlumberParser,
     PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
@@ -78,3 +79,8 @@ def test_pypdfium2_parser() -> None:
     """Test PyPDFium2 parser."""
     # Does not follow defaults to split by page.
     _assert_with_parser(PyPDFium2Parser())
+
+
+def test_pdfplumber_parser() -> None:
+    """Test PDFPlumber parser."""
+    _assert_with_parser(PDFPlumberParser())

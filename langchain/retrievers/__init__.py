@@ -1,3 +1,4 @@
+from langchain.retrievers.arxiv import ArxivRetriever
 from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
 from langchain.retrievers.chatgpt_plugin_retriever import ChatGPTPluginRetriever
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
@@ -19,6 +20,8 @@ from langchain.retrievers.wikipedia import WikipediaRetriever
 from langchain.retrievers.zep import ZepRetriever
 
 __all__ = [
+    "ArxivRetriever",
+    "AzureCognitiveSearchRetriever",
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",
     "DataberryRetriever",
@@ -33,7 +36,6 @@ __all__ = [
     "TimeWeightedVectorStoreRetriever",
     "VespaRetriever",
     "WeaviateHybridSearchRetriever",
-    "AzureCognitiveSearchRetriever",
     "WikipediaRetriever",
     "ZepRetriever",
 ]

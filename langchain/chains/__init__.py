@@ -8,6 +8,7 @@ from langchain.chains.conversational_retrieval.base import (
     ChatVectorDBChain,
     ConversationalRetrievalChain,
 )
+from langchain.chains.flare.base import FlareChain
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
@@ -63,4 +64,5 @@ __all__ = [
     "RetrievalQAWithSourcesChain",
     "ConversationalRetrievalChain",
     "OpenAPIEndpointChain",
+    "FlareChain",
 ]

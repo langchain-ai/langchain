@@ -329,7 +329,7 @@ class VectorStore(ABC):
         """Return VectorStore initialized from texts and embeddings."""
         raise NotImplementedError
 
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+    def as_retriever(self, **kwargs: Any) -> VectorStoreRetriever:
         return VectorStoreRetriever(vectorstore=self, **kwargs)
 
 
