@@ -67,7 +67,9 @@ class GraphCypherQAChain(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
 
-        generated_cypher = self.cypher_generation_chain.run({"question":question, "schema":self.graph.get_schema})
+        generated_cypher = self.cypher_generation_chain.run(
+            {"question": question, "schema": self.graph.get_schema}
+        )
 
         _run_manager.on_text("Generated Cypher:", end="\n", verbose=self.verbose)
         _run_manager.on_text(

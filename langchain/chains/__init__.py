@@ -59,8 +59,7 @@ __all__ = [
     "HypotheticalDocumentEmbedder",
     "ChatVectorDBChain",
     "GraphQAChain",
-    "GraphCypherQAChain"
-    "ConstitutionalChain",
+    "GraphCypherQAChain" "ConstitutionalChain",
     "QAGenerationChain",
     "RetrievalQA",
     "RetrievalQAWithSourcesChain",

@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -28,7 +28,9 @@ RETURN "(:" + label + ")-[:" + property + "]->(:" + toString(other[0]) + ")" AS 
 class Neo4jGraph:
     """Neo4j wrapper for graph operations."""
 
-    def __init__(self, url: str, username: str, password: str, database: str = "neo4j") -> None:
+    def __init__(
+        self, url: str, username: str, password: str, database: str = "neo4j"
+    ) -> None:
         """Create a new Neo4j graph wrapper instance."""
         try:
             import neo4j
@@ -64,10 +66,8 @@ class Neo4jGraph:
 
     @property
     def get_schema(self) -> str:
-        """Returns the schema of the Neo4j database
-        """
+        """Returns the schema of the Neo4j database"""
         return self.schema
-
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Neo4j database."""
@@ -77,10 +77,8 @@ class Neo4jGraph:
                 # Hard limit of 200 results
                 return [r.data() for r in data][:200]
             except neo4j.exceptions.CypherSyntaxError:
-                raise ValueError(
-                    "Generated Cypher Statement is not valid"
-                )
-    
+                raise ValueError("Generated Cypher Statement is not valid")
+
     def refresh_schema(self):
         """
         Refreshes the Neo4j graph schema information.
@@ -97,4 +95,3 @@ class Neo4jGraph:
         The relationships are the following:
         {relationships}
         """
-
