@@ -1,8 +1,8 @@
 """Wrapper around FAISS vector database."""
 from __future__ import annotations
 
-import os
 import math
+import os
 import pickle
 import uuid
 from pathlib import Path
@@ -28,8 +28,8 @@ def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
         no_avx2: Load FAISS strictly with no AVX2 optimization
             so that the vectorstore is portable and compatible with other devices.
     """
-    if no_avx2 is None and 'FAISS_NO_AVX2' in os.environ:
-        no_avx2 = bool(os.getenv('FAISS_NO_AVX2'))
+    if no_avx2 is None and "FAISS_NO_AVX2" in os.environ:
+        no_avx2 = bool(os.getenv("FAISS_NO_AVX2"))
 
     try:
         if no_avx2:
