@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterator, List, Optional, Sequence, Union
+from typing import Iterator, List, Optional, Sequence, Union, Literal
 
 from langchain.document_loaders.base import BaseBlobParser, BaseLoader
 from langchain.document_loaders.blob_loaders import BlobLoader, FileSystemBlobLoader
@@ -10,6 +10,8 @@ from langchain.schema import Document
 from langchain.text_splitter import TextSplitter
 
 _PathLike = Union[str, Path]
+
+DEFAULT = Literal["default"]
 
 
 class GenericLoader(BaseLoader):
@@ -105,18 +107,18 @@ class GenericLoader(BaseLoader):
         glob: str = "**/[!.]*",
         suffixes: Optional[Sequence[str]] = None,
         show_progress: bool = False,
-        parser: Union[str, BaseBlobParser] = "default",
+        parser: Union[DEFAULT, BaseBlobParser] = "default",
     ) -> GenericLoader:
         """Create a generic document loader using a filesystem blob loader.
 
         Args:
-            parser: A blob parser which knows how to parse blobs into documents
             path: The path to the directory to load documents from.
             glob: The glob pattern to use to find documents.
             suffixes: The suffixes to use to filter documents. If None, all files
                       matching the glob will be loaded.
             show_progress: Whether to show a progress bar or not (requires tqdm).
                            Proxies to the file system loader.
+            parser: A blob parser which knows how to parse blobs into documents
 
         Returns:
             A generic document loader.
