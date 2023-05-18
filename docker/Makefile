@@ -50,3 +50,15 @@ docker.force_build: $(DOCKER_SRC)
 
 docker.clean:
 	docker rmi $(DOCKER_IMAGE_NAME):$(GIT_HASH) $(DOCKER_IMAGE_NAME):latest
+
+docker.test: docker.build
+	docker run --rm -it -u lchain -v $(ROOTDIR):/src  $(DOCKER_IMAGE_NAME):$(GIT_HASH) \
+		pytest /src/tests/unit_tests
+
+docker.lint: docker.build
+	$(eval DOCKER_CMD = docker run --rm -it -u lchain -v $(ROOTDIR):/src  $(DOCKER_IMAGE_NAME):$(GIT_HASH))
+
+	$(DOCKER_CMD) mypy /src
+	$(DOCKER_CMD) black /src --check
+	$(DOCKER_CMD) isort /src --check
+	$(DOCKER_CMD) flake8 /src --check

@@ -65,7 +65,7 @@ COPY poetry.* pyproject.toml ./
 
 RUN mkdir /pip-prefix
 
-RUN poetry export $POETRY_EXTRA_PACKAGES --with dev -f requirements.txt --output requirements.txt --without-hashes && \
+RUN poetry export $POETRY_EXTRA_PACKAGES --with dev,test,lint -f requirements.txt --output requirements.txt --without-hashes && \
     pip install --no-cache-dir --disable-pip-version-check --prefix /pip-prefix -r requirements.txt
 
 
