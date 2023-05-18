@@ -265,7 +265,6 @@ class Beam(LLM):
         appID = kwargs.get("appID")
         if appID is not None:
             url = "https://apps.beam.cloud/" + appID
-            print(url)
         else:
             url = self.url
         payload = {"prompt": prompt, "max_length": max_length}
@@ -280,14 +279,12 @@ class Beam(LLM):
         completed = False
         tries = 0
         while not completed and tries < 100:
-            print("making call")
             request = requests.request(
                 "POST",
                 cast(Union[str, bytes], url),
                 headers=headers,
                 data=json.dumps(payload),
             )
-            print(request)
             if request.status_code == 200:
                 response = request.json()["text"]
                 completed = True
