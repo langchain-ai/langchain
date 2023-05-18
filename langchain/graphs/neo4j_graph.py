@@ -28,8 +28,8 @@ RETURN "(:" + label + ")-[:" + property + "]->(:" + toString(other[0]) + ")" AS 
 class Neo4jGraph:
     """Neo4j wrapper for entity graph operations."""
 
-    def __init__(self, url: str, username: str, password: str) -> None:
-        """Create a new graph."""
+    def __init__(self, url: str, username: str, password: str, database: str = "neo4j") -> None:
+        """Create a new Neo4j graph."""
         try:
             import neo4j
         except ImportError:
@@ -39,12 +39,27 @@ class Neo4jGraph:
             )
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+        self._database = database
+        # Verify connection
+        try:
+            self._driver.verify_connectivity()
+        except neo4j.exceptions.ServiceUnavailable:
+            raise ValueError(
+                "Could not connect to Neo4j database. "
+                "Please ensure that the url is correct"
+            )
+        except neo4j.exceptions.AuthError:
+            raise ValueError(
+                "Could not connect to Neo4j database. "
+                "Please ensure that the username and password are correct"
+            )
         # Set schema
         try:
             self.refresh_schema()
-        except Exception as e:
+        except neo4j.exceptions.ClientError:
             raise ValueError(
-                e
+                "Could not use APOC procedures. "
+                "Please install the APOC plugin in Neo4j."
             )
 
     @property
@@ -56,10 +71,15 @@ class Neo4jGraph:
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Neo4j database."""
-        with self._driver.session() as session:
-            data = session.run(query, params)
-            # Hard limit of 200 results
-            return [r.data() for r in data][:200]
+        with self._driver.session(database=self._database) as session:
+            try:
+                data = session.run(query, params)
+                # Hard limit of 200 results
+                return [r.data() for r in data][:200]
+            except neo4j.exceptions.CypherSyntaxError:
+                raise ValueError(
+                    "Generated Cypher Statement is not valid"
+                )
     
     def refresh_schema(self):
         """
