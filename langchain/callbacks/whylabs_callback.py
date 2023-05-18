@@ -7,12 +7,22 @@ from langchain.schema import AgentAction, AgentFinish, Generation, LLMResult
 logger = logging.getLogger(__name__)
 
 
-def import_langkit() -> Any:
+def import_langkit(
+    sentiment: Optional[bool] = None,
+    toxicity: Optional[bool] = None,
+    themes: Optional[bool] = None,
+) -> Any:
     try:
         import langkit  # noqa: F401
         import langkit.regexes  # noqa: F401
-        import langkit.sentiment  # noqa: F401
         import langkit.textstat  # noqa: F401
+
+        if sentiment:
+            import langkit.sentiment  # noqa: F401
+        if toxicity:
+            import langkit.toxicity  # noqa: F401
+        if themes:
+            import langkit.themes  # noqa: F401
     except ImportError:
         raise ImportError(
             "To use the whylabs callback manager you need to have the `langkit` python "
@@ -29,12 +39,15 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
         api_key: Optional[str] = None,
         org_id: Optional[str] = None,
         dataset_id: Optional[str] = None,
+        sentiment: Optional[bool] = None,
+        toxicity: Optional[bool] = None,
+        themes: Optional[bool] = None,
     ):
         """Initiate the rolling logger"""
         super().__init__()
 
         # langkit library will import necessary whylogs libraries
-        import_langkit()
+        import_langkit(sentiment=sentiment, toxicity=toxicity, themes=themes)
 
         import whylogs as why
         from whylogs.api.writer.whylabs import WhyLabsWriter
