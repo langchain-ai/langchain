@@ -1023,6 +1023,18 @@ files = [
 pycparser = "*"
 
 [[package]]
+name = "chardet"
+version = "5.1.0"
+description = "Universal encoding detector for Python 3"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "chardet-5.1.0-py3-none-any.whl", hash = "sha256:362777fb014af596ad31334fde1e8c327dfdb076e1960d1694662d46a6917ab9"},
+    {file = "chardet-5.1.0.tar.gz", hash = "sha256:0d62712b956bc154f85fb0a266e2a3c5913c2967e00348701b32411d6def31e5"},
+]
+
+[[package]]
 name = "charset-normalizer"
 version = "3.1.0"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
@@ -1510,13 +1522,13 @@ files = [
 
 [[package]]
 name = "deeplake"
-version = "3.4.4"
+version = "3.5.0"
 description = "Activeloop Deep Lake"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "deeplake-3.4.4.tar.gz", hash = "sha256:7d044a89862fe6aa4a93abc7db90090be7ecfc611169916e3975e0cd187be1ac"},
+    {file = "deeplake-3.5.0.tar.gz", hash = "sha256:ae640f75b1fec4eed9598a4e8d6b80e7243af87d9f39f0d34f01ce2c6f7c194f"},
 ]
 
 [package.dependencies]
@@ -2233,14 +2245,14 @@ uritemplate = ">=3.0.1,<5"
 
 [[package]]
 name = "google-auth"
-version = "2.18.0"
+version = "2.18.1"
 description = "Google Authentication Library"
 category = "main"
 optional = true
 python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*"
 files = [
-    {file = "google-auth-2.18.0.tar.gz", hash = "sha256:c66b488a8b005b23ccb97b1198b6cece516c91869091ac5b7c267422db2733c7"},
-    {file = "google_auth-2.18.0-py2.py3-none-any.whl", hash = "sha256:ef3f3a67fa54d421a1c155864570f9a8de9179cedc937bda496b7a8ca338e936"},
+    {file = "google-auth-2.18.1.tar.gz", hash = "sha256:d7a3249027e7f464fbbfd7ee8319a08ad09d2eea51578575c4bd360ffa049ccb"},
+    {file = "google_auth-2.18.1-py2.py3-none-any.whl", hash = "sha256:55a395cdfd3f3dd3f649131d41f97c17b4ed8a2aac1be3502090c716314e8a37"},
 ]
 
 [package.dependencies]
@@ -2732,14 +2744,14 @@ files = [
 
 [[package]]
 name = "httpcore"
-version = "0.17.0"
+version = "0.17.1"
 description = "A minimal low-level HTTP client."
 category = "main"
 optional = true
 python-versions = ">=3.7"
 files = [
-    {file = "httpcore-0.17.0-py3-none-any.whl", hash = "sha256:0fdfea45e94f0c9fd96eab9286077f9ff788dd186635ae61b312693e4d943599"},
-    {file = "httpcore-0.17.0.tar.gz", hash = "sha256:cc045a3241afbf60ce056202301b4d8b6af08845e3294055eb26b09913ef903c"},
+    {file = "httpcore-0.17.1-py3-none-any.whl", hash = "sha256:628e768aaeec1f7effdc6408ba1c3cdbd7487c1fc570f7d66844ec4f003e1ca4"},
+    {file = "httpcore-0.17.1.tar.gz", hash = "sha256:caf508597c525f9b8bfff187e270666309f63115af30f7d68b16143a403c8356"},
 ]
 
 [package.dependencies]
@@ -3138,13 +3150,13 @@ testing = ["flake8 (<5)", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-chec
 
 [[package]]
 name = "jcloud"
-version = "0.2.8"
+version = "0.2.9"
 description = "Simplify deploying and managing Jina projects on Jina Cloud"
 category = "main"
 optional = true
 python-versions = "*"
 files = [
-    {file = "jcloud-0.2.8.tar.gz", hash = "sha256:cdd30c85c0a857573651ebc329f52a8de9e43c3e0f276dc85975914006295639"},
+    {file = "jcloud-0.2.9.tar.gz", hash = "sha256:eaf8da685f8907e153ff752e6a4b945aeff548b8d94dfd650a035d8450ed547e"},
 ]
 
 [package.dependencies]
@@ -3297,14 +3309,14 @@ websockets = ["websockets"]
 
 [[package]]
 name = "jina-hubble-sdk"
-version = "0.36.0"
+version = "0.37.1"
 description = "SDK for Hubble API at Jina AI."
 category = "main"
 optional = true
 python-versions = ">=3.7.0"
 files = [
-    {file = "jina-hubble-sdk-0.36.0.tar.gz", hash = "sha256:ba1a72c7a5c14963fdad9af1ff4c3bba26a03ddcced08111bd11a95b153249ec"},
-    {file = "jina_hubble_sdk-0.36.0-py3-none-any.whl", hash = "sha256:56db142147d7c72142ed1b6505020c3b4d8070b1603d07ff796e56d491dde294"},
+    {file = "jina-hubble-sdk-0.37.1.tar.gz", hash = "sha256:5b6bd9e13f97c8c77be822e9ae49f87a0f16ef8195011f25db2552006a5ca2a0"},
+    {file = "jina_hubble_sdk-0.37.1-py3-none-any.whl", hash = "sha256:bc54a60ed120508e231fbed28b0fff394c288312d2ffa865c7865c03dbbbb502"},
 ]
 
 [package.dependencies]
@@ -9369,6 +9381,18 @@ doc = ["cairosvg (>=2.5.2,<3.0.0)", "mdx-include (>=1.4.1,<2.0.0)", "mkdocs (>=1
 test = ["black (>=22.3.0,<23.0.0)", "coverage (>=6.2,<7.0)", "isort (>=5.0.6,<6.0.0)", "mypy (==0.910)", "pytest (>=4.4.0,<8.0.0)", "pytest-cov (>=2.10.0,<5.0.0)", "pytest-sugar (>=0.9.4,<0.10.0)", "pytest-xdist (>=1.32.0,<4.0.0)", "rich (>=10.11.0,<13.0.0)", "shellingham (>=1.3.0,<2.0.0)"]
 
 [[package]]
+name = "types-chardet"
+version = "5.0.4.6"
+description = "Typing stubs for chardet"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-chardet-5.0.4.6.tar.gz", hash = "sha256:caf4c74cd13ccfd8b3313c314aba943b159de562a2573ed03137402b2bb37818"},
+    {file = "types_chardet-5.0.4.6-py3-none-any.whl", hash = "sha256:ea832d87e798abf1e4dfc73767807c2b7fee35d0003ae90348aea4ae00fb004d"},
+]
+
+[[package]]
 name = "types-pyopenssl"
 version = "23.1.0.3"
 description = "Typing stubs for pyOpenSSL"
@@ -9763,14 +9787,14 @@ files = [
 
 [[package]]
 name = "weaviate-client"
-version = "3.18.0"
+version = "3.19.1"
 description = "A python native weaviate client"
 category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "weaviate-client-3.18.0.tar.gz", hash = "sha256:423a526518a32505c5293328e5f252e6cbbf20e4b3124733f70d10fc0d6823c9"},
-    {file = "weaviate_client-3.18.0-py3-none-any.whl", hash = "sha256:42b324286a4b4436317e5d2c6ba48c07da6cf01518efdd47ee097e7a8cc7584c"},
+    {file = "weaviate-client-3.19.1.tar.gz", hash = "sha256:8528926b0b545225ab75583481d67cccf9494d2dc01cb62f1165a8f187b41ebb"},
+    {file = "weaviate_client-3.19.1-py3-none-any.whl", hash = "sha256:6b4aae86cd955543fcc6328bc1462fbbae053dc50f7b6822287b05b98fec0d27"},
 ]
 
 [package.dependencies]
@@ -10215,6 +10239,22 @@ idna = ">=2.0"
 multidict = ">=4.0"
 
 [[package]]
+name = "zep-python"
+version = "0.25"
+description = "Zep stores, manages, enriches, indexes, and searches long-term memory for conversational AI applications. This is the Python client for the Zep service."
+category = "main"
+optional = true
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "zep_python-0.25-py3-none-any.whl", hash = "sha256:d486afc0d621c3211020d89408940bcad4a062bcbb6f5623bf5152fccad1f87e"},
+    {file = "zep_python-0.25.tar.gz", hash = "sha256:bc2937c0449a13f2abffee24351aa2e574c977773f453812613e81c5bc253916"},
+]
+
+[package.dependencies]
+httpx = ">=0.24.0,<0.25.0"
+pydantic = ">=1.10.7,<2.0.0"
+
+[[package]]
 name = "zipp"
 version = "3.15.0"
 description = "Backport of pathlib-compatible object wrapper for zip files"
@@ -10294,14 +10334,15 @@ all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api
 azure = ["azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "jq", "lxml", "pandas", "pdfminer-six", "pymupdf", "pypdf", "pypdfium2", "telethon", "tqdm"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "chardet", "jq", "lxml", "pandas", "pdfminer-six", "pymupdf", "pypdf", "pypdfium2", "telethon", "tqdm", "zep-python"]
 hnswlib = ["docarray", "hnswlib", "protobuf"]
 in-memory-store = ["docarray"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
 qdrant = ["qdrant-client"]
+text-helpers = ["chardet"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "978f11abc5819e182271024a5cbdbe15c2238bd24e00b5cf64a63ce7a8366822"
+content-hash = "2b19b9deca7f83ca14af1f7bc7808bbe7873a91ce4c95381eaad8ea84fe04c0b"
