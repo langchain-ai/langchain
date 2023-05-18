@@ -1,4 +1,5 @@
 from langchain.retrievers.arxiv import ArxivRetriever
+from langchain.retrievers.pupmed import PubMedRetriever
 from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
 from langchain.retrievers.chatgpt_plugin_retriever import ChatGPTPluginRetriever
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
@@ -20,6 +21,7 @@ from langchain.retrievers.wikipedia import WikipediaRetriever
 
 __all__ = [
     "ArxivRetriever",
+    "PubMedRetriever",
     "AzureCognitiveSearchRetriever",
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",
