@@ -25,6 +25,7 @@ from langchain.embeddings.self_hosted_hugging_face import (
 )
 from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
+from langchain.embeddings.vertex_ai_palm import GoogleCloudVertexAIPalmEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ __all__ = [
     "AlephAlphaSymmetricSemanticEmbedding",
     "SentenceTransformerEmbeddings",
     "GooglePalmEmbeddings",
+    "GoogleCloudVertexAIPalmEmbeddings",
 ]
 
 

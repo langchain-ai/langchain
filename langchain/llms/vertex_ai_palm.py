@@ -49,8 +49,8 @@ class GoogleCloudVertexAIPalm(BaseLLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain.llms import GoogleVertexAIPalm
-            llm = VertexAIGooglePalm()
+            from langchain.llms import GoogleCloudVertexAIPalm
+            llm = GoogleCloudVertexAIPalm()
 
     """
 

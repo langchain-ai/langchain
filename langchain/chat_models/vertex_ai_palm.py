@@ -53,14 +53,6 @@ def _response_to_result(
 
     generations: List[ChatGeneration] = []
 
-    # vertex ai doesn't return the history in the prediction call.
-    # So we just add it in here.
-    generations.append(
-        ChatGeneration(
-            text=prompt,
-            message=HumanMessage(content=prompt),
-        )
-    )
     for candidate in prediction.get("candidates"):
         author = candidate.get("author")
         if author is None:
@@ -74,7 +66,7 @@ def _response_to_result(
                 f"ChatResponse must have a content: {candidate}"
             )
 
-        if author == "1":
+        if str(author) == "1":
             generations.append(
                 ChatGeneration(text=content, message=AIMessage(content=content))
             )
@@ -85,7 +77,6 @@ def _response_to_result(
                     message=ChatMessage(role=author, content=content),
                 )
             )
-
     return ChatResult(generations=generations)
 
 
@@ -175,7 +166,7 @@ def _messages_to_prompt_dict(
         "context": context,
         "examples": examples,
         "history": history,
-        "prompt": prompt,
+        "prompt": "Follow the provided context: " + prompt,
     }
 
 
