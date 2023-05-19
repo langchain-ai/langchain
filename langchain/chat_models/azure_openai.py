@@ -53,33 +53,33 @@ class AzureChatOpenAI(ChatOpenAI):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        openai_api_key = get_from_dict_or_env(
+        values["openai_api_key"] = get_from_dict_or_env(
             values,
             "openai_api_key",
             "OPENAI_API_KEY",
         )
-        openai_api_base = get_from_dict_or_env(
+        values["openai_api_base"] = get_from_dict_or_env(
             values,
             "openai_api_base",
             "OPENAI_API_BASE",
         )
-        openai_api_version = get_from_dict_or_env(
+        values["openai_api_version"] = get_from_dict_or_env(
             values,
             "openai_api_version",
             "OPENAI_API_VERSION",
         )
-        openai_api_type = get_from_dict_or_env(
+        values["openai_api_type"] = get_from_dict_or_env(
             values,
             "openai_api_type",
             "OPENAI_API_TYPE",
         )
-        openai_organization = get_from_dict_or_env(
+        values["openai_organization"] = get_from_dict_or_env(
             values,
             "openai_organization",
             "OPENAI_ORGANIZATION",
             default="",
         )
-        openai_proxy = get_from_dict_or_env(
+        values["openai_proxy"] = get_from_dict_or_env(
             values,
             "openai_proxy",
             "OPENAI_PROXY",
@@ -87,15 +87,6 @@ class AzureChatOpenAI(ChatOpenAI):
         )
         try:
             import openai
-
-            openai.api_type = openai_api_type
-            openai.api_base = openai_api_base
-            openai.api_version = openai_api_version
-            openai.api_key = openai_api_key
-            if openai_organization:
-                openai.organization = openai_organization
-            if openai_proxy:
-                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -120,6 +111,8 @@ class AzureChatOpenAI(ChatOpenAI):
         """Get the default parameters for calling OpenAI API."""
         return {
             **super()._default_params,
+            "api_type": self.openai_api_type,
+            "api_version": self.openai_api_version,
             "engine": self.deployment_name,
         }
 

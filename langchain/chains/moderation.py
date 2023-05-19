@@ -37,10 +37,10 @@ class OpenAIModerationChain(Chain):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        openai_api_key = get_from_dict_or_env(
+        values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        openai_organization = get_from_dict_or_env(
+        values["openai_organization"] = get_from_dict_or_env(
             values,
             "openai_organization",
             "OPENAI_ORGANIZATION",
@@ -49,9 +49,6 @@ class OpenAIModerationChain(Chain):
         try:
             import openai
 
-            openai.api_key = openai_api_key
-            if openai_organization:
-                openai.organization = openai_organization
             values["client"] = openai.Moderation
         except ImportError:
             raise ImportError(
@@ -91,6 +88,6 @@ class OpenAIModerationChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         text = inputs[self.input_key]
-        results = self.client.create(text)
+        results = self.client.create(text, self.model_name, self.openai_api_key)
         output = self._moderate(text, results["results"][0])
         return {self.output_key: output}

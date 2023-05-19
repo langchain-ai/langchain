@@ -91,14 +91,12 @@ class GooseAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        gooseai_api_key = get_from_dict_or_env(
+        values["gooseai_api_key"] = get_from_dict_or_env(
             values, "gooseai_api_key", "GOOSEAI_API_KEY"
         )
         try:
             import openai
 
-            openai.api_key = gooseai_api_key
-            openai.api_base = "https://api.goose.ai/v1"
             values["client"] = openai.Completion
         except ImportError:
             raise ImportError(
@@ -119,6 +117,8 @@ class GooseAI(LLM):
             "presence_penalty": self.presence_penalty,
             "n": self.n,
             "logit_bias": self.logit_bias,
+            "api_key": self.gooseai_api_key,
+            "api_base": "https://api.goose.ai/v1",
         }
         return {**normal_params, **self.model_kwargs}
 
