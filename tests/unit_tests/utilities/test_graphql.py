@@ -76,6 +76,7 @@ MOCK_RESPONSE = {
 }
 
 
+@pytest.mark.requires("gql")
 @pytest.fixture
 def graphql_wrapper() -> GraphQLAPIWrapper:
     return GraphQLAPIWrapper(
