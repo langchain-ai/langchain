@@ -25,9 +25,6 @@ class PromptTemplate(StringPromptTemplate):
             prompt = PromptTemplate(input_variables=["foo"], template="Say {foo}")
     """
 
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
-
     template: str
     """The prompt template."""
 
