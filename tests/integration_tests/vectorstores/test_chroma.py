@@ -10,7 +10,9 @@ def test_chroma() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        texts,
+        FakeEmbeddings(),
+        collection_name="test_collection",
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
@@ -21,7 +23,9 @@ async def test_chroma_async() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        texts,
+        FakeEmbeddings(),
+        collection_name="test_collection",
     )
     output = await docsearch.asimilarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
@@ -32,9 +36,9 @@ def test_chroma_with_metadatas() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Chroma.from_texts(
+        texts,
+        FakeEmbeddings(),
         collection_name="test_collection",
-        texts=texts,
-        embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
     output = docsearch.similarity_search("foo", k=1)
@@ -46,9 +50,9 @@ def test_chroma_with_metadatas_with_scores() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Chroma.from_texts(
+        texts,
+        FakeEmbeddings(),
         collection_name="test_collection",
-        texts=texts,
-        embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
@@ -60,9 +64,9 @@ def test_chroma_search_filter() -> None:
     texts = ["far", "bar", "baz"]
     metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
     docsearch = Chroma.from_texts(
+        texts,
+        FakeEmbeddings(),
         collection_name="test_collection",
-        texts=texts,
-        embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
     output = docsearch.similarity_search("far", k=1, filter={"first_letter": "f"})
@@ -76,9 +80,9 @@ def test_chroma_search_filter_with_scores() -> None:
     texts = ["far", "bar", "baz"]
     metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
     docsearch = Chroma.from_texts(
+        texts,
+        FakeEmbeddings(),
         collection_name="test_collection",
-        texts=texts,
-        embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
     output = docsearch.similarity_search_with_score(
@@ -101,9 +105,9 @@ def test_chroma_with_persistence() -> None:
     collection_name = "test_collection"
     texts = ["foo", "bar", "baz"]
     docsearch = Chroma.from_texts(
+        texts,
+        FakeEmbeddings(),
         collection_name=collection_name,
-        texts=texts,
-        embedding=FakeEmbeddings(),
         persist_directory=chroma_persist_dir,
     )
 
@@ -132,7 +136,9 @@ def test_chroma_mmr() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        texts,
+        FakeEmbeddings(),
+        collection_name="test_collection",
     )
     output = docsearch.max_marginal_relevance_search("foo", k=1)
     assert output == [Document(page_content="foo")]
@@ -143,7 +149,9 @@ def test_chroma_mmr_by_vector() -> None:
     texts = ["foo", "bar", "baz"]
     embeddings = FakeEmbeddings()
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=embeddings
+        texts,
+        embeddings,
+        collection_name="test_collection",
     )
     embedded_query = embeddings.embed_query("foo")
     output = docsearch.max_marginal_relevance_search_by_vector(embedded_query, k=1)
@@ -154,7 +162,9 @@ def test_chroma_with_include_parameter() -> None:
     """Test end to end construction and include parameter."""
     texts = ["foo", "bar", "baz"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        texts,
+        FakeEmbeddings(),
+        collection_name="test_collection",
     )
     output = docsearch.get(include=["embeddings"])
     assert output["embeddings"] is not None

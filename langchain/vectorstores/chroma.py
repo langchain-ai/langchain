@@ -90,6 +90,7 @@ class Chroma(VectorStore):
 
         self._embedding_function = embedding_function
         self._persist_directory = persist_directory
+
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
             embedding_function=self._embedding_function.embed_documents
@@ -354,7 +355,7 @@ class Chroma(VectorStore):
     def from_texts(
         cls: Type[Chroma],
         texts: List[str],
-        embedding: Optional[Embeddings] = None,
+        embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
@@ -389,43 +390,3 @@ class Chroma(VectorStore):
         )
         chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return chroma_collection
-
-    @classmethod
-    def from_documents(
-        cls: Type[Chroma],
-        documents: List[Document],
-        embedding: Optional[Embeddings] = None,
-        ids: Optional[List[str]] = None,
-        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        persist_directory: Optional[str] = None,
-        client_settings: Optional[chromadb.config.Settings] = None,
-        client: Optional[chromadb.Client] = None,  # Add this line
-        **kwargs: Any,
-    ) -> Chroma:
-        """Create a Chroma vectorstore from a list of documents.
-
-        If a persist_directory is specified, the collection will be persisted there.
-        Otherwise, the data will be ephemeral in-memory.
-
-        Args:
-            collection_name (str): Name of the collection to create.
-            persist_directory (Optional[str]): Directory to persist the collection.
-            ids (Optional[List[str]]): List of document IDs. Defaults to None.
-            documents (List[Document]): List of documents to add to the vectorstore.
-            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
-            client_settings (Optional[chromadb.config.Settings]): Chroma client settings
-        Returns:
-            Chroma: Chroma vectorstore.
-        """
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return cls.from_texts(
-            texts=texts,
-            embedding=embedding,
-            metadatas=metadatas,
-            ids=ids,
-            collection_name=collection_name,
-            persist_directory=persist_directory,
-            client_settings=client_settings,
-            client=client,
-        )
