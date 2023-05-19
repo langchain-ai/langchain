@@ -14,17 +14,10 @@ import wandb.util
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
 from wandb.sdk.data_types import trace_tree
-from wandb.sdk.lib import telemetry as wb_telemetry
 from wandb.sdk.lib.paths import StrPath
 
 if TYPE_CHECKING:
-    from langchain.base_language import BaseLanguageModel
     from langchain.callbacks.tracers.schemas import Run
-    from langchain.chains.base import Chain
-    from langchain.llms.base import BaseLLM
-    from langchain.tools.base import BaseTool
-    from wandb import Settings as WBSettings
-    from wandb.wandb_run import Run as WBRun
 
 PRINT_WARNINGS = True
 
@@ -266,10 +259,10 @@ class WandbTracer(BaseTracer):
 
         model_dict = None
 
-        # TODO: Uncomment this once we have a way to get the model from a run
-        # model = safely_get_span_producing_model(run)
-        # if model is not None:
-        #     model_dict = safely_convert_model_to_dict(model)
+        # TODO: Uncomment this once we have a way to get the clean serialized parent dict from a run
+        # serialized_parent = safely_get_span_producing_model(run)
+        # if serialized_parent is not None:
+        #     model_dict = safely_convert_model_to_dict(serialized_parent)
 
         model_trace = trace_tree.WBTraceTree(
             root_span=root_span,
@@ -298,17 +291,8 @@ class WandbTracer(BaseTracer):
             if should_print_url:
                 print_wandb_init_message(wandb.run.settings.run_url)
 
-        with wb_telemetry.context(wandb.run) as tel:
-            tel.feature.langchain_tracer = True
-
-    # Start of required methods (these methods are required by the BaseCallbackHandler interface)
+            wandb.run._label(repo="langchain")
 
     def _persist_run(self, run: "Run") -> None:
         """Persist a run."""
-        try:
-            self._log_trace_from_run(run)
-        except Exception:
-            # Silently ignore errors to not break user code
-            pass
-
-    # End of required methods
+        self._log_trace_from_run(run)
