@@ -22,8 +22,10 @@ from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearch
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.ifttt import IFTTTWebhook
+from langchain.tools.metaphor_search import MetaphorSearchResults
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
+from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain.tools.playwright import (
     ClickTool,
     CurrentWebPageTool,
@@ -78,10 +80,12 @@ __all__ = [
     "HumanInputRun",
     "IFTTTWebhook",
     "ListDirectoryTool",
+    "MetaphorSearchResults",
     "MoveFileTool",
     "NavigateBackTool",
     "NavigateTool",
     "OpenAPISpec",
+    "OpenWeatherMapQueryRun",
     "ReadFileTool",
     "SceneXplainTool",
     "ShellTool",

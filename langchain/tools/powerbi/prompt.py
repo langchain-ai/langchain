@@ -31,6 +31,8 @@ DATEDIFF(date1, date2, <interval>) - Returns the difference between two date val
 DATEVALUE(<date_text>) - Returns a date value that represents the specified date.
 YEAR(<date>), QUARTER(<date>), MONTH(<date>), DAY(<date>), HOUR(<date>), MINUTE(<date>), SECOND(<date>) - Returns the part of the date for the specified date.
 
+Finally, make sure to escape double quotes with a single backslash, and make sure that only table names have single quotes around them, while names of measures or the values of columns that you want to compare against are in escaped double quotes. Newlines are not necessary and can be skipped. The queries are serialized as json and so will have to fit be compliant with json syntax.
+
 The following tables exist: {tables}
 
 and the schema's for some are given here:
@@ -38,19 +40,20 @@ and the schema's for some are given here:
 
 Examples:
 {examples}
+
 Question: {tool_input}
 DAX: 
 """
 
 DEFAULT_FEWSHOT_EXAMPLES = """
 Question: How many rows are in the table <table>?
-DAX: EVALUATE ROW("Number of rows", COUNTROWS(<table>))
+DAX: EVALUATE ROW(\"Number of rows\", COUNTROWS(<table>))
 ----
 Question: How many rows are in the table <table> where <column> is not empty?
-DAX: EVALUATE ROW("Number of rows", COUNTROWS(FILTER(<table>, <table>[<column>] <> "")))
+DAX: EVALUATE ROW(\"Number of rows\", COUNTROWS(FILTER(<table>, <table>[<column>] <> \"\")))
 ----
 Question: What was the average of <column> in <table>?
-DAX: EVALUATE ROW("Average", AVERAGE(<table>[<column>]))
+DAX: EVALUATE ROW(\"Average\", AVERAGE(<table>[<column>]))
 ----
 """
 

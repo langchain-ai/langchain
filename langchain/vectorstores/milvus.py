@@ -545,10 +545,6 @@ class Milvus(VectorStore):
         # Embed the query text.
         embedding = self.embedding_func.embed_query(query)
 
-        # Determine result metadata fields.
-        output_fields = self.fields[:]
-        output_fields.remove(self._vector_field)
-
         res = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, param=param, expr=expr, timeout=timeout, **kwargs
         )

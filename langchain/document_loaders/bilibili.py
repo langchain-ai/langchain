@@ -32,7 +32,7 @@ class BiliBiliLoader(BaseLoader):
         except ImportError:
             raise ValueError(
                 "requests package not found, please install it with "
-                "`pip install bilibili-api`"
+                "`pip install bilibili-api-python`"
             )
 
         bvid = re.search(r"BV\w+", url)
@@ -60,11 +60,11 @@ class BiliBiliLoader(BaseLoader):
             raw_sub_titles = json.loads(result.content)["body"]
             raw_transcript = " ".join([c["content"] for c in raw_sub_titles])
 
-            raw_transcript_with_meta_info = f"""
-                Video Title: {video_info['title']},
-                description: {video_info['desc']}\n
-                Transcript: {raw_transcript}
-                """
+            raw_transcript_with_meta_info = (
+                f"Video Title: {video_info['title']},"
+                f"description: {video_info['desc']}\n\n"
+                f"Transcript: {raw_transcript}"
+            )
             return raw_transcript_with_meta_info, video_info
         else:
             raw_transcript = ""

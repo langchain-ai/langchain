@@ -13,7 +13,7 @@ from sqlalchemy import (
     select,
     text,
 )
-from sqlalchemy.engine import CursorResult, Engine
+from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 
@@ -196,7 +196,7 @@ class SQLDatabase:
         try:
             # get the sample rows
             with self._engine.connect() as connection:
-                sample_rows_result: CursorResult = connection.execute(command)
+                sample_rows_result = connection.execute(command)  # type: ignore
                 # shorten values in the sample rows
                 sample_rows = list(
                     map(lambda ls: [str(i)[:100] for i in ls], sample_rows_result)
