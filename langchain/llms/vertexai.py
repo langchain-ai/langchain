@@ -73,8 +73,8 @@ class VertexAI(_VertexAICommon, LLM):
     """Wrapper around Google Vertex AI large language models."""
 
     model_name: str = "text-bison"
-    is_tuned_model: bool = False
-    "Whether to use a tuned or a base model."
+    tuned_model_name: Optional[str] = None
+    "The name of a tuned model, if it's provided, model_name is ignored."
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -84,9 +84,9 @@ class VertexAI(_VertexAICommon, LLM):
             from vertexai.preview.language_models import TextGenerationModel
         except ImportError:
             raise_vertex_import_error()
-        is_tuned = values["is_tuned_model"]
-        if is_tuned:
-            values["client"] = TextGenerationModel.get_tuned_model(values["model_name"])
+        tuned_model_name = values.get("tuned_model_name")
+        if tuned_model_name:
+            values["client"] = TextGenerationModel.get_tuned_model(tuned_model_name)
         else:
             values["client"] = TextGenerationModel.from_pretrained(values["model_name"])
         return values
