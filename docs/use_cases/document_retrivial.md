@@ -4,7 +4,7 @@ Overview
 
 LangChain can be used for document retrieval stored in a VectorStore. The documents are embedded using one of the multiple LangChain LLMs and then retrieved based on a user query. 
 
-## Document Retrieval by tags
+## Document Retrieval by LLMs Tagging
 
 You can also leverage LangChain APIs to generate a set of domain-specific tags for each document and store them instead of the full text. Then, to search, you can translate a user query to tags using LLMs to get better results. A concrete example may be a list of items' descriptions to see to sell (for example, "New pair of shoes", "Used Levis jeans") and user input describing what he/she is looking for (for example, "I need new gym clothes"). You can prompt the LLMs asking for more or less refined tags based on your domain. We can first translate each text to a fixed set of tags, "shoes", and "jeans", and then do the retrieval by first translating the user query to tags, "shoes, shorts", and then do the similarity search in the vector db. Effectively restraining the search space to yield better matches.
 
