@@ -1,6 +1,6 @@
 """Loader that uses unstructured to load files."""
 from abc import ABC, abstractmethod
-from typing import Any, IO, List, Optional
+from typing import Any, IO, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -96,11 +96,11 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
         self,
         file_path: str,
         mode: str = "single",
-        get_source: Optional[bool] = True,
-        get_created_at: Optional[bool] = True,
-        get_updated_at: Optional[bool] = True,
-        get_mime_type: Optional[bool] = True,
-        get_extension: Optional[bool] = True,
+        get_source: bool = True,
+        get_created_at: bool = True,
+        get_updated_at: bool = True,
+        get_mime_type: bool = True,
+        get_extension: bool = True,
         **unstructured_kwargs: Any,
     ):
         """Initialize arguments."""
@@ -187,7 +187,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
         self,
         file: IO,
         mode: str = "single",
-        get_mime_type: Optional[bool] = True,
+        get_mime_type: bool = True,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
