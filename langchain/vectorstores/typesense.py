@@ -247,6 +247,8 @@ class Typesense(VectorStore):
         ids: Optional[List[str]] = None,
         typesense_client: Optional[Client] = None,
         typesense_client_params: Optional[dict] = None,
+        typesense_collection_name: Optional[str] = None,
+        text_key: str = "text",
         **kwargs: Any,
     ) -> Typesense:
         """Construct Typesense wrapper from raw text."""
