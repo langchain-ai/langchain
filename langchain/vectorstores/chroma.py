@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import uuid
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from warnings import warn
 
 import numpy as np
 
@@ -62,6 +63,7 @@ class Chroma(VectorStore):
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[Dict] = None,
         client: Optional[chromadb.Client] = None,
+        **kwargs: Any
     ) -> None:
         """Initialize with Chroma client."""
         try:
@@ -86,6 +88,16 @@ class Chroma(VectorStore):
                         persist_directory=persist_directory,
                     )
             self._client = chromadb.Client(self._client_settings)
+
+        if embeddings is None and "embedding_function" in kwargs:
+            # Use kwarg embedding_function and print a deprecation warning
+            assert isinstance(kwargs["embedding_function"], Embeddings), \
+                "Class `Chroma` expects to instantiated with an `Embeddings` instance."
+            embeddings = kwargs["embedding_function"]
+            warn("The named argument `embedding_function` is deprecated. " + \
+                 "Please use the argument `embeddings` instead.",
+                DeprecationWarning
+            )
 
         self._embeddings = embeddings
         self._persist_directory = persist_directory

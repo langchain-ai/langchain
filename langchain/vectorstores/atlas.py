@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import uuid
 from typing import Any, Iterable, List, Optional, Type
+from warnings import warn
 
 import numpy as np
 
@@ -39,6 +40,7 @@ class AtlasDB(VectorStore):
         description: str = "A description for your project",
         is_public: bool = True,
         reset_project_if_exists: bool = False,
+        **kwargs: Any
     ) -> None:
         """
         Initialize the Atlas Client
@@ -69,6 +71,16 @@ class AtlasDB(VectorStore):
         if api_key is None:
             raise ValueError("No API key provided. Sign up at atlas.nomic.ai!")
         nomic.login(api_key)
+
+        if embeddings is None and "embedding_function" in kwargs:
+            # Use kwarg embedding_function and print a deprecation warning
+            assert isinstance(kwargs["embedding_function"], Embeddings), \
+                "Class `AtlasDB` expects to instantiated with an `Embeddings` instance."
+            embeddings = kwargs["embedding_function"]
+            warn("Using the named argument `embedding_function` is "+\
+                 "deprecated. Please use the argument `embeddings` instead.",
+                 DeprecationWarning
+            )
 
         self._embeddings = embeddings
         modality = "text"
