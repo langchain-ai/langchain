@@ -3,11 +3,14 @@ from typing import Any, Optional
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
-from langchain.llms.base import BaseLLM
+from langchain.base_language import BaseLanguageModel
 
 
 def create_csv_agent(
-    llm: BaseLLM, path: str, pandas_kwargs: Optional[dict] = None, **kwargs: Any
+    llm: BaseLanguageModel,
+    path: str,
+    pandas_kwargs: Optional[dict] = None,
+    **kwargs: Any
 ) -> AgentExecutor:
     """Create csv agent by loading to a dataframe and using pandas agent."""
     import pandas as pd

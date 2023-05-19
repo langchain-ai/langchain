@@ -54,7 +54,7 @@ class GitLoader(BaseLoader):
 
             file_path = os.path.join(self.repo_path, item.path)
 
-            ignored_files = repo.ignored([file_path])
+            ignored_files = repo.ignored([file_path])  # type: ignore
             if len(ignored_files):
                 continue
 
@@ -75,6 +75,7 @@ class GitLoader(BaseLoader):
                         continue
 
                     metadata = {
+                        "source": rel_file_path,
                         "file_path": rel_file_path,
                         "file_name": item.name,
                         "file_type": file_type,

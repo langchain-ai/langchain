@@ -3,6 +3,10 @@ from typing import Any, Dict, Optional
 
 from pydantic import Field, validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.chains.llm import LLMChain
 from langchain.tools.base import BaseTool
 from langchain.tools.powerbi.prompt import (
@@ -45,7 +49,11 @@ class QueryPowerBITool(BaseTool):
             self.session_cache[tool_input] = BAD_REQUEST_RESPONSE_ESCALATED
         return self.session_cache[tool_input]
 
-    def _run(self, tool_input: str) -> str:
+    def _run(
+        self,
+        tool_input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Execute the query, return the results or an error message."""
         if cache := self._check_cache(tool_input):
             return cache
@@ -65,9 +73,26 @@ class QueryPowerBITool(BaseTool):
             self.session_cache[tool_input] = json_to_md(
                 self.session_cache[tool_input]["results"][0]["tables"][0]["rows"]
             )
+            return self.session_cache[tool_input]
+        if (
+            "error" in self.session_cache[tool_input]
+            and "pbi.error" in self.session_cache[tool_input]["error"]
+            and "details" in self.session_cache[tool_input]["error"]["pbi.error"]
+        ):
+            self.session_cache[
+                tool_input
+            ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]["pbi.error"]["details"][0]["detail"]}'  # noqa: E501
+            return self.session_cache[tool_input]
+        self.session_cache[
+            tool_input
+        ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]}'  # noqa: E501
         return self.session_cache[tool_input]
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(
+        self,
+        tool_input: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Execute the query, return the results or an error message."""
         if cache := self._check_cache(tool_input):
             return cache
@@ -87,6 +112,19 @@ class QueryPowerBITool(BaseTool):
             self.session_cache[tool_input] = json_to_md(
                 self.session_cache[tool_input]["results"][0]["tables"][0]["rows"]
             )
+            return self.session_cache[tool_input]
+        if (
+            "error" in self.session_cache[tool_input]
+            and "pbi.error" in self.session_cache[tool_input]["error"]
+            and "details" in self.session_cache[tool_input]["error"]["pbi.error"]
+        ):
+            self.session_cache[
+                tool_input
+            ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]["pbi.error"]["details"][0]["detail"]}'  # noqa: E501
+            return self.session_cache[tool_input]
+        self.session_cache[
+            tool_input
+        ] = f'{BAD_REQUEST_RESPONSE} Error was {self.session_cache[tool_input]["error"]}'  # noqa: E501
         return self.session_cache[tool_input]
 
 
@@ -107,11 +145,19 @@ class InfoPowerBITool(BaseTool):
 
         arbitrary_types_allowed = True
 
-    def _run(self, tool_input: str) -> str:
+    def _run(
+        self,
+        tool_input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Get the schema for tables in a comma-separated list."""
         return self.powerbi.get_table_info(tool_input.split(", "))
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(
+        self,
+        tool_input: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         return await self.powerbi.aget_table_info(tool_input.split(", "))
 
 
@@ -127,11 +173,19 @@ class ListPowerBITool(BaseTool):
 
         arbitrary_types_allowed = True
 
-    def _run(self, *args: Any, **kwargs: Any) -> str:
+    def _run(
+        self,
+        tool_input: Optional[str] = None,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Get the names of the tables."""
         return ", ".join(self.powerbi.get_table_names())
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> str:
+    async def _arun(
+        self,
+        tool_input: Optional[str] = None,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Get the names of the tables."""
         return ", ".join(self.powerbi.get_table_names())
 
@@ -147,8 +201,8 @@ class InputToQueryTool(BaseTool):
     """  # noqa: E501
     llm_chain: LLMChain
     powerbi: PowerBIDataset = Field(exclude=True)
-    template: str = QUESTION_TO_QUERY
-    examples: str = DEFAULT_FEWSHOT_EXAMPLES
+    template: Optional[str] = QUESTION_TO_QUERY
+    examples: Optional[str] = DEFAULT_FEWSHOT_EXAMPLES
 
     class Config:
         """Configuration for this pydantic object."""
@@ -171,7 +225,11 @@ class InputToQueryTool(BaseTool):
             )
         return llm_chain
 
-    def _run(self, tool_input: str) -> str:
+    def _run(
+        self,
+        tool_input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the LLM to check the query."""
         return self.llm_chain.predict(
             tool_input=tool_input,
@@ -180,7 +238,11 @@ class InputToQueryTool(BaseTool):
             examples=self.examples,
         )
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(
+        self,
+        tool_input: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         return await self.llm_chain.apredict(
             tool_input=tool_input,
             tables=self.powerbi.get_table_names(),

@@ -163,7 +163,7 @@ class DeepLake(VectorStore):
 
         return ids
 
-    def search(
+    def _search_helper(
         self,
         query: Any[str, None] = None,
         embedding: Any[float, None] = None,
@@ -278,7 +278,7 @@ class DeepLake(VectorStore):
         Returns:
             List of Documents most similar to the query vector.
         """
-        return self.search(query=query, k=k, **kwargs)
+        return self._search_helper(query=query, k=k, **kwargs)
 
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -291,7 +291,7 @@ class DeepLake(VectorStore):
         Returns:
             List of Documents most similar to the query vector.
         """
-        return self.search(embedding=embedding, k=k, **kwargs)
+        return self._search_helper(embedding=embedding, k=k, **kwargs)
 
     def similarity_search_with_score(
         self,
@@ -313,7 +313,7 @@ class DeepLake(VectorStore):
             List[Tuple[Document, float]]: List of documents most similar to the query
                 text with distance in float.
         """
-        return self.search(
+        return self._search_helper(
             query=query,
             k=k,
             filter=filter,
@@ -322,7 +322,12 @@ class DeepLake(VectorStore):
         )
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -331,18 +336,29 @@ class DeepLake(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        return self.search(
+        return self._search_helper(
             embedding=embedding,
             k=k,
             fetch_k=fetch_k,
             use_maximal_marginal_relevance=True,
+            lambda_mult=lambda_mult,
+            **kwargs,
         )
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -351,6 +367,10 @@ class DeepLake(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -358,8 +378,13 @@ class DeepLake(VectorStore):
             raise ValueError(
                 "For MMR search, you must specify an embedding function on" "creation."
             )
-        return self.search(
-            query=query, k=k, fetch_k=fetch_k, use_maximal_marginal_relevance=True
+        return self._search_helper(
+            query=query,
+            k=k,
+            fetch_k=fetch_k,
+            use_maximal_marginal_relevance=True,
+            lambda_mult=lambda_mult,
+            **kwargs,
         )
 
     @classmethod

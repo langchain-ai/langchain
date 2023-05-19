@@ -1,0 +1,33 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-dockerfile
+{
+	"dockerComposeFile": "./docker-compose.yaml",
+	"service": "langchain",
+	"workspaceFolder": "/workspaces/langchain",
+	"name": "langchain",
+	"customizations": {
+		"vscode": {
+			"extensions": [   
+				"ms-python.python"
+			],
+			"settings": {
+				"python.defaultInterpreterPath": "/home/vscode/langchain-py-env/bin/python3.11"
+			}
+		}
+		
+	},
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Uncomment the next line to run commands after the container is created.
+	// "postCreateCommand": "cat /etc/os-release",
+
+	// Uncomment to connect as an existing user other than the container default. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "devcontainer"
+	"remoteUser": "vscode",
+	"overrideCommand": true
+}

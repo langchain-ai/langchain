@@ -9,10 +9,11 @@ from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.output_parser import ConvoOutputParser
 from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain.agents.utils import validate_tools_single_input
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.schema import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 
@@ -79,6 +80,11 @@ class ConversationalAgent(Agent):
         if input_variables is None:
             input_variables = ["input", "chat_history", "agent_scratchpad"]
         return PromptTemplate(template=template, input_variables=input_variables)
+
+    @classmethod
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+        super()._validate_tools(tools)
+        validate_tools_single_input(cls.__name__, tools)
 
     @classmethod
     def from_llm_and_tools(

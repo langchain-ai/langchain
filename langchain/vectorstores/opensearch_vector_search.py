@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -33,6 +33,15 @@ def _import_bulk() -> Any:
     except ImportError:
         raise ValueError(IMPORT_OPENSEARCH_PY_ERROR)
     return bulk
+
+
+def _import_not_found_error() -> Any:
+    """Import not found error if available, otherwise raise error."""
+    try:
+        from opensearchpy.exceptions import NotFoundError
+    except ImportError:
+        raise ValueError(IMPORT_OPENSEARCH_PY_ERROR)
+    return NotFoundError
 
 
 def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
@@ -67,11 +76,20 @@ def _bulk_ingest_embeddings(
     metadatas: Optional[List[dict]] = None,
     vector_field: str = "vector_field",
     text_field: str = "text",
+    mapping: Dict = {},
 ) -> List[str]:
     """Bulk Ingest Embeddings into given index."""
     bulk = _import_bulk()
+    not_found_error = _import_not_found_error()
     requests = []
     ids = []
+    mapping = mapping
+
+    try:
+        client.indices.get(index=index_name)
+    except not_found_error:
+        client.indices.create(index=index_name, body=mapping)
+
     for i, text in enumerate(texts):
         metadata = metadatas[i] if metadatas else {}
         _id = str(uuid.uuid4())
@@ -311,8 +329,19 @@ class OpenSearchVectorSearch(VectorStore):
         """
         embeddings = self.embedding_function.embed_documents(list(texts))
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
-        vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
         text_field = _get_kwargs_value(kwargs, "text_field", "text")
+        dim = len(embeddings[0])
+        engine = _get_kwargs_value(kwargs, "engine", "nmslib")
+        space_type = _get_kwargs_value(kwargs, "space_type", "l2")
+        ef_search = _get_kwargs_value(kwargs, "ef_search", 512)
+        ef_construction = _get_kwargs_value(kwargs, "ef_construction", 512)
+        m = _get_kwargs_value(kwargs, "m", 16)
+        vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
+
+        mapping = _default_text_mapping(
+            dim, engine, space_type, ef_search, ef_construction, m, vector_field
+        )
+
         return _bulk_ingest_embeddings(
             self.client,
             self.index_name,
@@ -321,6 +350,7 @@ class OpenSearchVectorSearch(VectorStore):
             metadatas,
             vector_field,
             text_field,
+            mapping,
         )
 
     def similarity_search(
@@ -380,6 +410,27 @@ class OpenSearchVectorSearch(VectorStore):
             pre_filter: script_score query to pre-filter documents before identifying
             nearest neighbors; default: {"match_all": {}}
         """
+        docs_with_scores = self.similarity_search_with_score(query, k, **kwargs)
+        return [doc[0] for doc in docs_with_scores]
+
+    def similarity_search_with_score(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and it's scores most similar to query.
+
+        By default supports Approximate Search.
+        Also supports Script Scoring and Painless Scripting.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents along with its scores most similar to the query.
+
+        Optional Args:
+            same as `similarity_search`
+        """
         embedding = self.embedding_function.embed_query(query)
         search_type = _get_kwargs_value(kwargs, "search_type", "approximate_search")
         text_field = _get_kwargs_value(kwargs, "text_field", "text")
@@ -424,17 +475,20 @@ class OpenSearchVectorSearch(VectorStore):
             raise ValueError("Invalid `search_type` provided as an argument")
 
         response = self.client.search(index=self.index_name, body=search_query)
-        hits = [hit["_source"] for hit in response["hits"]["hits"][:k]]
-        documents = [
-            Document(
-                page_content=hit[text_field],
-                metadata=hit
-                if metadata_field == "*" or metadata_field not in hit
-                else hit[metadata_field],
+        hits = [hit for hit in response["hits"]["hits"][:k]]
+        documents_with_scores = [
+            (
+                Document(
+                    page_content=hit["_source"][text_field],
+                    metadata=hit["_source"]
+                    if metadata_field == "*" or metadata_field not in hit["_source"]
+                    else hit["_source"][metadata_field],
+                ),
+                hit["_score"],
             )
             for hit in hits
         ]
-        return documents
+        return documents_with_scores
 
     @classmethod
     def from_texts(
@@ -532,8 +586,14 @@ class OpenSearchVectorSearch(VectorStore):
 
         [kwargs.pop(key, None) for key in keys_list]
         client = _get_opensearch_client(opensearch_url, **kwargs)
-        client.indices.create(index=index_name, body=mapping)
         _bulk_ingest_embeddings(
-            client, index_name, embeddings, texts, metadatas, vector_field, text_field
+            client,
+            index_name,
+            embeddings,
+            texts,
+            metadatas,
+            vector_field,
+            text_field,
+            mapping,
         )
-        return cls(opensearch_url, index_name, embedding)
+        return cls(opensearch_url, index_name, embedding, **kwargs)

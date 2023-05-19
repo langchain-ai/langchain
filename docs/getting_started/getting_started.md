@@ -37,6 +37,12 @@ import os
 os.environ["OPENAI_API_KEY"] = "..."
 ```
 
+If you want to set the API key dynamically, you can use the openai_api_key parameter when initiating OpenAI class—for instance, each user's API key.
+
+```python
+from langchain.llms import OpenAI
+llm = OpenAI(openai_api_key="OPENAI_API_KEY")
+```
 
 ## Building a Language Model Application: LLMs
 
@@ -172,9 +178,9 @@ In order to load agents, you should understand the following concepts:
 - LLM: The language model powering the agent.
 - Agent: The agent to use. This should be a string that references a support agent class. Because this notebook focuses on the simplest, highest level API, this only covers using the standard supported agents. If you want to implement a custom agent, see the documentation for custom agents (coming soon).
 
-**Agents**: For a list of supported agents and their specifications, see [here](../modules/agents/agents.md).
+**Agents**: For a list of supported agents and their specifications, see [here](../modules/agents/getting_started.ipynb).
 
-**Tools**: For a list of predefined tools and their specifications, see [here](../modules/agents/tools.md).
+**Tools**: For a list of predefined tools and their specifications, see [here](../modules/agents/tools/getting_started.md).
 
 For this example, you will also need to install the SerpAPI Python package.
 
@@ -316,7 +322,7 @@ You can also pass in multiple messages for OpenAI's gpt-3.5-turbo and gpt-4 mode
 ```python
 messages = [
     SystemMessage(content="You are a helpful assistant that translates English to French."),
-    HumanMessage(content="Translate this sentence from English to French. I love programming.")
+    HumanMessage(content="I love programming.")
 ]
 chat(messages)
 # -> AIMessage(content="J'aime programmer.", additional_kwargs={})
@@ -327,29 +333,29 @@ You can go one step further and generate completions for multiple sets of messag
 batch_messages = [
     [
         SystemMessage(content="You are a helpful assistant that translates English to French."),
-        HumanMessage(content="Translate this sentence from English to French. I love programming.")
+        HumanMessage(content="I love programming.")
     ],
     [
         SystemMessage(content="You are a helpful assistant that translates English to French."),
-        HumanMessage(content="Translate this sentence from English to French. I love artificial intelligence.")
+        HumanMessage(content="I love artificial intelligence.")
     ],
 ]
 result = chat.generate(batch_messages)
 result
-# -> LLMResult(generations=[[ChatGeneration(text="J'aime programmer.", generation_info=None, message=AIMessage(content="J'aime programmer.", additional_kwargs={}))], [ChatGeneration(text="J'aime l'intelligence artificielle.", generation_info=None, message=AIMessage(content="J'aime l'intelligence artificielle.", additional_kwargs={}))]], llm_output={'token_usage': {'prompt_tokens': 71, 'completion_tokens': 18, 'total_tokens': 89}})
+# -> LLMResult(generations=[[ChatGeneration(text="J'aime programmer.", generation_info=None, message=AIMessage(content="J'aime programmer.", additional_kwargs={}))], [ChatGeneration(text="J'aime l'intelligence artificielle.", generation_info=None, message=AIMessage(content="J'aime l'intelligence artificielle.", additional_kwargs={}))]], llm_output={'token_usage': {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}})
 ```
 
 You can recover things like token usage from this LLMResult:
 ```
 result.llm_output['token_usage']
-# -> {'prompt_tokens': 71, 'completion_tokens': 18, 'total_tokens': 89}
+# -> {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}
 ```
 
 
 ## Chat Prompt Templates
 Similar to LLMs, you can make use of templating by using a `MessagePromptTemplate`. You can build a `ChatPromptTemplate` from one or more `MessagePromptTemplate`s. You can use `ChatPromptTemplate`'s `format_prompt` -- this returns a `PromptValue`, which you can convert to a string or `Message` object, depending on whether you want to use the formatted value as input to an llm or chat model.
 
-For convience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:
+For convenience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:
 
 ```python
 from langchain.chat_models import ChatOpenAI
@@ -361,9 +367,9 @@ from langchain.prompts.chat import (
 
 chat = ChatOpenAI(temperature=0)
 
-template="You are a helpful assistant that translates {input_language} to {output_language}."
+template = "You are a helpful assistant that translates {input_language} to {output_language}."
 system_message_prompt = SystemMessagePromptTemplate.from_template(template)
-human_template="{text}"
+human_template = "{text}"
 human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 
 chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
@@ -387,9 +393,9 @@ from langchain.prompts.chat import (
 
 chat = ChatOpenAI(temperature=0)
 
-template="You are a helpful assistant that translates {input_language} to {output_language}."
+template = "You are a helpful assistant that translates {input_language} to {output_language}."
 system_message_prompt = SystemMessagePromptTemplate.from_template(template)
-human_template="{text}"
+human_template = "{text}"
 human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 
