@@ -90,14 +90,14 @@ class Typesense(VectorStore):
         _metadatas: Iterable[dict] = metadatas or ({} for _ in texts)
         embedded_texts = self._embedding.embed_documents(list(texts))
         return [
-            {"id": _id, "vec": vec, "text": text, "metadata": metadata}
+            {"id": _id, "vec": vec, f"{self._text_key}": text, "metadata": metadata}
             for _id, vec, text, metadata in zip(_ids, embedded_texts, texts, _metadatas)
         ]
 
     def _create_collection(self, num_dim: int) -> None:
         fields = [
             {"name": "vec", "type": "float[]", "num_dim": num_dim},
-            {"name": "text", "type": "string"},
+            {"name": f"{self._text_key}", "type": "string"},
             {"name": ".*", "type": "auto"},
         ]
         self._typesense_client.collections.create(
