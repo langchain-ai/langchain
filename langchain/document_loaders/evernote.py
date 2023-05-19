@@ -3,10 +3,10 @@
 https://gist.github.com/foxmask/7b29c43a161e001ff04afdb2f181e31c
 """
 import hashlib
+import logging
 from base64 import b64decode
 from time import strptime
-from typing import Any, Dict, List, Iterator, Optional
-import logging
+from typing import Any, Dict, Iterator, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader

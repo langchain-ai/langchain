@@ -1,5 +1,5 @@
-import pathlib
 import os
+import pathlib
 import time
 
 import pytest
