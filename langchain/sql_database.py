@@ -121,6 +121,7 @@ class SQLDatabase:
         api_token: Optional[str] = None,
         warehouse_id: Optional[str] = None,
         cluster_id: Optional[str] = None,
+        engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> SQLDatabase:
         """
@@ -149,6 +150,8 @@ class SQLDatabase:
                 Cannot be used with 'warehouse_id'. If running in a Databricks notebook
                 and both 'warehouse_id' and 'cluster_id' are None, it uses the ID of the
                 cluster the notebook is attached to. Defaults to None.
+            engine_args (Optional[dict]): The arguments to be used when connecting
+                Databricks. Defaults to None.
             **kwargs (Any): Additional keyword arguments for the `from_uri` method.
 
         Returns:
@@ -206,7 +209,7 @@ class SQLDatabase:
             f"databricks://token:{api_token}@{host}?"
             f"http_path={http_path}&catalog={catalog}&schema={schema}"
         )
-        return cls.from_uri(uri, engine_args=None, **kwargs)
+        return cls.from_uri(database_uri=uri, engine_args=engine_args, **kwargs)
 
     @property
     def dialect(self) -> str:
