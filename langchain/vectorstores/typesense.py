@@ -38,7 +38,7 @@ class Typesense(VectorStore):
                   "connection_timeout_seconds": 2
                 }
             )
-            typesense_collection_name = "products"
+            typesense_collection_name = "langchain-memory"
 
             embedding = OpenAIEmbeddings()
             vectorstore = Typesense(
@@ -211,7 +211,7 @@ class Typesense(VectorStore):
                     host="localhost",
                     port="8108",
                     protocol="http",
-                    typesense_collection_name="products",
+                    typesense_collection_name="langchain-memory",
                 )
         """
         try:
