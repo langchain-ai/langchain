@@ -168,7 +168,7 @@ class VectorStore(ABC):
 
     async def asimilarity_search_with_relevance_scores(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query."""
 
         # This is a temporary workaround to make the similarity search
