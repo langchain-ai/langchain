@@ -1,5 +1,6 @@
 """Load Data from a Confluence Space"""
 import logging
+from io import BytesIO
 from typing import Any, Callable, List, Optional, Union
 
 from tenacity import (
@@ -92,7 +93,7 @@ class ConfluenceLoader(BaseLoader):
             from atlassian import Confluence  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`atlassian` package not found, please run"
+                "`atlassian` package not found, please run "
                 "`pip install atlassian-python-api`"
             )
 
@@ -124,13 +125,13 @@ class ConfluenceLoader(BaseLoader):
 
         if (api_key and not username) or (username and not api_key):
             errors.append(
-                "If one of `api_key` or `username` is provided,"
+                "If one of `api_key` or `username` is provided, "
                 "the other must be as well."
             )
 
         if (api_key or username) and oauth2:
             errors.append(
-                "Cannot provide a value for `api_key` and/or"
+                "Cannot provide a value for `api_key` and/or "
                 "`username` and provide a value for `oauth2`"
             )
 
@@ -141,8 +142,8 @@ class ConfluenceLoader(BaseLoader):
             "key_cert",
         ]:
             errors.append(
-                "You have either ommited require keys or added extra"
-                "keys to the oauth2 dictionary. key values should be"
+                "You have either ommited require keys or added extra "
+                "keys to the oauth2 dictionary. key values should be "
                 "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']`"
             )
 
@@ -192,7 +193,7 @@ class ConfluenceLoader(BaseLoader):
         """
         if not space_key and not page_ids and not label and not cql:
             raise ValueError(
-                "Must specify at least one among `space_key`, `page_ids`,"
+                "Must specify at least one among `space_key`, `page_ids`, "
                 "`label`, `cql` parameters."
             )
 
@@ -338,8 +339,8 @@ class ConfluenceLoader(BaseLoader):
             from bs4 import BeautifulSoup  # type: ignore
         except ImportError:
             raise ImportError(
-                "`beautifulsoup4` package not found, please run"
-                " `pip install beautifulsoup4`"
+                "`beautifulsoup4` package not found, please run "
+                "`pip install beautifulsoup4`"
             )
 
         if include_attachments:
@@ -370,12 +371,10 @@ class ConfluenceLoader(BaseLoader):
 
     def process_attachment(self, page_id: str) -> List[str]:
         try:
-            import requests  # noqa: F401
             from PIL import Image  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `pdf2image` or `Pillow` package not found,"
-                "please run `pip install pytesseract pdf2image Pillow`"
+                "`Pillow` package not found, " "please run `pip install Pillow`"
             )
 
         # depending on setup you may also need to set the correct path for
@@ -415,12 +414,9 @@ class ConfluenceLoader(BaseLoader):
             from pdf2image import convert_from_bytes  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `pdf2image` package not found,"
+                "`pytesseract` or `pdf2image` package not found, "
                 "please run `pip install pytesseract pdf2image`"
             )
-
-        import pytesseract  # noqa: F811
-        from pdf2image import convert_from_bytes  # noqa: F811
 
         response = self.confluence.request(path=link, absolute=True)
         text = ""
@@ -444,13 +440,11 @@ class ConfluenceLoader(BaseLoader):
 
     def process_image(self, link: str) -> str:
         try:
-            from io import BytesIO  # noqa: F401
-
             import pytesseract  # noqa: F401
             from PIL import Image  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `Pillow` package not found,"
+                "`pytesseract` or `Pillow` package not found, "
                 "please run `pip install pytesseract Pillow`"
             )
 
@@ -472,8 +466,6 @@ class ConfluenceLoader(BaseLoader):
 
     def process_doc(self, link: str) -> str:
         try:
-            from io import BytesIO  # noqa: F401
-
             import docx2txt  # noqa: F401
         except ImportError:
             raise ImportError(
@@ -522,17 +514,14 @@ class ConfluenceLoader(BaseLoader):
 
     def process_svg(self, link: str) -> str:
         try:
-            from io import BytesIO  # noqa: F401
-
             import pytesseract  # noqa: F401
             from PIL import Image  # noqa: F401
             from reportlab.graphics import renderPM  # noqa: F401
-            from reportlab.graphics.shapes import Drawing  # noqa: F401
             from svglib.svglib import svg2rlg  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract`, `Pillow`, or `svglib` package not found,"
-                "please run `pip install pytesseract Pillow svglib`"
+                "`pytesseract`, `Pillow`, `reportlab` or `svglib` package not found, "
+                "please run `pip install pytesseract Pillow reportlab svglib`"
             )
 
         response = self.confluence.request(path=link, absolute=True)
