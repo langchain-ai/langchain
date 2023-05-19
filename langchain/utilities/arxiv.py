@@ -146,6 +146,7 @@ class ArxivAPIWrapper(BaseModel):
             )
             docs.append(doc)
             
-        if os.path.exists(doc_file_name):
-            os.remove(doc_file_name)
+            if os.path.exists(doc_file_name):
+                os.remove(doc_file_name)
+                
         return docs
