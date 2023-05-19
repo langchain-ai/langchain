@@ -9,6 +9,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -115,7 +116,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
     allowed_special: Union[Literal["all"], Set[str]] = set()
-    disallowed_special: Union[Literal["all"], Set[str], Tuple[()]] = "all"
+    disallowed_special: Union[Literal["all"], Set[str], Sequence[str]] = "all"
     chunk_size: int = 1000
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 6
@@ -215,7 +216,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 response = embed_with_retry(
                     self,
                     input=tokens[i : i + _chunk_size],
-                    engine=self.deployment,
+                    model=self.deployment,
                     request_timeout=self.request_timeout,
                     headers=self.headers,
                 )
@@ -233,7 +234,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     average = embed_with_retry(
                         self,
                         input="",
-                        engine=self.deployment,
+                        model=self.deployment,
                         request_timeout=self.request_timeout,
                         headers=self.headers,
                     )["data"][0]["embedding"]
@@ -265,7 +266,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             return embed_with_retry(
                 self,
                 input=[text],
-                engine=engine,
+                model=engine,
                 request_timeout=self.request_timeout,
                 headers=self.headers,
             )["data"][0]["embedding"]
