@@ -22,7 +22,8 @@ class AzureCogsText2SpeechTool(BaseTool):
     In order to set this up, follow instructions at:
     https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/get-started-text-to-speech?pivots=programming-language-python
     """
-    azure_cogs_endpoint: str #: :meta private:
+    azure_cogs_key: str #: :meta private:
+    azure_cogs_region: str #: :meta private:
     speech_language: str = "en-US"
 
     name = "Azure Cognitive Services Text2Speech"
@@ -34,10 +35,15 @@ class AzureCogsText2SpeechTool(BaseTool):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
-        azure_cogs_endpoint = get_from_dict_or_env(
-            values, "azure_cogs_endpoint", "AZURE_COGS_ENDPOINT"
+        azure_cogs_key = get_from_dict_or_env(
+            values, "azure_cogs_key", "AZURE_COGS_KEY"
         )
-        values["azure_cogs_endpoint"] = azure_cogs_endpoint
+        values["azure_cogs_key"] = azure_cogs_key
+
+        azure_cogs_region = get_from_dict_or_env(
+            values, "azure_cogs_region", "AZURE_COGS_REGION"
+        )
+        values["azure_cogs_region"] = azure_cogs_region
 
         try:
             import azure.cognitiveservices.speech as speechsdk
@@ -56,7 +62,7 @@ class AzureCogsText2SpeechTool(BaseTool):
         except ImportError:
             pass
         
-        speech_config = speechsdk.SpeechConfig(endpoint=self.azure_cogs_endpoint)
+        speech_config = speechsdk.SpeechConfig(subscription=self.azure_cogs_key, region=self.azure_cogs_region)
         speech_config.speech_synthesis_language = speech_language
 
         speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=None)
