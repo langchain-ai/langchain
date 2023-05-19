@@ -28,11 +28,10 @@ class ConversationBufferWindowMemory(BaseChatMemory):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
 
-        if self.return_messages:
-            buffer: Any = self.buffer[-self.k * 2 :]
-        else:
+        buffer: Any = self.buffer[-self.k * 2 :] if self.k > 0 else []
+        if not self.return_messages:
             buffer = get_buffer_string(
-                self.buffer[-self.k * 2 :],
+                buffer,
                 human_prefix=self.human_prefix,
                 ai_prefix=self.ai_prefix,
             )

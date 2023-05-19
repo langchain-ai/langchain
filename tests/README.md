@@ -27,7 +27,7 @@ Any new dependencies should be added by running:
 
 ```bash
 # add package and install it after adding:
-poetry add deeplake --group "test_integration" && poetry install --with test_integration
+poetry add tiktoken@latest --group "test_integration" && poetry install --with test_integration
 ```
 
 Before running any tests, you should start a specific Docker container that has all the
@@ -38,6 +38,11 @@ for `test_elasticsearch.py`:
 cd tests/integration_tests/vectorstores/docker-compose
 docker-compose -f elasticsearch.yml up
 ```
+
+### Prepare environment variables for local testing:
+
+- copy `tests/.env.example` to `tests/.env`
+- set variables in `tests/.env` file, e.g `OPENAI_API_KEY`
 
 Additionally, it's important to note that some integration tests may require certain
 environment variables to be set, such as `OPENAI_API_KEY`. Be sure to set any required
@@ -54,5 +59,15 @@ cassettes. You can use the --vcr-record=none command-line option to disable reco
 new cassettes. Here's an example:
 
 ```bash
+pytest --log-cli-level=10 tests/integration_tests/vectorstores/test_pinecone.py --vcr-record=none
 pytest tests/integration_tests/vectorstores/test_elasticsearch.py --vcr-record=none
+
+```
+
+### Run some tests with coverage:
+
+```bash
+pytest tests/integration_tests/vectorstores/test_elasticsearch.py --cov=langchain --cov-report=html
+start "" htmlcov/index.html || open htmlcov/index.html
+
 ```

@@ -22,8 +22,8 @@ class S3FileLoader(BaseLoader):
             import boto3
         except ImportError:
             raise ValueError(
-                "Could not import boto3 python package. "
-                "Please it install it with `pip install boto3`."
+                "Could not import `boto3` python package. "
+                "Please install it with `pip install boto3`."
             )
         s3 = boto3.client("s3")
         with tempfile.TemporaryDirectory() as temp_dir:

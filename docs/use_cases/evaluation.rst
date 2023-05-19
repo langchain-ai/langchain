@@ -1,5 +1,5 @@
 Evaluation
-==============
+==========
 
 .. note::
    `Conceptual Guide <https://docs.langchain.com/docs/use-cases/evaluation>`_
@@ -55,7 +55,7 @@ See `this notebook <./evaluation/qa_generation.html>`_ for an example of how to 
 We have two solutions to the lack of metrics.
 
 The first solution is to use no metrics, and rather just rely on looking at results by eye to get a sense for how the chain/agent is performing.
-To assist in this, we have developed (and will continue to develop) `tracing <../tracing.html>`_, a UI-based visualizer of your chain and agent runs.
+To assist in this, we have developed (and will continue to develop) `tracing <../additional_resources/tracing.html>`_, a UI-based visualizer of your chain and agent runs.
 
 The second solution we recommend is to use Language Models themselves to evaluate outputs.
 For this we have a few different chains and prompts aimed at tackling this issue.
@@ -83,7 +83,7 @@ The existing examples we have are:
 
 
 Other Examples
-------------
+--------------
 
 In addition, we also have some more generic resources for evaluation.
 

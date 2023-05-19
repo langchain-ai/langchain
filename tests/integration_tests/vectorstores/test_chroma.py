@@ -1,4 +1,6 @@
 """Test Chroma functionality."""
+import pytest
+
 from langchain.docstore.document import Document
 from langchain.vectorstores import Chroma
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
@@ -11,6 +13,17 @@ def test_chroma() -> None:
         collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
     )
     output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+
+@pytest.mark.asyncio
+async def test_chroma_async() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+    )
+    output = await docsearch.asimilarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
 
@@ -113,3 +126,37 @@ def test_chroma_with_persistence() -> None:
     # Persist doesn't need to be called again
     # Data will be automatically persisted on object deletion
     # Or on program exit
+
+
+def test_chroma_mmr() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+    )
+    output = docsearch.max_marginal_relevance_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+
+def test_chroma_mmr_by_vector() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    embeddings = FakeEmbeddings()
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection", texts=texts, embedding=embeddings
+    )
+    embedded_query = embeddings.embed_query("foo")
+    output = docsearch.max_marginal_relevance_search_by_vector(embedded_query, k=1)
+    assert output == [Document(page_content="foo")]
+
+
+def test_chroma_with_include_parameter() -> None:
+    """Test end to end construction and include parameter."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+    )
+    output = docsearch.get(include=["embeddings"])
+    assert output["embeddings"] is not None
+    output = docsearch.get()
+    assert output["embeddings"] is None
