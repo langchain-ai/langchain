@@ -154,15 +154,16 @@ class Typesense(VectorStore):
             "q": "*",
             "vector_query": f'vec:([{",".join(embedded_query)}], k:{k})',
             "filter_by": filter,
+            "collection": self._typesense_collection_name
         }
         docs = []
-        results = self._collection.documents.search(query_obj)
-        for res in results["hits"]:
-            metadata = res["metadata"]
-            text = metadata.pop(self._text_key)
-            docs.append(
-                (Document(page_content=text, metadata=metadata), res["vector_distance"])
-            )
+        response = self._typesense_client.multi_search.perform({"searches": [query_obj]}, {})
+        for hit in response["results"][0]["hits"]:
+            document = hit["document"]
+            metadata = document["metadata"]
+            text = document[self._text_key]
+            score = hit["vector_distance"]
+            docs.append((Document(page_content=text, metadata=metadata), score))
         return docs
 
     def similarity_search(
