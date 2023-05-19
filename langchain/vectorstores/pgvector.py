@@ -184,7 +184,7 @@ class PGVector(VectorStore):
         with Session(self._conn) as session:
             collection = self.get_collection(session)
             if not collection:
-                self.logger.error("Collection not found")
+                self.logger.warning("Collection not found")
                 return
             session.delete(collection)
             session.commit()
