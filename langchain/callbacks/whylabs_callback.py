@@ -144,11 +144,11 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
         """Run on agent end."""
         pass
 
-    def flush(self):
+    def flush(self) -> None:
         self.logger._do_rollover()
         logger.info("Flushing WhyLabs logger, see you next time!")
 
-    def close(self):
+    def close(self) -> None:
         self.logger.close()
         logger.info("Closing WhyLabs logger, see you next time!")
 
