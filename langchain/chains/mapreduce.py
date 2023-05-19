@@ -38,15 +38,22 @@ class MapReduceChain(Chain):
         prompt: BasePromptTemplate,
         text_splitter: TextSplitter,
         callbacks: Callbacks = None,
+        combine_chain_kwargs: Dict[str, Any] = None,
+        reduce_chain_kwargs: Dict[str, Any] = None,
         **kwargs: Any,
     ) -> MapReduceChain:
         """Construct a map-reduce chain that uses the chain for map and reduce."""
         llm_chain = LLMChain(llm=llm, prompt=prompt, callbacks=callbacks)
-        reduce_chain = StuffDocumentsChain(llm_chain=llm_chain, callbacks=callbacks)
+        reduce_chain = StuffDocumentsChain(
+            llm_chain=llm_chain,
+            callbacks=callbacks,
+            **(reduce_chain_kwargs if reduce_chain_kwargs else {})
+        )
         combine_documents_chain = MapReduceDocumentsChain(
             llm_chain=llm_chain,
             combine_document_chain=reduce_chain,
             callbacks=callbacks,
+            **(combine_chain_kwargs if combine_chain_kwargs else {})
         )
         return cls(
             combine_documents_chain=combine_documents_chain,
