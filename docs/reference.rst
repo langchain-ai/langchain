@@ -2,7 +2,7 @@ API References
 ==========================
 
 | All of LangChain's reference documentation, in one place.
-Full documentation on all methods, classes, and APIs in LangChain.
+| Full documentation on all methods, classes, and APIs in LangChain.
 
 
 .. toctree::
