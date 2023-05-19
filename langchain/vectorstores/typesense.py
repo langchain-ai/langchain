@@ -72,7 +72,7 @@ class Typesense(VectorStore):
             )
         self._typesense_client = typesense_client
         self._embedding = embedding
-        self._typesense_collection_name = typesense_collection_name or str(uuid.uuid4())
+        self._typesense_collection_name = typesense_collection_name or f"langchain-{str(uuid.uuid4())}"
         self._text_key = text_key
 
     @property
