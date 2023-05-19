@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+import os
 import pickle
 import uuid
 from pathlib import Path
@@ -17,10 +18,24 @@ from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 
-def dependable_faiss_import() -> Any:
-    """Import faiss if available, otherwise raise error."""
+def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
+    """
+    Import faiss if available, otherwise raise error.
+    If FAISS_NO_AVX2 environment variable is set, it will be considered
+    to load FAISS with no AVX2 optimization.
+
+    Args:
+        no_avx2: Load FAISS strictly with no AVX2 optimization
+            so that the vectorstore is portable and compatible with other devices.
+    """
+    if no_avx2 is None and "FAISS_NO_AVX2" in os.environ:
+        no_avx2 = bool(os.getenv("FAISS_NO_AVX2"))
+
     try:
-        import faiss
+        if no_avx2:
+            from faiss import swigfaiss as faiss
+        else:
+            import faiss
     except ImportError:
         raise ValueError(
             "Could not import faiss python package. "
@@ -66,6 +81,7 @@ class FAISS(VectorStore):
         relevance_score_fn: Optional[
             Callable[[float], float]
         ] = _default_relevance_score_fn,
+        normalize_L2: bool = False,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
@@ -73,6 +89,7 @@ class FAISS(VectorStore):
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
         self.relevance_score_fn = relevance_score_fn
+        self._normalize_L2 = normalize_L2
 
     def __add(
         self,
@@ -92,7 +109,11 @@ class FAISS(VectorStore):
             documents.append(Document(page_content=text, metadata=metadata))
         # Add to the index, the index_to_id mapping, and the docstore.
         starting_len = len(self.index_to_docstore_id)
-        self.index.add(np.array(embeddings, dtype=np.float32))
+        faiss = dependable_faiss_import()
+        vector = np.array(embeddings, dtype=np.float32)
+        if self._normalize_L2:
+            faiss.normalize_L2(vector)
+        self.index.add(vector)
         # Get list of index, id, and docs.
         full_info = [
             (starting_len + i, str(uuid.uuid4()), doc)
@@ -161,13 +182,17 @@ class FAISS(VectorStore):
         """Return docs most similar to query.
 
         Args:
-            query: Text to look up documents similar to.
+            embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
 
         Returns:
             List of Documents most similar to the query and score for each
         """
-        scores, indices = self.index.search(np.array([embedding], dtype=np.float32), k)
+        faiss = dependable_faiss_import()
+        vector = np.array([embedding], dtype=np.float32)
+        if self._normalize_L2:
+            faiss.normalize_L2(vector)
+        scores, indices = self.index.search(vector, k)
         docs = []
         for j, i in enumerate(indices[0]):
             if i == -1:
@@ -227,7 +252,12 @@ class FAISS(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -238,7 +268,10 @@ class FAISS(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -246,7 +279,10 @@ class FAISS(VectorStore):
         # -1 happens when not enough docs are returned.
         embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]
         mmr_selected = maximal_marginal_relevance(
-            np.array([embedding], dtype=np.float32), embeddings, k=k
+            np.array([embedding], dtype=np.float32),
+            embeddings,
+            k=k,
+            lambda_mult=lambda_mult,
         )
         selected_indices = [indices[0][i] for i in mmr_selected]
         docs = []
@@ -266,6 +302,7 @@ class FAISS(VectorStore):
         query: str,
         k: int = 4,
         fetch_k: int = 20,
+        lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -277,12 +314,17 @@ class FAISS(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
         embedding = self.embedding_function(query)
-        docs = self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k)
+        docs = self.max_marginal_relevance_search_by_vector(
+            embedding, k, fetch_k, lambda_mult=lambda_mult
+        )
         return docs
 
     def merge_from(self, target: FAISS) -> None:
@@ -324,11 +366,15 @@ class FAISS(VectorStore):
         embeddings: List[List[float]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        normalize_L2: bool = False,
         **kwargs: Any,
     ) -> FAISS:
         faiss = dependable_faiss_import()
         index = faiss.IndexFlatL2(len(embeddings[0]))
-        index.add(np.array(embeddings, dtype=np.float32))
+        vector = np.array(embeddings, dtype=np.float32)
+        if normalize_L2:
+            faiss.normalize_L2(vector)
+        index.add(vector)
         documents = []
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
@@ -337,7 +383,14 @@ class FAISS(VectorStore):
         docstore = InMemoryDocstore(
             {index_to_id[i]: doc for i, doc in enumerate(documents)}
         )
-        return cls(embedding.embed_query, index, docstore, index_to_id, **kwargs)
+        return cls(
+            embedding.embed_query,
+            index,
+            docstore,
+            index_to_id,
+            normalize_L2=normalize_L2,
+            **kwargs,
+        )
 
     @classmethod
     def from_texts(

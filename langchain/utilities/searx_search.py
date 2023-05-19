@@ -7,7 +7,7 @@ supports the `OpenSearch
 <https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md>`_
 specification.
 
-More detailes on the installtion instructions `here. <../../ecosystem/searx.html>`_
+More detailes on the installtion instructions `here. <../../integrations/searx.html>`_
 
 For the search API refer to https://docs.searxng.org/dev/search_api.html
 
