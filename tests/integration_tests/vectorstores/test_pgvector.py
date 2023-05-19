@@ -163,8 +163,10 @@ def test_pgvector_with_filter_in_set() -> None:
         connection_string=CONNECTION_STRING,
         pre_delete_collection=True,
     )
-    output = docsearch.similarity_search_with_score("foo", k=2, filter={"page": {"IN" : ["0", "2"]}})
+    output = docsearch.similarity_search_with_score(
+        "foo", k=2, filter={"page": {"IN": ["0", "2"]}}
+    )
     assert output == [
         (Document(page_content="foo", metadata={"page": "0"}), 0.0),
-        (Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406)
+        (Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406),
     ]
