@@ -217,6 +217,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     self,
                     input=tokens[i : i + _chunk_size],
                     model=self.deployment,
+                    deployment_id=self.deployment,
                     request_timeout=self.request_timeout,
                     headers=self.headers,
                 )
@@ -235,6 +236,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         self,
                         input="",
                         model=self.deployment,
+                        deployment_id=self.deployment,
                         request_timeout=self.request_timeout,
                         headers=self.headers,
                     )["data"][0]["embedding"]
@@ -267,6 +269,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 self,
                 input=[text],
                 model=engine,
+                deployment_id=self.deployment,
                 request_timeout=self.request_timeout,
                 headers=self.headers,
             )["data"][0]["embedding"]
