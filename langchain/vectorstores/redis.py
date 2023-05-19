@@ -11,6 +11,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Mapping,
     Optional,
     Tuple,
@@ -22,9 +23,8 @@ from pydantic import BaseModel, root_validator
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,9 @@ REDIS_REQUIRED_MODULES = [
     {"name": "search", "ver": 20400},
     {"name": "searchlight", "ver": 20400},
 ]
+
+# distance mmetrics
+REDIS_DISTANCE_METRICS = Literal["COSINE", "IP", "L2"]
 
 
 def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -> None:
@@ -53,8 +56,9 @@ def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -
             return
     # otherwise raise error
     error_message = (
-        "You must add the RediSearch (>= 2.4) module from Redis Stack. "
-        "Please refer to Redis Stack docs: https://redis.io/docs/stack/"
+        "Redis cannot be used as a vector database without RediSearch >=2.4"
+        "Please head to https://redis.io/docs/stack/search/quick_start/"
+        "to know more about installing the RediSearch module within Redis Stack."
     )
     logging.error(error_message)
     raise ValueError(error_message)
@@ -123,7 +127,7 @@ class Redis(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
-                "Please install it with `pip install redis`."
+                "Please install it with `pip install redis>=4.1.0`."
             )
 
         self.embedding_function = embedding_function
@@ -142,7 +146,9 @@ class Redis(VectorStore):
         self.vector_key = vector_key
         self.relevance_score_fn = relevance_score_fn
 
-    def _create_index(self, dim: int = 1536) -> None:
+    def _create_index(
+        self, dim: int = 1536, distance_metric: REDIS_DISTANCE_METRICS = "COSINE"
+    ) -> None:
         try:
             from redis.commands.search.field import TextField, VectorField
             from redis.commands.search.indexDefinition import IndexDefinition, IndexType
@@ -154,10 +160,7 @@ class Redis(VectorStore):
 
         # Check if index exists
         if not _check_index_exists(self.client, self.index_name):
-            # Constants
-            distance_metric = (
-                "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
-            )
+            # Define schema
             schema = (
                 TextField(name=self.content_key),
                 TextField(name=self.metadata_key),
@@ -349,10 +352,70 @@ class Redis(VectorStore):
         if self.relevance_score_fn is None:
             raise ValueError(
                 "relevance_score_fn must be provided to"
-                " Weaviate constructor to normalize scores"
+                " Redis constructor to normalize scores"
             )
         docs_and_scores = self.similarity_search_with_score(query, k=k)
         return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
+
+    @classmethod
+    def from_texts_return_keys(
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        index_name: Optional[str] = None,
+        content_key: str = "content",
+        metadata_key: str = "metadata",
+        vector_key: str = "content_vector",
+        distance_metric: REDIS_DISTANCE_METRICS = "COSINE",
+        **kwargs: Any,
+    ) -> Tuple[Redis, List[str]]:
+        """Create a Redis vectorstore from raw documents.
+        This is a user-friendly interface that:
+            1. Embeds documents.
+            2. Creates a new index for the embeddings in Redis.
+            3. Adds the documents to the newly created Redis index.
+        This is intended to be a quick way to get started.
+        Example:
+            .. code-block:: python
+                from langchain.vectorstores import Redis
+                from langchain.embeddings import OpenAIEmbeddings
+                embeddings = OpenAIEmbeddings()
+                redisearch = RediSearch.from_texts(
+                    texts,
+                    embeddings,
+                    redis_url="redis://username:password@localhost:6379"
+                )
+        """
+        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
+
+        if "redis_url" in kwargs:
+            kwargs.pop("redis_url")
+
+        # Name of the search index if not given
+        if not index_name:
+            index_name = uuid.uuid4().hex
+
+        # Create instance
+        instance = cls(
+            redis_url,
+            index_name,
+            embedding.embed_query,
+            content_key=content_key,
+            metadata_key=metadata_key,
+            vector_key=vector_key,
+            **kwargs,
+        )
+
+        # Create embeddings over documents
+        embeddings = embedding.embed_documents(texts)
+
+        # Create the search index
+        instance._create_index(dim=len(embeddings[0]), distance_metric=distance_metric)
+
+        # Add data to Redis
+        keys = instance.add_texts(texts, metadatas, embeddings)
+        return instance, keys
 
     @classmethod
     def from_texts(
@@ -383,34 +446,16 @@ class Redis(VectorStore):
                     redis_url="redis://username:password@localhost:6379"
                 )
         """
-        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
-
-        if "redis_url" in kwargs:
-            kwargs.pop("redis_url")
-
-        # Name of the search index if not given
-        if not index_name:
-            index_name = uuid.uuid4().hex
-
-        # Create instance
-        instance = cls(
-            redis_url=redis_url,
+        instance, _ = cls.from_texts_return_keys(
+            texts,
+            embedding,
+            metadatas=metadatas,
             index_name=index_name,
-            embedding_function=embedding.embed_query,
             content_key=content_key,
             metadata_key=metadata_key,
             vector_key=vector_key,
             **kwargs,
         )
-
-        # Create embeddings over documents
-        embeddings = embedding.embed_documents(texts)
-
-        # Create the search index
-        instance._create_index(dim=len(embeddings[0]))
-
-        # Add data to Redis
-        instance.add_texts(texts, metadatas, embeddings)
         return instance
 
     @staticmethod
@@ -498,11 +543,11 @@ class Redis(VectorStore):
             **kwargs,
         )
 
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+    def as_retriever(self, **kwargs: Any) -> RedisVectorStoreRetriever:
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs)
 
 
-class RedisVectorStoreRetriever(BaseRetriever, BaseModel):
+class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
     vectorstore: Redis
     search_type: str = "similarity"
     k: int = 4

@@ -112,13 +112,16 @@ class ChatOpenAI(BaseChatModel):
     """
 
     client: Any  #: :meta private:
-    model_name: str = "gpt-3.5-turbo"
+    model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    """Base URL path for API requests, 
+    leave blank if not using a proxy or service emulator."""
+    openai_api_base: Optional[str] = None
     openai_organization: Optional[str] = None
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
@@ -135,12 +138,12 @@ class ChatOpenAI(BaseChatModel):
         """Configuration for this pydantic object."""
 
         extra = Extra.ignore
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
-
+        all_required_field_names = cls.all_required_field_names()
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
@@ -153,8 +156,7 @@ class ChatOpenAI(BaseChatModel):
                 )
                 extra[field_name] = values.pop(field_name)
 
-        disallowed_model_kwargs = all_required_field_names | {"model"}
-        invalid_model_kwargs = disallowed_model_kwargs.intersection(extra.keys())
+        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
         if invalid_model_kwargs:
             raise ValueError(
                 f"Parameters {invalid_model_kwargs} should be specified explicitly. "
@@ -346,6 +348,11 @@ class ChatOpenAI(BaseChatModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {**{"model_name": self.model_name}, **self._default_params}
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+        return "openai-chat"
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""

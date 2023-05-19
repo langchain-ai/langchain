@@ -1,5 +1,6 @@
 """Util that calls Arxiv."""
 import logging
+import os
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
@@ -16,7 +17,9 @@ class ArxivAPIWrapper(BaseModel):
     https://lukasschwab.me/arxiv.py/index.html
     This wrapper will use the Arxiv API to conduct searches and
     fetch document summaries. By default, it will return the document summaries
-    of the top-k results of an input search.
+    of the top-k results.
+    It limits the Document content by doc_content_chars_max.
+    Set doc_content_chars_max=None if you don't want to limit the content size.
 
     Parameters:
         top_k_results: number of the top-scored document used for the arxiv tool
@@ -34,6 +37,7 @@ class ArxivAPIWrapper(BaseModel):
     ARXIV_MAX_QUERY_LENGTH = 300
     load_max_docs: int = 100
     load_all_available_meta: bool = False
+    doc_content_chars_max: int = 4000
 
     class Config:
         """Configuration for this pydantic object."""
@@ -54,7 +58,7 @@ class ArxivAPIWrapper(BaseModel):
             )
             values["arxiv_result"] = arxiv.Result
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import arxiv python package. "
                 "Please install it with `pip install arxiv`."
             )
@@ -68,17 +72,21 @@ class ArxivAPIWrapper(BaseModel):
         It uses only the most informative fields of article meta information.
         """
         try:
-            docs = [
-                f"Published: {result.updated.date()}\nTitle: {result.title}\n"
-                f"Authors: {', '.join(a.name for a in result.authors)}\n"
-                f"Summary: {result.summary}"
-                for result in self.arxiv_search(  # type: ignore
-                    query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results
-                ).results()
-            ]
-            return "\n\n".join(docs) if docs else "No good Arxiv Result was found"
+            results = self.arxiv_search(  # type: ignore
+                query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results
+            ).results()
         except self.arxiv_exceptions as ex:
             return f"Arxiv exception: {ex}"
+        docs = [
+            f"Published: {result.updated.date()}\nTitle: {result.title}\n"
+            f"Authors: {', '.join(a.name for a in result.authors)}\n"
+            f"Summary: {result.summary}"
+            for result in results
+        ]
+        if docs:
+            return "\n\n".join(docs)[: self.doc_content_chars_max]
+        else:
+            return "No good Arxiv Result was found"
 
     def load(self, query: str) -> List[Document]:
         """
@@ -91,52 +99,51 @@ class ArxivAPIWrapper(BaseModel):
         try:
             import fitz
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "PyMuPDF package not found, please install it with "
                 "`pip install pymupdf`"
             )
 
         try:
-            docs: List[Document] = []
-            for result in self.arxiv_search(  # type: ignore
+            results = self.arxiv_search(  # type: ignore
                 query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.load_max_docs
-            ).results():
-                try:
-                    doc_file_name: str = result.download_pdf()
-                    with fitz.open(doc_file_name) as doc_file:
-                        text: str = "".join(page.get_text() for page in doc_file)
-                        add_meta = (
-                            {
-                                "entry_id": result.entry_id,
-                                "published_first_time": str(result.published.date()),
-                                "comment": result.comment,
-                                "journal_ref": result.journal_ref,
-                                "doi": result.doi,
-                                "primary_category": result.primary_category,
-                                "categories": result.categories,
-                                "links": [link.href for link in result.links],
-                            }
-                            if self.load_all_available_meta
-                            else {}
-                        )
-                        doc = Document(
-                            page_content=text,
-                            metadata=(
-                                {
-                                    "Published": str(result.updated.date()),
-                                    "Title": result.title,
-                                    "Authors": ", ".join(
-                                        a.name for a in result.authors
-                                    ),
-                                    "Summary": result.summary,
-                                    **add_meta,
-                                }
-                            ),
-                        )
-                        docs.append(doc)
-                except FileNotFoundError as f_ex:
-                    logger.debug(f_ex)
-            return docs
+            ).results()
         except self.arxiv_exceptions as ex:
             logger.debug("Error on arxiv: %s", ex)
             return []
+
+        docs: List[Document] = []
+        for result in results:
+            try:
+                doc_file_name: str = result.download_pdf()
+                with fitz.open(doc_file_name) as doc_file:
+                    text: str = "".join(page.get_text() for page in doc_file)
+            except FileNotFoundError as f_ex:
+                logger.debug(f_ex)
+                continue
+            if self.load_all_available_meta:
+                extra_metadata = {
+                    "entry_id": result.entry_id,
+                    "published_first_time": str(result.published.date()),
+                    "comment": result.comment,
+                    "journal_ref": result.journal_ref,
+                    "doi": result.doi,
+                    "primary_category": result.primary_category,
+                    "categories": result.categories,
+                    "links": [link.href for link in result.links],
+                }
+            else:
+                extra_metadata = {}
+            metadata = {
+                "Published": str(result.updated.date()),
+                "Title": result.title,
+                "Authors": ", ".join(a.name for a in result.authors),
+                "Summary": result.summary,
+                **extra_metadata,
+            }
+            doc = Document(
+                page_content=text[: self.doc_content_chars_max], metadata=metadata
+            )
+            docs.append(doc)
+            os.remove(doc_file_name)
+        return docs
