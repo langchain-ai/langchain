@@ -17,7 +17,8 @@ if TYPE_CHECKING:
     import chromadb.config
 
 logger = logging.getLogger()
-DEFAULT_K = 4 #Number of Documents to return.
+DEFAULT_K = 4  # Number of Documents to return.
+
 
 def _results_to_docs(results: Any) -> List[Document]:
     return [doc for doc, _ in _results_to_docs_and_scores(results)]
