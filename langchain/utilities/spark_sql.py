@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional
 
-from pyspark import Row
-from pyspark.sql import DataFrame, SparkSession
+if TYPE_CHECKING:
+    from pyspark.sql import DataFrame, Row, SparkSession
 
 
 class SparkSQL:
