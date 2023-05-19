@@ -38,8 +38,8 @@ class MapReduceChain(Chain):
         prompt: BasePromptTemplate,
         text_splitter: TextSplitter,
         callbacks: Callbacks = None,
-        combine_chain_kwargs: Dict[str, Any] = None,
-        reduce_chain_kwargs: Dict[str, Any] = None,
+        combine_chain_kwargs: Optional[Dict[str, Any]] = None,
+        reduce_chain_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> MapReduceChain:
         """Construct a map-reduce chain that uses the chain for map and reduce."""
