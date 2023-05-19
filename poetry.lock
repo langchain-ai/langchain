@@ -6620,7 +6620,6 @@ files = [
     {file = "pylance-0.4.12-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:2b86fb8dccc03094c0db37bef0d91bda60e8eb0d1eddf245c6971450c8d8a53f"},
     {file = "pylance-0.4.12-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:0bc82914b13204187d673b5f3d45f93219c38a0e9d0542ba251074f639669789"},
     {file = "pylance-0.4.12-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5a4bcce77f99ecd4cbebbadb01e58d5d8138d40eb56bdcdbc3b20b0475e7a472"},
-    {file = "pylance-0.4.12-cp38-abi3-win_amd64.whl", hash = "sha256:9616931c5300030adb9626d22515710a127d1e46a46737a7a0f980b52f13627c"},
 ]
 
 [package.dependencies]
@@ -10334,7 +10333,7 @@ all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api
 azure = ["azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "chardet", "jq", "lxml", "pandas", "pdfminer-six", "pymupdf", "pypdf", "pypdfium2", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "chardet", "gql", "jq", "lxml", "pandas", "pdfminer-six", "pymupdf", "pypdf", "pypdfium2", "telethon", "tqdm", "zep-python"]
 hnswlib = ["docarray", "hnswlib", "protobuf"]
 in-memory-store = ["docarray"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "torch", "transformers"]
@@ -10345,4 +10344,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "2b19b9deca7f83ca14af1f7bc7808bbe7873a91ce4c95381eaad8ea84fe04c0b"
+content-hash = "6b26e9f39ea35c297e4abd97810539c810c4ebbf952eeb3a4f61266219a4005e"
