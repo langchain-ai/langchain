@@ -218,15 +218,15 @@ class Beam(LLM):
             print(process.stdout)
             output = process.stdout
             lines = output.split("\n")
-            appID = None
+            app_id = None
 
             for line in lines:
                 if line.startswith(" i  Send requests to: https://apps.beam.cloud/"):
-                    appID = line.split("/")[-1]
-                    return appID
+                    app_id = line.split("/")[-1]
+                    return app_id
 
             raise ValueError(
-                f"""Failed to retrieve the appID from the deployment output.
+                f"""Failed to retrieve the app_id from the deployment output.
                 Error: {process.stdout}"""
             )
         else:
@@ -266,9 +266,9 @@ class Beam(LLM):
         authorization = base64.b64encode(credential_string.encode()).decode()
         connection = "keep-alive"
         content_type = "application/json"
-        appID = kwargs.get("appID")
-        if appID is not None:
-            url = "https://apps.beam.cloud/" + appID
+        app_id = kwargs.get("app_id")
+        if app_id is not None:
+            url = "https://apps.beam.cloud/" + app_id
         else:
             url = self.url
         payload = {"prompt": prompt, "max_length": max_length}
