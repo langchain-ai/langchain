@@ -1,5 +1,6 @@
 """Agent toolkits."""
 
+from langchain.agents.agent_toolkits.azure_cognitive_services.toolkit import AzureCognitiveServicesToolkit
 from langchain.agents.agent_toolkits.csv.base import create_csv_agent
 from langchain.agents.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
@@ -56,4 +57,5 @@ __all__ = [
     "JiraToolkit",
     "FileManagementToolkit",
     "PlayWrightBrowserToolkit",
+    "AzureCognitiveServicesToolkit",
 ]
