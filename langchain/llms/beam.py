@@ -192,7 +192,7 @@ class Beam(LLM):
         with open(script_name, "w") as file:
             file.write(script.format(model_name=self.model_name))
 
-    def _deploy(self) -> None:
+    def _deploy(self) -> str:
         """Call to Beam."""
         try:
             import beam  # type: ignore
@@ -215,18 +215,22 @@ class Beam(LLM):
         )
 
         if process.returncode == 0:
+            print(process.stdout)
             output = process.stdout
             lines = output.split("\n")
-            url = None
+            appID = None
 
             for line in lines:
-                if line.startswith(" i  Send requests to: "):
-                    url = ":".join(line.split(":")[1:]).strip()
-                    self.url = url
+                if line.startswith(" i  Send requests to: https://apps.beam.cloud/"):
+                    appID = line.split("/")[-1]
+                    return appID
 
+            raise ValueError(
+                f"""Failed to retrieve the appID from the deployment output.
+                Error: {process.stdout}"""
+            )
         else:
-            print("Deployment failed.")
-            print("Error:", process.stderr)
+            raise ValueError(f"Deployment failed. Error: {process.stderr}")
 
     def _call(
         self,
