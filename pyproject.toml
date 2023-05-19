@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.173"
+version = "0.0.174"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -183,7 +183,8 @@ in_memory_store = ["docarray"]
 hnswlib = ["docarray", "protobuf", "hnswlib"]
 embeddings = ["sentence-transformers"]
 azure = ["azure-identity", "azure-cosmos", "openai", "azure-core"]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "lark", "pexpect", "pyvespa", "O365", "jq", "docarray", "protobuf", "hnswlib", "steamship", "pdfminer-six", "gql"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "lark", "pexpect", "pyvespa", "O365", "jq", "docarray", "protobuf", "hnswlib", "steamship", "pdfminer-six", "gql", "lxml"]
+
 # An extra used to be able to add extended testing.
 # Please use new-line on formatting to make it easier to add new packages without
 # merge-conflicts
@@ -203,6 +204,7 @@ extended_testing = [
  "telethon",
  "zep-python",
  "gql",
+ "html2text"
 ]
 
 [tool.ruff]
