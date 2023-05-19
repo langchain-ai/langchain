@@ -14,14 +14,14 @@ class TestEverNoteLoader:
         current_dir = pathlib.Path(__file__).parent
         return os.path.join(current_dir, "sample_documents", notebook_name)
 
-    def test_evernoteloader_loadnotebook_eachnoteisindividualdocument(self) -> None:
+    def test_loadnotebook_eachnoteisindividualdocument(self) -> None:
         loader = EverNoteLoader(
             self.example_notebook_path("sample_notebook.enex"), False
         )
         documents = loader.load()
         assert len(documents) == 2
 
-    def test_evernoteloader_loadnotebook_eachnotehasexpectedcontentwithleadingandtrailingremoved(
+    def test_loadnotebook_eachnotehasexpectedcontentwithleadingandtrailingremoved(
         self,
     ) -> None:
         documents = EverNoteLoader(
@@ -34,20 +34,20 @@ class TestEverNoteLoader:
         content_note2 = documents[1].page_content
         assert content_note2 == "**Jan - March 2022**"
 
-    def test_evernoteloader_loademptynotebook_emptylistreturned(self) -> None:
+    def test_loademptynotebook_emptylistreturned(self) -> None:
         documents = EverNoteLoader(
             self.example_notebook_path("empty_export.enex"), False
         ).load()
         assert len(documents) == 0
 
-    def test_evernoteloader_loadnotewithemptycontent_emptydocumentcontent(self) -> None:
+    def test_loadnotewithemptycontent_emptydocumentcontent(self) -> None:
         documents = EverNoteLoader(
             self.example_notebook_path("sample_notebook_emptynote.enex"), False
         ).load()
         note = documents[0]
         assert note.page_content == ""
 
-    def test_evernoteloader_loadnotewithmissingcontenttag_emptylistreturned(
+    def test_loadnotewithmissingcontenttag_emptylistreturned(
         self,
     ) -> None:
         documents = EverNoteLoader(
@@ -55,7 +55,7 @@ class TestEverNoteLoader:
         ).load()
         assert len(documents) == 0
 
-    def test_evernoteloader_loadnotewithnometadata_documentreturnedwithsourceonly(
+    def test_loadnotewithnometadata_documentreturnedwithsourceonly(
         self,
     ) -> None:
         documents = EverNoteLoader(
@@ -69,7 +69,7 @@ class TestEverNoteLoader:
         assert "source" in note.metadata
         assert "sample_notebook_missingmetadata.enex" in note.metadata["source"]
 
-    def test_evernoteloader_loadnotebookwithnotecontainingimage_notehasplaintextonlywithresourcesremoved(
+    def test_loadnotebookwithimage_notehasplaintextonlywithresourcesremoved(
         self,
     ) -> None:
         documents = EverNoteLoader(
@@ -79,7 +79,8 @@ class TestEverNoteLoader:
         note = documents[0]
         assert (
             note.page_content
-            == """When you pick this mug up with your thumb on top and middle finger through the
+            == """\
+When you pick this mug up with your thumb on top and middle finger through the
 loop, your ring finger slides into the mug under the loop where it is too hot
 to touch and burns you.
 
@@ -89,7 +90,7 @@ If you try and pick it up with your thumb and index finger you can’t hold the
 mug."""
         )
 
-    def test_evernoteloader_loadnotebook_eachnotehasexpectedmetadata(self) -> None:
+    def test_loadnotebook_eachnotehasexpectedmetadata(self) -> None:
         documents = EverNoteLoader(
             self.example_notebook_path("sample_notebook.enex"), False
         ).load()
@@ -146,7 +147,7 @@ mug."""
         assert metadata_note2["created"].tm_mon == 12
         assert metadata_note2["created"].tm_mday == 27
 
-    def test_evernoteloader_loadnotebookwithconflictingsourcemetadatatag_sourceoffilepreferred(
+    def test_loadnotebookwithconflictingsourcemetadatatag_sourceoffilepreferred(
         self,
     ) -> None:
         documents = EverNoteLoader(
@@ -155,7 +156,7 @@ mug."""
         assert "sample_notebook_2.enex" in documents[0].metadata["source"]
         assert "mobile.iphone" not in documents[0].metadata["source"]
 
-    def test_evernoteloaderreturnsingledocument_loadnotebook_eachnoteiscombinedinto1document(
+    def test_returnsingledocument_loadnotebook_eachnoteiscombinedinto1document(
         self,
     ) -> None:
         loader = EverNoteLoader(
@@ -164,7 +165,7 @@ mug."""
         documents = loader.load()
         assert len(documents) == 1
 
-    def test_evernoteloaderreturnsingledocument_loadnotebook_notecontentiscombinedinto1document(
+    def test_returnsingledocument_loadnotebook_notecontentiscombinedinto1document(
         self,
     ) -> None:
         loader = EverNoteLoader(

@@ -14,19 +14,22 @@ from langchain.document_loaders.base import BaseLoader
 
 class EverNoteLoader(BaseLoader):
     """EverNote Loader.
-    Loads an EverNote notebook export file e.g. my_notebook.enex into Documents. Instructions on producing this
-    file can be found at https://help.evernote.com/hc/en-us/articles/209005557-Export-notes-and-notebooks-as-ENEX-or-HTML
+    Loads an EverNote notebook export file e.g. my_notebook.enex into Documents.
+    Instructions on producing this file can be found at
+    https://help.evernote.com/hc/en-us/articles/209005557-Export-notes-and-notebooks-as-ENEX-or-HTML
 
-    Currently only the plain text in the note is extracted and stored as the contents of the Document, any non content
-    metadata (e.g. 'author', 'created', 'updated' etc. but not 'content-raw' or 'resource') tags on the note will be
-    extracted and stored as metadata on the Document.
+    Currently only the plain text in the note is extracted and stored as the contents
+    of the Document, any non content metadata (e.g. 'author', 'created', 'updated' etc.
+    but not 'content-raw' or 'resource') tags on the note will be extracted and stored
+    as metadata on the Document.
 
     Args:
         file_path (str): The path to the notebook export with a .enex extension
-        load_single_document (bool): Whether or not to concatenate the content of all notes into a single long Document.
-        If this is set to True (default) then the only metadata on the document will be the 'source' which contains
-        the file name of the export.
-    """
+        load_single_document (bool): Whether or not to concatenate the content of all
+            notes into a single long Document.
+        If this is set to True (default) then the only metadata on the document will be
+            the 'source' which contains the file name of the export.
+    """  # noqa: E501
 
     def __init__(self, file_path: str, load_single_document: bool = True):
         """Initialize with file path."""
@@ -69,7 +72,9 @@ class EverNoteLoader(BaseLoader):
             return html2text.html2text(content).strip()
         except ImportError as e:
             logging.error(
-                "Could not import `html2text`. Although it is not a required package to use Langchain, using the EverNote loader requires `html2text`. Please install `html2text` via `pip install html2text` and try again."
+                "Could not import `html2text`. Although it is not a required package "
+                "to use Langchain, using the EverNote loader requires `html2text`. "
+                "Please install `html2text` via `pip install html2text` and try again."
             )
             raise e
 
@@ -78,7 +83,7 @@ class EverNoteLoader(BaseLoader):
         rsc_dict: Dict[str, Any] = {}
         for elem in resource:
             if elem.tag == "data":
-                # Some times elem.text is None
+                # Sometimes elem.text is None
                 rsc_dict[elem.tag] = b64decode(elem.text) if elem.text else b""
                 rsc_dict["hash"] = hashlib.md5(rsc_dict[elem.tag]).hexdigest()
             else:
@@ -128,7 +133,9 @@ class EverNoteLoader(BaseLoader):
             from lxml import etree
         except ImportError as e:
             logging.error(
-                "Could not import `lxml`. Although it is not a required package to use Langchain, using the EverNote loader requires `lxml`. Please install `lxml` via `pip install lxml` and try again."
+                "Could not import `lxml`. Although it is not a required package to use "
+                "Langchain, using the EverNote loader requires `lxml`. Please install "
+                "`lxml` via `pip install lxml` and try again."
             )
             raise e
 
