@@ -71,12 +71,14 @@ class Neo4jGraph:
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Neo4j database."""
+        from neo4j.exceptions import CypherSyntaxError
+
         with self._driver.session(database=self._database) as session:
             try:
                 data = session.run(query, params)
                 # Hard limit of 200 results
                 return [r.data() for r in data][:200]
-            except neo4j.exceptions.CypherSyntaxError:
+            except CypherSyntaxError:
                 raise ValueError("Generated Cypher Statement is not valid")
 
     def refresh_schema(self):
@@ -89,9 +91,9 @@ class Neo4jGraph:
 
         self.schema = f"""
         Node properties are the following:
-        {node_properties}
+        {[el['output'] for el in node_properties]}
         Relationship properties are the following:
-        {relationships_properties}
+        {[el['output'] for el in relationships_properties]}
         The relationships are the following:
-        {relationships}
+        {[el['output'] for el in relationships]}
         """
