@@ -77,20 +77,15 @@ MOCK_RESPONSE = {
 
 
 @pytest.mark.requires("gql")
-@pytest.fixture
-def graphql_wrapper() -> GraphQLAPIWrapper:
-    return GraphQLAPIWrapper(
-        graphql_endpoint=TEST_ENDPOINT,
-        custom_headers={"Authorization": "Bearer testtoken"},
-    )
-
-
-@pytest.mark.requires("gql")
 @responses.activate
-def test_run(graphql_wrapper: GraphQLAPIWrapper) -> None:
+def test_run() -> None:
     responses.add(responses.POST, TEST_ENDPOINT, json=MOCK_RESPONSE, status=200)
 
     query = "query { allUsers { name } }"
+    graphql_wrapper = GraphQLAPIWrapper(
+        graphql_endpoint=TEST_ENDPOINT,
+        custom_headers={"Authorization": "Bearer testtoken"},
+    )
     result = graphql_wrapper.run(query)
 
     expected_result = json.dumps(MOCK_RESPONSE["data"], indent=2)
