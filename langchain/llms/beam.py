@@ -223,10 +223,11 @@ class Beam(LLM):
             for line in lines:
                 if line.startswith(" i  Send requests to: https://apps.beam.cloud/"):
                     app_id = line.split("/")[-1]
+                    self.url = line.split(":")[1].strip()
                     return app_id
 
             raise ValueError(
-                f"""Failed to retrieve the app_id from the deployment output.
+                f"""Failed to retrieve the appID from the deployment output.
                 Error: {process.stdout}"""
             )
         else:
@@ -257,7 +258,6 @@ class Beam(LLM):
         api_secret = self.beam_client_secret
         max_length = self.max_length
         response = ""
-
         accept = "*/*"
         encoding = "gzip, deflate"
         credential_string = (
