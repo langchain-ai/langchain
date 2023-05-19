@@ -7,7 +7,7 @@ from langchain.embeddings import OpenAIEmbeddings
 
 def test_azure_openai_embeddings():
     os.environ["OPENAI_API_TYPE"] = "azure"
-    os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
+    os.environ["OPENAI_API_BASE"] = "https://your-endpoint.openai.azure.com/"
     os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
     os.environ["OPENAI_API_VERSION"] = "2023-03-15-preview"
 
