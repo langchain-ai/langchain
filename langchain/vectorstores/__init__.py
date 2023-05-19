@@ -19,6 +19,7 @@ from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
+from langchain.vectorstores.typesense import Typesense
 
 __all__ = [
     "Redis",
@@ -43,4 +44,5 @@ __all__ = [
     "LanceDB",
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
+    "Typesense"
 ]
