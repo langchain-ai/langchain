@@ -37,5 +37,6 @@ class PsychicLoader(BaseLoader):
                 for doc in psychic_docs
             ]
         except Exception as e:
-            print(e)
-            return []
+            raise RuntimeError(
+                "Error loading documents from Psychic.dev: {}".format(e)
+            )
