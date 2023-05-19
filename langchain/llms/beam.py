@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class Beam(LLM):
     """Wrapper around Beam API for gpt2 large language model.
 
-    To use, you should have the ``beam`` python package installed,
+    To use, you should have the ``beam-sdk`` python package installed,
     and the environment variable ``beam_client_id`` set with your client id
     and ``beam_client_secret`` set with your client secret. Information on how
     to set these is availible here: https://docs.beam.cloud/account/api-keys.
@@ -123,7 +123,7 @@ class Beam(LLM):
         """Return type of llm."""
         return self.model_name
 
-    def appCreation(self) -> None:
+    def app_creation(self) -> None:
         """Creates a Python file which will contain your Beam app definition."""
         script = textwrap.dedent(
             """\
@@ -161,7 +161,7 @@ class Beam(LLM):
                 )
             )
 
-    def runCreation(self) -> None:
+    def run_creation(self) -> None:
         """Creates a Python file which will be deployed on beam."""
         script = textwrap.dedent(
             """
@@ -207,8 +207,8 @@ class Beam(LLM):
                 "/get-beam/main/get-beam.sh -sSfL | sh`."
             )
 
-        self.appCreation()
-        self.runCreation()
+        self.app_creation()
+        self.run_creation()
 
         process = subprocess.run(
             "beam deploy app.py", shell=True, capture_output=True, text=True
