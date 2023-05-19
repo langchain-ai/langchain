@@ -30,9 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const icon = React.createElement('p', {
       style: { color: '#ffffff', fontSize: '22px',width: '48px', height: '48px', margin: '0px', padding: '0px', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' },
     }, [iconSpan1, iconSpan2]);
-    // get by classname
     
-
     const mendableFloatingButton = React.createElement(
       MendableFloatingButton,
       {
@@ -41,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         anon_key: '82842b36-3ea6-49b2-9fb8-52cfc4bde6bf', // Mendable Search Public ANON key, ok to be public
         messageSettings: {
           openSourcesInNewTab: false,
-          prettySources: true
+          prettySources: true // Prettify the sources displayed now
         },
         icon: icon,
       }
