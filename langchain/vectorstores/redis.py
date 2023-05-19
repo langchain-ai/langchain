@@ -58,7 +58,7 @@ def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -
     error_message = (
         "Redis cannot be used as a vector database without Redisearch"
         "Please head to https://redis.io/docs/stack/search/quick_start/"
-        "to know more about installing redisearch"
+        "to know more about installing the RediSearch module within Redis Stack."
     )
     logging.error(error_message)
     raise ValueError(error_message)
