@@ -76,7 +76,7 @@ MOCK_RESPONSE = {
 }
 
 
-@pytest.mark.requires("gql")
+@pytest.mark.requires("gql", "requests_toolbelt")
 @responses.activate
 def test_run() -> None:
     responses.add(responses.POST, TEST_ENDPOINT, json=MOCK_RESPONSE, status=200)
