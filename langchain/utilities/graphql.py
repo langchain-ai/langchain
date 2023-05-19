@@ -27,11 +27,12 @@ class GraphQLAPIWrapper(BaseModel):
         try:
             from gql import Client, gql
             from gql.transport.requests import RequestsHTTPTransport
-        except ImportError:
-            raise ImportError(
-                "Could not import gql python package. "
-                "Please install it with `pip install gql`."
-            )
+        except ImportError as e:
+            # raise ImportError(
+            #     "Could not import gql python package. "
+            #     "Please install it with `pip install gql`."
+            # )
+            raise e
         headers = values.get("custom_headers")
         transport = RequestsHTTPTransport(
             url=values["graphql_endpoint"],
