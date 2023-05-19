@@ -1,0 +1,50 @@
+version: '3'
+services:
+  langchain-frontend:
+    image: langchain/${_LANGCHAINPLUS_IMAGE_PREFIX-}langchainplus-frontend:latest
+    ports:
+      - 80:80
+    environment:
+      - BACKEND_URL=http://langchain-backend:8000
+      - PUBLIC_BASE_URL=http://localhost:8000
+      - PUBLIC_DEV_MODE=true
+    depends_on:
+      - langchain-backend
+    volumes:
+      - ./conf/nginx.conf:/etc/nginx/default.conf:ro
+    build:
+      context: frontend-react/.
+      dockerfile: Dockerfile
+  langchain-backend:
+    image: langchain/${_LANGCHAINPLUS_IMAGE_PREFIX-}langchainplus-backend:latest
+    environment:
+      - PORT=8000
+      - LANGCHAIN_ENV=local_docker
+      - LOG_LEVEL=warning
+    ports:
+      - 8000:8000
+    depends_on:
+      - langchain-db
+    build:
+      context: backend/.
+      dockerfile: Dockerfile
+  langchain-db:
+    image: postgres:14.1
+    command:
+      [
+        "postgres",
+        "-c",
+        "log_min_messages=WARNING",
+        "-c",
+        "client_min_messages=WARNING"
+      ]
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - langchain-db-data:/var/lib/postgresql/data
+    ports:
+      - 5433:5432
+volumes:
+  langchain-db-data:

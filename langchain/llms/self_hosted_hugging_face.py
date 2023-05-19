@@ -5,12 +5,13 @@ from typing import Any, Callable, List, Mapping, Optional
 
 from pydantic import Extra
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.utils import enforce_stop_tokens
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
-VALID_TASKS = ("text2text-generation", "text-generation")
+VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,8 @@ def _generate_text(
         text = response[0]["generated_text"][len(prompt) :]
     elif pipeline.task == "text2text-generation":
         text = response[0]["generated_text"]
+    elif pipeline.task == "summarization":
+        text = response[0]["summary_text"]
     else:
         raise ValueError(
             f"Got invalid task {pipeline.task}, "
@@ -63,7 +66,7 @@ def _load_transformer(
     try:
         if task == "text-generation":
             model = AutoModelForCausalLM.from_pretrained(model_id, **_model_kwargs)
-        elif task == "text2text-generation":
+        elif task in ("text2text-generation", "summarization"):
             model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **_model_kwargs)
         else:
             raise ValueError(
@@ -118,7 +121,7 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
 
     To use, you should have the ``runhouse`` python package installed.
 
-    Only supports `text-generation` and `text2text-generation` for now.
+    Only supports `text-generation`, `text2text-generation` and `summarization` for now.
 
     Example using from_model_id:
         .. code-block:: python
@@ -152,7 +155,8 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
     model_id: str = DEFAULT_MODEL_ID
     """Hugging Face model_id to load the model."""
     task: str = DEFAULT_TASK
-    """Hugging Face task (either "text-generation" or "text2text-generation")."""
+    """Hugging Face task ("text-generation", "text2text-generation" or
+    "summarization")."""
     device: int = 0
     """Device to use for inference. -1 for CPU, 0 for GPU, 1 for second GPU, etc."""
     model_kwargs: Optional[dict] = None
@@ -198,5 +202,10 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
     def _llm_type(self) -> str:
         return "selfhosted_huggingface_pipeline"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         return self.client(pipeline=self.pipeline_ref, prompt=prompt, stop=stop)

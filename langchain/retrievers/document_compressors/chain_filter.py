@@ -2,14 +2,13 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from langchain import BasePromptTemplate, LLMChain, PromptTemplate
+from langchain.base_language import BaseLanguageModel
 from langchain.output_parsers.boolean import BooleanOutputParser
-from langchain.retrievers.document_compressors.base import (
-    BaseDocumentCompressor,
-)
+from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.chain_filter_prompt import (
     prompt_template,
 )
-from langchain.schema import BaseLanguageModel, Document
+from langchain.schema import Document
 
 
 def _get_default_chain_prompt() -> PromptTemplate:

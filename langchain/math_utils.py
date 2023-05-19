@@ -13,7 +13,10 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
     X = np.array(X)
     Y = np.array(Y)
     if X.shape[1] != Y.shape[1]:
-        raise ValueError("Number of columns in X and Y must be the same.")
+        raise ValueError(
+            f"Number of columns in X and Y must be the same. X has shape {X.shape} "
+            f"and Y has shape {Y.shape}."
+        )
 
     X_norm = np.linalg.norm(X, axis=1)
     Y_norm = np.linalg.norm(Y, axis=1)

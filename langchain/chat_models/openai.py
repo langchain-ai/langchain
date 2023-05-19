@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 from pydantic import Extra, Field, root_validator
 from tenacity import (
@@ -14,6 +14,10 @@ from tenacity import (
     wait_exponential,
 )
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
@@ -108,16 +112,19 @@ class ChatOpenAI(BaseChatModel):
     """
 
     client: Any  #: :meta private:
-    model_name: str = "gpt-3.5-turbo"
+    model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    """Base URL path for API requests, 
+    leave blank if not using a proxy or service emulator."""
+    openai_api_base: Optional[str] = None
     openai_organization: Optional[str] = None
-    request_timeout: int = 60
-    """Timeout in seconds for the OpenAPI request."""
+    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
@@ -131,18 +138,31 @@ class ChatOpenAI(BaseChatModel):
         """Configuration for this pydantic object."""
 
         extra = Extra.ignore
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
-
+        all_required_field_names = cls.all_required_field_names()
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
+            if field_name in extra:
+                raise ValueError(f"Found {field_name} supplied twice.")
             if field_name not in all_required_field_names:
-                if field_name in extra:
-                    raise ValueError(f"Found {field_name} supplied twice.")
+                logger.warning(
+                    f"""WARNING! {field_name} is not default parameter.
+                    {field_name} was transferred to model_kwargs.
+                    Please confirm that {field_name} is what you intended."""
+                )
                 extra[field_name] = values.pop(field_name)
+
+        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
+        if invalid_model_kwargs:
+            raise ValueError(
+                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
+                f"Instead they were passed in as part of `model_kwargs` parameter."
+            )
+
         values["model_kwargs"] = extra
         return values
 
@@ -158,17 +178,25 @@ class ChatOpenAI(BaseChatModel):
             "OPENAI_ORGANIZATION",
             default="",
         )
+        openai_api_base = get_from_dict_or_env(
+            values,
+            "openai_api_base",
+            "OPENAI_API_BASE",
+            default="",
+        )
         try:
             import openai
 
-            openai.api_key = openai_api_key
-            if openai_organization:
-                openai.organization = openai_organization
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
+        openai.api_key = openai_api_key
+        if openai_organization:
+            openai.organization = openai_organization
+        if openai_api_base:
+            openai.api_base = openai_api_base
         try:
             values["client"] = openai.ChatCompletion
         except AttributeError:
@@ -242,7 +270,10 @@ class ChatOpenAI(BaseChatModel):
         return {"token_usage": overall_token_usage, "model_name": self.model_name}
 
     def _generate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         if self.streaming:
@@ -255,10 +286,8 @@ class ChatOpenAI(BaseChatModel):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content", "")
                 inner_completion += token
-                self.callback_manager.on_llm_new_token(
-                    token,
-                    verbose=self.verbose,
-                )
+                if run_manager:
+                    run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
                 {"content": inner_completion, "role": role}
             )
@@ -287,7 +316,10 @@ class ChatOpenAI(BaseChatModel):
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _agenerate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         if self.streaming:
@@ -300,16 +332,8 @@ class ChatOpenAI(BaseChatModel):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content", "")
                 inner_completion += token
-                if self.callback_manager.is_async:
-                    await self.callback_manager.on_llm_new_token(
-                        token,
-                        verbose=self.verbose,
-                    )
-                else:
-                    self.callback_manager.on_llm_new_token(
-                        token,
-                        verbose=self.verbose,
-                    )
+                if run_manager:
+                    await run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
                 {"content": inner_completion, "role": role}
             )
@@ -324,6 +348,11 @@ class ChatOpenAI(BaseChatModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {**{"model_name": self.model_name}, **self._default_params}
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+        return "openai-chat"
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
