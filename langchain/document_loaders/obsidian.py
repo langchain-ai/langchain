@@ -28,7 +28,8 @@ class ObsidianLoader(BaseLoader):
         match = self.FRONT_MATTER_REGEX.search(content)
         front_matter = {}
         if match:
-            front_matter = yaml.safe_load(match)
+            front_matter_match = match.group(1)
+            front_matter = yaml.safe_load(front_matter_match)
         return front_matter
 
     def _remove_front_matter(self, content: str) -> str:
