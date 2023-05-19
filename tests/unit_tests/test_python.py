@@ -54,7 +54,7 @@ def test_python_repl_no_previous_variables() -> None:
     foo = 3  # noqa: F841
     repl = PythonREPL()
     output = repl.run("print(foo)")
-    assert output == "name 'foo' is not defined"
+    assert output == """NameError("name 'foo' is not defined")"""
 
 
 def test_python_repl_pass_in_locals() -> None:

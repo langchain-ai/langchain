@@ -13,7 +13,7 @@ from sqlalchemy import (
     select,
     text,
 )
-from sqlalchemy.engine import CursorResult, Engine
+from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 
@@ -196,7 +196,7 @@ class SQLDatabase:
         try:
             # get the sample rows
             with self._engine.connect() as connection:
-                sample_rows_result: CursorResult = connection.execute(command)
+                sample_rows_result = connection.execute(command)  # type: ignore
                 # shorten values in the sample rows
                 sample_rows = list(
                     map(lambda ls: [str(i)[:100] for i in ls], sample_rows_result)
@@ -224,7 +224,12 @@ class SQLDatabase:
         """
         with self._engine.begin() as connection:
             if self._schema is not None:
-                connection.exec_driver_sql(f"SET search_path TO {self._schema}")
+                if self.dialect == "snowflake":
+                    connection.exec_driver_sql(
+                        f"ALTER SESSION SET search_path='{self._schema}'"
+                    )
+                else:
+                    connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.execute(text(command))
             if cursor.returns_rows:
                 if fetch == "all":

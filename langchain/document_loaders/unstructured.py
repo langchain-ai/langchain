@@ -23,6 +23,15 @@ def satisfies_min_unstructured_version(min_version: str) -> bool:
     return unstructured_version_tuple >= min_version_tuple
 
 
+def validate_unstructured_version(min_unstructured_version: str) -> None:
+    """Raises an error if the unstructured version does not exceed the
+    specified minimum."""
+    if not satisfies_min_unstructured_version(min_unstructured_version):
+        raise ValueError(
+            f"unstructured>={min_unstructured_version} is required in this loader."
+        )
+
+
 class UnstructuredBaseLoader(BaseLoader, ABC):
     """Loader that uses unstructured to load files."""
 

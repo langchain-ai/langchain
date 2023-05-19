@@ -47,7 +47,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         arbitrary_types_allowed = True
 
     # added text_key
-    def add_documents(self, docs: List[Document]) -> List[str]:
+    def add_documents(self, docs: List[Document], **kwargs: Any) -> List[str]:
         """Upload documents to Weaviate."""
         from weaviate.util import get_valid_uuid
 
@@ -56,7 +56,14 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
             for i, doc in enumerate(docs):
                 metadata = doc.metadata or {}
                 data_properties = {self._text_key: doc.page_content, **metadata}
-                _id = get_valid_uuid(uuid4())
+
+                # If the UUID of one of the objects already exists
+                # then the existing objectwill be replaced by the new object.
+                if "uuids" in kwargs:
+                    _id = kwargs["uuids"][i]
+                else:
+                    _id = get_valid_uuid(uuid4())
+
                 batch.add_data_object(data_properties, self._index_name, _id)
                 ids.append(_id)
         return ids
