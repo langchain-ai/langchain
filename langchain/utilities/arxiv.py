@@ -145,5 +145,7 @@ class ArxivAPIWrapper(BaseModel):
                 page_content=text[: self.doc_content_chars_max], metadata=metadata
             )
             docs.append(doc)
+            
+        if os.path.exists(doc_file_name):
             os.remove(doc_file_name)
         return docs
