@@ -145,4 +145,4 @@ class AzureCogsFormRecognizerTool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError("AzureCogsImageAnalysisTool does not support async")
+        raise NotImplementedError("AzureCogsFormRecognizerTool does not support async")
