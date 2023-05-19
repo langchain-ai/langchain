@@ -13,10 +13,12 @@ developer support.
 """
 import json
 from typing import Dict, List, Optional
+
+import aiohttp
 import requests
 from pydantic import BaseModel, Extra, root_validator
 from requests import Request, Session
-import aiohttp
+
 from langchain.utils import get_from_dict_or_env
 
 
