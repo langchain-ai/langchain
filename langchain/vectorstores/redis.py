@@ -397,9 +397,9 @@ class Redis(VectorStore):
 
         # Create instance
         instance = cls(
-            redis_url=redis_url,
-            index_name=index_name,
-            embedding_function=embedding.embed_query,
+            redis_url,
+            index_name,
+            embedding.embed_query,
             content_key=content_key,
             metadata_key=metadata_key,
             vector_key=vector_key,
@@ -446,14 +446,14 @@ class Redis(VectorStore):
                 )
         """
         instance, _ = cls.from_texts_return_keys(
-            texts=texts,
-            embedding=embedding,
+            texts,
+            embedding,
             metadatas=metadatas,
             index_name=index_name,
             content_key=content_key,
             metadata_key=metadata_key,
             vector_key=vector_key,
-            kwargs=kwargs,
+            **kwargs,
         )
         return instance
 
