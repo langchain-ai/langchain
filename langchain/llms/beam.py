@@ -268,9 +268,13 @@ class Beam(LLM):
         content_type = "application/json"
         app_id = kwargs.get("app_id")
         if app_id is not None:
+            print("Using app ID")
             url = "https://apps.beam.cloud/" + app_id
+            print("URL: ", url)
         else:
+            print("Using URL def")
             url = self.url
+            print("URL: ", url)
         payload = {"prompt": prompt, "max_length": max_length}
         headers = {
             "Accept": accept,
