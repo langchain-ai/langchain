@@ -133,8 +133,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
         pieces = [prefix, *example_strings, suffix]
         template = self.example_separator.join([piece for piece in pieces if piece])
-        # Format the template with the input variables.
-        return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
+        return template
 
     @property
     def _prompt_type(self) -> str:
