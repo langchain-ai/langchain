@@ -136,7 +136,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             try:
-                results = [
+                results: List[ChatResult] = [
                     self._generate(m, stop=stop, run_manager=run_manager)
                     if new_arg_supported
                     else self._generate(m, stop=stop)
@@ -160,8 +160,15 @@ class BaseChatModel(BaseLanguageModel, ABC):
             llm_outputs = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, messages
             )
+            # Combine cached results and new results
+            results = sorted({
+                **dict(zip(missing_prompt_idxs, new_results)),
+                **existing_prompts
+            }.items())
         else:
             llm_outputs = []
+            # All prompts were caches, so we construct results solely from cache
+            results = [r for _, r in existing_prompts]
         llm_output = self._combine_llm_outputs(llm_outputs)
         generations = [res.generations for res in results]
         # We ignore type as List[List[Generation]] is expected instead of
