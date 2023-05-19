@@ -144,11 +144,11 @@ class DeepLake(VectorStore):
                     "Try again later or use another embedding_function."
                 )
             self.deeplake_vector_store.embedding_function = None
-        else:
-            if not callable(self.deeplake_vector_store.embedding_function):
-                self.deeplake_vector_store.embedding_function = (
-                    self.deeplake_vector_store.embedding_function.embed_documents
-                )
+
+        if self.deeplake_vector_store.embedding_function is not None:
+            embedding_function = (
+                self.deeplake_vector_store.embedding_function.embed_documents
+            )
 
         try:
             ids = self.deeplake_vector_store.add(
@@ -156,6 +156,7 @@ class DeepLake(VectorStore):
                 metadatas=metadatas,
                 ids=ids,
                 embeddings=embeddings,
+                embedding_function=embedding_function,
             )
         except FailedIngestionError as e:
             raise Exception(f"Data ingestion failed. {str(e)}")
@@ -205,15 +206,14 @@ class DeepLake(VectorStore):
         emb = embedding or self._embedding_function.embed_query(query)  # type: ignore
         query_emb = np.array(emb, dtype=np.float32)
 
-        if self.deeplake_vector_store.embedding_function is not None and not callable(
-            self.deeplake_vector_store.embedding_function
-        ):
-            self.deeplake_vector_store.embedding_function = (
-                self.deeplake_vector_store.embedding_function.embed_documents
+        if self.deeplake_vector_store.embedding_function is not None:
+            embedding_function = (
+                self.deeplake_vector_store.embedding_function.embed_query
             )
 
         view, indices, scores = self.deeplake_vector_store.search(
             query=query,
+            embedding_function=embedding_function,
             embedding=query_emb,
             k=fetch_k if use_maximal_marginal_relevance else k,
             distance_metric=distance_metric,
