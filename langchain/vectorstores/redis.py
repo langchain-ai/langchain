@@ -56,8 +56,9 @@ def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -
             return
     # otherwise raise error
     error_message = (
-        "You must add the RediSearch (>= 2.4) module from Redis Stack. "
-        "Please refer to Redis Stack docs: https://redis.io/docs/stack/"
+        "Redis cannot be used as a vector database without Redisearch"
+        "Please head to https://redis.io/docs/stack/search/quick_start/"
+        "to know more about installing redisearch"
     )
     logging.error(error_message)
     raise ValueError(error_message)
