@@ -1,4 +1,4 @@
-"""Logic for converting internal query language to a valid Chroma query."""
+"""Logic for converting internal query language to a valid Weaviate query."""
 from typing import Dict, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
