@@ -216,7 +216,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 response = embed_with_retry(
                     self,
                     input=tokens[i : i + _chunk_size],
-                    engine=self.deployment,
+                    model=self.deployment,
                     request_timeout=self.request_timeout,
                     headers=self.headers,
                 )
@@ -234,7 +234,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     average = embed_with_retry(
                         self,
                         input="",
-                        engine=self.deployment,
+                        model=self.deployment,
                         request_timeout=self.request_timeout,
                         headers=self.headers,
                     )["data"][0]["embedding"]
@@ -266,7 +266,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             return embed_with_retry(
                 self,
                 input=[text],
-                engine=engine,
+                model=engine,
                 request_timeout=self.request_timeout,
                 headers=self.headers,
             )["data"][0]["embedding"]
