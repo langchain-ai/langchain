@@ -313,7 +313,7 @@ class GPTCache(BaseCache):
         try:
             import gptcache  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import gptcache python package. "
                 "Please install it with `pip install gptcache`."
             )

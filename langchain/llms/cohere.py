@@ -72,7 +72,7 @@ class Cohere(LLM):
 
             values["client"] = cohere.Client(cohere_api_key)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import cohere python package. "
                 "Please install it with `pip install cohere`."
             )
