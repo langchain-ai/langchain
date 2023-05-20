@@ -628,7 +628,7 @@ class AgentExecutor(Chain):
     early_stopping_method: str = "force"
     handle_parsing_errors: Union[
         bool, str, Callable[[OutputParserException], str]
-    ] = False
+    ] = True
 
     @classmethod
     def from_agent_and_tools(
@@ -773,7 +773,11 @@ class AgentExecutor(Chain):
                 raise e
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
-                observation = "Invalid or incomplete response"
+                if e.send_to_llm:
+                    observation = e.observation
+                    text = e.llm_output
+                else:
+                    observation = "Invalid or incomplete response"
             elif isinstance(self.handle_parsing_errors, str):
                 observation = self.handle_parsing_errors
             elif callable(self.handle_parsing_errors):
