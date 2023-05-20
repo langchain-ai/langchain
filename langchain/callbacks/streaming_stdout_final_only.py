@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
+DEFAULT_ANSWER_PREFIX_TOKENS = ["\nFinal", " Answer", ":"]
+
 
 class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
     """Callback handler for streaming in agents.
@@ -12,18 +14,13 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
     Only the final output of the agent will be streamed.
     """
 
-    answer_prefix_tokens: List[str] = ["\nFinal", " Answer", ":"]
-    """Tokens indicating the agent reached a conclusion.
-    Only token after these will be printed."""
-    last_tokens: List[str] = [""] * len(answer_prefix_tokens)
-    """Token buffer to compare to answer_prefix_tokens"""
-    answer_reached: bool = False
-
     def __init__(self, answer_prefix_tokens: Optional[List[str]] = None) -> None:
-        if answer_prefix_tokens is not None:
-            self.answer_prefix_tokens = answer_prefix_tokens
-            self.last_tokens = [""] * len(answer_prefix_tokens)
         super().__init__()
+        if answer_prefix_tokens is None:
+            answer_prefix_tokens = DEFAULT_ANSWER_PREFIX_TOKENS
+        self.answer_prefix_tokens = answer_prefix_tokens
+        self.last_tokens = [""] * len(answer_prefix_tokens)
+        self.answer_reached = False
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
