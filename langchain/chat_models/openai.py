@@ -81,7 +81,9 @@ def _convert_dict_to_message(_dict: dict) -> BaseMessage:
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
+        # map role strings used by LangChain to those used by OpenAI
+        role_mapping = {"human": "user", "ai": "assistant", "system": "system"}
+        message_dict = {"role": role_mapping[message.role], "content": message.content}
     elif isinstance(message, HumanMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
