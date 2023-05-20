@@ -45,7 +45,7 @@ class PowerBIDataset(BaseModel):
         arbitrary_types_allowed = True
 
     @validator("table_names", allow_reuse=True)
-    def fix_table_names(self, table_names: List[str]) -> List[str]:
+    def fix_table_names(cls, table_names: List[str]) -> List[str]:
         """Fix the table names."""
         return [fix_table_name(table) for table in table_names]
 
