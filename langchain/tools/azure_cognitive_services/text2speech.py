@@ -67,12 +67,21 @@ class AzureCogsText2SpeechTool(BaseTool):
 
         speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=None)
         result = speech_synthesizer.speak_text_async(text).get()
-        stream = speechsdk.AudioDataStream(result)
-
-        with tempfile.NamedTemporaryFile(mode="wb", suffix=f".wav", delete=False) as f:
-            stream.save_to_wav_file(f.name)
         
-        return f.name
+        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+            stream = speechsdk.AudioDataStream(result)
+            with tempfile.NamedTemporaryFile(mode="wb", suffix=f".wav", delete=False) as f:
+                stream.save_to_wav_file(f.name)
+            
+            return f.name
+        
+        elif result.reason == speechsdk.ResultReason.Canceled:
+            cancellation_details = result.cancellation_details
+            logger.debug(f"Speech synthesis canceled: {cancellation_details.reason}")
+            if cancellation_details.reason == speechsdk.CancellationReason.Error:
+                raise RuntimeError(f"Speech synthesis error: {cancellation_details.error_details}")
+
+            return "Speech synthesis canceled."
 
     def _run(
         self,
