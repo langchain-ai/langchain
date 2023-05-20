@@ -2,6 +2,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Extra, root_validator
+
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -195,15 +196,15 @@ class SmartLLMChain(Chain):
         role_strings.extend(
             [
                 *[
-                    ("ai", "Idea " + str(i+1) + ": {idea_" + str(i + 1) + "}")
+                    ("ai", "Idea " + str(i + 1) + ": {idea_" + str(i + 1) + "}")
                     for i in range(self.n_ideas)
                 ],
                 (
                     "human",
                     "You are a researcher tasked with investigating the "
-                    f"{self.n_ideas} response options provided. List the flaws and faulty "
-                    "logic of each answer options. Let'w work this out in a step by "
-                    "step way to be sure we have all the errors:",
+                    f"{self.n_ideas} response options provided. List the flaws and "
+                    "faulty logic of each answer options. Let'w work this out in a step"
+                    " by step way to be sure we have all the errors:",
                 ),
             ]
         )
@@ -215,8 +216,8 @@ class SmartLLMChain(Chain):
                 (
                     "human",
                     "You are a resolved tasked with 1) finding which of "
-                    f"the {self.n_ideas} anwer options the researcher thought was best, "
-                    "2) improving that answer and 3) printing the answer in full. "
+                    f"the {self.n_ideas} anwer options the researcher thought was  "
+                    "best,2) improving that answer and 3) printing the answer in full. "
                     "Let's work this out in a step by step way to be sure we have "
                     "the right answer:",
                 ),
@@ -225,8 +226,8 @@ class SmartLLMChain(Chain):
         if stage == "resolve":
             return role_strings
         raise ValueError(
-            f"stage should be either 'ideation', 'critique' or 'resolve',"
-            " but it is '{stage}'. This should never happen."
+            "stage should be either 'ideation', 'critique' or 'resolve',"
+            f" but it is '{stage}'. This should never happen."
         )
 
     def ideation_prompt(self) -> ChatPromptTemplate:
