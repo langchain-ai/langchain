@@ -94,8 +94,11 @@ class MapReduceChain(Chain):
         doc_text = inputs.pop(self.input_key)
         texts = self.text_splitter.split_text(doc_text)
         docs = [Document(page_content=text) for text in texts]
-        inputs[self.combine_documents_chain.input_key] = docs
+        _inputs: Dict[str, Any] = {
+            **inputs,
+            self.combine_documents_chain.input_key: docs,
+        }
         outputs = self.combine_documents_chain.run(
-            inputs, callbacks=_run_manager.get_child()
+            _inputs, callbacks=_run_manager.get_child()
         )
         return {self.output_key: outputs}
