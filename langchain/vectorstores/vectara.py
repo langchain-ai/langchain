@@ -74,7 +74,7 @@ class Vectara(VectorStore):
             request = {}
             request["customer_id"] = self._vectara_customer_id
             request["corpus_id"] = self._vectara_corpus_id
-            request["document"] = {"document_id": doc_id, "parts": [{"id": ids[i], "text": data}]}
+            request["document"] = {"document_id": doc_id, "parts": [{"id": ids[i], "text": data.page_content}]}
 
             logging.debug("Sending request %s", json.dumps(request))
             response = self._session.post(
