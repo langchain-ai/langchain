@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.171"
+version = "0.0.174"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -91,7 +91,9 @@ telethon = {version = "^1.28.5", optional = true}
 azure-ai-formrecognizer = {version = "^3.2.1", optional = true}
 azure-ai-vision = {version = "^0.11.1b1", optional = true}
 azure-cognitiveservices-speech = {version = "^1.28.0", optional = true}
-
+zep-python = {version="^0.25", optional=true}
+chardet = {version="^5.1.0", optional=true}
+requests-toolbelt = {version = "^1.0.0", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -154,12 +156,12 @@ pymongo = "^4.3.3"
 cassandra-driver = "^3.27.0"
 arxiv = "^1.4"
 
-
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
 types-toml = "^0.10.8.1"
 types-redis = "^4.3.21.6"
 black = "^23.1.0"
+types-chardet = "^5.0.4.6"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
@@ -178,16 +180,20 @@ setuptools = "^67.6.1"
 llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
+text_helpers = ["chardet"]
 cohere = ["cohere"]
 in_memory_store = ["docarray"]
 hnswlib = ["docarray", "protobuf", "hnswlib"]
 embeddings = ["sentence-transformers"]
 azure = ["azure-identity", "azure-cosmos", "openai", "azure-core", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech"]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "lark", "pexpect", "pyvespa", "O365", "jq", "docarray", "protobuf", "hnswlib", "steamship", "pdfminer-six", "gql", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "lark", "pexpect", "pyvespa", "O365", "jq", "docarray", "protobuf", "hnswlib", "steamship", "pdfminer-six", "lxml", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech"]
+
 # An extra used to be able to add extended testing.
 # Please use new-line on formatting to make it easier to add new packages without
 # merge-conflicts
 extended_testing = [
+ "beautifulsoup4",
+ "chardet",
  "jq",
  "pdfminer.six",
  "pypdf",
@@ -199,6 +205,10 @@ extended_testing = [
  "beautifulsoup4",
  "pandas",
  "telethon",
+ "zep-python",
+ "gql",
+ "requests_toolbelt",
+ "html2text"
 ]
 
 [tool.ruff]
