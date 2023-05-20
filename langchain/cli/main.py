@@ -201,6 +201,19 @@ class PlusCommand:
             ]
         )
 
+    def logs(self) -> None:
+        """Print the logs from the LangChainPlus server."""
+        subprocess.run(
+            [
+                *self.docker_compose_command,
+                "-f",
+                str(self.docker_compose_file),
+                "-f",
+                str(self.ngrok_path),
+                "logs",
+            ]
+        )
+
 
 def env() -> None:
     """Print the runtime environment information."""
@@ -247,6 +260,11 @@ def main() -> None:
         "stop", description="Stop the LangChainPlus server."
     )
     server_stop_parser.set_defaults(func=lambda args: server_command.stop())
+
+    server_logs_parser = server_subparsers.add_parser(
+        "logs", description="Show the LangChainPlus server logs."
+    )
+    server_logs_parser.set_defaults(func=lambda args: server_command.logs())
 
     env_parser = subparsers.add_parser("env")
     env_parser.set_defaults(func=lambda args: env())
