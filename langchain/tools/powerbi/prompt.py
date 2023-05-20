@@ -31,7 +31,7 @@ DATEDIFF(date1, date2, <interval>) - Returns the difference between two date val
 DATEVALUE(<date_text>) - Returns a date value that represents the specified date.
 YEAR(<date>), QUARTER(<date>), MONTH(<date>), DAY(<date>), HOUR(<date>), MINUTE(<date>), SECOND(<date>) - Returns the part of the date for the specified date.
 
-Finally, make sure to escape double quotes with a single backslash, and make sure that only table names have single quotes around them, while names of measures or the values of columns that you want to compare against are in escaped double quotes. Newlines are not necessary and can be skipped. The queries are serialized as json and so will have to fit be compliant with json syntax.
+Finally, make sure to escape double quotes with a single backslash, and make sure that only table names have single quotes around them, while names of measures or the values of columns that you want to compare against are in escaped double quotes. Newlines are not necessary and can be skipped. The queries are serialized as json and so will have to fit be compliant with json syntax. Sometimes you will get a question, a DAX query and a error, in that case you need to rewrite the DAX query to get the correct answer.
 
 The following tables exist: {tables}
 
@@ -57,9 +57,9 @@ DAX: EVALUATE ROW(\"Average\", AVERAGE(<table>[<column>]))
 ----
 """
 
-BAD_REQUEST_RESPONSE = (
-    "Bad request. Please ask the question_to_query_powerbi tool to provide the query."
+RETRY_RESPONSE = (
+    "{tool_input} DAX: {query} Error: {error}. Please supply a new DAX query."
 )
-BAD_REQUEST_RESPONSE_ESCALATED = "You already tried this, please try a different query."
+BAD_REQUEST_RESPONSE = "Error on this question, the error was {error}, you can try to rephrase the question."
 SCHEMA_ERROR_RESPONSE = "Bad request, are you sure the table name is correct?"
 UNAUTHORIZED_RESPONSE = "Unauthorized. Try changing your authentication, do not retry."
