@@ -76,8 +76,8 @@ class Neo4jGraph:
         with self._driver.session(database=self._database) as session:
             try:
                 data = session.run(query, params)
-                # Hard limit of 200 results
-                return [r.data() for r in data][:200]
+                # Hard limit of 50 results
+                return [r.data() for r in data][:50]
             except CypherSyntaxError:
                 raise ValueError("Generated Cypher Statement is not valid")
 
