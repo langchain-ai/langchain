@@ -72,7 +72,7 @@ class GenerativeAgentMemory(BaseMemory):
         return self._parse_list(result)
 
     def _get_insights_on_topic(
-        self, topic: str, now: Optional[datetime] = None
+        self, topic: str, now: Optional[datetime] = datetime.now()
     ) -> List[str]:
         """Generate 'insights' on a topic of reflection, based on pertinent memories."""
         prompt = PromptTemplate.from_template(
@@ -94,7 +94,7 @@ class GenerativeAgentMemory(BaseMemory):
         # TODO: Parse the connections between memories and insights
         return self._parse_list(result)
 
-    def pause_to_reflect(self, now: Optional[datetime] = None) -> List[str]:
+    def pause_to_reflect(self, now: Optional[datetime] = datetime.now()) -> List[str]:
         """Reflect on recent observations and generate 'insights'."""
         if self.verbose:
             logger.info("Character is reflecting")
@@ -128,7 +128,7 @@ class GenerativeAgentMemory(BaseMemory):
             return 0.0
 
     def add_memory(
-        self, memory_content: str, now: Optional[datetime] = None
+        self, memory_content: str, now: Optional[datetime] = datetime.now()
     ) -> List[str]:
         """Add an observation or memory to the agent's memory."""
         importance_score = self._score_memory_importance(memory_content)
@@ -154,7 +154,7 @@ class GenerativeAgentMemory(BaseMemory):
         return result
 
     def fetch_memories(
-        self, observation: str, now: Optional[datetime] = None
+        self, observation: str, now: Optional[datetime] = datetime.now()
     ) -> List[Document]:
         """Fetch related memories."""
         if now is not None:
