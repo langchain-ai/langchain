@@ -628,7 +628,7 @@ class AgentExecutor(Chain):
     early_stopping_method: str = "force"
     handle_parsing_errors: Union[
         bool, str, Callable[[OutputParserException], str]
-    ] = True
+    ] = False
 
     @classmethod
     def from_agent_and_tools(
