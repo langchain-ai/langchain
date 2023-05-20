@@ -27,6 +27,7 @@ from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesCha
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
+from langchain.chains.smart_llm.base import SmartLLMChain
 from langchain.chains.sql_database.base import (
     SQLDatabaseChain,
     SQLDatabaseSequentialChain,
@@ -45,6 +46,7 @@ __all__ = [
     "SQLDatabaseChain",
     "SequentialChain",
     "SimpleSequentialChain",
+    "SmartLLMChain",
     "VectorDBQA",
     "VectorDBQAWithSourcesChain",
     "APIChain",

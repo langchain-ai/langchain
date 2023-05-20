@@ -128,6 +128,7 @@ def messages_to_dict(messages: List[BaseMessage]) -> List[dict]:
 
 def _message_from_dict(message: dict) -> BaseMessage:
     _type = message["type"]
+    print(f"schema._message_from_dict: Parsing {message}")
     if _type == "human":
         return HumanMessage(**message["data"])
     elif _type == "ai":

@@ -80,6 +80,7 @@ def _convert_dict_to_message(_dict: dict) -> BaseMessage:
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
+    print(f"openai._convert_message_to_dict: message type = {type(message)}")
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
@@ -276,6 +277,9 @@ class ChatOpenAI(BaseChatModel):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> ChatResult:
+        
+        print("ChatOpenAI._generate")
+
         message_dicts, params = self._create_message_dicts(messages, stop)
         if self.streaming:
             inner_completion = ""
@@ -299,6 +303,9 @@ class ChatOpenAI(BaseChatModel):
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+
+        print("ChatOpenAI._create_message_dicts")
+
         params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
         if stop is not None:
             if "stop" in params:
