@@ -4,6 +4,7 @@ on:
   push:
     branches: [master]
   pull_request:
+  workflow_dispatch:
 
 env:
   POETRY_VERSION: "1.4.2"
@@ -40,5 +41,9 @@ jobs:
               fi
       - name: Run ${{matrix.test_type}} tests
         run: |
-          make test
+          if [ "${{ matrix.test_type }}" == "core" ]; then
+            make test
+          else
+            make extended_tests
+          fi
         shell: bash

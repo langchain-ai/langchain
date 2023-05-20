@@ -64,6 +64,9 @@ class LlamaCpp(LLM):
     """Number of tokens to process in parallel.
     Should be a number between 1 and n_ctx."""
 
+    n_gpu_layers: Optional[int] = Field(None, alias="n_gpu_layers")
+    """Number of layers to be loaded into gpu memory. Default None."""
+
     suffix: Optional[str] = Field(None)
     """A suffix to append to the generated text. If None, no suffix is appended."""
 
@@ -104,47 +107,41 @@ class LlamaCpp(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]
-        lora_path = values["lora_path"]
-        lora_base = values["lora_base"]
-        n_ctx = values["n_ctx"]
-        n_parts = values["n_parts"]
-        seed = values["seed"]
-        f16_kv = values["f16_kv"]
-        logits_all = values["logits_all"]
-        vocab_only = values["vocab_only"]
-        use_mlock = values["use_mlock"]
-        n_threads = values["n_threads"]
-        n_batch = values["n_batch"]
-        use_mmap = values["use_mmap"]
-        last_n_tokens_size = values["last_n_tokens_size"]
+        model_param_names = [
+            "lora_path",
+            "lora_base",
+            "n_ctx",
+            "n_parts",
+            "seed",
+            "f16_kv",
+            "logits_all",
+            "vocab_only",
+            "use_mlock",
+            "n_threads",
+            "n_batch",
+            "use_mmap",
+            "last_n_tokens_size",
+        ]
+        model_params = {k: values[k] for k in model_param_names}
+        # For backwards compatibility, only include if non-null.
+        if values["n_gpu_layers"] is not None:
+            model_params["n_gpu_layers"] = values["n_gpu_layers"]
 
         try:
             from llama_cpp import Llama
 
-            values["client"] = Llama(
-                model_path=model_path,
-                lora_base=lora_base,
-                lora_path=lora_path,
-                n_ctx=n_ctx,
-                n_parts=n_parts,
-                seed=seed,
-                f16_kv=f16_kv,
-                logits_all=logits_all,
-                vocab_only=vocab_only,
-                use_mlock=use_mlock,
-                n_threads=n_threads,
-                n_batch=n_batch,
-                use_mmap=use_mmap,
-                last_n_tokens_size=last_n_tokens_size,
-            )
+            values["client"] = Llama(model_path, **model_params)
         except ImportError:
             raise ModuleNotFoundError(
                 "Could not import llama-cpp-python library. "
                 "Please install the llama-cpp-python library to "
                 "use this embedding model: pip install llama-cpp-python"
             )
-        except Exception:
-            raise NameError(f"Could not load Llama model from path: {model_path}")
+        except Exception as e:
+            raise ValueError(
+                f"Could not load Llama model from path: {model_path}. "
+                f"Received error {e}"
+            )
 
         return values
 
