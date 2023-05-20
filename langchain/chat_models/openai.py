@@ -82,7 +82,9 @@ def _convert_dict_to_message(_dict: dict) -> BaseMessage:
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     print(f"openai._convert_message_to_dict: message type = {type(message)}")
     if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
+        # todo: in own pr?
+        mapping = {"human": "user", "ai": "assistant", "system": "system"}
+        message_dict = {"role": mapping[message.role], "content": message.content}
     elif isinstance(message, HumanMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):

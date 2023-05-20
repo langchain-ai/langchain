@@ -9,8 +9,7 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.input import get_colored_text
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseMessage, LLMResult, PromptValue, messages_from_dict
+from langchain.schema import BaseMessage, LLMResult, PromptValue
 
 
 class SmartLLMChain(Chain):
@@ -196,7 +195,7 @@ class SmartLLMChain(Chain):
         role_strings.extend(
             [
                 *[
-                    ("ai", "Idea " + str(i) + ": {idea_" + str(i + 1) + "}")
+                    ("ai", "Idea " + str(i+1) + ": {idea_" + str(i + 1) + "}")
                     for i in range(self.n_ideas)
                 ],
                 (
