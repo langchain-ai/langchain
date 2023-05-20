@@ -16,7 +16,6 @@ Answer: ${{Answer}}
 Begin.
 
 Question: What is 37593 * 67?
-
 ```text
 37593 * 67
 ```
