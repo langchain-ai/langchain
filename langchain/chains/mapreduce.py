@@ -5,7 +5,7 @@ then combines the results with another one.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra
 
@@ -38,8 +38,8 @@ class MapReduceChain(Chain):
         prompt: BasePromptTemplate,
         text_splitter: TextSplitter,
         callbacks: Callbacks = None,
-        combine_chain_kwargs: Optional[Dict[str, Any]] = None,
-        reduce_chain_kwargs: Optional[Dict[str, Any]] = None,
+        combine_chain_kwargs: Optional[Mapping[str, Any]] = None,
+        reduce_chain_kwargs: Optional[Mapping[str, Any]] = None,
         **kwargs: Any,
     ) -> MapReduceChain:
         """Construct a map-reduce chain that uses the chain for map and reduce."""
