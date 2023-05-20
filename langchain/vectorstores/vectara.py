@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, List, Optional, Iterable, Tuple
 import json
 import logging
-import uuid
+from hashlib import md5
 import requests
 from colorama import Fore, Style
 
@@ -51,6 +51,48 @@ class Vectara(VectorStore):
             "Content-Type": "application/json",
         }
 
+    def _delete_doc(self, doc_id: str):
+        """
+        Delete a document from the Vectara corpus.
+
+        Args:
+            url (str): URL of the page to delete.
+            doc_id (str): ID of the document to delete.
+
+        Returns:
+            bool: True if the delete was successful, False otherwise.
+        """
+        body = {'customer_id': self._vectara_customer_id, 'corpus_id': self._vectara_corpus_id, 'document_id': doc_id}
+        post_headers = { 'x-api-key': self._vectara_api_key, 'customer-id': str(self._vectara_customer_id) }
+        response = requests.post(
+            f"https://api.vectara.io/v1/delete-doc", data=json.dumps(body),
+            verify=True, headers=post_headers)        
+        if response.status_code != 200:
+            logging.error(f"Delete request failed for doc_id = {doc_id} with status code {response.status_code}, reason {response.reason}, text {response.text}")
+            return False
+        return True
+
+    def _index_doc(self, doc_id, text, metadata):
+        request = {}
+        request["customer_id"] = self._vectara_customer_id
+        request["corpus_id"] = self._vectara_corpus_id
+        request["document"] = {"document_id": doc_id, "metadta": metadata, "parts": [{"text": text}]}
+
+        response = self._session.post(
+            headers=self._get_post_headers(),
+            url="https://api.vectara.io/v1/core/index",
+            data=json.dumps(request),
+            timeout=30,
+        )
+        status_code = response.status_code
+
+        result = response.json()
+        status_str = result["status"]["code"] if "status" in result else None
+        if status_code == 409 or (status_str and status_str == "ALREADY_EXISTS"):
+            return False
+        else:
+            return True
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -67,37 +109,14 @@ class Vectara(VectorStore):
             List of ids from adding the texts into the vectorstore.
 
         """
-        ids = []
-        for i, data in enumerate(texts):
-            doc_id = str(uuid.uuid4())
-            ids.append(doc_id)
-            request = {}
-            request["customer_id"] = self._vectara_customer_id
-            request["corpus_id"] = self._vectara_corpus_id
-            request["document"] = {"document_id": doc_id, "parts": [{"id": ids[i], "text": data.page_content}]}
-
-            logging.debug("Sending request %s", json.dumps(request))
-            response = self._session.post(
-                headers=self._get_post_headers(),
-                url="https://api.vectara.io/v1/core/index",
-                data=json.dumps(request),
-                timeout=30,
-            )
-
-            if response.status_code != 200:
-                error = f"REST upload failed {_error_msg(response)}"
-                logging.warning(error)
-                return error
-            result = response.json()
-
-            allowed_codes = ["OK", "ALREADY_EXISTS"]
-            if result["status"] and result["status"]["code"] not in allowed_codes:
-                logging.typewriter_log(
-                    "VECTARA CORPUS INDEX FAILED. CONTACT support@vectara.com FOR HELP.",
-                    Fore.RED,
-                    Style.BRIGHT + json.dumps(result["status"]) + Style.RESET_ALL,
-                )
-                return ids
+        ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
+        for i, doc in enumerate(texts):
+            doc_id = ids[i]
+            metadata = metadatas[i] if metadatas else {}
+            succeeded = self._index_doc(doc_id, doc, metadata)
+            if not succeeded:
+                self._delete_doc(doc_id)
+                self._index_doc(doc_id, doc, metadata)
         return ids
 
     def similarity_search_with_score(
