@@ -219,6 +219,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     engine=self.deployment,
                     request_timeout=self.request_timeout,
                     headers=self.headers,
+                    engine=self.deployment,
                 )
                 batched_embeddings += [r["embedding"] for r in response["data"]]
 
