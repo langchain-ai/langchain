@@ -18,7 +18,7 @@ def test_python_repl_tool_single_input() -> None:
     assert int(tool.run("print(1 + 1)").strip()) == 2
 
 
-def test_python_repl_print():
+def test_python_repl_print() -> None:
     program = """
 import numpy as np
 v1 = np.array([1, 2, 3])
@@ -40,7 +40,7 @@ def test_python_ast_repl_tool_single_input() -> None:
     assert tool.run("1 + 1") == 2
 
 
-def test_python_ast_repl_return():
+def test_python_ast_repl_return() -> None:
     program = """
 ```
 import numpy as np
@@ -54,7 +54,7 @@ int(dot_product)
     assert tool.run(program) == 32
 
 
-def test_python_ast_repl_print():
+def test_python_ast_repl_print() -> None:
     program = """python
 string = "racecar"
 if string == string[::-1]:
@@ -65,7 +65,7 @@ else:
     assert tool.run(program) == "racecar is a palindrome\n"
 
 
-def test_python_ast_repl_raise_exception():
+def test_python_ast_repl_raise_exception() -> None:
     data = {"Name": ["John", "Alice"], "Age": [30, 25]}
     program = """
 import pandas as pd
@@ -80,20 +80,20 @@ df['Gender']
     assert tool.run(program) in expected_outputs
 
 
-def test_python_ast_repl_one_line_print():
+def test_python_ast_repl_one_line_print() -> None:
     program = 'print("The square of {} is {:.2f}".format(3, 3**2))'
     tool = PythonAstREPLTool()
     assert tool.run(program) == "The square of 3 is 9.00\n"
 
 
-def test_python_ast_repl_one_line_return():
+def test_python_ast_repl_one_line_return() -> None:
     arr = np.array([1, 2, 3, 4, 5])
     tool = PythonAstREPLTool(locals={"arr": arr})
     program = "`(arr**2).sum()   # Returns sum of squares`"
     assert tool.run(program) == 55
 
 
-def test_python_ast_repl_one_line_exception():
+def test_python_ast_repl_one_line_exception() -> None:
     program = "[1, 2, 3][4]"
     tool = PythonAstREPLTool()
     assert tool.run(program) == "IndexError: list index out of range"
