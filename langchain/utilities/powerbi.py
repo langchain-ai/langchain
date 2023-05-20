@@ -44,7 +44,7 @@ class PowerBIDataset(BaseModel):
 
         arbitrary_types_allowed = True
 
-    @validator("table_names")
+    @validator("table_names", allow_reuse=True)
     def fix_table_names(self, table_names: List[str]) -> List[str]:
         """Fix the table names."""
         return [fix_table_name(table) for table in table_names]
@@ -154,7 +154,8 @@ class PowerBIDataset(BaseModel):
         if tables_requested is None:
             return "No (valid) tables requested."
         tables_todo = self._get_tables_todo(tables_requested)
-        [self._get_schema(table) for table in tables_todo]
+        for table in tables_todo:
+            self._get_schema(table)
         return self._get_schema_for_tables(tables_requested)
 
     async def aget_table_info(

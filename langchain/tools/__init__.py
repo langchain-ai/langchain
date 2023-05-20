@@ -37,9 +37,9 @@ from langchain.tools.playwright import (
 )
 from langchain.tools.plugin import AIPluginTool
 from langchain.tools.powerbi.tool import (
-    QueryPowerBITool,
     InfoPowerBITool,
     ListPowerBITool,
+    QueryPowerBITool,
 )
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.shell.tool import ShellTool
