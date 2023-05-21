@@ -38,7 +38,7 @@ def chat_history_as_string(messages: List[BaseMessage]) -> str:
 
 def get_prompts(
     params: Dict[str, Any], prompts: List[List[BaseMessage]]
-) -> Tuple[Dict[int, List], str, List[int], List[List[BaseMessage]]]:
+) -> Tuple[Dict[int, ChatResult], str, List[int], List[List[BaseMessage]]]:
     """Get prompts that are already cached."""
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     missing_prompts = []
@@ -50,7 +50,7 @@ def get_prompts(
                 chat_history_as_string(prompt), llm_string
             )
             if isinstance(cache_val, list):
-                existing_prompts[i] = cache_val
+                existing_prompts[i] = ChatResult(generations=cache_val)
             else:
                 missing_prompts.append(prompt)
                 missing_prompt_idxs.append(i)
@@ -58,20 +58,19 @@ def get_prompts(
 
 
 def update_cache(
-    existing_prompts: Dict[int, List],
+    existing_prompts: Dict[int, ChatResult],
     llm_string: str,
     missing_prompt_idxs: List[int],
     new_results: List[ChatResult],
     prompts: List[List[BaseMessage]],
 ) -> List[Optional[dict]]:
     """Update the cache and get the LLM output."""
-    for i, results in enumerate(new_results):
-        result = results.generations
+    for i, result in enumerate(new_results):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
         if langchain.llm_cache is not None:
             langchain.llm_cache.update(
-                chat_history_as_string(prompt), llm_string, result
+                chat_history_as_string(prompt), llm_string, result.generations
             )
     llm_output = [results.llm_output for results in new_results]
     return llm_output
@@ -162,17 +161,21 @@ class BaseChatModel(BaseLanguageModel, ABC):
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, messages
             )
             # Combine cached results and new results
-            results_dict = {**existing_prompts, **dict(zip(missing_prompt_idxs, new_results))}
+            results_dict = {
+                **existing_prompts,
+                **dict(zip(missing_prompt_idxs, new_results)),
+            }
             results = [result for _, result in sorted(results_dict.items())]
         else:
             llm_outputs = []
             # All prompts were caches, so we construct results solely from cache
-            results = [r for _, r in existing_prompts]
+            results = [r for _, r in existing_prompts.items()]
         llm_output = self._combine_llm_outputs(llm_outputs)
         generations = [res.generations for res in results]
-        # todo: types dont match
+        # We ignore type as List[List[Generation]] is expected instead of
+        # List[List[ChatGeneration]], but ChatGeneration is subclass of Generation
         output = LLMResult(
-            generations=generations, llm_output=llm_output
+            generations=generations, llm_output=llm_output  # type: ignore
         )
         run_manager.on_llm_end(output)
         return output
@@ -236,8 +239,16 @@ class BaseChatModel(BaseLanguageModel, ABC):
             llm_outputs = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, messages
             )
+            # Combine cached results and new results
+            results_dict = {
+                **existing_prompts,
+                **dict(zip(missing_prompt_idxs, new_results)),
+            }
+            results = [result for _, result in sorted(results_dict.items())]
         else:
             llm_outputs = []
+            # All prompts were caches, so we construct results solely from cache
+            results = [r for _, r in existing_prompts.items()]
         llm_output = self._combine_llm_outputs(llm_outputs)
         generations = [res.generations for res in results]
         # We ignore type as List[List[Generation]] is expected instead of
