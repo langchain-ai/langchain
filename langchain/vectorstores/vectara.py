@@ -1,21 +1,15 @@
 """Wrapper around Vectara vector database."""
 from __future__ import annotations
 
-from typing import Any, List, Optional, Iterable, Tuple
+from typing import Any, List, Optional, Iterable, Tuple, Type
 import json
 import logging
 from hashlib import md5
 import requests
-from colorama import Fore, Style
 
 from langchain.docstore.document import Document
-from langchain.vectorstores.base import VectorStore
-
-
-def _error_msg(response):
-    """Returns an error message constructed from the passed http response."""
-    return f"(code {response.status_code}, reason {response.reason}, details {response.text})"
-
+from langchain.embeddings.base import Embeddings
+from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 """Implementation of Vector Store using Vectara (https://vectara.com)"""
 class Vectara(VectorStore):
@@ -41,7 +35,7 @@ class Vectara(VectorStore):
         self._session = requests.Session()  # to resuse connections
         logging.debug("Using corpus id %s", self._vectara_corpus_id)
 
-    def _get_post_headers(self):
+    def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
         return {
             "x-api-key": self._vectara_api_key,
@@ -49,7 +43,7 @@ class Vectara(VectorStore):
             "Content-Type": "application/json",
         }
 
-    def _delete_doc(self, doc_id: str):
+    def _delete_doc(self, doc_id: str) -> bool:
         """
         Delete a document from the Vectara corpus.
 
@@ -70,18 +64,20 @@ class Vectara(VectorStore):
             return False
         return True
 
-    def _index_doc(self, doc_id, text, metadata):
-        request = {}
-        request["customer_id"] = self._vectara_customer_id
-        request["corpus_id"] = self._vectara_corpus_id
-        request["document"] = {"document_id": doc_id, "metadta": metadata, "parts": [{"text": text}]}
+    def _index_doc(self, doc_id: str, text: str, metadata: dict) -> bool:
+        request: dict[str, Any] = {}
+        request["customer_id"] = str(self._vectara_customer_id)
+        request["corpus_id"] = str(self._vectara_corpus_id)
+        request["document"] = {"document_id": doc_id, "metadataJson": json.dumps(metadata), "section": [{"text": text, "metadataJson": json.dumps(metadata)}]}
 
         response = self._session.post(
             headers=self._get_post_headers(),
-            url="https://api.vectara.io/v1/core/index",
+            url="https://api.vectara.io/v1/index",
             data=json.dumps(request),
             timeout=30,
+            verify=True,
         )
+
         status_code = response.status_code
 
         result = response.json()
@@ -121,6 +117,7 @@ class Vectara(VectorStore):
         self,
         query: str,
         k: int = 5,
+        alpha: float = 0.025,
         filter: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -129,12 +126,12 @@ class Vectara(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 5.
+            alpha: parameter for hybrid search (called "lambda" in Vectara documentation)
             filter: Dictionary of argument(s) to filter on metadata. For example a filter can be "doc.rating > 3.0 and part.lang = 'deu'"}
                 see https://docs.vectara.com/docs/search-apis/sql/filter-overview for more details
         Returns:
             List of Documents most similar to the query and score for each
         """
-
         response = self._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
@@ -145,11 +142,18 @@ class Vectara(VectorStore):
                             "query": query,
                             "start": 0,
                             "num_results": k,
+                            "context_config": {
+                                "sentences_before": 3,
+                                "sentences_after": 3
+                            },
                             "corpus_key": [
                                 {
                                     "customer_id": self._vectara_customer_id,
                                     "corpus_id": self._vectara_corpus_id,
                                     "metadataFilter": filter,
+                                    "lexical_interpolation_config": {
+                                        "lambda": alpha
+                                    },
                                 }
                             ],
                         }
@@ -160,17 +164,21 @@ class Vectara(VectorStore):
         )
 
         if response.status_code != 200:
-            logging.error("Query failed %s", _error_msg(response))
+            logging.error("Query failed %s", f"(code {response.status_code}, reason {response.reason}, details {response.text})")
             return []
 
         result = response.json()
-        return [(Document(page_content=x["text"], metadata=x["metadata"]), x["score"]) for x in result["responseSet"][0]["response"]]
+        responses = result["responseSet"][0]["response"]
+        vectara_default_metadata = ["lang", "len", "offset"]
+        docs = [(Document(page_content=x["text"], metadata={m["name"]: m["value"] for m in x["metadata"] if m["name"] not in vectara_default_metadata}), x["score"]) for x in responses]
+        return docs
 
     def similarity_search(
         self,
         query: str,
         k: int = 5,
-        filter: Optional[dict] = None,
+        alpha: float = 0.025,
+        filter: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return Vectara documents most similar to query, along with scores.
@@ -183,28 +191,56 @@ class Vectara(VectorStore):
         Returns:
             List of Documents most similar to the query
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k, filter=filter, **kwargs)
+        docs_and_scores = self.similarity_search_with_score(query, k=k, alpha=alpha, filter=filter, **kwargs)
         return [doc for doc, _ in docs_and_scores]
 
     @classmethod
     def from_texts(
-        cls,
+        cls: Type[Vectara],
         texts: List[str],
-        customer_id: int,
-        corpus_id: int,
-        api_key: str,
+        embedding: Optional[Embeddings] = None,
+        metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> Vectara:
         """Construct Vectara wrapper from raw documents.
         This is intended to be a quick way to get started.
-
         Example:
             .. code-block:: python
 
                 from langchain import Vectara
                 vectara = Vectara.from_texts(texts, customer_id, corpus_id, api_key)
         """
+        # note: Vectara generates its own embeddings, so we ignore the provided embeddings (required by interface)
+        customer_id = kwargs["customer_id"]
+        corpus_id = kwargs["corpus_id"]
+        api_key = kwargs["api_key"]
 
         vectara = cls(customer_id, corpus_id, api_key)
-        vectara.add_texts(texts)
+        vectara.add_texts(texts, metadatas)
         return vectara
+
+    @classmethod
+    def from_documents(
+        cls: Type[Vectara],
+        documents: List[Document],
+        embedding: Optional[Embeddings] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Vectara:
+        """Create a Vectara vectorstore from a list of documents.
+
+        Args:
+            documents (List[Document]): List of documents to add to the vectorstore.
+            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
+        Returns:
+            Vectara: Vectara vectorstore.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return cls.from_texts(
+            texts=texts,
+            embedding=embedding,
+            metadatas=metadatas,
+            **kwargs
+        )
+    
