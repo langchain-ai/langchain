@@ -161,10 +161,8 @@ class BaseChatModel(BaseLanguageModel, ABC):
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, messages
             )
             # Combine cached results and new results
-            results = sorted({
-                **dict(zip(missing_prompt_idxs, new_results)),
-                **existing_prompts
-            }.items())
+            results_dict = {**existing_prompts, **dict(zip(missing_prompt_idxs, new_results))}
+            results = [result for _, result in sorted(results_dict.items())]
         else:
             llm_outputs = []
             # All prompts were caches, so we construct results solely from cache
