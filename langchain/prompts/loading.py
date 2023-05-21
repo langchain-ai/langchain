@@ -40,7 +40,7 @@ def _load_template(var_name: str, config: dict) -> dict:
                 f"Both `{var_name}_path` and `{var_name}` cannot be provided."
             )
         # Pop the template path from the config.
-        template_path = Path(config.pop(f"{var_name}_path"))
+        template_path = config["prompt_dir"] / Path(config.pop(f"{var_name}_path"))
         # Load the template.
         if template_path.suffix == ".txt":
             with open(template_path) as f:
@@ -57,10 +57,11 @@ def _load_examples(config: dict) -> dict:
     if isinstance(config["examples"], list):
         pass
     elif isinstance(config["examples"], str):
-        with open(config["examples"]) as f:
-            if config["examples"].endswith(".json"):
+        examples_path = config["prompt_dir"] / Path(config["examples"])
+        with open(examples_path) as f:
+            if examples_path.suffix == ".json":
                 examples = json.load(f)
-            elif config["examples"].endswith((".yaml", ".yml")):
+            elif examples_path.suffix in (".yaml", ".yml"):
                 examples = yaml.safe_load(f)
             else:
                 raise ValueError(
@@ -97,12 +98,16 @@ def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
                 "Only one of example_prompt and example_prompt_path should "
                 "be specified."
             )
-        config["example_prompt"] = load_prompt(config.pop("example_prompt_path"))
+        example_prompt_path = config["prompt_dir"] / Path(
+            config.pop("example_prompt_path")
+        )
+        config["example_prompt"] = load_prompt(example_prompt_path)
     else:
         config["example_prompt"] = load_prompt_from_config(config["example_prompt"])
     # Load the examples.
     config = _load_examples(config)
     config = _load_output_parser(config)
+    config.pop("prompt_dir", None)
     return FewShotPromptTemplate(**config)
 
 
@@ -111,6 +116,7 @@ def _load_prompt(config: dict) -> PromptTemplate:
     # Load the template from disk if necessary.
     config = _load_template("template", config)
     config = _load_output_parser(config)
+    config.pop("prompt_dir", None)
     return PromptTemplate(**config)
 
 
@@ -152,6 +158,11 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
         return helper.PROMPT
     else:
         raise ValueError(f"Got unsupported file type {file_path.suffix}")
+    # Add parent directory of prompt template to config. We need this to resolve
+    # relative paths when loading templates and examples from disk. We will drop
+    # this key in the _load_prompt and _load_few_shot_prompt functions before
+    # initializing the prompt template from the config.
+    config["prompt_dir"] = file_path.parent
     # Load the prompt from the config now.
     return load_prompt_from_config(config)
 
