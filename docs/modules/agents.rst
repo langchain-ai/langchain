@@ -17,7 +17,7 @@ At the moment, there are two main types of agents:
 
 When should you use each one? Action Agents are more conventional, and good for small tasks.
 For more complex or long running tasks, the initial planning step helps to maintain long term objectives and focus. However, that comes at the expense of generally more calls and higher latency.
-These two agents are also not mutually exclusive - in fact, it is often best to have an Action Agent be in change of the execution for the Plan and Execute agent.
+These two agents are also not mutually exclusive - in fact, it is often best to have an Action Agent be in charge of the execution for the Plan and Execute agent.
 
 Action Agents
 -------------
