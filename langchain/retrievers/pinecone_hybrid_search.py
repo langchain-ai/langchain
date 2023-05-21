@@ -18,6 +18,7 @@ def create_index(
     embeddings: Embeddings,
     sparse_encoder: Any,
     ids: Optional[List[str]] = None,
+    metadata: Optional[List[dict]] = None,
 ) -> None:
     batch_size = 32
     _iterator = range(0, len(contexts), batch_size)
@@ -38,8 +39,11 @@ def create_index(
         # extract batch
         context_batch = contexts[i:i_end]
         batch_ids = ids[i:i_end]
+        metadata_batch = metadata[i:i_end]
         # add context passages as metadata
-        meta = [{"context": context} for context in context_batch]
+        meta = [{"context": context, **metadata} for 
+                context, metadata in zip(context_batch, metadata_batch)]
+
         # create dense vectors
         dense_embeds = embeddings.embed_documents(context_batch)
         # create sparse vectors
@@ -78,8 +82,13 @@ class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def add_texts(self, texts: List[str], ids: Optional[List[str]] = None) -> None:
-        create_index(texts, self.index, self.embeddings, self.sparse_encoder, ids=ids)
+    def add_texts(
+        self, 
+        texts: List[str], 
+        ids: Optional[List[str]] = None, 
+        metadata: Optional[List[dict]] = None, 
+    ) -> None:
+        create_index(texts, self.index, self.embeddings, self.sparse_encoder, ids=ids, metadata=metadata)
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -114,7 +123,8 @@ class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
         )
         final_result = []
         for res in result["matches"]:
-            final_result.append(Document(page_content=res["metadata"]["context"]))
+            context = res['metadata'].pop('context')
+            final_result.append(Document(page_content=context, metadata=res))
         # return search results as json
         return final_result
 
