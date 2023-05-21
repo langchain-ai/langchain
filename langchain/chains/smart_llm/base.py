@@ -10,13 +10,13 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.input import get_colored_text
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
+    AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
     BaseStringMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
-    AIMessagePromptTemplate,
 )
-from langchain.schema import LLMResult, PromptValue, BaseMessage
+from langchain.schema import BaseMessage, LLMResult, PromptValue
 
 
 class SmartLLMChain(Chain):
