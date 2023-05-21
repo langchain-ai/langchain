@@ -1,5 +1,5 @@
 """Chain for applying constitutional principles to the outputs of another chain."""
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import Extra, root_validator
 
@@ -12,7 +12,6 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
-    BaseStringMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
