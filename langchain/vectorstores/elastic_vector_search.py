@@ -114,7 +114,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         ValueError: If the elasticsearch python package is not installed.
     """
 
-    def __init__(self, elasticsearch_url: str, index_name: str, embedding: Embeddings):
+    def __init__(self, elasticsearch_url: str, index_name: str, embedding: Embeddings, **kwargs: Any):
         """Initialize with necessary components."""
         try:
             import elasticsearch
@@ -125,8 +125,9 @@ class ElasticVectorSearch(VectorStore, ABC):
             )
         self.embedding = embedding
         self.index_name = index_name
+        self.ssl_verify = kwargs.get("ssl_verify", {})
         try:
-            es_client = elasticsearch.Elasticsearch(elasticsearch_url)  # noqa
+            es_client = elasticsearch.Elasticsearch(elasticsearch_url, **self.ssl_verify)
         except ValueError as e:
             raise ValueError(
                 f"Your elasticsearch client string is misformatted. Got error: {e} "
@@ -274,8 +275,11 @@ class ElasticVectorSearch(VectorStore, ABC):
                 "Could not import elasticsearch python package. "
                 "Please install it with `pip install elasticsearch`."
             )
+        ssl_verify = kwargs.get('ssl_verify',{})
         try:
-            client = elasticsearch.Elasticsearch(elasticsearch_url)
+
+            client = elasticsearch.Elasticsearch(elasticsearch_url, **ssl_verify)
+
         except ValueError as e:
             raise ValueError(
                 "Your elasticsearch client string is misformatted. " f"Got error: {e} "
@@ -306,4 +310,4 @@ class ElasticVectorSearch(VectorStore, ABC):
             requests.append(request)
         bulk(client, requests)
         client.indices.refresh(index=index_name)
-        return cls(elasticsearch_url, index_name, embedding)
+        return cls(elasticsearch_url, index_name, embedding, ssl_verify= ssl_verify)
