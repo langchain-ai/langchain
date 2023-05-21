@@ -24,9 +24,7 @@ class PsychicLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
 
-        psychic_docs = self.psychic.get_documents(
-            self.connector_id, self.connection_id
-        )
+        psychic_docs = self.psychic.get_documents(self.connector_id, self.connection_id)
         return [
             Document(
                 page_content=doc["content"],
@@ -34,4 +32,3 @@ class PsychicLoader(BaseLoader):
             )
             for doc in psychic_docs
         ]
-
