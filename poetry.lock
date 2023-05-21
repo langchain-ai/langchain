@@ -6215,6 +6215,21 @@ files = [
 test = ["enum34", "ipaddress", "mock", "pywin32", "wmi"]
 
 [[package]]
+name = "psychicapi"
+version = "0.2"
+description = "Psychic.dev is an open-source universal data connector for knowledgebases."
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "psychicapi-0.2-py3-none-any.whl", hash = "sha256:712c6a1615dfad11d65241c179e96a5058ed1ada47463d1208e5a55a2bfdb4ff"},
+    {file = "psychicapi-0.2.tar.gz", hash = "sha256:3db62c2665c1485d0f68f3c1c57590691f20ee868d1f40fdeb59a6eeb15ed26a"},
+]
+
+[package.dependencies]
+requests = "*"
+
+[[package]]
 name = "psycopg2-binary"
 version = "2.9.6"
 description = "psycopg2 - Python-PostgreSQL Database Adapter"
@@ -10348,7 +10363,7 @@ all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api
 azure = ["azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "chardet", "gql", "html2text", "jq", "lxml", "pandas", "pdfminer-six", "pymupdf", "pypdf", "pypdfium2", "requests-toolbelt", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "chardet", "gql", "html2text", "jq", "lxml", "pandas", "pdfminer-six", "psychicapi", "pymupdf", "pypdf", "pypdfium2", "requests-toolbelt", "telethon", "tqdm", "zep-python"]
 hnswlib = ["docarray", "hnswlib", "protobuf"]
 in-memory-store = ["docarray"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "torch", "transformers"]
@@ -10359,4 +10374,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5202794df913184aee17f9c6c798edbaa102d5b5152cac885a623ebc93d1e2a3"
+content-hash = "086b4d4d5ca5d0be9d12105f926d667926170bca706a6c6ee152637389d2a22d"
