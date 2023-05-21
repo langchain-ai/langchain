@@ -52,29 +52,19 @@ def _load_template(var_name: str, config: dict) -> dict:
     return config
 
 
-def _load_examples(var_name: str, config: dict) -> dict:
-    """Load template from disk if applicable."""
-    # Check if template_path exists in config.
-    if f"{var_name}_path" in config:
-        # If it does, make sure template variable doesn't also exist.
-        if var_name in config:
-            raise ValueError(
-                f"Both `{var_name}_path` and `{var_name}` cannot be provided."
-            )
-        # Pop the template path from the config.
-        examples_path: Path = Path(config.pop(f"{var_name}_path"))
-        # Load the template.
-        with open(examples_path) as f:
-            if examples_path.suffix.endswith(".json"):
+def _load_examples(config: dict) -> dict:
+    """Load examples if necessary."""
+    if "examples_path" in config:
+        with open(config["examples"]) as f:
+            if config["examples"].endswith(".json"):
                 examples = json.load(f)
-            elif examples_path.suffix.endswith((".yaml", ".yml")):
+            elif config["examples"].endswith((".yaml", ".yml")):
                 examples = yaml.safe_load(f)
             else:
                 raise ValueError(
                     "Invalid file format. Only json or yaml formats are supported."
                 )
-        # Set the template variable to the extracted variable.
-        config[var_name] = examples
+        config["examples"] = examples
     return config
 
 
@@ -108,7 +98,7 @@ def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
     else:
         config["example_prompt"] = load_prompt_from_config(config["example_prompt"])
     # Load the examples.
-    config = _load_examples("examples", config)
+    config = _load_examples(config)
     config = _load_output_parser(config)
     return FewShotPromptTemplate(**config)
 
