@@ -1,4 +1,5 @@
 from langchain.retrievers.tfidf import TFIDFRetriever
+from langchain.schema import Document
 
 
 def test_from_texts() -> None:
@@ -15,3 +16,13 @@ def test_from_texts_with_tfidf_params() -> None:
     )
     # should count only multiple words (have, pan)
     assert tfidf_retriever.tfidf_array.toarray().shape == (3, 2)
+
+def test_from_documents() -> None:
+    input_docs = [
+        Document(page_content="I have a pen."),
+        Document(page_content="Do you have a pen?"),
+        Document(page_content="I have a bag."),
+    ]
+    tfidf_retriever = TFIDFRetriever.from_documents(docs=input_docs)
+    assert len(tfidf_retriever.docs) == 3
+    assert tfidf_retriever.tfidf_array.toarray().shape == (3, 5)
