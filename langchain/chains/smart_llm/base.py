@@ -1,4 +1,4 @@
-"""Chain for applying constitutional principles to the outputs of another chain."""
+"""Chain for applying self-critique using the SmartGPT workflow."""
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import Extra, root_validator
@@ -249,23 +249,6 @@ class SmartLLMChain(Chain):
 
     def resolve_prompt(self) -> ChatPromptTemplate:
         return ChatPromptTemplate.from_strings(self.get_prompt_strings("resolve"))
-
-    def _predict_from_llm(
-        self,
-        llm: BaseLanguageModel,
-        text: Optional[str] = None,
-        messages: Optional[List[BaseMessage]] = None,
-    ) -> str:
-        # todo: delete as we use BaseLanguageModel.generate_prompt?
-        if isinstance(llm, BaseChatModel) and messages:
-            return llm.predict_messages(messages).content
-        elif not isinstance(llm, BaseChatModel) and text:
-            return llm.predict(text)
-        else:
-            raise ValueError(
-                "Wrong arguments for SmartLLMChain._predict_from_llm, "
-                "which should never happen."
-            )
 
     def _ideate(
         self,
