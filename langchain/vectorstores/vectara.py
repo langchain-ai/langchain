@@ -25,9 +25,7 @@ class Vectara(VectorStore):
         .. code-block:: python
 
             from langchain.vectorstores import Vectara
-
-            # The environment should be the one specified next to the API key
-            vectorstore = Vectara(index, "text")
+            vectorstore = Vectara(customer_id, corpus_id, api_key)
     """
 
     def __init__(
@@ -204,9 +202,7 @@ class Vectara(VectorStore):
             .. code-block:: python
 
                 from langchain import Vectara
-                vectara = Vectara.from_texts(
-                    texts,
-                )
+                vectara = Vectara.from_texts(texts, customer_id, corpus_id, api_key)
         """
 
         vectara = cls(customer_id, corpus_id, api_key)
