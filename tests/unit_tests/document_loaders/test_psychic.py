@@ -36,7 +36,7 @@ class TestPsychicLoader:
             secret_key=self.MOCK_API_KEY
         )
         mock_connector_id.assert_called_once_with(
-            value=self.MOCK_CONNECTOR_ID
+            self.MOCK_CONNECTOR_ID
         )
 
     def test_psychic_loader_load_data(self, mock_psychic: MagicMock) -> None:
