@@ -102,6 +102,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         arbitrary_types_allowed = True
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+        # todo
         return {}
 
     def generate(
@@ -169,10 +170,9 @@ class BaseChatModel(BaseLanguageModel, ABC):
             results = [r for _, r in existing_prompts]
         llm_output = self._combine_llm_outputs(llm_outputs)
         generations = [res.generations for res in results]
-        # We ignore type as List[List[Generation]] is expected instead of
-        # List[List[ChatGeneration]], but ChatGeneration is subclass of Generation
+        # todo: types dont match
         output = LLMResult(
-            generations=generations, llm_output=llm_output  # type: ignore
+            generations=generations, llm_output=llm_output
         )
         run_manager.on_llm_end(output)
         return output
