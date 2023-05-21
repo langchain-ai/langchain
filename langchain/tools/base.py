@@ -24,6 +24,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain.schema import ToolException
 
 
 class SchemaAnnotationError(TypeError):
@@ -136,6 +137,9 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     """Callbacks to be called during tool execution."""
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """Deprecated. Please use callbacks instead."""
+
+    handle_tool_error: Union[bool, str, Callable[[ToolException], str]] = False
+    """Handle the content of the ToolException thrown."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -251,8 +255,25 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
                 else self._run(*tool_args, **tool_kwargs)
             )
         except (Exception, KeyboardInterrupt) as e:
-            run_manager.on_tool_error(e)
-            raise e
+            if isinstance(e, ToolException):
+                if isinstance(self.handle_tool_error, bool):
+                    if self.handle_tool_error:
+                        observation = "Tool execution error"
+                    else:
+                        raise e
+                elif isinstance(self.handle_tool_error, str):
+                    observation = self.handle_tool_error
+                elif callable(self.handle_tool_error):
+                    observation = self.handle_tool_error(e)
+                else:
+                    raise ValueError("Got unexpected type of `handle_tool_error`")
+                run_manager.on_tool_end(
+                    str(observation), color="pink", name=self.name, **kwargs
+                )
+                return observation
+            else:
+                run_manager.on_tool_error(e)
+                raise e
         run_manager.on_tool_end(str(observation), color=color, name=self.name, **kwargs)
         return observation
 
