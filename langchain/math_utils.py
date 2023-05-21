@@ -3,6 +3,7 @@ from typing import List, Union
 
 import numpy as np
 
+from sklearn.metrics.pairwise import cosine_similarity as cs
 
 Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
 
@@ -27,7 +28,6 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
 
 def cosine_similarity_v1(X: Matrix, Y: Matrix) -> np.ndarray:
     """Row-wise cosine similarity between two equal-width matrices using cosine_similarity from sklearn library which is more faster."""
-    from sklearn.metrics.pairwise import cosine_similarity
     
     if len(X) == 0 or len(Y) == 0:
         return np.array([])
@@ -39,7 +39,7 @@ def cosine_similarity_v1(X: Matrix, Y: Matrix) -> np.ndarray:
             f"Number of columns in X and Y must be the same. X has shape {X.shape} "
             f"and Y has shape {Y.shape}."
         )
-    similarity = cosine_similarity(X, Y)
+    similarity = cs(X, Y)
     similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
     return similarity
     
