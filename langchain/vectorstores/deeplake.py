@@ -131,31 +131,15 @@ class DeepLake(VectorStore):
         Returns:
             List[str]: List of IDs of the added texts.
         """
-        from deeplake.constants import MAX_DATASET_LENGTH_FOR_CACHING
         from deeplake.util.exceptions import FailedIngestionError
 
-        embeddings = None
-        if len(self.deeplake_vector_store) < MAX_DATASET_LENGTH_FOR_CACHING:
-            try:
-                embeddings = self._embedding_function.embed_documents(texts)
-            except Exception:
-                raise Exception(
-                    "Specified embedding function raised an exception. "
-                    "Try again later or use another embedding_function."
-                )
-            self.deeplake_vector_store.embedding_function = None
-
-        if self.deeplake_vector_store.embedding_function is not None:
-            embedding_function = (
-                self.deeplake_vector_store.embedding_function.embed_documents
-            )
+        embedding_function = self._embedding_function.embed_documents
 
         try:
             ids = self.deeplake_vector_store.add(
                 texts=texts,
                 metadatas=metadatas,
                 ids=ids,
-                embeddings=embeddings,
                 embedding_function=embedding_function,
             )
         except FailedIngestionError as e:
@@ -206,14 +190,9 @@ class DeepLake(VectorStore):
         emb = embedding or self._embedding_function.embed_query(query)  # type: ignore
         query_emb = np.array(emb, dtype=np.float32)
 
-        if self.deeplake_vector_store.embedding_function is not None:
-            embedding_function = (
-                self.deeplake_vector_store.embedding_function.embed_query
-            )
-
         view, indices, scores = self.deeplake_vector_store.search(
             query=query,
-            embedding_function=embedding_function,
+            embedding_function=self._embedding_function.embed_query,
             embedding=query_emb,
             k=fetch_k if use_maximal_marginal_relevance else k,
             distance_metric=distance_metric,
