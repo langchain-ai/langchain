@@ -1,5 +1,5 @@
 """Chain for applying constitutional principles to the outputs of another chain."""
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 from pydantic import Extra, root_validator
 
@@ -9,8 +9,14 @@ from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.input import get_colored_text
 from langchain.prompts.base import BasePromptTemplate
-from langchain.prompts.chat import ChatPromptTemplate
-from langchain.schema import BaseMessage, LLMResult, PromptValue
+from langchain.prompts.chat import (
+    BaseMessagePromptTemplate,
+    BaseStringMessagePromptTemplate,
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    AIMessagePromptTemplate,
+)
+from langchain.schema import LLMResult, PromptValue, BaseMessage
 
 
 class SmartLLMChain(Chain):
@@ -182,11 +188,13 @@ class SmartLLMChain(Chain):
             )
         return result.generations[0][0].text
 
-    def get_role_strings(self, stage: str) -> List[Tuple[str, str]]:
-        role_strings: List[Tuple[str, str]] = []
+    def get_prompt_strings(
+        self, stage: str
+    ) -> List[Tuple[Type[BaseMessagePromptTemplate], str]]:
+        role_strings: List[Tuple[Type[BaseMessagePromptTemplate], str]] = []
         role_strings.append(
             (
-                "human",
+                HumanMessagePromptTemplate,
                 "Question: {question}\nAnswer: Let's work this out in a step by "
                 "step way to be sure we have the right answer:",
             )
@@ -196,11 +204,14 @@ class SmartLLMChain(Chain):
         role_strings.extend(
             [
                 *[
-                    ("ai", "Idea " + str(i + 1) + ": {idea_" + str(i + 1) + "}")
+                    (
+                        AIMessagePromptTemplate,
+                        "Idea " + str(i + 1) + ": {idea_" + str(i + 1) + "}",
+                    )
                     for i in range(self.n_ideas)
                 ],
                 (
-                    "human",
+                    HumanMessagePromptTemplate,
                     "You are a researcher tasked with investigating the "
                     f"{self.n_ideas} response options provided. List the flaws and "
                     "faulty logic of each answer options. Let'w work this out in a step"
@@ -212,12 +223,13 @@ class SmartLLMChain(Chain):
             return role_strings
         role_strings.extend(
             [
-                ("ai", "Critique: {critique}"),
+                (AIMessagePromptTemplate, "Critique: {critique}"),
                 (
-                    "human",
+                    HumanMessagePromptTemplate,
                     "You are a resolved tasked with 1) finding which of "
                     f"the {self.n_ideas} anwer options the researcher thought was  "
                     "best,2) improving that answer and 3) printing the answer in full. "
+                    "Don't output anything for step 1 or 2, only the full answer in 3. "
                     "Let's work this out in a step by step way to be sure we have "
                     "the right answer:",
                 ),
@@ -231,13 +243,13 @@ class SmartLLMChain(Chain):
         )
 
     def ideation_prompt(self) -> ChatPromptTemplate:
-        return ChatPromptTemplate.from_role_strings(self.get_role_strings("ideation"))
+        return ChatPromptTemplate.from_strings(self.get_prompt_strings("ideation"))
 
     def critique_prompt(self) -> ChatPromptTemplate:
-        return ChatPromptTemplate.from_role_strings(self.get_role_strings("critique"))
+        return ChatPromptTemplate.from_strings(self.get_prompt_strings("critique"))
 
     def resolve_prompt(self) -> ChatPromptTemplate:
-        return ChatPromptTemplate.from_role_strings(self.get_role_strings("critique"))
+        return ChatPromptTemplate.from_strings(self.get_prompt_strings("resolve"))
 
     def _predict_from_llm(
         self,
@@ -277,7 +289,7 @@ class SmartLLMChain(Chain):
             ]
             for i, idea in enumerate(ideas):
                 _colored_text = get_colored_text(idea, "blue")
-                _text = f"Idea {i+1}: " + _colored_text
+                _text = f"Idea {i+1}:\n" + _colored_text
                 if run_manager:
                     run_manager.on_text(_text, end="\n", verbose=self.verbose)
             return ideas
@@ -300,7 +312,7 @@ class SmartLLMChain(Chain):
                 llm.generate_prompt([prompt], stop, callbacks), step="critique"
             )
             _colored_text = get_colored_text(critique, "yellow")
-            _text = "Critique: " + _colored_text
+            _text = "Critique:\n" + _colored_text
             if run_manager:
                 run_manager.on_text(_text, end="\n", verbose=self.verbose)
             return critique
@@ -323,7 +335,7 @@ class SmartLLMChain(Chain):
                 llm.generate_prompt([prompt], stop, callbacks), step="resolve"
             )
             _colored_text = get_colored_text(resolution, "green")
-            _text = "Resolution: " + _colored_text
+            _text = "Resolution:\n" + _colored_text
             if run_manager:
                 run_manager.on_text(_text, end="\n", verbose=self.verbose)
             return resolution
