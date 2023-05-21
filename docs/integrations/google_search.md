@@ -1,4 +1,4 @@
-# Google Search Wrapper
+# Google Search
 
 This page covers how to use the Google Search API within LangChain.
 It is broken into two parts: installation and setup, and then references to the specific Google Search wrapper.
