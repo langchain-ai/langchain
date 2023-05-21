@@ -360,7 +360,7 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
         return output_parser_dict
 
 
-class OutputParserException(Exception):
+class OutputParserException(ValueError):
     """Exception that output parsers should raise to signify a parsing error.
 
     This exists to differentiate parsing errors from other code or execution errors

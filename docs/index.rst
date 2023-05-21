@@ -140,9 +140,15 @@ Reference Docs
 Ecosystem
 ------------
 
-| Guides for how other products can be used with LangChain.
+| LangChain integrates a lot of different LLMs, systems, and products.
+From the other side, many systems and products depend on LangChain.
+It creates a vibrant and thriving ecosystem.
 
-- `Integrations <./integrations.html>`_
+
+- `Integrations <./integrations.html>`_: Guides for how other products can be used with LangChain.
+
+- `Dependents <./dependents.html>`_: List of repositories that use LangChain.
+
 
 .. toctree::
    :maxdepth: 2
@@ -152,6 +158,7 @@ Ecosystem
    :hidden:
 
    ./integrations.rst
+   ./dependents.md
 
 
 Additional Resources
