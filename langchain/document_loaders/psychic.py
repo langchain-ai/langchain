@@ -10,31 +10,28 @@ class PsychicLoader(BaseLoader):
 
     def __init__(self, api_key: str, connector_id: str, connection_id: str):
         """Initialize with API key, connector id, and connection id."""
-        self.api_key = api_key
 
         try:
             from psychicapi import ConnectorId, Psychic  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`psychicapi` package not found, please run " "`pip install psychicapi`"
+                "`psychicapi` package not found, please run `pip install psychicapi`"
             )
-        self.psychic = Psychic(secret_key=self.api_key)
+        self.psychic = Psychic(secret_key=api_key)
         self.connector_id = ConnectorId(connector_id)
         self.connection_id = connection_id
 
     def load(self) -> List[Document]:
         """Load documents."""
 
-        try:
-            psychic_docs = self.psychic.get_documents(
-                self.connector_id, self.connection_id
+        psychic_docs = self.psychic.get_documents(
+            self.connector_id, self.connection_id
+        )
+        return [
+            Document(
+                page_content=doc["content"],
+                metadata={"title": doc["title"], "source": doc["uri"]},
             )
-            return [
-                Document(
-                    page_content=doc["content"],
-                    metadata={"title": doc["title"], "source": doc["uri"]},
-                )
-                for doc in psychic_docs
-            ]
-        except Exception as e:
-            raise RuntimeError("Error loading documents from Psychic.dev: {}".format(e))
+            for doc in psychic_docs
+        ]
+
