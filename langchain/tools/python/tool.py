@@ -21,15 +21,13 @@ def _get_default_python_repl() -> PythonREPL:
     return PythonREPL(_globals=globals(), _locals=None)
 
 
-_MD_PY_BLOCK = "```python"
-
-
 def sanitize_input(query: str) -> str:
-    query = query.strip()
-    if query[: len(_MD_PY_BLOCK)] == _MD_PY_BLOCK:
-        query = query[len(_MD_PY_BLOCK) :].strip()
-    # Remove backticks & python (if llm mistakes python console as terminal) from query
-    query = re.sub(r"(?i:python)|`", "", query).strip()
+    # Remove whitespace, backtick & python (if llm mistakes python console as terminal)
+
+    # Removes `, whitespace & python from start
+    query = re.sub(r"^(\s|`)*(?i:python)?\s*", "", query)
+    # Removes whitespace & ` from end
+    query = re.sub(r"(\s|`)*$", "", query)
     return query
 
 

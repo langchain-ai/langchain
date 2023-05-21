@@ -53,6 +53,17 @@ int(dot_product)
     tool = PythonAstREPLTool()
     assert tool.run(program) == 32
 
+    program = """
+```python
+import numpy as np
+v1 = np.array([1, 2, 3])
+v2 = np.array([4, 5, 6])
+dot_product = np.dot(v1, v2)
+int(dot_product)
+```
+    """
+    assert tool.run(program) == 32
+
 
 def test_python_ast_repl_print() -> None:
     program = """python
@@ -63,6 +74,12 @@ else:
     print(string, "is not a palindrome")"""
     tool = PythonAstREPLTool()
     assert tool.run(program) == "racecar is a palindrome\n"
+
+
+def test_repl_print_python_backticks() -> None:
+    program = "`print('`python` is a great language.')`"
+    tool = PythonAstREPLTool()
+    assert tool.run(program) == "`python` is a great language.\n"
 
 
 def test_python_ast_repl_raise_exception() -> None:
