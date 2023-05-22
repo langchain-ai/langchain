@@ -51,7 +51,8 @@ class QueryPowerBITool(BaseTool):
             "examples",
         ]:
             raise ValueError(
-                "LLM chain for InputToQueryTool must have input variables ['tool_input', 'tables', 'schemas', 'examples']"  # noqa: C0301 E501 # pylint: disable=C0301
+                "LLM chain for QueryPowerBITool must have input variables ['tool_input', 'tables', 'schemas', 'examples'], found %s",  # noqa: C0301 E501 # pylint: disable=C0301
+                llm_chain.prompt.input_variables,
             )
         return llm_chain
 
@@ -68,7 +69,7 @@ class QueryPowerBITool(BaseTool):
         self,
         tool_input: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        iterations: int = 0,
+        **kwargs: Any,
     ) -> str:
         """Execute the query, return the results or an error message."""
         if cache := self._check_cache(tool_input):
@@ -87,6 +88,8 @@ class QueryPowerBITool(BaseTool):
 
         pbi_result = self.powerbi.run(command=query)
         result, error = self._parse_output(pbi_result)
+
+        iterations = kwargs.get("iterations", 0)
         if error and iterations < self.max_iterations:
             return self._run(
                 tool_input=RETRY_RESPONSE.format(
@@ -105,7 +108,7 @@ class QueryPowerBITool(BaseTool):
         self,
         tool_input: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-        iterations: int = 0,
+        **kwargs: Any,
     ) -> str:
         """Execute the query, return the results or an error message."""
         if cache := self._check_cache(tool_input):
@@ -122,6 +125,8 @@ class QueryPowerBITool(BaseTool):
             return self.session_cache[tool_input]
         pbi_result = await self.powerbi.arun(command=query)
         result, error = self._parse_output(pbi_result)
+
+        iterations = kwargs.get("iterations", 0)
         if error and iterations < self.max_iterations:
             return await self._arun(
                 tool_input=RETRY_RESPONSE.format(
