@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import os
 from copy import deepcopy
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
 import aiohttp
 import requests
@@ -16,13 +16,8 @@ _LOGGER = logging.getLogger(__name__)
 
 BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg")
 
-try:
+if TYPE_CHECKING:
     from azure.core.credentials import TokenCredential
-except ImportError:
-    _LOGGER.log(
-        logging.WARNING,
-        "Could not import azure.core python package.",
-    )
 
 
 class PowerBIDataset(BaseModel):
