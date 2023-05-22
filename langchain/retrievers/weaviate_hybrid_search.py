@@ -23,7 +23,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         try:
             import weaviate
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import weaviate python package. "
                 "Please install it with `pip install weaviate-client`."
             )
