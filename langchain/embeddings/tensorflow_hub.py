@@ -36,7 +36,7 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
                 "Please install it with `pip install tensorflow-hub``."
             )
         try:
-            import tensorflow_text
+            import tensorflow_text  # noqa
         except ImportError:
             raise ImportError(
                 "Could not import tensorflow_text python package. "

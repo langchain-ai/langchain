@@ -108,7 +108,8 @@ class SitemapLoader(WebBaseLoader):
                 import bs4
             except ImportError:
                 raise ImportError(
-                    "beautifulsoup4 package not found, please install it with `pip install beautifulsoup4`"
+                    "beautifulsoup4 package not found, please install it"
+                    " with `pip install beautifulsoup4`"
                 )
             fp = open(self.web_path)
             soup = bs4.BeautifulSoup(fp, "xml")
