@@ -1,6 +1,7 @@
 """Base implementation for tools or skills."""
 from __future__ import annotations
 
+import json
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
@@ -416,7 +417,27 @@ class StructuredTool(BaseTool):
     @property
     def args(self) -> dict:
         """The tool's input arguments."""
-        return self.args_schema.schema()["properties"]
+
+        props = self.args_schema.schema()["properties"]
+
+        if "$ref" in json.dumps(props):
+            try:
+                import jsonref
+            except ImportError:
+                raise ValueError(
+                    "Could not import jsonref python package. "
+                    "This is needed in order to resolve references in the schema."
+                    "Please install it with `pip install jsonref`."
+                )
+
+            resolved_schema = jsonref.loads(self.args_schema.schema_json())
+
+            if isinstance(resolved_schema, dict):
+                return resolved_schema.get("properties", {})
+            else:
+                raise ValueError("could not resolve schema")
+        else:
+            return props
 
     def _run(
         self,

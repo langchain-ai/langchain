@@ -62,6 +62,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
     assert test_group_deps == [
         "duckdb-engine",  # Should be removed
         "freezegun",
+        "jsonref",
         "lark",  # Should be removed
         "pytest",
         "pytest-asyncio",

@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import Any, Optional, Type, Union
+from typing import Any, List, Optional, Type, Union
 
 import pytest
 from pydantic import BaseModel
@@ -276,6 +276,27 @@ def test_structured_tool_types_parsed() -> None:
         "some_base_model": SomeBaseModel(foo="bar"),
     }
     assert result == expected
+
+
+def test_structured_tool_nested_types() -> None:
+    """Test that the full schema of a complicated schema is included"""
+
+    class ModelNested(BaseModel):
+        data: List[str]
+
+    class ModelParent(BaseModel):
+        child: ModelNested
+
+    @tool()
+    def structured_tool(query: ModelParent) -> str:
+        """My structured tool"""
+        return "foo"
+
+    assert isinstance(structured_tool, StructuredTool)
+
+    args = str(structured_tool.args)
+    assert "$ref" not in args
+    assert "ModelNested" in args
 
 
 def test_base_tool_inheritance_base_schema() -> None:
