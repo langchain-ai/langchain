@@ -146,30 +146,36 @@ class BaseChatModel(BaseLanguageModel, ABC):
             except (KeyboardInterrupt, Exception) as e:
                 run_manager.on_llm_error(e)
                 raise e
-        if len(missing_prompts) > 0:
-            try:
-                new_results = [
-                    self._generate(m, stop=stop, run_manager=run_manager)
-                    if new_arg_supported
-                    else self._generate(m, stop=stop)
-                    for m in missing_prompts
-                ]
-            except (KeyboardInterrupt, Exception) as e:
-                run_manager.on_llm_error(e)
-                raise e
-            llm_outputs = update_cache(
-                existing_prompts, llm_string, missing_prompt_idxs, new_results, messages
-            )
-            # Combine cached results and new results
-            results_dict = {
-                **existing_prompts,
-                **dict(zip(missing_prompt_idxs, new_results)),
-            }
-            results = [result for _, result in sorted(results_dict.items())]
         else:
-            llm_outputs = []
-            # All prompts were caches, so we construct results solely from cache
-            results = [r for _, r in existing_prompts.items()]
+            # use cache
+            if len(missing_prompts) > 0:
+                try:
+                    new_results = [
+                        self._generate(m, stop=stop, run_manager=run_manager)
+                        if new_arg_supported
+                        else self._generate(m, stop=stop)
+                        for m in missing_prompts
+                    ]
+                except (KeyboardInterrupt, Exception) as e:
+                    run_manager.on_llm_error(e)
+                    raise e
+                llm_outputs = update_cache(
+                    existing_prompts,
+                    llm_string,
+                    missing_prompt_idxs,
+                    new_results,
+                    messages,
+                )
+                # Combine cached results and new results
+                results_dict = {
+                    **existing_prompts,
+                    **dict(zip(missing_prompt_idxs, new_results)),
+                }
+                results = [result for _, result in sorted(results_dict.items())]
+            else:
+                llm_outputs = []
+                # All prompts were caches, so we construct results solely from cache
+                results = [r for _, r in existing_prompts.items()]
         llm_output = self._combine_llm_outputs(llm_outputs)
         generations = [res.generations for res in results]
         # We ignore type as List[List[Generation]] is expected instead of
@@ -223,32 +229,38 @@ class BaseChatModel(BaseLanguageModel, ABC):
             except (KeyboardInterrupt, Exception) as e:
                 await run_manager.on_llm_error(e)
                 raise e
-        if len(missing_prompts) > 0:
-            try:
-                new_results = await asyncio.gather(
-                    *[
-                        self._agenerate(m, stop=stop, run_manager=run_manager)
-                        if new_arg_supported
-                        else self._agenerate(m, stop=stop)
-                        for m in missing_prompts
-                    ]
-                )
-            except (KeyboardInterrupt, Exception) as e:
-                run_manager.on_llm_error(e)
-                raise e
-            llm_outputs = update_cache(
-                existing_prompts, llm_string, missing_prompt_idxs, new_results, messages
-            )
-            # Combine cached results and new results
-            results_dict = {
-                **existing_prompts,
-                **dict(zip(missing_prompt_idxs, new_results)),
-            }
-            results = [result for _, result in sorted(results_dict.items())]
         else:
-            llm_outputs = []
-            # All prompts were caches, so we construct results solely from cache
-            results = [r for _, r in existing_prompts.items()]
+            # use cache
+            if len(missing_prompts) > 0:
+                try:
+                    new_results = await asyncio.gather(
+                        *[
+                            self._agenerate(m, stop=stop, run_manager=run_manager)
+                            if new_arg_supported
+                            else self._agenerate(m, stop=stop)
+                            for m in missing_prompts
+                        ]
+                    )
+                except (KeyboardInterrupt, Exception) as e:
+                    run_manager.on_llm_error(e)
+                    raise e
+                llm_outputs = update_cache(
+                    existing_prompts,
+                    llm_string,
+                    missing_prompt_idxs,
+                    new_results,
+                    messages,
+                )
+                # Combine cached results and new results
+                results_dict = {
+                    **existing_prompts,
+                    **dict(zip(missing_prompt_idxs, new_results)),
+                }
+                results = [result for _, result in sorted(results_dict.items())]
+            else:
+                llm_outputs = []
+                # All prompts were caches, so we construct results solely from cache
+                results = [r for _, r in existing_prompts.items()]
         llm_output = self._combine_llm_outputs(llm_outputs)
         generations = [res.generations for res in results]
         # We ignore type as List[List[Generation]] is expected instead of

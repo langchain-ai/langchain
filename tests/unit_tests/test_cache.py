@@ -7,8 +7,7 @@ from langchain.chat_models import FakeListChatModel
 from langchain.chat_models.base import BaseChatModel, chat_history_as_string
 from langchain.llms import FakeListLLM
 from langchain.llms.base import BaseLLM
-from langchain.schema import (AIMessage, ChatGeneration, Generation,
-                              _message_from_dict)
+from langchain.schema import AIMessage, ChatGeneration, Generation, _message_from_dict
 
 
 def create_llm_string(llm: Union[BaseLLM, BaseChatModel]) -> str:
