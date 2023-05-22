@@ -285,7 +285,6 @@ class Pinecone(VectorStore):
         index_name: str,
         embedding: Embeddings,
         text_key: str = "text",
-        filter: Optional[dict] = None,
         namespace: Optional[str] = None,
     ) -> Pinecone:
         """Load pinecone vectorstore from index name."""
@@ -298,5 +297,5 @@ class Pinecone(VectorStore):
             )
 
         return cls(
-            pinecone.Index(index_name), embedding.embed_query, text_key, filter, namespace
+            pinecone.Index(index_name), embedding.embed_query, text_key, namespace
         )
