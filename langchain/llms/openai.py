@@ -454,8 +454,8 @@ class BaseOpenAI(BaseLLM):
         """Return type of llm."""
         return "openai"
 
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate num tokens with tiktoken package."""
+    def get_token_ids(self, text: str) -> List[int]:
+        """Get the token IDs using the tiktoken package."""
         # tiktoken NOT supported for Python < 3.8
         if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
@@ -470,14 +470,11 @@ class BaseOpenAI(BaseLLM):
 
         enc = tiktoken.encoding_for_model(self.model_name)
 
-        tokenized_text = enc.encode(
+        return enc.encode(
             text,
             allowed_special=self.allowed_special,
             disallowed_special=self.disallowed_special,
         )
-
-        # calculate the number of tokens in the encoded text
-        return len(tokenized_text)
 
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
@@ -802,11 +799,11 @@ class OpenAIChat(BaseLLM):
         """Return type of llm."""
         return "openai-chat"
 
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate num tokens with tiktoken package."""
+    def get_token_ids(self, text: str) -> List[int]:
+        """Get the token IDs using the tiktoken package."""
         # tiktoken NOT supported for Python < 3.8
         if sys.version_info[1] < 8:
-            return super().get_num_tokens(text)
+            return super().get_token_ids(text)
         try:
             import tiktoken
         except ImportError:
@@ -815,15 +812,10 @@ class OpenAIChat(BaseLLM):
                 "This is needed in order to calculate get_num_tokens. "
                 "Please install it with `pip install tiktoken`."
             )
-        # create a GPT-3.5-Turbo encoder instance
-        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
-        # encode the text using the GPT-3.5-Turbo encoder
-        tokenized_text = enc.encode(
+        enc = tiktoken.encoding_for_model(self.model_name)
+        return enc.encode(
             text,
             allowed_special=self.allowed_special,
             disallowed_special=self.disallowed_special,
         )
-
-        # calculate the number of tokens in the encoded text
-        return len(tokenized_text)
