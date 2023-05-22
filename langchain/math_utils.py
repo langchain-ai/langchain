@@ -49,7 +49,7 @@ def cosine_similarity_top_k(
     sorted_idxs = score_array.flatten().argsort()[::-1]
     top_k = top_k or len(sorted_idxs)
     top_idxs = sorted_idxs[:top_k]
-    score_threshold = score_threshold or 0.0
+    score_threshold = score_threshold or -1.0
     top_idxs = top_idxs[score_array.flatten()[top_idxs] > score_threshold]
     ret_idxs = [(x // score_array.shape[1], x % score_array.shape[1]) for x in top_idxs]
     scores = score_array.flatten()[top_idxs].tolist()
