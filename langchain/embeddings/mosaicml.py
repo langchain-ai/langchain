@@ -39,7 +39,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
     )
     """Instruction used to embed the query."""
 
-    mosaicml_api_token: str
+    mosaicml_api_token: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""

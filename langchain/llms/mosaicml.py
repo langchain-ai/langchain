@@ -56,7 +56,7 @@ class MosaicML(LLM):
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
-    mosaicml_api_token: str
+    mosaicml_api_token: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
