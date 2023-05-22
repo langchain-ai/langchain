@@ -1,16 +1,17 @@
 """Wrapper around Vectara vector database."""
 from __future__ import annotations
 
-from typing import Any, List, Optional, Iterable, Tuple, Type
 import json
 import logging
 from hashlib import md5
+from typing import Any, Iterable, List, Optional, Tuple, Type
+
 import requests
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
 from langchain.schema import BaseRetriever, Document
+from langchain.vectorstores.base import VectorStore
 
 
 class Vectara(VectorStore):
