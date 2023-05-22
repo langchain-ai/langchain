@@ -4809,6 +4809,24 @@ sphinx = ">=1.8"
 traitlets = ">=5"
 
 [[package]]
+name = "neo4j"
+version = "5.8.1"
+description = "Neo4j Bolt driver for Python"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "neo4j-5.8.1.tar.gz", hash = "sha256:79c947f402e9f8624587add7b8af742b38cbcdf364d48021c5bff9220457965b"},
+]
+
+[package.dependencies]
+pytz = "*"
+
+[package.extras]
+numpy = ["numpy (>=1.7.0,<2.0.0)"]
+pandas = ["numpy (>=1.7.0,<2.0.0)", "pandas (>=1.1.0,<3.0.0)"]
+
+[[package]]
 name = "nest-asyncio"
 version = "1.5.6"
 description = "Patch asyncio to allow nested event loops"
