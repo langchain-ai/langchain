@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.176"
+version = "0.0.177"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -88,11 +88,11 @@ pypdfium2 = {version = "^4.10.0", optional = true}
 gql = {version = "^3.4.1", optional = true}
 pandas = {version = "^2.0.1", optional = true}
 telethon = {version = "^1.28.5", optional = true}
+neo4j = {version = "^5.8.1", optional = true}
 psychicapi = {version = "^0.2", optional = true}
 zep-python = {version="^0.25", optional=true}
 chardet = {version="^5.1.0", optional=true}
 requests-toolbelt = {version = "^1.0.0", optional = true}
-
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -185,7 +185,67 @@ in_memory_store = ["docarray"]
 hnswlib = ["docarray", "protobuf", "hnswlib"]
 embeddings = ["sentence-transformers"]
 azure = ["azure-identity", "azure-cosmos", "openai", "azure-core"]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "lark", "pexpect", "pyvespa", "O365", "jq", "docarray", "protobuf", "hnswlib", "steamship", "pdfminer-six", "lxml"]
+all = [
+    "anthropic",
+    "cohere",
+    "openai",
+    "nlpcloud",
+    "huggingface_hub",
+    "jina",
+    "manifest-ml",
+    "elasticsearch",
+    "opensearch-py",
+    "google-search-results",
+    "faiss-cpu",
+    "sentence-transformers",
+    "transformers",
+    "spacy",
+    "nltk",
+    "wikipedia",
+    "beautifulsoup4",
+    "tiktoken",
+    "torch",
+    "jinja2",
+    "pinecone-client",
+    "pinecone-text",
+    "weaviate-client",
+    "redis",
+    "google-api-python-client",
+    "wolframalpha",
+    "qdrant-client",
+    "tensorflow-text",
+    "pypdf",
+    "networkx",
+    "nomic",
+    "aleph-alpha-client",
+    "deeplake",
+    "pgvector",
+    "psycopg2-binary",
+    "pyowm",
+    "pytesseract",
+    "html2text",
+    "atlassian-python-api",
+    "gptcache",
+    "duckduckgo-search",
+    "arxiv",
+    "azure-identity",
+    "clickhouse-connect",
+    "azure-cosmos",
+    "lancedb",
+    "lark",
+    "pexpect",
+    "pyvespa",
+    "O365",
+    "jq",
+    "docarray",
+    "protobuf",
+    "hnswlib",
+    "steamship",
+    "pdfminer-six",
+    "lxml",
+    "requests-toolbelt",
+    "neo4j",
+]
 
 # An extra used to be able to add extended testing.
 # Please use new-line on formatting to make it easier to add new packages without
