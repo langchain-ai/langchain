@@ -79,9 +79,7 @@ O365 = {version = "^2.0.26", optional = true}
 jq = {version = "^1.4.1", optional = true}
 steamship = {version = "^2.16.9", optional = true}
 pdfminer-six = {version = "^20221105", optional = true}
-docarray = {version="^0.31.0", optional=true}
-protobuf = {version="3.19.6", optional=true}
-hnswlib = {version="^0.7.0", optional=true}
+docarray = {version="^0.32.0", extras=["hnswlib"], optional=true}
 lxml = {version = "^4.9.2", optional = true}
 pymupdf = {version = "^1.22.3", optional = true}
 pypdfium2 = {version = "^4.10.0", optional = true}
@@ -181,8 +179,7 @@ qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
 cohere = ["cohere"]
-in_memory_store = ["docarray"]
-hnswlib = ["docarray", "protobuf", "hnswlib"]
+docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
 azure = ["azure-identity", "azure-cosmos", "openai", "azure-core"]
 all = [
@@ -238,8 +235,6 @@ all = [
     "O365",
     "jq",
     "docarray",
-    "protobuf",
-    "hnswlib",
     "steamship",
     "pdfminer-six",
     "lxml",
