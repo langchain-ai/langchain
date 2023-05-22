@@ -59,7 +59,7 @@ class _AnthropicCommon(BaseModel):
             values["AI_PROMPT"] = anthropic.AI_PROMPT
             values["count_tokens"] = anthropic.count_tokens
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import anthropic python package. "
                 "Please it install it with `pip install anthropic`."
             )
