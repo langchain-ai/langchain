@@ -9,12 +9,12 @@ import requests
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
+from langchain.vectorstores.base import VectorStore
+from langchain.schema import BaseRetriever, Document
 
-"""Implementation of Vector Store using Vectara (https://vectara.com)"""
+
 class Vectara(VectorStore):
-    """Wrapper around Vectara
-
+    """Implementation of Vector Store using Vectara (https://vectara.com)
     Example:
         .. code-block:: python
 
@@ -23,10 +23,7 @@ class Vectara(VectorStore):
     """
 
     def __init__(
-        self,
-        vectara_customer_id: int,
-        vectara_corpus_id: int,
-        vectara_api_key: str
+        self, vectara_customer_id: int, vectara_corpus_id: int, vectara_api_key: str
     ):
         """Initialize with Vectara API."""
         self._vectara_customer_id = vectara_customer_id
@@ -54,13 +51,25 @@ class Vectara(VectorStore):
         Returns:
             bool: True if the delete was successful, False otherwise.
         """
-        body = {'customer_id': self._vectara_customer_id, 'corpus_id': self._vectara_corpus_id, 'document_id': doc_id}
-        post_headers = { 'x-api-key': self._vectara_api_key, 'customer-id': str(self._vectara_customer_id) }
+        body = {
+            "customer_id": self._vectara_customer_id,
+            "corpus_id": self._vectara_corpus_id,
+            "document_id": doc_id,
+        }
+        post_headers = {
+            "x-api-key": self._vectara_api_key,
+            "customer-id": str(self._vectara_customer_id),
+        }
         response = requests.post(
-            f"https://api.vectara.io/v1/delete-doc", data=json.dumps(body),
-            verify=True, headers=post_headers)        
+            f"https://api.vectara.io/v1/delete-doc",
+            data=json.dumps(body),
+            verify=True,
+            headers=post_headers,
+        )
         if response.status_code != 200:
-            logging.error(f"Delete request failed for doc_id = {doc_id} with status code {response.status_code}, reason {response.reason}, text {response.text}")
+            logging.error(
+                f"Delete request failed for doc_id = {doc_id} with status code {response.status_code}, reason {response.reason}, text {response.text}"
+            )
             return False
         return True
 
@@ -68,7 +77,11 @@ class Vectara(VectorStore):
         request: dict[str, Any] = {}
         request["customer_id"] = str(self._vectara_customer_id)
         request["corpus_id"] = str(self._vectara_corpus_id)
-        request["document"] = {"document_id": doc_id, "metadataJson": json.dumps(metadata), "section": [{"text": text, "metadataJson": json.dumps(metadata)}]}
+        request["document"] = {
+            "document_id": doc_id,
+            "metadataJson": json.dumps(metadata),
+            "section": [{"text": text, "metadataJson": json.dumps(metadata)}],
+        }
 
         response = self._session.post(
             headers=self._get_post_headers(),
@@ -144,16 +157,14 @@ class Vectara(VectorStore):
                             "num_results": k,
                             "context_config": {
                                 "sentences_before": 3,
-                                "sentences_after": 3
+                                "sentences_after": 3,
                             },
                             "corpus_key": [
                                 {
                                     "customer_id": self._vectara_customer_id,
                                     "corpus_id": self._vectara_corpus_id,
                                     "metadataFilter": filter,
-                                    "lexical_interpolation_config": {
-                                        "lambda": alpha
-                                    },
+                                    "lexical_interpolation_config": {"lambda": alpha},
                                 }
                             ],
                         }
@@ -164,13 +175,29 @@ class Vectara(VectorStore):
         )
 
         if response.status_code != 200:
-            logging.error("Query failed %s", f"(code {response.status_code}, reason {response.reason}, details {response.text})")
+            logging.error(
+                "Query failed %s",
+                f"(code {response.status_code}, reason {response.reason}, details {response.text})",
+            )
             return []
 
         result = response.json()
         responses = result["responseSet"][0]["response"]
         vectara_default_metadata = ["lang", "len", "offset"]
-        docs = [(Document(page_content=x["text"], metadata={m["name"]: m["value"] for m in x["metadata"] if m["name"] not in vectara_default_metadata}), x["score"]) for x in responses]
+        docs = [
+            (
+                Document(
+                    page_content=x["text"],
+                    metadata={
+                        m["name"]: m["value"]
+                        for m in x["metadata"]
+                        if m["name"] not in vectara_default_metadata
+                    },
+                ),
+                x["score"],
+            )
+            for x in responses
+        ]
         return docs
 
     def similarity_search(
@@ -191,7 +218,9 @@ class Vectara(VectorStore):
         Returns:
             List of Documents most similar to the query
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k, alpha=alpha, filter=filter, **kwargs)
+        docs_and_scores = self.similarity_search_with_score(
+            query, k=k, alpha=alpha, filter=filter, **kwargs
+        )
         return [doc for doc, _ in docs_and_scores]
 
     @classmethod
@@ -238,9 +267,39 @@ class Vectara(VectorStore):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return cls.from_texts(
-            texts=texts,
-            embedding=embedding,
-            metadatas=metadatas,
-            **kwargs
+            texts=texts, embedding=embedding, metadatas=metadatas, **kwargs
         )
-    
+
+
+class VectaraRetriever(BaseRetriever):
+    def __init__(
+        self,
+        store: Vectara,
+        alpha: float = 0.025,  # called "lambda" in Vectara, but changed here to alpha since its a reserved word in python
+        k: int = 5,
+        filter: Optional[str] = None,
+    ):
+        self.store = store
+        self.alpha = alpha
+        self.k = k
+        self.filter = filter
+
+    def add_texts(
+        self, texts: List[str], metadatas: Optional[List[dict]] = None
+    ) -> None:
+        """Add text to the Vectara vectorstore
+
+        Args:
+            texts (List[str]): The text
+            metadatas (List[dict]): Metadata dicts, must line up with existing store
+        """
+        self.store.add_texts(texts, metadatas)
+
+    def get_relevant_documents(self, query: str) -> List[Document]:
+        docs = self.store.similarity_search(
+            query, k=self.k, alpha=self.alpha, filter=self.filter
+        )
+        return docs
+
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        raise NotImplementedError
