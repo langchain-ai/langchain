@@ -107,21 +107,21 @@ class Beam(LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"model_name": self.model_name},
-            **{"name": self.name},
-            **{"cpu": self.cpu},
-            **{"memory": self.memory},
-            **{"gpu": self.gpu},
-            **{"python_version": self.python_version},
-            **{"python_packages": self.python_packages},
-            **{"max_length": self.max_length},
-            **{"model_kwargs": self.model_kwargs},
+            "model_name": self.model_name,
+            "name": self.name,
+            "cpu": self.cpu,
+            "memory": self.memory,
+            "gpu": self.gpu,
+            "python_version": self.python_version,
+            "python_packages": self.python_packages,
+            "max_length": self.max_length,
+            "model_kwargs": self.model_kwargs,
         }
 
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return self.model_name
+        return "Beam"
 
     def app_creation(self) -> None:
         """Creates a Python file which will contain your Beam app definition."""
