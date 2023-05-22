@@ -1,6 +1,6 @@
 """Abstract interface for document loader implementations."""
 from abc import ABC, abstractmethod
-from typing import Iterable, Iterator, List, Optional
+from typing import Iterator, List, Optional
 
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.schema import Document
@@ -13,7 +13,7 @@ class BaseLoader(ABC):
     Implementations should implement the lazy-loading method using generators
     to avoid loading all documents into memory at once.
 
-    The `load` method will remain as is for backwards compatibility, but it's
+    The `load` method will remain as is for backwards compatibility, but its
     implementation should be just `list(self.lazy_load())`.
     """
 
@@ -39,7 +39,7 @@ class BaseLoader(ABC):
     #            implemented in all the existing subclasses.
     def lazy_load(
         self,
-    ) -> Iterable[Document]:
+    ) -> Iterator[Document]:
         """A lazy loader for document content."""
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement lazy_load()"
