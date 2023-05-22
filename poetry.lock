@@ -5237,6 +5237,21 @@ files = [
 pydantic = ">=1.8.2"
 
 [[package]]
+name = "openlm"
+version = "0.0.5"
+description = "Drop-in OpenAI-compatible that can call LLMs from other providers"
+category = "main"
+optional = true
+python-versions = ">=3.8.1,<4.0"
+files = [
+    {file = "openlm-0.0.5-py3-none-any.whl", hash = "sha256:9fcbbc575d2869e2a6c0b00827f9be2189c067c2de4bf03ef3cbdf488367ae93"},
+    {file = "openlm-0.0.5.tar.gz", hash = "sha256:0eb3fd7a9e4f7b4248931ff2f0dc91c525d990b99956886861a1b3f9868bc451"},
+]
+
+[package.dependencies]
+requests = ">=2,<3"
+
+[[package]]
 name = "opensearch-py"
 version = "2.2.0"
 description = "Python client for OpenSearch"
@@ -10393,4 +10408,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "7c14d63435a60c32edbb4d7adcc647430cf64a80aa26c1515fba28d5433efc6b"
+content-hash = "e32ad3cc19b12da08a6625030367028dc7545a8c80f50dc0e159ad5674931b13"
