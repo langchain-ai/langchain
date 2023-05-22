@@ -25,6 +25,4 @@ For a more detailed walkthrough of the Vectara wrapper, see one of the two examp
 * docs/integrations/vectara_chat.ipynb
 * docs/interations/vectara_text_generation.ipynb
 
-### Retriever
-
 
