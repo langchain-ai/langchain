@@ -97,7 +97,7 @@ class HuggingFaceTextGenInference(LLM):
                 values["inference_server_url"], timeout=values["timeout"]
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import text_generation python package. "
                 "Please install it with `pip install text_generation`."
             )
