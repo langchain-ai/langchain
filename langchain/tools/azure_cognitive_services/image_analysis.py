@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import root_validator
 
@@ -17,13 +17,15 @@ logger = logging.getLogger(__name__)
 
 
 class AzureCogsImageAnalysisTool(BaseTool):
-    """Tool that adds the capability to query the Azure Cognitive Services Image Analysis API.
+    """Tool that queries the Azure Cognitive Services Image Analysis API.
 
     In order to set this up, follow instructions at:
     https://learn.microsoft.com/en-us/azure/cognitive-services/computer-vision/quickstarts-sdk/image-analysis-client-library-40
     """
-    azure_cogs_key: str #: :meta private:
-    azure_cogs_endpoint: str #: :meta private:
+
+    azure_cogs_key: str  #: :meta private:
+    azure_cogs_endpoint: str  #: :meta private:
+    vision_sdk: Any = None
 
     name = "Azure Cognitive Services Image Analysis"
     description = (
@@ -48,6 +50,7 @@ class AzureCogsImageAnalysisTool(BaseTool):
         try:
             import azure.ai.vision as sdk
 
+            values["vision_sdk"] = sdk
         except ImportError:
             raise ImportError(
                 "azure-ai-vision is not installed. "
@@ -57,34 +60,32 @@ class AzureCogsImageAnalysisTool(BaseTool):
         return values
 
     def _image_analysis(self, image_path: str) -> Dict:
-        try:
-            import azure.ai.vision as sdk
-        except ImportError:
-            pass
-
-        service_options = sdk.VisionServiceOptions(endpoint=self.azure_cogs_endpoint, key=self.azure_cogs_key)
-        analysis_options = sdk.ImageAnalysisOptions()
-        analysis_options.features = (
-            sdk.ImageAnalysisFeature.CAPTION |
-            sdk.ImageAnalysisFeature.OBJECTS |
-            sdk.ImageAnalysisFeature.TAGS |
-            sdk.ImageAnalysisFeature.TEXT
+        service_options = self.vision_sdk.VisionServiceOptions(
+            endpoint=self.azure_cogs_endpoint, key=self.azure_cogs_key
         )
-            
+        analysis_options = self.vision_sdk.ImageAnalysisOptions()
+        analysis_options.features = (
+            self.vision_sdk.ImageAnalysisFeature.CAPTION
+            | self.vision_sdk.ImageAnalysisFeature.OBJECTS
+            | self.vision_sdk.ImageAnalysisFeature.TAGS
+            | self.vision_sdk.ImageAnalysisFeature.TEXT
+        )
+
         image_src_type = detect_file_src_type(image_path)
         if image_src_type == "local":
-            vision_source = sdk.VisionSource(filename=image_path)
+            vision_source = self.vision_sdk.VisionSource(filename=image_path)
         elif image_src_type == "remote":
-            vision_source = sdk.VisionSource(url=image_path)
+            vision_source = self.vision_sdk.VisionSource(url=image_path)
         else:
             raise ValueError(f"Invalid image path: {image_path}")
 
-        image_analyzer = sdk.ImageAnalyzer(service_options, vision_source, analysis_options)
+        image_analyzer = self.vision_sdk.ImageAnalyzer(
+            service_options, vision_source, analysis_options
+        )
         result = image_analyzer.analyze()
 
         res_dict = {}
-        if result.reason == sdk.ImageAnalysisResultReason.ANALYZED:
-
+        if result.reason == self.vision_sdk.ImageAnalysisResultReason.ANALYZED:
             if result.caption is not None:
                 res_dict["caption"] = result.caption.content
 
@@ -98,8 +99,14 @@ class AzureCogsImageAnalysisTool(BaseTool):
                 res_dict["text"] = [line.content for line in result.text.lines]
 
         else:
-            error_details = sdk.ImageAnalysisErrorDetails.from_result(result)
-            raise RuntimeError(f"Image analysis failed.\nReason: {error_details.reason}\nDetails: {error_details.message}")
+            error_details = self.vision_sdk.ImageAnalysisErrorDetails.from_result(
+                result
+            )
+            raise RuntimeError(
+                f"Image analysis failed.\n"
+                f"Reason: {error_details.reason}\n"
+                f"Details: {error_details.message}"
+            )
 
         return res_dict
 
@@ -108,8 +115,13 @@ class AzureCogsImageAnalysisTool(BaseTool):
         if "caption" in image_analysis_result:
             formatted_result.append("Caption: " + image_analysis_result["caption"])
 
-        if "objects" in image_analysis_result and len(image_analysis_result["objects"]) > 0:
-            formatted_result.append("Objects: " + ", ".join(image_analysis_result["objects"]))
+        if (
+            "objects" in image_analysis_result
+            and len(image_analysis_result["objects"]) > 0
+        ):
+            formatted_result.append(
+                "Objects: " + ", ".join(image_analysis_result["objects"])
+            )
 
         if "tags" in image_analysis_result and len(image_analysis_result["tags"]) > 0:
             formatted_result.append("Tags: " + ", ".join(image_analysis_result["tags"]))
@@ -129,7 +141,7 @@ class AzureCogsImageAnalysisTool(BaseTool):
             image_analysis_result = self._image_analysis(query)
             if not image_analysis_result:
                 return "No good image analysis result was found"
-            
+
             return self._format_image_analysis_result(image_analysis_result)
         except Exception as e:
             raise RuntimeError(f"Error while running AzureCogsImageAnalysisTool: {e}")

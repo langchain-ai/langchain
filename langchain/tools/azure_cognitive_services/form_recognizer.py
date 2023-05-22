@@ -17,19 +17,21 @@ logger = logging.getLogger(__name__)
 
 
 class AzureCogsFormRecognizerTool(BaseTool):
-    """Tool that adds the capability to query the Azure Cognitive Services Form Recognizer API.
-    
+    """Tool that queries the Azure Cognitive Services Form Recognizer API.
+
     In order to set this up, follow instructions at:
     https://learn.microsoft.com/en-us/azure/applied-ai-services/form-recognizer/quickstarts/get-started-sdks-rest-api?view=form-recog-3.0.0&pivots=programming-language-python
     """
-    azure_cogs_key: str #: :meta private:
-    azure_cogs_endpoint: str #: :meta private:
-    doc_analysis_client: Any #: :meta private:
+
+    azure_cogs_key: str  #: :meta private:
+    azure_cogs_endpoint: str  #: :meta private:
+    doc_analysis_client: Any  #: :meta private:
 
     name = "Azure Cognitive Services Form Recognizer"
     description = (
         "A wrapper around Azure Cognitive Services Form Recognizer. "
-        "Useful for when you need to extract text, tables, and key-value pairs from documents. "
+        "Useful for when you need to "
+        "extract text, tables, and key-value pairs from documents. "
         "Input should be a url to a document."
     )
 
@@ -67,7 +69,7 @@ class AzureCogsFormRecognizerTool(BaseTool):
         result = []
         for table in tables:
             rc, cc = table.row_count, table.column_count
-            _table = [['' for _ in range(cc)] for _ in range(rc)]
+            _table = [["" for _ in range(cc)] for _ in range(rc)]
             for cell in table.cells:
                 _table[cell.row_index][cell.column_index] = cell.content
             result.append(_table)
@@ -112,18 +114,22 @@ class AzureCogsFormRecognizerTool(BaseTool):
     def _format_document_analysis_result(self, document_analysis_result: Dict) -> str:
         formatted_result = []
         if "content" in document_analysis_result:
-            formatted_result.append(f"Content: {document_analysis_result['content']}".replace('\n', ' '))
+            formatted_result.append(
+                f"Content: {document_analysis_result['content']}".replace("\n", " ")
+            )
 
         if "tables" in document_analysis_result:
             for i, table in enumerate(document_analysis_result["tables"]):
-                formatted_result.append(f"Table {i}: {table}".replace('\n', ' '))
+                formatted_result.append(f"Table {i}: {table}".replace("\n", " "))
 
         if "key_value_pairs" in document_analysis_result:
             for kv_pair in document_analysis_result["key_value_pairs"]:
-                formatted_result.append(f"{kv_pair[0]}: {kv_pair[1]}".replace('\n', ' '))
+                formatted_result.append(
+                    f"{kv_pair[0]}: {kv_pair[1]}".replace("\n", " ")
+                )
 
         return "\n".join(formatted_result)
-    
+
     def _run(
         self,
         query: str,
@@ -134,7 +140,7 @@ class AzureCogsFormRecognizerTool(BaseTool):
             document_analysis_result = self._document_analysis(query)
             if not document_analysis_result:
                 return "No good document analysis result was found"
-            
+
             return self._format_document_analysis_result(document_analysis_result)
         except Exception as e:
             raise RuntimeError(f"Error while running AzureCogsFormRecognizerTool: {e}")

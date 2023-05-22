@@ -10,7 +10,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.tools.azure_cognitive_services.utils import detect_file_src_type, download_audio_from_url
+from langchain.tools.azure_cognitive_services.utils import (
+    detect_file_src_type,
+    download_audio_from_url,
+)
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
 
@@ -18,14 +21,16 @@ logger = logging.getLogger(__name__)
 
 
 class AzureCogsSpeech2TextTool(BaseTool):
-    """Tool that adds the capability to query the Azure Cognitive Services Speech2Text API.
+    """Tool that queries the Azure Cognitive Services Speech2Text API.
 
     In order to set this up, follow instructions at:
     https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/get-started-speech-to-text?pivots=programming-language-python
     """
-    azure_cogs_key: str #: :meta private:
-    azure_cogs_region: str #: :meta private:
+
+    azure_cogs_key: str  #: :meta private:
+    azure_cogs_region: str  #: :meta private:
     speech_language: str = "en-US"
+    speech_sdk: Any = None
 
     name = "Azure Cognitive Services Speech2Text"
     description = (
@@ -50,6 +55,7 @@ class AzureCogsSpeech2TextTool(BaseTool):
         try:
             import azure.cognitiveservices.speech as speechsdk
 
+            values["speech_sdk"] = speechsdk
         except ImportError:
             raise ImportError(
                 "azure-cognitiveservices-speech is not installed. "
@@ -62,13 +68,13 @@ class AzureCogsSpeech2TextTool(BaseTool):
         done = False
         text = ""
 
-        def stop_cb(evt) -> None:
-            """callback that signals to stop continuous recognition upon receiving an event `evt`"""
+        def stop_cb(evt: Any) -> None:
+            """callback that stop continuous recognition"""
             speech_recognizer.stop_continuous_recognition_async()
             nonlocal done
             done = True
 
-        def retrieve_cb(evt) -> None:
+        def retrieve_cb(evt: Any) -> None:
             """callback that retrieves the intermediate recognition results"""
             nonlocal text
             text += evt.result.text
@@ -82,28 +88,27 @@ class AzureCogsSpeech2TextTool(BaseTool):
         # Start continuous speech recognition
         speech_recognizer.start_continuous_recognition_async()
         while not done:
-            time.sleep(.5)
+            time.sleep(0.5)
         return text
 
     def _speech2text(self, audio_path: str, speech_language: str) -> str:
-        try:
-            import azure.cognitiveservices.speech as speechsdk
-        except ImportError:
-            pass
-
-        speech_config = speechsdk.SpeechConfig(subscription=self.azure_cogs_key, region=self.azure_cogs_region)
+        speech_config = self.speech_sdk.SpeechConfig(
+            subscription=self.azure_cogs_key, region=self.azure_cogs_region
+        )
         speech_config.speech_recognition_language = speech_language
 
         audio_src_type = detect_file_src_type(audio_path)
         if audio_src_type == "local":
-            audio_config = speechsdk.AudioConfig(filename=audio_path)
+            audio_config = self.speech_sdk.AudioConfig(filename=audio_path)
         elif audio_src_type == "remote":
             tmp_audio_path = download_audio_from_url(audio_path)
-            audio_config = speechsdk.AudioConfig(filename=tmp_audio_path)
+            audio_config = self.speech_sdk.AudioConfig(filename=tmp_audio_path)
         else:
             raise ValueError(f"Invalid audio path: {audio_path}")
 
-        speech_recognizer = speechsdk.SpeechRecognizer(speech_config, audio_config)
+        speech_recognizer = self.speech_sdk.SpeechRecognizer(
+            speech_config, audio_config
+        )
         return self._continuous_recognize(speech_recognizer)
 
     def _run(

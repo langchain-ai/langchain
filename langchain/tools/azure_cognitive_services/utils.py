@@ -1,6 +1,7 @@
 import os
 import tempfile
 from urllib.parse import urlparse
+
 import requests
 
 
@@ -24,5 +25,5 @@ def download_audio_from_url(audio_url: str) -> str:
     with tempfile.NamedTemporaryFile(mode="wb", suffix=f".{ext}", delete=False) as f:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
-    
+
     return f.name
