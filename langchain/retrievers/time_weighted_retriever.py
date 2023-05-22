@@ -109,8 +109,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""
-        current_time = kwargs.get("current_time", datetime.datetime.now())
-        # `current_time` may exist in kwargs, but may still have the value of None.
+        current_time = kwargs.get("current_time")
         if current_time is None:
             current_time = datetime.datetime.now()
         # Avoid mutating input documents
