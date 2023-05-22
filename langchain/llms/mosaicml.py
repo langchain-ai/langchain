@@ -88,7 +88,7 @@ class MosaicML(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "mosaicml_llm"
+        return "mosaicml"
 
     def _transform_prompt(self, prompt: str) -> str:
         """Transform prompt."""
