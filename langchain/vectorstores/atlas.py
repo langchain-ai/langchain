@@ -119,7 +119,7 @@ class AtlasDB(VectorStore):
 
         # Embedding upload case
         if self._embedding_function is not None:
-            _embeddings = self._embedding_function.embed_documents(texts)
+            _embeddings = self._embedding_function.embed_texts(texts)
             embeddings = np.stack(_embeddings)
             if metadatas is None:
                 data = [
@@ -194,7 +194,7 @@ class AtlasDB(VectorStore):
                 "AtlasDB requires an embedding_function for text similarity search!"
             )
 
-        _embedding = self._embedding_function.embed_documents([query])[0]
+        _embedding = self._embedding_function.embed_texts([query])[0]
         embedding = np.array(_embedding).reshape(1, -1)
         with self.project.wait_for_project_lock():
             neighbors, _ = self.project.projections[0].vector_search(

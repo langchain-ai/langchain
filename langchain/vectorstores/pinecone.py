@@ -229,7 +229,7 @@ class Pinecone(VectorStore):
             else:
                 ids_batch = [str(uuid.uuid4()) for n in range(i, i_end)]
             # create embeddings
-            embeds = embedding.embed_documents(lines_batch)
+            embeds = embedding.embed_texts(lines_batch)
             # prep metadata and upsert batch
             if metadatas:
                 metadata = metadatas[i:i_end]

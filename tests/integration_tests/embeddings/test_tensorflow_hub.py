@@ -6,7 +6,7 @@ def test_tensorflowhub_embedding_documents() -> None:
     """Test tensorflowhub embeddings."""
     documents = ["foo bar"]
     embedding = TensorflowHubEmbeddings()
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 1
     assert len(output[0]) == 512
 

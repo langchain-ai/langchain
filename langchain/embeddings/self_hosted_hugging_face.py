@@ -140,7 +140,7 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
         load_fn_kwargs["device"] = load_fn_kwargs.get("device", 0)
         super().__init__(load_fn_kwargs=load_fn_kwargs, **kwargs)
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace instruct model.
 
         Args:

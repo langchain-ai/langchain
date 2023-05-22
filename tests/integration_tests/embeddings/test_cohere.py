@@ -6,7 +6,7 @@ def test_cohere_embedding_documents() -> None:
     """Test cohere embeddings."""
     documents = ["foo bar"]
     embedding = CohereEmbeddings()
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 1
     assert len(output[0]) == 2048
 

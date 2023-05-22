@@ -10,7 +10,7 @@ def test_google_palm_embedding_documents() -> None:
     """Test Google PaLM embeddings."""
     documents = ["foo bar"]
     embedding = GooglePalmEmbeddings()
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 1
     assert len(output[0]) == 768
 
@@ -19,7 +19,7 @@ def test_google_palm_embedding_documents_multiple() -> None:
     """Test Google PaLM embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
     embedding = GooglePalmEmbeddings()
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 3
     assert len(output[0]) == 768
     assert len(output[1]) == 768

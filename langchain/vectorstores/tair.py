@@ -82,7 +82,7 @@ class Tair(VectorStore):
         keys = kwargs.get("keys", None)
         # Write data to tair
         pipeline = self.client.pipeline(transaction=False)
-        embeddings = self.embedding_function.embed_documents(list(texts))
+        embeddings = self.embedding_function.embed_texts(list(texts))
         for i, text in enumerate(texts):
             # Use provided key otherwise use default key
             key = keys[i] if keys else _uuid_key()
@@ -191,7 +191,7 @@ class Tair(VectorStore):
             raise ValueError(f"tair failed to connect: {e}")
 
         # Create embeddings for documents
-        embeddings = embedding.embed_documents(texts)
+        embeddings = embedding.embed_texts(texts)
 
         tair_vector_store.create_index_if_not_exist(
             len(embeddings[0]),

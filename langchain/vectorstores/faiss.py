@@ -417,7 +417,7 @@ class FAISS(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 faiss = FAISS.from_texts(texts, embeddings)
         """
-        embeddings = embedding.embed_documents(texts)
+        embeddings = embedding.embed_texts(texts)
         return cls.__from(
             texts,
             embeddings,

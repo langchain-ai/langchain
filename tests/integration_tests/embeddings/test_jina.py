@@ -6,7 +6,7 @@ def test_jina_embedding_documents() -> None:
     """Test jina embeddings for documents."""
     documents = ["foo bar", "bar foo"]
     embedding = JinaEmbeddings()
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 2
     assert len(output[0]) == 512
 

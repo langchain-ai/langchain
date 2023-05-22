@@ -397,7 +397,7 @@ class Milvus(VectorStore):
         texts = list(texts)
 
         try:
-            embeddings = self.embedding_func.embed_documents(texts)
+            embeddings = self.embedding_func.embed_texts(texts)
         except NotImplementedError:
             embeddings = [self.embedding_func.embed_query(x) for x in texts]
 

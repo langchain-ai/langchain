@@ -9,7 +9,7 @@ def test_sentence_transformer_embedding_documents() -> None:
     """Test sentence_transformer embeddings."""
     embedding = SentenceTransformerEmbeddings()
     documents = ["foo bar"]
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 1
     assert len(output[0]) == 384
 

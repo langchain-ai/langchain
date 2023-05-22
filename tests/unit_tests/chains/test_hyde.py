@@ -17,7 +17,7 @@ from langchain.schema import Generation, LLMResult
 class FakeEmbeddings(Embeddings):
     """Fake embedding class for tests."""
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """Return random floats."""
         return [list(np.random.uniform(0, 1, 10)) for _ in range(10)]
 

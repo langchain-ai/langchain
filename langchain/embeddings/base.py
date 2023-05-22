@@ -6,9 +6,13 @@ from typing import List
 class Embeddings(ABC):
     """Interface for embedding models."""
 
-    @abstractmethod
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed search docs."""
+        """DEPRECATED. Kept for backwards compatibility."""
+        return self.embed_texts(texts)
+
+    @abstractmethod
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+        """Embed search texts."""
 
     @abstractmethod
     def embed_query(self, text: str) -> List[float]:

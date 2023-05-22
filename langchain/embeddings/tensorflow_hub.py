@@ -43,7 +43,7 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a TensorflowHub embedding model.
 
         Args:

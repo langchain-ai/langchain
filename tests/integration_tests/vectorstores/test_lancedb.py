@@ -8,7 +8,7 @@ def test_lancedb() -> None:
     embeddings = FakeEmbeddings()
     db = lancedb.connect("/tmp/lancedb")
     texts = ["text 1", "text 2", "item 3"]
-    vectors = embeddings.embed_documents(texts)
+    vectors = embeddings.embed_texts(texts)
     table = db.create_table(
         "my_table",
         data=[
@@ -27,7 +27,7 @@ def test_lancedb_add_texts() -> None:
     embeddings = FakeEmbeddings()
     db = lancedb.connect("/tmp/lancedb")
     texts = ["text 1"]
-    vectors = embeddings.embed_documents(texts)
+    vectors = embeddings.embed_texts(texts)
     table = db.create_table(
         "my_table",
         data=[

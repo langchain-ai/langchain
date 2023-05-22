@@ -54,7 +54,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
             )
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """Call out to Cohere's embedding endpoint.
 
         Args:

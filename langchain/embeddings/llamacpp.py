@@ -99,7 +99,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
 
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """Embed a list of documents using the Llama model.
 
         Args:

@@ -72,7 +72,7 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
 
         Args:

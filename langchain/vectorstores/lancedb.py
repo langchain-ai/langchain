@@ -71,7 +71,7 @@ class LanceDB(VectorStore):
         # Embed texts and create documents
         docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
-        embeddings = self._embedding.embed_documents(list(texts))
+        embeddings = self._embedding.embed_texts(list(texts))
         for idx, text in enumerate(texts):
             embedding = embeddings[idx]
             metadata = metadatas[idx] if metadatas else {}

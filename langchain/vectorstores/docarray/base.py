@@ -77,7 +77,7 @@ class DocArrayIndex(VectorStore, ABC):
             List of ids from adding the texts into the vectorstore.
         """
         ids: List[str] = []
-        embeddings = self.embedding.embed_documents(list(texts))
+        embeddings = self.embedding.embed_texts(list(texts))
         for i, (t, e) in enumerate(zip(texts, embeddings)):
             m = metadatas[i] if metadatas else {}
             doc = self.doc_cls(text=t, embedding=e, metadata=m)

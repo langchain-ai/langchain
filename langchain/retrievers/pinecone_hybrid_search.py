@@ -49,7 +49,7 @@ def create_index(
         ]
 
         # create dense vectors
-        dense_embeds = embeddings.embed_documents(context_batch)
+        dense_embeds = embeddings.embed_texts(context_batch)
         # create sparse vectors
         sparse_embeds = sparse_encoder.encode_documents(context_batch)
         for s in sparse_embeds:

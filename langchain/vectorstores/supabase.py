@@ -74,7 +74,7 @@ class SupabaseVectorStore(VectorStore):
     ) -> List[str]:
         docs = self._texts_to_documents(texts, metadatas)
 
-        vectors = self._embedding.embed_documents(list(texts))
+        vectors = self._embedding.embed_texts(list(texts))
         return self.add_vectors(vectors, docs)
 
     @classmethod
@@ -96,7 +96,7 @@ class SupabaseVectorStore(VectorStore):
         if not table_name:
             raise ValueError("Supabase document table_name is required.")
 
-        embeddings = embedding.embed_documents(texts)
+        embeddings = embedding.embed_texts(texts)
         docs = cls._texts_to_documents(texts, metadatas)
         _ids = cls._add_vectors(client, table_name, embeddings, docs)
 
@@ -115,7 +115,7 @@ class SupabaseVectorStore(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        vectors = self._embedding.embed_documents([query])
+        vectors = self._embedding.embed_texts([query])
         return self.similarity_search_by_vector(vectors[0], k)
 
     def similarity_search_by_vector(
@@ -130,7 +130,7 @@ class SupabaseVectorStore(VectorStore):
     def similarity_search_with_relevance_scores(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        vectors = self._embedding.embed_documents([query])
+        vectors = self._embedding.embed_texts([query])
         return self.similarity_search_by_vector_with_relevance_scores(vectors[0], k)
 
     def similarity_search_by_vector_with_relevance_scores(
@@ -328,7 +328,7 @@ class SupabaseVectorStore(VectorStore):
         END;
         $$;```
         """
-        embedding = self._embedding.embed_documents([query])
+        embedding = self._embedding.embed_texts([query])
         docs = self.max_marginal_relevance_search_by_vector(
             embedding[0], k, fetch_k, lambda_mult=lambda_mult
         )

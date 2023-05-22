@@ -142,7 +142,7 @@ class Weaviate(VectorStore):
                 )
 
                 if self._embedding is not None:
-                    vector = self._embedding.embed_documents([text])[0]
+                    vector = self._embedding.embed_texts([text])[0]
                 else:
                     vector = None
                 batch.add_data_object(
@@ -391,7 +391,7 @@ class Weaviate(VectorStore):
         from weaviate.util import get_valid_uuid
 
         index_name = kwargs.get("index_name", f"LangChain_{uuid4().hex}")
-        embeddings = embedding.embed_documents(texts) if embedding else None
+        embeddings = embedding.embed_texts(texts) if embedding else None
         text_key = "text"
         schema = _default_schema(index_name)
         attributes = list(metadatas[0].keys()) if metadatas else None

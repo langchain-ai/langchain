@@ -77,7 +77,7 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
 
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
         return [self.embed_query(text) for text in texts]
 
     def embed_query(self, text: str) -> List[float]:

@@ -202,7 +202,7 @@ class AnalyticDB(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
 
-        embeddings = self.embedding_function.embed_documents(list(texts))
+        embeddings = self.embedding_function.embed_texts(list(texts))
 
         if not metadatas:
             metadatas = [{} for _ in texts]

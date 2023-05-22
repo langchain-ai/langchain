@@ -71,7 +71,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
         payload = dict(inputs=docs, metadata=self.request_headers, **kwargs)
         return self.client.post(on="/encode", **payload)
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """Call out to Jina's embedding endpoint.
         Args:
             texts: The list of texts to embed.

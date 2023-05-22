@@ -164,9 +164,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
 
         return self.content_handler.transform_output(response["Body"])
 
-    def embed_documents(
-        self, texts: List[str], chunk_size: int = 64
-    ) -> List[List[float]]:
+    def embed_texts(self, texts: List[str], chunk_size: int = 64) -> List[List[float]]:
         """Compute doc embeddings using a SageMaker Inference Endpoint.
 
         Args:

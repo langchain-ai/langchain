@@ -351,7 +351,7 @@ class Annoy(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 index = Annoy.from_texts(texts, embeddings)
         """
-        embeddings = embedding.embed_documents(texts)
+        embeddings = embedding.embed_texts(texts)
         return cls.__from(
             texts, embeddings, embedding, metadatas, metric, trees, n_jobs, **kwargs
         )

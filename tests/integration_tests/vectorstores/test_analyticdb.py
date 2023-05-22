@@ -24,7 +24,7 @@ ADA_TOKEN_COUNT = 1536
 class FakeEmbeddingsWithAdaDimension(FakeEmbeddings):
     """Fake embeddings functionality for testing."""
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """Return simple embeddings."""
         return [
             [float(1.0)] * (ADA_TOKEN_COUNT - 1) + [float(i)] for i in range(len(texts))

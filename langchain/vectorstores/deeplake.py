@@ -224,7 +224,7 @@ class DeepLake(VectorStore):
             embeds: Sequence[Optional[np.ndarray]] = []
 
             if self._embedding_function is not None:
-                embeddings = self._embedding_function.embed_documents(text_list)
+                embeddings = self._embedding_function.embed_texts(text_list)
                 embeds = [np.array(e, dtype=np.float32) for e in embeddings]
             else:
                 embeds = [None] * len(text_list)

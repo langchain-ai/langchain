@@ -8,7 +8,7 @@ def test_huggingfacehub_embedding_documents() -> None:
     """Test huggingfacehub embeddings."""
     documents = ["foo bar"]
     embedding = HuggingFaceHubEmbeddings()
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 1
     assert len(output[0]) == 768
 

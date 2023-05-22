@@ -32,7 +32,7 @@ def test_llamacpp_embedding_documents() -> None:
     documents = ["foo bar"]
     model_path = get_model()
     embedding = LlamaCppEmbeddings(model_path=model_path)
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 1
     assert len(output[0]) == 512
 

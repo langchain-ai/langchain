@@ -143,7 +143,7 @@ def test_similarity_search_by_vector(
     deeplake_datastore: DeepLake, distance_metric: str
 ) -> None:
     """Test similarity search by vector."""
-    embeddings = FakeEmbeddings().embed_documents(["foo", "bar", "baz"])
+    embeddings = FakeEmbeddings().embed_texts(["foo", "bar", "baz"])
     output = deeplake_datastore.similarity_search_by_vector(
         embeddings[1], k=1, distance_metric=distance_metric
     )
@@ -185,7 +185,7 @@ def test_max_marginal_relevance_search(deeplake_datastore: DeepLake) -> None:
 
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
-    embeddings = FakeEmbeddings().embed_documents(["foo", "bar", "baz"])
+    embeddings = FakeEmbeddings().embed_texts(["foo", "bar", "baz"])
     output = deeplake_datastore.max_marginal_relevance_search_by_vector(
         embeddings[0], k=1, fetch_k=2
     )

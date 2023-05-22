@@ -55,9 +55,7 @@ def _get_embeddings_from_stateful_docs(
     if len(documents) and "embedded_doc" in documents[0].state:
         embedded_documents = [doc.state["embedded_doc"] for doc in documents]
     else:
-        embedded_documents = embeddings.embed_documents(
-            [d.page_content for d in documents]
-        )
+        embedded_documents = embeddings.embed_texts([d.page_content for d in documents])
         for doc, embedding in zip(documents, embedded_documents):
             doc.state["embedded_doc"] = embedding
     return embedded_documents

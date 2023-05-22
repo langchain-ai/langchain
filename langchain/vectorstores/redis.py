@@ -408,7 +408,7 @@ class Redis(VectorStore):
         )
 
         # Create embeddings over documents
-        embeddings = embedding.embed_documents(texts)
+        embeddings = embedding.embed_texts(texts)
 
         # Create the search index
         instance._create_index(dim=len(embeddings[0]), distance_metric=distance_metric)

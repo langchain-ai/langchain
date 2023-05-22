@@ -10,7 +10,7 @@ def test_huggingface_embedding_documents() -> None:
     """Test huggingface embeddings."""
     documents = ["foo bar"]
     embedding = HuggingFaceEmbeddings()
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 1
     assert len(output[0]) == 768
 
@@ -27,7 +27,7 @@ def test_huggingface_instructor_embedding_documents() -> None:
     """Test huggingface embeddings."""
     documents = ["foo bar"]
     embedding = HuggingFaceInstructEmbeddings()
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 1
     assert len(output[0]) == 768
 

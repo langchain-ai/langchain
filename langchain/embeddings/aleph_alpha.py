@@ -65,7 +65,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         values["client"] = Client(token=aleph_alpha_api_key)
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """Call out to Aleph Alpha's asymmetric Document endpoint.
 
         Args:
@@ -186,7 +186,7 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
 
         return query_response.embedding
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """Call out to Aleph Alpha's Document endpoint.
 
         Args:

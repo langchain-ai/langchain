@@ -139,7 +139,7 @@ class Qdrant(VectorStore):
             List of floats representing the texts embedding.
         """
         if self.embeddings is not None:
-            embeddings = self.embeddings.embed_documents(list(texts))
+            embeddings = self.embeddings.embed_texts(list(texts))
             if hasattr(embeddings, "tolist"):
                 embeddings = embeddings.tolist()
         elif self._embeddings_function is not None:
@@ -388,7 +388,7 @@ class Qdrant(VectorStore):
         from qdrant_client.http import models as rest
 
         # Just do a single quick embedding to get vector size
-        partial_embeddings = embedding.embed_documents(texts[:1])
+        partial_embeddings = embedding.embed_texts(texts[:1])
         vector_size = len(partial_embeddings[0])
 
         collection_name = collection_name or uuid.uuid4().hex
@@ -418,7 +418,7 @@ class Qdrant(VectorStore):
         )
 
         # Now generate the embeddings for all the texts
-        embeddings = embedding.embed_documents(texts)
+        embeddings = embedding.embed_texts(texts)
 
         client.upsert(
             collection_name=collection_name,

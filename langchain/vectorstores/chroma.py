@@ -92,7 +92,7 @@ class Chroma(VectorStore):
         self._persist_directory = persist_directory
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
-            embedding_function=self._embedding_function.embed_documents
+            embedding_function=self._embedding_function.embed_texts
             if self._embedding_function is not None
             else None,
             metadata=collection_metadata,
@@ -156,7 +156,7 @@ class Chroma(VectorStore):
             ids = [str(uuid.uuid1()) for _ in texts]
         embeddings = None
         if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(list(texts))
+            embeddings = self._embedding_function.embed_texts(list(texts))
         self._collection.add(
             metadatas=metadatas, embeddings=embeddings, documents=texts, ids=ids
         )

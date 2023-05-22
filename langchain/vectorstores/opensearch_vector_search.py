@@ -327,7 +327,7 @@ class OpenSearchVectorSearch(VectorStore):
             text_field: Document field the text of the document is stored in. Defaults
             to "text".
         """
-        embeddings = self.embedding_function.embed_documents(list(texts))
+        embeddings = self.embedding_function.embed_texts(list(texts))
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         text_field = _get_kwargs_value(kwargs, "text_field", "text")
         dim = len(embeddings[0])
@@ -560,7 +560,7 @@ class OpenSearchVectorSearch(VectorStore):
             "ef_construction",
             "m",
         ]
-        embeddings = embedding.embed_documents(texts)
+        embeddings = embedding.embed_texts(texts)
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
         # Get the index name from either from kwargs or ENV Variable

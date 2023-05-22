@@ -24,7 +24,7 @@ def test_self_hosted_huggingface_embedding_documents() -> None:
     documents = ["foo bar"]
     gpu = get_remote_instance()
     embedding = SelfHostedHuggingFaceEmbeddings(hardware=gpu)
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 1
     assert len(output[0]) == 768
 
@@ -43,7 +43,7 @@ def test_self_hosted_huggingface_instructor_embedding_documents() -> None:
     documents = ["foo bar"]
     gpu = get_remote_instance()
     embedding = SelfHostedHuggingFaceInstructEmbeddings(hardware=gpu)
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 1
     assert len(output[0]) == 768
 
@@ -80,7 +80,7 @@ def test_self_hosted_embedding_documents() -> None:
     embedding = SelfHostedEmbeddings(
         model_load_fn=get_pipeline, hardware=gpu, inference_fn=inference_fn
     )
-    output = embedding.embed_documents(documents)
+    output = embedding.embed_texts(documents)
     assert len(output) == 2
     assert len(output[0]) == 50265
 

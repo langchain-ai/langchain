@@ -271,7 +271,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 headers=self.headers,
             )["data"][0]["embedding"]
 
-    def embed_documents(
+    def embed_texts(
         self, texts: List[str], chunk_size: Optional[int] = 0
     ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.

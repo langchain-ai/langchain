@@ -167,7 +167,7 @@ class ElasticVectorSearch(VectorStore, ABC):
             )
         requests = []
         ids = []
-        embeddings = self.embedding.embed_documents(list(texts))
+        embeddings = self.embedding.embed_texts(list(texts))
         dim = len(embeddings[0])
         mapping = _default_text_mapping(dim)
 

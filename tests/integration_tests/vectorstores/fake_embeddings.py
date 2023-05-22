@@ -9,7 +9,7 @@ fake_texts = ["foo", "bar", "baz"]
 class FakeEmbeddings(Embeddings):
     """Fake embeddings functionality for testing."""
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """Return simple embeddings.
         Embeddings encode each text as its index."""
         return [[float(1.0)] * 9 + [float(i)] for i in range(len(texts))]
