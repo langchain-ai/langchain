@@ -42,6 +42,7 @@ class Neo4jGraph:
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
+        self.schema = ""
         # Verify connection
         try:
             self._driver.verify_connectivity()
@@ -79,12 +80,9 @@ class Neo4jGraph:
                 # Hard limit of 50 results
                 return [r.data() for r in data][:50]
             except CypherSyntaxError as e:
-                raise ValueError(
-                    "Generated Cypher Statement is not valid\n"
-                    f"{e}"
-                )
+                raise ValueError("Generated Cypher Statement is not valid\n" f"{e}")
 
-    def refresh_schema(self):
+    def refresh_schema(self) -> None:
         """
         Refreshes the Neo4j graph schema information.
         """

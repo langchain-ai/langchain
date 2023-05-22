@@ -8,14 +8,17 @@ from langchain.llms.openai import OpenAI
 
 def test_connect_neo4j() -> None:
     """Test that Neo4j database is correctly instantiated and connected."""
-    assert os.environ.get("NEO4J_URL") is not None
-    assert os.environ.get("NEO4J_USERNAME") is not None
-    assert os.environ.get("NEO4J_PASSWORD") is not None
+    url = os.environ.get("NEO4J_URL")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
 
     graph = Neo4jGraph(
-        url=os.environ.get("NEO4J_URL"),
-        username=os.environ.get("NEO4J_USERNAME"),
-        password=os.environ.get("NEO4J_PASSWORD"),
+        url=url,
+        username=username,
+        password=password,
     )
 
     output = graph.query(
@@ -29,20 +32,24 @@ def test_connect_neo4j() -> None:
 
 def test_cypher_generating_run() -> None:
     """Test that Cypher statement is correctly generated and executed."""
-    assert os.environ.get("NEO4J_URL") is not None
-    assert os.environ.get("NEO4J_USERNAME") is not None
-    assert os.environ.get("NEO4J_PASSWORD") is not None
+    url = os.environ.get("NEO4J_URL")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
 
     graph = Neo4jGraph(
-        url=os.environ.get("NEO4J_URL"),
-        username=os.environ.get("NEO4J_USERNAME"),
-        password=os.environ.get("NEO4J_PASSWORD"),
+        url=url,
+        username=username,
+        password=password,
     )
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship
     graph.query(
-        "CREATE (a:Actor {name:'Bruce Willis'})-[:ACTED_IN]->(:Movie {title: 'Pulp Fiction'})"
+        "CREATE (a:Actor {name:'Bruce Willis'})"
+        "-[:ACTED_IN]->(:Movie {title: 'Pulp Fiction'})"
     )
     # Refresh schema information
     graph.refresh_schema()
