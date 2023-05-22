@@ -44,6 +44,7 @@ class GraphCypherQAChain(Chain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
+        *,
         qa_prompt: BasePromptTemplate = PROMPT,
         cypher_prompt: BasePromptTemplate = CYPHER_GENERATION_PROMPT,
         **kwargs: Any,
@@ -65,10 +66,11 @@ class GraphCypherQAChain(Chain):
     ) -> Dict[str, str]:
         """Generate Cypher statement, use it to look up in db and answer question."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
+        callbacks = _run_manager.get_child()
         question = inputs[self.input_key]
 
         generated_cypher = self.cypher_generation_chain.run(
-            {"question": question, "schema": self.graph.get_schema}
+            {"question": question, "schema": self.graph.get_schema}, callbacks=callbacks
         )
 
         _run_manager.on_text("Generated Cypher:", end="\n", verbose=self.verbose)
@@ -83,6 +85,6 @@ class GraphCypherQAChain(Chain):
         )
         result = self.qa_chain(
             {"question": question, "context": context},
-            callbacks=_run_manager.get_child(),
+            callbacks=callbacks,
         )
         return {self.output_key: result[self.qa_chain.output_key]}
