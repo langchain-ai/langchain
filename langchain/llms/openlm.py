@@ -1,17 +1,19 @@
-from typing import Dict,Any
+from typing import Dict, Any
 from pydantic import root_validator
 
 from langchain.llms.openai import BaseOpenAI
+
 
 class OpenLM(BaseOpenAI):
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"model": self.model_name}, **super()._invocation_params}
-    
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         try:
             import openlm
+
             values["client"] = openlm.Completion
         except ImportError:
             raise ValueError(
