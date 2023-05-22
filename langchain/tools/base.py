@@ -260,6 +260,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
                     if self.handle_tool_error:
                         observation = "Tool execution error"
                     else:
+                        run_manager.on_tool_error(e)
                         raise e
                 elif isinstance(self.handle_tool_error, str):
                     observation = self.handle_tool_error
