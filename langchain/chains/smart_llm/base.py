@@ -6,7 +6,6 @@ from pydantic import Extra, root_validator
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chat_models.base import BaseChatModel
 from langchain.input import get_colored_text
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
@@ -15,7 +14,7 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain.schema import BaseMessage, LLMResult, PromptValue
+from langchain.schema import LLMResult, PromptValue
 
 
 class SmartLLMChain(Chain):
