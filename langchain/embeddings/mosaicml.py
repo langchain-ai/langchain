@@ -62,9 +62,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {
-            **{"endpoint_url": self.endpoint_url},
-        }
+        return {"endpoint_url": self.endpoint_url}
 
     def _embed(self, input: List[Tuple[str, str]]) -> List[List[float]]:
         payload = {"input_strings": input}
