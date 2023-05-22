@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Type
 
 from pydantic import BaseModel, Extra
 
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.vectorstores.base import VectorStore
 
@@ -64,7 +64,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
     def from_examples(
         cls,
         examples: List[dict],
-        embeddings: Embeddings,
+        embeddings: EmbeddingModel,
         vectorstore_cls: Type[VectorStore],
         k: int = 4,
         input_keys: Optional[List[str]] = None,
@@ -130,7 +130,7 @@ class MaxMarginalRelevanceExampleSelector(SemanticSimilarityExampleSelector):
     def from_examples(
         cls,
         examples: List[dict],
-        embeddings: Embeddings,
+        embeddings: EmbeddingModel,
         vectorstore_cls: Type[VectorStore],
         k: int = 4,
         input_keys: Optional[List[str]] = None,

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, List, Optional
 
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.vectorstores.milvus import Milvus
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ class Zilliz(Milvus):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         collection_name: str = "LangChainCollection",
         connection_args: dict[str, Any] = {},
@@ -73,7 +73,7 @@ class Zilliz(Milvus):
 
         Args:
             texts (List[str]): Text data.
-            embedding (Embeddings): Embedding function.
+            embedding (EmbeddingModel): Embedding function.
             metadatas (Optional[List[dict]]): Metadata for each text if it exists.
                 Defaults to None.
             collection_name (str, optional): Collection name to use. Defaults to

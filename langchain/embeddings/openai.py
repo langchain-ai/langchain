@@ -25,7 +25,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     return _embed_with_retry(**kwargs)
 
 
-class OpenAIEmbeddings(BaseModel, Embeddings):
+class OpenAIEmbeddings(BaseModel, EmbeddingModel):
     """Wrapper around OpenAI embedding models.
 
     To use, you should have the ``openai`` python package installed, and the

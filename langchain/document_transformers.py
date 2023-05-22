@@ -4,7 +4,7 @@ from typing import Any, Callable, List, Sequence
 import numpy as np
 from pydantic import BaseModel, Field
 
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.math_utils import cosine_similarity
 from langchain.schema import BaseDocumentTransformer, Document
 
@@ -50,7 +50,7 @@ def _filter_similar_embeddings(
 
 
 def _get_embeddings_from_stateful_docs(
-    embeddings: Embeddings, documents: Sequence[_DocumentWithState]
+    embeddings: EmbeddingModel, documents: Sequence[_DocumentWithState]
 ) -> List[List[float]]:
     if len(documents) and "embedded_doc" in documents[0].state:
         embedded_documents = [doc.state["embedded_doc"] for doc in documents]
@@ -66,7 +66,7 @@ def _get_embeddings_from_stateful_docs(
 class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
     """Filter that drops redundant documents by comparing their embeddings."""
 
-    embeddings: Embeddings
+    embeddings: EmbeddingModel
     """Embeddings to use for embedding document contents."""
     similarity_fn: Callable = cosine_similarity
     """Similarity function for comparing documents. Function expected to take as input

@@ -13,7 +13,7 @@ import numpy as np
 from langchain.docstore.base import AddableMixin, Docstore
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -364,7 +364,7 @@ class FAISS(VectorStore):
         cls,
         texts: List[str],
         embeddings: List[List[float]],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         normalize_L2: bool = False,
         **kwargs: Any,
@@ -396,7 +396,7 @@ class FAISS(VectorStore):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> FAISS:
@@ -430,7 +430,7 @@ class FAISS(VectorStore):
     def from_embeddings(
         cls,
         text_embeddings: List[Tuple[str, List[float]]],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> FAISS:
@@ -486,7 +486,7 @@ class FAISS(VectorStore):
 
     @classmethod
     def load_local(
-        cls, folder_path: str, embeddings: Embeddings, index_name: str = "index"
+        cls, folder_path: str, embeddings: EmbeddingModel, index_name: str = "index"
     ) -> FAISS:
         """Load FAISS index, docstore, and index_to_docstore_id to disk.
 

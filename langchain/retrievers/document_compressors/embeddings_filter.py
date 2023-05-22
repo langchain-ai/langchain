@@ -8,7 +8,7 @@ from langchain.document_transformers import (
     _get_embeddings_from_stateful_docs,
     get_stateful_documents,
 )
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.math_utils import cosine_similarity
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
@@ -17,7 +17,7 @@ from langchain.schema import Document
 
 
 class EmbeddingsFilter(BaseDocumentCompressor):
-    embeddings: Embeddings
+    embeddings: EmbeddingModel
     """Embeddings to use for embedding document contents and queries."""
     similarity_fn: Callable = cosine_similarity
     """Similarity function for comparing documents. Function expected to take as input

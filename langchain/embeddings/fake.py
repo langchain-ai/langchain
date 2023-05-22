@@ -3,10 +3,10 @@ from typing import List
 import numpy as np
 from pydantic import BaseModel
 
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 
 
-class FakeEmbeddings(Embeddings, BaseModel):
+class FakeEmbeddings(EmbeddingModel, BaseModel):
     size: int
 
     def _get_embedding(self) -> List[float]:

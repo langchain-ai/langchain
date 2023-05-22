@@ -1,12 +1,12 @@
 """Fake Embedding class for testing purposes."""
 from typing import List
 
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 
 fake_texts = ["foo", "bar", "baz"]
 
 
-class FakeEmbeddings(Embeddings):
+class FakeEmbeddings(EmbeddingModel):
     """Fake embeddings functionality for testing."""
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

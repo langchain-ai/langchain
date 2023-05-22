@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 
-class Embeddings(ABC):
+class EmbeddingModel(ABC):
     """Interface for embedding models."""
 
     @abstractmethod
@@ -13,3 +13,7 @@ class Embeddings(ABC):
     @abstractmethod
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
+
+
+# For backwards compatibility.
+Embedding = EmbeddingModel

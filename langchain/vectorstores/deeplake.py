@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -96,7 +96,7 @@ class DeepLake(VectorStore):
         self,
         dataset_path: str = _LANGCHAIN_DEFAULT_DEEPLAKE_PATH,
         token: Optional[str] = None,
-        embedding_function: Optional[Embeddings] = None,
+        embedding_function: Optional[EmbeddingModel] = None,
         read_only: Optional[bool] = False,
         ingestion_batch_size: int = 1024,
         num_workers: int = 0,
@@ -494,7 +494,7 @@ class DeepLake(VectorStore):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: Optional[Embeddings] = None,
+        embedding: Optional[EmbeddingModel] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         dataset_path: str = _LANGCHAIN_DEFAULT_DEEPLAKE_PATH,
@@ -522,7 +522,7 @@ class DeepLake(VectorStore):
                     save the dataset, but keeps it in memory instead.
                     Should be used only for testing as it does not persist.
             documents (List[Document]): List of documents to add.
-            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
+            embedding (Optional[EmbeddingModel]): Embedding function. Defaults to None.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
 

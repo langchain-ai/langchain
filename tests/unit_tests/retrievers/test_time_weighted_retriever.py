@@ -5,7 +5,7 @@ from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import pytest
 
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
     _get_hours_passed,
@@ -67,7 +67,7 @@ class MockVectorStore(VectorStore):
     def from_documents(
         cls: Type["MockVectorStore"],
         documents: List[Document],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         **kwargs: Any,
     ) -> "MockVectorStore":
         """Return VectorStore initialized from documents and embeddings."""
@@ -79,7 +79,7 @@ class MockVectorStore(VectorStore):
     def from_texts(
         cls: Type["MockVectorStore"],
         texts: List[str],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> "MockVectorStore":

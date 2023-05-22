@@ -4,7 +4,7 @@ from typing import Callable, Optional
 import pytest
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
@@ -139,7 +139,7 @@ def test_qdrant_max_marginal_relevance_search(
     ],
 )
 def test_qdrant_embedding_interface(
-    embeddings: Optional[Embeddings], embedding_function: Optional[Callable]
+    embeddings: Optional[EmbeddingModel], embedding_function: Optional[Callable]
 ) -> None:
     from qdrant_client import QdrantClient
 
@@ -162,7 +162,7 @@ def test_qdrant_embedding_interface(
     ],
 )
 def test_qdrant_embedding_interface_raises(
-    embeddings: Optional[Embeddings], embedding_function: Optional[Callable]
+    embeddings: Optional[EmbeddingModel], embedding_function: Optional[Callable]
 ) -> None:
     from qdrant_client import QdrantClient
 

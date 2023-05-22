@@ -3,14 +3,14 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_REPO_ID = "sentence-transformers/all-mpnet-base-v2"
 VALID_TASKS = ("feature-extraction",)
 
 
-class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
+class HuggingFaceHubEmbeddings(BaseModel, EmbeddingModel):
     """Wrapper around HuggingFaceHub embedding models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the

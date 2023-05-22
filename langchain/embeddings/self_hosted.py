@@ -3,7 +3,7 @@ from typing import Any, Callable, List
 
 from pydantic import Extra
 
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.llms import SelfHostedPipeline
 
 
@@ -16,7 +16,7 @@ def _embed_documents(pipeline: Any, *args: Any, **kwargs: Any) -> List[List[floa
     return pipeline(*args, **kwargs)
 
 
-class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
+class SelfHostedEmbeddings(SelfHostedPipeline, EmbeddingModel):
     """Runs custom embedding models on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,

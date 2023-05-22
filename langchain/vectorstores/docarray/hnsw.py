@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, List, Literal, Optional
 
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.vectorstores.docarray.base import (
     DocArrayIndex,
     _check_docarray_import,
@@ -20,7 +20,7 @@ class DocArrayHnswSearch(DocArrayIndex):
     @classmethod
     def from_params(
         cls,
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         work_dir: str,
         n_dim: int,
         dist_metric: Literal["cosine", "ip", "l2"] = "cosine",
@@ -36,7 +36,7 @@ class DocArrayHnswSearch(DocArrayIndex):
         """Initialize DocArrayHnswSearch store.
 
         Args:
-            embedding (Embeddings): Embedding function.
+            embedding (EmbeddingModel): Embedding function.
             work_dir (str): path to the location where all the data will be stored.
             n_dim (int): dimension of an embedding.
             dist_metric (str): Distance metric for DocArrayHnswSearch can be one of:
@@ -78,7 +78,7 @@ class DocArrayHnswSearch(DocArrayIndex):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         work_dir: Optional[str] = None,
         n_dim: Optional[int] = None,
@@ -89,7 +89,7 @@ class DocArrayHnswSearch(DocArrayIndex):
 
         Args:
             texts (List[str]): Text data.
-            embedding (Embeddings): Embedding function.
+            embedding (EmbeddingModel): Embedding function.
             metadatas (Optional[List[dict]]): Metadata for each text if it exists.
                 Defaults to None.
             work_dir (str): path to the location where all the data will be stored.

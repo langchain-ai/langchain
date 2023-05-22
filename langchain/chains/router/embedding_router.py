@@ -7,7 +7,7 @@ from pydantic import Extra
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.router.base import RouterChain
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.vectorstores.base import VectorStore
 
 
@@ -45,7 +45,7 @@ class EmbeddingRouterChain(RouterChain):
         cls,
         names_and_descriptions: Sequence[Tuple[str, Sequence[str]]],
         vectorstore_cls: Type[VectorStore],
-        embeddings: Embeddings,
+        embeddings: EmbeddingModel,
         **kwargs: Any,
     ) -> EmbeddingRouterChain:
         """Convenience constructor."""

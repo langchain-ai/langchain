@@ -22,7 +22,7 @@ import numpy as np
 from pydantic import BaseModel, root_validator
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
@@ -361,7 +361,7 @@ class Redis(VectorStore):
     def from_texts_return_keys(
         cls,
         texts: List[str],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
         content_key: str = "content",
@@ -421,7 +421,7 @@ class Redis(VectorStore):
     def from_texts(
         cls: Type[Redis],
         texts: List[str],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
         content_key: str = "content",
@@ -502,7 +502,7 @@ class Redis(VectorStore):
     @classmethod
     def from_existing_index(
         cls,
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         index_name: str,
         content_key: str = "content",
         metadata_key: str = "metadata",

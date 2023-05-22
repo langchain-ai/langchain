@@ -21,7 +21,7 @@ from typing import (
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -55,7 +55,7 @@ class Qdrant(VectorStore):
         self,
         client: Any,
         collection_name: str,
-        embeddings: Optional[Embeddings] = None,
+        embeddings: Optional[EmbeddingModel] = None,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         embedding_function: Optional[Callable] = None,  # deprecated
@@ -99,7 +99,7 @@ class Qdrant(VectorStore):
                 "Pass `Embeddings` instance to `embeddings` instead."
             )
 
-        if not isinstance(embeddings, Embeddings):
+        if not isinstance(embeddings, EmbeddingModel):
             warnings.warn(
                 "`embeddings` should be an instance of `Embeddings`."
                 "Using `embeddings` as `embedding_function` which is deprecated"
@@ -292,7 +292,7 @@ class Qdrant(VectorStore):
     def from_texts(
         cls: Type[Qdrant],
         texts: List[str],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,

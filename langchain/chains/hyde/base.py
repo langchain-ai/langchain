@@ -14,16 +14,16 @@ from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.chains.llm import LLMChain
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 
 
-class HypotheticalDocumentEmbedder(Chain, Embeddings):
+class HypotheticalDocumentEmbedder(Chain, EmbeddingModel):
     """Generate hypothetical document for query, and then embed that.
 
     Based on https://arxiv.org/abs/2212.10496
     """
 
-    base_embeddings: Embeddings
+    base_embeddings: EmbeddingModel
     llm_chain: LLMChain
 
     class Config:
@@ -71,7 +71,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        base_embeddings: Embeddings,
+        base_embeddings: EmbeddingModel,
         prompt_key: str,
         **kwargs: Any,
     ) -> HypotheticalDocumentEmbedder:

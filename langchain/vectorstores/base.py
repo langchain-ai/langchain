@@ -10,7 +10,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
 from pydantic import BaseModel, Field, root_validator
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.schema import BaseRetriever
 
 VST = TypeVar("VST", bound="VectorStore")
@@ -298,7 +298,7 @@ class VectorStore(ABC):
     def from_documents(
         cls: Type[VST],
         documents: List[Document],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from documents and embeddings."""
@@ -310,7 +310,7 @@ class VectorStore(ABC):
     async def afrom_documents(
         cls: Type[VST],
         documents: List[Document],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from documents and embeddings."""
@@ -323,7 +323,7 @@ class VectorStore(ABC):
     def from_texts(
         cls: Type[VST],
         texts: List[str],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> VST:
@@ -333,7 +333,7 @@ class VectorStore(ABC):
     async def afrom_texts(
         cls: Type[VST],
         texts: List[str],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> VST:

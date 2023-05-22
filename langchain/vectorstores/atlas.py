@@ -8,7 +8,7 @@ from typing import Any, Iterable, List, Optional, Type
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ class AtlasDB(VectorStore):
     def __init__(
         self,
         name: str,
-        embedding_function: Optional[Embeddings] = None,
+        embedding_function: Optional[EmbeddingModel] = None,
         api_key: Optional[str] = None,
         description: str = "A description for your project",
         is_public: bool = True,
@@ -212,7 +212,7 @@ class AtlasDB(VectorStore):
     def from_texts(
         cls: Type[AtlasDB],
         texts: List[str],
-        embedding: Optional[Embeddings] = None,
+        embedding: Optional[EmbeddingModel] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         name: Optional[str] = None,
@@ -229,7 +229,7 @@ class AtlasDB(VectorStore):
             texts (List[str]): The list of texts to ingest.
             name (str): Name of the project to create.
             api_key (str): Your nomic API key,
-            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
+            embedding (Optional[EmbeddingModel]): Embedding function. Defaults to None.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): Optional list of document IDs. If None,
                 ids will be auto created
@@ -272,7 +272,7 @@ class AtlasDB(VectorStore):
     def from_documents(
         cls: Type[AtlasDB],
         documents: List[Document],
-        embedding: Optional[Embeddings] = None,
+        embedding: Optional[EmbeddingModel] = None,
         ids: Optional[List[str]] = None,
         name: Optional[str] = None,
         api_key: Optional[str] = None,
@@ -289,7 +289,7 @@ class AtlasDB(VectorStore):
             name (str): Name of the collection to create.
             api_key (str): Your nomic API key,
             documents (List[Document]): List of documents to add to the vectorstore.
-            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
+            embedding (Optional[EmbeddingModel]): Embedding function. Defaults to None.
             ids (Optional[List[str]]): Optional list of document IDs. If None,
                 ids will be auto created
             description (str): A description for your project.

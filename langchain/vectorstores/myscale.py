@@ -10,7 +10,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from pydantic import BaseSettings
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()
@@ -98,7 +98,7 @@ class MyScale(VectorStore):
 
     def __init__(
         self,
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         config: Optional[MyScaleSettings] = None,
         **kwargs: Any,
     ) -> None:
@@ -259,7 +259,7 @@ class MyScale(VectorStore):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: Embeddings,
+        embedding: EmbeddingModel,
         metadatas: Optional[List[Dict[Any, Any]]] = None,
         config: Optional[MyScaleSettings] = None,
         text_ids: Optional[Iterable[str]] = None,
@@ -269,7 +269,7 @@ class MyScale(VectorStore):
         """Create Myscale wrapper with existing texts
 
         Args:
-            embedding_function (Embeddings): Function to extract text embedding
+            embedding_function (EmbeddingModel): Function to extract text embedding
             texts (Iterable[str]): List or tuple of strings to be added
             config (MyScaleSettings, Optional): Myscale configuration
             text_ids (Optional[Iterable], optional): IDs for the texts.

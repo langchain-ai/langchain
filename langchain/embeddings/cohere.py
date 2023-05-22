@@ -3,11 +3,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import EmbeddingModel
 from langchain.utils import get_from_dict_or_env
 
 
-class CohereEmbeddings(BaseModel, Embeddings):
+class CohereEmbeddings(BaseModel, EmbeddingModel):
     """Wrapper around Cohere embedding models.
 
     To use, you should have the ``cohere`` python package installed, and the
