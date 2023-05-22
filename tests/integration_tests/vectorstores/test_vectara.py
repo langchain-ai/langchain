@@ -1,4 +1,5 @@
 import os
+
 from langchain.docstore.document import Document
 from langchain.vectorstores.vectara import Vectara
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings

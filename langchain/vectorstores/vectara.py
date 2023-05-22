@@ -259,28 +259,6 @@ class Vectara(VectorStore):
         vectara.add_texts(texts, metadatas)
         return vectara
 
-    @classmethod
-    def from_documents(
-        cls: Type[Vectara],
-        documents: List[Document],
-        embedding: Optional[Embeddings] = None,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> Vectara:
-        """Create a Vectara vectorstore from a list of documents.
-
-        Args:
-            documents (List[Document]): List of documents to add to the vectorstore.
-            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
-        Returns:
-            Vectara: Vectara vectorstore.
-        """
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return cls.from_texts(
-            texts=texts, embedding=embedding, metadatas=metadatas, **kwargs
-        )
-
 
 class VectaraRetriever(BaseRetriever):
     def __init__(
