@@ -14,7 +14,7 @@ def X() -> List[List[float]]:
 
 @pytest.fixture
 def Y() -> List[List[float]]:
-    return [[0.5, 1.0, 1.5], [1.0, 0.0, 0.0], [2.0, 5.0, 2.0], [0, 0, 0]]
+    return [[0.5, 1.0, 1.5], [1.0, 0.0, 0.0], [2.0, 5.0, 2.0], [0.0, 0.0, 0.0]]
 
 
 def test_cosine_similarity_zero() -> None:
