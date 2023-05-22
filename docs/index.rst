@@ -13,7 +13,6 @@ Overview
 .. note::
     This is the Python specific portion of the documentation. See here for the `Conceptual documentation <https://docs.langchain.com/docs/>`_ and here for the `JavaScript documentation <https://js.langchain.com/docs/>`_.
 
-
 .. toctree::
    :maxdepth: 1
    :caption: LangChain
@@ -25,6 +24,5 @@ Overview
    ./ecosystem.rst
    ./reference.rst
    ./additional_resources.rst
-
 
 
