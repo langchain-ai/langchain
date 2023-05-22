@@ -69,6 +69,7 @@ from langchain.document_loaders.pdf import (
     UnstructuredPDFLoader,
 )
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
+from langchain.document_loaders.psychic import PsychicLoader
 from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
@@ -215,4 +216,5 @@ __all__ = [
     "YoutubeLoader",
     "TelegramChatLoader",
     "ToMarkdownLoader",
+    "PsychicLoader",
 ]
