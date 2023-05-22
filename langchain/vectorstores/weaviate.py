@@ -137,7 +137,9 @@ class Weaviate(VectorStore):
 
                 # If the UUID of one of the objects already exists
                 # then the existing object will be replaced by the new object.
-                _id = kwargs["uuids"][i] if "uuids" in kwargs else get_valid_uuid(uuid4())
+                _id = (
+                    kwargs["uuids"][i] if "uuids" in kwargs else get_valid_uuid(uuid4())
+                )
 
                 if self._embedding is not None:
                     vector = self._embedding.embed_documents([text])[0]
