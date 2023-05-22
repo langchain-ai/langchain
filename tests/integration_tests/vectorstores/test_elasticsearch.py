@@ -48,6 +48,23 @@ class TestElasticsearch:
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
 
+    def test_similarity_search_with_ssl_verify(self, elasticsearch_url: str) -> None:
+        """Test end to end construction and search with ssl verify."""
+        ssl_verify = {
+            "verify_certs": True,
+            "basic_auth": ("ES_USER", "ES_PASSWORD"),
+            "ca_certs": "ES_CA_CERTS_PATH",
+        }
+        texts = ["foo", "bar", "baz"]
+        docsearch = ElasticVectorSearch.from_texts(
+            texts,
+            FakeEmbeddings(),
+            elasticsearch_url=elasticsearch_url,
+            ssl_verify=ssl_verify,
+        )
+        output = docsearch.similarity_search("foo", k=1)
+        assert output == [Document(page_content="foo")]
+
     def test_similarity_search_with_metadata(self, elasticsearch_url: str) -> None:
         """Test end to end construction and search with metadata."""
         texts = ["foo", "bar", "baz"]
