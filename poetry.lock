@@ -818,6 +818,21 @@ files = [
 numpy = ">=1.15.0"
 
 [[package]]
+name = "blurhash"
+version = "1.1.4"
+description = "Pure-Python implementation of the blurhash algorithm."
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "blurhash-1.1.4-py2.py3-none-any.whl", hash = "sha256:7611c1bc41383d2349b6129208587b5d61e8792ce953893cb49c38beeb400d1d"},
+    {file = "blurhash-1.1.4.tar.gz", hash = "sha256:da56b163e5a816e4ad07172f5639287698e09d7f3dc38d18d9726d9c1dbc4cee"},
+]
+
+[package.extras]
+test = ["Pillow", "numpy", "pytest"]
+
+[[package]]
 name = "boto3"
 version = "1.26.76"
 description = "The AWS SDK for Python"
@@ -4163,6 +4178,32 @@ files = [
 marshmallow = ">=2.0.0"
 
 [[package]]
+name = "mastodon-py"
+version = "1.8.1"
+description = "Python wrapper for the Mastodon API"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "Mastodon.py-1.8.1-py2.py3-none-any.whl", hash = "sha256:22bc7e060518ef2eaa69d911cde6e4baf56bed5ea0dd407392c49051a7ac526a"},
+    {file = "Mastodon.py-1.8.1.tar.gz", hash = "sha256:4a64cb94abadd6add73e4b8eafdb5c466048fa5f638284fd2189034104d4687e"},
+]
+
+[package.dependencies]
+blurhash = ">=1.1.4"
+decorator = ">=4.0.0"
+python-dateutil = "*"
+python-magic = {version = "*", markers = "platform_system != \"Windows\""}
+python-magic-bin = {version = "*", markers = "platform_system == \"Windows\""}
+requests = ">=2.4.2"
+six = "*"
+
+[package.extras]
+blurhash = ["blurhash (>=1.1.4)"]
+test = ["blurhash (>=1.1.4)", "cryptography (>=1.6.0)", "http-ece (>=1.0.5)", "pytest", "pytest-cov", "pytest-mock", "pytest-runner", "pytest-vcr", "pytz", "requests-mock", "vcrpy"]
+webpush = ["cryptography (>=1.6.0)", "http-ece (>=1.0.5)"]
+
+[[package]]
 name = "matplotlib-inline"
 version = "0.1.6"
 description = "Inline Matplotlib backend for Jupyter"
@@ -7149,6 +7190,31 @@ python-versions = ">=3.6"
 files = [
     {file = "python-json-logger-2.0.7.tar.gz", hash = "sha256:23e7ec02d34237c5aa1e29a070193a4ea87583bb4e7f8fd06d3de8264c4b2e1c"},
     {file = "python_json_logger-2.0.7-py3-none-any.whl", hash = "sha256:f380b826a991ebbe3de4d897aeec42760035ac760345e57b812938dc8b35e2bd"},
+]
+
+[[package]]
+name = "python-magic"
+version = "0.4.27"
+description = "File type identification using libmagic"
+category = "dev"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+files = [
+    {file = "python-magic-0.4.27.tar.gz", hash = "sha256:c1ba14b08e4a5f5c31a302b7721239695b2f0f058d125bd5ce1ee36b9d9d3c3b"},
+    {file = "python_magic-0.4.27-py2.py3-none-any.whl", hash = "sha256:c212960ad306f700aa0d01e5d7a325d20548ff97eb9920dcd29513174f0294d3"},
+]
+
+[[package]]
+name = "python-magic-bin"
+version = "0.4.14"
+description = "File type identification using libmagic binary package"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "python_magic_bin-0.4.14-py2.py3-none-macosx_10_6_intel.whl", hash = "sha256:7b1743b3dbf16601d6eedf4e7c2c9a637901b0faaf24ad4df4d4527e7d8f66a4"},
+    {file = "python_magic_bin-0.4.14-py2.py3-none-win32.whl", hash = "sha256:34a788c03adde7608028203e2dbb208f1f62225ad91518787ae26d603ae68892"},
+    {file = "python_magic_bin-0.4.14-py2.py3-none-win_amd64.whl", hash = "sha256:90be6206ad31071a36065a2fc169c5afb5e0355cbe6030e87641c6c62edc2b69"},
 ]
 
 [[package]]
@@ -10393,4 +10459,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "7c14d63435a60c32edbb4d7adcc647430cf64a80aa26c1515fba28d5433efc6b"
+content-hash = "52fa365939f4bf1a9f5a93c9dfc8f0fe77a5e7989ff2c1caf0392044b72e08dc"
