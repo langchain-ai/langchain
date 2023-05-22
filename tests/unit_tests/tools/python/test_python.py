@@ -40,6 +40,9 @@ def test_python_ast_repl_tool_single_input() -> None:
     assert tool.run("1 + 1") == 2
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
 def test_python_ast_repl_return() -> None:
     program = """
 ```
@@ -65,6 +68,9 @@ int(dot_product)
     assert tool.run(program) == 32
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
 def test_python_ast_repl_print() -> None:
     program = """python
 string = "racecar"
@@ -76,12 +82,18 @@ else:
     assert tool.run(program) == "racecar is a palindrome\n"
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
 def test_repl_print_python_backticks() -> None:
     program = "`print('`python` is a great language.')`"
     tool = PythonAstREPLTool()
     assert tool.run(program) == "`python` is a great language.\n"
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
 def test_python_ast_repl_raise_exception() -> None:
     data = {"Name": ["John", "Alice"], "Age": [30, 25]}
     program = """
@@ -97,12 +109,18 @@ df['Gender']
     assert tool.run(program) in expected_outputs
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
 def test_python_ast_repl_one_line_print() -> None:
     program = 'print("The square of {} is {:.2f}".format(3, 3**2))'
     tool = PythonAstREPLTool()
     assert tool.run(program) == "The square of 3 is 9.00\n"
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
 def test_python_ast_repl_one_line_return() -> None:
     arr = np.array([1, 2, 3, 4, 5])
     tool = PythonAstREPLTool(locals={"arr": arr})
@@ -110,6 +128,9 @@ def test_python_ast_repl_one_line_return() -> None:
     assert tool.run(program) == 55
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
 def test_python_ast_repl_one_line_exception() -> None:
     program = "[1, 2, 3][4]"
     tool = PythonAstREPLTool()
