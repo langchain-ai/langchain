@@ -18,7 +18,7 @@ def create_index(
     embeddings: Embeddings,
     sparse_encoder: Any,
     ids: Optional[List[str]] = None,
-    metadata: Optional[List[dict]] = None,
+    metadatas: Optional[List[dict]] = None,
 ) -> None:
     batch_size = 32
     _iterator = range(0, len(contexts), batch_size)
@@ -33,16 +33,23 @@ def create_index(
         # create unique ids using hash of the text
         ids = [hash_text(context) for context in contexts]
 
+    if metadatas is None:
+        metadatas = []
+
     for i in _iterator:
         # find end of batch
         i_end = min(i + batch_size, len(contexts))
         # extract batch
         context_batch = contexts[i:i_end]
         batch_ids = ids[i:i_end]
-        metadata_batch = metadata[i:i_end]
+        metadata_batch = (
+            metadatas[i:i_end] if metadatas else [{} for _ in context_batch]
+        )
         # add context passages as metadata
-        meta = [{"context": context, **metadata} for 
-                context, metadata in zip(context_batch, metadata_batch)]
+        meta = [
+            {"context": context, **metadata}
+            for context, metadata in zip(context_batch, metadata_batch)
+        ]
 
         # create dense vectors
         dense_embeds = embeddings.embed_documents(context_batch)
@@ -83,12 +90,19 @@ class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
         arbitrary_types_allowed = True
 
     def add_texts(
-        self, 
-        texts: List[str], 
-        ids: Optional[List[str]] = None, 
-        metadata: Optional[List[dict]] = None, 
+        self,
+        texts: List[str],
+        ids: Optional[List[str]] = None,
+        metadatas: Optional[List[dict]] = None,
     ) -> None:
-        create_index(texts, self.index, self.embeddings, self.sparse_encoder, ids=ids, metadata=metadata)
+        create_index(
+            texts,
+            self.index,
+            self.embeddings,
+            self.sparse_encoder,
+            ids=ids,
+            metadatas=metadatas,
+        )
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -123,7 +137,7 @@ class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
         )
         final_result = []
         for res in result["matches"]:
-            context = res['metadata'].pop('context')
+            context = res["metadata"].pop("context")
             final_result.append(Document(page_content=context, metadata=res))
         # return search results as json
         return final_result
