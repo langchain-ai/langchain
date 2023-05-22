@@ -1,5 +1,5 @@
 """Simple reader that reads weather data from OpenWeatherMap API"""
-from typing import List
+from typing import List, Iterator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -23,19 +23,11 @@ class WeatherDataLoader(BaseLoader):
         super().__init__()
         self.token = token
 
-    def load(
-        self, 
+    def lazy_load(
+        self,
         places: List[str], 
-    ) -> List[Document]:
-
-        """Load weather data for the given locations. 
-        OWM's One Call API provides the following weather data for any geographical coordinate:
-        - Current weather
-        - Hourly forecast for 48 hours
-        - Daily forecast for 7 days
-        Args:
-            places (List[str]) - places you want the weather data for.
-        """
+    ) -> Iterator[Document]:
+        """A lazy loader for document content."""
 
         try:
             import pyowm
@@ -77,7 +69,20 @@ class WeatherDataLoader(BaseLoader):
                 info_dict['minutely forecast'] = [i.to_dict() for i in res.forecast_minutely]
             if res.national_weather_alerts:
                 info_dict['national weather alerts'] = [i.to_dict() for i in res.national_weather_alerts]
+            
+            yield Document(page_content=str(info_dict),metadata=metadata)        
 
-            results.append(Document(page_content=str(info_dict),metadata=metadata))
+    def load(
+        self, 
+        places: List[str], 
+    ) -> List[Document]:
 
-        return results
+        """Load weather data for the given locations. 
+        OWM's One Call API provides the following weather data for any geographical coordinate:
+        - Current weather
+        - Hourly forecast for 48 hours
+        - Daily forecast for 7 days
+        Args:
+            places (List[str]) - places you want the weather data for.
+        """
+        return list(self.lazy_load(places=places))
