@@ -17,6 +17,7 @@ def test_from_texts_with_tfidf_params() -> None:
     # should count only multiple words (have, pan)
     assert tfidf_retriever.tfidf_array.toarray().shape == (3, 2)
 
+
 def test_from_documents() -> None:
     input_docs = [
         Document(page_content="I have a pen."),

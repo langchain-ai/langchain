@@ -34,7 +34,7 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
         tfidf_array = vectorizer.fit_transform(texts)
         docs = [Document(page_content=t) for t in texts]
         return cls(vectorizer=vectorizer, docs=docs, tfidf_array=tfidf_array, **kwargs)
-    
+
     @classmethod
     def from_documents(
         cls,
