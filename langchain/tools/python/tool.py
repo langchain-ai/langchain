@@ -81,16 +81,11 @@ class PythonAstREPLTool(BaseTool):
     def validate_python_version(cls, values: Dict) -> Dict:
         """Validate valid python version."""
         if sys.version_info < (3, 9):
-            if sys.version_info[:2] == (3, 8):
-                import astunparse
-
-                ast.unparse = astunparse.unparse
-            else:
-                raise ValueError(
-                    "This tool relies on Python 3.8 or higher "
-                    "(as it uses new functionality in the `ast` module, "
-                    f"you have Python version: {sys.version}"
-                )
+            raise ValueError(
+                "This tool relies on Python 3.9 or higher "
+                "(as it uses new functionality in the `ast` module, "
+                f"you have Python version: {sys.version}"
+            )
         return values
 
     def _run(
