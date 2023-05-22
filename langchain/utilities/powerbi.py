@@ -1,5 +1,4 @@
 """Wrapper around a Power BI endpoint."""
-
 from __future__ import annotations
 
 import logging
@@ -67,8 +66,8 @@ class PowerBIDataset(BaseModel):
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + self.token,
             }
-        from azure.core.exceptions import (  # pylint: disable=import-outside-toplevel
-            ClientAuthenticationError,
+        from azure.core.exceptions import (
+            ClientAuthenticationError,  # pylint: disable=import-outside-toplevel
         )
 
         if self.credential:
