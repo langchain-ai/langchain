@@ -18,14 +18,15 @@ class WeatherDataLoader(BaseLoader):
     def __init__(
         self,
         token: str,
+        places: List[str], 
     ) -> None:
         """Initialize with parameters."""
         super().__init__()
         self.token = token
+        self.places = places
 
     def lazy_load(
         self,
-        places: List[str], 
     ) -> Iterator[Document]:
         """A lazy loader for document content."""
 
@@ -38,9 +39,7 @@ class WeatherDataLoader(BaseLoader):
         mgr = owm.weather_manager()
         reg = owm.city_id_registry()
 
-        results: List[Document] = []
-
-        for place in places:
+        for place in self.places:
             info_dict = {}
             list_of_locations = reg.locations_for(city_name=place)
 
@@ -74,7 +73,6 @@ class WeatherDataLoader(BaseLoader):
 
     def load(
         self, 
-        places: List[str], 
     ) -> List[Document]:
 
         """Load weather data for the given locations. 
@@ -85,4 +83,4 @@ class WeatherDataLoader(BaseLoader):
         Args:
             places (List[str]) - places you want the weather data for.
         """
-        return list(self.lazy_load(places=places))
+        return list(self.lazy_load())
