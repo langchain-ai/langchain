@@ -52,10 +52,6 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         mosaicml_api_token = get_from_dict_or_env(
             values, "mosaicml_api_token", "MOSAICML_API_TOKEN"
         )
-        if not mosaicml_api_token:
-            raise ValueError(
-                "Could not find MOSAICML_API_TOKEN in environment or as a parameter."
-            )
         values["mosaicml_api_token"] = mosaicml_api_token
         return values
 
