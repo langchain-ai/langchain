@@ -76,11 +76,24 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
         try:
-            embeddings = response.json()["data"]
-            if "error" in embeddings:
+            parsed_response = response.json()
+
+            if "error" in parsed_response:
+                if "rate limit exceeded" in parsed_response['error'].lower():
+                    import time
+                    time.sleep(1)
+
+                    return self._call(input)
+
                 raise ValueError(
-                    f"Error raised by inference API: {embeddings['error']}"
+                    f"Error raised by inference API: {parsed_response['error']}"
                 )
+
+            if "data" not in parsed_response:
+                raise ValueError(
+                    f"Error raised by inference API, no key data in response: {parsed_response}"
+                )
+            embeddings = parsed_response["data"]
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(
                 f"Error raised by inference API: {e}.\nResponse: {response.text}"
