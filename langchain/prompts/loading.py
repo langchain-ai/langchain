@@ -54,23 +54,23 @@ def _load_template(var_name: str, config: dict) -> dict:
 
 def _load_examples(config: dict) -> dict:
     """Load examples if necessary."""
-    if isinstance(config["examples"], list):
-        pass
-    elif "examples_path" in config:
-        with open(config["examples"]) as f:
-            if config["examples"].endswith(".json"):
+    if "examples_path" in config:
+        if "examples" in config:
+            raise ValueError("Both examples_path and examples cannot be provided.")
+        # Pop the template path from the config.
+        examples_path = config.pop("examples_path")
+        with open(examples_path) as f:
+            if examples_path.endswith(".json"):
                 examples = json.load(f)
-            elif config["examples"].endswith((".yaml", ".yml")):
+            elif examples_path.endswith((".yaml", ".yml")):
                 examples = yaml.safe_load(f)
             else:
                 raise ValueError(
                     "Invalid file format. Only json or yaml formats are supported."
                 )
         config["examples"] = examples
-    else:
-        raise ValueError(
-            "Invalid examples format. Only list or loading from file are supported."
-        )
+    if not isinstance(config["examples"], list):
+        raise ValueError("Invalid examples format. Only list format supported.")
     return config
 
 
