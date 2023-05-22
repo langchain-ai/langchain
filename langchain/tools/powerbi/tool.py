@@ -85,7 +85,9 @@ class QueryPowerBITool(BaseTool):
         except Exception as exc:  # pylint: disable=broad-except
             self.session_cache[tool_input] = f"Error on call to LLM: {exc}"
             return self.session_cache[tool_input]
-
+        if query == "I cannot answer this":
+            self.session_cache[tool_input] = query
+            return self.session_cache[tool_input]
         pbi_result = self.powerbi.run(command=query)
         result, error = self._parse_output(pbi_result)
 
@@ -122,6 +124,10 @@ class QueryPowerBITool(BaseTool):
             )
         except Exception as exc:  # pylint: disable=broad-except
             self.session_cache[tool_input] = f"Error on call to LLM: {exc}"
+            return self.session_cache[tool_input]
+
+        if query == "I cannot answer this":
+            self.session_cache[tool_input] = query
             return self.session_cache[tool_input]
         pbi_result = await self.powerbi.arun(command=query)
         result, error = self._parse_output(pbi_result)
