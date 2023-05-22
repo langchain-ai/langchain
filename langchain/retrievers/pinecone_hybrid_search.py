@@ -33,9 +33,6 @@ def create_index(
         # create unique ids using hash of the text
         ids = [hash_text(context) for context in contexts]
 
-    if metadatas is None:
-        metadatas = []
-
     for i in _iterator:
         # find end of batch
         i_end = min(i + batch_size, len(contexts))
