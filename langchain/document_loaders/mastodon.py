@@ -1,6 +1,7 @@
 """Mastodon document loader."""
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence
 
 from langchain.docstore.document import Document
@@ -16,27 +17,13 @@ def _dependable_mastodon_import() -> mastodon:
     except ImportError:
         raise ValueError(
             "Mastodon.py package not found, "
-            + "please install it with `pip install Mastodon.py`"
+            "please install it with `pip install Mastodon.py`"
         )
     return mastodon
 
 
 class MastodonTootsLoader(BaseLoader):
-    """Mastodon toots loader.
-    Read toots of user's Mastodon handle.
-
-    Attributes:
-        access_token:
-          An access token to use if the request is made as a Mastodon app.
-        api_base_url:
-          The base URL of the Mastodon instance API for the loader to talk to.
-        mastodon_accounts:
-          A list of Mastodon accounts to pull toots for.
-        number_toots:
-          The integer number of toots pulled during load for each listed account.
-        exclude_replies:
-          A boolean indicating whether replies are excluded from the pulls
-    """
+    """Mastodon toots loader."""
 
     def __init__(
         self,
@@ -46,34 +33,31 @@ class MastodonTootsLoader(BaseLoader):
         access_token: Optional[str] = None,
         api_base_url: str = "https://mastodon.social",
     ):
-        """Mastodon toots loader.
-
-        Read toots of a list of Mastodon users.
+        """Instantiate Mastodon toots loader.
 
         Args:
             mastodon_accounts: The list of Mastodon accounts to query.
             number_toots: How many toots to pull for each account.
-            exclude_replies: Whether or not to exclude reply toots from the load.
-            access_token: An access token if toots are loaded as a Mastodon app.
+            exclude_replies: Whether to exclude reply toots from the load.
+            access_token: An access token if toots are loaded as a Mastodon app. Can
+                also be specified via the environment variables "MASTODON_ACCESS_TOKEN".
             api_base_url: A Mastodon API base URL to talk to, if not using the default.
         """
-        self.access_token = access_token
-        self.api_base_url = api_base_url
+        mastodon = _dependable_mastodon_import()
+        access_token = access_token or os.environ.get("MASTODON_ACCESS_TOKEN")
+        self.api = mastodon.Mastodon(
+            access_token=access_token, api_base_url=api_base_url
+        )
         self.mastodon_accounts = mastodon_accounts
         self.number_toots = number_toots
         self.exclude_replies = exclude_replies
 
     def load(self) -> List[Document]:
         """Load toots into documents."""
-        mastodon = _dependable_mastodon_import()
-        api = mastodon.Mastodon(
-            access_token=self.access_token, api_base_url=self.api_base_url
-        )
-
         results: List[Document] = []
         for account in self.mastodon_accounts:
-            user = api.account_lookup(account)
-            toots = api.account_statuses(
+            user = self.api.account_lookup(account)
+            toots = self.api.account_statuses(
                 user.id,
                 only_media=False,
                 pinned=False,
