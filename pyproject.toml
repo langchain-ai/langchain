@@ -152,6 +152,7 @@ wikipedia = "^1"
 pymongo = "^4.3.3"
 cassandra-driver = "^3.27.0"
 arxiv = "^1.4"
+mastodon-py = "^1.8.1"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
