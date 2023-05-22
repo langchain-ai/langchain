@@ -1,6 +1,4 @@
 """Tests for the Mastodon toots loader"""
-from pathlib import Path
-
 from langchain.document_loaders import MastodonTootsLoader
 
 
