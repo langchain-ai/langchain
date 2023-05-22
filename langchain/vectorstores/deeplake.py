@@ -79,6 +79,14 @@ class DeepLake(VectorStore):
                 - ``tensor_db`` - Fully-hosted Managed Database that is responsible for storage and query execution. Only available for data stored in the Deep Lake Managed Database. This is achieved by specifying runtime = {"tensor_db": True} during dataset creation.
 
         """
+        import deeplake
+
+        version = deeplake.__version__
+        if version > "3.5.2":
+            raise ValueError(
+                f"deeplake version should be <= 3.5.2, but you've installed {version}. Consider downgrading deeplake version to 3.5.2 ."
+            )
+
         from deeplake.core.vectorstore import DeepLakeVectorStore
 
         self.deeplake_vector_store = DeepLakeVectorStore(
