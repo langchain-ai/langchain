@@ -1,5 +1,5 @@
 """Wrapper around MosaicML APIs."""
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Tuple
 
 import requests
 from pydantic import BaseModel, Extra, root_validator
