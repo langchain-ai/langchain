@@ -8,7 +8,6 @@ from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
 
-from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
@@ -62,14 +61,16 @@ class Vectara(VectorStore):
             "customer-id": str(self._vectara_customer_id),
         }
         response = requests.post(
-            f"https://api.vectara.io/v1/delete-doc",
+            "https://api.vectara.io/v1/delete-doc",
             data=json.dumps(body),
             verify=True,
             headers=post_headers,
         )
         if response.status_code != 200:
             logging.error(
-                f"Delete request failed for doc_id = {doc_id} with status code {response.status_code}, reason {response.reason}, text {response.text}"
+                f"Delete request failed for doc_id = {doc_id} with status code "
+                f"{response.status_code}, reason {response.reason}, text "
+                f"{response.text}"
             )
             return False
         return True
@@ -140,11 +141,15 @@ class Vectara(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 5.
-            alpha: parameter for hybrid search (called "lambda" in Vectara documentation)
-            filter: Dictionary of argument(s) to filter on metadata. For example a filter can be "doc.rating > 3.0 and part.lang = 'deu'"}
-                see https://docs.vectara.com/docs/search-apis/sql/filter-overview for more details
+            alpha: parameter for hybrid search (called "lambda" in Vectara
+                documentation).
+            filter: Dictionary of argument(s) to filter on metadata. For example a
+                filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
+                https://docs.vectara.com/docs/search-apis/sql/filter-overview
+                for more details.
+
         Returns:
-            List of Documents most similar to the query and score for each
+            List of Documents most similar to the query and score for each.
         """
         response = self._session.post(
             headers=self._get_post_headers(),
@@ -178,7 +183,8 @@ class Vectara(VectorStore):
         if response.status_code != 200:
             logging.error(
                 "Query failed %s",
-                f"(code {response.status_code}, reason {response.reason}, details {response.text})",
+                f"(code {response.status_code}, reason {response.reason}, details "
+                f"{response.text})",
             )
             return []
 
@@ -214,8 +220,11 @@ class Vectara(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 5.
-            filter: Dictionary of argument(s) to filter on metadata. For example a filter can be "doc.rating > 3.0 and part.lang = 'deu'"}
-                see https://docs.vectara.com/docs/search-apis/sql/filter-overview for more details
+            filter: Dictionary of argument(s) to filter on metadata. For example a
+                filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
+                https://docs.vectara.com/docs/search-apis/sql/filter-overview for more
+                details.
+
         Returns:
             List of Documents most similar to the query
         """
@@ -240,7 +249,8 @@ class Vectara(VectorStore):
                 from langchain import Vectara
                 vectara = Vectara.from_texts(texts, customer_id, corpus_id, api_key)
         """
-        # note: Vectara generates its own embeddings, so we ignore the provided embeddings (required by interface)
+        # Note: Vectara generates its own embeddings, so we ignore the provided
+        # embeddings (required by interface).
         customer_id = kwargs["customer_id"]
         corpus_id = kwargs["corpus_id"]
         api_key = kwargs["api_key"]
@@ -276,10 +286,22 @@ class VectaraRetriever(BaseRetriever):
     def __init__(
         self,
         store: Vectara,
-        alpha: float = 0.025,  # called "lambda" in Vectara, but changed here to alpha since its a reserved word in python
+        alpha: float = 0.025,
         k: int = 5,
         filter: Optional[str] = None,
     ):
+        """Instantiate Vectara-backed Retriever.
+
+        Args:
+            store: Vectara vector store.
+            k: Number of Documents to return. Defaults to 5.
+            alpha: parameter for hybrid search (called "lambda" in Vectara
+                documentation).
+            filter: Dictionary of argument(s) to filter on metadata. For example a
+                filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
+                https://docs.vectara.com/docs/search-apis/sql/filter-overview
+                for more details.
+        """
         self.store = store
         self.alpha = alpha
         self.k = k

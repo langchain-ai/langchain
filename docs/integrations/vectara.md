@@ -22,7 +22,7 @@ To import this vectorstore:
 from langchain.vectorstores import Vectara
 ```
 For a more detailed walkthrough of the Vectara wrapper, see one of the two example notebooks:
-* docs/integrations/vectara_chat.ipynb
-* docs/interations/vectara_text_generation.ipynb
+* [Chat Over Documents with Vectara](./vectara/vectara_chat.html)
+* [Vectara Text Generation](./vectara/vectara_text_generation.html)
 
 
