@@ -6,7 +6,7 @@ LangChain integrates with many LLMs, systems, and products.
 Integrations by Module
 --------------------------------
 
-Integrations grouped by the core LangChain module they map to:
+| Integrations grouped by the core LangChain module they map to:
 
 
 - `LLM Providers <./modules/models/llms/integrations.html>`_
@@ -23,7 +23,7 @@ Integrations grouped by the core LangChain module they map to:
 All Integrations
 -------------------------------------------
 
-A comprehensive list of LLMs, systems, and products integrated with LangChain:
+| A comprehensive list of LLMs, systems, and products integrated with LangChain:
 
 
 .. toctree::
