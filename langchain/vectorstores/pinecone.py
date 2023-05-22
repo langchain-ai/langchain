@@ -49,7 +49,6 @@ class Pinecone(VectorStore):
         index: Any,
         embedding_function: Callable,
         text_key: str,
-        filter: Optional[dict] = None,
         namespace: Optional[str] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = _default_relevance_score_fn,
     ):
@@ -69,7 +68,6 @@ class Pinecone(VectorStore):
         self._index = index
         self._embedding_function = embedding_function
         self._text_key = text_key
-        self.filter = filter
         self._namespace = namespace
 
         self.relevance_score_fn = relevance_score_fn
