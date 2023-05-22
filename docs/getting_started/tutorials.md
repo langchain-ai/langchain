@@ -2,6 +2,12 @@
 
 This is a collection of `LangChain` tutorials on `YouTube`.
 
+⛓ icon marks a new video [last update 2023-05-15]
+
+###
+[LangChain Tutorials](https://www.youtube.com/watch?v=FuqdVNB_8c0&list=PL9V0lbeJ69brU-ojMpU1Y7Ic58Tap0Cw6) by [Edrick](https://www.youtube.com/@edrickdch):
+- ⛓ [LangChain, Chroma DB, OpenAI Beginner Guide | ChatGPT with your PDF](https://youtu.be/FuqdVNB_8c0) 
+
 [LangChain Crash Course: Build an AutoGPT app in 25 minutes](https://youtu.be/MlK6SIjcjE8) by [Nicholas Renotte](https://www.youtube.com/@NicholasRenotte)
 
 
@@ -18,8 +24,10 @@ This is a collection of `LangChain` tutorials on `YouTube`.
 - #3 [LLM Chains using `GPT 3.5` and other LLMs](https://youtu.be/S8j9Tk0lZHU)
 - #4 [Chatbot Memory for `Chat-GPT`, `Davinci` + other LLMs](https://youtu.be/X05uK0TZozM)
 - #5 [Chat with OpenAI in LangChain](https://youtu.be/CnAgB3A5OlU)
-- #6 [LangChain Agents Deep Dive with `GPT 3.5`](https://youtu.be/jSP-gSEyVeI)
-- [Prompt Engineering with OpenAI's `GPT-3` and other LLMs](https://youtu.be/BP9fi_0XTlw)
+- ⛓ #6 [Fixing LLM Hallucinations with Retrieval Augmentation in LangChain](https://youtu.be/kvdVduIJsc8)
+- ⛓ #7 [LangChain Agents Deep Dive with GPT 3.5](https://youtu.be/jSP-gSEyVeI)
+- ⛓ #8 [Create Custom Tools for Chatbots in LangChain](https://youtu.be/q-HNphrWsDE)
+- ⛓ #9 [Build Conversational Agents with Vector DBs](https://youtu.be/H6bCqqw9xyI)
 
 
 ###
@@ -39,6 +47,8 @@ This is a collection of `LangChain` tutorials on `YouTube`.
 - [Structured Output From `OpenAI` (Clean Dirty Data)](https://youtu.be/KwAXfey-xQk)
 - [Connect `OpenAI` To +5,000 Tools (LangChain + `Zapier`)](https://youtu.be/7tNm0yiDigU)
 - [Use LLMs To Extract Data From Text (Expert Mode)](https://youtu.be/xZzvwR9jdPA)
+- ⛓ [Extract Insights From Interview Transcripts Using LLMs](https://youtu.be/shkMOHwJ4SM)
+- ⛓ [5 Levels Of LLM Summarizing: Novice to Expert](https://youtu.be/qaPMdcCqtWk)
 
 
 ###
@@ -60,6 +70,12 @@ This is a collection of `LangChain` tutorials on `YouTube`.
 - [Talk to your `CSV` & `Excel` with LangChain](https://youtu.be/xQ3mZhw69bc)
 - [`BabyAGI`: Discover the Power of Task-Driven Autonomous Agents!](https://youtu.be/QBcDLSE2ERA)
 - [Improve your `BabyAGI` with LangChain](https://youtu.be/DRgPyOXZ-oE)
+- ⛓ [Master `PDF` Chat with LangChain - Your essential guide to queries on documents](https://youtu.be/ZzgUqFtxgXI)
+- ⛓ [Using LangChain with `DuckDuckGO` `Wikipedia` & `PythonREPL` Tools](https://youtu.be/KerHlb8nuVc)
+- ⛓ [Building Custom Tools and Agents with LangChain (gpt-3.5-turbo)](https://youtu.be/biS8G8x8DdA)
+- ⛓ [LangChain Retrieval QA Over Multiple Files with `ChromaDB`](https://youtu.be/3yPBVii7Ct0)
+- ⛓ [LangChain Retrieval QA with Instructor Embeddings & `ChromaDB` for PDFs](https://youtu.be/cFCGUjc33aU)
+- ⛓ [LangChain + Retrieval Local LLMs for Retrieval QA - No OpenAI!!!](https://youtu.be/9ISVjh8mdlA)
 
 
 ###
@@ -68,6 +84,7 @@ This is a collection of `LangChain` tutorials on `YouTube`.
 - [Working with MULTIPLE `PDF` Files in LangChain: `ChatGPT` for your Data](https://youtu.be/s5LhRdh5fu4)
 - [`ChatGPT` for YOUR OWN `PDF` files with LangChain](https://youtu.be/TLf90ipMzfE)
 - [Talk to YOUR DATA without OpenAI APIs: LangChain](https://youtu.be/wrD-fZvT6UI)
+- ⛓️ [CHATGPT For WEBSITES: Custom ChatBOT](https://youtu.be/RBnuhhmD21U)
 
 
 ###
@@ -75,6 +92,7 @@ LangChain by [Chat with data](https://www.youtube.com/@chatwithdata)
 - [LangChain Beginner's Tutorial for `Typescript`/`Javascript`](https://youtu.be/bH722QgRlhQ)
 - [`GPT-4` Tutorial: How to Chat With Multiple `PDF` Files (~1000 pages of Tesla's 10-K Annual Reports)](https://youtu.be/Ix9WIZpArm0)
 - [`GPT-4` & LangChain Tutorial: How to Chat With A 56-Page `PDF` Document (w/`Pinecone`)](https://youtu.be/ih9PBGVVOO4)
+- ⛓ [LangChain & Supabase Tutorial: How to Build a ChatGPT Chatbot For Your Website](https://youtu.be/R2FMzcsmQY8)
 
 
 ###
@@ -84,3 +102,7 @@ LangChain by [Chat with data](https://www.youtube.com/@chatwithdata)
 - [LangChain Models: `ChatGPT`, `Flan Alpaca`, `OpenAI Embeddings`, Prompt Templates & Streaming](https://www.youtube.com/watch?v=zy6LiK5F5-s)
 - [LangChain Chains: Use `ChatGPT` to Build Conversational Agents, Summaries and Q&A on Text With LLMs](https://www.youtube.com/watch?v=h1tJZQPcimM)
 - [Analyze Custom CSV Data with `GPT-4` using Langchain](https://www.youtube.com/watch?v=Ew3sGdX8at4)
+- ⛓ [Build ChatGPT Chatbots with LangChain Memory: Understanding and Implementing Memory in Conversations](https://youtu.be/CyuUlf54wTs)
+
+---------------------
+⛓ icon marks a new video [last update 2023-05-15]

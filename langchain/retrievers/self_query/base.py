@@ -10,8 +10,9 @@ from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
+from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 from langchain.schema import BaseRetriever, Document
-from langchain.vectorstores import Chroma, Pinecone, VectorStore
+from langchain.vectorstores import Chroma, Pinecone, VectorStore, Weaviate
 
 
 def _get_builtin_translator(vectorstore_cls: Type[VectorStore]) -> Visitor:
@@ -19,6 +20,7 @@ def _get_builtin_translator(vectorstore_cls: Type[VectorStore]) -> Visitor:
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         Pinecone: PineconeTranslator,
         Chroma: ChromaTranslator,
+        Weaviate: WeaviateTranslator,
     }
     if vectorstore_cls not in BUILTIN_TRANSLATORS:
         raise ValueError(
@@ -81,7 +83,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
             new_kwargs["k"] = structured_query.limit
 
         search_kwargs = {**self.search_kwargs, **new_kwargs}
-        docs = self.vectorstore.search(query, self.search_type, **search_kwargs)
+        docs = self.vectorstore.search(new_query, self.search_type, **search_kwargs)
         return docs
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:

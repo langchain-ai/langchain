@@ -315,7 +315,7 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
     def parse(self, text: str) -> T:
         """Parse the output of an LLM call.
 
-        A method which takes in a string (assumed output of language model )
+        A method which takes in a string (assumed output of a language model )
         and parses it into some structure.
 
         Args:
@@ -360,7 +360,7 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
         return output_parser_dict
 
 
-class OutputParserException(Exception):
+class OutputParserException(ValueError):
     """Exception that output parsers should raise to signify a parsing error.
 
     This exists to differentiate parsing errors from other code or execution errors
@@ -369,7 +369,23 @@ class OutputParserException(Exception):
     errors will be raised.
     """
 
-    pass
+    def __init__(
+        self,
+        error: Any,
+        observation: str | None = None,
+        llm_output: str | None = None,
+        send_to_llm: bool = False,
+    ):
+        super(OutputParserException, self).__init__(error)
+        if send_to_llm:
+            if observation is None or llm_output is None:
+                raise ValueError(
+                    "Arguments 'observation' & 'llm_output'"
+                    " are required if 'send_to_llm' is True"
+                )
+        self.observation = observation
+        self.llm_output = llm_output
+        self.send_to_llm = send_to_llm
 
 
 class BaseDocumentTransformer(ABC):

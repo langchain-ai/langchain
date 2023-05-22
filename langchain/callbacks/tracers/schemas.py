@@ -23,8 +23,6 @@ class TracerSessionV1Base(BaseModel):
 class TracerSessionV1Create(TracerSessionV1Base):
     """Create class for TracerSessionV1."""
 
-    pass
-
 
 class TracerSessionV1(TracerSessionV1Base):
     """TracerSessionV1 schema."""
@@ -110,7 +108,7 @@ class RunBase(BaseModel):
     extra: dict
     error: Optional[str]
     execution_order: int
-    child_execution_order: int
+    child_execution_order: Optional[int]
     serialized: dict
     inputs: dict
     outputs: Optional[dict]
