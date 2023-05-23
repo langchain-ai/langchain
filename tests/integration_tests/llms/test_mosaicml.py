@@ -44,7 +44,7 @@ def test_instruct_prompt() -> None:
 
 
 def test_retry_logic() -> None:
-    """Tests that two consecutive queries (which would usually exceed the rate limit) works"""
+    """Tests that two queries (which would usually exceed the rate limit) works"""
     llm = MosaicML(inject_instruction_format=True, model_kwargs={"do_sample": False})
     instruction = "Repeat the word foo"
     prompt = llm._transform_prompt(instruction)
@@ -57,7 +57,7 @@ def test_retry_logic() -> None:
 
 
 def test_short_retry_does_not_loop() -> None:
-    """Tests that two consecutive queries with a short retry sleep does not infinite loop"""
+    """Tests that two queries with a short retry sleep does not infinite loop"""
     llm = MosaicML(
         inject_instruction_format=True,
         model_kwargs={"do_sample": False},

@@ -157,7 +157,7 @@ class MosaicML(LLM):
 
             if "data" not in parsed_response:
                 raise ValueError(
-                    f"Error raised by inference API, no key data in response: {parsed_response}"
+                    f"Error raised by inference API, no key data: {parsed_response}"
                 )
             generated_text = parsed_response["data"]
         except requests.exceptions.JSONDecodeError as e:
