@@ -1,29 +1,35 @@
 import os
-
 from langchain.docstore.document import Document
 from langchain.vectorstores.vectara import Vectara
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
+def get_abbr(s: str):
+    words = s.split(" ")  # Split the string into words
+    first_letters = [word[0] for word in words]  # Extract the first letter of each word
+    return "".join(first_letters)  # Join the first letters into a single string
+
+
 def test_vectara_add_documents() -> None:
     """Test end to end construction and search."""
-    texts = ["foo", "bar", "baz"]
-    customer_id = int(os.environ["VECTARA_CUSTOMER_ID"])
-    corpus_id = int(os.environ["VECTARA_CORPUS_ID"])
-    api_key = os.environ["VECTARA_API_KEY"]
 
+    # start with some initial documents
+    texts = ["grounded generation", "retrieval augmented generation", "data privacy"]
     docsearch: Vectara = Vectara.from_texts(
         texts,
         embedding=FakeEmbeddings(),
-        metadatas=None,
-        customer_id=customer_id,
-        corpus_id=corpus_id,
-        api_key=api_key,
+        metadatas=[{"abbr": "gg"}, {"abbr": "rag"}, {"abbr": "dp"}],
     )
 
-    new_texts = ["foobar", "foobaz"]
-    docsearch.add_documents([Document(page_content=content) for content in new_texts])
-    output = docsearch.similarity_search("foobar", k=1)
-    assert output == [Document(page_content="foobar")] or output == [
-        Document(page_content="foo")
-    ]
+    # then add some additional documents
+    new_texts = ["large language model", "information retrieval", "question answering"]
+    docsearch.add_documents(
+        [Document(page_content=t, metadata={"abbr": get_abbr(t)}) for t in new_texts]
+    )
+
+    # finally do a similarity search to see if all works okay
+    output = docsearch.similarity_search("large language model", k=2)
+    assert output[0].page_content == "large language model"
+    assert output[0].metadata == {"abbr": "llm"}
+    assert output[1].page_content == "information retrieval"
+    assert output[1].metadata == {"abbr": "ir"}

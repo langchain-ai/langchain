@@ -5,6 +5,7 @@ import json
 import logging
 from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
+import os
 
 import requests
 
@@ -23,20 +24,27 @@ class Vectara(VectorStore):
     """
 
     def __init__(
-        self, vectara_customer_id: int, vectara_corpus_id: int, vectara_api_key: str
+        self,
+        vectara_customer_id: Optional[str] = None,
+        vectara_corpus_id: Optional[str] = None,
+        vectara_api_key: Optional[str] = None,
     ):
         """Initialize with Vectara API."""
-        self._vectara_customer_id = vectara_customer_id
-        self._vectara_corpus_id = vectara_corpus_id
-        self._vectara_api_key = vectara_api_key
+        self._vectara_customer_id = vectara_customer_id or os.environ.get(
+            "VECTARA_CUSTOMER_ID"
+        )
+        self._vectara_corpus_id = vectara_corpus_id or os.environ.get(
+            "VECTARA_CORPUS_ID"
+        )
+        self._vectara_api_key = vectara_api_key or os.environ.get("VECTARA_API_KEY")
         self._session = requests.Session()  # to resuse connections
-        logging.debug("Using corpus id %s", self._vectara_corpus_id)
+        logging.debug(f"Using corpus id {self._vectara_corpus_id}")
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
         return {
             "x-api-key": self._vectara_api_key,
-            "customer-id": str(self._vectara_customer_id),
+            "customer-id": self._vectara_customer_id,
             "Content-Type": "application/json",
         }
 
@@ -58,7 +66,7 @@ class Vectara(VectorStore):
         }
         post_headers = {
             "x-api-key": self._vectara_api_key,
-            "customer-id": str(self._vectara_customer_id),
+            "customer-id": self._vectara_customer_id,
         }
         response = requests.post(
             "https://api.vectara.io/v1/delete-doc",
@@ -77,8 +85,8 @@ class Vectara(VectorStore):
 
     def _index_doc(self, doc_id: str, text: str, metadata: dict) -> bool:
         request: dict[str, Any] = {}
-        request["customer_id"] = str(self._vectara_customer_id)
-        request["corpus_id"] = str(self._vectara_corpus_id)
+        request["customer_id"] = self._vectara_customer_id
+        request["corpus_id"] = self._vectara_corpus_id
         request["document"] = {
             "document_id": doc_id,
             "metadataJson": json.dumps(metadata),
@@ -249,13 +257,8 @@ class Vectara(VectorStore):
                 from langchain import Vectara
                 vectara = Vectara.from_texts(texts, customer_id, corpus_id, api_key)
         """
-        # Note: Vectara generates its own embeddings, so we ignore the provided
-        # embeddings (required by interface).
-        customer_id = kwargs["customer_id"]
-        corpus_id = kwargs["corpus_id"]
-        api_key = kwargs["api_key"]
-
-        vectara = cls(customer_id, corpus_id, api_key)
+        # note: Vectara generates its own embeddings, so we ignore the provided embeddings (required by interface)
+        vectara = cls(**kwargs)
         vectara.add_texts(texts, metadatas)
         return vectara
 
