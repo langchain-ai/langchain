@@ -48,6 +48,7 @@ from langchain.document_loaders.image_captions import ImageCaptionLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.json_loader import JSONLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
+from langchain.document_loaders.mastodon import MastodonTootsLoader
 from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
@@ -160,6 +161,7 @@ __all__ = [
     "ImageCaptionLoader",
     "JSONLoader",
     "MWDumpLoader",
+    "MastodonTootsLoader",
     "MathpixPDFLoader",
     "ModernTreasuryLoader",
     "NotebookLoader",
