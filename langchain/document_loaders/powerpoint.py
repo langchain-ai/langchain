@@ -23,7 +23,7 @@ class UnstructuredPowerPointLoader(UnstructuredFileLoader):
 
             is_ppt = detect_filetype(self.file_path) == FileType.PPT
         except ImportError:
-            _, extension = os.path.splitext(self.file_path)
+            _, extension = os.path.splitext(str(self.file_path))
             is_ppt = extension == ".ppt"
 
         if is_ppt and unstructured_version < (0, 4, 11):

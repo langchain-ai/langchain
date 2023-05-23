@@ -76,6 +76,16 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         prompt = PromptTemplate.from_template(template)
         return cls(prompt=prompt, **kwargs)
 
+    @classmethod
+    def from_template_file(
+        cls: Type[MessagePromptTemplateT],
+        template_file: Union[str, Path],
+        input_variables: List[str],
+        **kwargs: Any,
+    ) -> MessagePromptTemplateT:
+        prompt = PromptTemplate.from_file(template_file, input_variables)
+        return cls(prompt=prompt, **kwargs)
+
     @abstractmethod
     def format(self, **kwargs: Any) -> BaseMessage:
         """To a BaseMessage."""
@@ -92,7 +102,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     def _type(self) -> str:
         """The type of MessagePromptTemplate."""
 
-    def dict(self, *args, **kwargs):
+    def dict(self, *args: Any, **kwargs: Any) -> dict:
         result = super().dict(*args, **kwargs)
         result["_type"] = self._type
         return result
