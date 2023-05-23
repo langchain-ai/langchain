@@ -28,12 +28,13 @@ Just instantiate the class and test it by running the code
 after the class is defined)'''
 
 response1 = agent.run(input=prompt1)
+#print(response1)
 assert "'python" not in response1
-
 #
 # Create and return JavaScript code, verify generated code contains javascript header
 #
 prompt2 ="Generate JavaScript code that calculates first 10 Fibonaci numbers."
 
 response2 = agent.run(input=prompt2)
-assert "'javascript" not in response1
+#print(response2)
+assert "'javascript" not in response2
