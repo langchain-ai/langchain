@@ -36,6 +36,11 @@ from langchain.tools.playwright import (
     NavigateTool,
 )
 from langchain.tools.plugin import AIPluginTool
+from langchain.tools.powerbi.tool import (
+    InfoPowerBITool,
+    ListPowerBITool,
+    QueryPowerBITool,
+)
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.shell.tool import ShellTool
 from langchain.tools.steamship_image_generation import SteamshipImageGenerationTool
@@ -79,13 +84,16 @@ __all__ = [
     "GoogleSerperRun",
     "HumanInputRun",
     "IFTTTWebhook",
+    "InfoPowerBITool",
     "ListDirectoryTool",
+    "ListPowerBITool",
     "MetaphorSearchResults",
     "MoveFileTool",
     "NavigateBackTool",
     "NavigateTool",
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
+    "QueryPowerBITool",
     "ReadFileTool",
     "SceneXplainTool",
     "ShellTool",
