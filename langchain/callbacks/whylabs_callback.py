@@ -50,7 +50,7 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
         super().__init__()
         self.logger = logger
         diagnostic_logger.info(
-                "Initialied WhyLabs callback handler with configured whylogs Logger."
+            "Initialied WhyLabs callback handler with configured whylogs Logger."
         )
 
     def _profile_generations(self, generations: List[Generation]) -> None:
