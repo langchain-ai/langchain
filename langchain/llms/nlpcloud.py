@@ -75,7 +75,7 @@ class NLPCloud(LLM):
                 values["model_name"], nlpcloud_api_key, gpu=True, lang="en"
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import nlpcloud python package. "
                 "Please install it with `pip install nlpcloud`."
             )
