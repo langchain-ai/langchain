@@ -72,7 +72,7 @@ def test_headers() -> None:
         LangChainPlusClient, "_get_seeded_tenant_id", new=mock_get_seeded_tenant_id
     ):
         client = LangChainPlusClient(api_url="http://localhost:8000", api_key="123")
-        assert client._headers == {"authorization": "Bearer 123"}
+        assert client._headers == {"x-api-key": "123"}
 
     with mock.patch.object(
         LangChainPlusClient, "_get_seeded_tenant_id", new=mock_get_seeded_tenant_id
@@ -188,9 +188,9 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
 
     async def mock_arun_chain(
         example: Example,
-        tracer: Any,
         llm_or_chain: Union[BaseLanguageModel, Chain],
         n_repetitions: int,
+        tracer: Any,
     ) -> List[Dict[str, Any]]:
         return [
             {"result": f"Result for example {example.id}"} for _ in range(n_repetitions)
@@ -203,8 +203,8 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         LangChainPlusClient, "read_dataset", new=mock_read_dataset
     ), mock.patch.object(
         LangChainPlusClient, "list_examples", new=mock_list_examples
-    ), mock.patch.object(
-        LangChainPlusClient, "_arun_llm_or_chain", new=mock_arun_chain
+    ), mock.patch(
+        "langchain.client.runner_utils._arun_llm_or_chain", new=mock_arun_chain
     ), mock.patch.object(
         LangChainTracer, "ensure_session", new=mock_ensure_session
     ):

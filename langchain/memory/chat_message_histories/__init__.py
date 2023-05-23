@@ -1,3 +1,6 @@
+from langchain.memory.chat_message_histories.cassandra import (
+    CassandraChatMessageHistory,
+)
 from langchain.memory.chat_message_histories.cosmos_db import CosmosDBChatMessageHistory
 from langchain.memory.chat_message_histories.dynamodb import DynamoDBChatMessageHistory
 from langchain.memory.chat_message_histories.file import FileChatMessageHistory
@@ -8,6 +11,7 @@ from langchain.memory.chat_message_histories.mongodb import MongoDBChatMessageHi
 from langchain.memory.chat_message_histories.postgres import PostgresChatMessageHistory
 from langchain.memory.chat_message_histories.redis import RedisChatMessageHistory
 from langchain.memory.chat_message_histories.sql import SQLChatMessageHistory
+from langchain.memory.chat_message_histories.zep import ZepChatMessageHistory
 
 __all__ = [
     "DynamoDBChatMessageHistory",
@@ -18,4 +22,6 @@ __all__ = [
     "CosmosDBChatMessageHistory",
     "FirestoreChatMessageHistory",
     "MongoDBChatMessageHistory",
+    "CassandraChatMessageHistory",
+    "ZepChatMessageHistory",
 ]
