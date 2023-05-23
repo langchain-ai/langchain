@@ -1,5 +1,5 @@
 """Agent for working with csvs."""
-from typing import Any, Optional
+from typing import Any, List, Optional, Union
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
@@ -8,7 +8,7 @@ from langchain.base_language import BaseLanguageModel
 
 def create_csv_agent(
     llm: BaseLanguageModel,
-    path: Any,
+    path: Union[str, List[str]],
     pandas_kwargs: Optional[dict] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
