@@ -14,9 +14,9 @@ diagnostic_logger = logging.getLogger(__name__)
 
 
 def import_langkit(
-    sentiment: Optional[bool] = None,
-    toxicity: Optional[bool] = None,
-    themes: Optional[bool] = None,
+    sentiment: bool = False,
+    toxicity: bool = False,
+    themes: bool = False,
 ) -> Any:
     try:
         import langkit  # noqa: F401
@@ -149,9 +149,9 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
         api_key: Optional[str] = None,
         org_id: Optional[str] = None,
         dataset_id: Optional[str] = None,
-        sentiment: Optional[bool] = None,
-        toxicity: Optional[bool] = None,
-        themes: Optional[bool] = None,
+        sentiment: bool = False,
+        toxicity: bool = False,
+        themes: bool = False,
     ) -> Logger:
         """Instantiate whylogs Logger from params.
 
@@ -165,12 +165,12 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
             dataset_id (Optional[str]): The model or dataset this callback is gathering
                 telemetry for. If not set must be specified in environment variable
                 WHYLABS_DEFAULT_DATASET_ID.
-            sentiment (Optional[bool]): If set will initialize a model to perform
-                sentiment analysis compound score. Defaults to None and will not gather
+            sentiment (bool): If True will initialize a model to perform
+                sentiment analysis compound score. Defaults to False and will not gather
                 this metric.
-            toxicity (Optional[bool]): If set will initialize a model to score
-                toxicity. Defaults to None and will not gather this metric.
-            themes (Optional[bool]): If set will initialize a model to calculate
+            toxicity (bool): If True will initialize a model to score
+                toxicity. Defaults to False and will not gather this metric.
+            themes (bool): If True will initialize a model to calculate
                 distance to configured themes. Defaults to None and will not gather this
                 metric.
         """
