@@ -1,8 +1,14 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, Generation, LLMResult
+from langchain.utils import get_from_env
+
+if TYPE_CHECKING:
+    from whylogs.api.logger.logger import Logger
 
 diagnostic_logger = logging.getLogger(__name__)
 
@@ -34,23 +40,12 @@ def import_langkit(
 class WhyLabsCallbackHandler(BaseCallbackHandler):
     """WhyLabs CallbackHandler."""
 
-    try:
-        from whylogs.api.logger.logger import Logger
-    except ImportError:
-        raise ImportError(
-            "To use the whylabs callback manager you need to have the `langkit` python "
-            "package installed. Please install it with `pip install langkit`."
-        )
-
-    def __init__(
-        self,
-        logger: Logger,
-    ):
+    def __init__(self, logger: Logger):
         """Initiate the rolling logger"""
         super().__init__()
         self.logger = logger
         diagnostic_logger.info(
-            "Initialied WhyLabs callback handler with configured whylogs Logger."
+            "Initialized WhyLabs callback handler with configured whylogs Logger."
         )
 
     def _profile_generations(self, generations: List[Generation]) -> None:
@@ -139,7 +134,7 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
         self.logger.close()
         diagnostic_logger.info("Closing WhyLabs logger, see you next time!")
 
-    def __enter__(self) -> "WhyLabsCallbackHandler":
+    def __enter__(self) -> WhyLabsCallbackHandler:
         return self
 
     def __exit__(
@@ -157,7 +152,7 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
         sentiment: Optional[bool] = None,
         toxicity: Optional[bool] = None,
         themes: Optional[bool] = None,
-    ) -> "Logger":
+    ) -> Logger:
         """Instantiate whylogs Logger from params.
 
         Args:
@@ -187,6 +182,11 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
         from whylogs.core.schema import DeclarativeSchema
         from whylogs.experimental.core.metrics.udf_metric import generate_udf_schema
 
+        api_key = api_key or get_from_env("api_key", "WHYLABS_API_KEY")
+        org_id = org_id or get_from_env("org_id", "WHYLABS_DEFAULT_ORG_ID")
+        dataset_id = dataset_id or get_from_env(
+            "dataset_id", "WHYLABS_DEFAULT_DATASET_ID"
+        )
         whylabs_writer = WhyLabsWriter(
             api_key=api_key, org_id=org_id, dataset_id=dataset_id
         )
