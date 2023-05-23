@@ -16,6 +16,7 @@ from enum import Enum
 from functools import partial
 import json
 import re
+from textwrap import indent
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field
@@ -70,15 +71,25 @@ class ToTMemory:
     def __init__(self):
         self.stack = []
 
-    def pop(self) -> Optional[Result]:
-        if len(self.stack) > 0:
-            return self.stack.pop()
-
-    def get_parent(self) -> Optional[Result]:
+    def top(self) -> Optional[Result]:
+        "Get the top of the stack without popping it."
         if len(self.stack) > 0:
             return self.stack[-1]
 
+    def pop(self, n=1) -> Optional[Result]:
+        "Pop the top n elements of the stack and return the last one."
+        if len(self.stack) >= n:
+            for _ in range(n):
+                node = self.stack.pop()
+            return node
+
+    def top_parent(self) -> Optional[Result]:
+        "Get the parent of the top of the stack without popping it."
+        if len(self.stack) > 1:
+            return self.stack[-2]
+
     def store(self, node: Result) -> None:
+        "Add a node on the top of the stack."
         if len(self.stack) > 0:
             self.stack[-1].children.add(node)
         self.stack.append(node)
@@ -105,13 +116,14 @@ class ToTController:
         self.c = c
 
     def __call__(self, memory: ToTMemory) -> Optional[str]:
-        next_node = memory.pop()
-        parent_node = memory.get_parent()
+        next_node = memory.top()
+        parent_node = memory.top_parent()
         solution_type = next_node.solution_type
 
         # 1 if the current partial solution is invalid, backtrack to the parent node.
         if solution_type == SolutionType.INVALID:
-            next_node = memory.pop()
+            memory.pop()
+            next_node = memory.top()
 
         # 2 if the current partial solution is valid but C children were
         # explored and yet failed to find a final solution, backtrack to the
@@ -121,11 +133,12 @@ class ToTController:
             and parent_node is not None
             and len(parent_node.children) >= self.c
         ):
-            next_node = memory.pop()
-        else:
-            memory.store(next_node)
-
+            memory.pop(2)
+            next_node = memory.top()
+        # else:
+        #     next_node = memory.pop()
         if next_node is not None:
+            # return "\n".join(f"{node.solution}" for node in memory.stack)
             return next_node.solution
 
 
@@ -204,13 +217,18 @@ class ToTChain(Chain):
 
     def parse_llm_output(self, llm_output: str) -> str:
         """Parse the output of the language model."""
-        if match := re.search(r"(\{.*?\})", llm_output, re.DOTALL):
+        if match := re.search(r"\{.*?\}", llm_output, re.DOTALL):
             try:
                 return json.loads(match.group())["next_step"]
             except json.JSONDecodeError:
                 return ""
+        return ""
 
-    def solve(self, problem_description) -> Optional[str]:
+    def solve(
+        self,
+        problem_description,
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Optional[str]:
         """Algorithm 2 from the ToT paper."""
         checker = partial(self.checker, problem_description)
         llm = self.llm.predict
@@ -219,13 +237,43 @@ class ToTChain(Chain):
         memory = self.tot_memory
 
         prompt = prompter(problem_description)
+        level = 0
         for _ in range(self.k):
+            indentation = "    " * level
+
+            run_manager.on_text(
+                text=f"{indentation}ToT Request >>>\n{indent(prompt, indentation)}\n\n",
+                verbose=self.verbose,
+                color="green",
+            )
+
             response = self.parse_llm_output(llm(prompt))
+
+            run_manager.on_text(
+                text=f"{indentation}ToT Response >>>\n{indent(response, indentation)}\n\n",
+                verbose=self.verbose,
+                color="yellow",
+            )
+
             result = checker(response)
+
+            # run_manager.on_text(
+            #     text=f"{indentation}ToT Checker >>>\n{indent(str(result.solution_type), indentation)}\n\n",
+            #     verbose=self.verbose,
+            #     color="yellow",
+            # )
+
             if result.solution_type == SolutionType.VALID_FINAL:
                 return result.solution
             memory.store(result)
             ctrl_signal = controller(memory)
+            level = len(memory.stack)
+
+            run_manager.on_text(
+                text=f"{indentation}ToT Control Signal >>>\n{indent(str(ctrl_signal), indentation)}\n\n",
+                verbose=self.verbose,
+                color="red",
+            )
             prompt = prompter(problem_description, ctrl_signal)
 
     def _call(
@@ -233,7 +281,12 @@ class ToTChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        solution = self.solve(inputs["problem_description"])
+        if run_manager:
+            run_manager.on_text(
+                text="Starting the ToT solve procedure.\n",
+                verbose=self.verbose,
+            )
+        solution = self.solve(inputs["problem_description"], run_manager)
         if solution is None:
             return {self.output_key: "No solution found"}
         return {self.output_key: solution}
