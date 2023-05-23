@@ -50,9 +50,12 @@ class ClickTool(BaseBrowserTool):
         # Navigate to the desired webpage before using this tool
         selector_effective = self._selector_effective(selector=selector)
         from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
         try:
             page.click(
-                selector_effective, strict=self.playwright_strict, timeout=self.playwright_timeout,
+                selector_effective,
+                strict=self.playwright_strict,
+                timeout=self.playwright_timeout,
             )
         except PlaywrightTimeoutError:
             return f"Unable to click on element '{selector}'"
@@ -70,9 +73,12 @@ class ClickTool(BaseBrowserTool):
         # Navigate to the desired webpage before using this tool
         selector_effective = self._selector_effective(selector=selector)
         from playwright.async_api import TimeoutError as PlaywrightTimeoutError
+
         try:
             await page.click(
-                selector_effective, strict=self.playwright_strict, timeout=self.playwright_timeout,
+                selector_effective,
+                strict=self.playwright_strict,
+                timeout=self.playwright_timeout,
             )
         except PlaywrightTimeoutError:
             return f"Unable to click on element '{selector}'"
