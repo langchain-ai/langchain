@@ -16,6 +16,7 @@ from pydantic import BaseModel, root_validator, validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from googleapiclient.discovery import Resource, build
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
@@ -26,11 +27,15 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     service_account_key: Path = Path.home() / ".credentials" / "keys.json"
     credentials_path: Path = Path.home() / ".credentials" / "credentials.json"
     token_path: Path = Path.home() / ".credentials" / "token.json"
+    service: Optional[Resource] = None
     folder_id: Optional[str] = None
     document_ids: Optional[List[str]] = None
     file_ids: Optional[List[str]] = None
     recursive: bool = False
     file_types: Optional[Sequence[str]] = None
+
+    class Config: 
+        arbitrary_types_allowed = True
 
     @root_validator
     def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -128,11 +133,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     def _load_sheet_from_id(self, id: str) -> List[Document]:
         """Load a sheet and all tabs from an ID."""
 
-        from googleapiclient.discovery import build
-
-        creds = self._load_credentials()
-        sheets_service = build("sheets", "v4", credentials=creds)
-        spreadsheet = sheets_service.spreadsheets().get(spreadsheetId=id).execute()
+        spreadsheet = self._service(api="sheets", version="v4").spreadsheets().get(spreadsheetId=id).execute()
         sheets = spreadsheet.get("sheets", [])
 
         documents = []
@@ -170,15 +171,11 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         """Load a document from an ID."""
         from io import BytesIO
 
-        from googleapiclient.discovery import build
         from googleapiclient.errors import HttpError
         from googleapiclient.http import MediaIoBaseDownload
 
-        creds = self._load_credentials()
-        service = build("drive", "v3", credentials=creds)
-
-        file = service.files().get(fileId=id, supportsAllDrives=True).execute()
-        request = service.files().export_media(fileId=id, mimeType="text/plain")
+        file = self._service().files().get(fileId=id, supportsAllDrives=True).execute()
+        request = self._service().files().export_media(fileId=id, mimeType="text/plain")
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -205,9 +202,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         """Load documents from a folder."""
         from googleapiclient.discovery import build
 
-        creds = self._load_credentials()
-        service = build("drive", "v3", credentials=creds)
-        files = self._fetch_files_recursive(service, folder_id)
+        files = self._fetch_files_recursive(self._service(), folder_id)
         # If file types filter is provided, we'll filter by the file type.
         if file_types:
             _files = [f for f in files if f["mimeType"] in file_types]  # type: ignore
@@ -264,14 +259,10 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         """Load a file from an ID."""
         from io import BytesIO
 
-        from googleapiclient.discovery import build
         from googleapiclient.http import MediaIoBaseDownload
 
-        creds = self._load_credentials()
-        service = build("drive", "v3", credentials=creds)
-
-        file = service.files().get(fileId=id, supportsAllDrives=True).execute()
-        request = service.files().get_media(fileId=id)
+        file = self._service().files().get(fileId=id, supportsAllDrives=True).execute()
+        request = self._service().files().get_media(fileId=id)
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -303,6 +294,15 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         for file_id in self.file_ids:
             docs.extend(self._load_file_from_id(file_id))
         return docs
+    
+    def _service(self, api: str = "drive", version: str = "v3") -> Resource:
+        """Load Google Drive Service."""
+        if not self.service: 
+            creds = self._load_credentials()
+            service = build(api, version, credentials=creds)
+        else: 
+            service=self.service
+        return service
 
     def load(self) -> List[Document]:
         """Load documents."""
