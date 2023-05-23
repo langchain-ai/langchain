@@ -28,10 +28,10 @@ class ClickTool(BaseBrowserTool):
 
     visible_only: bool = True
     """Whether to consider only visible elements."""
-    strict_mode: bool = False
+    playwright_strict: bool = False
     """Whether to employ Playwright's strict mode when clicking on elements."""
-    timeout: float = 1_000
-    """Timeout for Playwright to wait for element to be ready."""
+    playwright_timeout: float = 1_000
+    """Timeout (in ms) for Playwright to wait for element to be ready."""
 
     def _selector_effective(self, selector: str) -> str:
         if not self.visible_only:
@@ -52,7 +52,7 @@ class ClickTool(BaseBrowserTool):
         from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
         try:
             page.click(
-                selector_effective, strict=self.strict_mode, timeout=self.timeout,
+                selector_effective, strict=self.playwright_strict, timeout=self.playwright_timeout,
             )
         except PlaywrightTimeoutError:
             return f"Unable to click on element '{selector}'"
@@ -72,7 +72,7 @@ class ClickTool(BaseBrowserTool):
         from playwright.async_api import TimeoutError as PlaywrightTimeoutError
         try:
             await page.click(
-                selector_effective, strict=self.strict_mode, timeout=self.timeout,
+                selector_effective, strict=self.playwright_strict, timeout=self.playwright_timeout,
             )
         except PlaywrightTimeoutError:
             return f"Unable to click on element '{selector}'"
