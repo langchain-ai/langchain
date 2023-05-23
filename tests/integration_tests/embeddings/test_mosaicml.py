@@ -1,13 +1,9 @@
 """Test mosaicml embeddings."""
-import time
-
 from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
 
 
 def test_mosaicml_embedding_documents() -> None:
     """Test MosaicML embeddings."""
-    # sleep to avoid the 1 request / sec rate limit
-    time.sleep(1)
     documents = ["foo bar"]
     embedding = MosaicMLInstructorEmbeddings()
     output = embedding.embed_documents(documents)
@@ -17,8 +13,6 @@ def test_mosaicml_embedding_documents() -> None:
 
 def test_mosaicml_embedding_documents_multiple() -> None:
     """Test MosaicML embeddings with multiple documents."""
-    # sleep to avoid the 1 request / sec rate limit
-    time.sleep(1)
     documents = ["foo bar", "bar foo", "foo"]
     embedding = MosaicMLInstructorEmbeddings()
     output = embedding.embed_documents(documents)
@@ -30,8 +24,6 @@ def test_mosaicml_embedding_documents_multiple() -> None:
 
 def test_mosaicml_embedding_query() -> None:
     """Test MosaicML embeddings of queries."""
-    # sleep to avoid the 1 request / sec rate limit
-    time.sleep(1)
     document = "foo bar"
     embedding = MosaicMLInstructorEmbeddings()
     output = embedding.embed_query(document)
@@ -40,8 +32,6 @@ def test_mosaicml_embedding_query() -> None:
 
 def test_mosaicml_embedding_endpoint() -> None:
     """Test MosaicML embeddings with a different endpoint"""
-    # sleep to avoid the 1 request / sec rate limit
-    time.sleep(1)
     documents = ["foo bar"]
     embedding = MosaicMLInstructorEmbeddings(
         endpoint_url="https://models.hosted-on.mosaicml.hosting/instructor-xl/v1/predict"
