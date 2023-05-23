@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from langchain.document_loaders.bibtex import BibtexLoader
 import pytest
+
+from langchain.document_loaders.bibtex import BibtexLoader
 
 BIBTEX_EXAMPLE_FILE = (
     Path(__file__).parent.parent.parent
