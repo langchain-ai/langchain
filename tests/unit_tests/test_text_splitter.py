@@ -157,14 +157,14 @@ def test_split_documents() -> None:
         Document(page_content="baz", metadata={"source": "1"}),
     ]
     expected_output = [
-        Document(page_content='f', metadata={'source': '1'}),
-        Document(page_content='o', metadata={'source': '1'}),
-        Document(page_content='o', metadata={'source': '1'}),
-        Document(page_content='b', metadata={'source': '2'}),
-        Document(page_content='a', metadata={'source': '2'}),
-        Document(page_content='r', metadata={'source': '2'}),
-        Document(page_content='b', metadata={'source': '1'}),
-        Document(page_content='a', metadata={'source': '1'}),
-        Document(page_content='z', metadata={'source': '1'})
+        Document(page_content="f", metadata={"source": "1"}),
+        Document(page_content="o", metadata={"source": "1"}),
+        Document(page_content="o", metadata={"source": "1"}),
+        Document(page_content="b", metadata={"source": "2"}),
+        Document(page_content="a", metadata={"source": "2"}),
+        Document(page_content="r", metadata={"source": "2"}),
+        Document(page_content="b", metadata={"source": "1"}),
+        Document(page_content="a", metadata={"source": "1"}),
+        Document(page_content="z", metadata={"source": "1"}),
     ]
     assert splitter.split_documents(docs) == expected_output
