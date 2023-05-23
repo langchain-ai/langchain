@@ -20,8 +20,6 @@ LangChain Workflow for Document Retrieval with shifted domain
 
 
 The full tutorial is available below.
-- [TODO](TODO): An application to recommend Disney songs based on user feellings/moods and vibes.
-
-An interactive demo can be found on [Hugging Face Spaces](TODO)
+- [FairytaleDJ]([TODO](https://www.activeloop.ai/resources/3-ways-to-build-a-recommendation-engine-for-songs-with-lang-chain/)): An application to recommend Disney songs based on user feellings/moods and vibes. An interactive demo can be found on [Hugging Face Spaces]([TODO](https://huggingface.co/spaces/Francesco/FairytaleDJ))
 
 
