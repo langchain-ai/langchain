@@ -203,10 +203,7 @@ class AzureSearch(VectorStore):
                 {
                     "@search.action": "upload",
                     FIELDS_ID: key,
-                    FIELDS_TITLE: metadata.get(
-                        FIELDS_TITLE,
-                        metadata.get("source", "[]").split("[")[1].split("]")[0],
-                    ),
+                    FIELDS_TITLE: metadata.get(FIELDS_TITLE, ""),
                     FIELDS_TAG: metadata.get(FIELDS_TAG, ""),
                     FIELDS_CONTENT: text,
                     FIELDS_CONTENT_VECTOR: np.array(
