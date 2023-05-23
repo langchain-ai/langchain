@@ -62,7 +62,9 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         """Get the identifying parameters."""
         return {"endpoint_url": self.endpoint_url}
 
-    def _embed(self, input: List[Tuple[str, str]], is_retry: bool = False) -> List[List[float]]:
+    def _embed(
+        self, input: List[Tuple[str, str]], is_retry: bool = False
+    ) -> List[List[float]]:
         payload = {"input_strings": input}
 
         # HTTP headers for authorization
@@ -82,11 +84,15 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
 
             if "error" in parsed_response:
                 # if we get rate limited, try sleeping for 1 second
-                if not is_retry and "rate limit exceeded" in parsed_response['error'].lower():
+                if (
+                    not is_retry
+                    and "rate limit exceeded" in parsed_response["error"].lower()
+                ):
                     import time
+
                     time.sleep(self.retry_sleep)
 
-                    return self._call(input, is_retry=True)
+                    return self._embed(input, is_retry=True)
 
                 raise ValueError(
                     f"Error raised by inference API: {parsed_response['error']}"

@@ -141,8 +141,12 @@ class MosaicML(LLM):
 
             if "error" in parsed_response:
                 # if we get rate limited, try sleeping for 1 second
-                if not is_retry and "rate limit exceeded" in parsed_response['error'].lower():
+                if (
+                    not is_retry
+                    and "rate limit exceeded" in parsed_response["error"].lower()
+                ):
                     import time
+
                     time.sleep(self.retry_sleep)
 
                     return self._call(prompt, stop, run_manager, is_retry=True)
