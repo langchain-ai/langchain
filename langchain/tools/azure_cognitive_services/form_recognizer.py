@@ -23,8 +23,8 @@ class AzureCogsFormRecognizerTool(BaseTool):
     https://learn.microsoft.com/en-us/azure/applied-ai-services/form-recognizer/quickstarts/get-started-sdks-rest-api?view=form-recog-3.0.0&pivots=programming-language-python
     """
 
-    azure_cogs_key: str  #: :meta private:
-    azure_cogs_endpoint: str  #: :meta private:
+    azure_cogs_key: str = ""  #: :meta private:
+    azure_cogs_endpoint: str = ""  #: :meta private:
     doc_analysis_client: Any  #: :meta private:
 
     name = "Azure Cognitive Services Form Recognizer"
@@ -41,12 +41,10 @@ class AzureCogsFormRecognizerTool(BaseTool):
         azure_cogs_key = get_from_dict_or_env(
             values, "azure_cogs_key", "AZURE_COGS_KEY"
         )
-        values["azure_cogs_key"] = azure_cogs_key
 
         azure_cogs_endpoint = get_from_dict_or_env(
             values, "azure_cogs_endpoint", "AZURE_COGS_ENDPOINT"
         )
-        values["azure_cogs_endpoint"] = azure_cogs_endpoint
 
         try:
             from azure.ai.formrecognizer import DocumentAnalysisClient

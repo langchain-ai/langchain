@@ -27,10 +27,10 @@ class AzureCogsSpeech2TextTool(BaseTool):
     https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/get-started-speech-to-text?pivots=programming-language-python
     """
 
-    azure_cogs_key: str  #: :meta private:
-    azure_cogs_region: str  #: :meta private:
-    speech_language: str = "en-US"
-    speech_sdk: Any = None
+    azure_cogs_key: str = ""  #: :meta private:
+    azure_cogs_region: str = ""  #: :meta private:
+    speech_language: str = "en-US"  #: :meta private:
+    speech_config: Any  #: :meta private:
 
     name = "Azure Cognitive Services Speech2Text"
     description = (
@@ -45,17 +45,17 @@ class AzureCogsSpeech2TextTool(BaseTool):
         azure_cogs_key = get_from_dict_or_env(
             values, "azure_cogs_key", "AZURE_COGS_KEY"
         )
-        values["azure_cogs_key"] = azure_cogs_key
 
         azure_cogs_region = get_from_dict_or_env(
             values, "azure_cogs_region", "AZURE_COGS_REGION"
         )
-        values["azure_cogs_region"] = azure_cogs_region
 
         try:
             import azure.cognitiveservices.speech as speechsdk
 
-            values["speech_sdk"] = speechsdk
+            values["speech_config"] = speechsdk.SpeechConfig(
+                subscription=azure_cogs_key, region=azure_cogs_region
+            )
         except ImportError:
             raise ImportError(
                 "azure-cognitiveservices-speech is not installed. "
@@ -92,23 +92,22 @@ class AzureCogsSpeech2TextTool(BaseTool):
         return text
 
     def _speech2text(self, audio_path: str, speech_language: str) -> str:
-        speech_config = self.speech_sdk.SpeechConfig(
-            subscription=self.azure_cogs_key, region=self.azure_cogs_region
-        )
-        speech_config.speech_recognition_language = speech_language
+        try:
+            import azure.cognitiveservices.speech as speechsdk
+        except ImportError:
+            pass
 
         audio_src_type = detect_file_src_type(audio_path)
         if audio_src_type == "local":
-            audio_config = self.speech_sdk.AudioConfig(filename=audio_path)
+            audio_config = speechsdk.AudioConfig(filename=audio_path)
         elif audio_src_type == "remote":
             tmp_audio_path = download_audio_from_url(audio_path)
-            audio_config = self.speech_sdk.AudioConfig(filename=tmp_audio_path)
+            audio_config = speechsdk.AudioConfig(filename=tmp_audio_path)
         else:
             raise ValueError(f"Invalid audio path: {audio_path}")
 
-        speech_recognizer = self.speech_sdk.SpeechRecognizer(
-            speech_config, audio_config
-        )
+        self.speech_config.speech_recognition_language = speech_language
+        speech_recognizer = speechsdk.SpeechRecognizer(self.speech_config, audio_config)
         return self._continuous_recognize(speech_recognizer)
 
     def _run(

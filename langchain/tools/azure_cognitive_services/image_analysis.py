@@ -23,9 +23,10 @@ class AzureCogsImageAnalysisTool(BaseTool):
     https://learn.microsoft.com/en-us/azure/cognitive-services/computer-vision/quickstarts-sdk/image-analysis-client-library-40
     """
 
-    azure_cogs_key: str  #: :meta private:
-    azure_cogs_endpoint: str  #: :meta private:
-    vision_sdk: Any = None
+    azure_cogs_key: str = ""  #: :meta private:
+    azure_cogs_endpoint: str = ""  #: :meta private:
+    vision_service: Any  #: :meta private:
+    analysis_options: Any  #: :meta private:
 
     name = "Azure Cognitive Services Image Analysis"
     description = (
@@ -40,17 +41,25 @@ class AzureCogsImageAnalysisTool(BaseTool):
         azure_cogs_key = get_from_dict_or_env(
             values, "azure_cogs_key", "AZURE_COGS_KEY"
         )
-        values["azure_cogs_key"] = azure_cogs_key
 
         azure_cogs_endpoint = get_from_dict_or_env(
             values, "azure_cogs_endpoint", "AZURE_COGS_ENDPOINT"
         )
-        values["azure_cogs_endpoint"] = azure_cogs_endpoint
 
         try:
             import azure.ai.vision as sdk
 
-            values["vision_sdk"] = sdk
+            values["vision_service"] = sdk.VisionServiceOptions(
+                endpoint=azure_cogs_endpoint, key=azure_cogs_key
+            )
+
+            values["analysis_options"] = sdk.ImageAnalysisOptions()
+            values["analysis_options"].features = (
+                sdk.ImageAnalysisFeature.CAPTION
+                | sdk.ImageAnalysisFeature.OBJECTS
+                | sdk.ImageAnalysisFeature.TAGS
+                | sdk.ImageAnalysisFeature.TEXT
+            )
         except ImportError:
             raise ImportError(
                 "azure-ai-vision is not installed. "
@@ -60,32 +69,26 @@ class AzureCogsImageAnalysisTool(BaseTool):
         return values
 
     def _image_analysis(self, image_path: str) -> Dict:
-        service_options = self.vision_sdk.VisionServiceOptions(
-            endpoint=self.azure_cogs_endpoint, key=self.azure_cogs_key
-        )
-        analysis_options = self.vision_sdk.ImageAnalysisOptions()
-        analysis_options.features = (
-            self.vision_sdk.ImageAnalysisFeature.CAPTION
-            | self.vision_sdk.ImageAnalysisFeature.OBJECTS
-            | self.vision_sdk.ImageAnalysisFeature.TAGS
-            | self.vision_sdk.ImageAnalysisFeature.TEXT
-        )
+        try:
+            import azure.ai.vision as sdk
+        except ImportError:
+            pass
 
         image_src_type = detect_file_src_type(image_path)
         if image_src_type == "local":
-            vision_source = self.vision_sdk.VisionSource(filename=image_path)
+            vision_source = sdk.VisionSource(filename=image_path)
         elif image_src_type == "remote":
-            vision_source = self.vision_sdk.VisionSource(url=image_path)
+            vision_source = sdk.VisionSource(url=image_path)
         else:
             raise ValueError(f"Invalid image path: {image_path}")
 
-        image_analyzer = self.vision_sdk.ImageAnalyzer(
-            service_options, vision_source, analysis_options
+        image_analyzer = sdk.ImageAnalyzer(
+            self.vision_service, vision_source, self.analysis_options
         )
         result = image_analyzer.analyze()
 
         res_dict = {}
-        if result.reason == self.vision_sdk.ImageAnalysisResultReason.ANALYZED:
+        if result.reason == sdk.ImageAnalysisResultReason.ANALYZED:
             if result.caption is not None:
                 res_dict["caption"] = result.caption.content
 
@@ -99,9 +102,7 @@ class AzureCogsImageAnalysisTool(BaseTool):
                 res_dict["text"] = [line.content for line in result.text.lines]
 
         else:
-            error_details = self.vision_sdk.ImageAnalysisErrorDetails.from_result(
-                result
-            )
+            error_details = sdk.ImageAnalysisErrorDetails.from_result(result)
             raise RuntimeError(
                 f"Image analysis failed.\n"
                 f"Reason: {error_details.reason}\n"

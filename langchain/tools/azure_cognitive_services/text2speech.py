@@ -23,10 +23,10 @@ class AzureCogsText2SpeechTool(BaseTool):
     https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/get-started-text-to-speech?pivots=programming-language-python
     """
 
-    azure_cogs_key: str  #: :meta private:
-    azure_cogs_region: str  #: :meta private:
-    speech_language: str = "en-US"
-    speech_sdk: Any = None
+    azure_cogs_key: str = ""  #: :meta private:
+    azure_cogs_region: str = ""  #: :meta private:
+    speech_language: str = "en-US"  #: :meta private:
+    speech_config: Any  #: :meta private:
 
     name = "Azure Cognitive Services Text2Speech"
     description = (
@@ -40,17 +40,17 @@ class AzureCogsText2SpeechTool(BaseTool):
         azure_cogs_key = get_from_dict_or_env(
             values, "azure_cogs_key", "AZURE_COGS_KEY"
         )
-        values["azure_cogs_key"] = azure_cogs_key
 
         azure_cogs_region = get_from_dict_or_env(
             values, "azure_cogs_region", "AZURE_COGS_REGION"
         )
-        values["azure_cogs_region"] = azure_cogs_region
 
         try:
             import azure.cognitiveservices.speech as speechsdk
 
-            values["speech_sdk"] = speechsdk
+            values["speech_config"] = speechsdk.SpeechConfig(
+                subscription=azure_cogs_key, region=azure_cogs_region
+            )
         except ImportError:
             raise ImportError(
                 "azure-cognitiveservices-speech is not installed. "
@@ -60,18 +60,19 @@ class AzureCogsText2SpeechTool(BaseTool):
         return values
 
     def _text2speech(self, text: str, speech_language: str) -> str:
-        speech_config = self.speech_sdk.SpeechConfig(
-            subscription=self.azure_cogs_key, region=self.azure_cogs_region
-        )
-        speech_config.speech_synthesis_language = speech_language
+        try:
+            import azure.cognitiveservices.speech as speechsdk
+        except ImportError:
+            pass
 
-        speech_synthesizer = self.speech_sdk.SpeechSynthesizer(
-            speech_config=speech_config, audio_config=None
+        self.speech_config.speech_synthesis_language = speech_language
+        speech_synthesizer = speechsdk.SpeechSynthesizer(
+            speech_config=self.speech_config, audio_config=None
         )
-        result = speech_synthesizer.speak_text_async(text).get()
+        result = speech_synthesizer.speak_text(text)
 
-        if result.reason == self.speech_sdk.ResultReason.SynthesizingAudioCompleted:
-            stream = self.speech_sdk.AudioDataStream(result)
+        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+            stream = speechsdk.AudioDataStream(result)
             with tempfile.NamedTemporaryFile(
                 mode="wb", suffix=".wav", delete=False
             ) as f:
@@ -79,10 +80,10 @@ class AzureCogsText2SpeechTool(BaseTool):
 
             return f.name
 
-        elif result.reason == self.speech_sdk.ResultReason.Canceled:
+        elif result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = result.cancellation_details
             logger.debug(f"Speech synthesis canceled: {cancellation_details.reason}")
-            if cancellation_details.reason == self.speech_sdk.CancellationReason.Error:
+            if cancellation_details.reason == speechsdk.CancellationReason.Error:
                 raise RuntimeError(
                     f"Speech synthesis error: {cancellation_details.error_details}"
                 )
