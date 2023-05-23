@@ -184,8 +184,7 @@ class SqliteEntityStore(BaseEntityStore):
         create_table_query = f"""
             CREATE TABLE IF NOT EXISTS {self.full_table_name} (
                 key TEXT PRIMARY KEY,
-                value TEXT,
-                expiration INTEGER
+                value TEXT
             )
         """
         with self.conn:
@@ -195,7 +194,7 @@ class SqliteEntityStore(BaseEntityStore):
         query = f"""
             SELECT value
             FROM {self.full_table_name}
-            WHERE key = ? AND expiration >= strftime('%s', 'now')
+            WHERE key = ?
         """
         cursor = self.conn.execute(query, (key,))
         result = cursor.fetchone()
@@ -208,8 +207,8 @@ class SqliteEntityStore(BaseEntityStore):
         if not value:
             return self.delete(key)
         query = f"""
-            INSERT OR REPLACE INTO {self.full_table_name} (key, value, expiration)
-            VALUES (?, ?, strftime('%s', 'now') + ?)
+            INSERT OR REPLACE INTO {self.full_table_name} (key, value)
+            VALUES (?, ?)
         """
         with self.conn:
             self.conn.execute(query, (key, value))
@@ -226,7 +225,7 @@ class SqliteEntityStore(BaseEntityStore):
         query = f"""
             SELECT 1
             FROM {self.full_table_name}
-            WHERE key = ? AND expiration >= strftime('%s', 'now')
+            WHERE key = ?
             LIMIT 1
         """
         cursor = self.conn.execute(query, (key,))
