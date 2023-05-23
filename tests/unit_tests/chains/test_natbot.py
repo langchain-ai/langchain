@@ -4,13 +4,13 @@ from typing import Any, List, Mapping, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chains.natbot.base import NatBotChain
-from langchain.llms.base import StrInStrOutLLM
+from langchain.llms.base import SimpleLLM
 
 
-class FakeLLM(StrInStrOutLLM):
+class FakeLLM(SimpleLLM):
     """Fake LLM wrapper for testing purposes."""
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

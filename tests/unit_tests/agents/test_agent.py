@@ -5,17 +5,17 @@ from typing import Any, List, Mapping, Optional
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import StrInStrOutLLM
+from langchain.llms.base import SimpleLLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-class FakeListLLM(StrInStrOutLLM):
+class FakeListLLM(SimpleLLM):
     """Fake LLM for testing that outputs elements of a list."""
 
     responses: List[str]
     i: int = -1
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

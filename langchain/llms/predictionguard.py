@@ -5,14 +5,14 @@ from typing import Any, Dict, List, Optional
 from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import StrInStrOutLLM
+from langchain.llms.base import SimpleLLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
 
-class PredictionGuard(StrInStrOutLLM):
+class PredictionGuard(SimpleLLM):
     """Wrapper around Prediction Guard large language models.
     To use, you should have the ``predictionguard`` python package installed, and the
     environment variable ``PREDICTIONGUARD_TOKEN`` set with your access token, or pass
@@ -74,7 +74,7 @@ class PredictionGuard(StrInStrOutLLM):
         """Return type of llm."""
         return "predictionguard"
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

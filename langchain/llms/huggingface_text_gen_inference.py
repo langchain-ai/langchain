@@ -5,10 +5,10 @@ from typing import Any, Dict, List, Optional
 from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import StrInStrOutLLM
+from langchain.llms.base import SimpleLLM
 
 
-class HuggingFaceTextGenInference(StrInStrOutLLM):
+class HuggingFaceTextGenInference(SimpleLLM):
     """
     HuggingFace text generation inference API.
 
@@ -108,7 +108,7 @@ class HuggingFaceTextGenInference(StrInStrOutLLM):
         """Return type of llm."""
         return "hf_textgen_inference"
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

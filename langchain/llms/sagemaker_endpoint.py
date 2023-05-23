@@ -5,7 +5,7 @@ from typing import Any, Dict, Generic, List, Mapping, Optional, TypeVar, Union
 from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import StrInStrOutLLM
+from langchain.llms.base import SimpleLLM
 from langchain.llms.utils import enforce_stop_tokens
 
 INPUT_TYPE = TypeVar("INPUT_TYPE", bound=Union[str, List[str]])
@@ -61,7 +61,7 @@ class LLMContentHandler(ContentHandlerBase[str, str]):
     """Content handler for LLM class."""
 
 
-class SagemakerEndpoint(StrInStrOutLLM):
+class SagemakerEndpoint(SimpleLLM):
     """Wrapper around custom Sagemaker Inference Endpoints.
 
     To use, you must supply the endpoint name from your deployed
@@ -202,7 +202,7 @@ class SagemakerEndpoint(StrInStrOutLLM):
         """Return type of llm."""
         return "sagemaker_endpoint"
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

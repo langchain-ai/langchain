@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import StrInStrOutLLM
+from langchain.llms.base import SimpleLLM
 
 
-class ManifestWrapper(StrInStrOutLLM):
+class ManifestWrapper(SimpleLLM):
     """Wrapper around HazyResearch's Manifest library."""
 
     client: Any  #: :meta private:
@@ -43,7 +43,7 @@ class ManifestWrapper(StrInStrOutLLM):
         """Return type of llm."""
         return "manifest"
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

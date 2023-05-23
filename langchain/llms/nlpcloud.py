@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import StrInStrOutLLM
+from langchain.llms.base import SimpleLLM
 from langchain.utils import get_from_dict_or_env
 
 
-class NLPCloud(StrInStrOutLLM):
+class NLPCloud(SimpleLLM):
     """Wrapper around NLPCloud large language models.
 
     To use, you should have the ``nlpcloud`` python package installed, and the
@@ -112,7 +112,7 @@ class NLPCloud(StrInStrOutLLM):
         """Return type of llm."""
         return "nlpcloud"
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

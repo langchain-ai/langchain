@@ -202,7 +202,7 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
     def _llm_type(self) -> str:
         return "selfhosted_huggingface_pipeline"
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

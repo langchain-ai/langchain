@@ -2,10 +2,10 @@
 from typing import Any, List, Mapping, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import StrInStrOutLLM
+from langchain.llms.base import SimpleLLM
 
 
-class FakeListLLM(StrInStrOutLLM):
+class FakeListLLM(SimpleLLM):
     """Fake LLM wrapper for testing purposes."""
 
     responses: List
@@ -16,7 +16,7 @@ class FakeListLLM(StrInStrOutLLM):
         """Return type of llm."""
         return "fake-list"
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

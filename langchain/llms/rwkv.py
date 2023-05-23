@@ -8,11 +8,11 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import StrInStrOutLLM
+from langchain.llms.base import SimpleLLM
 from langchain.llms.utils import enforce_stop_tokens
 
 
-class RWKV(StrInStrOutLLM, BaseModel):
+class RWKV(SimpleLLM, BaseModel):
     r"""Wrapper around RWKV language models.
 
     To use, you should have the ``rwkv`` python package installed, the
@@ -205,7 +205,7 @@ class RWKV(StrInStrOutLLM, BaseModel):
 
         return decoded
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

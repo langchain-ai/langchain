@@ -365,14 +365,14 @@ class BaseLLM(BaseLanguageModel, ABC):
             raise ValueError(f"{save_path} must be json or yaml")
 
 
-class StrInStrOutLLM(BaseLLM):
+class SimpleLLM(BaseLLM):
     """LLM class that expect subclasses to implement a simpler call method.
 
     The purpose of this class is to expose a simpler interface for working
     with LLMs, rather than expect the user to implement the full _generate method.
     """
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
@@ -381,7 +381,7 @@ class StrInStrOutLLM(BaseLLM):
         """Run the LLM on a single input string and return the output as a string."""
         raise NotImplementedError
 
-    async def _agenerate_str_in_str_out(
+    async def _agenerate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
@@ -398,7 +398,7 @@ class StrInStrOutLLM(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
         """Run the LLM on the given prompt and input."""
-        return self._generate_str_in_str_out(prompt, stop=stop, run_manager=run_manager)
+        return self._generate_single(prompt, stop=stop, run_manager=run_manager)
 
     # Kept for backwards compatibility
     async def _acall(
@@ -408,9 +408,7 @@ class StrInStrOutLLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> str:
         """Run the LLM on the given prompt and input."""
-        return await self._agenerate_str_in_str_out(
-            prompt, stop=stop, run_manager=run_manager
-        )
+        return await self._agenerate_single(prompt, stop=stop, run_manager=run_manager)
 
     def _generate(
         self,

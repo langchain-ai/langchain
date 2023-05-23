@@ -6,13 +6,13 @@ import requests
 from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import StrInStrOutLLM
+from langchain.llms.base import SimpleLLM
 from langchain.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
 
 
-class Modal(StrInStrOutLLM):
+class Modal(SimpleLLM):
     """Wrapper around Modal large language models.
 
     To use, you should have the ``modal-client`` python package installed.
@@ -70,7 +70,7 @@ class Modal(StrInStrOutLLM):
         """Return type of llm."""
         return "modal"
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

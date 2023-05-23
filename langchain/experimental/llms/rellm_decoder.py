@@ -42,7 +42,7 @@ class RELLM(HuggingFacePipeline):
         import_rellm()
         return values
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

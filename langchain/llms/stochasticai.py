@@ -7,14 +7,14 @@ import requests
 from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import StrInStrOutLLM
+from langchain.llms.base import SimpleLLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
 
-class StochasticAI(StrInStrOutLLM):
+class StochasticAI(SimpleLLM):
     """Wrapper around StochasticAI large language models.
 
     To use, you should have the environment variable ``STOCHASTICAI_API_KEY``
@@ -81,7 +81,7 @@ class StochasticAI(StrInStrOutLLM):
         """Return type of llm."""
         return "stochasticai"
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

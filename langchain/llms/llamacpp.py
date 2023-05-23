@@ -5,12 +5,12 @@ from typing import Any, Dict, Generator, List, Optional
 from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import StrInStrOutLLM
+from langchain.llms.base import SimpleLLM
 
 logger = logging.getLogger(__name__)
 
 
-class LlamaCpp(StrInStrOutLLM):
+class LlamaCpp(SimpleLLM):
     """Wrapper around the llama.cpp model.
 
     To use, you should have the llama-cpp-python library installed, and provide the
@@ -195,7 +195,7 @@ class LlamaCpp(StrInStrOutLLM):
 
         return params
 
-    def _generate_str_in_str_out(
+    def _generate_single(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
