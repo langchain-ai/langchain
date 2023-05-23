@@ -38,6 +38,8 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         "Represent the question for retrieving supporting documents: "
     )
     """Instruction used to embed the query."""
+    retry_sleep: float = 1.0
+    """How long to try sleeping for if a rate limit is encountered"""
 
     mosaicml_api_token: Optional[str] = None
 
@@ -52,21 +54,17 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         mosaicml_api_token = get_from_dict_or_env(
             values, "mosaicml_api_token", "MOSAICML_API_TOKEN"
         )
-        if not mosaicml_api_token:
-            raise ValueError(
-                "Could not find MOSAICML_API_TOKEN in environment or as a parameter."
-            )
         values["mosaicml_api_token"] = mosaicml_api_token
         return values
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {
-            **{"endpoint_url": self.endpoint_url},
-        }
+        return {"endpoint_url": self.endpoint_url}
 
-    def _embed(self, input: List[Tuple[str, str]]) -> List[List[float]]:
+    def _embed(
+        self, input: List[Tuple[str, str]], is_retry: bool = False
+    ) -> List[List[float]]:
         payload = {"input_strings": input}
 
         # HTTP headers for authorization
@@ -82,11 +80,29 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
         try:
-            embeddings = response.json()["data"]
-            if "error" in embeddings:
+            parsed_response = response.json()
+
+            if "error" in parsed_response:
+                # if we get rate limited, try sleeping for 1 second
+                if (
+                    not is_retry
+                    and "rate limit exceeded" in parsed_response["error"].lower()
+                ):
+                    import time
+
+                    time.sleep(self.retry_sleep)
+
+                    return self._embed(input, is_retry=True)
+
                 raise ValueError(
-                    f"Error raised by inference API: {embeddings['error']}"
+                    f"Error raised by inference API: {parsed_response['error']}"
                 )
+
+            if "data" not in parsed_response:
+                raise ValueError(
+                    f"Error raised by inference API, no key data: {parsed_response}"
+                )
+            embeddings = parsed_response["data"]
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(
                 f"Error raised by inference API: {e}.\nResponse: {response.text}"

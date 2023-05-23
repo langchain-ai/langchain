@@ -55,6 +55,8 @@ class MosaicML(LLM):
     """Whether to inject the instruction format into the prompt."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
+    retry_sleep: float = 1.0
+    """How long to try sleeping for if a rate limit is encountered"""
 
     mosaicml_api_token: Optional[str] = None
 
@@ -69,10 +71,6 @@ class MosaicML(LLM):
         mosaicml_api_token = get_from_dict_or_env(
             values, "mosaicml_api_token", "MOSAICML_API_TOKEN"
         )
-        if not mosaicml_api_token:
-            raise ValueError(
-                "Could not find MOSAICML_API_TOKEN in environment or as a parameter."
-            )
         values["mosaicml_api_token"] = mosaicml_api_token
         return values
 
@@ -88,7 +86,7 @@ class MosaicML(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "mosaicml_llm"
+        return "mosaicml"
 
     def _transform_prompt(self, prompt: str) -> str:
         """Transform prompt."""
@@ -103,6 +101,7 @@ class MosaicML(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        is_retry: bool = False,
     ) -> str:
         """Call out to a MosaicML LLM inference endpoint.
 
@@ -138,11 +137,29 @@ class MosaicML(LLM):
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
         try:
-            generated_text = response.json()["data"]
-            if "error" in generated_text:
+            parsed_response = response.json()
+
+            if "error" in parsed_response:
+                # if we get rate limited, try sleeping for 1 second
+                if (
+                    not is_retry
+                    and "rate limit exceeded" in parsed_response["error"].lower()
+                ):
+                    import time
+
+                    time.sleep(self.retry_sleep)
+
+                    return self._call(prompt, stop, run_manager, is_retry=True)
+
                 raise ValueError(
-                    f"Error raised by inference API: {generated_text['error']}"
+                    f"Error raised by inference API: {parsed_response['error']}"
                 )
+
+            if "data" not in parsed_response:
+                raise ValueError(
+                    f"Error raised by inference API, no key data: {parsed_response}"
+                )
+            generated_text = parsed_response["data"]
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(
                 f"Error raised by inference API: {e}.\nResponse: {response.text}"
