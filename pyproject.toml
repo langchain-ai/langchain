@@ -93,6 +93,9 @@ langkit = {version = ">=0.0.1.dev3, <0.1.0", optional = true}
 chardet = {version="^5.1.0", optional=true}
 requests-toolbelt = {version = "^1.0.0", optional = true}
 openlm = {version = "^0.0.5", optional = true}
+azure-ai-formrecognizer = {version = "^3.2.1", optional = true}
+azure-ai-vision = {version = "^0.11.1b1", optional = true}
+azure-cognitiveservices-speech = {version = "^1.28.0", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -184,7 +187,7 @@ text_helpers = ["chardet"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-azure = ["azure-identity", "azure-cosmos", "openai", "azure-core"]
+azure = ["azure-identity", "azure-cosmos", "openai", "azure-core", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech"]
 all = [
     "anthropic",
     "cohere",
@@ -244,7 +247,10 @@ all = [
     "lxml",
     "requests-toolbelt",
     "neo4j",
-    "openlm"
+    "openlm",
+    "azure-ai-formrecognizer",
+    "azure-ai-vision",
+    "azure-cognitiveservices-speech",
 ]
 
 # An extra used to be able to add extended testing.
