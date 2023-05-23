@@ -26,8 +26,8 @@ MODEL_COST_PER_1K_TOKENS = {
     "code-davinci-002": 0.02,
     "ada-finetuned": 0.0016,
     "babbage-finetuned": 0.0024,
-    "curie-finetuned": 0.0120,
-    "davinci-finetuned": 0.1200,
+    "curie-finetuned": 0.012,
+    "davinci-finetuned": 0.12,
 }
 
 
@@ -92,7 +92,7 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         completion_tokens = token_usage.get("completion_tokens", 0)
         prompt_tokens = token_usage.get("prompt_tokens", 0)
         model_name = response.llm_output.get("model_name")
-        if model_name and model_name in MODEL_COST_PER_1K_TOKENS:
+        if model_name:
             completion_cost = get_openai_token_cost_for_model(
                 model_name, completion_tokens, is_completion=True
             )
