@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import List
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
@@ -17,9 +18,14 @@ class AzureCognitiveServicesToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        return [
-            AzureCogsImageAnalysisTool(),
+
+        tools = [
             AzureCogsFormRecognizerTool(),
             AzureCogsSpeech2TextTool(),
             AzureCogsText2SpeechTool(),
         ]
+
+        # TODO: Remove check once azure-ai-vision supports MacOS.
+        if sys.platform.startswith("linux") or sys.platform.startswith("win"):
+            tools.append(AzureCogsImageAnalysisTool())
+        return tools
