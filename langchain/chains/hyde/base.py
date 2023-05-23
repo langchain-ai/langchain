@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from pydantic import Extra
+from pydantic import Extra, Field
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
@@ -23,7 +23,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
     Based on https://arxiv.org/abs/2212.10496
     """
 
-    base_embeddings: Embeddings
+    base_embeddings: Embeddings = Field(exclude=True)
     llm_chain: LLMChain
 
     class Config:
