@@ -53,6 +53,7 @@ For detailed instructions on how to get set up with Unstructured, see installati
    ./document_loaders/examples/unstructured_file.ipynb
    ./document_loaders/examples/url.ipynb
    ./document_loaders/examples/web_base.ipynb
+   ./document_loaders/examples/weather.ipynb
    ./document_loaders/examples/whatsapp_chat.ipynb
 
 
