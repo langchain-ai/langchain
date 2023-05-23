@@ -64,13 +64,13 @@ class LangChainPlusClient(BaseSettings):
     """Client for interacting with the LangChain+ API."""
 
     api_key: Optional[str] = Field(default=None, env="LANGCHAIN_API_KEY")
-    api_url: str = Field(default="http://localhost:8000", env="LANGCHAIN_ENDPOINT")
+    api_url: str = Field(default="http://localhost:1984", env="LANGCHAIN_ENDPOINT")
     tenant_id: Optional[str] = None
 
     @root_validator(pre=True)
     def validate_api_key_if_hosted(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Verify API key is provided if url not localhost."""
-        api_url: str = values.get("api_url", "http://localhost:8000")
+        api_url: str = values.get("api_url", "http://localhost:1984")
         api_key: Optional[str] = values.get("api_key")
         if not _is_localhost(api_url):
             if not api_key:
