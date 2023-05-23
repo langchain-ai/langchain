@@ -43,27 +43,7 @@ class Neo4jGraph:
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
         self.schema = ""
-        # Verify connection
-        try:
-            self._driver.verify_connectivity()
-        except neo4j.exceptions.ServiceUnavailable:
-            raise ValueError(
-                "Could not connect to Neo4j database. "
-                "Please ensure that the url is correct"
-            )
-        except neo4j.exceptions.AuthError:
-            raise ValueError(
-                "Could not connect to Neo4j database. "
-                "Please ensure that the username and password are correct"
-            )
-        # Set schema
-        try:
-            self.refresh_schema()
-        except neo4j.exceptions.ClientError:
-            raise ValueError(
-                "Could not use APOC procedures. "
-                "Please install the APOC plugin in Neo4j."
-            )
+        self.refresh_schema()
 
     @property
     def get_schema(self) -> str:
