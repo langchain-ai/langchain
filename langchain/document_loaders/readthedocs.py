@@ -19,9 +19,8 @@ class ReadTheDocsLoader(BaseLoader):
         """Initialize path."""
         try:
             from bs4 import BeautifulSoup
-
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import python packages. "
                 "Please install it with `pip install beautifulsoup4`. "
             )

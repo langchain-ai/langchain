@@ -91,7 +91,7 @@ class Banana(LLM):
         try:
             import banana_dev as banana
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import banana-dev python package. "
                 "Please install it with `pip install banana-dev`."
             )

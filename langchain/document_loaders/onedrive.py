@@ -77,7 +77,7 @@ class OneDriveLoader(BaseLoader, BaseModel):
         try:
             from O365 import FileSystemTokenBackend
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "O365 package not found, please install it with `pip install o365`"
             )
         if self.auth_with_token:
