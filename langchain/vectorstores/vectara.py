@@ -5,7 +5,7 @@ import json
 import logging
 import os
 from hashlib import md5
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
 
@@ -48,7 +48,7 @@ class Vectara(VectorStore):
             or self._vectara_api_key is None
         ):
             logging.warning(
-                f"Cant find Vectara credentials, customer_id or corpus_id in environment."
+                "Cant find Vectara credentials, customer_id or corpus_id in environment."
             )
         else:
             logging.debug(f"Using corpus id {self._vectara_corpus_id}")
