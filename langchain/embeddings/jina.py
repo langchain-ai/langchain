@@ -34,7 +34,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
         try:
             import jina
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import `jina` python package. "
                 "Please install it with `pip install jina`."
             )

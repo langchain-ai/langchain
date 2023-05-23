@@ -148,7 +148,7 @@ class AlephAlpha(LLM):
 
             values["client"] = aleph_alpha_client.Client(token=aleph_alpha_api_key)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
