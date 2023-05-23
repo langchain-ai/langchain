@@ -86,7 +86,7 @@ class AzureChatOpenAI(ChatOpenAI):
             if openai_organization:
                 openai.organization = openai_organization
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
