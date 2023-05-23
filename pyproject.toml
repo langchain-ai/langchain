@@ -91,6 +91,7 @@ psychicapi = {version = "^0.2", optional = true}
 zep-python = {version="^0.25", optional=true}
 chardet = {version="^5.1.0", optional=true}
 requests-toolbelt = {version = "^1.0.0", optional = true}
+openlm = {version = "^0.0.5", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -175,7 +176,7 @@ playwright = "^1.28.0"
 setuptools = "^67.6.1"
 
 [tool.poetry.extras]
-llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+llms = ["anthropic", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
@@ -241,6 +242,7 @@ all = [
     "lxml",
     "requests-toolbelt",
     "neo4j",
+    "openlm"
 ]
 
 # An extra used to be able to add extended testing.
