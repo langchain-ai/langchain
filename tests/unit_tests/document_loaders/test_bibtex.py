@@ -11,7 +11,7 @@ BIBTEX_EXAMPLE_FILE = (
 )
 
 
-# @pytest.mark.requires("pymupdf")
+@pytest.mark.requires("pymupdf")
 def test_load_success() -> None:
     """Test that returns one document"""
     loader = BibtexLoader(file_path=str(BIBTEX_EXAMPLE_FILE), load_max_docs=2)
