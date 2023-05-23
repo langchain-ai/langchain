@@ -222,7 +222,7 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
 def _get_sms(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Sms",
-        description="Useful for when you need to send an message to a provided phone number.",
+        description="Useful for when you need to send a message to a provided phone number.",
         func=Sms(**kwargs).run,
     )
 
