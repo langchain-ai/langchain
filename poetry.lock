@@ -682,6 +682,7 @@ six = ">=1.12.0"
 name = "azure-search-documents"
 version = "11.4.0a20230509004"
 description = "Microsoft Azure Cognitive Search Client Library for Python"
+category = "main"
 optional = true
 python-versions = ">=3.7"
 files = [
@@ -10887,4 +10888,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "196588e10bb33939f5bae294a194ad01e803f40ed1087fe6a7a4b87e8d80712b"
+content-hash = "10f463f08060f91e9302ea8fd5cbaa7b906120f21453f8536605aa678354c9c6"
