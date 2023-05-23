@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Iterable, Iterator, List, Optional
+from typing import Iterator, List, Optional, Sequence
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -20,7 +20,7 @@ class WeatherDataLoader(BaseLoader):
     def __init__(
         self,
         client: OpenWeatherMapAPIWrapper,
-        places: Iterable[str],
+        places: Sequence[str],
     ) -> None:
         """Initialize with parameters."""
         super().__init__()
@@ -29,7 +29,7 @@ class WeatherDataLoader(BaseLoader):
 
     @classmethod
     def from_params(
-        cls, places: Iterable[str], *, openweathermap_api_key: Optional[str] = None
+        cls, places: Sequence[str], *, openweathermap_api_key: Optional[str] = None
     ) -> WeatherDataLoader:
         client = OpenWeatherMapAPIWrapper(openweathermap_api_key=openweathermap_api_key)
         return cls(client, places)
