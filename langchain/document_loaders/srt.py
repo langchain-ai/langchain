@@ -13,8 +13,8 @@ class SRTLoader(BaseLoader):
         try:
             import pysrt  # noqa:F401
         except ImportError:
-            raise ValueError(
-                "package `pysrt` not found, please install it with `pysrt`"
+            raise ImportError(
+                "package `pysrt` not found, please install it with `pip install pysrt`"
             )
         self.file_path = file_path
 

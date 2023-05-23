@@ -234,7 +234,7 @@ class BaseOpenAI(BaseLLM):
                 openai.organization = openai_organization
             values["client"] = openai.Completion
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
@@ -462,7 +462,7 @@ class BaseOpenAI(BaseLLM):
         try:
             import tiktoken
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
                 "Please install it with `pip install tiktoken`."
@@ -677,7 +677,7 @@ class OpenAIChat(BaseLLM):
             if openai_organization:
                 openai.organization = openai_organization
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
@@ -807,7 +807,7 @@ class OpenAIChat(BaseLLM):
         try:
             import tiktoken
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
                 "Please install it with `pip install tiktoken`."

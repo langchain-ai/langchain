@@ -79,9 +79,7 @@ O365 = {version = "^2.0.26", optional = true}
 jq = {version = "^1.4.1", optional = true}
 steamship = {version = "^2.16.9", optional = true}
 pdfminer-six = {version = "^20221105", optional = true}
-docarray = {version="^0.31.0", optional=true}
-protobuf = {version="3.19.6", optional=true}
-hnswlib = {version="^0.7.0", optional=true}
+docarray = {version="^0.32.0", extras=["hnswlib"], optional=true}
 lxml = {version = "^4.9.2", optional = true}
 pymupdf = {version = "^1.22.3", optional = true}
 pypdfium2 = {version = "^4.10.0", optional = true}
@@ -93,6 +91,7 @@ psychicapi = {version = "^0.2", optional = true}
 zep-python = {version="^0.25", optional=true}
 chardet = {version="^5.1.0", optional=true}
 requests-toolbelt = {version = "^1.0.0", optional = true}
+openlm = {version = "^0.0.5", optional = true}
 azure-ai-formrecognizer = {version = "^3.2.1", optional = true}
 azure-ai-vision = {version = "^0.11.1b1", optional = true}
 azure-cognitiveservices-speech = {version = "^1.28.0", optional = true}
@@ -157,6 +156,7 @@ wikipedia = "^1"
 pymongo = "^4.3.3"
 cassandra-driver = "^3.27.0"
 arxiv = "^1.4"
+mastodon-py = "^1.8.1"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
@@ -179,13 +179,12 @@ playwright = "^1.28.0"
 setuptools = "^67.6.1"
 
 [tool.poetry.extras]
-llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+llms = ["anthropic", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
 cohere = ["cohere"]
-in_memory_store = ["docarray"]
-hnswlib = ["docarray", "protobuf", "hnswlib"]
+docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
 azure = ["azure-identity", "azure-cosmos", "openai", "azure-core", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech"]
 all = [
@@ -241,13 +240,12 @@ all = [
     "O365",
     "jq",
     "docarray",
-    "protobuf",
-    "hnswlib",
     "steamship",
     "pdfminer-six",
     "lxml",
     "requests-toolbelt",
     "neo4j",
+    "openlm",
     "azure-ai-formrecognizer",
     "azure-ai-vision",
     "azure-cognitiveservices-speech",
