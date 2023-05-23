@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
-import os
 
 import requests
 
