@@ -2,7 +2,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Type
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -16,29 +16,26 @@ class BibtexparserWrapper(BaseModel):
 
     To use, you should have the ``bibtexparser`` python package installed.
     https://bibtexparser.readthedocs.io/en/master/
+
     This wrapper will use bibtexparser to load a collection of references from
     a bibtex file and fetch document summaries.
     It limits the Document content by doc_content_chars_max.
     Set doc_content_chars_max=None if you don't want to limit the content size.
-
-    Parameters:
-        load_max_docs: a limit to the number of loaded documents
-          -1 by default, does not limit the number of loaded documents
-        load_all_available_meta:
-          if True: the `metadata` of the loaded Documents gets all available meta info
-          if False: the `metadata` gets only the most informative fields.
-        doc_content_chars_max: the maximum number of characters in the content of a
-          Document 4000 by default
-        pdf_pattern: the regex pattern to find the pdf file name in the bibtex entry
-          r'[^:]+\.pdf' by default
     """
 
     bibtexparser_client: Any  #: :meta private:
-    bibtexparser_exceptions: Any  # :meta private:
+
     load_max_docs: int = -1
+    """Max number of associated documents to load. Use -1 means no limit."""
+
     load_all_available_meta: bool = False
-    doc_content_chars_max: int = 4000
-    pdf_pattern = r"[^:]+\.pdf"
+    """Load all available metadata or restrict to most informative fields."""
+
+    max_content_chars: Optional[int] = 4000
+    """The maximum number of characters in the content of a Document 4000 by default"""
+
+    file_pattern = r"[^:]+\.pdf"
+    r"""File pattern in the bibtex entry to decide which files to load r'[^:]+\.pdf'"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -50,38 +47,49 @@ class BibtexparserWrapper(BaseModel):
         """Validate that the python package exists in environment."""
         try:
             import bibtexparser
-
-            values["load_file"] = bibtexparser.load
-            values["bibtexparser_exceptions"] = (
-                bibtexparser.bibtexexpression.BibtexExpression().ParseException,
-            )
         except ImportError:
             raise ValueError(
                 "Could not import bibtexparser python package. "
                 "Please install it with `pip install bibtexparser`."
             )
+
+        if "ignorable_exceptions" not in values:
+            values["ignorable_exceptions"] = ()
+
         return values
 
-    def _meta_str(self, entry: Any) -> str:
-        """
-        Return the meta information of an article in string format.
-        """
-        metadata = self._get_meta(entry)
+    def _meta_str(self, entry: Mapping[str, Any]) -> str:
+        """Return the meta information of an article in string format."""
+        metadata = self._get_metadata(entry)
         return "\n".join([f"{key}: {value}" for key, value in metadata.items()])
 
-    def _get_metata(self, entry: Any) -> str:
+    def load_bibtex_entries(self, path: str) -> List[Dict[str, Any]]:
+        """Load bibtex entries from the bibtex file at the given path."""
+        import bibtexparser
+        from bibtexparser.bibtexexpression import BibtexExpression
+
+        try:
+            with open(path) as file:
+                entries = bibtexparser.load(file).entries[: self.load_max_docs]
+        except BibtexExpression.ParseException as e:
+            entries = []
+            logger.debug("Error on bibtexparser: %s", e)
+        return entries
+
+    def _get_metadata(self, entry: Mapping[str, Any]) -> Dict[str, Any]:
+        """Get metadata for the given entry."""
         meta = {
-            "ID": entry.get("ID", ""),
-            "Published": entry.get("year", "Published date unknown"),
-            "Title": entry.get("title", "Unknown"),
-            "Publication": entry.get("journal")
+            "id": entry.get("ID", ""),
+            "published": entry.get("year", "Published date unknown"),
+            "title": entry.get("title", "Unknown"),
+            "publication": entry.get("journal")
             or entry.get("booktitle")
             or "Unknown publication",
-            "Authors": entry.get("author", "Unknown authors"),
-            "Summary": entry.get("abstract", "No abstract available"),
-            "URL": entry.get("url", None) or f'https://doi.org/{entry.get("doi", "")}'
+            "authors": entry.get("author", "Unknown authors"),
+            "summary": entry.get("abstract", "No abstract available"),
+            "url": entry.get("url", None) or f'https://doi.org/{entry.get("doi", "")}'
             if entry.get("doi", None)
-            else "No URL available",
+            else "",
         }
         optional_fields = [
             "annote",
@@ -103,40 +111,32 @@ class BibtexparserWrapper(BaseModel):
         if self.load_all_available_meta:
             for field in optional_fields:
                 if field in entry:
-                    meta[field.capitalize()] = entry.get(field)
+                    meta[field] = entry[field]
         return meta
 
     def run(self, file_path: str) -> str:
-        """
-        Load bibtex file using bibtexparser and get the article meta information.
+        """Load bibtex file using bibtexparser and get the article meta information.
+
         See https://bibtexparser.readthedocs.io/en/master/
         It uses only the most informative fields of article meta information.
         """
-        print("Running bibtexparser wrapper")
-        try:
-            with open(file_path) as file:
-                docs = [
-                    self._meta_str(entry)
-                    for entry in self.load_file(file).entries[: self.load_max_docs]
-                ]
-            return (
-                "\n\n".join(docs)[: self.doc_content_chars_max]
-                if docs
-                else "No good bibtex information found. Check your bibtex file."
-            )
-        except self.bibtexparser_exceptions as ex:
-            return f"Bibtexparser exception: {ex}"
+        docs = [self._meta_str(entry) for entry in self.load_bibtex_entries(file_path)]
+        return (
+            "\n\n".join(docs)[: self.max_content_chars]
+            if docs
+            else "No good bibtex information found. Check your bibtex file."
+        )
 
-    def load(self, file_path: str) -> List[Document]:
-        """
-        Load bibtex file using bibtexparser and get the article texts plus the
+    def lazy_load(self, file_path: str) -> Iterator[Document]:
+        """Load bibtex file using bibtexparser and get the article texts plus the
+
         article metadata.
+
         See https://bibtexparser.readthedocs.io/en/master/
 
-        Returns: a list of documents with the document.page_content in text format
-
+        Returns:
+            a list of documents with the document.page_content in text format
         """
-        print("Running bibtexparser wrapper LOADER")
         try:
             import fitz
         except ImportError:
@@ -145,33 +145,38 @@ class BibtexparserWrapper(BaseModel):
                 "`pip install pymupdf`"
             )
 
-        try:
-            docs: List[Document] = []
-            pdf_regex = re.compile(self.pdf_pattern)
-            with open(file_path) as file:
-                for entry in self.load_file(file).entries[: self.load_max_docs]:
-                    try:
-                        # regex is usefull for Zotero flavor bibtex files
-                        doc_file_names = pdf_regex.findall(entry.get("file", ""))
-                        doc_file_paths = [
-                            Path(file_path).parent / name for name in doc_file_names
-                        ]
-                        text: str = ""
-                        for doc_file_name in doc_file_paths:
-                            with fitz.open(doc_file_name) as doc_file:
-                                text += "\n".join(page.get_text() for page in doc_file)
-                        if not text:
-                            # if nothing retrieved, just use the abstract as content
-                            text: str = entry.get("abstract", "")
+        pdf_regex = re.compile(self.file_pattern)
+        entries = self.load_bibtex_entries(file_path)
 
-                        doc = Document(
-                            page_content=text[: self.doc_content_chars_max],
-                            metadata=self._get_metata(entry),
-                        )
-                        docs.append(doc)
-                    except FileNotFoundError as f_ex:
-                        logger.debug(f_ex)
-            return docs
-        except self.bibtexparser_exceptions as ex:
-            logger.debug("Error on bibtexparser: %s", ex)
-            return []
+        for entry in entries:
+            try:
+                # regex is useful for Zotero flavor bibtex files
+                filenames = pdf_regex.findall(entry.get("file", ""))
+                file_paths = [Path(file_path).parent / name for name in filenames]
+                text: str = ""
+                for file_path in file_paths:
+                    with fitz.open(file_path) as doc_file:
+                        text += "\n".join(page.get_text() for page in doc_file)
+                if not text:
+                    # if nothing retrieved, just use the abstract as content
+                    text = entry.get("abstract", "")
+
+                yield Document(
+                    page_content=text[: self.max_content_chars],
+                    metadata=self._get_metadata(entry),
+                )
+            except FileNotFoundError as f_ex:
+                logger.debug(f_ex)
+
+    def load(self, file_path: str) -> List[Document]:
+        """Load bibtex file documents from the given bibtex file path.
+
+        See https://bibtexparser.readthedocs.io/en/master/
+
+        Args:
+            file_path: the path to the bibtex file
+
+        Returns:
+            a list of documents with the document.page_content in text format
+        """
+        return list(self.lazy_load(file_path))
