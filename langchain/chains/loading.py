@@ -138,19 +138,14 @@ def _load_map_reduce_documents_chain(
 
 
 def _load_llm_bash_chain(config: dict, **kwargs: Any) -> LLMBashChain:
-    if "llm" in config:
-        llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
-    elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+    if "llm_chain" in config:
+        llm_chain_config = config.pop("llm_chain")
+        llm_chain = load_chain_from_config(llm_chain_config)
+    elif "llm_chain_path" in config:
+        llm_chain = load_chain(config.pop("llm_chain_path"))
     else:
-        raise ValueError("One of `llm` or `llm_path` must be present.")
-    if "prompt" in config:
-        prompt_config = config.pop("prompt")
-        prompt = load_prompt_from_config(prompt_config)
-    elif "prompt_path" in config:
-        prompt = load_prompt(config.pop("prompt_path"))
-    return LLMBashChain(llm=llm, prompt=prompt, **config)
+        raise ValueError("One of `llm_chain` or `llm_chain_config` must be present.")
+    return LLMBashChain(llm_chain=llm_chain, **config)
 
 
 def _load_llm_checker_chain(config: dict, **kwargs: Any) -> LLMCheckerChain:

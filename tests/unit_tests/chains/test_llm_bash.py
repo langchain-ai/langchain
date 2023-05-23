@@ -4,7 +4,8 @@ import sys
 import pytest
 
 from langchain.chains.llm_bash.base import LLMBashChain
-from langchain.chains.llm_bash.prompt import _PROMPT_TEMPLATE, BashOutputParser
+from langchain.chains.llm_bash.prompt import _PROMPT_TEMPLATE
+from langchain.output_parsers.bash import BashOutputParser
 from langchain.schema import OutputParserException
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

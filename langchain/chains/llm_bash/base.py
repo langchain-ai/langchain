@@ -30,13 +30,12 @@ class LLMBashChain(Chain):
     """
 
     llm_chain: LLMChain
-    llm: Optional[BaseLanguageModel] = None
-    """[Deprecated] LLM wrapper to use."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
-    prompt: BasePromptTemplate = PROMPT
     """[Deprecated]"""
-    bash_process: BashProcess = Field(default_factory=BashProcess)  #: :meta private:
+    bash_process: BashProcess = Field(
+        default_factory=BashProcess, exclude=True
+    )  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
