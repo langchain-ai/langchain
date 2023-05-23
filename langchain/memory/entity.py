@@ -147,6 +147,7 @@ class RedisEntityStore(BaseEntityStore):
         ):
             self.redis_client.delete(*keybatch)
 
+
 class SqliteEntityStore(BaseEntityStore):
     """SQLite-backed Entity store"""
 
@@ -200,7 +201,6 @@ class SqliteEntityStore(BaseEntityStore):
         result = cursor.fetchone()
         if result is not None:
             value = result[0]
-            self._extend_expiration(key)
             return value
         return default
 
@@ -274,7 +274,7 @@ class ConversationEntityMemory(BaseChatMemory):
         else:
             prompt_input_key = self.input_key
         buffer_string = get_buffer_string(
-            self.buffer[-self.k * 2 :],
+            self.buffer[-self.k * 2:],
             human_prefix=self.human_prefix,
             ai_prefix=self.ai_prefix,
         )
@@ -291,7 +291,7 @@ class ConversationEntityMemory(BaseChatMemory):
             entity_summaries[entity] = self.entity_store.get(entity, "")
         self.entity_cache = entities
         if self.return_messages:
-            buffer: Any = self.buffer[-self.k * 2 :]
+            buffer: Any = self.buffer[-self.k * 2:]
         else:
             buffer = buffer_string
         return {
@@ -309,7 +309,7 @@ class ConversationEntityMemory(BaseChatMemory):
             prompt_input_key = self.input_key
 
         buffer_string = get_buffer_string(
-            self.buffer[-self.k * 2 :],
+            self.buffer[-self.k * 2:],
             human_prefix=self.human_prefix,
             ai_prefix=self.ai_prefix,
         )
