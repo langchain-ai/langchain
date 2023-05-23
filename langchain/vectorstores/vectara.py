@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import json
 import logging
-from hashlib import md5
-from typing import Any, Iterable, List, Optional, Tuple, Type
 import os
+from hashlib import md5
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import requests
 
@@ -15,12 +15,17 @@ from langchain.vectorstores.base import VectorStore
 
 
 class Vectara(VectorStore):
-    """Implementation of Vector Store using Vectara (https://vectara.com)
+    """Implementation of Vector Store using Vectara (https://vectara.com).
     Example:
         .. code-block:: python
 
             from langchain.vectorstores import Vectara
-            vectorstore = Vectara(customer_id, corpus_id, api_key)
+
+            vectorstore = Vectara(
+                vectara_customer_id=vectara_customer_id,
+                vectara_corpus_id=vectara_corpus_id,
+                vectara_api_key=vectara_api_key
+            )
     """
 
     def __init__(
@@ -66,7 +71,7 @@ class Vectara(VectorStore):
             doc_id (str): ID of the document to delete.
 
         Returns:
-            bool: True if the delete was successful, False otherwise.
+            bool: True if deletion was successful, False otherwise.
         """
         body = {
             "customer_id": self._vectara_customer_id,
@@ -260,9 +265,15 @@ class Vectara(VectorStore):
             .. code-block:: python
 
                 from langchain import Vectara
-                vectara = Vectara.from_texts(texts, customer_id, corpus_id, api_key)
+                vectara = Vectara.from_texts(
+                    texts,
+                    vectara_customer_id=customer_id,
+                    vectara_corpus_id=corpus_id,
+                    vectara_api_key=api_key,
+                )
         """
-        # note: Vectara generates its own embeddings, so we ignore the provided embeddings (required by interface)
+        # Note: Vectara generates its own embeddings, so we ignore the provided
+        # embeddings (required by interface)
         vectara = cls(**kwargs)
         vectara.add_texts(texts, metadatas)
         return vectara
