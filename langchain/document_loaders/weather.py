@@ -1,6 +1,6 @@
 """Simple reader that reads weather data from OpenWeatherMap API"""
 from datetime import datetime
-from typing import Iterator, List
+from typing import Any, Dict, Iterator, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -41,7 +41,7 @@ class WeatherDataLoader(BaseLoader):
         reg = owm.city_id_registry()
 
         for place in self.places:
-            info_dict = {}
+            info_dict: Dict[str, Any] = {}
             list_of_locations = reg.locations_for(city_name=place)
 
             try:
