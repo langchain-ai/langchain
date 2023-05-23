@@ -679,6 +679,27 @@ msal-extensions = ">=0.3.0,<2.0.0"
 six = ">=1.12.0"
 
 [[package]]
+name = "azure-search-documents"
+version = "11.4.0a20230509004"
+description = "Microsoft Azure Cognitive Search Client Library for Python"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "azure-search-documents-11.4.0a20230509004.zip", hash = "sha256:6cca144573161a10aa0fcd13927264453e79c63be6a53cf2ec241c9c8c22f6b5"},
+    {file = "azure_search_documents-11.4.0a20230509004-py3-none-any.whl", hash = "sha256:6215e9a4f9e935ff3eac1b7d5519c6c0789b4497eb11242d376911aaefbb0359"},
+]
+
+[package.dependencies]
+azure-common = ">=1.1,<2.0"
+azure-core = ">=1.24.0,<2.0.0"
+isodate = ">=0.6.0"
+
+[package.source]
+type = "legacy"
+url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple"
+reference = "azure-sdk-dev"
+
+[[package]]
 name = "babel"
 version = "2.12.1"
 description = "Internationalization utilities"
