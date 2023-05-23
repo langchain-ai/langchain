@@ -53,9 +53,6 @@ class BibtexparserWrapper(BaseModel):
                 "Please install it with `pip install bibtexparser`."
             )
 
-        if "ignorable_exceptions" not in values:
-            values["ignorable_exceptions"] = ()
-
         return values
 
     def _meta_str(self, entry: Mapping[str, Any]) -> str:
