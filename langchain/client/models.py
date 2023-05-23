@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -97,3 +97,55 @@ class ListRunsQueryParams(BaseModel):
         if start_time and end_time and start_time > end_time:
             raise ValueError("start_time must be <= end_time")
         return values
+
+
+class FeedbackBase(BaseModel):
+    """Feedback schema."""
+
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow)
+    """The time the feedback was created."""
+    modified_at: datetime = Field(
+        default_factory=datetime.utcnow)
+    """The time the feedback was last modified."""
+    run_id: UUID
+    """The associated run ID this feedback is logged for."""
+    metric_name: Optional[str] = None
+    """The feedback metric name or type."""
+    rating: Optional[float] = None
+    """Score to assign the run."""
+    correction: Optional[str] = None
+    """The ground-truth value or recommended correction."""
+    comment: Optional[str] = None
+    """Explanation of the score and other free-form feedback."""
+    feedback_model: Optional[str] = None
+    """The feedback model used to generate this feedback, if AI-assisted."""
+    user_id: Optional[UUID] = None
+    """The user ID of the user who provided this feedback, if human."""
+    extra: Dict[str, Any] | None
+    """Extra metadata associated with this feedback."""
+
+
+class FeedbackCreate(FeedbackBase):
+    """Schema used for creating feedback."""
+    id: UUID = Field(default_factory=uuid4)
+
+
+class Feedback(FeedbackBase):
+    """Schema for getting feedback."""
+    id: UUID
+
+
+class ListFeedbackQueryParams(BaseModel):
+    """Query Params for listing feedbacks."""
+
+    run: Optional[List[UUID]] = None
+    metric_name: Optional[str] = None
+    user: Optional[List[UUID]] = None
+    limit: int = 100
+    offset: int = 0
+
+    class Config:
+        """Config for query params."""
+
+        extra = "forbid"
