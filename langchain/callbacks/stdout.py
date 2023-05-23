@@ -74,10 +74,10 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """If not the final action, print out observation."""
-        if observation_prefix:
+        if observation_prefix is not None:
             print_text(f"\n{observation_prefix}")
         print_text(output, color=color if color else self.color)
-        if llm_prefix:
+        if llm_prefix is not None:
             print_text(f"\n{llm_prefix}")
 
     def on_tool_error(
@@ -91,7 +91,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         text: str,
         color: Optional[str] = None,
         end: str = "",
-        **kwargs: Optional[str],
+        **kwargs: Any,
     ) -> None:
         """Run when agent ends."""
         print_text(text, color=color if color else self.color, end=end)

@@ -3,8 +3,8 @@ import sys
 
 import pytest
 
-from langchain.python import PythonREPL
 from langchain.tools.python.tool import PythonAstREPLTool, PythonREPLTool
+from langchain.utilities import PythonREPL
 
 _SAMPLE_CODE = """
 ```
@@ -54,7 +54,7 @@ def test_python_repl_no_previous_variables() -> None:
     foo = 3  # noqa: F841
     repl = PythonREPL()
     output = repl.run("print(foo)")
-    assert output == "name 'foo' is not defined"
+    assert output == """NameError("name 'foo' is not defined")"""
 
 
 def test_python_repl_pass_in_locals() -> None:
@@ -97,7 +97,6 @@ def test_python_ast_repl_multi_statement() -> None:
         pytest.skip("Python 3.9+ is required for this test")
     tool = PythonAstREPLTool()
     output = tool.run(_AST_SAMPLE_CODE_EXECUTE)
-    print(output)
     assert output == 30
 
 

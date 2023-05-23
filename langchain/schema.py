@@ -2,7 +2,17 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeVar
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+)
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -31,7 +41,7 @@ class AgentAction(NamedTuple):
     """Agent's action to take."""
 
     tool: str
-    tool_input: str
+    tool_input: Union[str, dict]
     log: str
 
 
@@ -69,6 +79,8 @@ class BaseMessage(BaseModel):
 class HumanMessage(BaseMessage):
     """Type of message that is spoken by the human."""
 
+    example: bool = False
+
     @property
     def type(self) -> str:
         """Type of the message, used for serialization."""
@@ -77,6 +89,8 @@ class HumanMessage(BaseMessage):
 
 class AIMessage(BaseMessage):
     """Type of message that is spoken by the AI."""
+
+    example: bool = False
 
     @property
     def type(self) -> str:
@@ -171,45 +185,6 @@ class PromptValue(BaseModel, ABC):
         """Return prompt as messages."""
 
 
-class BaseLanguageModel(BaseModel, ABC):
-    @abstractmethod
-    def generate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
-    ) -> LLMResult:
-        """Take in a list of prompt values and return an LLMResult."""
-
-    @abstractmethod
-    async def agenerate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
-    ) -> LLMResult:
-        """Take in a list of prompt values and return an LLMResult."""
-
-    def get_num_tokens(self, text: str) -> int:
-        """Get the number of tokens present in the text."""
-        # TODO: this method may not be exact.
-        # TODO: this method may differ based on model (eg codex).
-        try:
-            from transformers import GPT2TokenizerFast
-        except ImportError:
-            raise ValueError(
-                "Could not import transformers python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please install it with `pip install transformers`."
-            )
-        # create a GPT-3 tokenizer instance
-        tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
-        # tokenize the text using the GPT-3 tokenizer
-        tokenized_text = tokenizer.tokenize(text)
-
-        # calculate the number of tokens in the tokenized text
-        return len(tokenized_text)
-
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
-        """Get the number of tokens in the message."""
-        return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
-
-
 class BaseMemory(BaseModel, ABC):
     """Base interface for memory in chains."""
 
@@ -252,25 +227,25 @@ class BaseChatMessageHistory(ABC):
             class FileChatMessageHistory(BaseChatMessageHistory):
                 storage_path:  str
                 session_id: str
-               
+
                @property
                def messages(self):
                    with open(os.path.join(storage_path, session_id), 'r:utf-8') as f:
                        messages = json.loads(f.read())
-                    return messages_from_dict(messages)     
-                
+                    return messages_from_dict(messages)
+
                def add_user_message(self, message: str):
                    message_ = HumanMessage(content=message)
                    messages = self.messages.append(_message_to_dict(_message))
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        json.dump(f, messages)
-               
+
                def add_ai_message(self, message: str):
                    message_ = AIMessage(content=message)
                    messages = self.messages.append(_message_to_dict(_message))
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        json.dump(f, messages)
-                       
+
                def clear(self):
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        f.write("[]")
@@ -340,7 +315,7 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
     def parse(self, text: str) -> T:
         """Parse the output of an LLM call.
 
-        A method which takes in a string (assumed output of language model )
+        A method which takes in a string (assumed output of a language model )
         and parses it into some structure.
 
         Args:
@@ -373,7 +348,10 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
     @property
     def _type(self) -> str:
         """Return the type key."""
-        raise NotImplementedError
+        raise NotImplementedError(
+            f"_type property is not implemented in class {self.__class__.__name__}."
+            " This is required for serialization."
+        )
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of output parser."""
@@ -382,7 +360,7 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
         return output_parser_dict
 
 
-class OutputParserException(Exception):
+class OutputParserException(ValueError):
     """Exception that output parsers should raise to signify a parsing error.
 
     This exists to differentiate parsing errors from other code or execution errors
@@ -391,4 +369,36 @@ class OutputParserException(Exception):
     errors will be raised.
     """
 
-    pass
+    def __init__(
+        self,
+        error: Any,
+        observation: str | None = None,
+        llm_output: str | None = None,
+        send_to_llm: bool = False,
+    ):
+        super(OutputParserException, self).__init__(error)
+        if send_to_llm:
+            if observation is None or llm_output is None:
+                raise ValueError(
+                    "Arguments 'observation' & 'llm_output'"
+                    " are required if 'send_to_llm' is True"
+                )
+        self.observation = observation
+        self.llm_output = llm_output
+        self.send_to_llm = send_to_llm
+
+
+class BaseDocumentTransformer(ABC):
+    """Base interface for transforming documents."""
+
+    @abstractmethod
+    def transform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Transform a list of documents."""
+
+    @abstractmethod
+    async def atransform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Asynchronously transform a list of documents."""

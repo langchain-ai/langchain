@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TypeVar
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
-    BaseLanguageModel,
     BaseOutputParser,
     OutputParserException,
     PromptValue,
@@ -76,6 +76,10 @@ class RetryOutputParser(BaseOutputParser[T]):
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
 
+    @property
+    def _type(self) -> str:
+        return "retry"
+
 
 class RetryWithErrorOutputParser(BaseOutputParser[T]):
     """Wraps a parser and tries to fix parsing errors.
@@ -118,3 +122,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
+
+    @property
+    def _type(self) -> str:
+        return "retry_with_error"

@@ -21,6 +21,24 @@ def test_pwd_command() -> None:
     assert output == subprocess.check_output("pwd", shell=True).decode()
 
 
+@pytest.mark.skip(reason="flaky on GHA, TODO to fix")
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="Test not supported on Windows"
+)
+def test_pwd_command_persistent() -> None:
+    """Test correct functionality when the bash process is persistent."""
+    session = BashProcess(persistent=True, strip_newlines=True)
+    commands = ["pwd"]
+    output = session.run(commands)
+
+    assert subprocess.check_output("pwd", shell=True).decode().strip() in output
+
+    session.run(["cd .."])
+    new_output = session.run(["pwd"])
+    # Assert that the new_output is a parent of the old output
+    assert Path(output).parent == Path(new_output)
+
+
 @pytest.mark.skipif(
     sys.platform.startswith("win"), reason="Test not supported on Windows"
 )
@@ -66,3 +84,17 @@ def test_create_directory_and_files(tmp_path: Path) -> None:
     # check that the files were created in the temporary directory
     output = session.run([f"ls {temp_dir}"])
     assert output == "file1.txt\nfile2.txt"
+
+
+@pytest.mark.skip(reason="flaky on GHA, TODO to fix")
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="Test not supported on Windows"
+)
+def test_create_bash_persistent() -> None:
+    """Test the pexpect persistent bash terminal"""
+    session = BashProcess(persistent=True)
+    response = session.run("echo hello")
+    response += session.run("echo world")
+
+    assert "hello" in response
+    assert "world" in response

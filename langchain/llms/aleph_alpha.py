@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
@@ -147,7 +148,7 @@ class AlephAlpha(LLM):
 
             values["client"] = aleph_alpha_client.Client(token=aleph_alpha_api_key)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
@@ -200,7 +201,12 @@ class AlephAlpha(LLM):
         """Return type of llm."""
         return "alpeh_alpha"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to Aleph Alpha's completion endpoint.
 
         Args:

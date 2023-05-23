@@ -1,3 +1,4 @@
+.vs/
 .vscode/
 .idea/
 # Byte-compiled / optimized / DLL files
@@ -142,3 +143,10 @@ wandb/
 # asdf tool versions
 .tool-versions
 /.ruff_cache/
+
+*.pkl
+*.bin
+
+# integration test artifacts
+data_map*
+\[('_type', 'fake'), ('stop', None)]
