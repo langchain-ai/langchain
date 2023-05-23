@@ -512,6 +512,10 @@ class BaseOpenAI(BaseLLM):
             "code-cushman-001": 2048,
         }
 
+        # handling finetuned models
+        if "ft-" in modelname:
+            modelname = modelname.split(":")[0]
+
         context_size = model_token_mapping.get(modelname, None)
 
         if context_size is None:
