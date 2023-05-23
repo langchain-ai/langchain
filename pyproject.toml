@@ -92,6 +92,7 @@ zep-python = {version="^0.25", optional=true}
 chardet = {version="^5.1.0", optional=true}
 requests-toolbelt = {version = "^1.0.0", optional = true}
 openlm = {version = "^0.0.5", optional = true}
+scikit-learn = {version = "^1.2.2", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -266,7 +267,8 @@ extended_testing = [
  "zep-python",
  "gql",
  "requests_toolbelt",
- "html2text"
+ "html2text",
+ "scikit-learn",
 ]
 
 [tool.ruff]
