@@ -25,7 +25,7 @@ SYSTEM_PROMPT = (
 
 class PlanningOutputParser(PlanOutputParser):
     def parse(self, text: str) -> Plan:
-        steps = [Step(value=v) for v in re.split("\n\d+\. ", text)[1:]]
+        steps = [Step(value=v) for v in re.split("\n\s*\d+\. ", text)[1:]]
         return Plan(steps=steps)
 
 

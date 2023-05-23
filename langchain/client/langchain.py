@@ -342,7 +342,7 @@ class LangChainPlusClient(BaseSettings):
     ) -> Example:
         """Create a dataset example in the LangChain+ API."""
         if dataset_id is None:
-            dataset_id = self.read_dataset(dataset_name).id
+            dataset_id = self.read_dataset(dataset_name=dataset_name).id
 
         data = {
             "inputs": inputs,

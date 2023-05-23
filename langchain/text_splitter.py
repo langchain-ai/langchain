@@ -64,10 +64,12 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 documents.append(new_doc)
         return documents
 
-    def split_documents(self, documents: List[Document]) -> List[Document]:
+    def split_documents(self, documents: Iterable[Document]) -> List[Document]:
         """Split documents."""
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
+        texts, metadatas = [], []
+        for doc in documents:
+            texts.append(doc.page_content)
+            metadatas.append(doc.metadata)
         return self.create_documents(texts, metadatas=metadatas)
 
     def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
