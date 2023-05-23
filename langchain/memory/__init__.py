@@ -18,6 +18,7 @@ from langchain.memory.entity import (
     ConversationEntityMemory,
     InMemoryEntityStore,
     RedisEntityStore,
+    SqliteEntityStore,
 )
 from langchain.memory.kg import ConversationKGMemory
 from langchain.memory.readonly import ReadOnlySharedMemory
@@ -37,6 +38,7 @@ __all__ = [
     "ConversationEntityMemory",
     "InMemoryEntityStore",
     "RedisEntityStore",
+    "SqliteEntityStore",
     "ConversationSummaryMemory",
     "ChatMessageHistory",
     "ConversationStringBufferMemory",
