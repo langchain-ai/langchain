@@ -93,10 +93,15 @@ class TestWeaviate:
         )
         output = docsearch.similarity_search(
             "foo",
-            k=2,
+            k=1,
             additional=["certainty"],
         )
-        assert output == [Document(page_content="foo", metadata={"page": 0, "_additional": {"certainty": 0}})]
+        assert output == [
+            Document(
+                page_content="foo",
+                metadata={"page": 0, "_additional": {"certainty": 1}},
+            )
+        ]
 
     @pytest.mark.vcr(ignore_localhost=True)
     def test_similarity_search_with_uuids(
