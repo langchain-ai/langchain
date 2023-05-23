@@ -38,7 +38,7 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
     @classmethod
     def from_documents(
         cls,
-        docs: List[Document],
+        documents: List[Document],
         tfidf_params: Optional[Dict[str, Any]] = None,
         **kwargs: Any
     ) -> "TFIDFRetriever":
@@ -46,8 +46,8 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
 
         tfidf_params = tfidf_params or {}
         vectorizer = TfidfVectorizer(**tfidf_params)
-        tfidf_array = vectorizer.fit_transform([d.page_content for d in docs])
-        return cls(vectorizer=vectorizer, docs=docs, tfidf_array=tfidf_array, **kwargs)
+        tfidf_array = vectorizer.fit_transform([d.page_content for d in documents])
+        return cls(vectorizer=vectorizer, docs=documents, tfidf_array=tfidf_array, **kwargs)
 
     def get_relevant_documents(self, query: str) -> List[Document]:
         from sklearn.metrics.pairwise import cosine_similarity
