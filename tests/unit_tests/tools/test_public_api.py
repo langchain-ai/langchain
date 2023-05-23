@@ -4,6 +4,10 @@ from langchain.tools import __all__ as public_api
 _EXPECTED = [
     "AIPluginTool",
     "APIOperation",
+    "AzureCogsFormRecognizerTool",
+    "AzureCogsImageAnalysisTool",
+    "AzureCogsSpeech2TextTool",
+    "AzureCogsText2SpeechTool",
     "BaseTool",
     "BaseTool",
     "BaseTool",
