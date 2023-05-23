@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import Union, List
 import unicodedata
+from typing import List, Union
 
 from langchain.agents import AgentOutputParser
 from langchain.agents.conversational_chat.prompt import FORMAT_INSTRUCTIONS
@@ -28,13 +28,15 @@ class ConvoOutputParser(AgentOutputParser):
             """
             The input text may contain one or more responses from the ChatGPT API.
             Each response is enclosed within a ```json and ``` pair.
-            The following lines of code split the text into sections, each section containing one response.
+            The following lines of code split the text into sections, each 
+            section containing one response.
             """
             sections = cleaned_output.split("```json")
 
             """
             Next, we remove any trailing "```" from each section.
-            This gives us a list of cleaned_output strings, each of which should be a valid JSON string.
+            Gives list of cleaned_output strings, each of which should be
+            a valid JSON string.
             """
             cleaned_sections: List[str] = [
                 section.rstrip("```") for section in sections if section.rstrip("```")
@@ -54,7 +56,8 @@ class ConvoOutputParser(AgentOutputParser):
                     pass  # Continue to the next section
 
             """
-            Once we have the list of responses, we process each response based on its action value.
+            Once we have the list of responses, we process each response based on
+            its action value.
             If the action is "Final Answer", we return an AgentFinish object.
             Otherwise, we return an AgentAction object.
             """
@@ -78,11 +81,13 @@ class ConvoOutputParser(AgentOutputParser):
             """
             If any exception is raised during the above process,
             we catch it here and raise an OutputParserException instead.
-            This is to ensure that any issues are clearly flagged as related to the parsing process.
+            This is to ensure that any issues are clearly flagged as related
+            to the parsing process.
             """
             raise OutputParserException(f"Could not parse LLM output: {text}") from e
 
-    # This property method is required by the base class and simply returns the type of this parser
+    # This property method is required by the base class and simply returns 
+    # the type of this parser
     @property
     def _type(self) -> str:
         return "conversational_chat"
