@@ -37,8 +37,17 @@ class Vectara(VectorStore):
             "VECTARA_CORPUS_ID"
         )
         self._vectara_api_key = vectara_api_key or os.environ.get("VECTARA_API_KEY")
+        if (
+            self._vectara_customer_id is None
+            or self._vectara_corpus_id is None
+            or self._vectara_api_key is None
+        ):
+            logging.warning(
+                f"Cant find Vectara credentials, customer_id or corpus_id in environment."
+            )
+        else:
+            logging.debug(f"Using corpus id {self._vectara_corpus_id}")
         self._session = requests.Session()  # to resuse connections
-        logging.debug(f"Using corpus id {self._vectara_corpus_id}")
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
@@ -64,15 +73,11 @@ class Vectara(VectorStore):
             "corpus_id": self._vectara_corpus_id,
             "document_id": doc_id,
         }
-        post_headers = {
-            "x-api-key": self._vectara_api_key,
-            "customer-id": self._vectara_customer_id,
-        }
-        response = requests.post(
+        response = self._session.post(
             "https://api.vectara.io/v1/delete-doc",
             data=json.dumps(body),
             verify=True,
-            headers=post_headers,
+            headers=self._get_post_headers(),
         )
         if response.status_code != 200:
             logging.error(
