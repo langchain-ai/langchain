@@ -20,14 +20,41 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
     index_name: str = ""
     """Name of Index inside Azure Cognitive Search service"""
     api_key: str = ""
-    """API Key. Both Admin and Query keys work, but for reading data it's
-    recommended to use a Query key."""
-    api_version: str = "2020-06-30"
+    """Required. Version of the REST API used for the request. For a list of supported versions, see API versions. For this operation, the api-version is specified as a URI parameter regardless of whether you call Search Documents with GET or POST."""
+    api_version: str = "2021-04-30-Preview"
     """API version"""
     aiosession: Optional[aiohttp.ClientSession] = None
     """ClientSession, in case we want to reuse connection for better performance."""
     content_key: str = "content"
     """Key in a retrieved result to set as the Document page_content."""
+
+    query_parameters: Optional[Dict] = None
+    """Optional. Parameters to be passed to the search query.
+    
+    For more information see: https://learn.microsoft.com/en-us/rest/api/searchservice/search-documents
+    
+    {
+        "count": true | false (default),  
+        "facets": [ "facet_expression_1", "facet_expression_2", ... ],  
+        "filter": "odata_filter_expression",  
+        "highlight": "highlight_field_1, highlight_field_2, ...",  
+        "highlightPreTag": "pre_tag",  
+        "highlightPostTag": "post_tag",  
+        "minimumCoverage": # (% of index that must be covered to declare query successful; default 100),  
+        "orderby": "orderby_expression",  
+        "queryType": "simple" (default) | "full",
+        "scoringParameters": [ "scoring_parameter_1", "scoring_parameter_2", ... ],  
+        "scoringProfile": "scoring_profile_name",  
+        "scoringStatistics" : "local" | "global",
+        "search": "simple_query_expression",  
+        "searchFields": "field_name_1, field_name_2, ...",  
+        "searchMode": "any" (default) | "all",  
+        "select": "field_name_1, field_name_2, ...",  
+        "sessionId" : "session_id",
+        "skip": # (default 0),  
+        "top": #  
+    }
+    """
 
     class Config:
         extra = Extra.forbid
@@ -49,8 +76,13 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
 
     def _build_search_url(self, query: str) -> str:
         base_url = f"https://{self.service_name}.search.windows.net/"
+        # iterate over query parameters and add them to the url
         endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
-        return base_url + endpoint_path + f"&search={query}"
+        query = base_url + endpoint_path + f"&search={query}"
+        if self.query_parameters:
+            for key, value in self.query_parameters.items():
+                query += f"&${key}={value}"
+        return query
 
     @property
     def _headers(self) -> Dict[str, str]:
