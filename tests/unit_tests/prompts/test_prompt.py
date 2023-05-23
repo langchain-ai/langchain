@@ -1,5 +1,6 @@
 """Test functionality related to prompts."""
 import pytest
+from pydantic import ValidationError
 
 from langchain.prompts.prompt import PromptTemplate
 
@@ -32,6 +33,30 @@ def test_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template)
     expected_prompt = PromptTemplate(template=template, input_variables=["bar", "foo"])
     assert prompt == expected_prompt
+
+
+def test_prompt_from_string() -> None:
+    """Test prompt can be constructed from a string template."""
+    template = "This {bar} is a {foo} test {foo}."
+    prompt = PromptTemplate.from_string(template)
+    expected_prompt = PromptTemplate(template=template, input_variables=["bar", "foo"])
+    assert prompt == expected_prompt
+
+    # Multiple input variables with repeats.
+    template = "This {bar} is a {foo} test {foo}."
+    prompt = PromptTemplate.from_string(template)
+    expected_prompt = PromptTemplate(template=template, input_variables=["bar", "foo"])
+    assert prompt == expected_prompt
+
+    template = "This {bar} is a {foo} test {foo}."
+    prompt = PromptTemplate.from_string(template, foo="hello")
+    assert prompt.format(bar="world") == "This world is a hello test hello."
+
+    # Test with invalid partial variables.
+    template = "This {bar} is a {foo} test {foo}."
+
+    with pytest.raises(ValidationError):
+        PromptTemplate.from_string(template, meow="hello")
 
 
 def test_prompt_missing_input_variables() -> None:

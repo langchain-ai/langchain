@@ -23,6 +23,30 @@ class PromptTemplate(StringPromptTemplate):
 
             from langchain import PromptTemplate
             prompt = PromptTemplate(input_variables=["foo"], template="Say {foo}")
+
+            # Instantiate from a string template
+            prompt = PromptTemplate.from_string(
+                "Say {foo}"
+            )
+
+            # With partial variables
+            prompt = PromptTemplate.from_string(
+                "Say {foo} {bar}",
+                partial_variables={"foo": "hello world"}
+            )
+            prompt.format(bar="!!")
+
+            # Alternatively, from_template class method
+            prompt = PromptTemplate.from_template(
+                "This is a {foo}, {bar} test."
+                partial_variables={"bar": "!!"}
+            )
+
+            # Which also supports jinja2 templates
+            prompt = PromptTemplate.from_template(
+                jinja2_template, template_format="jinja2"
+            )
+
     """
 
     input_variables: List[str]
@@ -116,6 +140,7 @@ class PromptTemplate(StringPromptTemplate):
             template_file: The path to the file containing the prompt template.
             input_variables: A list of variable names the final prompt template
                 will expect.
+
         Returns:
             The prompt loaded from the file.
         """
@@ -144,6 +169,22 @@ class PromptTemplate(StringPromptTemplate):
         return cls(
             input_variables=list(sorted(input_variables)), template=template, **kwargs
         )
+
+    @classmethod
+    def from_string(cls, string: str, **partial_variables: Any) -> PromptTemplate:
+        """Load a prompt template from a python string.
+
+        A helper method around from_template that is streamlined specifically
+        for python string templates (e.g., "say {foo}").
+
+        Args:
+            string: a python string to use as the template (e.g., "say {foo}")
+            partial_variables: named arguments to use as partials (e.g., {"foo": "bar"})
+
+        Returns:
+            PromptTemplate instance
+        """
+        return cls.from_template(string, partial_variables=partial_variables)
 
 
 # For backwards compatibility.
