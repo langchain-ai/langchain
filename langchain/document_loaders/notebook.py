@@ -83,7 +83,7 @@ class NotebookLoader(BaseLoader):
         try:
             import pandas as pd
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "pandas is needed for Notebook Loader, "
                 "please install with `pip install pandas`"
             )
