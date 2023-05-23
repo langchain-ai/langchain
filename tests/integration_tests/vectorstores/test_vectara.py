@@ -1,11 +1,9 @@
-import os
-
 from langchain.docstore.document import Document
 from langchain.vectorstores.vectara import Vectara
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
-def get_abbr(s: str):
+def get_abbr(s: str) -> str:
     words = s.split(" ")  # Split the string into words
     first_letters = [word[0] for word in words]  # Extract the first letter of each word
     return "".join(first_letters)  # Join the first letters into a single string
