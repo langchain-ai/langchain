@@ -55,6 +55,8 @@ class MosaicML(LLM):
     """Whether to inject the instruction format into the prompt."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
+    retry_sleep: float = 1.0
+    """How long to try sleeping for if a rate limit is encountered"""
 
     mosaicml_api_token: Optional[str] = None
 
@@ -99,6 +101,7 @@ class MosaicML(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        is_retry: bool = False,
     ) -> str:
         """Call out to a MosaicML LLM inference endpoint.
 
@@ -137,11 +140,12 @@ class MosaicML(LLM):
             parsed_response = response.json()
 
             if "error" in parsed_response:
-                if "rate limit exceeded" in parsed_response['error'].lower():
+                # if we get rate limited, try sleeping for 1 second
+                if not is_retry and "rate limit exceeded" in parsed_response['error'].lower():
                     import time
-                    time.sleep(1)
+                    time.sleep(self.retry_sleep)
 
-                    return self._call(prompt, stop, run_manager)
+                    return self._call(prompt, stop, run_manager, is_retry=True)
 
                 raise ValueError(
                     f"Error raised by inference API: {parsed_response['error']}"

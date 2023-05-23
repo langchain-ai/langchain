@@ -38,6 +38,8 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         "Represent the question for retrieving supporting documents: "
     )
     """Instruction used to embed the query."""
+    retry_sleep: float = 1.0
+    """How long to try sleeping for if a rate limit is encountered"""
 
     mosaicml_api_token: Optional[str] = None
 
@@ -60,7 +62,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         """Get the identifying parameters."""
         return {"endpoint_url": self.endpoint_url}
 
-    def _embed(self, input: List[Tuple[str, str]]) -> List[List[float]]:
+    def _embed(self, input: List[Tuple[str, str]], is_retry: bool = False) -> List[List[float]]:
         payload = {"input_strings": input}
 
         # HTTP headers for authorization
@@ -79,11 +81,12 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
             parsed_response = response.json()
 
             if "error" in parsed_response:
-                if "rate limit exceeded" in parsed_response['error'].lower():
+                # if we get rate limited, try sleeping for 1 second
+                if not is_retry and "rate limit exceeded" in parsed_response['error'].lower():
                     import time
-                    time.sleep(1)
+                    time.sleep(self.retry_sleep)
 
-                    return self._call(input)
+                    return self._call(input, is_retry=True)
 
                 raise ValueError(
                     f"Error raised by inference API: {parsed_response['error']}"
