@@ -1,13 +1,12 @@
-# Quickstart Guide: Part 2
-## Chat Models
+# Chat Models
 
-This guide walks you through how the core LangChain modules work with chat models. We recommend first reading through the [Quickstart Guide](./getting_started.md), which introduces the core concepts in the context of LLMs.
-
-Chat models are a variation on language models. While chat models use language models under the hood, the interface they expose is a bit different: rather than expose a "text in, text out" API, they expose an interface where "chat messages" are the inputs and outputs.
-
-Chat model APIs are fairly new, so we are still figuring out the correct abstractions.
-
-> **NOTE**: Before going further please make sure you've followed the [Installation](./getting_started.md#installation) and [Environment Setup](./getting_started.md#environment-setup) steps from the Quickstart Guide.
+This guide walks you through how the core LangChain modules work with chat models. We recommend first reading through the [Quickstart Guide](./getting_started.md), which introduces the core concepts in the context of LLMs.\
+\
+Chat models are a variation on language models. While chat models use language models under the hood, the interface they expose is a bit different: rather than expose a "text in, text out" API, they expose an interface where "chat messages" are the inputs and outputs.\
+\
+Chat model APIs are fairly new, so we are still figuring out the correct abstractions.\
+\
+**NOTE**: Before going further please make sure you've followed the [Installation](./getting_started.md#installation) and [Environment Setup](./getting_started.md#environment-setup) steps from the Quickstart Guide.
 
 ## Message Completions
 

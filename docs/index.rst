@@ -30,7 +30,7 @@ Getting Started
    :name: getting_started
    :hidden:
 
-   getting_started/getting_started.md
+   getting_started/quickstart.rst
    getting_started/concepts.md
    getting_started/tutorials.md
 

@@ -1,4 +1,4 @@
-# Quickstart Guide
+# Basics
 
 This tutorial gives you a quick walkthrough about building an end-to-end language model application with LangChain.
 
@@ -91,7 +91,7 @@ Feetful of Fun
 For more details on how to use LLMs within LangChain, see the 
 [LLM Getting Started guide](../modules/models/llms/getting_started.ipynb).
 
-> **NOTE:** There is a subtle but crucial difference between text completion models such as GPT-3 and chat models such as GPT-4. The former corresponds to the `LLM` class (what we are demonstrating here) and the latter to the `ChatModel` class. We discuss `ChatModel`s [below](#chat-models) and in [Part 2 of the Quickstart Guide](./getting_started_chat.md).
+**NOTE:** There is a subtle but crucial difference between text completion models such as GPT-3 and chat models such as GPT-4. The former corresponds to the `LLM` class (what we are demonstrating here) and the latter to the `ChatModel` class. We discuss `ChatModel`s [below](#chat-models) and in [Part 2 of the Quickstart Guide](./getting_started_chat.md).
 
 
 ## Prompt Templates
