@@ -12,7 +12,7 @@ from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Session, declarative_base, relationship
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
@@ -122,7 +122,7 @@ class PGVector(VectorStore):
     def __init__(
         self,
         connection_string: str,
-        embedding_function: EmbeddingModel,
+        embedding_function: TextEmbeddingModel,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         collection_metadata: Optional[dict] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
@@ -363,7 +363,7 @@ class PGVector(VectorStore):
     def from_texts(
         cls: Type[PGVector],
         texts: List[str],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
@@ -412,7 +412,7 @@ class PGVector(VectorStore):
     def from_documents(
         cls: Type[PGVector],
         documents: List[Document],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,

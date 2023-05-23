@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.llms.sagemaker_endpoint import ContentHandlerBase
 
 
@@ -11,7 +11,7 @@ class EmbeddingsContentHandler(ContentHandlerBase[List[str], List[List[float]]])
     """Content handler for LLM class."""
 
 
-class SagemakerEndpointEmbeddings(BaseModel, EmbeddingModel):
+class SagemakerEndpointEmbeddings(BaseModel, TextEmbeddingModel):
     """Wrapper around custom Sagemaker Inference Endpoints.
 
     To use, you must supply the endpoint name from your deployed

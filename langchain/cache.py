@@ -14,7 +14,7 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.schema import Generation
 from langchain.vectorstores.redis import Redis as RedisVectorstore
 
@@ -178,7 +178,10 @@ class RedisSemanticCache(BaseCache):
     # TODO - implement a TTL policy in Redis
 
     def __init__(
-        self, redis_url: str, embedding: EmbeddingModel, score_threshold: float = 0.2
+        self,
+        redis_url: str,
+        embedding: TextEmbeddingModel,
+        score_threshold: float = 0.2,
     ):
         """Initialize by passing in the `init` GPTCache func
 

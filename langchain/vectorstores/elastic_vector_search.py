@@ -6,7 +6,7 @@ from abc import ABC
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.utils import get_from_env
 from langchain.vectorstores.base import VectorStore
 
@@ -106,7 +106,7 @@ class ElasticVectorSearch(VectorStore, ABC):
     Args:
         elasticsearch_url (str): The URL for the Elasticsearch instance.
         index_name (str): The name of the Elasticsearch index for the embeddings.
-        embedding (EmbeddingModel): An object that provides the ability to embed text.
+        embedding (TextEmbeddingModel): An object that provides the ability to embed text.
                 It should be an instance of a class that subclasses the Embeddings
                 abstract base class, such as OpenAIEmbeddings()
 
@@ -118,7 +118,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         self,
         elasticsearch_url: str,
         index_name: str,
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         *,
         ssl_verify: Optional[Dict[str, Any]] = None,
     ):
@@ -244,7 +244,7 @@ class ElasticVectorSearch(VectorStore, ABC):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         elasticsearch_url: Optional[str] = None,
         index_name: Optional[str] = None,

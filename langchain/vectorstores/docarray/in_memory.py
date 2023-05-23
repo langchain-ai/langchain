@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Optional
 
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.vectorstores.docarray.base import (
     DocArrayIndex,
     _check_docarray_import,
@@ -20,7 +20,7 @@ class DocArrayInMemorySearch(DocArrayIndex):
     @classmethod
     def from_params(
         cls,
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metric: Literal[
             "cosine_sim", "euclidian_dist", "sgeuclidean_dist"
         ] = "cosine_sim",
@@ -29,7 +29,7 @@ class DocArrayInMemorySearch(DocArrayIndex):
         """Initialize DocArrayInMemorySearch store.
 
         Args:
-            embedding (EmbeddingModel): Embedding function.
+            embedding (TextEmbeddingModel): Embedding function.
             metric (str): metric for exact nearest-neighbor search.
                 Can be one of: "cosine_sim", "euclidean_dist" and "sqeuclidean_dist".
                 Defaults to "cosine_sim".
@@ -46,7 +46,7 @@ class DocArrayInMemorySearch(DocArrayIndex):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[Dict[Any, Any]]] = None,
         **kwargs: Any,
     ) -> DocArrayInMemorySearch:
@@ -54,7 +54,7 @@ class DocArrayInMemorySearch(DocArrayIndex):
 
         Args:
             texts (List[str]): Text data.
-            embedding (EmbeddingModel): Embedding function.
+            embedding (TextEmbeddingModel): Embedding function.
             metadatas (Optional[List[Dict[Any, Any]]]): Metadata for each text
                 if it exists. Defaults to None.
             metric (str): metric for exact nearest-neighbor search.

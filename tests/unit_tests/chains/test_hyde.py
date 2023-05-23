@@ -9,12 +9,12 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.hyde.prompts import PROMPT_MAP
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
 
 
-class FakeEmbeddings(EmbeddingModel):
+class FakeEmbeddings(TextEmbeddingModel):
     """Fake embedding class for tests."""
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

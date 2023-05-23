@@ -10,17 +10,17 @@ from typing import Any, List, Optional
 import numpy as np
 from pydantic import BaseModel
 
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.schema import BaseRetriever, Document
 
 
-def create_index(contexts: List[str], embeddings: EmbeddingModel) -> np.ndarray:
+def create_index(contexts: List[str], embeddings: TextEmbeddingModel) -> np.ndarray:
     with concurrent.futures.ThreadPoolExecutor() as executor:
         return np.array(list(executor.map(embeddings.embed_query, contexts)))
 
 
 class SVMRetriever(BaseRetriever, BaseModel):
-    embeddings: EmbeddingModel
+    embeddings: TextEmbeddingModel
     index: Any
     texts: List[str]
     k: int = 4
@@ -34,7 +34,7 @@ class SVMRetriever(BaseRetriever, BaseModel):
 
     @classmethod
     def from_texts(
-        cls, texts: List[str], embeddings: EmbeddingModel, **kwargs: Any
+        cls, texts: List[str], embeddings: TextEmbeddingModel, **kwargs: Any
     ) -> SVMRetriever:
         index = create_index(texts, embeddings)
         return cls(embeddings=embeddings, index=index, texts=texts, **kwargs)

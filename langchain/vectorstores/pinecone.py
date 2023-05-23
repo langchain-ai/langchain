@@ -6,7 +6,7 @@ import uuid
 from typing import Any, Callable, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger(__name__)
@@ -161,7 +161,7 @@ class Pinecone(VectorStore):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
@@ -247,7 +247,7 @@ class Pinecone(VectorStore):
     def from_existing_index(
         cls,
         index_name: str,
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         text_key: str = "text",
         namespace: Optional[str] = None,
     ) -> Pinecone:

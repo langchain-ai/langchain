@@ -15,7 +15,7 @@ from typing import (
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -41,14 +41,14 @@ class SupabaseVectorStore(VectorStore):
     # This is the embedding function. Don't confuse with the embedding vectors.
     # We should perhaps rename the underlying Embedding base class to EmbeddingFunction
     # or something
-    _embedding: EmbeddingModel
+    _embedding: TextEmbeddingModel
     table_name: str
     query_name: str
 
     def __init__(
         self,
         client: supabase.client.Client,
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         table_name: str,
         query_name: Union[str, None] = None,
     ) -> None:
@@ -62,7 +62,7 @@ class SupabaseVectorStore(VectorStore):
             )
 
         self._client = client
-        self._embedding: EmbeddingModel = embedding
+        self._embedding: TextEmbeddingModel = embedding
         self.table_name = table_name or "documents"
         self.query_name = query_name or "match_documents"
 
@@ -81,7 +81,7 @@ class SupabaseVectorStore(VectorStore):
     def from_texts(
         cls: Type["SupabaseVectorStore"],
         texts: List[str],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         client: Optional[supabase.client.Client] = None,
         table_name: Optional[str] = "documents",

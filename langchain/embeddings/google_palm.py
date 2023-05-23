@@ -13,7 +13,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ def embed_with_retry(
     return _embed_with_retry(*args, **kwargs)
 
 
-class GooglePalmEmbeddings(BaseModel, EmbeddingModel):
+class GooglePalmEmbeddings(BaseModel, TextEmbeddingModel):
     client: Any
     google_api_key: Optional[str]
     model_name: str = "models/embedding-gecko-001"

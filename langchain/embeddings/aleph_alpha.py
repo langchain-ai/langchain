@@ -2,11 +2,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, root_validator
 
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.utils import get_from_dict_or_env
 
 
-class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, EmbeddingModel):
+class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, TextEmbeddingModel):
     """
     Wrapper for Aleph Alpha's Asymmetric Embeddings
     AA provides you with an endpoint to embed a document and a query.

@@ -8,7 +8,7 @@ from uuid import uuid4
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -28,7 +28,7 @@ class Milvus(VectorStore):
 
     def __init__(
         self,
-        embedding_function: EmbeddingModel,
+        embedding_function: TextEmbeddingModel,
         collection_name: str = "LangChainCollection",
         connection_args: Optional[dict[str, Any]] = None,
         consistency_level: str = "Session",
@@ -77,7 +77,7 @@ class Milvus(VectorStore):
             server_name (str): If use tls, need to write the common name.
 
         Args:
-            embedding_function (EmbeddingModel): Function used to embed the text.
+            embedding_function (TextEmbeddingModel): Function used to embed the text.
             collection_name (str): Which Milvus collection to use. Defaults to
                 "LangChainCollection".
             connection_args (Optional[dict[str, any]]): The arguments for connection to
@@ -754,7 +754,7 @@ class Milvus(VectorStore):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         collection_name: str = "LangChainCollection",
         connection_args: dict[str, Any] = DEFAULT_MILVUS_CONNECTION,
@@ -768,7 +768,7 @@ class Milvus(VectorStore):
 
         Args:
             texts (List[str]): Text data.
-            embedding (EmbeddingModel): Embedding function.
+            embedding (TextEmbeddingModel): Embedding function.
             metadatas (Optional[List[dict]]): Metadata for each text if it exists.
                 Defaults to None.
             collection_name (str, optional): Collection name to use. Defaults to

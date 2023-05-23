@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 import numpy as np
 from pydantic import Field
 
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.schema import Document
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
@@ -36,7 +36,7 @@ class DocArrayIndex(VectorStore, ABC):
     def __init__(
         self,
         doc_index: "BaseDocIndex",
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
     ):
         """Initialize a vector store from DocArray's DocIndex."""
         self.doc_index = doc_index

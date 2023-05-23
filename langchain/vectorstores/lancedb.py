@@ -5,7 +5,7 @@ import uuid
 from typing import Any, Iterable, List, Optional
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.vectorstores.base import VectorStore
 
 
@@ -27,7 +27,7 @@ class LanceDB(VectorStore):
     def __init__(
         self,
         connection: Any,
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         vector_key: Optional[str] = "vector",
         id_key: Optional[str] = "id",
         text_key: Optional[str] = "text",
@@ -113,7 +113,7 @@ class LanceDB(VectorStore):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         connection: Any = None,
         vector_key: Optional[str] = "vector",

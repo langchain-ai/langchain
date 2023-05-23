@@ -7,7 +7,7 @@ import uuid
 from typing import Any, Iterable, List, Optional, Type
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
@@ -21,7 +21,7 @@ def _uuid_key() -> str:
 class Tair(VectorStore):
     def __init__(
         self,
-        embedding_function: EmbeddingModel,
+        embedding_function: TextEmbeddingModel,
         url: str,
         index_name: str,
         content_key: str = "content",
@@ -140,7 +140,7 @@ class Tair(VectorStore):
     def from_texts(
         cls: Type[Tair],
         texts: List[str],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         index_name: str = "langchain",
         content_key: str = "content",
@@ -208,7 +208,7 @@ class Tair(VectorStore):
     def from_documents(
         cls,
         documents: List[Document],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         index_name: str = "langchain",
         content_key: str = "content",
@@ -262,7 +262,7 @@ class Tair(VectorStore):
     @classmethod
     def from_existing_index(
         cls,
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         index_name: str = "langchain",
         content_key: str = "content",
         metadata_key: str = "metadata",

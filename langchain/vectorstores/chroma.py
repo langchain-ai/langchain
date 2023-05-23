@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Ty
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.utils import xor_args
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
@@ -58,7 +58,7 @@ class Chroma(VectorStore):
     def __init__(
         self,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        embedding_function: Optional[EmbeddingModel] = None,
+        embedding_function: Optional[TextEmbeddingModel] = None,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[Dict] = None,
@@ -354,7 +354,7 @@ class Chroma(VectorStore):
     def from_texts(
         cls: Type[Chroma],
         texts: List[str],
-        embedding: Optional[EmbeddingModel] = None,
+        embedding: Optional[TextEmbeddingModel] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
@@ -372,7 +372,7 @@ class Chroma(VectorStore):
             texts (List[str]): List of texts to add to the collection.
             collection_name (str): Name of the collection to create.
             persist_directory (Optional[str]): Directory to persist the collection.
-            embedding (Optional[EmbeddingModel]): Embedding function. Defaults to None.
+            embedding (Optional[TextEmbeddingModel]): Embedding function. Defaults to None.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
@@ -394,7 +394,7 @@ class Chroma(VectorStore):
     def from_documents(
         cls: Type[Chroma],
         documents: List[Document],
-        embedding: Optional[EmbeddingModel] = None,
+        embedding: Optional[TextEmbeddingModel] = None,
         ids: Optional[List[str]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
@@ -412,7 +412,7 @@ class Chroma(VectorStore):
             persist_directory (Optional[str]): Directory to persist the collection.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
             documents (List[Document]): List of documents to add to the vectorstore.
-            embedding (Optional[EmbeddingModel]): Embedding function. Defaults to None.
+            embedding (Optional[TextEmbeddingModel]): Embedding function. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
         Returns:
             Chroma: Chroma vectorstore.

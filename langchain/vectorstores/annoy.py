@@ -13,7 +13,7 @@ import numpy as np
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -282,7 +282,7 @@ class Annoy(VectorStore):
         cls,
         texts: List[str],
         embeddings: List[List[float]],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         metric: str = DEFAULT_METRIC,
         trees: int = 100,
@@ -319,7 +319,7 @@ class Annoy(VectorStore):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         metric: str = DEFAULT_METRIC,
         trees: int = 100,
@@ -360,7 +360,7 @@ class Annoy(VectorStore):
     def from_embeddings(
         cls,
         text_embeddings: List[Tuple[str, List[float]]],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         metric: str = DEFAULT_METRIC,
         trees: int = 100,
@@ -424,7 +424,7 @@ class Annoy(VectorStore):
     def load_local(
         cls,
         folder_path: str,
-        embeddings: EmbeddingModel,
+        embeddings: TextEmbeddingModel,
     ) -> Annoy:
         """Load Annoy index, docstore, and index_to_docstore_id to disk.
 

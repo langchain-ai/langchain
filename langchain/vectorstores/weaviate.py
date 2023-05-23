@@ -8,7 +8,7 @@ from uuid import uuid4
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
@@ -89,7 +89,7 @@ class Weaviate(VectorStore):
         client: Any,
         index_name: str,
         text_key: str,
-        embedding: Optional[EmbeddingModel] = None,
+        embedding: Optional[TextEmbeddingModel] = None,
         attributes: Optional[List[str]] = None,
         relevance_score_fn: Optional[
             Callable[[float], float]
@@ -364,7 +364,7 @@ class Weaviate(VectorStore):
     def from_texts(
         cls: Type[Weaviate],
         texts: List[str],
-        embedding: EmbeddingModel,
+        embedding: TextEmbeddingModel,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> Weaviate:

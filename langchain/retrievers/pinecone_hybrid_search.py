@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.schema import BaseRetriever, Document
 
 
@@ -15,7 +15,7 @@ def hash_text(text: str) -> str:
 def create_index(
     contexts: List[str],
     index: Any,
-    embeddings: EmbeddingModel,
+    embeddings: TextEmbeddingModel,
     sparse_encoder: Any,
     ids: Optional[List[str]] = None,
     metadatas: Optional[List[dict]] = None,
@@ -74,7 +74,7 @@ def create_index(
 
 
 class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
-    embeddings: EmbeddingModel
+    embeddings: TextEmbeddingModel
     sparse_encoder: Any
     index: Any
     top_k: int = 4

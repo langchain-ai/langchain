@@ -3,12 +3,12 @@ from typing import Any, List
 
 from pydantic import BaseModel, Extra
 
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 
 DEFAULT_MODEL_URL = "https://tfhub.dev/google/universal-sentence-encoder-multilingual/3"
 
 
-class TensorflowHubEmbeddings(BaseModel, EmbeddingModel):
+class TensorflowHubEmbeddings(BaseModel, TextEmbeddingModel):
     """Wrapper around tensorflow_hub embedding models.
 
     To use, you should have the ``tensorflow_text`` python package installed.

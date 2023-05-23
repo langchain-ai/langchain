@@ -1,7 +1,7 @@
 """Zilliz Retriever"""
 from typing import Any, Dict, List, Optional
 
-from langchain.embeddings.base import EmbeddingModel
+from langchain.embeddings.base import TextEmbeddingModel
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.zilliz import Zilliz
 
@@ -11,7 +11,7 @@ from langchain.vectorstores.zilliz import Zilliz
 class ZillizRetreiver(BaseRetriever):
     def __init__(
         self,
-        embedding_function: EmbeddingModel,
+        embedding_function: TextEmbeddingModel,
         collection_name: str = "LangChainCollection",
         connection_args: Optional[Dict[str, Any]] = None,
         consistency_level: str = "Session",
