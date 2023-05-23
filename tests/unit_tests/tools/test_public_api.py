@@ -4,6 +4,10 @@ from langchain.tools import __all__ as public_api
 _EXPECTED = [
     "AIPluginTool",
     "APIOperation",
+    "AzureCogsFormRecognizerTool",
+    "AzureCogsImageAnalysisTool",
+    "AzureCogsSpeech2TextTool",
+    "AzureCogsText2SpeechTool",
     "BaseTool",
     "BaseTool",
     "BaseTool",
@@ -19,19 +23,32 @@ _EXPECTED = [
     "ExtractTextTool",
     "FileSearchTool",
     "GetElementsTool",
+    "GmailCreateDraft",
+    "GmailGetMessage",
+    "GmailGetThread",
+    "GmailSearch",
+    "GmailSendMessage",
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
+    "GoogleSerperResults",
+    "GoogleSerperRun",
     "HumanInputRun",
     "IFTTTWebhook",
+    "InfoPowerBITool",
     "ListDirectoryTool",
+    "ListPowerBITool",
+    "MetaphorSearchResults",
     "MoveFileTool",
     "NavigateBackTool",
     "NavigateTool",
     "OpenAPISpec",
+    "OpenWeatherMapQueryRun",
+    "QueryPowerBITool",
     "ReadFileTool",
     "SceneXplainTool",
     "ShellTool",
+    "SteamshipImageGenerationTool",
     "StructuredTool",
     "Tool",
     "VectorStoreQATool",
@@ -42,10 +59,11 @@ _EXPECTED = [
     "ZapierNLAListActions",
     "ZapierNLARunAction",
     "tool",
+    "YouTubeSearchTool",
 ]
 
 
 def test_public_api() -> None:
     """Test for regressions or changes in the public API."""
     # Check that the public API is as expected
-    assert public_api == sorted(_EXPECTED)
+    assert sorted(public_api) == sorted(_EXPECTED)

@@ -23,6 +23,7 @@ from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.discord import DiscordChatLoader
+from langchain.document_loaders.docugami import DocugamiLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import (
     OutlookMessageLoader,
@@ -45,24 +46,31 @@ from langchain.document_loaders.ifixit import IFixitLoader
 from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.document_loaders.image_captions import ImageCaptionLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
+from langchain.document_loaders.json_loader import JSONLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
+from langchain.document_loaders.mastodon import MastodonTootsLoader
 from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.notiondb import NotionDBLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
+from langchain.document_loaders.odt import UnstructuredODTLoader
+from langchain.document_loaders.onedrive import OneDriveLoader
 from langchain.document_loaders.pdf import (
     MathpixPDFLoader,
     OnlinePDFLoader,
     PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
+    PDFPlumberLoader,
     PyMuPDFLoader,
     PyPDFDirectoryLoader,
+    PyPDFium2Loader,
     PyPDFLoader,
     UnstructuredPDFLoader,
 )
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
+from langchain.document_loaders.psychic import PsychicLoader
 from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
@@ -75,8 +83,13 @@ from langchain.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain.document_loaders.spreedly import SpreedlyLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.stripe import StripeLoader
-from langchain.document_loaders.telegram import TelegramChatLoader
+from langchain.document_loaders.telegram import (
+    TelegramChatApiLoader,
+    TelegramChatFileLoader,
+)
 from langchain.document_loaders.text import TextLoader
+from langchain.document_loaders.tomarkdown import ToMarkdownLoader
+from langchain.document_loaders.toml import TomlLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredAPIFileIOLoader,
@@ -89,6 +102,7 @@ from langchain.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain.document_loaders.url_selenium import SeleniumURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.document_loaders.whatsapp_chat import WhatsAppChatLoader
+from langchain.document_loaders.wikipedia import WikipediaLoader
 from langchain.document_loaders.word_document import (
     Docx2txtLoader,
     UnstructuredWordDocumentLoader,
@@ -102,13 +116,14 @@ from langchain.document_loaders.youtube import (
 # Legacy: only for backwards compat. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
 
+# For backwards compatability
+TelegramChatLoader = TelegramChatFileLoader
+
 __all__ = [
     "AZLyricsLoader",
     "AirbyteJSONLoader",
     "ApifyDatasetLoader",
     "ArxivLoader",
-    "StripeLoader",
-    "SpreedlyLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
@@ -125,6 +140,8 @@ __all__ = [
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
+    "DocugamiLoader",
+    "Docx2txtLoader",
     "DuckDBLoader",
     "EverNoteLoader",
     "FacebookChatLoader",
@@ -133,31 +150,39 @@ __all__ = [
     "GitLoader",
     "GitbookLoader",
     "GoogleApiClient",
-    "RedditPostsLoader",
     "GoogleApiYoutubeLoader",
     "GoogleDriveLoader",
     "GutenbergLoader",
     "HNLoader",
     "HuggingFaceDatasetLoader",
+    "HuggingFaceDatasetLoader",
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",
-    "ModernTreasuryLoader",
+    "JSONLoader",
     "MWDumpLoader",
+    "MastodonTootsLoader",
+    "MathpixPDFLoader",
+    "ModernTreasuryLoader",
     "NotebookLoader",
     "NotionDBLoader",
     "NotionDirectoryLoader",
     "ObsidianLoader",
+    "OneDriveLoader",
     "OnlinePDFLoader",
     "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
+    "PDFPlumberLoader",
     "PagedPDFSplitter",
     "PlaywrightURLLoader",
     "PyMuPDFLoader",
+    "PyPDFDirectoryLoader",
     "PyPDFLoader",
+    "PyPDFium2Loader",
     "PythonLoader",
     "ReadTheDocsLoader",
+    "RedditPostsLoader",
     "RoamLoader",
     "S3DirectoryLoader",
     "S3FileLoader",
@@ -165,18 +190,23 @@ __all__ = [
     "SeleniumURLLoader",
     "SitemapLoader",
     "SlackDirectoryLoader",
-    "TelegramChatLoader",
+    "TelegramChatFileLoader",
+    "TelegramChatApiLoader",
+    "SpreedlyLoader",
+    "StripeLoader",
     "TextLoader",
+    "TomlLoader",
     "TwitterTweetLoader",
+    "UnstructuredAPIFileIOLoader",
+    "UnstructuredAPIFileLoader",
     "UnstructuredEPubLoader",
     "UnstructuredEmailLoader",
-    "UnstructuredAPIFileIOLoader",
     "UnstructuredFileIOLoader",
-    "UnstructuredAPIFileLoader",
     "UnstructuredFileLoader",
     "UnstructuredHTMLLoader",
     "UnstructuredImageLoader",
     "UnstructuredMarkdownLoader",
+    "UnstructuredODTLoader",
     "UnstructuredPDFLoader",
     "UnstructuredPowerPointLoader",
     "UnstructuredRTFLoader",
@@ -184,10 +214,9 @@ __all__ = [
     "UnstructuredWordDocumentLoader",
     "WebBaseLoader",
     "WhatsAppChatLoader",
+    "WikipediaLoader",
     "YoutubeLoader",
-    "PyPDFDirectoryLoader",
-    "MathpixPDFLoader",
-    "ChatGPTLoader",
-    "HuggingFaceDatasetLoader",
-    "Docx2txtLoader",
+    "TelegramChatLoader",
+    "ToMarkdownLoader",
+    "PsychicLoader",
 ]

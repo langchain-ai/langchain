@@ -1,9 +1,17 @@
 """Wrapper around Google's PaLM Chat API."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+import logging
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, root_validator
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -23,6 +31,8 @@ from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     import google.generativeai as genai
+
+logger = logging.getLogger(__name__)
 
 
 class ChatGooglePalmError(Exception):
@@ -156,6 +166,51 @@ def _messages_to_prompt_dict(
     )
 
 
+def _create_retry_decorator() -> Callable[[Any], Any]:
+    """Returns a tenacity retry decorator, preconfigured to handle PaLM exceptions"""
+    import google.api_core.exceptions
+
+    multiplier = 2
+    min_seconds = 1
+    max_seconds = 60
+    max_retries = 10
+
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential(multiplier=multiplier, min=min_seconds, max=max_seconds),
+        retry=(
+            retry_if_exception_type(google.api_core.exceptions.ResourceExhausted)
+            | retry_if_exception_type(google.api_core.exceptions.ServiceUnavailable)
+            | retry_if_exception_type(google.api_core.exceptions.GoogleAPIError)
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
+def chat_with_retry(llm: ChatGooglePalm, **kwargs: Any) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator()
+
+    @retry_decorator
+    def _chat_with_retry(**kwargs: Any) -> Any:
+        return llm.client.chat(**kwargs)
+
+    return _chat_with_retry(**kwargs)
+
+
+async def achat_with_retry(llm: ChatGooglePalm, **kwargs: Any) -> Any:
+    """Use tenacity to retry the async completion call."""
+    retry_decorator = _create_retry_decorator()
+
+    @retry_decorator
+    async def _achat_with_retry(**kwargs: Any) -> Any:
+        # Use OpenAI's async api https://github.com/openai/openai-python#async-api
+        return await llm.client.chat_async(**kwargs)
+
+    return await _achat_with_retry(**kwargs)
+
+
 class ChatGooglePalm(BaseChatModel, BaseModel):
     """Wrapper around Google's PaLM Chat API.
 
@@ -203,7 +258,8 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
             genai.configure(api_key=google_api_key)
         except ImportError:
             raise ChatGooglePalmError(
-                "Could not import google.generativeai python package."
+                "Could not import google.generativeai python package. "
+                "Please install it with `pip install google-generativeai`"
             )
 
         values["client"] = genai
@@ -227,7 +283,8 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     ) -> ChatResult:
         prompt = _messages_to_prompt_dict(messages)
 
-        response: genai.types.ChatResponse = self.client.chat(
+        response: genai.types.ChatResponse = chat_with_retry(
+            self,
             model=self.model_name,
             prompt=prompt,
             temperature=self.temperature,
@@ -246,7 +303,8 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     ) -> ChatResult:
         prompt = _messages_to_prompt_dict(messages)
 
-        response: genai.types.ChatResponse = await self.client.chat_async(
+        response: genai.types.ChatResponse = await achat_with_retry(
+            self,
             model=self.model_name,
             prompt=prompt,
             temperature=self.temperature,
@@ -256,3 +314,18 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         )
 
         return _response_to_result(response, stop)
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "model_name": self.model_name,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
+            "n": self.n,
+        }
+
+    @property
+    def _llm_type(self) -> str:
+        return "google-palm-chat"
