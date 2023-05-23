@@ -1,9 +1,10 @@
 """Simple reader that reads weather data from OpenWeatherMap API"""
-from typing import List, Iterator
+from datetime import datetime
+from typing import Iterator, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from datetime import datetime
+
 
 class WeatherDataLoader(BaseLoader):
     """Weather Reader.
@@ -18,7 +19,7 @@ class WeatherDataLoader(BaseLoader):
     def __init__(
         self,
         token: str,
-        places: List[str], 
+        places: List[str],
     ) -> None:
         """Initialize with parameters."""
         super().__init__()
@@ -33,7 +34,7 @@ class WeatherDataLoader(BaseLoader):
         try:
             import pyowm
         except:
-            raise ValueError('install pyowm using `pip install pyowm`')
+            raise ValueError("install pyowm using `pip install pyowm`")
 
         owm = pyowm.OWM(api_key=self.token)
         mgr = owm.weather_manager()
@@ -46,36 +47,43 @@ class WeatherDataLoader(BaseLoader):
             try:
                 city = list_of_locations[0]
             except:
-                raise ValueError(f"The given location - {place}, "
-                                 "cannot be found on OpenWeatherMap's city registry. "
-                                 "Check the spelling and try again")
+                raise ValueError(
+                    f"The given location - {place}, "
+                    "cannot be found on OpenWeatherMap's city registry. "
+                    "Check the spelling and try again"
+                )
             lat = city.lat
             lon = city.lon
 
-            metadata = {'queried_at':datetime.now()}
-            res = mgr.one_call(lat=lat,lon=lon)
+            metadata = {"queried_at": datetime.now()}
+            res = mgr.one_call(lat=lat, lon=lon)
 
-            info_dict['location'] = place
-            info_dict['latitude'] = lat
-            info_dict['longitude'] = lon
-            info_dict['timezone'] = res.timezone
-            info_dict['current weather'] = res.current.to_dict()
+            info_dict["location"] = place
+            info_dict["latitude"] = lat
+            info_dict["longitude"] = lon
+            info_dict["timezone"] = res.timezone
+            info_dict["current weather"] = res.current.to_dict()
             if res.forecast_daily:
-                info_dict['daily forecast'] = [i.to_dict() for i in res.forecast_daily]
+                info_dict["daily forecast"] = [i.to_dict() for i in res.forecast_daily]
             if res.forecast_hourly:
-                info_dict['hourly forecast'] = [i.to_dict() for i in res.forecast_hourly]
+                info_dict["hourly forecast"] = [
+                    i.to_dict() for i in res.forecast_hourly
+                ]
             if res.forecast_minutely:
-                info_dict['minutely forecast'] = [i.to_dict() for i in res.forecast_minutely]
+                info_dict["minutely forecast"] = [
+                    i.to_dict() for i in res.forecast_minutely
+                ]
             if res.national_weather_alerts:
-                info_dict['national weather alerts'] = [i.to_dict() for i in res.national_weather_alerts]
-            
-            yield Document(page_content=str(info_dict),metadata=metadata)        
+                info_dict["national weather alerts"] = [
+                    i.to_dict() for i in res.national_weather_alerts
+                ]
+
+            yield Document(page_content=str(info_dict), metadata=metadata)
 
     def load(
-        self, 
+        self,
     ) -> List[Document]:
-
-        """Load weather data for the given locations. 
+        """Load weather data for the given locations.
         OWM's One Call API provides the following weather data for any geographical coordinate:
         - Current weather
         - Hourly forecast for 48 hours
