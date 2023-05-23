@@ -256,18 +256,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         """Return the prompt type key."""
         return "chat_prompt"
 
-    def dict(self, **kwargs: Any) -> Dict:
-        prompt_dict = super().dict(**kwargs)
-        # for i, message in enumerate(self.messages):
-        #     if isinstance(message, SystemMessagePromptTemplate):
-        #         prompt_dict["messages"][i]["prompt"]["role"] = "system"
-        #     elif isinstance(message, HumanMessagePromptTemplate):
-        #         prompt_dict["messages"][i]["prompt"]["role"] = "human"
-        #     elif isinstance(message, AIMessagePromptTemplate):
-        #         prompt_dict["messages"][i]["prompt"]["role"] = "ai"
-
-        return prompt_dict
-
     def save(self, file_path: Union[Path, str]) -> None:
         if isinstance(file_path, str):
             save_path = Path(file_path)
