@@ -89,7 +89,7 @@ class LocalHuggingFaceEndpoint(LLM):
         _model_kwargs = self.model_kwargs or {}
 
         # payload samples
-        parameter_payload = {"inputs": prompt, "parameters": _model_kwargs}
+        parameter_payload = {"inputs": prompt, "model_kwargs": _model_kwargs}
 
         # send request
         try:
