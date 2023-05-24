@@ -195,9 +195,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             for docs in new_result_doc_list:
                 new_doc = _collapse_docs(docs, _collapse_docs_func, **kwargs)
                 result_docs.append(new_doc)
-            num_tokens = self.combine_document_chain.prompt_length(
-                result_docs, **kwargs
-            )
+            num_tokens = length_func(result_docs, **kwargs)
         if self.return_intermediate_steps:
             _results = [r[self.llm_chain.output_key] for r in results]
             extra_return_dict = {"intermediate_steps": _results}
