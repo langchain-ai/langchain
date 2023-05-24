@@ -18,6 +18,7 @@ from langchain.vectorstores.redis import Redis
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
 from langchain.vectorstores.typesense import Typesense
+from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
 
@@ -40,6 +41,7 @@ __all__ = [
     "MyScaleSettings",
     "SupabaseVectorStore",
     "AnalyticDB",
+    "Vectara",
     "Tair",
     "LanceDB",
     "DocArrayHnswSearch",
