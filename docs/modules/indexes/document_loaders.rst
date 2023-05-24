@@ -40,10 +40,11 @@ For detailed instructions on how to get set up with Unstructured, see installati
    ./document_loaders/examples/file_directory.ipynb
    ./document_loaders/examples/html.ipynb
    ./document_loaders/examples/image.ipynb
-   ./document_loaders/examples/jupyter_notebook.ipynb
+   ./document_loaders/examples/json.ipynb
    ./document_loaders/examples/markdown.ipynb
    ./document_loaders/examples/microsoft_powerpoint.ipynb
    ./document_loaders/examples/microsoft_word.ipynb
+   ./document_loaders/examples/odt.ipynb
    ./document_loaders/examples/pandas_dataframe.ipynb
    ./document_loaders/examples/pdf.ipynb
    ./document_loaders/examples/sitemap.ipynb
@@ -81,6 +82,7 @@ We don't need any access permissions to these datasets and services.
    ./document_loaders/examples/ifixit.ipynb
    ./document_loaders/examples/imsdb.ipynb
    ./document_loaders/examples/mediawikidump.ipynb
+   ./document_loaders/examples/wikipedia.ipynb
    ./document_loaders/examples/youtube_transcript.ipynb
 
 
@@ -131,4 +133,5 @@ We need access tokens and sometime other parameters to get access to these datas
    ./document_loaders/examples/slack.ipynb
    ./document_loaders/examples/spreedly.ipynb
    ./document_loaders/examples/stripe.ipynb
+   ./document_loaders/examples/tomarkdown.ipynb
    ./document_loaders/examples/twitter.ipynb
