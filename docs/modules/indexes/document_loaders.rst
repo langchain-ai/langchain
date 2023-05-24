@@ -40,7 +40,6 @@ For detailed instructions on how to get set up with Unstructured, see installati
    ./document_loaders/examples/file_directory.ipynb
    ./document_loaders/examples/html.ipynb
    ./document_loaders/examples/image.ipynb
-   ./document_loaders/examples/image.ipynb
    ./document_loaders/examples/json.ipynb
    ./document_loaders/examples/markdown.ipynb
    ./document_loaders/examples/microsoft_powerpoint.ipynb
