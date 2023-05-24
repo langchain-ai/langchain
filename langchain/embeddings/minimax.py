@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def _create_retry_decorator() -> Callable[[Any], Any]:
-    """Returns a tenacity retry decorator, preconfigured to handle requests exceptions"""
+    """Returns a tenacity retry decorator."""
 
     multiplier = 1
     min_seconds = 1
@@ -49,9 +49,9 @@ def embed_with_retry(embeddings: MiniMaxEmbeddings, *args: Any, **kwargs: Any) -
 class MiniMaxEmbeddings(BaseModel, Embeddings):
     """Wrapper around MiniMax's embedding inference service.
 
-    To use, you should have the
-    environment variable ``MINIMAX_GROUP_ID`` and ``MINIMAX_API_KEY`` set with your API token, or pass
-    it as a named parameter to the constructor.
+    To use, you should have the environment variable ``MINIMAX_GROUP_ID`` and
+    ``MINIMAX_API_KEY`` set with your API token, or pass it as a named parameter to
+    the constructor.
 
     Example:
         .. code-block:: python
