@@ -1,6 +1,6 @@
 """Loader that loads ReadTheDocs documentation directory dump."""
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -11,7 +11,7 @@ class ReadTheDocsLoader(BaseLoader):
 
     def __init__(
         self,
-        path: str,
+        path: Union[str, Path],
         encoding: Optional[str] = None,
         errors: Optional[str] = None,
         custom_html_tag: Optional[Tuple[str, dict]] = None,
@@ -51,7 +51,7 @@ class ReadTheDocsLoader(BaseLoader):
         except Exception as e:
             raise ValueError("Parsing kwargs do not appear valid") from e
 
-        self.file_path = path
+        self.file_path = Path(path)
         self.encoding = encoding
         self.errors = errors
         self.custom_html_tag = custom_html_tag
@@ -60,7 +60,7 @@ class ReadTheDocsLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
         docs = []
-        for p in Path(self.file_path).rglob("*"):
+        for p in self.file_path.rglob("*"):
             if p.is_dir():
                 continue
             with open(p, encoding=self.encoding, errors=self.errors) as f:
