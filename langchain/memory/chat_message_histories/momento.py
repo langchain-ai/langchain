@@ -1,0 +1,151 @@
+from __future__ import annotations
+
+from datetime import timedelta
+import json
+from typing import Any, Optional
+
+from langchain.schema import (
+    AIMessage,
+    BaseChatMessageHistory,
+    BaseMessage,
+    HumanMessage,
+    _message_to_dict,
+    messages_from_dict,
+)
+
+
+class MomentoChatMessageHistory(BaseChatMessageHistory):
+    """Chat message history cache that uses Momento as a backend.
+    See https://gomomento.com/"""
+
+    def __init__(
+        self,
+        session_id: str,
+        cache_client: Any,
+        cache_name: str,
+        key_prefix: str = "message_store:",
+        ttl: Optional[timedelta] = None,
+        ensure_cache_exists: bool = True,
+    ):
+        try:
+            from momento import CacheClient
+            from momento.requests import CollectionTtl
+        except ImportError:
+            raise ImportError(
+                "Could not import momento python package. "
+                "Please install it with `pip install momento`."
+            )
+
+        self.cache_client: CacheClient = cache_client
+        self.cache_name = cache_name
+        self.session_id = session_id
+        self.key_prefix = key_prefix
+        if ttl is not None:
+            self.ttl = CollectionTtl.of(ttl)
+        else:
+            self.ttl = CollectionTtl.from_cache_ttl()
+        self.key = f"{self.key_prefix}{self.session_id}"
+
+        if ensure_cache_exists:
+            self.__ensure_cache_exists()
+
+    def __ensure_cache_exists(self) -> None:
+        """Create cache if it doesn't exist.
+
+        Raises:
+            SdkException: Momento service or network error.
+            Exception: Unexpected response.
+        """
+        from momento.responses import CreateCache
+
+        create_cache_response = self.cache_client.create_cache(self.cache_name)
+        if isinstance(create_cache_response, CreateCache.Success) or isinstance(
+            create_cache_response, CreateCache.CacheAlreadyExists
+        ):
+            pass
+        elif isinstance(create_cache_response, CreateCache.Error):
+            raise create_cache_response.inner_exception
+        else:
+            raise Exception(f"Unexpected response: {create_cache_response}")
+
+    @property
+    def messages(self) -> list[BaseMessage]:
+        """Retrieve the messages from Momento.
+
+        Raises:
+            SdkException: Momento service or network error
+            Exception: Unexpected response
+
+        Returns:
+            list[BaseMessage]: List of cached messages
+        """
+        from momento.responses import CacheListFetch
+
+        fetch_response = self.cache_client.list_fetch(self.cache_name, self.key)
+
+        items: list[dict] = []
+        if isinstance(fetch_response, CacheListFetch.Hit):
+            items = [json.loads(m) for m in fetch_response.value_list_string]
+        elif isinstance(fetch_response, CacheListFetch.Miss):
+            pass
+        elif isinstance(fetch_response, CacheListFetch.Error):
+            raise fetch_response.inner_exception
+        else:
+            raise Exception(f"Unexpected response: {fetch_response}")
+        return messages_from_dict(items)
+
+    def add_user_message(self, message: str) -> None:
+        """Store a user message in the cache.
+
+        Args:
+            message (str): The message to store.
+        """
+        self.__add_message(HumanMessage(content=message))
+
+    def add_ai_message(self, message: str) -> None:
+        """Store an AI message in the cache.
+
+        Args:
+            message (str): The message to store.
+        """
+        self.__add_message(AIMessage(content=message))
+
+    def __add_message(self, message: BaseMessage) -> None:
+        """Store a message in the cache.
+
+        Args:
+            message (BaseMessage): The message object to store.
+
+        Raises:
+            SdkException: Momento service or network error.
+            Exception: Unexpected response.
+        """
+        from momento.responses import CacheListPushBack
+
+        item = json.dumps(_message_to_dict(message))
+        push_response = self.cache_client.list_push_back(
+            self.cache_name, self.key, item, ttl=self.ttl
+        )
+        if isinstance(push_response, CacheListPushBack.Success):
+            pass
+        elif isinstance(push_response, CacheListPushBack.Error):
+            raise push_response.inner_exception
+        else:
+            raise Exception(f"Unexpected response: {push_response}")
+
+    def clear(self) -> None:
+        """Remove the session's messages from the cache.
+
+        Raises:
+            SdkException: Momento service or network error.
+            Exception: Unexpected response.
+        """
+        from momento.responses import CacheDelete
+
+        delete_response = self.cache_client.delete(self.cache_name, self.key)
+        if isinstance(delete_response, CacheDelete.Success):
+            pass
+        elif isinstance(delete_response, CacheDelete.Error):
+            raise delete_response.inner_exception
+        else:
+            raise Exception(f"Unexpected response: {delete_response}")

@@ -12,13 +12,17 @@ from langchain.schema import Generation, LLMResult
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
+def random_string() -> str:
+    return str(uuid.uuid4())
+
+
 @pytest.fixture(scope="module")
 def momento_cache() -> Iterator[MomentoCache]:
-    cache_name = f"langchain-test-cache-{uuid.uuid4()}"
+    cache_name = f"langchain-test-cache-{random_string()}"
     client = CacheClient(
         Configurations.Laptop.v1(),
         CredentialProvider.from_environment_variable("TEST_AUTH_TOKEN"),
-        default_ttl=timedelta(seconds=10),
+        default_ttl=timedelta(seconds=30),
     )
     try:
         llm_cache = MomentoCache(client, cache_name)
@@ -26,10 +30,6 @@ def momento_cache() -> Iterator[MomentoCache]:
         yield llm_cache
     finally:
         client.delete_cache(cache_name)
-
-
-def random_string() -> str:
-    return str(uuid.uuid4())
 
 
 def test_momento_cache_miss(momento_cache: MomentoCache) -> None:
