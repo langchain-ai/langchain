@@ -42,8 +42,11 @@ class DatabricksServingEndpointClient(DatabricksClientBase):
     def post(self, request):
         # See https://docs.databricks.com/machine-learning/model-serving/score-model-serving-endpoints.html
         wrapped_request = {"dataframe_records": [request]}
-        wrapped_response = self.post_raw(wrapped_request)
-        return wrapped_response["predictions"][0]
+        response = self.post_raw(wrapped_request)["predictions"]
+        # For a signle-record query, the result is not a list.
+        if isinstance(response, list):
+            response = response[0]
+        return response
 
 class DatabricksClusterDriverProxyClient(DatabricksClientBase):
     host: str
@@ -217,8 +220,5 @@ class DatabricksEndpoint(LLM):
 
         if self.transform_output_fn:
             response = self.transform_output_fn(response)
-
-        if stop:
-            response = enforce_stop_tokens(response, stop)
 
         return response
