@@ -34,6 +34,13 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     document_separator: str = "\n\n"
     """The string with which to join the formatted documents"""
 
+    @property
+    def input_keys(self) -> List[str]:
+        extra_keys = [
+            k for k in self.llm_chain.input_keys if k != self.document_variable_name
+        ]
+        return super().input_keys + extra_keys
+
     class Config:
         """Configuration for this pydantic object."""
 
