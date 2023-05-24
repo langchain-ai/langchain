@@ -222,9 +222,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             response = embed_with_retry(
                 self,
                 input=tokens[i : i + _chunk_size],
-                engine=self.deployment,
-                request_timeout=self.request_timeout,
-                headers=self.headers,
+                model=self.model,
+                # request_timeout=self.request_timeout,
+                # headers=self.headers,
             )
             batched_embeddings += [r["embedding"] for r in response["data"]]
 
@@ -240,9 +240,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 average = embed_with_retry(
                     self,
                     input="",
-                    engine=self.deployment,
-                    request_timeout=self.request_timeout,
-                    headers=self.headers,
+                    model=self.model,
+                    # request_timeout=self.request_timeout,
+                    # headers=self.headers,
                 )["data"][0]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
@@ -263,9 +263,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             return embed_with_retry(
                 self,
                 input=[text],
-                engine=engine,
-                request_timeout=self.request_timeout,
-                headers=self.headers,
+                model=self.model,
+                # request_timeout=self.request_timeout,
+                # headers=self.headers,
             )["data"][0]["embedding"]
 
     def embed_documents(
