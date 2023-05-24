@@ -31,14 +31,13 @@ class OpenWeatherMapAPIWrapper(BaseModel):
         openweathermap_api_key = get_from_dict_or_env(
             values, "openweathermap_api_key", "OPENWEATHERMAP_API_KEY"
         )
-        values["openweathermap_api_key"] = openweathermap_api_key
 
         try:
             import pyowm
 
         except ImportError:
             raise ImportError(
-                "pyowm is not installed. " "Please install it with `pip install pyowm`"
+                "pyowm is not installed. Please install it with `pip install pyowm`"
             )
 
         owm = pyowm.OWM(openweathermap_api_key)

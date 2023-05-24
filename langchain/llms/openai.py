@@ -234,7 +234,7 @@ class BaseOpenAI(BaseLLM):
                 openai.organization = openai_organization
             values["client"] = openai.Completion
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
@@ -462,7 +462,7 @@ class BaseOpenAI(BaseLLM):
         try:
             import tiktoken
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
                 "Please install it with `pip install tiktoken`."
@@ -511,6 +511,10 @@ class BaseOpenAI(BaseLLM):
             "code-cushman-002": 2048,
             "code-cushman-001": 2048,
         }
+
+        # handling finetuned models
+        if "ft-" in modelname:
+            modelname = modelname.split(":")[0]
 
         context_size = model_token_mapping.get(modelname, None)
 
@@ -677,7 +681,7 @@ class OpenAIChat(BaseLLM):
             if openai_organization:
                 openai.organization = openai_organization
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
@@ -807,7 +811,7 @@ class OpenAIChat(BaseLLM):
         try:
             import tiktoken
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
                 "Please install it with `pip install tiktoken`."

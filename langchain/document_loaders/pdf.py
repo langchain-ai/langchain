@@ -103,7 +103,7 @@ class PyPDFLoader(BasePDFLoader):
         try:
             import pypdf  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
         self.parser = PyPDFParser()
@@ -194,7 +194,7 @@ class PDFMinerLoader(BasePDFLoader):
         try:
             from pdfminer.high_level import extract_text  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`pdfminer` package not found, please install it with "
                 "`pip install pdfminer.six`"
             )
@@ -222,7 +222,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
         try:
             from pdfminer.high_level import extract_text_to_fp  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`pdfminer` package not found, please install it with "
                 "`pip install pdfminer.six`"
             )
@@ -256,7 +256,7 @@ class PyMuPDFLoader(BasePDFLoader):
         try:
             import fitz  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`PyMuPDF` package not found, please install it with "
                 "`pip install pymupdf`"
             )
@@ -375,7 +375,7 @@ class PDFPlumberLoader(BasePDFLoader):
         try:
             import pdfplumber  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "pdfplumber package not found, please install it with "
                 "`pip install pdfplumber`"
             )
