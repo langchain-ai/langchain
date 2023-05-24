@@ -6,10 +6,15 @@ from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 class SelfAskOutputParser(AgentOutputParser):
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        followup = "Follow up:"
+        followup = ["Follow up:", "Followup:"]
         last_line = text.split("\n")[-1]
 
-        if followup not in last_line:
+        followup_present = False
+        for phrase in followup:
+            if phrase in last_line:
+                followup_present = True
+
+        if not followup_present:
             finish_string = "So the final answer is: "
             if finish_string not in last_line:
                 raise OutputParserException(f"Could not parse output: {text}")
