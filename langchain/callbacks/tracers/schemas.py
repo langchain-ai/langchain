@@ -36,12 +36,6 @@ class TracerSessionBase(TracerSessionV1Base):
     tenant_id: UUID
 
 
-class TracerSessionCreate(TracerSessionBase):
-    """A creation class for TracerSession."""
-
-    id: Optional[UUID]
-
-
 class TracerSession(TracerSessionBase):
     """TracerSessionV1 schema for the V2 API."""
 
@@ -136,7 +130,7 @@ class Run(RunBase):
 
 class RunCreate(RunBase):
     name: str
-    session_id: UUID
+    session_name: Optional[str] = None
 
     @root_validator(pre=True)
     def add_runtime_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:

@@ -214,7 +214,6 @@ async def _tracer_initializer(session_name: Optional[str]) -> Optional[LangChain
     """
     if session_name:
         tracer = LangChainTracer(session_name=session_name)
-        tracer.ensure_session()
         return tracer
     else:
         return None

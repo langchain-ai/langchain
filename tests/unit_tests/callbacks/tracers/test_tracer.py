@@ -89,17 +89,18 @@ def test_persist_run(
     sample_runs: Tuple[Run, Run, Run],
 ) -> None:
     """Test that persist_run method calls requests.post once per method call."""
-    with patch("langchain.callbacks.tracers.langchain.requests.post") as post, patch(
-        "langchain.callbacks.tracers.langchain.requests.get"
-    ) as get:
-        post.return_value.raise_for_status.return_value = None
+    with patch(
+        "langchain.callbacks.tracers.langchain.requests.patch"
+    ) as req_patch, patch("langchain.callbacks.tracers.langchain.requests.get") as get:
+        req_patch.return_value.raise_for_status.return_value = None
         lang_chain_tracer_v2.session = sample_tracer_session_v2
         for run in sample_runs:
             lang_chain_tracer_v2.run_map[str(run.id)] = run
-        for run in sample_runs:
-            lang_chain_tracer_v2._end_trace(run)
-
-        assert post.call_count == 3
+        lang_chain_tracer_v2._on_llm_end(sample_runs[0])
+        lang_chain_tracer_v2._on_chain_end(sample_runs[1])
+        lang_chain_tracer_v2._on_tool_end(sample_runs[2])
+        lang_chain_tracer_v2.executor.shutdown(wait=True)
+        assert req_patch.call_count == 3
         assert get.call_count == 0
 
 
@@ -119,16 +120,12 @@ def test_persist_run_with_example_id(
         post.return_value.raise_for_status.return_value = None
         lang_chain_tracer_v2.session = sample_tracer_session_v2
         lang_chain_tracer_v2.example_id = example_id
-        lang_chain_tracer_v2._persist_run(chain_run)
-
-        assert post.call_count == 3
+        lang_chain_tracer_v2._persist_run_single(chain_run)
+        lang_chain_tracer_v2.executor.shutdown(wait=True)
+        assert post.call_count == 1
         assert get.call_count == 0
         posted_data = [
             json.loads(call_args[1]["data"]) for call_args in post.call_args_list
         ]
         assert posted_data[0]["id"] == str(chain_run.id)
         assert posted_data[0]["reference_example_id"] == str(example_id)
-        assert posted_data[1]["id"] == str(tool_run.id)
-        assert not posted_data[1].get("reference_example_id")
-        assert posted_data[2]["id"] == str(llm_run.id)
-        assert not posted_data[2].get("reference_example_id")
