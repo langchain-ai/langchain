@@ -5,14 +5,7 @@ import warnings
 from typing import Any, Iterable, List, Optional
 
 import sqlalchemy
-from sqlalchemy import (
-    MetaData,
-    Table,
-    create_engine,
-    inspect,
-    select,
-    text,
-)
+from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
@@ -336,10 +329,16 @@ class SQLDatabase:
                 if fetch == "all":
                     result = cursor.fetchall()
                 elif fetch == "one":
-                    result = cursor.fetchone()[0]  # type: ignore
+                    result = cursor.fetchone()  # type: ignore
                 else:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
-                return str(result)
+
+                # Convert columns values to string to avoid issues with sqlalchmey
+                # trunacating text
+                if isinstance(result, list):
+                    return str(list(tuple(map(str, row)) for row in result))
+                else:
+                    return str(tuple(map(str, result)))
         return ""
 
     def get_table_info_no_throw(self, table_names: Optional[List[str]] = None) -> str:
