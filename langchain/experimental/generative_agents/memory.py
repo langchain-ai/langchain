@@ -151,18 +151,18 @@ class GenerativeAgentMemory(BaseMemory):
         return scores_list
     
     def add_memories(
-        self, memory_content: List[str], now: Optional[datetime] = None
+        self, memory_content: str, now: Optional[datetime] = None
     ) -> List[str]:
         """Add an observations or memories to the agent's memory."""
         importance_scores = self._score_memories_importance(memory_content)
 
-        self.aggregate_importance += sum(importance_scores)
-        print(self.aggregate_importance)
+        self.aggregate_importance += max(importance_scores)
+        memory_list = memory_content.split(";")
         documents = []
 
-        for i in range(len(memory_content)):
+        for i in range(len(memory_list)):
             documents.append(Document(
-                page_content=memory_content[i], metadata={"importance": importance_scores[i]}
+                page_content=memory_list[i], metadata={"importance": importance_scores[i]}
             ))
         
         result = self.memory_retriever.add_documents(documents, current_time=now)
