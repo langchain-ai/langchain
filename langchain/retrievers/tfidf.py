@@ -2,7 +2,9 @@
 
 Largely based on
 https://github.com/asvskartheek/Text-Retrieval/blob/master/TF-IDF%20Search%20Engine%20(SKLEARN).ipynb"""
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any, Dict, Iterable, List, Optional
 
 from pydantic import BaseModel
 
@@ -23,17 +25,38 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
     @classmethod
     def from_texts(
         cls,
-        texts: List[str],
+        texts: Iterable[str],
+        metadatas: Optional[Iterable[dict]] = None,
         tfidf_params: Optional[Dict[str, Any]] = None,
-        **kwargs: Any
-    ) -> "TFIDFRetriever":
-        from sklearn.feature_extraction.text import TfidfVectorizer
+        **kwargs: Any,
+    ) -> TFIDFRetriever:
+        try:
+            from sklearn.feature_extraction.text import TfidfVectorizer
+        except ImportError:
+            raise ImportError(
+                "Could not import scikit-learn, please install with `pip install "
+                "scikit-learn`."
+            )
 
         tfidf_params = tfidf_params or {}
         vectorizer = TfidfVectorizer(**tfidf_params)
         tfidf_array = vectorizer.fit_transform(texts)
-        docs = [Document(page_content=t) for t in texts]
+        metadatas = metadatas or ({} for _ in texts)
+        docs = [Document(page_content=t, metadata=m) for t, m in zip(texts, metadatas)]
         return cls(vectorizer=vectorizer, docs=docs, tfidf_array=tfidf_array, **kwargs)
+
+    @classmethod
+    def from_documents(
+        cls,
+        documents: Iterable[Document],
+        *,
+        tfidf_params: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> TFIDFRetriever:
+        texts, metadatas = zip(*((d.page_content, d.metadata) for d in documents))
+        return cls.from_texts(
+            texts=texts, tfidf_params=tfidf_params, metadatas=metadatas, **kwargs
+        )
 
     def get_relevant_documents(self, query: str) -> List[Document]:
         from sklearn.metrics.pairwise import cosine_similarity
