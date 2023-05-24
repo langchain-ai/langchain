@@ -5,7 +5,7 @@ import logging
 import subprocess
 import textwrap
 import time
-from typing import Any, Dict, List, Mapping, Optional, Union, cast
+from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from pydantic import Extra, Field, root_validator
@@ -16,14 +16,16 @@ from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_NUM_TRIES = 100
+
 
 class Beam(LLM):
     """Wrapper around Beam API for gpt2 large language model.
 
     To use, you should have the ``beam-sdk`` python package installed,
-    and the environment variable ``beam_client_id`` set with your client id
-    and ``beam_client_secret`` set with your client secret. Information on how
-    to set these is availible here: https://docs.beam.cloud/account/api-keys.
+    and the environment variable ``BEAM_CLIENT_ID`` set with your client id
+    and ``BEAM_CLIENT_SECRET`` set with your client secret. Information on how
+    to get these is available here: https://docs.beam.cloud/account/api-keys.
 
     The wrapper can then be called as follows, where the name, cpu, memory, gpu,
     python version, and python packages can be updated accordingly. Once deployed,
@@ -44,9 +46,8 @@ class Beam(LLM):
                 "xformers",],
             max_length=50)
 
-        depolyResult = llm._deploy(prompt=input)
-
-        callResult = llm._call(prompt=input)
+        llm._deploy()
+        call_result = llm._call(prompt=input)
     """
 
     model_name: str = ""
@@ -66,6 +67,7 @@ class Beam(LLM):
 
     beam_client_id: str = ""
     beam_client_secret: str = ""
+    app_id: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic config."""
@@ -121,7 +123,7 @@ class Beam(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "Beam"
+        return "beam"
 
     def app_creation(self) -> None:
         """Creates a Python file which will contain your Beam app definition."""
@@ -197,16 +199,15 @@ class Beam(LLM):
         try:
             import beam  # type: ignore
 
-            if (beam.__path__) == "":
+            if beam.__path__ == "":
                 raise ImportError
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import beam python package. "
                 "Please install it with `curl "
                 "https://raw.githubusercontent.com/slai-labs"
                 "/get-beam/main/get-beam.sh -sSfL | sh`."
             )
-
         self.app_creation()
         self.run_creation()
 
@@ -215,85 +216,52 @@ class Beam(LLM):
         )
 
         if process.returncode == 0:
-            print(process.stdout)
             output = process.stdout
+            logger.info(output)
             lines = output.split("\n")
-            app_id = None
 
             for line in lines:
                 if line.startswith(" i  Send requests to: https://apps.beam.cloud/"):
-                    app_id = line.split("/")[-1]
+                    self.app_id = line.split("/")[-1]
                     self.url = line.split(":")[1].strip()
-                    return app_id
+                    return self.app_id
 
             raise ValueError(
                 f"""Failed to retrieve the appID from the deployment output.
-                Error: {process.stdout}"""
+                Deployment output: {output}"""
             )
         else:
             raise ValueError(f"Deployment failed. Error: {process.stderr}")
+
+    @property
+    def authorization(self) -> str:
+        if self.beam_client_id:
+            credential_str = self.beam_client_id + ":" + self.beam_client_secret
+        else:
+            credential_str = self.beam_client_secret
+        return base64.b64encode(credential_str.encode()).decode()
 
     def _call(
         self,
         prompt: str,
         stop: Optional[list] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
     ) -> str:
         """Call to Beam."""
-        try:
-            import beam  # type: ignore
-
-            if (beam.__path__) == "":
-                raise ImportError
-        except ImportError:
-            raise ValueError(
-                "Could not import beam python package. "
-                "Please install it with `curl "
-                "https://raw.githubusercontent.com/slai-labs"
-                "/get-beam/main/get-beam.sh -sSfL | sh`."
-            )
-
-        api_key = self.beam_client_id
-        api_secret = self.beam_client_secret
-        max_length = self.max_length
-        response = ""
-        accept = "*/*"
-        encoding = "gzip, deflate"
-        credential_string = (
-            (api_key + ":" + api_secret) if api_key is not None else api_secret
-        )
-        authorization = base64.b64encode(credential_string.encode()).decode()
-        connection = "keep-alive"
-        content_type = "application/json"
-        app_id = kwargs.get("app_id")
-        if app_id is not None:
-            url = "https://apps.beam.cloud/" + app_id
-        else:
-            url = self.url
-        payload = {"prompt": prompt, "max_length": max_length}
+        url = "https://apps.beam.cloud/" + self.app_id if self.app_id else self.url
+        payload = {"prompt": prompt, "max_length": self.max_length}
         headers = {
-            "Accept": accept,
-            "Accept-Encoding": encoding,
-            "Authorization": "Basic " + authorization,
-            "Connection": connection,
-            "Content-Type": content_type,
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip, deflate",
+            "Authorization": "Basic " + self.authorization,
+            "Connection": "keep-alive",
+            "Content-Type": "application/json",
         }
 
-        completed = False
-        tries = 0
-        while not completed and tries < 100:
-            request = requests.request(
-                "POST",
-                cast(Union[str, bytes], url),
-                headers=headers,
-                data=json.dumps(payload),
-            )
+        for _ in range(DEFAULT_NUM_TRIES):
+            request = requests.post(url, headers=headers, data=json.dumps(payload))
             if request.status_code == 200:
-                response = request.json()["text"]
-                completed = True
-            else:
-                time.sleep(10)
-                tries += 1
-
-        return response
+                return request.json()["text"]
+            time.sleep(10)
+        logger.warning("Unable to successfully call model.")
+        return ""
