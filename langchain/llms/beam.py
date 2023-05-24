@@ -16,7 +16,8 @@ from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_NUM_TRIES = 100
+DEFAULT_NUM_TRIES = 10
+DEFAULT_SLEEP_TIME = 4
 
 
 class Beam(LLM):
@@ -47,7 +48,7 @@ class Beam(LLM):
             max_length=50)
 
         llm._deploy()
-        call_result = llm._call(prompt=input)
+        call_result = llm._call(input)
     """
 
     model_name: str = ""
@@ -262,6 +263,6 @@ class Beam(LLM):
             request = requests.post(url, headers=headers, data=json.dumps(payload))
             if request.status_code == 200:
                 return request.json()["text"]
-            time.sleep(10)
+            time.sleep(DEFAULT_SLEEP_TIME)
         logger.warning("Unable to successfully call model.")
         return ""

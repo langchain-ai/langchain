@@ -58,7 +58,7 @@ Once a beam model is deployed, it can be called by callying your model's `_call(
 This returns the GPT2 text response to your prompt.
 
 ```python
-response = llm._call(prompt="Running machine learning on a remote GPU")
+response = llm._call("Running machine learning on a remote GPU")
 ```
 
 An example script which deploys the model and calls it would be:
@@ -86,7 +86,7 @@ llm = Beam(model_name="gpt2",
 
 llm._deploy()
 
-response = llm._call(prompt="Running machine learning on a remote GPU")
+response = llm._call("Running machine learning on a remote GPU")
 
 print(response)
 ```
