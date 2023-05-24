@@ -9,7 +9,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains import LLMChain
 from langchain.chains.router.base import RouterChain
-from langchain.output_parsers.structured import parse_json_markdown
+from langchain.output_parsers.json import parse_and_check_json_markdown
 from langchain.prompts import BasePromptTemplate
 from langchain.schema import BaseOutputParser, OutputParserException
 
@@ -77,7 +77,7 @@ class RouterOutputParser(BaseOutputParser[Dict[str, str]]):
     def parse(self, text: str) -> Dict[str, Any]:
         try:
             expected_keys = ["destination", "next_inputs"]
-            parsed = parse_json_markdown(text, expected_keys)
+            parsed = parse_and_check_json_markdown(text, expected_keys)
             if not isinstance(parsed["destination"], str):
                 raise ValueError("Expected 'destination' to be a string.")
             if not isinstance(parsed["next_inputs"], self.next_inputs_type):
