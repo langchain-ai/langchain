@@ -34,6 +34,7 @@ class MimeTypeBasedParser(BaseBlobParser):
     def __init__(
         self,
         handlers: Mapping[str, BaseBlobParser],
+        *,
         fallback_parser: Optional[BaseBlobParser] = None,
     ) -> None:
         """Define a parser that uses mime-types to determine how to parse a blob.

@@ -58,7 +58,7 @@ class ArxivAPIWrapper(BaseModel):
             )
             values["arxiv_result"] = arxiv.Result
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import arxiv python package. "
                 "Please install it with `pip install arxiv`."
             )

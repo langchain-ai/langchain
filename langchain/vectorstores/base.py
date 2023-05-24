@@ -166,6 +166,17 @@ class VectorStore(ABC):
         """
         raise NotImplementedError
 
+    async def asimilarity_search_with_relevance_scores(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query."""
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(self.similarity_search_with_relevance_scores, query, k, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
@@ -384,6 +395,13 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
             docs = await self.vectorstore.asimilarity_search(
                 query, **self.search_kwargs
             )
+        elif self.search_type == "similarity_score_threshold":
+            docs_and_similarities = (
+                await self.vectorstore.asimilarity_search_with_relevance_scores(
+                    query, **self.search_kwargs
+                )
+            )
+            docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
             docs = await self.vectorstore.amax_marginal_relevance_search(
                 query, **self.search_kwargs

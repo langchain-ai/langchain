@@ -27,6 +27,11 @@ def get_colored_text(text: str, color: str) -> str:
     return f"\u001b[{color_str}m\033[1;3m{text}\u001b[0m"
 
 
+def get_bolded_text(text: str) -> str:
+    """Get bolded text."""
+    return f"\033[1m{text}\033[0m"
+
+
 def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
     """Print text with highlighting and no end characters."""
     if color is None:

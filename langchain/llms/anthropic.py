@@ -59,7 +59,7 @@ class _AnthropicCommon(BaseModel):
             values["AI_PROMPT"] = anthropic.AI_PROMPT
             values["count_tokens"] = anthropic.count_tokens
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import anthropic python package. "
                 "Please it install it with `pip install anthropic`."
             )
@@ -96,12 +96,6 @@ class _AnthropicCommon(BaseModel):
         stop.extend([self.HUMAN_PROMPT])
 
         return stop
-
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate number of tokens."""
-        if not self.count_tokens:
-            raise NameError("Please ensure the anthropic package is loaded")
-        return self.count_tokens(text)
 
 
 class Anthropic(LLM, _AnthropicCommon):
@@ -263,3 +257,9 @@ class Anthropic(LLM, _AnthropicCommon):
             stop_sequences=stop,
             **self._default_params,
         )
+
+    def get_num_tokens(self, text: str) -> int:
+        """Calculate number of tokens."""
+        if not self.count_tokens:
+            raise NameError("Please ensure the anthropic package is loaded")
+        return self.count_tokens(text)

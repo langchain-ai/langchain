@@ -42,7 +42,7 @@ class JSONLoader(BaseLoader):
         try:
             import jq  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "jq package not found, please install it with `pip install jq`"
             )
 

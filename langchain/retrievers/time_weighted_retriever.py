@@ -15,7 +15,7 @@ def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> f
 
 
 class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
-    """Retriever combining embededing similarity with recency."""
+    """Retriever combining embedding similarity with recency."""
 
     vectorstore: VectorStore
     """The vectorstore to store documents and determine salience."""
@@ -109,7 +109,9 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""
-        current_time = kwargs.get("current_time", datetime.datetime.now())
+        current_time = kwargs.get("current_time")
+        if current_time is None:
+            current_time = datetime.datetime.now()
         # Avoid mutating input documents
         dup_docs = [deepcopy(d) for d in documents]
         for i, doc in enumerate(dup_docs):
@@ -125,7 +127,9 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         self, documents: List[Document], **kwargs: Any
     ) -> List[str]:
         """Add documents to vectorstore."""
-        current_time = kwargs.get("current_time", datetime.datetime.now())
+        current_time = kwargs.get("current_time")
+        if current_time is None:
+            current_time = datetime.datetime.now()
         # Avoid mutating input documents
         dup_docs = [deepcopy(d) for d in documents]
         for i, doc in enumerate(dup_docs):
