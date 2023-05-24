@@ -4,7 +4,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-class FaunaDBLoader(BaseLoader):
+class FaunaLoader(BaseLoader):
     def __init__(
         self,
         query: str,
@@ -24,7 +24,7 @@ class FaunaDBLoader(BaseLoader):
             from fauna.client import Client
             from fauna.encoding import QuerySuccess
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import fauna python package. "
                 "Please install it with `pip install fauna`."
             )
