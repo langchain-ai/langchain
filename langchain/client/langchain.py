@@ -389,6 +389,7 @@ class LangChainPlusClient(BaseSettings):
     def update_example(
         self,
         example_id: str,
+        *,
         inputs: Optional[Dict[str, Any]] = None,
         outputs: Optional[Dict[str, Any]] = None,
         dataset_id: Optional[str] = None,
