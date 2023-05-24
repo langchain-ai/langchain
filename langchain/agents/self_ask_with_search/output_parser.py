@@ -1,4 +1,4 @@
-from typing import Union, Sequence
+from typing import Sequence, Union
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.schema import AgentAction, AgentFinish, OutputParserException
@@ -13,7 +13,7 @@ class SelfAskOutputParser(AgentOutputParser):
         if not any([follow in last_line for follow in self.followups]):
             if self.finish_string not in last_line:
                 raise OutputParserException(f"Could not parse output: {text}")
-            return AgentFinish({"output": last_line[len(self.finish_string):]}, text)
+            return AgentFinish({"output": last_line[len(self.finish_string) :]}, text)
 
         after_colon = text.split(":")[-1].strip()
         return AgentAction("Intermediate Answer", after_colon, text)
