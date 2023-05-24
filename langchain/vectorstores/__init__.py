@@ -44,5 +44,5 @@ __all__ = [
     "LanceDB",
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
-    "Typesense"
+    "Typesense",
 ]

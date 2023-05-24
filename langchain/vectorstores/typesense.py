@@ -72,7 +72,9 @@ class Typesense(VectorStore):
             )
         self._typesense_client = typesense_client
         self._embedding = embedding
-        self._typesense_collection_name = typesense_collection_name or f"langchain-{str(uuid.uuid4())}"
+        self._typesense_collection_name = (
+            typesense_collection_name or f"langchain-{str(uuid.uuid4())}"
+        )
         self._text_key = text_key
 
     @property
@@ -154,10 +156,12 @@ class Typesense(VectorStore):
             "q": "*",
             "vector_query": f'vec:([{",".join(embedded_query)}], k:{k})',
             "filter_by": filter,
-            "collection": self._typesense_collection_name
+            "collection": self._typesense_collection_name,
         }
         docs = []
-        response = self._typesense_client.multi_search.perform({"searches": [query_obj]}, {})
+        response = self._typesense_client.multi_search.perform(
+            {"searches": [query_obj]}, {}
+        )
         for hit in response["results"][0]["hits"]:
             document = hit["document"]
             metadata = document["metadata"]
