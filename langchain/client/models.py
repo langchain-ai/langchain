@@ -151,7 +151,7 @@ class Feedback(FeedbackBase):
 class ListFeedbackQueryParams(BaseModel):
     """Query Params for listing feedbacks."""
 
-    run: Optional[List[UUID]] = None
+    run: Optional[Sequence[UUID]] = None
     limit: int = 100
     offset: int = 0
 
