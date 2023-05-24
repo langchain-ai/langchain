@@ -220,7 +220,7 @@ class DatabricksEndpoint(LLM):
     """
 
     transform_output_fn: Optional[Callable[..., str]] = None
-    """A function that transfroms the output from the endpoint to the generated text.
+    """A function that transforms the output from the endpoint to the generated text.
     """
 
     _client: DatabricksClientBase = PrivateAttr()
