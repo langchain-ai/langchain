@@ -6,7 +6,10 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from pydantic import Extra, root_validator
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -33,7 +36,7 @@ class LocalHuggingFaceEndpoint(LLM):
 
     completion_endpoint_url: str
     """Endpoint URL to use for completion."""
-    config_endpoint_url: Optional[str] = None
+    config_endpoint_url: str
     """Endpoint URL to use to GET the model config."""
     task: Optional[str] = None
     """Task to call the model with. Should be a task that returns `generated_text`."""
@@ -59,20 +62,26 @@ class LocalHuggingFaceEndpoint(LLM):
             response = requests.get(cls.config_endpoint_url, headers=cls.headers)
             response.raise_for_status()
         except Exception as e:
-            raise ValueError(f"Could not connect to {cls.config_endpoint_url} with error {e}")
-        local_task = response["task"]
+            raise ValueError(
+                f"Could not connect to {cls.config_endpoint_url} with error {e}"
+            )
+        try:
+            local_task = response.json()["task"]
+        except Exception as e:
+            raise ValueError(f"Could not parse response with error {e}")
         if cls.task != local_task:
-            raise ValueError(f"The llm task '{cls.task}' differs from the local task '{local_task}'.")
+            raise ValueError(
+                f"The llm task '{cls.task}' differs from the local task '{local_task}'."
+            )
         return values
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
-        _config_endpoint_url = self.config_endpoint_url or self.completion_endpoint_url
         return {
-            **{"completion_endpoint_url": self.completion_endpoint_url}, 
-            **{"config_endpoint_url": _config_endpoint_url, "task": self.task},
+            **{"completion_endpoint_url": self.completion_endpoint_url},
+            **{"config_endpoint_url": self.config_endpoint_url, "task": self.task},
             **{"model_kwargs": _model_kwargs},
         }
 
@@ -82,11 +91,11 @@ class LocalHuggingFaceEndpoint(LLM):
         return "local_huggingface_endpoint"
 
     def _call(
-            self, 
-            prompt: str, 
-            stop: Optional[List[str]] = None, 
-            run_manager: Optional[CallbackManagerForLLMRun] = None
-        ) -> str:
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to local Huggingface Inference endpoint.
 
         Args:
@@ -109,7 +118,9 @@ class LocalHuggingFaceEndpoint(LLM):
         # send request
         try:
             response = requests.post(
-                self.completion_endpoint_url, headers=self.headers, json=parameter_payload
+                self.completion_endpoint_url,
+                headers=self.headers,
+                json=parameter_payload,
             )
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
@@ -132,11 +143,11 @@ class LocalHuggingFaceEndpoint(LLM):
         return text
 
     async def _acall(
-            self, 
-            prompt: str, 
-            stop: Optional[List[str]] = None, 
-            run_manager: Optional[CallbackManagerForLLMRun] = None
-        ) -> str:
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to custom inference endpoint."""
         func = partial(self._call, prompt, stop)
         return await asyncio.get_event_loop().run_in_executor(None, func)
