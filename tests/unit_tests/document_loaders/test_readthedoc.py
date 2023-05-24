@@ -8,7 +8,7 @@ from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 
 
 @pytest.mark.requires("bs4")
-def test_main_id_main_content():
+def test_main_id_main_content() -> None:
     loader = ReadTheDocsLoader(
         Path(__file__).parent / "test_docs" / "readthedocs" / "main_id_main_content"
     )
@@ -17,7 +17,7 @@ def test_main_id_main_content():
 
 
 @pytest.mark.requires("bs4")
-def test_div_role_main():
+def test_div_role_main() -> None:
     loader = ReadTheDocsLoader(
         Path(__file__).parent / "test_docs" / "readthedocs" / "div_role_main"
     )
@@ -26,7 +26,7 @@ def test_div_role_main():
 
 
 @pytest.mark.requires("bs4")
-def test_custom():
+def test_custom() -> None:
     loader = ReadTheDocsLoader(
         Path(__file__).parent / "test_docs" / "readthedocs" / "custom",
         custom_html_tag=("article", {"role": "main"}),
@@ -36,7 +36,7 @@ def test_custom():
 
 
 @pytest.mark.requires("bs4")
-def test_empty():
+def test_empty() -> None:
     loader = ReadTheDocsLoader(
         Path(__file__).parent / "test_docs" / "readthedocs" / "custom",
     )
