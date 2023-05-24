@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -21,15 +22,19 @@ class LocalHuggingFaceEndpoint(LLM):
         .. code-block:: python
 
             from langchain.llms import LocalHuggingFaceEndpoint
-            endpoint_url = "https://api/endpoint/"
+            completion_endpoint_url = "https://api/completion-endpoint/"
+            config_endpoint_url = "https://api/config-endpoint/"
             llm = LocalHuggingFaceEndpoint(
-                endpoint_url=endpoint_url,
+                completion_endpoint_url=completion_endpoint_url,
+                config_endpoint_url=config_endpoint_url,
                 headers = {"Content-Type": "application/json"}
             )
     """
 
-    endpoint_url: str
-    """Endpoint URL to use."""
+    completion_endpoint_url: str
+    """Endpoint URL to use for completion."""
+    config_endpoint_url: Optional[str] = None
+    """Endpoint URL to use to GET the model config."""
     task: Optional[str] = None
     """Task to call the model with. Should be a task that returns `generated_text`."""
     model_kwargs: Optional[dict] = None
@@ -51,18 +56,23 @@ class LocalHuggingFaceEndpoint(LLM):
                 f"currently only {VALID_TASKS} are supported"
             )
         try:
-            response = requests.get(cls.endpoint_url, headers=cls.headers)
+            response = requests.get(cls.config_endpoint_url, headers=cls.headers)
             response.raise_for_status()
         except Exception as e:
-            raise ValueError(f"Could not connect to {cls.endpoint_url} with error {e}")
+            raise ValueError(f"Could not connect to {cls.config_endpoint_url} with error {e}")
+        local_task = response["task"]
+        if cls.task != local_task:
+            raise ValueError(f"The llm task '{cls.task}' differs from the local task '{local_task}'.")
         return values
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
+        _config_endpoint_url = self.config_endpoint_url or self.completion_endpoint_url
         return {
-            **{"endpoint_url": self.endpoint_url, "task": self.task},
+            **{"completion_endpoint_url": self.completion_endpoint_url}, 
+            **{"config_endpoint_url": _config_endpoint_url, "task": self.task},
             **{"model_kwargs": _model_kwargs},
         }
 
@@ -71,7 +81,12 @@ class LocalHuggingFaceEndpoint(LLM):
         """Return type of llm."""
         return "local_huggingface_endpoint"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+            self, 
+            prompt: str, 
+            stop: Optional[List[str]] = None, 
+            run_manager: Optional[CallbackManagerForLLMRun] = None
+        ) -> str:
         """Call out to local Huggingface Inference endpoint.
 
         Args:
@@ -94,8 +109,9 @@ class LocalHuggingFaceEndpoint(LLM):
         # send request
         try:
             response = requests.post(
-                self.endpoint_url, headers=self.headers, json=parameter_payload
+                self.completion_endpoint_url, headers=self.headers, json=parameter_payload
             )
+            response.raise_for_status()
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
         response_dict = response.json()
@@ -115,7 +131,12 @@ class LocalHuggingFaceEndpoint(LLM):
             text = enforce_stop_tokens(text, stop)
         return text
 
-    async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    async def _acall(
+            self, 
+            prompt: str, 
+            stop: Optional[List[str]] = None, 
+            run_manager: Optional[CallbackManagerForLLMRun] = None
+        ) -> str:
         """Call out to custom inference endpoint."""
         func = partial(self._call, prompt, stop)
         return await asyncio.get_event_loop().run_in_executor(None, func)
