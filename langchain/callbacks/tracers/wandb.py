@@ -18,6 +18,13 @@ from wandb.sdk.lib.paths import StrPath
 
 if TYPE_CHECKING:
     from langchain.callbacks.tracers.schemas import Run
+    from langchain.chains.base import Chain
+    from langchain.llms.base import BaseLLM
+    from langchain.models.base import BaseLanguageModel
+    from langchain.tools.base import BaseTool
+    from wandb.settings import Settings as WBSettings
+    from wandb.wandb_run import Run as WBRun
+
 
 PRINT_WARNINGS = True
 
@@ -268,7 +275,8 @@ class WandbTracer(BaseTracer):
             root_span=root_span,
             model_dict=model_dict,
         )
-        wandb.run.log({"langchain_trace": model_trace})
+        if wandb.run is not None:
+            wandb.run.log({"langchain_trace": model_trace})
 
     def _ensure_run(self, should_print_url: bool = False) -> None:
         """Ensures an active W&B run exists.
@@ -287,11 +295,11 @@ class WandbTracer(BaseTracer):
 
             # Start the run and add the stream table
             wandb.init(**run_args)
+            if wandb.run is not None:
+                if should_print_url:
+                    print_wandb_init_message(wandb.run.settings.run_url)
 
-            if should_print_url:
-                print_wandb_init_message(wandb.run.settings.run_url)
-
-            wandb.run._label(repo="langchain")
+                wandb.run._label(repo="langchain")
 
     def _persist_run(self, run: "Run") -> None:
         """Persist a run."""
