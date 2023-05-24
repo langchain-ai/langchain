@@ -391,7 +391,7 @@ class FAISS(VectorStore):
             documents.append(Document(page_content=text, metadata=metadata))
         index_to_id = dict(enumerate(ids))
         docstore = InMemoryDocstore(
-            dict(zip(index_to_id, documents))
+            dict(zip(index_to_id.values(), documents))
         )
         return cls(
             embedding.embed_query,
