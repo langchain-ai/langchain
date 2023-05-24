@@ -30,27 +30,30 @@ MODEL_COST_PER_1K_TOKENS = {
     "davinci-finetuned": 0.12,
 }
 
-def get_base_model_name(
-    model_name:str,
-) -> str:
-    if "ft-" in model_name:
-        model_name = f"{model_name.split(':')[0]}-finetuned"
 
-    return model_name
+def standardize_model_name(
+    model_name: str,
+    is_completion: bool = False,
+) -> str:
+    model_name = model_name.lower()
+    if "ft-" in model_name:
+        return model_name.split(":")[0] + "-finetuned"
+    elif is_completion and model_name.startswith("gpt-4"):
+        return model_name + "-completion"
+    else:
+        return model_name
+
 
 def get_openai_token_cost_for_model(
     model_name: str, num_tokens: int, is_completion: bool = False
 ) -> float:
-  
-    model_name = get_base_model_name(model_name)
-    suffix = "-completion" if is_completion and model_name.startswith("gpt-4") else ""
-    model = model_name.lower() + suffix
-    if model not in MODEL_COST_PER_1K_TOKENS:
+    model_name = standardize_model_name(model_name, is_completion=is_completion)
+    if model_name not in MODEL_COST_PER_1K_TOKENS:
         raise ValueError(
             f"Unknown model: {model_name}. Please provide a valid OpenAI model name."
             "Known models are: " + ", ".join(MODEL_COST_PER_1K_TOKENS.keys())
         )
-    return MODEL_COST_PER_1K_TOKENS[model] * num_tokens / 1000
+    return MODEL_COST_PER_1K_TOKENS[model_name] * num_tokens / 1000
 
 
 class OpenAICallbackHandler(BaseCallbackHandler):
@@ -96,10 +99,8 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         token_usage = response.llm_output["token_usage"]
         completion_tokens = token_usage.get("completion_tokens", 0)
         prompt_tokens = token_usage.get("prompt_tokens", 0)
-        model_name = get_base_model_name(
-            response.llm_output.get("model_name")
-        )
-        if model_name and model_name in MODEL_COST_PER_1K_TOKENS:
+        model_name = standardize_model_name(response.llm_output.get("model_name", ""))
+        if model_name in MODEL_COST_PER_1K_TOKENS:
             completion_cost = get_openai_token_cost_for_model(
                 model_name, completion_tokens, is_completion=True
             )
