@@ -1,4 +1,3 @@
-import logging
 import os
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional
@@ -12,7 +11,7 @@ from langchain.llms.base import LLM
 __all__ = ["DatabricksEndpoint"]
 
 
-class DatabricksClientBase(BaseModel, ABC):
+class _DatabricksClientBase(BaseModel, ABC):
     """A base JSON API client that talks to Databricks."""
 
     api_url: str
@@ -22,7 +21,8 @@ class DatabricksClientBase(BaseModel, ABC):
         headers = {"Authorization": f"Bearer {self.api_token}"}
         response = requests.post(self.api_url, headers=headers, json=request)
         # TODO: error handling and automatic retries
-        assert response.ok, f"HTTP {response.status_code} error: {response.text}"
+        if not response.ok:
+            raise ValueError(f"HTTP {response.status_code} error: {response.text}")
         return response.json()
 
     @abstractmethod
@@ -30,7 +30,7 @@ class DatabricksClientBase(BaseModel, ABC):
         ...
 
 
-class DatabricksServingEndpointClient(DatabricksClientBase):
+class _DatabricksServingEndpointClient(_DatabricksClientBase):
     """An API client that talks to a Databricks serving endpoint."""
 
     host: str
@@ -41,9 +41,8 @@ class DatabricksServingEndpointClient(DatabricksClientBase):
         if "api_url" not in values:
             host = values["host"]
             endpoint_name = values["endpoint_name"]
-            values[
-                "api_url"
-            ] = f"https://{host}/serving-endpoints/{endpoint_name}/invocations"
+            api_url = f"https://{host}/serving-endpoints/{endpoint_name}/invocations"
+            values["api_url"] = api_url
         return values
 
     def post(self, request: Any) -> Any:
@@ -56,7 +55,7 @@ class DatabricksServingEndpointClient(DatabricksClientBase):
         return response
 
 
-class DatabricksClusterDriverProxyClient(DatabricksClientBase):
+class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
     """An API client that talks to a Databricks cluster driver proxy app."""
 
     host: str
@@ -69,9 +68,8 @@ class DatabricksClusterDriverProxyClient(DatabricksClientBase):
             host = values["host"]
             cluster_id = values["cluster_id"]
             port = values["cluster_driver_port"]
-            values[
-                "api_url"
-            ] = f"https://{host}/driver-proxy-api/o/0/{cluster_id}/{port}"
+            api_url = f"https://{host}/driver-proxy-api/o/0/{cluster_id}/{port}"
+            values["api_url"] = api_url
         return values
 
     def post(self, request: Any) -> Any:
@@ -82,20 +80,14 @@ def get_repl_context() -> Any:
     """Gets the notebook REPL context if running inside a Databricks notebook.
     Returns None otherwise.
     """
-    context = None
     try:
         from dbruntime.databricks_repl_context import get_context
 
-        context = get_context()
+        return get_context()
     except ImportError:
-        logging.debug("Not running inside a Databricks notebook")
-    except Exception:
-        logging.debug(
-            "Error getting the REPL context. "
-            "Will not use it to provide default values.",
-            exc_info=True,
+        raise ValueError(
+            "Cannot access dbruntime, not running inside a Databricks notebook."
         )
-    return context
 
 
 def get_default_host() -> str:
@@ -106,12 +98,15 @@ def get_default_host() -> str:
     if not host:
         try:
             host = get_repl_context().browserHostName
-        except Exception:
-            pass
+            if not host:
+                raise ValueError("context doesn't contain browserHostName.")
+        except Exception as e:
+            raise ValueError(
+                "host was not set and cannot be automatically inferred. Set "
+                f"environment variable 'DATABRICKS_HOST'. Received error: {e}"
+            )
     # TODO: support Databricks CLI profile
-    if host:
-        host = host.lstrip("https://").lstrip("http://").rstrip("/")
-    assert host, "host was not set and it cannot be automatically determined."
+    host = host.lstrip("https://").lstrip("http://").rstrip("/")
     return host
 
 
@@ -119,14 +114,18 @@ def get_default_api_token() -> str:
     """Gets the default Databricks personal access token.
     Raises an error if the token cannot be automatically determined.
     """
-    api_token = os.getenv("DATABRICKS_API_TOKEN")
-    if not api_token:
-        try:
-            api_token = get_repl_context().apiToken
-        except Exception:
-            pass
+    if api_token := os.getenv("DATABRICKS_API_TOKEN"):
+        return api_token
+    try:
+        api_token = get_repl_context().apiToken
+        if not api_token:
+            raise ValueError("context doesn't contain apiToken.")
+    except Exception as e:
+        raise ValueError(
+            "api_token was not set and cannot be automatically inferred. Set "
+            f"environment variable 'DATABRICKS_API_TOKEN'. Received error: {e}"
+        )
     # TODO: support Databricks CLI profile
-    assert api_token, "api_token was not set and it cannot be automatically determined."
     return api_token
 
 
@@ -223,7 +222,7 @@ class DatabricksEndpoint(LLM):
     """A function that transforms the output from the endpoint to the generated text.
     """
 
-    _client: DatabricksClientBase = PrivateAttr()
+    _client: _DatabricksClientBase = PrivateAttr()
 
     class Config:
         extra = Extra.forbid
@@ -231,48 +230,59 @@ class DatabricksEndpoint(LLM):
 
     @validator("cluster_id", always=True)
     def set_cluster_id(cls, v: Any, values: Dict[str, Any]) -> Optional[str]:
-        if values["endpoint_name"]:
-            assert v is None, "Cannot provide both endpoint_name and cluster_id."
-        elif not v:
+        if v and values["endpoint_name"]:
+            raise ValueError("Cannot set both endpoint_name and cluster_id.")
+        elif values["endpoint_name"]:
+            return None
+        elif v:
+            return v
+        else:
             try:
-                v = get_repl_context().clusterId
-            except Exception:
-                pass
-            assert v, (
-                "Neither endpoint_name nor cluster_id was set. "
-                "And the cluster_id cannot be automatically determined."
-            )
-        return v
+                if v := get_repl_context().clusterId:
+                    return v
+                raise ValueError("Context doesn't contain clusterId.")
+            except Exception as e:
+                raise ValueError(
+                    "Neither endpoint_name nor cluster_id was set. "
+                    "And the cluster_id cannot be automatically determined. Received"
+                    f" error: {e}"
+                )
 
     @validator("cluster_driver_port", always=True)
     def set_cluster_driver_port(cls, v: Any, values: Dict[str, Any]) -> Optional[str]:
-        if values["endpoint_name"]:
-            assert v is None, "Cannot set both endpoint_name and cluster_driver_port."
-        else:
-            assert (
-                v is not None
-            ), "Must set cluster_driver_port to connect to a cluster driver."
-            assert int(v) > 0, f"Invalid cluster_driver_port: {v}"
-        return v
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data)
-        if self.endpoint_name:
-            self._client = DatabricksServingEndpointClient(
-                host=self.host,
-                api_token=self.api_token,
-                endpoint_name=self.endpoint_name,
+        if v and values["endpoint_name"]:
+            raise ValueError("Cannot set both endpoint_name and cluster_driver_port.")
+        elif values["endpoint_name"]:
+            return None
+        elif v is None:
+            raise ValueError(
+                "Must set cluster_driver_port to connect to a cluster driver."
             )
-        elif self.cluster_id and self.cluster_driver_port:
-            self._client = DatabricksClusterDriverProxyClient(
-                host=self.host,
-                api_token=self.api_token,
-                cluster_id=self.cluster_id,
-                cluster_driver_port=self.cluster_driver_port,
+        elif int(v) <= 0:
+            raise ValueError(f"Invalid cluster_driver_port: {v}")
+        else:
+            return v
+
+    @validator("_client", always=True)
+    def set__client(cls, v: Any, values: Dict[str, Any]) -> _DatabricksClientBase:
+        if v:
+            return v
+        elif values["endpoint_name"]:
+            return _DatabricksServingEndpointClient(
+                host=values["host"],
+                api_token=values["api_token"],
+                endpoint_name=values["endpoint_name"],
+            )
+        elif values["cluster_id"] and values["cluster_driver_port"]:
+            return _DatabricksClusterDriverProxyClient(
+                host=values["host"],
+                api_token=values["api_token"],
+                cluster_id=values["cluster_id"],
+                cluster_driver_port=values["cluster_driver_port"],
             )
         else:
             raise ValueError(
-                "Must specify either endpoint_name or cluster_id/driver_port."
+                "Must specify either endpoint_name or cluster_id/cluster_driver_port."
             )
 
     @property
