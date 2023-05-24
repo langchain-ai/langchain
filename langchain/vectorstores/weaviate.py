@@ -322,7 +322,7 @@ class Weaviate(VectorStore):
         if kwargs.get("search_distance"):
             content["certainty"] = kwargs.get("search_distance")
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
-        
+
         if not self._by_text:
             embedding = self._embedding.embed_query(query)
             vector = {"vector": embedding}
@@ -452,6 +452,11 @@ class Weaviate(VectorStore):
         by_text = kwargs.get("by_text")
 
         return cls(
-    client, index_name, text_key, embedding=embedding, attributes=attributes,
-    relevance_score_fn=relevance_score_fn, by_text=by_text
-)
+            client,
+            index_name,
+            text_key,
+            embedding=embedding,
+            attributes=attributes,
+            relevance_score_fn=relevance_score_fn,
+            by_text=by_text,
+        )
