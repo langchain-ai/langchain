@@ -50,7 +50,7 @@ class DatabricksServingEndpointClient(DatabricksClientBase):
         # See https://docs.databricks.com/machine-learning/model-serving/score-model-serving-endpoints.html
         wrapped_request = {"dataframe_records": [request]}
         response = self.post_raw(wrapped_request)["predictions"]
-        # For a signle-record query, the result is not a list.
+        # For a single-record query, the result is not a list.
         if isinstance(response, list):
             response = response[0]
         return response
@@ -239,7 +239,7 @@ class DatabricksEndpoint(LLM):
             except Exception:
                 pass
             assert v, (
-                "Neiter endpoint_name nor cluster_id was set. "
+                "Neither endpoint_name nor cluster_id was set. "
                 "And the cluster_id cannot be automatically determined."
             )
         return v
