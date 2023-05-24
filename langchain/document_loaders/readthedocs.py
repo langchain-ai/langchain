@@ -20,16 +20,21 @@ class ReadTheDocsLoader(BaseLoader):
         """
         Initialize ReadTheDocsLoader
 
-        The loader loops over all files under `path` and extract the actual content of the files by retrieving main html tags.
-        Default main html tags include `<main id="main-content>`, <`div role="main>`, and `<article role="main">`.
-        You can also define your own html tags by passing custom_html_tag, e.g. `("div", "class=main")`
-        The loader iterates html tags with the order of custom html tags (if exists) and default html tags.
-        If any of the tags is not empty, the loop will break and retrieve the content out of that tag.
+        The loader loops over all files under `path` and extract the actual content of
+        the files by retrieving main html tags. Default main html tags include
+        `<main id="main-content>`, <`div role="main>`, and `<article role="main">`. You
+        can also define your own html tags by passing custom_html_tag, e.g.
+        `("div", "class=main")`. The loader iterates html tags with the order of
+        custom html tags (if exists) and default html tags. If any of the tags is not
+        empty, the loop will break and retrieve the content out of that tag.
 
-        :param path: the location of pulled readthedocs folder
-        :param encoding: the encoding to open the documents
-        :param errors: specifies how encoding and decoding errors are to be handled—this cannot be used in binary mode
-        :param custom_html_tag: custom html tag to retrieve the content from files
+        Args:
+            path: The location of pulled readthedocs folder.
+            encoding: The encoding with which to open the documents.
+            errors: Specifies how encoding and decoding errors are to be handled—this
+                cannot be used in binary mode.
+            custom_html_tag: Optional custom html tag to retrieve the content from
+                files.
         """
         try:
             from bs4 import BeautifulSoup
