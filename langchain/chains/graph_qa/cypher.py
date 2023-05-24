@@ -8,7 +8,7 @@ from pydantic import Field
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, PROMPT
+from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.graphs.neo4j_graph import Neo4jGraph
 from langchain.prompts.base import BasePromptTemplate
@@ -45,7 +45,7 @@ class GraphCypherQAChain(Chain):
         cls,
         llm: BaseLanguageModel,
         *,
-        qa_prompt: BasePromptTemplate = PROMPT,
+        qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
         cypher_prompt: BasePromptTemplate = CYPHER_GENERATION_PROMPT,
         **kwargs: Any,
     ) -> GraphCypherQAChain:
