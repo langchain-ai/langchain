@@ -36,7 +36,7 @@ class ExampleUpdate(BaseModel, frozen=True):
 
     dataset_id: Optional[UUID] = None
     inputs: Optional[Dict[str, Any]] = None
-    outputs: Optional[Dict[str, Any]] = None
+    outputs: Optional[Mapping[str, Any]] = None
 
 
 class DatasetBase(BaseModel, frozen=True):
