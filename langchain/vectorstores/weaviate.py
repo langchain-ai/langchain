@@ -449,7 +449,7 @@ class Weaviate(VectorStore):
             batch.flush()
 
         relevance_score_fn = kwargs.get("relevance_score_fn")
-        by_text = kwargs.get("by_text")
+        by_text: bool = kwargs.get("by_text", False)
 
         return cls(
             client,
