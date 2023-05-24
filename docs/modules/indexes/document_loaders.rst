@@ -123,6 +123,7 @@ We need access tokens and sometime other parameters to get access to these datas
    ./document_loaders/examples/google_cloud_storage_file.ipynb
    ./document_loaders/examples/google_drive.ipynb
    ./document_loaders/examples/image_captions.ipynb
+   ./document_loaders/examples/joplin.ipynb
    ./document_loaders/examples/microsoft_onedrive.ipynb
    ./document_loaders/examples/modern_treasury.ipynb
    ./document_loaders/examples/notiondb.ipynb
