@@ -1,18 +1,18 @@
-from abc import ABC, abstractmethod
 import logging
 import os
-from typing import Any, Dict, List, Mapping, Optional, Union, Callable
+from abc import ABC, abstractmethod
+from typing import Callable, List, Optional
 
-from pydantic import BaseModel, Extra, Field, validator, root_validator, ValidationError, PrivateAttr
 import requests
+from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator, validator
 
 from langchain.llms.base import LLM
-from langchain.llms.utils import enforce_stop_tokens
 
 __all__ = ["DatabricksEndpoint"]
 
 
 class DatabricksClientBase(BaseModel, ABC):
+    """A base JSON API client that talks to Databricks."""
     api_url: str
     api_token: str
 
@@ -25,10 +25,10 @@ class DatabricksClientBase(BaseModel, ABC):
     
     @abstractmethod
     def post(self, request):
-        raise NotImplementedError
-
+        ...
 
 class DatabricksServingEndpointClient(DatabricksClientBase):
+    """An API client that talks to a Databricks serving endpoint."""
     host: str
     endpoint_name: str
 
@@ -49,6 +49,7 @@ class DatabricksServingEndpointClient(DatabricksClientBase):
         return response
 
 class DatabricksClusterDriverProxyClient(DatabricksClientBase):
+    """An API client that talks to a Databricks cluster driver proxy app."""
     host: str
     cluster_id: str
     cluster_driver_port: str
@@ -80,29 +81,39 @@ def get_repl_context():
     return context
 
 def get_default_host():
+    """Gets the default Databricks workspace hostname.
+    Raises an error if the hostname cannot be automatically determined.
+    """
     host = os.getenv("DATABRICKS_HOST")
     if not host:
         try:
             host = get_repl_context().browserHostName
         except:
             pass
+    # TODO: support Databricks CLI profile
+    if host:
+        host = host.lstrip("https://").lstrip("http://").rstrip("/")
     assert host, "host was not set and it cannot be automatically determined."
     return host
 
 def get_default_api_token():
+    """Gets the default Databricks personal access token.
+    Raises an error if the token cannot be automatically determined.
+    """
     api_token = os.getenv("DATABRIKCS_API_TOKEN")
     if not api_token:
         try:
             api_token = get_repl_context().apiToken
         except:
             pass
+    # TODO: support Databricks CLI profile
     assert api_token, "api_token was not set and it cannot be automatically determined."
     return api_token
 
 class DatabricksEndpoint(LLM):
     """LLM wrapper around a Databricks endpoint. serving endpoint or a cluster driver proxy app.
     It supports two types of endpoints:
-    - Serving endpoint (recommended for both development and production).
+    - Serving endpoint (recommended for both production and development).
       We assume that an LLM was registered and deployed to a serving endpoint.
       To wrap it as a LangChain LLM you must have "Can Query" permission to the endpoint.
       Set `endpoint_name` accordingly and do not set `cluster_id` and `cluster_driver_port`.
@@ -110,7 +121,7 @@ class DatabricksEndpoint(LLM):
       - inputs: `[{"name": "prompt", "type": "string"}, {"name": "stop", "type": "list[string]"}]`
       - outputs: `[{"type": "string"}]`
 
-    - Cluster driver proxy app (recommended for rapid development).
+    - Cluster driver proxy app (recommended for interactive development).
       One can load an LLM on a Databricks interactive cluster and start a local HTTP server
       on the driver node to serve the model at "/" using HTTP POST with JSON input/output.
       Please use a port number between [3000, 8000] and let the server listen to the driver IP
@@ -131,38 +142,44 @@ class DatabricksEndpoint(LLM):
     If not provided, the default value is determined by
       - the ``DATABRICKS_HOST`` environment variable if present, or
       - the hostname of the current Databricks workspace if running inside a Databricks notebook
-        attached to an interactive 
+        attached to an interactive cluster in "single user" or "no isolation shared" mode.
     """
 
     api_token: str = Field(default_factory=get_default_api_token)
     """Databricks personal access token.
     If not provided, the default value is determined by
       - the ``DATABRICKS_API_TOKEN`` environment variable if present, or
-      - an automatically generated temporary token if running inside a Databricks notebook.
+      - an automatically generated temporary token if running inside a Databricks notebook
+        attached to an interactive cluster in "single user" or "no isolation shared" mode.
     """
 
     endpoint_name: Optional[str] = None
     """Name of the model serving endpont.
     You must specify the endpoint name to connect to a model serving endpoint.
+    You must not set both `endpoint_name` and `cluster_id`.
     """
 
     cluster_id: Optional[str] = None
-    """ID of the cluster if connecting to 
-    Cannot provide both `endpoint_name` and `cluster_id`.
+    """ID of the cluster if connecting to a cluster driver proxy app.
+    If neither `endpoint_name` nor `cluster_id` is not provided and the code runs inside a Databricks notebook
+    attached to an interactive cluster in "single user" or "no isolation shared" mode,
+    the current cluster ID is used as the default value.
+    You must not set both `endpoint_name` and `cluster_id`.
     """
 
-    cluster_driver_port: Optional[str|int] = None
+    cluster_driver_port: Optional[str] = None
     """The port number used by the HTTP server running on the cluster driver node.
-    The server should listen on the driver IP address or simply ``0.0.0.0``.
+    The server should listen on the driver IP address or simply ``0.0.0.0`` in order to connect.
+    We recommend the server using a port number between [3000, 8000].
     """
 
-    transform_input_fn: Optional[Callable[..., Any]] = None
-    """A function that transforms (prompt, stop) into a request dict that the endpoint accepts.
+    transform_input_fn: Optional[Callable] = None
+    """A function that transforms (prompt, stop) into a JSON-compatible request that the endpoint accepts.
     For example, you can insert additional parameters like temperature.
     """
 
     transform_output_fn: Optional[Callable[..., str]] = None
-    """A function that transfroms the output from the endpoint to generated text.
+    """A function that transfroms the output from the endpoint to the generated text.
     """
 
     _client: DatabricksClientBase = PrivateAttr()
@@ -190,6 +207,7 @@ class DatabricksEndpoint(LLM):
             assert v is None, "Cannot set both endpoint_name and cluster_driver_port."
         else:
             assert v is not None, "Must set cluster_driver_port to connect to a cluster driver."
+            assert int(v) > 0, f"Invalid cluster_driver_port: {v}"
         return v
     
     def __init__(self, **data):
@@ -202,7 +220,7 @@ class DatabricksEndpoint(LLM):
                 host=self.host, api_token=self.api_token,
                 cluster_id=self.cluster_id, cluster_driver_port=self.cluster_driver_port)
         else:
-            raise ValueError("Must specify an endpoint name or cluster_id/driver_port.")
+            raise ValueError("Must specify either endpoint_name or cluster_id/driver_port.")
 
     @property
     def _llm_type(self) -> str:
