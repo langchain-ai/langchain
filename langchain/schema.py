@@ -7,7 +7,6 @@ from typing import (
     Dict,
     Generic,
     List,
-    NamedTuple,
     Optional,
     Sequence,
     TypeVar,
@@ -37,7 +36,7 @@ def get_buffer_string(
     return "\n".join(string_messages)
 
 
-class AgentAction(NamedTuple):
+class AgentAction(BaseModel):
     """Agent's action to take."""
 
     tool: str
@@ -45,7 +44,7 @@ class AgentAction(NamedTuple):
     log: str
 
 
-class AgentFinish(NamedTuple):
+class AgentFinish(BaseModel):
     """Agent's return value."""
 
     return_values: dict
