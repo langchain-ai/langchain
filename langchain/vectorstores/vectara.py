@@ -48,11 +48,12 @@ class Vectara(VectorStore):
             or self._vectara_api_key is None
         ):
             logging.warning(
-                "Cant find Vectara credentials, customer_id or corpus_id in environment."
+                "Cant find Vectara credentials, customer_id or corpus_id in "
+                "environment."
             )
         else:
             logging.debug(f"Using corpus id {self._vectara_corpus_id}")
-        self._session = requests.Session()  # to resuse connections
+        self._session = requests.Session()  # to reuse connections
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
