@@ -127,7 +127,7 @@ class FeedbackBase(BaseModel):
     """The feedback metric name or type."""
     metric_value: Optional[Union[float, str]] = None
     """Score to assign the run."""
-    feedback_source: Optional[Union[APIFeedbackSource, Dict[str, Any]]] = None
+    feedback_source: Optional[Union[APIFeedbackSource, Mapping[str, Any]]] = None
     """The source of the feedback."""
 
 
