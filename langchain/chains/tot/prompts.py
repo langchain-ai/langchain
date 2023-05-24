@@ -2,7 +2,6 @@ from textwrap import dedent
 
 from langchain.prompts import PromptTemplate
 
-
 FIRST_STEP_PROMPT = PromptTemplate(
     input_variables=["problem_description"],
     template=dedent(

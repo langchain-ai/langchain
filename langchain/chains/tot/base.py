@@ -11,11 +11,11 @@ possible solutions to a problem.
 
 from __future__ import annotations
 
+import json
+import re
 from abc import ABC, abstractmethod
 from enum import Enum
 from functools import partial
-import json
-import re
 from textwrap import indent
 from typing import Any, Dict, List, Optional
 
@@ -68,25 +68,24 @@ class ToTMemory:
     Memory for the Tree of Thought (ToT) chain.
     """
 
-    def __init__(self):
-        self.stack = []
+    def __init__(self, stack: Optional[List[Result]] = None):
+        self.stack: list[Result] = stack or []
 
     def top(self) -> Optional[Result]:
         "Get the top of the stack without popping it."
-        if len(self.stack) > 0:
-            return self.stack[-1]
+        return self.stack[-1] if len(self.stack) > 0 else None
 
-    def pop(self, n=1) -> Optional[Result]:
+    def pop(self, n: int = 1) -> Optional[Result]:
         "Pop the top n elements of the stack and return the last one."
-        if len(self.stack) >= n:
-            for _ in range(n):
-                node = self.stack.pop()
-            return node
+        if len(self.stack) < n:
+            return None
+        for _ in range(n):
+            node = self.stack.pop()
+        return node
 
     def top_parent(self) -> Optional[Result]:
         "Get the parent of the top of the stack without popping it."
-        if len(self.stack) > 1:
-            return self.stack[-2]
+        return self.stack[-2] if len(self.stack) > 1 else None
 
     def store(self, node: Result) -> None:
         "Add a node on the top of the stack."
@@ -118,7 +117,11 @@ class ToTController:
     def __call__(self, memory: ToTMemory) -> Optional[str]:
         next_node = memory.top()
         parent_node = memory.top_parent()
-        solution_type = next_node.solution_type
+        solution_type = (
+            SolutionType.VALID_INTERMEDIATE
+            if next_node is None
+            else next_node.solution_type
+        )
 
         # 1 if the current partial solution is invalid, backtrack to the parent node.
         if solution_type == SolutionType.INVALID:
@@ -135,11 +138,7 @@ class ToTController:
         ):
             memory.pop(2)
             next_node = memory.top()
-        # else:
-        #     next_node = memory.pop()
-        if next_node is not None:
-            # return "\n".join(f"{node.solution}" for node in memory.stack)
-            return next_node.solution
+        return next_node.solution if next_node is not None else None
 
 
 class ToTChecker(ABC):
@@ -224,9 +223,50 @@ class ToTChain(Chain):
                 return ""
         return ""
 
+    @property
+    def current_level(self) -> int:
+        return len(self.tot_memory.stack)
+
+    def log_request(
+        self, prompt: str, run_manager: Optional[CallbackManagerForChainRun] = None
+    ) -> None:
+        if run_manager is not None:
+            prefix = "    " * self.current_level
+            run_manager.on_text(
+                indent(f"ToT Request >>>\n{prompt}\n\n", prefix),
+                verbose=self.verbose,
+                color="green",
+            )
+
+    def log_response(
+        self, response: str, run_manager: Optional[CallbackManagerForChainRun] = None
+    ) -> None:
+        if run_manager is not None:
+            prefix = "    " * self.current_level
+            run_manager.on_text(
+                indent(f"ToT Response >>>\n{response}\n\n", prefix),
+                verbose=self.verbose,
+                color="green",
+            )
+
+    def log_ctrl_signal(
+        self,
+        ctrl_signal: Optional[str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> None:
+        if ctrl_signal is None:
+            ctrl_signal = "<None>"
+        if run_manager is not None:
+            prefix = "    " * self.current_level
+            run_manager.on_text(
+                indent(f"ToT Ctrl Signal >>>\n{ctrl_signal}\n\n", prefix),
+                verbose=self.verbose,
+                color="red",
+            )
+
     def solve(
         self,
-        problem_description,
+        problem_description: str,
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Optional[str]:
         """Algorithm 2 from the ToT paper."""
@@ -237,44 +277,18 @@ class ToTChain(Chain):
         memory = self.tot_memory
 
         prompt = prompter(problem_description)
-        level = 0
         for _ in range(self.k):
-            indentation = "    " * level
-
-            run_manager.on_text(
-                text=f"{indentation}ToT Request >>>\n{indent(prompt, indentation)}\n\n",
-                verbose=self.verbose,
-                color="green",
-            )
-
+            self.log_request(prompt, run_manager)
             response = self.parse_llm_output(llm(prompt))
-
-            run_manager.on_text(
-                text=f"{indentation}ToT Response >>>\n{indent(response, indentation)}\n\n",
-                verbose=self.verbose,
-                color="yellow",
-            )
-
+            self.log_response(response, run_manager)
             result = checker(response)
-
-            # run_manager.on_text(
-            #     text=f"{indentation}ToT Checker >>>\n{indent(str(result.solution_type), indentation)}\n\n",
-            #     verbose=self.verbose,
-            #     color="yellow",
-            # )
-
             if result.solution_type == SolutionType.VALID_FINAL:
                 return result.solution
             memory.store(result)
             ctrl_signal = controller(memory)
-            level = len(memory.stack)
-
-            run_manager.on_text(
-                text=f"{indentation}ToT Control Signal >>>\n{indent(str(ctrl_signal), indentation)}\n\n",
-                verbose=self.verbose,
-                color="red",
-            )
+            self.log_ctrl_signal(ctrl_signal, run_manager)
             prompt = prompter(problem_description, ctrl_signal)
+        return None
 
     def _call(
         self,

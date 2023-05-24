@@ -3,9 +3,8 @@ import re
 
 import pytest
 
-from langchain.chains.tot.base import ToTChain, ToTChecker, SolutionType
+from langchain.chains.tot.base import SolutionType, ToTChain, ToTChecker
 from tests.unit_tests.llms.fake_llm import FakeLLM
-
 
 sudoku_puzzle = "3,*,*,2|1,*,3,*|*,1,*,3|4,*,*,1"
 solutions = [
