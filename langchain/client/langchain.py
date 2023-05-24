@@ -393,7 +393,7 @@ class LangChainPlusClient(BaseSettings):
         self,
         example_id: str,
         *,
-        inputs: Optional[Dict[str, Any]] = None,
+        inputs: Optional[Mapping[str, Any]] = None,
         outputs: Optional[Mapping[str, Any]] = None,
         dataset_id: Optional[str] = None,
     ) -> Dict[str, Any]:
