@@ -17,6 +17,8 @@ from pydantic import BaseModel, root_validator, validator
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from googleapiclient.discovery import Resource, build
+from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaIoBaseDownload
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
@@ -172,9 +174,6 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         """Load a document from an ID."""
         from io import BytesIO
 
-        from googleapiclient.errors import HttpError
-        from googleapiclient.http import MediaIoBaseDownload
-
         service = self._service 
         file = service.files().get(fileId=id, supportsAllDrives=True).execute()
         request = service.files().export_media(fileId=id, mimeType="text/plain")
@@ -202,7 +201,6 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         self, folder_id: str, *, file_types: Optional[Sequence[str]] = None
     ) -> List[Document]:
         """Load documents from a folder."""
-        from googleapiclient.discovery import build
 
         files = self._fetch_files_recursive(self._service(), folder_id)
         # If file types filter is provided, we'll filter by the file type.
@@ -260,8 +258,6 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     def _load_file_from_id(self, id: str) -> List[Document]:
         """Load a file from an ID."""
         from io import BytesIO
-
-        from googleapiclient.http import MediaIoBaseDownload
 
         service = self._service()
         file = service.files().get(fileId=id, supportsAllDrives=True).execute()
