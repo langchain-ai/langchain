@@ -150,7 +150,6 @@ In this example, we'll create a prompt to generate word antonyms.
 ```python
 from langchain import PromptTemplate, FewShotPromptTemplate
 
-
 # First, create the list of few shot examples.
 examples = [
     {"word": "happy", "antonym": "sad"},
@@ -159,10 +158,10 @@ examples = [
 
 # Next, we specify the template to format the examples we have provided.
 # We use the `PromptTemplate` class for this.
-example_formatter_template = """
-Word: {word}
-Antonym: {antonym}\n
+example_formatter_template = """Word: {word}
+Antonym: {antonym}
 """
+
 example_prompt = PromptTemplate(
     input_variables=["word", "antonym"],
     template=example_formatter_template,
@@ -176,14 +175,14 @@ few_shot_prompt = FewShotPromptTemplate(
     example_prompt=example_prompt,
     # The prefix is some text that goes before the examples in the prompt.
     # Usually, this consists of intructions.
-    prefix="Give the antonym of every input",
+    prefix="Give the antonym of every input\n",
     # The suffix is some text that goes after the examples in the prompt.
     # Usually, this is where the user input will go
-    suffix="Word: {input}\nAntonym:",
+    suffix="Word: {input}\nAntonym: ",
     # The input variables are the variables that the overall prompt expects.
     input_variables=["input"],
     # The example_separator is the string we will use to join the prefix, examples, and suffix together with.
-    example_separator="\n\n",
+    example_separator="\n",
 )
 
 # We can now generate a prompt using the `format` method.
@@ -197,7 +196,7 @@ print(few_shot_prompt.format(input="big"))
 # -> Antonym: short
 # ->
 # -> Word: big
-# -> Antonym:
+# -> Antonym: 
 ```
 
 ## Select examples for a prompt template
@@ -229,7 +228,11 @@ example_selector = LengthBasedExampleSelector(
     example_prompt=example_prompt, 
     # This is the maximum length that the formatted examples should be.
     # Length is measured by the get_text_length function below.
-    max_length=25,
+    max_length=25
+    # This is the function used to get the length of a string, which is used
+    # to determine which examples to include. It is commented out because
+    # it is provided as a default value if none is specified.
+    # get_text_length: Callable[[str], int] = lambda x: len(re.split("\n| ", x))
 )
 
 # We can now use the `example_selector` to create a `FewShotPromptTemplate`.
