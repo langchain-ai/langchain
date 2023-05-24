@@ -138,7 +138,9 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """Deprecated. Please use callbacks instead."""
 
-    handle_tool_error: Union[bool, str, Callable[[ToolException], str]] = False
+    handle_tool_error: Optional[
+        Union[bool, str, Callable[[ToolException], str]]
+    ] = False
     """Handle the content of the ToolException thrown."""
 
     class Config:
@@ -255,13 +257,12 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
                 else self._run(*tool_args, **tool_kwargs)
             )
         except (Exception, KeyboardInterrupt) as e:
-            if isinstance(e, ToolException):
+            if isinstance(e, ToolException) and self.handle_tool_error:
                 if isinstance(self.handle_tool_error, bool):
-                    if self.handle_tool_error:
-                        observation = "Tool execution error"
+                    if e.args:
+                        observation = e.args[0]
                     else:
-                        run_manager.on_tool_error(e)
-                        raise e
+                        observation = "Tool execution error"
                 elif isinstance(self.handle_tool_error, str):
                     observation = self.handle_tool_error
                 elif callable(self.handle_tool_error):
@@ -269,7 +270,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
                 else:
                     raise ValueError("Got unexpected type of `handle_tool_error`")
                 run_manager.on_tool_end(
-                    str(observation), color="pink", name=self.name, **kwargs
+                    str(observation), color="red", name=self.name, **kwargs
                 )
                 return observation
             else:
@@ -312,8 +313,25 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
                 else await self._arun(*tool_args, **tool_kwargs)
             )
         except (Exception, KeyboardInterrupt) as e:
-            await run_manager.on_tool_error(e)
-            raise e
+            if isinstance(e, ToolException) and self.handle_tool_error:
+                if isinstance(self.handle_tool_error, bool):
+                    if e.args:
+                        observation = e.args[0]
+                    else:
+                        observation = "Tool execution error"
+                elif isinstance(self.handle_tool_error, str):
+                    observation = self.handle_tool_error
+                elif callable(self.handle_tool_error):
+                    observation = await self.handle_tool_error(e)
+                else:
+                    raise ValueError("Got unexpected type of `handle_tool_error`")
+                await run_manager.on_tool_end(
+                    str(observation), color="red", name=self.name, **kwargs
+                )
+                return observation
+            else:
+                await run_manager.on_tool_error(e)
+                raise e
         await run_manager.on_tool_end(
             str(observation), color=color, name=self.name, **kwargs
         )
