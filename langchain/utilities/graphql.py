@@ -1,10 +1,7 @@
 import json
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from pydantic import BaseModel, Extra, root_validator
-
-if TYPE_CHECKING:
-    from gql import Client
 
 
 class GraphQLAPIWrapper(BaseModel):
@@ -16,7 +13,7 @@ class GraphQLAPIWrapper(BaseModel):
 
     custom_headers: Optional[Dict[str, str]] = None
     graphql_endpoint: str
-    gql_client: "Client"  #: :meta private:
+    gql_client: Any  #: :meta private:
     gql_function: Callable[[str], Any]  #: :meta private:
 
     class Config:
@@ -24,29 +21,25 @@ class GraphQLAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
-
-        headers = values.get("custom_headers", {})
-
         try:
             from gql import Client, gql
             from gql.transport.requests import RequestsHTTPTransport
-
-            transport = RequestsHTTPTransport(
-                url=values["graphql_endpoint"],
-                headers=headers or None,
-            )
-
-            client = Client(transport=transport, fetch_schema_from_transport=True)
-            values["gql_client"] = client
-            values["gql_function"] = gql
-        except ImportError:
-            raise ValueError(
+        except ImportError as e:
+            raise ImportError(
                 "Could not import gql python package. "
-                "Please install it with `pip install gql`."
+                f"Try installing it with `pip install gql`. Received error: {e}"
             )
+        headers = values.get("custom_headers")
+        transport = RequestsHTTPTransport(
+            url=values["graphql_endpoint"],
+            headers=headers,
+        )
+        client = Client(transport=transport, fetch_schema_from_transport=True)
+        values["gql_client"] = client
+        values["gql_function"] = gql
         return values
 
     def run(self, query: str) -> str:

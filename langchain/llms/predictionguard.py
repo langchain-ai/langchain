@@ -50,7 +50,7 @@ class PredictionGuard(LLM):
 
             values["client"] = pg.Client(token=token)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import predictionguard python package. "
                 "Please install it with `pip install predictionguard`."
             )

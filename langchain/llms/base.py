@@ -287,11 +287,24 @@ class BaseLLM(BaseLanguageModel, ABC):
         self, prompt: str, stop: Optional[List[str]] = None, callbacks: Callbacks = None
     ) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
+        if not isinstance(prompt, str):
+            raise ValueError(
+                "Argument `prompt` is expected to be a string. Instead found "
+                f"{type(prompt)}. If you want to run the LLM on multiple prompts, use "
+                "`generate` instead."
+            )
         return (
             self.generate([prompt], stop=stop, callbacks=callbacks)
             .generations[0][0]
             .text
         )
+
+    async def _call_async(
+        self, prompt: str, stop: Optional[List[str]] = None, callbacks: Callbacks = None
+    ) -> str:
+        """Check Cache and run the LLM on the given prompt and input."""
+        result = await self.agenerate([prompt], stop=stop, callbacks=callbacks)
+        return result.generations[0][0].text
 
     def predict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
         if stop is None:
@@ -309,6 +322,24 @@ class BaseLLM(BaseLanguageModel, ABC):
         else:
             _stop = list(stop)
         content = self(text, stop=_stop)
+        return AIMessage(content=content)
+
+    async def apredict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        return await self._call_async(text, stop=_stop)
+
+    async def apredict_messages(
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
+    ) -> BaseMessage:
+        text = get_buffer_string(messages)
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        content = await self._call_async(text, stop=_stop)
         return AIMessage(content=content)
 
     @property

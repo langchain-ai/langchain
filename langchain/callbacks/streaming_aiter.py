@@ -58,7 +58,8 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
             )
 
             # Cancel the other task
-            other.pop().cancel()
+            if other:
+                other.pop().cancel()
 
             # Extract the value of the first completed task
             token_or_done = cast(Union[str, Literal[True]], done.pop().result())

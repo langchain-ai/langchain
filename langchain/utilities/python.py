@@ -22,5 +22,4 @@ class PythonREPL(BaseModel):
         except Exception as e:
             sys.stdout = old_stdout
             output = repr(e)
-        print(output)
         return output
