@@ -439,3 +439,291 @@ class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
             "",
         ]
         super().__init__(separators=separators, **kwargs)
+
+
+class GolangCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Golang (*.go) syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a GolangTextSplitter."""
+        separators = [
+            # Split along function definitions
+            "\nfunc ",
+            "\nvar ",
+            "\nconst ",
+            "\ntype ",
+            # Split along control flow statements
+            "\nif ",
+            "\nfor ",
+            "\nswitch ",
+            "\ncase ",
+            # Split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class RSTCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along reStructuredText (*.rst) syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize an RSTTextSplitter."""
+        separators = [
+            # Split along section titles
+            "\n===\n",
+            "\n---\n",
+            "\n***\n",
+            # Split along directive markers
+            "\n.. ",
+            # Split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class ProtoCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Protocol Buffer (*.proto) syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a ProtoTextSplitter."""
+        separators = [
+            # Split along message definitions
+            "\nmessage ",
+            # Split along service definitions
+            "\nservice ",
+            # Split along enum definitions
+            "\nenum ",
+            # Split along option definitions
+            "\noption ",
+            # Split along import statements
+            "\nimport ",
+            # Split along syntax declarations
+            "\nsyntax ",
+            # Split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class JavaScriptCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along JavaScript (*.js) syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a JavaScriptCodeTextSplitter."""
+        separators = [
+            # Split along function definitions
+            "\nfunction ",
+            "\nconst ",
+            "\nlet ",
+            # Split along control flow statements
+            "\nif ",
+            "\nfor ",
+            "\nwhile ",
+            "\nswitch ",
+            "\ncase ",
+            "\ndefault ",
+            # Split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class JavaCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Java (*.java) syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a JavaCodeTextSplitter."""
+        separators = [
+            # Split along class definitions
+            "\nclass ",
+            # Split along method definitions
+            "\npublic ",
+            "\nprotected ",
+            "\nprivate ",
+            "\nstatic ",
+            # Split along control flow statements
+            "\nif ",
+            "\nfor ",
+            "\nwhile ",
+            "\nswitch ",
+            "\ncase ",
+            # Split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class CppCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along C++ (*.cpp) syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a CppCodeTextSplitter."""
+        separators = [
+            # Split along class definitions
+            "\nclass ",
+            # Split along function definitions
+            "\nvoid ",
+            "\nint ",
+            "\nfloat ",
+            "\ndouble ",
+            # Split along control flow statements
+            "\nif ",
+            "\nfor ",
+            "\nwhile ",
+            "\nswitch ",
+            "\ncase ",
+            # Split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class ScalaCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Scala (*.scala) syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a ScalaCodeTextSplitter."""
+        separators = [
+            # Split along class definitions
+            "\nclass ",
+            "\nobject ",
+            # Split along method definitions
+            "\ndef ",
+            "\nval ",
+            "\nvar ",
+            # Split along control flow statements
+            "\nif ",
+            "\nfor ",
+            "\nwhile ",
+            "\nmatch ",
+            "\ncase ",
+            # Split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class RubyCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Ruby (*.rb) syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a RubyCodeTextSplitter."""
+        separators = [
+            # Split along method definitions
+            "\ndef ",
+            "\nclass ",
+            # Split along control flow statements
+            "\nif ",
+            "\nunless ",
+            "\nwhile ",
+            "\nfor ",
+            "\ndo ",
+            "\nbegin ",
+            "\nrescue ",
+            # Split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class PhpCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along PHP (*.php) syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a PhpCodeTextSplitter."""
+        separators = [
+            # Split along function definitions
+            "\nfunction ",
+            # Split along class definitions
+            "\nclass ",
+            # Split along control flow statements
+            "\nif ",
+            "\nforeach ",
+            "\nwhile ",
+            "\ndo ",
+            "\nswitch ",
+            "\ncase ",
+            # Split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class SwiftCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Swift (*.swift) syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a SwiftCodeTextSplitter."""
+        separators = [
+            # Split along function definitions
+            "\nfunc ",
+            # Split along class definitions
+            "\nclass ",
+            "\nstruct ",
+            "\nenum ",
+            # Split along control flow statements
+            "\nif ",
+            "\nfor ",
+            "\nwhile ",
+            "\ndo ",
+            "\nswitch ",
+            "\ncase ",
+            # Split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+class RustCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Rust (*.rs) syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a RustCodeTextSplitter."""
+        separators = [
+            # Split along function definitions
+            "\nfn ",
+            "\nconst ",
+            "\nlet ",
+            # Split along control flow statements
+            "\nif ",
+            "\nwhile ",
+            "\nfor ",
+            "\nloop ",
+            "\nmatch ",
+            "\nconst ",
+            # Split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
