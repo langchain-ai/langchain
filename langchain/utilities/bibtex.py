@@ -46,7 +46,7 @@ class BibtexparserWrapper(BaseModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
-            import bibtexparser
+            import bibtexparser  # noqa
         except ImportError:
             raise ValueError(
                 "Could not import bibtexparser python package. "
