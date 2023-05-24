@@ -8,7 +8,7 @@ from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator, valid
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
-__all__ = ["DatabricksEndpoint"]
+__all__ = ["Databricks"]
 
 
 class _DatabricksClientBase(BaseModel, ABC):
@@ -129,7 +129,7 @@ def get_default_api_token() -> str:
     return api_token
 
 
-class DatabricksEndpoint(LLM):
+class Databricks(LLM):
     """LLM wrapper around a Databricks serving endpoint or a cluster driver proxy app.
     It supports two endpoint types:
 
@@ -216,8 +216,8 @@ class DatabricksEndpoint(LLM):
     """Extra parameters to pass to the endpoint."""
 
     transform_input_fn: Optional[Callable] = None
-    """A function that transforms ``{prompt, stop, **kwargs}`` into a JSON-compatible 
-    request that the endpoint accepts.
+    """A function that transforms ``{prompt, stop, **kwargs}`` into a JSON-compatible
+    request object that the endpoint accepts.
     For example, you can apply a prompt template to the input prompt.
     """
 
@@ -296,7 +296,7 @@ class DatabricksEndpoint(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "databricks_endpoint"
+        return "databricks"
 
     def _call(
         self,
