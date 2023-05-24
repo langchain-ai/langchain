@@ -228,7 +228,11 @@ example_selector = LengthBasedExampleSelector(
     example_prompt=example_prompt, 
     # This is the maximum length that the formatted examples should be.
     # Length is measured by the get_text_length function below.
-    max_length=25,
+    max_length=25
+    # This is the function used to get the length of a string, which is used
+    # to determine which examples to include. It is commented out because
+    # it is provided as a default value if none is specified.
+    # get_text_length: Callable[[str], int] = lambda x: len(re.split("\n| ", x))
 )
 
 # We can now use the `example_selector` to create a `FewShotPromptTemplate`.
