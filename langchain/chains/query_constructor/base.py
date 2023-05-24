@@ -22,7 +22,7 @@ from langchain.chains.query_constructor.prompt import (
     SCHEMA_WITH_LIMIT,
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
-from langchain.output_parsers.structured import parse_json_markdown
+from langchain.output_parsers.json import parse_and_check_json_markdown
 from langchain.schema import BaseOutputParser, OutputParserException
 
 
@@ -33,7 +33,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
     def parse(self, text: str) -> StructuredQuery:
         try:
             expected_keys = ["query", "filter"]
-            parsed = parse_json_markdown(text, expected_keys)
+            parsed = parse_and_check_json_markdown(text, expected_keys)
             if len(parsed["query"]) == 0:
                 parsed["query"] = " "
             if parsed["filter"] == "NO_FILTER" or not parsed["filter"]:
