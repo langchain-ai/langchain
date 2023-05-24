@@ -212,10 +212,13 @@ class DatabricksEndpoint(LLM):
     We recommend the server using a port number between ``[3000, 8000]``.
     """
 
+    model_kwargs: Optional[Dict[str, Any]] = None
+    """Extra parameters to pass to the endpoint."""
+
     transform_input_fn: Optional[Callable] = None
-    """A function that transforms ``(prompt, stop)`` into a JSON-compatible request
-    that the endpoint accepts.
-    For example, you can insert additional parameters like temperature.
+    """A function that transforms ``{prompt, stop, **kwargs}`` into a JSON-compatible 
+    request that the endpoint accepts.
+    For example, you can apply a prompt template to the input prompt.
     """
 
     transform_output_fn: Optional[Callable[..., str]] = None
@@ -263,6 +266,13 @@ class DatabricksEndpoint(LLM):
         else:
             return v
 
+    @validator("model_kwargs", always=True)
+    def set_model_kwargs(cls, v: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        if v:
+            assert "prompt" not in v, "model_kwargs must not contain key 'prompt'"
+            assert "stop" not in v, "model_kwargs must not contain key 'stop'"
+        return v
+
     def __init__(self, **data: Any):
         super().__init__(**data)
         if self.endpoint_name:
@@ -299,6 +309,9 @@ class DatabricksEndpoint(LLM):
         # TODO: support callbacks
 
         request = {"prompt": prompt, "stop": stop}
+        if self.model_kwargs:
+            request.update(self.model_kwargs)
+
         if self.transform_input_fn:
             request = self.transform_input_fn(**request)
 
