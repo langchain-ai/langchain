@@ -10,6 +10,7 @@ from langchain.schema import (
     _message_to_dict,
     messages_from_dict,
 )
+from langchain.utilities.redis import get_client
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
             )
 
         try:
-            self.redis_client = redis.Redis.from_url(url=url)
+            self.redis_client = get_client(redis_url=url)
         except redis.exceptions.ConnectionError as error:
             logger.error(error)
 
