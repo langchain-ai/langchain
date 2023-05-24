@@ -7,6 +7,7 @@ from langchain.llms.anthropic import Anthropic
 from langchain.llms.anyscale import Anyscale
 from langchain.llms.bananadev import Banana
 from langchain.llms.base import BaseLLM
+from langchain.llms.beam import Beam
 from langchain.llms.cerebriumai import CerebriumAI
 from langchain.llms.cohere import Cohere
 from langchain.llms.deepinfra import DeepInfra
@@ -43,6 +44,7 @@ __all__ = [
     "AlephAlpha",
     "Anyscale",
     "Banana",
+    "Beam",
     "CerebriumAI",
     "Cohere",
     "DeepInfra",
@@ -85,6 +87,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "anthropic": Anthropic,
     "anyscale": Anyscale,
     "bananadev": Banana,
+    "beam": Beam,
     "cerebriumai": CerebriumAI,
     "cohere": Cohere,
     "deepinfra": DeepInfra,
