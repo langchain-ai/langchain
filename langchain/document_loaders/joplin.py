@@ -22,22 +22,18 @@ class JoplinLoader(BaseLoader):
     https://joplinapp.org/clipper/
     """
 
-    def __init__(self, access_token: Optional[str] = None) -> None:
+    def __init__(self, access_token: Optional[str] = None, port: int = 41184) -> None:
         self.access_token = access_token or get_from_env(
             "access_token", "JOPLIN_ACCESS_TOKEN"
         )
+        self.port = port
         self.get_note = (
-            f"http://localhost:41184/notes?token={self.access_token}&fields=id,parent_id,title,body,created_time,updated_time&page="
+            f"http://localhost:{self.port}/notes?token={self.access_token}&fields=id,parent_id,title,body,created_time,updated_time&page="
             + "{page}"
         )
-        self.get_folder = (
-            "http://localhost:41184/folders/{id}"
-            + f"?token={self.access_token}&fields=title"
-        )
-        self.get_tag = (
-            "http://localhost:41184/notes/{id}/tags"
-            + f"?token={self.access_token}&fields=title"
-        )
+        id = "{id}"
+        self.get_folder = f"http://localhost:{self.port}/folders/{id}?token={self.access_token}&fields=title"
+        self.get_tag = f"http://localhost:{self.port}/notes/{id}/tags?token={self.access_token}&fields=title"
         self.link_note = "joplin://x-callback-url/openNote?id={id}"
 
     def _get_notes(self) -> List[Document]:
