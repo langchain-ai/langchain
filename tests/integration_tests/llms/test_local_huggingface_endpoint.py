@@ -1,13 +1,8 @@
 """Test HuggingFace API wrapper."""
 
 import unittest
-from pathlib import Path
 
-import pytest
-
-from langchain.llms.loading import load_llm
 from langchain.llms.local_huggingface_endpoint import LocalHuggingFaceEndpoint
-from tests.integration_tests.llms.utils import assert_llm_equality
 
 
 @unittest.skip("This test requires an inference endpoint.")
