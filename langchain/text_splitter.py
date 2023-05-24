@@ -20,6 +20,8 @@ from typing import (
     Union,
 )
 
+from transformers import AutoTokenizer
+
 from langchain.docstore.document import Document
 from langchain.schema import BaseDocumentTransformer
 
@@ -219,10 +221,11 @@ class CharacterTextSplitter(TextSplitter):
         return self._merge_splits(splits, self._separator)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+# should be in newer Python versions (3.10+) @dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True)
 class Tokenizer:
     chunk_overlap: int
-    chunk_size: int
+    tokens_per_chunk: int
     decode: Callable[[list[int]], str]
     encode: Callable[[str], List[int]]
 
@@ -232,12 +235,12 @@ def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
     splits = []
     input_ids = tokenizer.encode(text)
     start_idx = 0
-    cur_idx = min(start_idx + tokenizer.chunk_size, len(input_ids))
+    cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
     chunk_ids = input_ids[start_idx:cur_idx]
     while start_idx < len(input_ids):
         splits.append(tokenizer.decode(chunk_ids))
-        start_idx += tokenizer.chunk_size - tokenizer.chunk_overlap
-        cur_idx = min(start_idx + tokenizer.chunk_size, len(input_ids))
+        start_idx += tokenizer.tokens_per_chunk - tokenizer.chunk_overlap
+        cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
         chunk_ids = input_ids[start_idx:cur_idx]
     return splits
 
@@ -280,12 +283,72 @@ class TokenTextSplitter(TextSplitter):
         )
         tokenizer = Tokenizer(
             chunk_overlap=self._chunk_overlap,
-            chunk_size=self._chunk_size,
+            tokens_per_chunk=self._chunk_size,
             decode=self._tokenizer.decode,
             encode=encode,
         )
 
         return split_text_on_tokens(text=text, tokenizer=tokenizer)
+
+
+class SentenceTransformersTokenTextSplitter(TextSplitter):
+    """Implementation of splitting text that looks at tokens."""
+
+    def __init__(
+        self,
+        chunk_overlap: int = 50,
+        model_name: str = "sentence-transformers/all-mpnet-base-v2",
+        tokens_per_chunk: Optional[int] = None,
+        **kwargs: Any,
+    ):
+        """Create a new TextSplitter."""
+        super().__init__(**kwargs, chunk_overlap=chunk_overlap)
+
+        self.model_name = model_name
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
+
+    def _initialize_chunk_configuration(
+        self, *, tokens_per_chunk: Optional[int]
+    ) -> None:
+        self.maximum_tokens_per_chunk = self.tokenizer.max_len_single_sentence
+
+        if tokens_per_chunk is None:
+            self.tokens_per_chunk = self.maximum_tokens_per_chunk
+        else:
+            self.tokens_per_chunk = tokens_per_chunk
+
+        if self.tokens_per_chunk > self.maximum_tokens_per_chunk:
+            raise ValueError(
+                f"""The token limit of the models "{self.model_name}" is: {self.maximum_tokens_per_chunk}.
+                Argument tokens_per_chunk={self.tokens_per_chunk} > maximum token limit."""
+            )
+
+    def split_text(self, text: str) -> List[str]:
+        def encode_strip_start_and_stop_token_ids(text: str) -> List[int]:
+            return self._encode(text)[1:-1]
+
+        tokenizer = Tokenizer(
+            chunk_overlap=self._chunk_overlap,
+            tokens_per_chunk=self.tokens_per_chunk,
+            decode=self.tokenizer.decode,
+            encode=encode_strip_start_and_stop_token_ids,
+        )
+
+        return split_text_on_tokens(text=text, tokenizer=tokenizer)
+
+    def count_tokens(self, *, text: str) -> int:
+        return len(self._encode(text))
+
+    _max_length_equal_32_bit_integer = 2**32
+
+    def _encode(self, text: str) -> List[int]:
+        token_ids_with_start_and_end_token_ids = self.tokenizer.encode(
+            text,
+            max_length=self._max_length_equal_32_bit_integer,
+            truncation="do_not_truncate",
+        )
+        return token_ids_with_start_and_end_token_ids
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
