@@ -8,6 +8,36 @@ It is broken into two parts: installation and setup, and then references to spec
 
 ## Wrappers
 
+All wrappers needing a redis url connection string to connect to the database support either a stand alone Redis server
+or a High-Availability setup with Replication and Redis Sentinels.
+
+### Redis Standalone connection url
+For standalone Redis server the official redis connection url formats can be used as describe in the python redis modules
+"from_url()" method [Redis.from_url](https://redis-py.readthedocs.io/en/stable/connections.html#redis.Redis.from_url)
+
+Example: `redis_url = "redis://:secret-pass@localhost:6379/0"`
+
+### Redis Sentinel connection url
+
+For [Redis sentinel setups](https://redis.io/docs/management/sentinel/) the connection scheme is "redis+sentinel". 
+This is an un-offical extensions to the official IANA registered protocol schemes as long as there is no connection url
+for Sentinels available.
+
+Example: `redis_url = "redis+sentinel://:secret-pass@sentinel-host:26379/mymaster/0"`
+
+The format is  `redis+sentinel://[[username]:[password]]@[host-or-ip]:[port]/[service-name]/[db-number]`
+with the default values of "service-name = mymaster" and "db-number = 0" if not set explicit.
+The service-name is the redis server monitoring group name as configured within the Sentinel. 
+
+The current url format limits the connection string to one sentinel host only (no list can be given) and
+booth Redis server and sentinel must have the same password set (if used).
+
+### Redis Cluster connection url
+
+Redis cluster is not supported right now for all methods requiring a "redis_url" parameter.
+The only way to use a Redis Cluster is with LangChain classes accepting a preconfigured Redis client like `RedisCache`
+(example below).
+
 ### Cache
 
 The Cache wrapper allows for [Redis](https://redis.io) to be used as a remote, low-latency, in-memory cache for LLM prompts and responses.
