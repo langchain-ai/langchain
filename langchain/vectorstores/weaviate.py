@@ -322,12 +322,24 @@ class Weaviate(VectorStore):
         if kwargs.get("search_distance"):
             content["certainty"] = kwargs.get("search_distance")
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
-        result = (
-            query_obj.with_near_text(content)
-            .with_limit(k)
-            .with_additional("vector")
-            .do()
-        )
+
+        if not self._by_text:
+            embedding = self._embedding.embed_query(query)
+            vector = {"vector": embedding}
+            result = (
+                query_obj.with_near_vector(vector)
+                .with_limit(k)
+                .with_additional("vector")
+                .do()
+            )
+        else:
+            result = (
+                query_obj.with_near_text(content)
+                .with_limit(k)
+                .with_additional("vector")
+                .do()
+            )
+
         if "errors" in result:
             raise ValueError(f"Error during query: {result['errors']}")
 
@@ -436,6 +448,15 @@ class Weaviate(VectorStore):
 
             batch.flush()
 
+        relevance_score_fn = kwargs.get("relevance_score_fn")
+        by_text: bool = kwargs.get("by_text", False)
+
         return cls(
-            client, index_name, text_key, embedding=embedding, attributes=attributes
+            client,
+            index_name,
+            text_key,
+            embedding=embedding,
+            attributes=attributes,
+            relevance_score_fn=relevance_score_fn,
+            by_text=by_text,
         )
