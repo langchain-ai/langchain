@@ -40,16 +40,16 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
 
     def get_snippets(self, query: str) -> List[str]:
         """Run query through DuckDuckGo and return concatenated results."""
-        from duckduckgo_search import ddg
+        from duckduckgo_search import DDGS
 
-        results = ddg(
+        ddgs = DDGS()
+        results = ddgs.text(
             query,
             region=self.region,
             safesearch=self.safesearch,
-            time=self.time,
-            max_results=self.max_results,
+            timelimit=self.time
         )
-        if results is None or len(results) == 0:
+        if results is None or next(results, None) is None:
             return ["No good DuckDuckGo Search Result was found"]
         snippets = [result["body"] for result in results]
         return snippets
@@ -71,17 +71,16 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 title - The title of the result.
                 link - The link to the result.
         """
-        from duckduckgo_search import ddg
+        from duckduckgo_search import DDGS
 
-        results = ddg(
+        ddgs = DDGS()
+        results = ddgs.text(
             query,
             region=self.region,
             safesearch=self.safesearch,
-            time=self.time,
-            max_results=num_results,
+            timelimit=self.time
         )
-
-        if results is None or len(results) == 0:
+        if results is None or next(results, None) is None:
             return [{"Result": "No good DuckDuckGo Search Result was found"}]
 
         def to_metadata(result: Dict) -> Dict[str, str]:
