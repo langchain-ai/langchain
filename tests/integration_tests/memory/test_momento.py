@@ -1,3 +1,9 @@
+"""Test Momento chat message history functionality.
+
+To run tests, set the environment variable MOMENTO_AUTH_TOKEN to a valid
+Momento auth token. This can be obtained by signing up for a free
+Momento account at https://gomomento.com/.
+"""
 from datetime import timedelta
 import json
 from typing import Iterator
@@ -20,7 +26,7 @@ def message_history() -> Iterator[MomentoChatMessageHistory]:
     cache_name = f"langchain-test-cache-{random_string()}"
     client = CacheClient(
         Configurations.Laptop.v1(),
-        CredentialProvider.from_environment_variable("TEST_AUTH_TOKEN"),
+        CredentialProvider.from_environment_variable("MOMENTO_AUTH_TOKEN"),
         default_ttl=timedelta(seconds=30),
     )
     try:
