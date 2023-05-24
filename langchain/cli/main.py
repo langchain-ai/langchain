@@ -173,6 +173,7 @@ class PlusCommand:
         expose: bool = False,
         auth_token: Optional[str] = None,
         dev: bool = False,
+        openai_api_key: Optional[str] = None,
     ) -> None:
         """Run the LangChainPlus server locally.
 
@@ -180,9 +181,16 @@ class PlusCommand:
             expose: If True, expose the server to the internet using ngrok.
             auth_token: The ngrok authtoken to use (visible in the ngrok dashboard).
                 If not provided, ngrok server session length will be restricted.
+            dev: If True, use the development (rc) image of LangChainPlus.
+            openai_api_key: The OpenAI API key to use for LangChainPlus
+                If not provided, the OpenAI API Key will be read from the
+                OPENAI_API_KEY environment variable. If neither are provided,
+                some features of LangChainPlus will not be available.
         """
         if dev:
             os.environ["_LANGCHAINPLUS_IMAGE_PREFIX"] = "rc-"
+        if openai_api_key is not None:
+            os.environ["OPENAI_API_KEY"] = openai_api_key
         if expose:
             self._start_and_expose(auth_token=auth_token)
         else:
@@ -250,9 +258,20 @@ def main() -> None:
         action="store_true",
         help="Use the development version of the LangChainPlus image.",
     )
+    server_start_parser.add_argument(
+        "--openai-api-key",
+        default=os.getenv("OPENAI_API_KEY"),
+        help="The OpenAI API key to use for LangChainPlus."
+        " If not provided, the OpenAI API Key will be read from the"
+        " OPENAI_API_KEY environment variable. If neither are provided,"
+        " some features of LangChainPlus will not be available.",
+    )
     server_start_parser.set_defaults(
         func=lambda args: server_command.start(
-            expose=args.expose, auth_token=args.ngrok_authtoken, dev=args.dev
+            expose=args.expose,
+            auth_token=args.ngrok_authtoken,
+            dev=args.dev,
+            openai_api_key=args.openai_api_key,
         )
     )
 
