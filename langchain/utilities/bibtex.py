@@ -2,7 +2,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Type
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
