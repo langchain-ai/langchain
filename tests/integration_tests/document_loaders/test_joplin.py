@@ -1,5 +1,3 @@
-import pytest
-
 from langchain.document_loaders.joplin import JoplinLoader
 
 
