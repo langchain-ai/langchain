@@ -25,6 +25,14 @@ def test_chat_openai() -> None:
     assert isinstance(response.content, str)
 
 
+def test_chat_openai_model() -> None:
+    """Test ChatOpenAI wrapper handles model_name."""
+    chat = ChatOpenAI(model="foo")
+    assert chat.model_name == "foo"
+    chat = ChatOpenAI(model_name="bar")
+    assert chat.model_name == "bar"
+
+
 def test_chat_openai_system_message() -> None:
     """Test ChatOpenAI wrapper with system message."""
     chat = ChatOpenAI(max_tokens=10)

@@ -39,7 +39,7 @@ class ImageCaptionLoader(BaseLoader):
         try:
             from transformers import BlipForConditionalGeneration, BlipProcessor
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`transformers` package not found, please install with "
                 "`pip install transformers`."
             )
@@ -66,7 +66,7 @@ class ImageCaptionLoader(BaseLoader):
         try:
             from PIL import Image
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`PIL` package not found, please install with `pip install pillow`"
             )
 
