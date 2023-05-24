@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import (
     AbstractSet,
     Any,
@@ -218,6 +219,29 @@ class CharacterTextSplitter(TextSplitter):
         return self._merge_splits(splits, self._separator)
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
+class Tokenizer:
+    chunk_overlap: int
+    chunk_size: int
+    decode: Callable[[list[int]], str]
+    encode: Callable[[str], List[int]]
+
+
+def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
+    """Split incoming text and return chunks."""
+    splits = []
+    input_ids = tokenizer.encode(text)
+    start_idx = 0
+    cur_idx = min(start_idx + tokenizer.chunk_size, len(input_ids))
+    chunk_ids = input_ids[start_idx:cur_idx]
+    while start_idx < len(input_ids):
+        splits.append(tokenizer.decode(chunk_ids))
+        start_idx += tokenizer.chunk_size - tokenizer.chunk_overlap
+        cur_idx = min(start_idx + tokenizer.chunk_size, len(input_ids))
+        chunk_ids = input_ids[start_idx:cur_idx]
+    return splits
+
+
 class TokenTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at tokens."""
 
@@ -249,22 +273,19 @@ class TokenTextSplitter(TextSplitter):
         self._disallowed_special = disallowed_special
 
     def split_text(self, text: str) -> List[str]:
-        """Split incoming text and return chunks."""
-        splits = []
-        input_ids = self._tokenizer.encode(
+        encode = lambda text: self._tokenizer.encode(
             text,
             allowed_special=self._allowed_special,
             disallowed_special=self._disallowed_special,
         )
-        start_idx = 0
-        cur_idx = min(start_idx + self._chunk_size, len(input_ids))
-        chunk_ids = input_ids[start_idx:cur_idx]
-        while start_idx < len(input_ids):
-            splits.append(self._tokenizer.decode(chunk_ids))
-            start_idx += self._chunk_size - self._chunk_overlap
-            cur_idx = min(start_idx + self._chunk_size, len(input_ids))
-            chunk_ids = input_ids[start_idx:cur_idx]
-        return splits
+        tokenizer = Tokenizer(
+            chunk_overlap=self._chunk_overlap,
+            chunk_size=self._chunk_size,
+            decode=self._tokenizer.decode,
+            encode=encode,
+        )
+
+        return split_text_on_tokens(text=text, tokenizer=tokenizer)
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
