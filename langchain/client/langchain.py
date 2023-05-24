@@ -391,7 +391,7 @@ class LangChainPlusClient(BaseSettings):
         example_id: str,
         *,
         inputs: Optional[Dict[str, Any]] = None,
-        outputs: Optional[Dict[str, Any]] = None,
+        outputs: Optional[Mapping[str, Any]] = None,
         dataset_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Update a specific example."""
