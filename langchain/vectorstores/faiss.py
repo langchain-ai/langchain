@@ -152,7 +152,7 @@ class FAISS(VectorStore):
             )
         # Embed and create the documents.
         embeddings = [self.embedding_function(text) for text in texts]
-        return self.__add(texts, embeddings, metadatas, **kwargs)
+        return self.__add(texts, embeddings, metadatas, ids, **kwargs)
 
     def add_embeddings(
         self,
@@ -181,7 +181,7 @@ class FAISS(VectorStore):
 
         texts = [te[0] for te in text_embeddings]
         embeddings = [te[1] for te in text_embeddings]
-        return self.__add(texts, embeddings, metadatas, **kwargs)
+        return self.__add(texts, embeddings, metadatas, ids, **kwargs)
 
     def similarity_search_with_score_by_vector(
         self, embedding: List[float], k: int = 4
@@ -434,6 +434,7 @@ class FAISS(VectorStore):
             embeddings,
             embedding,
             metadatas,
+            ids,
             **kwargs,
         )
 
@@ -472,6 +473,7 @@ class FAISS(VectorStore):
             embeddings,
             embedding,
             metadatas,
+            ids,
             **kwargs,
         )
 
