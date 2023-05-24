@@ -190,6 +190,7 @@ cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
 azure = ["azure-identity", "azure-cosmos", "openai", "azure-core", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech"]
+momento = ["momento"]
 all = [
     "anthropic",
     "cohere",
@@ -253,6 +254,7 @@ all = [
     "azure-ai-formrecognizer",
     "azure-ai-vision",
     "azure-cognitiveservices-speech",
+    "momento"
 ]
 
 # An extra used to be able to add extended testing.
