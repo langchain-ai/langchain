@@ -35,9 +35,7 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
     )
 
 
-def embed_with_retry(
-        embeddings: MiniMaxEmbeddings, *args: Any, **kwargs: Any
-) -> Any:
+def embed_with_retry(embeddings: MiniMaxEmbeddings, *args: Any, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator()
 
@@ -69,9 +67,7 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
 
     """
 
-    endpoint_url: str = (
-        "https://api.minimax.chat/v1/embeddings"
-    )
+    endpoint_url: str = "https://api.minimax.chat/v1/embeddings"
     """Endpoint URL to use."""
     model: str = "embo-01"
     """Embeddings model name to use."""
@@ -104,7 +100,9 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         return values
 
     def embed(
-            self, texts: List[str], embed_type: str,
+        self,
+        texts: List[str],
+        embed_type: str,
     ) -> List[List[float]]:
         payload = {
             "model": self.model,
@@ -123,7 +121,9 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         }
 
         # send request
-        response = requests.post(self.endpoint_url, params=params, headers=headers, json=payload)
+        response = requests.post(
+            self.endpoint_url, params=params, headers=headers, json=payload
+        )
         parsed_response = response.json()
 
         # check for errors
@@ -157,5 +157,7 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embeddings = embed_with_retry(self, texts=[text], embed_type=self.embed_type_query)
+        embeddings = embed_with_retry(
+            self, texts=[text], embed_type=self.embed_type_query
+        )
         return embeddings[0]
