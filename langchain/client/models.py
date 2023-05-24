@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from typing import Any, ClassVar, Dict, List, Mapping, Optional, Sequence, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, root_validator
@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, root_validator
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
 
 
-class ExampleBase(BaseModel):
+class ExampleBase(BaseModel, frozen=True):
     """Example base model."""
 
     dataset_id: UUID
@@ -31,7 +31,7 @@ class Example(ExampleBase):
     runs: List[Run] = Field(default_factory=list)
 
 
-class ExampleUpdate(BaseModel):
+class ExampleUpdate(BaseModel, frozen=True):
     """Update class for Example."""
 
     dataset_id: Optional[UUID] = None
@@ -39,7 +39,7 @@ class ExampleUpdate(BaseModel):
     outputs: Optional[Dict[str, Any]] = None
 
 
-class DatasetBase(BaseModel):
+class DatasetBase(BaseModel, frozen=True):
     """Dataset base model."""
 
     tenant_id: UUID
@@ -62,7 +62,7 @@ class Dataset(DatasetBase):
     modified_at: Optional[datetime] = Field(default=None)
 
 
-class ListRunsQueryParams(BaseModel):
+class ListRunsQueryParams(BaseModel, frozen=True):
     """Query params for GET /runs endpoint."""
 
     class Config:
@@ -107,14 +107,14 @@ class ListRunsQueryParams(BaseModel):
         return values
 
 
-class APIFeedbackSource(BaseModel):
+class APIFeedbackSource(BaseModel, frozen=True):
     """API feedback source."""
 
     type: ClassVar[str] = "api"
     metadata: Optional[Dict[str, Any]] = None
 
 
-class FeedbackBase(BaseModel):
+class FeedbackBase(BaseModel, frozen=True):
     """Feedback schema."""
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -125,7 +125,7 @@ class FeedbackBase(BaseModel):
     """The associated run ID this feedback is logged for."""
     metric_name: str
     """The feedback metric name or type."""
-    metric_value: Optional[Union[float, str]] = None
+    metric_value: Union[float, bool, int, str]
     """Score to assign the run."""
     feedback_source: Optional[Union[APIFeedbackSource, Mapping[str, Any]]] = None
     """The source of the feedback."""
@@ -148,7 +148,7 @@ class Feedback(FeedbackBase):
     """The source of the feedback. In this case"""
 
 
-class ListFeedbackQueryParams(BaseModel):
+class ListFeedbackQueryParams(BaseModel, frozen=True):
     """Query Params for listing feedbacks."""
 
     run: Optional[Sequence[UUID]] = None

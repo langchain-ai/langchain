@@ -36,8 +36,8 @@ def test_feedback_cycle(
     with tracing_v2_enabled(session_name=other_session_name):
         try:
             agent.run("What is the square root of 3?")
-        except:
-            pass
+        except Exception as e:
+            print(e)
     runs = list(
         langchain_client.list_runs(
             session_name=os.environ["LANGCHAIN_SESSION"], error=False, execution_order=1
