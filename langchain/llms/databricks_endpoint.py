@@ -119,7 +119,7 @@ def get_default_api_token() -> str:
     """Gets the default Databricks personal access token.
     Raises an error if the token cannot be automatically determined.
     """
-    api_token = os.getenv("DATABRIKCS_API_TOKEN")
+    api_token = os.getenv("DATABRICKS_API_TOKEN")
     if not api_token:
         try:
             api_token = get_repl_context().apiToken
