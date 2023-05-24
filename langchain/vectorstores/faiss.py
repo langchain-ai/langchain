@@ -132,6 +132,7 @@ class FAISS(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -139,6 +140,7 @@ class FAISS(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -156,6 +158,7 @@ class FAISS(VectorStore):
         self,
         text_embeddings: Iterable[Tuple[str, List[float]]],
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -164,6 +167,7 @@ class FAISS(VectorStore):
             text_embeddings: Iterable pairs of string and embedding to
                 add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -404,6 +408,7 @@ class FAISS(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> FAISS:
         """Construct FAISS wrapper from raw documents.
@@ -438,6 +443,7 @@ class FAISS(VectorStore):
         text_embeddings: List[Tuple[str, List[float]]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> FAISS:
         """Construct FAISS wrapper from raw documents.
