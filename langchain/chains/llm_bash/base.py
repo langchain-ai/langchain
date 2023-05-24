@@ -50,9 +50,13 @@ class LLMBashChain(Chain):
                 "Directly instantiating an LLMBashChain with an llm is deprecated. "
                 "Please instantiate with llm_chain or using the from_llm class method."
             )
-            if "llm_chain" not in values and values["llm"] is not None:
-                prompt = values.get("prompt", PROMPT)
-                values["llm_chain"] = LLMChain(llm=values["llm"], prompt=prompt)
+            llm = values.pop("llm")
+            if "llm_chain" not in values and llm is not None:
+                if "prompt" in values:
+                    prompt = values.pop("prompt")
+                else:
+                    prompt = PROMPT
+                values["llm_chain"] = LLMChain(llm=llm, prompt=prompt)
         return values
 
     @root_validator
