@@ -8,10 +8,11 @@ from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
+from pydantic import Field
 
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever, Document
-from langchain.vectorstores.base import VectorStore
+from langchain.schema import Document
+from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 
 class Vectara(VectorStore):
@@ -279,48 +280,30 @@ class Vectara(VectorStore):
         vectara.add_texts(texts, metadatas)
         return vectara
 
+    def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
+        return VectaraRetriever(vectorstore=self, **kwargs)
 
-class VectaraRetriever(BaseRetriever):
-    def __init__(
-        self,
-        store: Vectara,
-        alpha: float = 0.025,
-        k: int = 5,
-        filter: Optional[str] = None,
-    ):
-        """Instantiate Vectara-backed Retriever.
 
-        Args:
-            store: Vectara vector store.
-            k: Number of Documents to return. Defaults to 5.
-            alpha: parameter for hybrid search (called "lambda" in Vectara
-                documentation).
-            filter: Dictionary of argument(s) to filter on metadata. For example a
-                filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
-                https://docs.vectara.com/docs/search-apis/sql/filter-overview
-                for more details.
-        """
-        self.store = store
-        self.alpha = alpha
-        self.k = k
-        self.filter = filter
+class VectaraRetriever(VectorStoreRetriever):
+    vectorstore: Vectara
+    search_kwargs: dict = Field(default_factory=lambda: {"alpha": 0.025, "k": 5})
+    """Search params.
+        k: Number of Documents to return. Defaults to 5.
+        alpha: parameter for hybrid search (called "lambda" in Vectara
+            documentation).
+        filter: Dictionary of argument(s) to filter on metadata. For example a
+            filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
+            https://docs.vectara.com/docs/search-apis/sql/filter-overview
+            for more details.
+    """
 
     def add_texts(
         self, texts: List[str], metadatas: Optional[List[dict]] = None
     ) -> None:
-        """Add text to the Vectara vectorstore
+        """Add text to the Vectara vectorstore.
 
         Args:
             texts (List[str]): The text
             metadatas (List[dict]): Metadata dicts, must line up with existing store
         """
-        self.store.add_texts(texts, metadatas)
-
-    def get_relevant_documents(self, query: str) -> List[Document]:
-        docs = self.store.similarity_search(
-            query, k=self.k, alpha=self.alpha, filter=self.filter
-        )
-        return docs
-
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
-        raise NotImplementedError
+        self.vectorstore.add_texts(texts, metadatas)

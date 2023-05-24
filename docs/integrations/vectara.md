@@ -24,9 +24,13 @@ from langchain.vectorstores import Vectara
 
 To create an instance of the Vectara vectorstore:
 ```python
-vectara = Vectara(customer_id, corpus_id, api_key)
+vectara = Vectara(
+    vectara_customer_id=customer_id, 
+    vectara_corpus_id=corpus_id, 
+    vectara_api_key=api_key
+)
 ```
-the customer_id, corpus_id and api_key are optioonal, and if they are not supplied will be read from the environment variables `VECTARA_CUSTOMER_ID`, `VECTARA_CORPUS_ID` and `VECTARA_API_KEY`, respectivelu
+The customer_id, corpus_id and api_key are optional, and if they are not supplied will be read from the environment variables `VECTARA_CUSTOMER_ID`, `VECTARA_CORPUS_ID` and `VECTARA_API_KEY`, respectively.
 
 
 For a more detailed walkthrough of the Vectara wrapper, see one of the two example notebooks:
