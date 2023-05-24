@@ -40,7 +40,6 @@ For detailed instructions on how to get set up with Unstructured, see installati
    ./document_loaders/examples/file_directory.ipynb
    ./document_loaders/examples/html.ipynb
    ./document_loaders/examples/image.ipynb
-   ./document_loaders/examples/iugu.ipynb
    ./document_loaders/examples/jupyter_notebook.ipynb
    ./document_loaders/examples/json.ipynb
    ./document_loaders/examples/markdown.ipynb
@@ -123,6 +122,7 @@ We need access tokens and sometime other parameters to get access to these datas
    ./document_loaders/examples/google_cloud_storage_file.ipynb
    ./document_loaders/examples/google_drive.ipynb
    ./document_loaders/examples/image_captions.ipynb
+   ./document_loaders/examples/iugu.ipynb
    ./document_loaders/examples/joplin.ipynb
    ./document_loaders/examples/microsoft_onedrive.ipynb
    ./document_loaders/examples/modern_treasury.ipynb
