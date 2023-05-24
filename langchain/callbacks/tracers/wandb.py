@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from langchain.llms.base import BaseLLM
     from langchain.models.base import BaseLanguageModel
     from langchain.tools.base import BaseTool
-    from wandb.settings import Settings as WBSettings
+    from wandb import Settings as WBSettings
     from wandb.wandb_run import Run as WBRun
 
 
