@@ -24,12 +24,20 @@ MODEL_COST_PER_1K_TOKENS = {
     "text-davinci-003": 0.02,
     "text-davinci-002": 0.02,
     "code-davinci-002": 0.02,
+    "ada-finetuned": 0.0016,
+    "babbage-finetuned": 0.0024,
+    "curie-finetuned": 0.0120,
+    "davinci-finetuned": 0.1200,
 }
 
 
 def get_openai_token_cost_for_model(
     model_name: str, num_tokens: int, is_completion: bool = False
 ) -> float:
+    # handling finetuned models
+    if "ft-" in model_name:
+        model_name = f"{model_name.split(':')[0]}-finetuned"
+
     suffix = "-completion" if is_completion and model_name.startswith("gpt-4") else ""
     model = model_name.lower() + suffix
     if model not in MODEL_COST_PER_1K_TOKENS:

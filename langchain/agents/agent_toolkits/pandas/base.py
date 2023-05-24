@@ -34,7 +34,7 @@ def create_pandas_dataframe_agent(
     try:
         import pandas as pd
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "pandas package not found, please install with `pip install pandas`"
         )
 

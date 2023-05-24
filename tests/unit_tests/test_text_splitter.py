@@ -146,3 +146,25 @@ Bye!\n\n-H."""
         "Bye!\n\n-H.",
     ]
     assert output == expected_output
+
+
+def test_split_documents() -> None:
+    """Test split_documents."""
+    splitter = CharacterTextSplitter(separator="", chunk_size=1, chunk_overlap=0)
+    docs = [
+        Document(page_content="foo", metadata={"source": "1"}),
+        Document(page_content="bar", metadata={"source": "2"}),
+        Document(page_content="baz", metadata={"source": "1"}),
+    ]
+    expected_output = [
+        Document(page_content="f", metadata={"source": "1"}),
+        Document(page_content="o", metadata={"source": "1"}),
+        Document(page_content="o", metadata={"source": "1"}),
+        Document(page_content="b", metadata={"source": "2"}),
+        Document(page_content="a", metadata={"source": "2"}),
+        Document(page_content="r", metadata={"source": "2"}),
+        Document(page_content="b", metadata={"source": "1"}),
+        Document(page_content="a", metadata={"source": "1"}),
+        Document(page_content="z", metadata={"source": "1"}),
+    ]
+    assert splitter.split_documents(docs) == expected_output

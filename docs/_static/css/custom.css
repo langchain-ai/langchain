@@ -13,5 +13,5 @@ pre {
 }
 
 #my-component-root *, #headlessui-portal-root * {
-  z-index: 1000000000000;
+  z-index: 10000;
 }
