@@ -1,40 +1,79 @@
 from __future__ import annotations
 
-from langchain.agents import AgentType, initialize_agent
-from langchain.chat_models import ChatOpenAI
-from langchain.memory import ConversationBufferWindowMemory
+import pytest
 
-# set no tools available (generate only)
-notoolset = []
+from langchain.agents.conversational_chat.output_parser import (
+    ConvoOutputParser,
+    OutputParserException,
+)
+from langchain.schema import AgentAction, AgentFinish
 
-# choose fast LLM
-llm_chatgpt = ChatOpenAI(temperature=0.3, model_name="gpt-3.5-turbo")
 
-# conversational agent requires buffer memory
-memory1 = ConversationBufferWindowMemory(memory_key="chat_history", 
-                                         return_messages=True)
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        (
+            '```json\n'
+            '{"action": "Final Answer", "action_input": "Hello, World!"}'
+            '```',
+            AgentFinish(
+                {"output": "Hello, World!"},
+                '```json\n'
+                '{"action": "Final Answer", "action_input": "Hello, World!"}'
+                '```'
+            )
+        ),
+        (
+            '```json\n'
+            '{"action": "Some Action", "action_input": "Hello, World!"}'
+            '```', 
+            AgentAction(
+                "Some Action",
+                "Hello, World!",
+                '```json\n'
+                '{"action": "Some Action", "action_input": "Hello, World!"}'
+                '```'
+            )
+        ),
+        (
+            '```json\n'
+            '{"action": "Final Answer", "action_input": '
+            '"Here\'s a simple Python \'Hello World!\' program:\\n\\n'
+            'python\\nprint(\'Hello World!\')\\n"}'
+            '```',
+            AgentFinish(
+                {
+                    "output": (
+                        "Here's a simple Python 'Hello World!' program:\n\n"
+                        "python\nprint('Hello World!')\n"
+                    )
+                },
+                '```json\n'
+                '{"action": "Final Answer", "action_input": '
+                '"Here\'s a simple Python \'Hello World!\' program:\\n\\n'
+                'python\\nprint(\'Hello World!\')\\n"}'
+                '```'
+            )
+        ),
+    ]
+)
+def test_parser(text, expected) -> None:
+    """Test the ConvoOutputParser class."""
+    parser = ConvoOutputParser()
+    assert parser.parse(text) == expected
 
-# initialize conversational agent
-agent = initialize_agent(notoolset, llm_chatgpt,
-                         agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
-                         verbose=False, memory=memory1)
 
-#
-# Create and return Python code, verify generated code contains python header
-#
-prompt1 ='''Generate a Python class with embedded unit test program that calculates 
-the first 100 Fibonaci numbers and prints them out.
-Just instantiate the class and test it by running the code
-after the class is defined)'''
+@pytest.mark.parametrize(
+    "text",
+    [
+        ('Invalid text without any recognizable format'),
+        ('json\n{"invalid": "json"}'),
+        ('```json\n{"invalid": "json"}```'),
+    ]
+)
+def test_unhappy_path(text) -> None:
+    """Test the ConvoOutputParser class."""
+    parser = ConvoOutputParser()
+    with pytest.raises(OutputParserException):
+        parser.parse(text)
 
-response1 = agent.run(input=prompt1)
-#print(response1)
-assert "'python" not in response1
-#
-# Create and return JavaScript code, verify generated code contains javascript header
-#
-prompt2 ="Generate JavaScript code that calculates first 10 Fibonaci numbers."
-
-response2 = agent.run(input=prompt2)
-#print(response2)
-assert "'javascript" not in response2
