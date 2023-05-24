@@ -23,7 +23,7 @@ def _fake_combine_docs_func(docs: List[Document], **kwargs: Any) -> str:
     return "".join([d.page_content for d in docs])
 
 
-def test_multiple_input_keys():
+def test_multiple_input_keys() -> None:
     chain = load_qa_with_sources_chain(FakeLLM(), chain_type="stuff")
     assert chain.input_keys == ["input_documents", "question"]
 
