@@ -26,6 +26,39 @@ def _hash(_input: str) -> str:
     return hashlib.md5(_input.encode()).hexdigest()
 
 
+def _dump_generations_to_json(generations: RETURN_VAL_TYPE) -> str:
+    """Dump generations to json.
+
+    Args:
+        generations (RETURN_VAL_TYPE): A list of language model generations.
+
+    Returns:
+        str: Json representing a list of generations.
+    """
+    return json.dumps([generation.dict() for generation in generations])
+
+
+def _load_generations_from_json(generations_json: str) -> RETURN_VAL_TYPE:
+    """Load generations from json.
+
+    Args:
+        generations_json (str): A string of json representing a list of generations.
+
+    Raises:
+        ValueError: Could not decode json string to list of generations.
+
+    Returns:
+        RETURN_VAL_TYPE: A list of generations.
+    """
+    try:
+        results = json.loads(generations_json)
+        return [Generation(**generation_dict) for generation_dict in results]
+    except json.JSONDecodeError:
+        raise ValueError(
+            f"Could not decode json to list of generations: {generations_json}"
+        )
+
+
 class BaseCache(ABC):
     """Base interface for cache."""
 
@@ -390,3 +423,122 @@ class GPTCache(BaseCache):
             gptcache_instance.flush()
 
         self.gptcache_dict.clear()
+
+
+class MomentoCache(BaseCache):
+    """Cache that uses Momento as a backend. See https://gomomento.com/"""
+
+    def __init__(
+        self, cache_client: Any, cache_name: str, ensure_cache_exists: bool = True
+    ):
+        try:
+            from momento import CacheClient
+        except ImportError:
+            raise ValueError(
+                "Could not import momento python package. "
+                "Please install it with `pip install momento`."
+            )
+        if not isinstance(cache_client, CacheClient):
+            raise ValueError("Please pass in a Momento CacheClient object.")
+        self.cache_client: CacheClient = cache_client
+        self.cache_name = cache_name
+        if ensure_cache_exists:
+            self.__ensure_cache_exists()
+
+    def __ensure_cache_exists(self) -> None:
+        """Create cache if it doesn't exist.
+
+        Raises:
+            SdkException: Momento service or network error
+            Exception: Unexpected response
+        """
+        from momento.responses import CreateCache
+
+        create_cache_response = self.cache_client.create_cache(self.cache_name)
+        if isinstance(create_cache_response, CreateCache.Success) or isinstance(
+            create_cache_response, CreateCache.CacheAlreadyExists
+        ):
+            pass
+        elif isinstance(create_cache_response, CreateCache.Error):
+            raise create_cache_response.inner_exception
+        else:
+            raise Exception(f"Unexpected response: {create_cache_response}")
+
+    def __key(self, prompt: str, llm_string: str) -> str:
+        """Compute cache key from prompt and associated model and settings.
+
+        Args:
+            prompt (str): The prompt run through the language model.
+            llm_string (str): The language model version and settings.
+
+        Returns:
+            str: The cache key.
+        """
+        return _hash(prompt + llm_string)
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Lookup llm generations in cache by prompt and associated model and settings.
+
+        Args:
+            prompt (str): The prompt run through the language model.
+            llm_string (str): The language model version and settings.
+
+        Raises:
+            SdkException: Momento service or network error
+
+        Returns:
+            Optional[RETURN_VAL_TYPE]: A list of language model generations.
+        """
+        from momento.responses import CacheGet
+
+        generations = []
+
+        get_response = self.cache_client.get(
+            self.cache_name, self.__key(prompt, llm_string)
+        )
+        if isinstance(get_response, CacheGet.Hit):
+            value = get_response.value_string
+            generations = _load_generations_from_json(value)
+        elif isinstance(get_response, CacheGet.Miss):
+            pass
+        elif isinstance(get_response, CacheGet.Error):
+            raise get_response.inner_exception
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Store llm generations in cache.
+
+        Args:
+            prompt (str): The prompt run through the language model.
+            llm_string (str): The language model string.
+            return_val (RETURN_VAL_TYPE): A list of language model generations.
+
+        Raises:
+            SdkException: Momento service or network error
+            Exception: Unexpected response
+        """
+        key = self.__key(prompt, llm_string)
+        value = _dump_generations_to_json(return_val)
+        set_response = self.cache_client.set(self.cache_name, key, value)
+        from momento.responses import CacheSet
+
+        if isinstance(set_response, CacheSet.Success):
+            pass
+        elif isinstance(set_response, CacheSet.Error):
+            raise set_response.inner_exception
+        else:
+            raise Exception(f"Unexpected response: {set_response}")
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear the cache.
+
+        Raises:
+            SdkException: Momento service or network error
+        """
+        from momento.responses import CacheFlush
+
+        flush_response = self.cache_client.flush_cache(self.cache_name)
+        if isinstance(flush_response, CacheFlush.Success):
+            pass
+        elif isinstance(flush_response, CacheFlush.Error):
+            raise flush_response.inner_exception
