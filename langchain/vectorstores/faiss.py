@@ -96,6 +96,7 @@ class FAISS(VectorStore):
         texts: Iterable[str],
         embeddings: Iterable[List[float]],
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         if not isinstance(self.docstore, AddableMixin):
@@ -107,6 +108,8 @@ class FAISS(VectorStore):
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
             documents.append(Document(page_content=text, metadata=metadata))
+        if ids is None:
+            ids = [str(uuid.uuid4()) for _ in texts]
         # Add to the index, the index_to_id mapping, and the docstore.
         starting_len = len(self.index_to_docstore_id)
         faiss = dependable_faiss_import()
@@ -116,7 +119,7 @@ class FAISS(VectorStore):
         self.index.add(vector)
         # Get list of index, id, and docs.
         full_info = [
-            (starting_len + i, str(uuid.uuid4()), doc)
+            (starting_len + i, ids[i], doc)
             for i, doc in enumerate(documents)
         ]
         # Add information to docstore and index.
@@ -346,13 +349,13 @@ class FAISS(VectorStore):
         # Merge two IndexFlatL2
         self.index.merge_from(target.index)
 
-        # Create new id for docs from target FAISS object
+        # Get id and docs from target FAISS object
         full_info = []
-        for i in target.index_to_docstore_id:
-            doc = target.docstore.search(target.index_to_docstore_id[i])
+        for i, target_id in target.index_to_docstore_id.items():
+            doc = target.docstore.search(target_id)
             if not isinstance(doc, Document):
                 raise ValueError("Document should be returned")
-            full_info.append((starting_len + i, str(uuid.uuid4()), doc))
+            full_info.append((starting_len + i, target_id, doc))
 
         # Add information to docstore and index_to_docstore_id.
         self.docstore.add({_id: doc for _, _id, doc in full_info})
@@ -366,6 +369,7 @@ class FAISS(VectorStore):
         embeddings: List[List[float]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         normalize_L2: bool = False,
         **kwargs: Any,
     ) -> FAISS:
@@ -376,12 +380,14 @@ class FAISS(VectorStore):
             faiss.normalize_L2(vector)
         index.add(vector)
         documents = []
+        if ids is None:
+            ids = [str(uuid.uuid4()) for _ in texts]
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
             documents.append(Document(page_content=text, metadata=metadata))
-        index_to_id = {i: str(uuid.uuid4()) for i in range(len(documents))}
+        index_to_id = dict(enumerate(ids))
         docstore = InMemoryDocstore(
-            {index_to_id[i]: doc for i, doc in enumerate(documents)}
+            dict(zip(index_to_id, documents))
         )
         return cls(
             embedding.embed_query,
