@@ -11,13 +11,10 @@ possible solutions to a problem.
 
 from __future__ import annotations
 
-import json
-import re
 from abc import ABC, abstractmethod
 from enum import Enum
-from functools import partial
 from textwrap import indent
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from pydantic import BaseModel, Extra, Field
 
@@ -27,6 +24,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
+from langchain.chains.llm import LLMChain
 from langchain.chains.tot.prompts import FIRST_STEP_PROMPT, NEXT_STEP_PROMPT
 from langchain.prompts.base import BasePromptTemplate
 
@@ -44,23 +42,6 @@ class Result(BaseModel):
 
     def __hash__(self) -> int:
         return id(self)
-
-
-class ToTPrompter(BaseModel):
-    first_step_prompt: BasePromptTemplate
-    next_step_prompt: BasePromptTemplate
-
-    def __call__(
-        self, problem_description: str, partial_solution_summary: Optional[str] = None
-    ) -> str:
-        if partial_solution_summary is None:
-            return self.first_step_prompt.format(
-                problem_description=problem_description
-            )
-        return self.next_step_prompt.format(
-            problem_description=problem_description,
-            partial_solution_summary=partial_solution_summary,
-        )
 
 
 class ToTMemory:
@@ -92,6 +73,11 @@ class ToTMemory:
         if len(self.stack) > 0:
             self.stack[-1].children.add(node)
         self.stack.append(node)
+
+    @property
+    def level(self) -> int:
+        "Return the current level of the stack."
+        return len(self.stack)
 
 
 class ToTController:
@@ -171,8 +157,9 @@ class ToTChain(Chain):
     llm: BaseLanguageModel
     """
     Language model to use. It must be set to produce different variations for
-    the same prompt. For the OpenAI use the temperature parameter < 1."""
-    # The paper states that authors used the temperature parmaeter set to 1.
+    the same prompt. The paper states that authors used the temperature
+    parmaeter set to 1.
+    """
     checker: ToTChecker
     """ToT Checker to use."""
     first_step_prompt: BasePromptTemplate = FIRST_STEP_PROMPT
@@ -192,13 +179,6 @@ class ToTChain(Chain):
         arbitrary_types_allowed = True
 
     @property
-    def tot_prompter(self) -> ToTPrompter:
-        return ToTPrompter(
-            first_step_prompt=self.first_step_prompt,
-            next_step_prompt=self.next_step_prompt,
-        )
-
-    @property
     def input_keys(self) -> List[str]:
         """Will be whatever keys the prompt expects.
 
@@ -213,15 +193,6 @@ class ToTChain(Chain):
         :meta private:
         """
         return [self.output_key]
-
-    def parse_llm_output(self, llm_output: str) -> str:
-        """Parse the output of the language model."""
-        if match := re.search(r"\{.*?\}", llm_output, re.DOTALL):
-            try:
-                return json.loads(match.group())["next_step"]
-            except json.JSONDecodeError:
-                return ""
-        return ""
 
     @property
     def current_level(self) -> int:
@@ -264,30 +235,35 @@ class ToTChain(Chain):
                 color="red",
             )
 
-    def solve(
-        self,
-        problem_description: str,
-        run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Optional[str]:
-        """Algorithm 2 from the ToT paper."""
-        checker = partial(self.checker, problem_description)
-        llm = self.llm.predict
-        controller = self.tot_controller
-        prompter = self.tot_prompter
-        memory = self.tot_memory
+    def predict(
+        self, problem_description: str, partial_solution_summary: Optional[str] = None
+    ) -> str:
+        if partial_solution_summary is None:
+            prompt = self.first_step_prompt
+            inputs = {"problem_description": problem_description}
 
-        prompt = prompter(problem_description)
+        else:
+            prompt = self.next_step_prompt
+            inputs = {
+                "problem_description": problem_description,
+                "partial_solution_summary": partial_solution_summary,
+            }
+        llm_chain = LLMChain(llm=self.llm, prompt=prompt, verbose=self.verbose)
+        response_text = llm_chain.predict_and_parse(callbacks=None, **inputs)
+        if not isinstance(response_text, str):
+            response_text = ""
+        return response_text
+
+    def solve(self, problem_description: str) -> Optional[str]:
+        """Algorithm 2 from the ToT paper."""
+        ctrl_signal = None
         for _ in range(self.k):
-            self.log_request(prompt, run_manager)
-            response = self.parse_llm_output(llm(prompt))
-            self.log_response(response, run_manager)
-            result = checker(response)
+            response = self.predict(problem_description, ctrl_signal)
+            result = self.checker(problem_description, response)
             if result.solution_type == SolutionType.VALID_FINAL:
                 return result.solution
-            memory.store(result)
-            ctrl_signal = controller(memory)
-            self.log_ctrl_signal(ctrl_signal, run_manager)
-            prompt = prompter(problem_description, ctrl_signal)
+            self.tot_memory.store(result)
+            ctrl_signal = self.tot_controller(self.tot_memory)
         return None
 
     def _call(
@@ -296,11 +272,8 @@ class ToTChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         if run_manager:
-            run_manager.on_text(
-                text="Starting the ToT solve procedure.\n",
-                verbose=self.verbose,
-            )
-        solution = self.solve(inputs["problem_description"], run_manager)
+            run_manager.on_text(text="Starting the ToT solve procedure.\n")
+        solution = self.solve(inputs["problem_description"])
         if solution is None:
             return {self.output_key: "No solution found"}
         return {self.output_key: solution}

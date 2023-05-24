@@ -1,6 +1,25 @@
+import json
+import re
 from textwrap import dedent
 
 from langchain.prompts import PromptTemplate
+from langchain.schema import BaseOutputParser
+
+
+class NextStepOutputParser(BaseOutputParser):
+    def parse(self, text: str) -> str:
+        """Parse the output of the language model."""
+        if match := re.search(r"\{.*?\}", text, re.DOTALL):
+            try:
+                return json.loads(match.group())["next_step"]
+            except json.JSONDecodeError:
+                return ""
+        return ""
+
+    @property
+    def _type(self) -> str:
+        return "next_step_output"
+
 
 FIRST_STEP_PROMPT = PromptTemplate(
     input_variables=["problem_description"],
@@ -14,6 +33,7 @@ FIRST_STEP_PROMPT = PromptTemplate(
         format {{"next_step": "<next_step>"}}
         """
     ),
+    output_parser=NextStepOutputParser(),
 )
 
 
@@ -33,4 +53,5 @@ NEXT_STEP_PROMPT = PromptTemplate(
         the step in the following JSON format {{"next_step": "<next_step>"}}
         """
     ),
+    output_parser=NextStepOutputParser(),
 )
