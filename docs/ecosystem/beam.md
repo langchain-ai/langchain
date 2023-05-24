@@ -47,10 +47,9 @@ llm = Beam(model_name="gpt2",
 ## Deploy your Beam app
 
 Once defined, you can deploy your Beam app by calling your model's `_deploy()` method.
-This returns an app ID for the deployed app, which can then be used to call the model.
 
 ```python
-app_id = llm._deploy()
+llm._deploy()
 ```
 
 ## Call your Beam app
@@ -59,7 +58,7 @@ Once a beam model is deployed, it can be called by callying your model's `_call(
 This returns the GPT2 text response to your prompt.
 
 ```python
-response = llm._call(prompt="Running machine learning on a remote GPU", appID=appID)
+response = llm._call(prompt="Running machine learning on a remote GPU")
 ```
 
 An example script which deploys the model and calls it would be:
@@ -85,9 +84,9 @@ llm = Beam(model_name="gpt2",
            max_length="50",
            verbose=False)
 
-appID = llm._deploy()
+llm._deploy()
 
-response = llm._call(prompt="Running machine learning on a remote GPU", appID=appID)
+response = llm._call(prompt="Running machine learning on a remote GPU")
 
 print(response)
 ```
