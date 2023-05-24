@@ -703,6 +703,7 @@ class SwiftCodeTextSplitter(RecursiveCharacterTextSplitter):
         ]
         super().__init__(separators=separators, **kwargs)
 
+
 class RustCodeTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Rust (*.rs) syntax."""
 
