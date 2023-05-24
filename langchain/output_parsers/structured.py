@@ -6,6 +6,7 @@ from typing import Any, List
 from pydantic import BaseModel
 
 from langchain.output_parsers.format_instructions import STRUCTURED_FORMAT_INSTRUCTIONS
+from langchain.output_parsers.json import parse_json
 from langchain.schema import BaseOutputParser, OutputParserException
 
 line_template = '\t"{name}": {type}  // {description}'
@@ -23,15 +24,8 @@ def _get_sub_string(schema: ResponseSchema) -> str:
 
 
 def parse_json_markdown(text: str, expected_keys: List[str]) -> Any:
-    if "```json" not in text:
-        raise OutputParserException(
-            f"Got invalid return object. Expected markdown code snippet with JSON "
-            f"object, but got:\n{text}"
-        )
-
-    json_string = text.split("```json")[1].strip().strip("```").strip()
     try:
-        json_obj = json.loads(json_string)
+        json_obj = parse_json(text)
     except json.JSONDecodeError as e:
         raise OutputParserException(f"Got invalid JSON object. Error: {e}")
     for key in expected_keys:
