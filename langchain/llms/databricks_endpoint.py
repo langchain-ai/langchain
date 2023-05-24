@@ -263,22 +263,20 @@ class DatabricksEndpoint(LLM):
         else:
             return v
 
-    @validator("_client", always=True)
-    def set__client(cls, v: Any, values: Dict[str, Any]) -> _DatabricksClientBase:
-        if v:
-            return v
-        elif values["endpoint_name"]:
-            return _DatabricksServingEndpointClient(
-                host=values["host"],
-                api_token=values["api_token"],
-                endpoint_name=values["endpoint_name"],
+    def __init__(self, **data: Any):
+        super().__init__(**data)
+        if self.endpoint_name:
+            self._client = _DatabricksServingEndpointClient(
+                host=self.host,
+                api_token=self.api_token,
+                endpoint_name=self.endpoint_name,
             )
-        elif values["cluster_id"] and values["cluster_driver_port"]:
-            return _DatabricksClusterDriverProxyClient(
-                host=values["host"],
-                api_token=values["api_token"],
-                cluster_id=values["cluster_id"],
-                cluster_driver_port=values["cluster_driver_port"],
+        elif self.cluster_id and self.cluster_driver_port:
+            self._client = _DatabricksClusterDriverProxyClient(
+                host=self.host,
+                api_token=self.api_token,
+                cluster_id=self.cluster_id,
+                cluster_driver_port=self.cluster_driver_port,
             )
         else:
             raise ValueError(
