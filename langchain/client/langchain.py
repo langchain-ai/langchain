@@ -271,7 +271,7 @@ class LangChainPlusClient(BaseSettings):
         raise_for_status_with_text(response)
         yield from [TracerSession(**session) for session in response.json()]
 
-    def create_dataset(self, dataset_name: str, description: Optional[str]) -> Dataset:
+    def create_dataset(self, dataset_name: str, *, description: Optional[str] = None) -> Dataset:
         """Create a dataset in the LangChain+ API."""
         dataset = DatasetCreate(
             tenant_id=self.tenant_id,
