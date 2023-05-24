@@ -1,11 +1,13 @@
 import json
 import urllib
 from datetime import datetime
-from typing import List, Optional
+from typing import Iterator, List, Optional
 
 from langchain.document_loaders.base import BaseLoader
 from langchain.schema import Document
 from langchain.utils import get_from_env
+
+LINK_NOTE_TEMPLATE = "joplin://x-callback-url/openNote?id={id}"
 
 
 class JoplinLoader(BaseLoader):
@@ -28,53 +30,50 @@ class JoplinLoader(BaseLoader):
         port: int = 41184,
         host: str = "localhost",
     ) -> None:
-        self.access_token = access_token or get_from_env(
+        access_token = access_token or get_from_env(
             "access_token", "JOPLIN_ACCESS_TOKEN"
         )
-        self.port = port
-        self.host = host
-        self.get_note = (
-            f"http://{self.host}:{self.port}/notes?token={self.access_token}&fields=id,parent_id,title,body,created_time,updated_time&page="
-            + "{page}"
+        base_url = f"http://{host}:{port}"
+        self._get_note_url = (
+            f"{base_url}/notes?token={access_token}"
+            "&fields=id,parent_id,title,body,created_time,updated_time&page={{page}}"
         )
-        id = "{id}"
-        self.get_folder = f"http://{self.host}:{self.port}/folders/{id}?token={self.access_token}&fields=title"
-        self.get_tag = f"http://{self.host}:{self.port}/notes/{id}/tags?token={self.access_token}&fields=title"
-        self.link_note = "joplin://x-callback-url/openNote?id={id}"
+        self._get_folder_url = (
+            f"{base_url}/folders/{{id}}?token={access_token}&fields=title"
+        )
+        self._get_tag_url = (
+            f"{base_url}/notes/{{id}}/tags?token={access_token}&fields=title"
+        )
 
-    def _get_notes(self) -> List[Document]:
+    def _get_notes(self) -> Iterator[Document]:
         has_more = True
         page = 1
-
-        notes = []
         while has_more:
-            req_note = urllib.request.Request(self.get_note.format(page=page))
+            req_note = urllib.request.Request(self._get_note_url.format(page=page))
             with urllib.request.urlopen(req_note) as response:
                 json_data = json.loads(response.read().decode())
                 for note in json_data["items"]:
                     metadata = {
-                        "source": self.link_note.format(id=note["id"]),
+                        "source": LINK_NOTE_TEMPLATE.format(id=note["id"]),
                         "folder": self._get_folder(note["parent_id"]),
                         "tags": self._get_tags(note["id"]),
                         "title": note["title"],
                         "created_time": self._convert_date(note["created_time"]),
                         "updated_time": self._convert_date(note["updated_time"]),
                     }
-                    notes.append(Document(page_content=note["body"], metadata=metadata))
+                    yield Document(page_content=note["body"], metadata=metadata)
 
                 has_more = json_data["has_more"]
                 page += 1
 
-        return notes
-
     def _get_folder(self, folder_id: str) -> str:
-        req_folder = urllib.request.Request(self.get_folder.format(id=folder_id))
+        req_folder = urllib.request.Request(self._get_folder_url.format(id=folder_id))
         with urllib.request.urlopen(req_folder) as response:
             json_data = json.loads(response.read().decode())
             return json_data["title"]
 
     def _get_tags(self, note_id: str) -> List[str]:
-        req_tag = urllib.request.Request(self.get_tag.format(id=note_id))
+        req_tag = urllib.request.Request(self._get_tag_url.format(id=note_id))
         with urllib.request.urlopen(req_tag) as response:
             json_data = json.loads(response.read().decode())
             return [tag["title"] for tag in json_data["items"]]
@@ -82,5 +81,8 @@ class JoplinLoader(BaseLoader):
     def _convert_date(self, date: int) -> str:
         return datetime.fromtimestamp(date / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
+    def lazy_load(self) -> Iterator[Document]:
+        yield from self._get_notes()
+
     def load(self) -> List[Document]:
-        return self._get_notes()
+        return list(self.lazy_load())
