@@ -85,7 +85,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
     """Wraps a parser and tries to fix parsing errors.
 
     Does this by passing the original prompt, the completion, AND the error
-    that was raised to another language and telling it that the completion
+    that was raised to another language model and telling it that the completion
     did not work, and raised the given error. Differs from RetryOutputParser
     in that this implementation provides the error that was raised back to the
     LLM, which in theory should give it more information on how to fix it.
