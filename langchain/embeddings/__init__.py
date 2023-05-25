@@ -17,6 +17,7 @@ from langchain.embeddings.huggingface import (
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain.embeddings.jina import JinaEmbeddings
 from langchain.embeddings.llamacpp import LlamaCppEmbeddings
+from langchain.embeddings.modelscope_hub import ModelScopeEmbeddings
 from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
@@ -27,6 +28,7 @@ from langchain.embeddings.self_hosted_hugging_face import (
 )
 from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
+from langchain.embeddings.vertexai import VertexAIEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +40,7 @@ __all__ = [
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
     "HuggingFaceHubEmbeddings",
+    "ModelScopeEmbeddings",
     "TensorflowHubEmbeddings",
     "SagemakerEndpointEmbeddings",
     "HuggingFaceInstructEmbeddings",
@@ -50,6 +53,7 @@ __all__ = [
     "AlephAlphaSymmetricSemanticEmbedding",
     "SentenceTransformerEmbeddings",
     "GooglePalmEmbeddings",
+    "VertexAIEmbeddings",
 ]
 
 

@@ -888,7 +888,12 @@ def _configure(
                     handler.ensure_session()
                     callback_manager.add_handler(handler, True)
                 except Exception as e:
-                    logger.debug("Unable to load requested LangChainTracer", e)
+                    logger.warning(
+                        "Unable to load requested LangChainTracer."
+                        " To disable this warning,"
+                        " unset the  LANGCHAIN_TRACING_V2 environment variables.",
+                        e,
+                    )
         if open_ai is not None and not any(
             isinstance(handler, OpenAICallbackHandler)
             for handler in callback_manager.handlers
