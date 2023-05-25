@@ -35,6 +35,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     file_ids: Optional[List[str]] = None
     recursive: bool = False
     file_types: Optional[Sequence[str]] = None
+    load_trashed_files: bool = False
 
     class Config: 
         arbitrary_types_allowed = True
@@ -210,8 +211,10 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             _files = files
 
         returns = []
-        for file in _files:
-            if file["mimeType"] == "application/vnd.google-apps.document":
+        for file in files:
+            if file["trashed"] and not self.load_trashed_files:
+                continue
+            elif file["mimeType"] == "application/vnd.google-apps.document":
                 returns.append(self._load_document_from_id(file["id"]))  # type: ignore
             elif file["mimeType"] == "application/vnd.google-apps.spreadsheet":
                 returns.extend(self._load_sheet_from_id(file["id"]))  # type: ignore
@@ -219,7 +222,6 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 returns.extend(self._load_file_from_id(file["id"]))  # type: ignore
             else:
                 pass
-
         return returns
 
     def _fetch_files_recursive(
@@ -233,7 +235,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 pageSize=1000,
                 includeItemsFromAllDrives=True,
                 supportsAllDrives=True,
-                fields="nextPageToken, files(id, name, mimeType, parents)",
+                fields="nextPageToken, files(id, name, mimeType, parents, trashed)",
             )
             .execute()
         )
