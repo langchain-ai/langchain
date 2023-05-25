@@ -63,6 +63,7 @@ class HuggingFacePipeline(LLM):
         task: str,
         device: int = -1,
         model_kwargs: Optional[dict] = None,
+        pipeline_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> LLM:
         """Construct the pipeline object from model_id and task."""
@@ -125,6 +126,7 @@ class HuggingFacePipeline(LLM):
             tokenizer=tokenizer,
             device=device,
             model_kwargs=_model_kwargs,
+            **pipeline_kwargs
         )
         if pipeline.task not in VALID_TASKS:
             raise ValueError(
