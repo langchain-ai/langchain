@@ -10,6 +10,7 @@ from langchain.llms.base import BaseLLM
 from langchain.llms.beam import Beam
 from langchain.llms.cerebriumai import CerebriumAI
 from langchain.llms.cohere import Cohere
+from langchain.llms.ctransformers import CTransformers
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.fake import FakeListLLM
 from langchain.llms.forefrontai import ForefrontAI
@@ -48,6 +49,7 @@ __all__ = [
     "Beam",
     "CerebriumAI",
     "Cohere",
+    "CTransformers",
     "DeepInfra",
     "ForefrontAI",
     "GooglePalm",
@@ -92,6 +94,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "beam": Beam,
     "cerebriumai": CerebriumAI,
     "cohere": Cohere,
+    "ctransformers": CTransformers,
     "deepinfra": DeepInfra,
     "forefrontai": ForefrontAI,
     "google_palm": GooglePalm,
