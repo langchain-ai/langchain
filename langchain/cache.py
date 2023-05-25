@@ -431,10 +431,24 @@ class MomentoCache(BaseCache):
     def __init__(
         self, cache_client: Any, cache_name: str, ensure_cache_exists: bool = True
     ):
+        """Instantiate a prompt cache using Momento as a backend.
+
+        Note: to instantiate the cache client passed to MomentoCache,
+        you must have a Momento account. See https://gomomento.com/.
+
+        Args:
+            cache_client (CacheClient): The Momento cache client.
+            cache_name (str): The name of the cache to use to store the data.
+            ensure_cache_exists (bool, optional): Create the cache if it doesn't
+                exist. Defaults to True.
+
+        Raises:
+            ImportError: Momento python package is not installed.
+        """
         try:
             from momento import CacheClient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import momento python package. "
                 "Please install it with `pip install momento`."
             )

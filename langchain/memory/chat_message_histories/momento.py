@@ -27,6 +27,25 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         ttl: Optional[timedelta] = None,
         ensure_cache_exists: bool = True,
     ):
+        """Instantiate a chat message history cache that uses Momento as a backend.
+
+        Note: to instantiate the cache client passed to MomentoChatMessageHistory,
+        you must have a Momento account at https://gomomento.com/.
+
+        Args:
+            session_id (str): The session ID to use for this chat session.
+            cache_client (CacheClient): The Momento cache client.
+            cache_name (str): The name of the cache to use to store the messages.
+            key_prefix (str, optional): The prefix to apply to the cache key.
+                Defaults to "message_store:".
+            ttl (Optional[timedelta], optional): The TTL to use for the messages.
+                Defaults to None, ie the default TTL of the cache will be used.
+            ensure_cache_exists (bool, optional): Create the cache if it doesn't exist.
+                Defaults to True.
+
+        Raises:
+            ImportError: Momento python package is not installed.
+        """
         try:
             from momento import CacheClient
             from momento.requests import CollectionTtl
