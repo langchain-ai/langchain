@@ -219,10 +219,10 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
     )
 
 
-def _get_sms(**kwargs: Any) -> BaseTool:
+def _get_twilio(**kwargs: Any) -> BaseTool:
     return Tool(
-        name="Sms",
-        description="Useful for when you need to send a message to a provided phone number.",
+        name="Text Message",
+        description="Useful for when you need to send a text message to a provided phone number.",
         func=TwilioAPIWrapper(**kwargs).run,
     )
 
@@ -295,7 +295,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["serper_api_key", "aiosession"],
     ),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
-    "sms": (_get_sms, ["account_sid", "auth_token", "from_number"]),
+    "twilio": (_get_twilio, ["account_sid", "auth_token", "from_number"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
     "arxiv": (
