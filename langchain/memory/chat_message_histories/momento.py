@@ -88,7 +88,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
             raise Exception(f"Unexpected response: {create_cache_response}")
 
     @property
-    def messages(self) -> list[BaseMessage]:
+    def messages(self) -> list[BaseMessage]:  # type: ignore[override]
         """Retrieve the messages from Momento.
 
         Raises:
