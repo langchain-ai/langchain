@@ -13,15 +13,21 @@ from typing import (
     List,
     Literal,
     Optional,
+    Sequence,
+    Type,
+    TypeVar,
     Union,
 )
 
 from langchain.docstore.document import Document
+from langchain.schema import BaseDocumentTransformer
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
+
+TS = TypeVar("TS", bound="TextSplitter")
 
 
-class TextSplitter(ABC):
+class TextSplitter(BaseDocumentTransformer, ABC):
     """Interface for splitting text into chunks."""
 
     def __init__(
@@ -58,11 +64,13 @@ class TextSplitter(ABC):
                 documents.append(new_doc)
         return documents
 
-    def split_documents(self, documents: List[Document]) -> List[Document]:
+    def split_documents(self, documents: Iterable[Document]) -> List[Document]:
         """Split documents."""
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return self.create_documents(texts, metadatas)
+        texts, metadatas = [], []
+        for doc in documents:
+            texts.append(doc.page_content)
+            metadatas.append(doc.metadata)
+        return self.create_documents(texts, metadatas=metadatas)
 
     def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
         text = separator.join(docs)
@@ -137,18 +145,18 @@ class TextSplitter(ABC):
 
     @classmethod
     def from_tiktoken_encoder(
-        cls,
+        cls: Type[TS],
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
-    ) -> TextSplitter:
+    ) -> TS:
         """Text splitter that uses tiktoken encoder to count length."""
         try:
             import tiktoken
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate max_tokens_for_prompt. "
                 "Please install it with `pip install tiktoken`."
@@ -159,17 +167,37 @@ class TextSplitter(ABC):
         else:
             enc = tiktoken.get_encoding(encoding_name)
 
-        def _tiktoken_encoder(text: str, **kwargs: Any) -> int:
+        def _tiktoken_encoder(text: str) -> int:
             return len(
                 enc.encode(
                     text,
                     allowed_special=allowed_special,
                     disallowed_special=disallowed_special,
-                    **kwargs,
                 )
             )
 
+        if issubclass(cls, TokenTextSplitter):
+            extra_kwargs = {
+                "encoding_name": encoding_name,
+                "model_name": model_name,
+                "allowed_special": allowed_special,
+                "disallowed_special": disallowed_special,
+            }
+            kwargs = {**kwargs, **extra_kwargs}
+
         return cls(length_function=_tiktoken_encoder, **kwargs)
+
+    def transform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Transform sequence of documents by splitting them."""
+        return self.split_documents(list(documents))
+
+    async def atransform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Asynchronously transform a sequence of documents by splitting them."""
+        raise NotImplementedError
 
 
 class CharacterTextSplitter(TextSplitter):
@@ -206,7 +234,7 @@ class TokenTextSplitter(TextSplitter):
         try:
             import tiktoken
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
                 "Please install it with `pip install tiktoken`."
@@ -398,7 +426,7 @@ class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Python syntax."""
 
     def __init__(self, **kwargs: Any):
-        """Initialize a MarkdownTextSplitter."""
+        """Initialize a PythonCodeTextSplitter."""
         separators = [
             # First, try to split along class definitions
             "\nclass ",

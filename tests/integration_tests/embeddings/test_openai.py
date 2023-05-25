@@ -1,4 +1,7 @@
 """Test openai embeddings."""
+import numpy as np
+import openai
+
 from langchain.embeddings.openai import OpenAIEmbeddings
 
 
@@ -29,3 +32,17 @@ def test_openai_embedding_query() -> None:
     embedding = OpenAIEmbeddings()
     output = embedding.embed_query(document)
     assert len(output) == 1536
+
+
+def test_openai_embedding_with_empty_string() -> None:
+    """Test openai embeddings with empty string."""
+    document = ["", "abc"]
+    embedding = OpenAIEmbeddings()
+    output = embedding.embed_documents(document)
+    assert len(output) == 2
+    assert len(output[0]) == 1536
+    expected_output = openai.Embedding.create(input="", model="text-embedding-ada-002")[
+        "data"
+    ][0]["embedding"]
+    assert np.allclose(output[0], expected_output)
+    assert len(output[1]) == 1536

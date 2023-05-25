@@ -2,7 +2,7 @@
 
 import pytest
 
-from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.schema import (
     BaseMessage,

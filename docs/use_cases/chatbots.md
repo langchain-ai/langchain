@@ -16,3 +16,6 @@ The following resources exist:
 Additional related resources include:
 - [Memory Key Concepts](../modules/memory.rst): Explanation of key concepts related to memory.
 - [Memory Examples](../modules/memory/how_to_guides.rst): A collection of how-to examples for working with memory.
+
+More end-to-end examples include:
+- [Voice Assistant](chatbots/voice_assistant.ipynb): A notebook walking through how to create a voice assistant using LangChain.

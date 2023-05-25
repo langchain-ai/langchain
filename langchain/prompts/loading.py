@@ -14,7 +14,7 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:
@@ -74,15 +74,14 @@ def _load_examples(config: dict) -> dict:
 
 def _load_output_parser(config: dict) -> dict:
     """Load output parser."""
-    if "output_parsers" in config:
-        if config["output_parsers"] is not None:
-            _config = config["output_parsers"]
-            output_parser_type = _config["_type"]
-            if output_parser_type == "regex_parser":
-                output_parser = RegexParser(**_config)
-            else:
-                raise ValueError(f"Unsupported output parser {output_parser_type}")
-            config["output_parsers"] = output_parser
+    if "output_parser" in config and config["output_parser"]:
+        _config = config.pop("output_parser")
+        output_parser_type = _config.pop("_type")
+        if output_parser_type == "regex_parser":
+            output_parser = RegexParser(**_config)
+        else:
+            raise ValueError(f"Unsupported output parser {output_parser_type}")
+        config["output_parser"] = output_parser
     return config
 
 

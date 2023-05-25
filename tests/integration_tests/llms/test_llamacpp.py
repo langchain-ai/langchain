@@ -1,9 +1,12 @@
 # flake8: noqa
 """Test Llama.cpp wrapper."""
 import os
+from typing import Generator
 from urllib.request import urlretrieve
 
 from langchain.llms import LlamaCpp
+
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 def get_model() -> str:
@@ -32,3 +35,36 @@ def test_llamacpp_inference() -> None:
     llm = LlamaCpp(model_path=model_path)
     output = llm("Say foo:")
     assert isinstance(output, str)
+    assert len(output) > 1
+
+
+def test_llamacpp_streaming() -> None:
+    """Test streaming tokens from LlamaCpp."""
+    model_path = get_model()
+    llm = LlamaCpp(model_path=model_path, max_tokens=10)
+    generator = llm.stream("Q: How do you say 'hello' in German? A:'", stop=["'"])
+    stream_results_string = ""
+    assert isinstance(generator, Generator)
+
+    for chunk in generator:
+        assert not isinstance(chunk, str)
+        # Note that this matches the OpenAI format:
+        assert isinstance(chunk["choices"][0]["text"], str)
+        stream_results_string += chunk["choices"][0]["text"]
+    assert len(stream_results_string.strip()) > 1
+
+
+def test_llamacpp_streaming_callback() -> None:
+    """Test that streaming correctly invokes on_llm_new_token callback."""
+    MAX_TOKENS = 5
+    OFF_BY_ONE = 1  # There may be an off by one error in the upstream code!
+
+    callback_handler = FakeCallbackHandler()
+    llm = LlamaCpp(
+        model_path=get_model(),
+        callbacks=[callback_handler],
+        verbose=True,
+        max_tokens=MAX_TOKENS,
+    )
+    llm("Q: Can you count to 10? A:'1, ")
+    assert callback_handler.llm_streams <= MAX_TOKENS + OFF_BY_ONE

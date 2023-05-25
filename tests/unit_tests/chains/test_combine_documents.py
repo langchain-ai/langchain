@@ -4,6 +4,8 @@ from typing import Any, List
 
 import pytest
 
+from langchain import PromptTemplate
+from langchain.chains.combine_documents.base import format_document
 from langchain.chains.combine_documents.map_reduce import (
     _collapse_docs,
     _split_list_of_docs,
@@ -116,3 +118,24 @@ def test__collapse_docs_metadata() -> None:
     }
     expected_output = Document(page_content="foobar", metadata=expected_metadata)
     assert output == expected_output
+
+
+def test_format_doc_with_metadata() -> None:
+    """Test format doc on a valid document."""
+    doc = Document(page_content="foo", metadata={"bar": "baz"})
+    prompt = PromptTemplate(
+        input_variables=["page_content", "bar"], template="{page_content}, {bar}"
+    )
+    expected_output = "foo, baz"
+    output = format_document(doc, prompt)
+    assert output == expected_output
+
+
+def test_format_doc_missing_metadata() -> None:
+    """Test format doc on a document with missing metadata."""
+    doc = Document(page_content="foo")
+    prompt = PromptTemplate(
+        input_variables=["page_content", "bar"], template="{page_content}, {bar}"
+    )
+    with pytest.raises(ValueError):
+        format_document(doc, prompt)

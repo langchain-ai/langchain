@@ -4,6 +4,7 @@ from typing import Any, List, Mapping, Optional, Union
 
 from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
 from langchain.agents.tools import Tool
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
@@ -32,7 +33,12 @@ class FakeListLLM(LLM):
         """Return type of llm."""
         return "fake_list"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Increment counter, and then return response in that index."""
         self.i += 1
         return self.responses[self.i]
@@ -62,20 +68,6 @@ def test_predict_until_observation_normal() -> None:
     agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
     output = agent.plan([], input="")
     expected_output = AgentAction("Search", "foo", outputs[0])
-    assert output == expected_output
-
-
-def test_predict_until_observation_repeat() -> None:
-    """Test when no action is generated initially."""
-    outputs = ["foo", " Search[foo]"]
-    fake_llm = FakeListLLM(responses=outputs)
-    tools = [
-        Tool(name="Search", func=lambda x: x, description="foo"),
-        Tool(name="Lookup", func=lambda x: x, description="bar"),
-    ]
-    agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
-    output = agent.plan([], input="")
-    expected_output = AgentAction("Search", "foo", "foo\nAction: Search[foo]")
     assert output == expected_output
 
 

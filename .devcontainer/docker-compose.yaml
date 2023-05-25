@@ -1,0 +1,31 @@
+version: '3'
+services:
+  langchain:
+    build:
+      dockerfile: .devcontainer/Dockerfile
+      context: ../ 
+    volumes:
+      - ../:/workspaces/langchain
+    networks:
+      - langchain-network 
+  #   environment:
+  #     MONGO_ROOT_USERNAME: root
+  #     MONGO_ROOT_PASSWORD: example123
+  #   depends_on:
+  #     - mongo   
+  # mongo:
+  #   image: mongo
+  #   restart: unless-stopped
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: root
+  #     MONGO_INITDB_ROOT_PASSWORD: example123
+  #   ports:
+  #     - "27017:27017"
+  #   networks:
+  #     - langchain-network
+
+networks:
+  langchain-network:
+    driver: bridge
+    
+    

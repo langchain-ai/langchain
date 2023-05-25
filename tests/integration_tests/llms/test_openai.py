@@ -5,7 +5,8 @@ from typing import Generator
 
 import pytest
 
-from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.manager import CallbackManager
+from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
@@ -17,6 +18,13 @@ def test_openai_call() -> None:
     llm = OpenAI(max_tokens=10)
     output = llm("Say foo:")
     assert isinstance(output, str)
+
+
+def test_openai_model_param() -> None:
+    llm = OpenAI(model="foo")
+    assert llm.model_name == "foo"
+    llm = OpenAI(model_name="foo")
+    assert llm.model_name == "foo"
 
 
 def test_openai_extra_kwargs() -> None:
@@ -33,6 +41,14 @@ def test_openai_extra_kwargs() -> None:
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
         OpenAI(foo=3, model_kwargs={"foo": 2})
+
+    # Test that if explicit param is specified in kwargs it errors
+    with pytest.raises(ValueError):
+        OpenAI(model_kwargs={"temperature": 0.2})
+
+    # Test that "model" cannot be specified in kwargs
+    with pytest.raises(ValueError):
+        OpenAI(model_kwargs={"model": "text-davinci-003"})
 
 
 def test_openai_llm_output_contains_model_name() -> None:
@@ -222,3 +238,40 @@ def test_openai_modelname_to_contextsize_invalid() -> None:
     """Test model name to context size on an invalid model."""
     with pytest.raises(ValueError):
         OpenAI().modelname_to_contextsize("foobar")
+
+
+_EXPECTED_NUM_TOKENS = {
+    "ada": 17,
+    "babbage": 17,
+    "curie": 17,
+    "davinci": 17,
+    "gpt-4": 12,
+    "gpt-4-32k": 12,
+    "gpt-3.5-turbo": 12,
+}
+
+_MODELS = models = [
+    "ada",
+    "babbage",
+    "curie",
+    "davinci",
+]
+_CHAT_MODELS = [
+    "gpt-4",
+    "gpt-4-32k",
+    "gpt-3.5-turbo",
+]
+
+
+@pytest.mark.parametrize("model", _MODELS)
+def test_openai_get_num_tokens(model: str) -> None:
+    """Test get_tokens."""
+    llm = OpenAI(model=model)
+    assert llm.get_num_tokens("表情符号是\n🦜🔗") == _EXPECTED_NUM_TOKENS[model]
+
+
+@pytest.mark.parametrize("model", _CHAT_MODELS)
+def test_chat_openai_get_num_tokens(model: str) -> None:
+    """Test get_tokens."""
+    llm = ChatOpenAI(model=model)
+    assert llm.get_num_tokens("表情符号是\n🦜🔗") == _EXPECTED_NUM_TOKENS[model]

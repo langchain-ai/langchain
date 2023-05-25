@@ -9,7 +9,7 @@ from langchain.agents.agent_toolkits.json.base import create_json_agent
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.agent_toolkits.openapi.prompt import DESCRIPTION
 from langchain.agents.tools import Tool
-from langchain.llms.base import BaseLLM
+from langchain.base_language import BaseLanguageModel
 from langchain.requests import TextRequestsWrapper
 from langchain.tools import BaseTool
 from langchain.tools.json.tool import JsonSpec
@@ -57,7 +57,7 @@ class OpenAPIToolkit(BaseToolkit):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         json_spec: JsonSpec,
         requests_wrapper: TextRequestsWrapper,
         **kwargs: Any,

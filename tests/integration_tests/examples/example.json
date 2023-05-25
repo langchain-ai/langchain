@@ -1,0 +1,25 @@
+{
+    "messages": [
+        {
+            "sender_name": "User 2",
+            "timestamp_ms": 1675597571851,
+            "content": "Bye!"
+        },
+        {
+            "sender_name": "User 1",
+            "timestamp_ms": 1675597435669,
+            "content": "Oh no worries! Bye"
+        },
+        {
+            "sender_name": "User 2",
+            "timestamp_ms": 1675595060730,
+            "photos": [
+                {
+                    "uri": "url_of_some_picture.jpg",
+                    "creation_timestamp": 1675595059
+                }
+            ]
+        }
+    ],
+    "title": "User 1 and User 2 chat"
+}

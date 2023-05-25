@@ -5,11 +5,12 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.qa_generation.prompt import PROMPT_SELECTOR
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
@@ -45,11 +46,14 @@ class QAGenerationChain(Chain):
     def output_keys(self) -> List[str]:
         return [self.output_key]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, List]:
         docs = self.text_splitter.create_documents([inputs[self.input_key]])
-        results = self.llm_chain.generate([{"text": d.page_content} for d in docs])
+        results = self.llm_chain.generate(
+            [{"text": d.page_content} for d in docs], run_manager=run_manager
+        )
         qa = [json.loads(res[0].text) for res in results.generations]
         return {self.output_key: qa}
-
-    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        raise NotImplementedError

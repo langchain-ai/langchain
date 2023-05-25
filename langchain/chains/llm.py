@@ -5,11 +5,19 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from pydantic import Extra
 
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
+    CallbackManager,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseLanguageModel, LLMResult, PromptValue
+from langchain.schema import LLMResult, PromptValue
 
 
 class LLMChain(Chain):
@@ -53,21 +61,40 @@ class LLMChain(Chain):
         """
         return [self.output_key]
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        return self.apply([inputs])[0]
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        response = self.generate([inputs], run_manager=run_manager)
+        return self.create_outputs(response)[0]
 
-    def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
+    def generate(
+        self,
+        input_list: List[Dict[str, Any]],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> LLMResult:
         """Generate LLM result from inputs."""
-        prompts, stop = self.prep_prompts(input_list)
-        return self.llm.generate_prompt(prompts, stop)
+        prompts, stop = self.prep_prompts(input_list, run_manager=run_manager)
+        return self.llm.generate_prompt(
+            prompts, stop, callbacks=run_manager.get_child() if run_manager else None
+        )
 
-    async def agenerate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
+    async def agenerate(
+        self,
+        input_list: List[Dict[str, Any]],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> LLMResult:
         """Generate LLM result from inputs."""
-        prompts, stop = await self.aprep_prompts(input_list)
-        return await self.llm.agenerate_prompt(prompts, stop)
+        prompts, stop = await self.aprep_prompts(input_list, run_manager=run_manager)
+        return await self.llm.agenerate_prompt(
+            prompts, stop, callbacks=run_manager.get_child() if run_manager else None
+        )
 
     def prep_prompts(
-        self, input_list: List[Dict[str, Any]]
+        self,
+        input_list: List[Dict[str, Any]],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Tuple[List[PromptValue], Optional[List[str]]]:
         """Prepare prompts from inputs."""
         stop = None
@@ -79,7 +106,8 @@ class LLMChain(Chain):
             prompt = self.prompt.format_prompt(**selected_inputs)
             _colored_text = get_colored_text(prompt.to_string(), "green")
             _text = "Prompt after formatting:\n" + _colored_text
-            self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
+            if run_manager:
+                run_manager.on_text(_text, end="\n", verbose=self.verbose)
             if "stop" in inputs and inputs["stop"] != stop:
                 raise ValueError(
                     "If `stop` is present in any inputs, should be present in all."
@@ -88,7 +116,9 @@ class LLMChain(Chain):
         return prompts, stop
 
     async def aprep_prompts(
-        self, input_list: List[Dict[str, Any]]
+        self,
+        input_list: List[Dict[str, Any]],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Tuple[List[PromptValue], Optional[List[str]]]:
         """Prepare prompts from inputs."""
         stop = None
@@ -100,12 +130,8 @@ class LLMChain(Chain):
             prompt = self.prompt.format_prompt(**selected_inputs)
             _colored_text = get_colored_text(prompt.to_string(), "green")
             _text = "Prompt after formatting:\n" + _colored_text
-            if self.callback_manager.is_async:
-                await self.callback_manager.on_text(
-                    _text, end="\n", verbose=self.verbose
-                )
-            else:
-                self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
+            if run_manager:
+                await run_manager.on_text(_text, end="\n", verbose=self.verbose)
             if "stop" in inputs and inputs["stop"] != stop:
                 raise ValueError(
                     "If `stop` is present in any inputs, should be present in all."
@@ -113,15 +139,45 @@ class LLMChain(Chain):
             prompts.append(prompt)
         return prompts, stop
 
-    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+    def apply(
+        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
+    ) -> List[Dict[str, str]]:
         """Utilize the LLM generate method for speed gains."""
-        response = self.generate(input_list)
-        return self.create_outputs(response)
+        callback_manager = CallbackManager.configure(
+            callbacks, self.callbacks, self.verbose
+        )
+        run_manager = callback_manager.on_chain_start(
+            {"name": self.__class__.__name__},
+            {"input_list": input_list},
+        )
+        try:
+            response = self.generate(input_list, run_manager=run_manager)
+        except (KeyboardInterrupt, Exception) as e:
+            run_manager.on_chain_error(e)
+            raise e
+        outputs = self.create_outputs(response)
+        run_manager.on_chain_end({"outputs": outputs})
+        return outputs
 
-    async def aapply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+    async def aapply(
+        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
+    ) -> List[Dict[str, str]]:
         """Utilize the LLM generate method for speed gains."""
-        response = await self.agenerate(input_list)
-        return self.create_outputs(response)
+        callback_manager = AsyncCallbackManager.configure(
+            callbacks, self.callbacks, self.verbose
+        )
+        run_manager = await callback_manager.on_chain_start(
+            {"name": self.__class__.__name__},
+            {"input_list": input_list},
+        )
+        try:
+            response = await self.agenerate(input_list, run_manager=run_manager)
+        except (KeyboardInterrupt, Exception) as e:
+            await run_manager.on_chain_error(e)
+            raise e
+        outputs = self.create_outputs(response)
+        await run_manager.on_chain_end({"outputs": outputs})
+        return outputs
 
     def create_outputs(self, response: LLMResult) -> List[Dict[str, str]]:
         """Create outputs from response."""
@@ -131,13 +187,19 @@ class LLMChain(Chain):
             for generation in response.generations
         ]
 
-    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        return (await self.aapply([inputs]))[0]
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        response = await self.agenerate([inputs], run_manager=run_manager)
+        return self.create_outputs(response)[0]
 
-    def predict(self, **kwargs: Any) -> str:
+    def predict(self, callbacks: Callbacks = None, **kwargs: Any) -> str:
         """Format prompt with kwargs and pass to LLM.
 
         Args:
+            callbacks: Callbacks to pass to LLMChain
             **kwargs: Keys to pass to prompt template.
 
         Returns:
@@ -148,12 +210,13 @@ class LLMChain(Chain):
 
                 completion = llm.predict(adjective="funny")
         """
-        return self(kwargs)[self.output_key]
+        return self(kwargs, callbacks=callbacks)[self.output_key]
 
-    async def apredict(self, **kwargs: Any) -> str:
+    async def apredict(self, callbacks: Callbacks = None, **kwargs: Any) -> str:
         """Format prompt with kwargs and pass to LLM.
 
         Args:
+            callbacks: Callbacks to pass to LLMChain
             **kwargs: Keys to pass to prompt template.
 
         Returns:
@@ -164,31 +227,33 @@ class LLMChain(Chain):
 
                 completion = llm.predict(adjective="funny")
         """
-        return (await self.acall(kwargs))[self.output_key]
+        return (await self.acall(kwargs, callbacks=callbacks))[self.output_key]
 
-    def predict_and_parse(self, **kwargs: Any) -> Union[str, List[str], Dict[str, str]]:
+    def predict_and_parse(
+        self, callbacks: Callbacks = None, **kwargs: Any
+    ) -> Union[str, List[str], Dict[str, Any]]:
         """Call predict and then parse the results."""
-        result = self.predict(**kwargs)
+        result = self.predict(callbacks=callbacks, **kwargs)
         if self.prompt.output_parser is not None:
             return self.prompt.output_parser.parse(result)
         else:
             return result
 
     async def apredict_and_parse(
-        self, **kwargs: Any
+        self, callbacks: Callbacks = None, **kwargs: Any
     ) -> Union[str, List[str], Dict[str, str]]:
         """Call apredict and then parse the results."""
-        result = await self.apredict(**kwargs)
+        result = await self.apredict(callbacks=callbacks, **kwargs)
         if self.prompt.output_parser is not None:
             return self.prompt.output_parser.parse(result)
         else:
             return result
 
     def apply_and_parse(
-        self, input_list: List[Dict[str, Any]]
+        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         """Call apply and then parse the results."""
-        result = self.apply(input_list)
+        result = self.apply(input_list, callbacks=callbacks)
         return self._parse_result(result)
 
     def _parse_result(
@@ -202,10 +267,10 @@ class LLMChain(Chain):
             return result
 
     async def aapply_and_parse(
-        self, input_list: List[Dict[str, Any]]
+        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         """Call apply and then parse the results."""
-        result = await self.aapply(input_list)
+        result = await self.aapply(input_list, callbacks=callbacks)
         return self._parse_result(result)
 
     @property

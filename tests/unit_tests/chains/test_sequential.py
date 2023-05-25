@@ -1,8 +1,9 @@
 """Test pipeline functionality."""
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pytest
 
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.memory.simple import SimpleMemory
@@ -24,7 +25,11 @@ class FakeChain(Chain):
         """Input keys this chain returns."""
         return self.output_variables
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         outputs = {}
         for var in self.output_variables:
             variables = [inputs[k] for k in self.input_variables]

@@ -1,46 +1,30 @@
 """Functionality for loading agents."""
 import json
+import logging
 from pathlib import Path
 from typing import Any, List, Optional, Union
 
 import yaml
 
 from langchain.agents.agent import BaseSingleActionAgent
-from langchain.agents.agent_types import AgentType
-from langchain.agents.chat.base import ChatAgent
-from langchain.agents.chat_v2.base import ChatAgentV2
-from langchain.agents.conversational.base import ConversationalAgent
-from langchain.agents.conversational_chat.base import ConversationalChatAgent
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.react.base import ReActDocstoreAgent
-from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
 from langchain.agents.tools import Tool
+from langchain.agents.types import AGENT_TO_CLASS
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.loading import load_chain, load_chain_from_config
-from langchain.llms.base import BaseLLM
 from langchain.utilities.loading import try_load_from_hub
 
-AGENT_TO_CLASS = {
-    AgentType.ZERO_SHOT_REACT_DESCRIPTION: ZeroShotAgent,
-    AgentType.REACT_DOCSTORE: ReActDocstoreAgent,
-    AgentType.SELF_ASK_WITH_SEARCH: SelfAskWithSearchAgent,
-    AgentType.CONVERSATIONAL_REACT_DESCRIPTION: ConversationalAgent,
-    AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION: ChatAgent,
-    AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION: ConversationalChatAgent,
-    AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION_V2: ChatAgentV2,
-}
+logger = logging.getLogger(__file__)
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/agents/"
 
 
 def _load_agent_from_tools(
-    config: dict, llm: BaseLLM, tools: List[Tool], **kwargs: Any
+    config: dict, llm: BaseLanguageModel, tools: List[Tool], **kwargs: Any
 ) -> BaseSingleActionAgent:
     config_type = config.pop("_type")
     if config_type not in AGENT_TO_CLASS:
         raise ValueError(f"Loading {config_type} agent not supported")
 
-    if config_type not in AGENT_TO_CLASS:
-        raise ValueError(f"Loading {config_type} agent not supported")
     agent_cls = AGENT_TO_CLASS[config_type]
     combined_config = {**config, **kwargs}
     return agent_cls.from_llm_and_tools(llm, tools, **combined_config)
@@ -48,7 +32,7 @@ def _load_agent_from_tools(
 
 def load_agent_from_config(
     config: dict,
-    llm: Optional[BaseLLM] = None,
+    llm: Optional[BaseLanguageModel] = None,
     tools: Optional[List[Tool]] = None,
     **kwargs: Any,
 ) -> BaseSingleActionAgent:
@@ -80,6 +64,13 @@ def load_agent_from_config(
         config["llm_chain"] = load_chain(config.pop("llm_chain_path"))
     else:
         raise ValueError("One of `llm_chain` and `llm_chain_path` should be specified.")
+    if "output_parser" in config:
+        logger.warning(
+            "Currently loading output parsers on agent is not supported, "
+            "will just use the default one."
+        )
+        del config["output_parser"]
+
     combined_config = {**config, **kwargs}
     return agent_cls(**combined_config)  # type: ignore
 

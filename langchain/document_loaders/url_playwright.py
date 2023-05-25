@@ -6,7 +6,7 @@ from typing import List, Optional
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class PlaywrightURLLoader(BaseLoader):
@@ -30,7 +30,7 @@ class PlaywrightURLLoader(BaseLoader):
         try:
             import playwright  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "playwright package not found, please install it with "
                 "`pip install playwright`"
             )
@@ -67,9 +67,10 @@ class PlaywrightURLLoader(BaseLoader):
                     page.goto(url)
 
                     for selector in self.remove_selectors or []:
-                        element = page.locator(selector)
-                        if element.is_visible():
-                            element.evaluate("element => element.remove()")
+                        elements = page.locator(selector).all()
+                        for element in elements:
+                            if element.is_visible():
+                                element.evaluate("element => element.remove()")
 
                     page_source = page.content()
                     elements = partition_html(text=page_source)
