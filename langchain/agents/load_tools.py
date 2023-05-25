@@ -46,7 +46,7 @@ from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.graphql import GraphQLAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
-from langchain.utilities.sms import Sms
+from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
@@ -223,7 +223,7 @@ def _get_sms(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Sms",
         description="Useful for when you need to send a message to a provided phone number.",
-        func=Sms(**kwargs).run,
+        func=TwilioAPIWrapper(**kwargs).run,
     )
 
 
