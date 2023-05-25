@@ -23,7 +23,7 @@ The results of these actions can then be fed back into the language model to gen
 ## ReAct
 
 `ReAct` is a prompting technique that combines Chain-of-Thought prompting with action plan generation.
-This induces the to model to think about what action to take, then take it.
+This induces the model to think about what action to take, then take it.
 
 - [Paper](https://arxiv.org/pdf/2210.03629.pdf)
 - [LangChain Example](../modules/agents/agents/examples/react.ipynb)
