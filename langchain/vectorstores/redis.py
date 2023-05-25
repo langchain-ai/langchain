@@ -109,13 +109,13 @@ class Redis(VectorStore):
             )
 
     To use a redis replication setup with multiple redis server and redis sentinels
-    set "redis_url" to "redis+sentinel://" scheme. With this url format a path is needed holding the
-    name of the redis service within the sentinels to get the correct redis server connection.
-    The default service name is "mymaster".
+    set "redis_url" to "redis+sentinel://" scheme. With this url format a path is
+    needed holding the name of the redis service within the sentinels to get the
+    correct redis server connection. The default service name is "mymaster".
 
-    An optional username or password is used for booth connections to the rediserver and the sentinel, different
-    passwords for server and sentinel are not supported. And as another constraint only one sentinel instance can
-    be given:
+    An optional username or password is used for booth connections to the rediserver
+    and the sentinel, different passwords for server and sentinel are not supported.
+    And as another constraint only one sentinel instance can be given:
 
     Example:
         .. code-block:: python
@@ -272,8 +272,8 @@ class Redis(VectorStore):
             k (int): The number of documents to return. Default is 4.
             score_threshold (float): The minimum matching score required for a document
                 to be considered a match. Defaults to 0.2.
-                Because the similarity calculation algorithm is based on cosine similarity,
-                the smaller the angle, the higher the similarity.
+                Because the similarity calculation algorithm is based on cosine
+                similarity, the smaller the angle, the higher the similarity.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text,
@@ -492,7 +492,7 @@ class Redis(VectorStore):
         """
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
         try:
-            import redis
+            import redis  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
@@ -528,7 +528,7 @@ class Redis(VectorStore):
         """Connect to an existing Redis index."""
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
         try:
-            import redis
+            import redis  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "

@@ -36,14 +36,14 @@ def get_client(redis_url: str, **kwargs: Any) -> RedisType:
             )
 
     To use a redis replication setup with multiple redis server and redis sentinels
-    set "redis_url" to "redis+sentinel://" scheme. With this url format a path is needed holding the
-    name of the redis service within the sentinels to get the correct redis server connection.
-    The default service name is "mymaster". THe optional second part of the path is the redis db number
-    to connect to.
+    set "redis_url" to "redis+sentinel://" scheme. With this url format a path is
+    needed holding the name of the redis service within the sentinels to get the
+    correct redis server connection. The default service name is "mymaster". The
+    optional second part of the path is the redis db number to connect to.
 
-    An optional username or password is used for booth connections to the rediserver and the sentinel, different
-    passwords for server and sentinel are not supported. And as another constraint only one sentinel instance can
-    be given:
+    An optional username or password is used for booth connections to the rediserver
+    and the sentinel, different passwords for server and sentinel are not supported.
+    And as another constraint only one sentinel instance can be given:
 
     Example:
         .. code-block:: python
@@ -87,6 +87,7 @@ def _redis_sentinel_client(redis_url: str, **kwargs: Any) -> RedisType:
     import redis
 
     parsed_url = urlparse(redis_url)
+    # sentinel needs list with (host, port) tuple, use default port if none available
     sentinel_list = [(parsed_url.hostname or "localhost", parsed_url.port or 26379)]
     if parsed_url.path:
         # "/mymaster/0" first part is service name, optional second part is db number
@@ -105,21 +106,21 @@ def _redis_sentinel_client(redis_url: str, **kwargs: Any) -> RedisType:
         sentinel_args["username"] = parsed_url.username
         kwargs["username"] = parsed_url.username
 
-    # sentinel needs list with (host, port) tuple, use default sentinel port if none is provided
-    # sentinel user/pass is part of sentinel_kwargs, user/pass for redis server connection as direct parameter in kwargs
+    # sentinel user/pass is part of sentinel_kwargs, user/pass for redis server
+    # connection as direct parameter in kwargs
     sentinel_client = redis.sentinel.Sentinel(
         sentinel_list, sentinel_kwargs=sentinel_args, **kwargs
     )
 
-    # redis server might have password but not sentinel - fetch this error and try again without pass
-    # everything else cannot be handled here -> user needed
+    # redis server might have password but not sentinel - fetch this error and try
+    # again without pass, everything else cannot be handled here -> user needed
     try:
         sentinel_client.execute_command("ping")
     except redis.exceptions.AuthenticationError as ae:
         if "no password is set" in ae.args[0]:
             logger.warning(
-                "Redis sentinel connection configured with password but Sentinel answered \
-NO PASSWORD NEEDED - Please check Sentinel configuration"
+                "Redis sentinel connection configured with password but Sentinel \
+answered NO PASSWORD NEEDED - Please check Sentinel configuration"
             )
             sentinel_client = redis.sentinel.Sentinel(sentinel_list, **kwargs)
         else:
