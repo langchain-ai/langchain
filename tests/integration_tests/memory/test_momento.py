@@ -4,13 +4,13 @@ To run tests, set the environment variable MOMENTO_AUTH_TOKEN to a valid
 Momento auth token. This can be obtained by signing up for a free
 Momento account at https://gomomento.com/.
 """
-from datetime import timedelta
 import json
-from typing import Iterator
 import uuid
+from datetime import timedelta
+from typing import Iterator
 
-from momento import CacheClient, Configurations, CredentialProvider
 import pytest
+from momento import CacheClient, Configurations, CredentialProvider
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import MomentoChatMessageHistory
