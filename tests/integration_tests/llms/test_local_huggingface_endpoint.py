@@ -2,14 +2,31 @@
 
 import unittest
 
+import pytest
+
 from langchain.llms.local_huggingface_endpoint import LocalHuggingFaceEndpoint
 
 
+def test_local_huggingface_endpoint_task_error() -> None:
+    """Test task error raised."""
+    with pytest.raises(ValueError):
+        llm = LocalHuggingFaceEndpoint(task="invalid-task")
+
+
+def test_local_huggingface_endpoint_url_error() -> None:
+    """Test url error raised."""
+    with pytest.raises(ValueError):
+        llm = LocalHuggingFaceEndpoint(config_endpoint_url="", task="text-generation")
+
+
 @unittest.skip("This test requires an inference endpoint.")
-def test_huggingface_endpoint_text_generation() -> None:
+def test_local_huggingface_endpoint_text_generation() -> None:
     """Test valid call to HuggingFace text generation model."""
     llm = LocalHuggingFaceEndpoint(
-        endpoint_url="", task="text-generation", model_kwargs={"max_new_tokens": 10}
+        completion_endpoint_url="",
+        config_endpoint_url="",
+        task="text-generation",
+        model_kwargs={"max_new_tokens": 10},
     )
     output = llm("Say foo:")
     assert isinstance(output, str)
@@ -18,6 +35,11 @@ def test_huggingface_endpoint_text_generation() -> None:
 @unittest.skip("This test requires an inference endpoint.")
 def test_huggingface_endpoint_text2text_generation() -> None:
     """Test valid call to HuggingFace text2text model."""
-    llm = LocalHuggingFaceEndpoint(endpoint_url="", task="text2text-generation")
+    llm = LocalHuggingFaceEndpoint(
+        completion_endpoint_url="",
+        config_endpoint_url="",
+        task="text2text-generation",
+        model_kwargs={"max_new_tokens": 10},
+    )
     output = llm("The capital of New York is")
     assert isinstance(output, str)

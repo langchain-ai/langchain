@@ -52,26 +52,29 @@ class LocalHuggingFaceEndpoint(LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate the task and endpoint url."""
-        if cls.task not in VALID_TASKS:
+        """Validate the task and endpoint urls."""
+        task = values.get("task", "")
+        if task not in VALID_TASKS:
             raise ValueError(
-                f"Got invalid task {cls.task}, "
+                f"Got invalid task {task}, "
                 f"currently only {VALID_TASKS} are supported"
             )
         try:
-            response = requests.get(cls.config_endpoint_url, headers=cls.headers)
+            config_endpoint_url = values.get("config_endpoint_url", "")
+            headers = values.get("headers")
+            response = requests.get(config_endpoint_url, headers=headers)
             response.raise_for_status()
         except Exception as e:
             raise ValueError(
-                f"Could not connect to {cls.config_endpoint_url} with error {e}"
+                f"Could not connect to '{config_endpoint_url}' with error {e}"
             )
         try:
             local_task = response.json()["task"]
         except Exception as e:
             raise ValueError(f"Could not parse response with error {e}")
-        if cls.task != local_task:
+        if task != local_task:
             raise ValueError(
-                f"The llm task '{cls.task}' differs from the local task '{local_task}'."
+                f"The llm task '{task}' differs from the local task '{local_task}'."
             )
         return values
 
