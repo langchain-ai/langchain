@@ -430,27 +430,29 @@ class LangChainPlusClient(BaseSettings):
     def create_feedback(
         self,
         run_id: str,
-        metric_name: str,
-        metric_value: Union[float, str],
+        key: str,
         *,
+        score: Union[float, int, bool, None] = None,
+        value: Union[float, int, bool, str, dict, None] = None,
         source_info: Optional[Dict[str, Any]] = None,
     ) -> Feedback:
         """Create a feedback in the LangChain+ API.
 
         Args:
             run_id: The ID of the run to provide feedback on.
-            metric_name: The name of the metric, tag, or 'aspect' this
+            key: The name of the metric, tag, or 'aspect' this
                 feedback is about.
-            metric_value: The score to rate this run on the metric, or
-                the value or label to assign for this metric.
+            score: The score to rate this run on the metric
+                or aspect.
+            value: The display value or non-numeric value for this feedback.
             source_info: Information about the source of this feedback.
-            extra: Extra information to include with the feedback.
         """
         feedback_source = APIFeedbackSource(metadata=source_info)
         feedback = FeedbackCreate(
             run_id=run_id,
-            metric_name=metric_name,
-            metric_value=metric_value,
+            key=key,
+            score=score,
+            value=value,
             feedback_source=feedback_source,
         )
         response = requests.post(

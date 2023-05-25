@@ -1,21 +1,15 @@
 """LangChain+ langchain_client Integration Tests."""
+import os
 from uuid import uuid4
 
 import pytest
 from tenacity import RetryError
 
-from langchain.callbacks.manager import tracing_v2_enabled
-from langchain.client import LangChainPlusClient
-from langchain.tools.base import tool
-import os
-from uuid import uuid4
-
-import pytest
-
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.chat_models import ChatOpenAI
 from langchain.client import LangChainPlusClient
+from langchain.tools.base import tool
 
 
 @pytest.fixture
@@ -95,10 +89,8 @@ def test_feedback_cycle(
         )
     )
     assert len(order_2) > 0
-    langchain_client.create_feedback(str(order_2[0].id), "test score", metric_value=0)
-    feedback = langchain_client.create_feedback(
-        str(runs[0].id), "test score", metric_value=1
-    )
+    langchain_client.create_feedback(str(order_2[0].id), "test score", score=0)
+    feedback = langchain_client.create_feedback(str(runs[0].id), "test score", score=1)
     feedbacks = list(langchain_client.list_feedback(run_ids=[str(runs[0].id)]))
     assert len(feedbacks) == 1
     assert feedbacks[0].id == feedback.id
@@ -109,7 +101,7 @@ def test_feedback_cycle(
     )
     assert len(other_runs) == 1
     langchain_client.create_feedback(
-        run_id=str(other_runs[0].id), metric_name="test score", metric_value=0
+        run_id=str(other_runs[0].id), key="test score", score=0
     )
     all_runs = list(
         langchain_client.list_runs(session_name=os.environ["LANGCHAIN_SESSION"])

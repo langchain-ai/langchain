@@ -136,10 +136,16 @@ class FeedbackBase(BaseModel):
     """The time the feedback was last modified."""
     run_id: UUID
     """The associated run ID this feedback is logged for."""
-    metric_name: str
-    """The feedback metric name or type."""
-    metric_value: Union[float, bool, int, str]
-    """Score to assign the run."""
+    key: str
+    """The metric name, tag, or aspect to provide feedback on."""
+    score: Union[float, int, bool, None] = None
+    """Value or score to assign the run."""
+    value: float | int | bool | str | dict | None = None
+    """The display value, tag or other value for the feedback if not a metric."""
+    comment: Optional[str] = None
+    """Comment or explanation for the feedback."""
+    correction: Union[str, dict, None] = None
+    """Correction for the run."""
     feedback_source: Optional[Union[APIFeedbackSource, Mapping[str, Any]]] = None
     """The source of the feedback."""
 
