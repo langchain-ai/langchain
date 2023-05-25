@@ -37,6 +37,12 @@ import os
 os.environ["OPENAI_API_KEY"] = "..."
 ```
 
+If you want to set the API key dynamically, you can use the openai_api_key parameter when initiating OpenAI class—for instance, each user's API key.
+
+```python
+from langchain.llms import OpenAI
+llm = OpenAI(openai_api_key="OPENAI_API_KEY")
+```
 
 ## Building a Language Model Application: LLMs
 

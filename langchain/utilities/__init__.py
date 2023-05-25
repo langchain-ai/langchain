@@ -16,6 +16,7 @@ from langchain.utilities.powerbi import PowerBIDataset
 from langchain.utilities.python import PythonREPL
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
+from langchain.utilities.spark_sql import SparkSQL
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
@@ -38,5 +39,6 @@ __all__ = [
     "PythonREPL",
     "LambdaWrapper",
     "PowerBIDataset",
+    "SparkSQL",
     "MetaphorSearchAPIWrapper",
 ]

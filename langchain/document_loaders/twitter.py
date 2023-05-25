@@ -15,7 +15,7 @@ def _dependable_tweepy_import() -> tweepy:
     try:
         import tweepy
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "tweepy package not found, please install it with `pip install tweepy`"
         )
     return tweepy

@@ -313,7 +313,7 @@ class GPTCache(BaseCache):
         try:
             import gptcache  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import gptcache python package. "
                 "Please install it with `pip install gptcache`."
             )
@@ -341,6 +341,8 @@ class GPTCache(BaseCache):
                 pre_embedding_func=get_prompt,
                 data_manager=get_data_manager(data_path=llm_string),
             )
+
+        self.gptcache_dict[llm_string] = _gptcache
         return _gptcache
 
     def _get_gptcache(self, llm_string: str) -> Any:

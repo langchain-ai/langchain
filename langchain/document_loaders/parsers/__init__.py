@@ -1,3 +1,4 @@
+from langchain.document_loaders.parsers.html import BS4HTMLParser
 from langchain.document_loaders.parsers.pdf import (
     PDFMinerParser,
     PDFPlumberParser,
@@ -7,9 +8,10 @@ from langchain.document_loaders.parsers.pdf import (
 )
 
 __all__ = [
-    "PyPDFParser",
+    "BS4HTMLParser",
     "PDFMinerParser",
+    "PDFPlumberParser",
     "PyMuPDFParser",
     "PyPDFium2Parser",
-    "PDFPlumberParser",
+    "PyPDFParser",
 ]

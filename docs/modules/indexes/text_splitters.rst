@@ -30,12 +30,47 @@ For an introduction to the default text splitter and generic functionality see:
    ./text_splitters/getting_started.ipynb
 
 
-We also have documentation for all the types of text splitters that are supported.
-Please see below for that list.
+Usage examples for the text splitters:
+
+- `Character <./text_splitters/examples/character_text_splitter.html>`_
+- `LaTeX <./text_splitters/examples/latex.html>`_
+- `Markdown <./text_splitters/examples/markdown.html>`_
+- `NLTK <./text_splitters/examples/nltk.html>`_
+- `Python code <./text_splitters/examples/python.html>`_
+- `Recursive Character <./text_splitters/examples/recursive_text_splitter.html>`_
+- `spaCy <./text_splitters/examples/spacy.html>`_
+- `tiktoken (OpenAI) <./text_splitters/examples/tiktoken_splitter.html>`_
 
 
 .. toctree::
    :maxdepth: 1
-   :glob:
+   :caption: Text Splitters
+   :name: text_splitters
+   :hidden:
 
-   ./text_splitters/examples/*
+   ./text_splitters/examples/character_text_splitter.ipynb
+   ./text_splitters/examples/latex.ipynb
+   ./text_splitters/examples/markdown.ipynb
+   ./text_splitters/examples/nltk.ipynb
+   ./text_splitters/examples/python.ipynb
+   ./text_splitters/examples/recursive_text_splitter.ipynb
+   ./text_splitters/examples/spacy.ipynb
+   ./text_splitters/examples/tiktoken_splitter.ipynb
+
+
+Most LLMs are constrained by the number of tokens that you can pass in, which is not the same as the number of characters.
+In order to get a more accurate estimate, we can use tokenizers to count the number of tokens in the text.
+We use this number inside the `..TextSplitter` classes.
+This implemented as the `from_<tokenizer>` methods of the `..TextSplitter` classes:
+
+- `Hugging Face tokenizer <./text_splitters/examples/huggingface_length_function.html>`_
+- `tiktoken (OpenAI) tokenizer <./text_splitters/examples/tiktoken.html>`_
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Text Splitters with Tokens
+   :name: text_splitter_with_tokens
+   :hidden:
+
+   ./text_splitters/examples/huggingface_length_function.ipynb
+   ./text_splitters/examples/tiktoken.ipynb

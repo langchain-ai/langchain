@@ -13,4 +13,16 @@
 <!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd"><en-note><div>testing this</div><div>what happens?</div><div>to the world?</div></en-note>      ]]>
     </content>
   </note>
+  <note>
+    <title>Summer Training Program</title>
+    <created>20221227T015948Z</created>
+    <note-attributes>
+        <author>Mike McGarry</author>
+        <source>mobile.iphone</source>
+    </note-attributes>
+    <content>
+        <![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd"><en-note><div><b>Jan - March 2022</b></div></en-note>      ]]>
+    </content>
+  </note>
 </en-export>

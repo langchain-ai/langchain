@@ -118,7 +118,7 @@ Below is a list of all supported tools and relevant information:
 - Notes: Uses the Google Custom Search API
 - Requires LLM: No
 - Extra Parameters: `google_api_key`, `google_cse_id`
-- For more information on this, see [this page](../../../ecosystem/google_search.md)
+- For more information on this, see [this page](../../../integrations/google_search.md)
 
 **searx-search**
 
@@ -135,7 +135,7 @@ Below is a list of all supported tools and relevant information:
 - Notes: Calls the [serper.dev](https://serper.dev) Google Search API and then parses results.
 - Requires LLM: No
 - Extra Parameters: `serper_api_key`
-- For more information on this, see [this page](../../../ecosystem/google_serper.md)
+- For more information on this, see [this page](../../../integrations/google_serper.md)
 
 **wikipedia**
 
