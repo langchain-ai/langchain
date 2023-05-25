@@ -10775,14 +10775,14 @@ multidict = ">=4.0"
 
 [[package]]
 name = "zep-python"
-version = "0.25"
+version = "0.30"
 description = "Zep stores, manages, enriches, indexes, and searches long-term memory for conversational AI applications. This is the Python client for the Zep service."
 category = "main"
 optional = true
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "zep_python-0.25-py3-none-any.whl", hash = "sha256:d486afc0d621c3211020d89408940bcad4a062bcbb6f5623bf5152fccad1f87e"},
-    {file = "zep_python-0.25.tar.gz", hash = "sha256:bc2937c0449a13f2abffee24351aa2e574c977773f453812613e81c5bc253916"},
+    {file = "zep_python-0.30-py3-none-any.whl", hash = "sha256:6020d2f3c6dc3c3bfb8de62db88d97a8c0cf4029b5def0c8a682c3ddc2c480d2"},
+    {file = "zep_python-0.30.tar.gz", hash = "sha256:902720af8ffdda861ae1ee1d88e374a095195f1dc3ef79a78ecc699062ace203"},
 ]
 
 [package.dependencies]
@@ -10879,4 +10879,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6eefd001a66f12c5b9978fcb46aaaece7a4f1cd9887d85446d773c884816b104"
+content-hash = "0f2ed0b37063f533b3403d545b48633ced4d02c15bc8f4e47f1ded1652ab9764"
