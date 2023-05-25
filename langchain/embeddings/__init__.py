@@ -29,6 +29,7 @@ from langchain.embeddings.self_hosted_hugging_face import (
 )
 from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
+from langchain.embeddings.vertexai import VertexAIEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ __all__ = [
     "SentenceTransformerEmbeddings",
     "GooglePalmEmbeddings",
     "MiniMaxEmbeddings",
+    "VertexAIEmbeddings",
 ]
 
 
