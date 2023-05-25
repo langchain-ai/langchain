@@ -36,7 +36,7 @@ class JoplinLoader(BaseLoader):
         base_url = f"http://{host}:{port}"
         self._get_note_url = (
             f"{base_url}/notes?token={access_token}"
-            "&fields=id,parent_id,title,body,created_time,updated_time&page={{page}}"
+            f"&fields=id,parent_id,title,body,created_time,updated_time&page={{page}}"
         )
         self._get_folder_url = (
             f"{base_url}/folders/{{id}}?token={access_token}&fields=title"
