@@ -8,7 +8,7 @@
 
 ## Installation and Setup
 
-```
+```bash
 pip install openai
 pip install tiktoken
 ```

@@ -7,7 +7,7 @@ We use `SageMaker` to host our model and expose it as the `SageMaker Endpoint`.
 
 ## Installation and Setup
 
-```
+```bash
 pip install boto3
 ```
 

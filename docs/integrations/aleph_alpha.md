@@ -6,7 +6,7 @@
 
 ## Installation and Setup
 
-```
+```bash
 pip install aleph-alpha-client
 ```
 
