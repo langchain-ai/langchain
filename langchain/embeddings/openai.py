@@ -186,7 +186,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             if openai_api_type:
                 openai.api_type = openai_api_type
             if openai_proxy:
-                openai.proxy = {"http": openai_proxy, "https": openai_proxy}
+                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
             values["client"] = openai.Embedding
         except ImportError:
             raise ImportError(
