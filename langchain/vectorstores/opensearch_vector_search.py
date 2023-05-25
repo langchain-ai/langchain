@@ -153,13 +153,12 @@ def _default_text_mapping(
 
 def _default_approximate_search_query(
     query_vector: List[float],
-    size: int = 4,
     k: int = 4,
     vector_field: str = "vector_field",
 ) -> Dict:
     """For Approximate k-NN Search, this is the default query."""
     return {
-        "size": size,
+        "size": k,
         "query": {"knn": {vector_field: {"vector": query_vector, "k": k}}},
     }
 
@@ -167,14 +166,13 @@ def _default_approximate_search_query(
 def _approximate_search_query_with_boolean_filter(
     query_vector: List[float],
     boolean_filter: Dict,
-    size: int = 4,
     k: int = 4,
     vector_field: str = "vector_field",
     subquery_clause: str = "must",
 ) -> Dict:
     """For Approximate k-NN Search, with Boolean Filter."""
     return {
-        "size": size,
+        "size": k,
         "query": {
             "bool": {
                 "filter": boolean_filter,
@@ -189,13 +187,12 @@ def _approximate_search_query_with_boolean_filter(
 def _approximate_search_query_with_lucene_filter(
     query_vector: List[float],
     lucene_filter: Dict,
-    size: int = 4,
     k: int = 4,
     vector_field: str = "vector_field",
 ) -> Dict:
     """For Approximate k-NN Search, with Lucene Filter."""
     search_query = _default_approximate_search_query(
-        query_vector, size, k, vector_field
+        query_vector, k=k, vector_field=vector_field
     )
     search_query["query"]["knn"][vector_field]["filter"] = lucene_filter
     return search_query
@@ -382,8 +379,6 @@ class OpenSearchVectorSearch(VectorStore):
         Optional Args for Approximate Search:
             search_type: "approximate_search"; default: "approximate_search"
 
-            size: number of results the query actually returns; default: 4
-
             boolean_filter: A Boolean filter consists of a Boolean query that
             contains a k-NN query and a filter.
 
@@ -438,7 +433,6 @@ class OpenSearchVectorSearch(VectorStore):
         vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
 
         if search_type == "approximate_search":
-            size = _get_kwargs_value(kwargs, "size", 4)
             boolean_filter = _get_kwargs_value(kwargs, "boolean_filter", {})
             subquery_clause = _get_kwargs_value(kwargs, "subquery_clause", "must")
             lucene_filter = _get_kwargs_value(kwargs, "lucene_filter", {})
@@ -449,15 +443,19 @@ class OpenSearchVectorSearch(VectorStore):
                 )
             if boolean_filter != {}:
                 search_query = _approximate_search_query_with_boolean_filter(
-                    embedding, boolean_filter, size, k, vector_field, subquery_clause
+                    embedding,
+                    boolean_filter,
+                    k=k,
+                    vector_field=vector_field,
+                    subquery_clause=subquery_clause,
                 )
             elif lucene_filter != {}:
                 search_query = _approximate_search_query_with_lucene_filter(
-                    embedding, lucene_filter, size, k, vector_field
+                    embedding, lucene_filter, k=k, vector_field=vector_field
                 )
             else:
                 search_query = _default_approximate_search_query(
-                    embedding, size, k, vector_field
+                    embedding, k=k, vector_field=vector_field
                 )
         elif search_type == SCRIPT_SCORING_SEARCH:
             space_type = _get_kwargs_value(kwargs, "space_type", "l2")
