@@ -23,9 +23,7 @@ Integrations by Module
 Dependencies
 ----------------
 
-| LangChain depends on `several hungered of the python packages <https://github.com/hwchase17/langchain/network/dependencies>`_.
-Please, make sure you follow a package license, if you use it in your application.
-
+| LangChain depends on `several hungered Python packages <https://github.com/hwchase17/langchain/network/dependencies>`_.
 
 
 All Integrations
