@@ -28,7 +28,7 @@ class HuggingFacePipeline(LLM):
 
             from langchain.llms import HuggingFacePipeline
             hf = HuggingFacePipeline.from_model_id(
-                model_id="gpt2", task="text-generation"
+                model_id="gpt2", task="text-generation", pipeline_hwargs={"max_new_tokens": 10}
             )
     Example passing pipeline in directly:
         .. code-block:: python
@@ -50,6 +50,8 @@ class HuggingFacePipeline(LLM):
     """Model name to use."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
+    pipeline_kwargs: Optional[dict] = None
+    """Key word arguments to pass to the pipeline."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -126,7 +128,7 @@ class HuggingFacePipeline(LLM):
             tokenizer=tokenizer,
             device=device,
             model_kwargs=_model_kwargs,
-            **pipeline_kwargs
+            **pipeline_kwargs,
         )
         if pipeline.task not in VALID_TASKS:
             raise ValueError(
