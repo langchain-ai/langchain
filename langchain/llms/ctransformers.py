@@ -1,5 +1,4 @@
 """Wrapper around the C Transformers library."""
-
 from typing import Any, Dict, Optional, Sequence
 
 from pydantic import root_validator
@@ -38,7 +37,7 @@ class CTransformers(LLM):
     """The config parameters.
     See https://github.com/marella/ctransformers#config"""
 
-    lib: Optional[Any] = None
+    lib: Optional[str] = None
     """The path to a shared library or one of `avx2`, `avx`, `basic`."""
 
     @property
@@ -98,8 +97,8 @@ class CTransformers(LLM):
                 response = llm("Tell me a joke.")
         """
         text = []
+        _run_manager = run_manager or CallbackManagerForLLMRun.get_noop_manager()
         for chunk in self.client(prompt, stop=stop, stream=True):
             text.append(chunk)
-            if run_manager:
-                run_manager.on_llm_new_token(chunk, verbose=self.verbose)
+            _run_manager.on_llm_new_token(chunk, verbose=self.verbose)
         return "".join(text)
