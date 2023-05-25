@@ -433,8 +433,8 @@ class MomentoCache(BaseCache):
         self,
         cache_client: Any,
         cache_name: str,
-        ensure_cache_exists: bool = True,
         ttl: Optional[timedelta] = None,
+        ensure_cache_exists: bool = True,
     ):
         """Instantiate a prompt cache using Momento as a backend.
 
