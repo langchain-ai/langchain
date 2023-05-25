@@ -118,10 +118,7 @@ class FAISS(VectorStore):
             faiss.normalize_L2(vector)
         self.index.add(vector)
         # Get list of index, id, and docs.
-        full_info = [
-            (starting_len + i, ids[i], doc)
-            for i, doc in enumerate(documents)
-        ]
+        full_info = [(starting_len + i, ids[i], doc) for i, doc in enumerate(documents)]
         # Add information to docstore and index.
         self.docstore.add({_id: doc for _, _id, doc in full_info})
         index_to_id = {index: _id for index, _id, _ in full_info}
@@ -152,7 +149,7 @@ class FAISS(VectorStore):
             )
         # Embed and create the documents.
         embeddings = [self.embedding_function(text) for text in texts]
-        return self.__add(texts, embeddings, metadatas, ids, **kwargs)
+        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids, **kwargs)
 
     def add_embeddings(
         self,
@@ -181,7 +178,7 @@ class FAISS(VectorStore):
 
         texts = [te[0] for te in text_embeddings]
         embeddings = [te[1] for te in text_embeddings]
-        return self.__add(texts, embeddings, metadatas, ids, **kwargs)
+        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids, **kwargs)
 
     def similarity_search_with_score_by_vector(
         self, embedding: List[float], k: int = 4
@@ -390,9 +387,7 @@ class FAISS(VectorStore):
             metadata = metadatas[i] if metadatas else {}
             documents.append(Document(page_content=text, metadata=metadata))
         index_to_id = dict(enumerate(ids))
-        docstore = InMemoryDocstore(
-            dict(zip(index_to_id.values(), documents))
-        )
+        docstore = InMemoryDocstore(dict(zip(index_to_id.values(), documents)))
         return cls(
             embedding.embed_query,
             index,
@@ -433,8 +428,8 @@ class FAISS(VectorStore):
             texts,
             embeddings,
             embedding,
-            metadatas,
-            ids,
+            metadatas=metadatas,
+            ids=ids,
             **kwargs,
         )
 
@@ -472,8 +467,8 @@ class FAISS(VectorStore):
             texts,
             embeddings,
             embedding,
-            metadatas,
-            ids,
+            metadatas=metadatas,
+            ids=ids,
             **kwargs,
         )
 
