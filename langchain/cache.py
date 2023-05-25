@@ -1,4 +1,5 @@
 """Beta Feature: base interface for cache."""
+from datetime import timedelta
 import hashlib
 import inspect
 import json
@@ -429,7 +430,11 @@ class MomentoCache(BaseCache):
     """Cache that uses Momento as a backend. See https://gomomento.com/"""
 
     def __init__(
-        self, cache_client: Any, cache_name: str, ensure_cache_exists: bool = True
+        self,
+        cache_client: Any,
+        cache_name: str,
+        ensure_cache_exists: bool = True,
+        ttl: Optional[timedelta] = None,
     ):
         """Instantiate a prompt cache using Momento as a backend.
 
@@ -439,6 +444,8 @@ class MomentoCache(BaseCache):
         Args:
             cache_client (CacheClient): The Momento cache client.
             cache_name (str): The name of the cache to use to store the data.
+            ttl (Optional[timedelta], optional): The time to live for the cache items.
+                Defaults to None, ie use the client default TTL.
             ensure_cache_exists (bool, optional): Create the cache if it doesn't
                 exist. Defaults to True.
 
@@ -456,8 +463,14 @@ class MomentoCache(BaseCache):
             raise ValueError("Please pass in a Momento CacheClient object.")
         self.cache_client: CacheClient = cache_client
         self.cache_name = cache_name
+        self.__validate_ttl(ttl)
+        self.ttl = ttl
         if ensure_cache_exists:
             self.__ensure_cache_exists()
+
+    def __validate_ttl(self, ttl: Optional[timedelta]) -> None:
+        if ttl is not None and ttl <= timedelta(seconds=0):
+            raise ValueError(f"ttl must be positive but was {ttl}.")
 
     def __ensure_cache_exists(self) -> None:
         """Create cache if it doesn't exist.
@@ -533,7 +546,7 @@ class MomentoCache(BaseCache):
         """
         key = self.__key(prompt, llm_string)
         value = _dump_generations_to_json(return_val)
-        set_response = self.cache_client.set(self.cache_name, key, value)
+        set_response = self.cache_client.set(self.cache_name, key, value, self.ttl)
         from momento.responses import CacheSet
 
         if isinstance(set_response, CacheSet.Success):

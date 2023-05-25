@@ -39,6 +39,16 @@ def momento_cache() -> Iterator[MomentoCache]:
         client.delete_cache(cache_name)
 
 
+def test_invalid_ttl() -> None:
+    client = CacheClient(
+        Configurations.Laptop.v1(),
+        CredentialProvider.from_environment_variable("MOMENTO_AUTH_TOKEN"),
+        default_ttl=timedelta(seconds=30),
+    )
+    with pytest.raises(ValueError):
+        MomentoCache(client, cache_name=random_string(), ttl=timedelta(seconds=-1))
+
+
 def test_momento_cache_miss(momento_cache: MomentoCache) -> None:
     llm = FakeLLM()
     stub_llm_output = LLMResult(generations=[[Generation(text="foo")]])
