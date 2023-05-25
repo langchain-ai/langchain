@@ -1,9 +1,9 @@
 """Beta Feature: base interface for cache."""
-from datetime import timedelta
 import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
+from datetime import timedelta
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 from sqlalchemy import Column, Integer, String, create_engine, select
