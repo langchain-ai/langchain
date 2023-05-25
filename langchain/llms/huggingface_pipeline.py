@@ -51,7 +51,9 @@ class HuggingFacePipeline(LLM):
     model_id: str = DEFAULT_MODEL_ID
     """Model name to use."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Key word arguments passed to the model."""
+    pipeline_kwargs: Optional[dict] = None
+    """Key word arguments passed to the pipeline."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -140,6 +142,7 @@ class HuggingFacePipeline(LLM):
             pipeline=pipeline,
             model_id=model_id,
             model_kwargs=_model_kwargs,
+            pipeline_kwargs=_pipeline_kwargs,
             **kwargs,
         )
 
@@ -147,8 +150,9 @@ class HuggingFacePipeline(LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"model_id": self.model_id},
-            **{"model_kwargs": self.model_kwargs},
+            "model_id": self.model_id,
+            "model_kwargs": self.model_kwargs,
+            "pipeline_kwargs": self.pipeline_kwargs,
         }
 
     @property
