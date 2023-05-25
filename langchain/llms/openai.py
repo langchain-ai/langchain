@@ -241,7 +241,7 @@ class BaseOpenAI(BaseLLM):
             if openai_organization:
                 openai.organization = openai_organization
             if openai_proxy:
-                openai.proxy = {"http": openai_proxy, "https": openai_proxy}
+                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
             values["client"] = openai.Completion
         except ImportError:
             raise ImportError(
@@ -699,7 +699,7 @@ class OpenAIChat(BaseLLM):
             if openai_organization:
                 openai.organization = openai_organization
             if openai_proxy:
-                openai.proxy = {"http": openai_proxy, "https": openai_proxy}
+                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

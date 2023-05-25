@@ -231,7 +231,7 @@ class ChatOpenAI(BaseChatModel):
         if openai_api_base:
             openai.api_base = openai_api_base
         if openai_proxy:
-            openai.proxy = {"http": openai_proxy, "https": openai_proxy}
+            openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
         try:
             values["client"] = openai.ChatCompletion
         except AttributeError:
