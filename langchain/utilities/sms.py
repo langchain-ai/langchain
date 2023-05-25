@@ -5,6 +5,7 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
 
+
 class Sms(BaseModel):
     """Sms Client using Twilio.
 
@@ -37,14 +38,13 @@ class Sms(BaseModel):
         values["account_sid"] = get_from_dict_or_env(
             values, "account_sid", "ACCOUNT_SID"
         )
-        values["auth_token"] = get_from_dict_or_env(
-            values, "auth_token", "AUTH_TOKEN"
-        )
+        values["auth_token"] = get_from_dict_or_env(values, "auth_token", "AUTH_TOKEN")
         values["from_number"] = get_from_dict_or_env(
             values, "from_number", "FROM_NUMBER"
         )
         try:
             from twilio.rest import Client
+
             values["sms_client"] = Client
         except ImportError:
             raise ValueError(
@@ -64,9 +64,5 @@ class Sms(BaseModel):
     def sms(self, body: str, to: str) -> str:
         """Send message through Twilio and return the message sid."""
         client = self.sms_client(self.account_sid, self.auth_token)
-        message = client.messages.create(
-                to=to, 
-                from_=self.from_number,
-                body=body
-        )
+        message = client.messages.create(to=to, from_=self.from_number, body=body)
         return message.sid
