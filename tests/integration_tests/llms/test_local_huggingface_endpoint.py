@@ -4,24 +4,24 @@ import unittest
 
 import pytest
 
-from langchain.llms.local_huggingface_endpoint import LocalHuggingFaceEndpoint
+from langchain.llms import LocalHuggingFaceEndpoint
 
 
 def test_local_huggingface_endpoint_task_error() -> None:
     """Test task error raised."""
     with pytest.raises(ValueError):
-        llm = LocalHuggingFaceEndpoint(task="invalid-task")
+        _ = LocalHuggingFaceEndpoint(task="invalid-task")
 
 
 def test_local_huggingface_endpoint_url_error() -> None:
     """Test url error raised."""
     with pytest.raises(ValueError):
-        llm = LocalHuggingFaceEndpoint(config_endpoint_url="", task="text-generation")
+        _ = LocalHuggingFaceEndpoint(config_endpoint_url="", task="text-generation")
 
 
 @unittest.skip("This test requires an inference endpoint.")
 def test_local_huggingface_endpoint_text_generation() -> None:
-    """Test valid call to HuggingFace text generation model."""
+    """Test valid call to HuggingFace text generation model. Tested locally."""
     llm = LocalHuggingFaceEndpoint(
         completion_endpoint_url="",
         config_endpoint_url="",
@@ -34,7 +34,7 @@ def test_local_huggingface_endpoint_text_generation() -> None:
 
 @unittest.skip("This test requires an inference endpoint.")
 def test_huggingface_endpoint_text2text_generation() -> None:
-    """Test valid call to HuggingFace text2text model."""
+    """Test valid call to HuggingFace text2text model. Tested locally."""
     llm = LocalHuggingFaceEndpoint(
         completion_endpoint_url="",
         config_endpoint_url="",
