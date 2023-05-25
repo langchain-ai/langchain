@@ -17,8 +17,6 @@ from pydantic import BaseModel, root_validator, validator
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from googleapiclient.discovery import Resource, build
-from googleapiclient.errors import HttpError
-from googleapiclient.http import MediaIoBaseDownload
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
@@ -29,7 +27,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     service_account_key: Path = Path.home() / ".credentials" / "keys.json"
     credentials_path: Path = Path.home() / ".credentials" / "credentials.json"
     token_path: Path = Path.home() / ".credentials" / "token.json"
-    service: Optional[Resource] = None
+    services: Optional[Dict[str, Resource]] = None
     folder_id: Optional[str] = None
     document_ids: Optional[List[str]] = None
     file_ids: Optional[List[str]] = None
@@ -66,6 +64,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             type_mapping = {
                 "document": "application/vnd.google-apps.document",
                 "sheet": "application/vnd.google-apps.spreadsheet",
+                "slides": "application/vnd.google-apps.presentation",
                 "pdf": "application/pdf",
             }
             allowed_types = list(type_mapping.keys()) + list(type_mapping.values())
@@ -164,19 +163,52 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 for j, v in enumerate(row):
                     title = header[j].strip() if len(header) > j else ""
                     content.append(f"{title}: {v.strip()}")
-
+                
                 page_content = "\n".join(content)
                 documents.append(Document(page_content=page_content, metadata=metadata))
 
         return documents
 
+    def _load_slides_from_id(self, id: str) -> List[Document]:
+        """Load slides and all elements from an ID."""
+
+        slides_service = self._service(api="slides", version="v1")
+        presentation = slides_service.presentations().get(presentationId=id).execute()
+        slides = presentation.get('slides', [])
+
+        documents = []
+        for i, slide in enumerate(slides, start=1):
+            elements = slide.get('pageElements', [])
+            content = []
+
+        for element in elements:
+            if 'shape' in element and 'text' in element['shape']:
+                text_elements = element['shape']['text'].get('textElements', [])
+                for text_element in text_elements:
+                    if 'textRun' in text_element:
+                        content.append(text_element['textRun']['content'].strip())
+
+            page_content = "\n".join(content)
+            metadata = {
+                "source": f"https://docs.google.com/presentation/d/{id}/edit",
+                "title": presentation['title'],
+                "slide": i,
+            }
+
+            documents.append(Document(page_content=page_content, metadata=metadata))
+
+        return documents   
+
     def _load_document_from_id(self, id: str) -> Document:
         """Load a document from an ID."""
         from io import BytesIO
 
-        service = self._service 
-        file = service.files().get(fileId=id, supportsAllDrives=True).execute()
-        request = service.files().export_media(fileId=id, mimeType="text/plain")
+        from googleapiclient.errors import HttpError
+        from googleapiclient.http import MediaIoBaseDownload
+
+        drive_service=self._service()
+        file = drive_service.files().get(fileId=id, supportsAllDrives=True).execute()
+        request = drive_service.files().export_media(fileId=id, mimeType="text/plain")
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -201,6 +233,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         self, folder_id: str, *, file_types: Optional[Sequence[str]] = None
     ) -> List[Document]:
         """Load documents from a folder."""
+        from googleapiclient.discovery import build
 
         files = self._fetch_files_recursive(self._service(), folder_id)
         # If file types filter is provided, we'll filter by the file type.
@@ -215,11 +248,13 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 returns.append(self._load_document_from_id(file["id"]))  # type: ignore
             elif file["mimeType"] == "application/vnd.google-apps.spreadsheet":
                 returns.extend(self._load_sheet_from_id(file["id"]))  # type: ignore
+            elif file["mimeType"] == "application/vnd.google-apps.presentation":
+                returns.extend(self._load_slides_from_id(file["id"]))  # type: ignore
             elif file["mimeType"] == "application/pdf":
                 returns.extend(self._load_file_from_id(file["id"]))  # type: ignore
             else:
                 pass
-
+        
         return returns
 
     def _fetch_files_recursive(
@@ -259,9 +294,11 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         """Load a file from an ID."""
         from io import BytesIO
 
-        service = self._service()
-        file = service.files().get(fileId=id, supportsAllDrives=True).execute()
-        request = service.files().get_media(fileId=id)
+        from googleapiclient.http import MediaIoBaseDownload
+
+        drive_service=self._service()
+        file = drive_service.files().get(fileId=id, supportsAllDrives=True).execute()
+        request = drive_service.files().get_media(fileId=id)
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -289,18 +326,32 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         """Load files from a list of IDs."""
         if not self.file_ids:
             raise ValueError("file_ids must be set")
-        docs = []
+        returns = []
+        drive_service = self._service()
+
         for file_id in self.file_ids:
-            docs.extend(self._load_file_from_id(file_id))
-        return docs
+            file = drive_service.files().get(fileId=file_id, fields="mimeType").execute()
+            if not self.file_types or file["mimeType"] in self.file_types:
+                if file["mimeType"] == "application/vnd.google-apps.document":
+                    returns.append(self._load_document_from_id(file_id)) 
+                elif file["mimeType"] == "application/vnd.google-apps.spreadsheet":
+                    returns.extend(self._load_sheet_from_id(file_id))  
+                elif file["mimeType"] == "application/vnd.google-apps.presentation":
+                    returns.extend(self._load_slides_from_id(file_id))  
+                elif file["mimeType"] == "application/pdf":
+                    returns.extend(self._load_file_from_id(file_id))  
+                else:
+                    pass
+
+        return returns
     
     def _service(self, api: str = "drive", version: str = "v3") -> Resource:
         """Load Google Drive Service."""
-        if not self.service: 
+        if not self.services: 
             creds = self._load_credentials()
             service = build(api, version, credentials=creds)
         else: 
-            service=self.service
+            service=self.services[api+"-"+version]
         return service
 
     def load(self) -> List[Document]:
