@@ -23,7 +23,7 @@ class UnstructuredPowerPointLoader(UnstructuredFileLoader):
 
             is_ppt = detect_filetype(self.file_path) == FileType.PPT
         except ImportError:
-            _, extension = os.path.splitext(self.file_path)
+            _, extension = os.path.splitext(str(self.file_path))
             is_ppt = extension == ".ppt"
 
         if is_ppt and unstructured_version < (0, 4, 11):
@@ -36,8 +36,8 @@ class UnstructuredPowerPointLoader(UnstructuredFileLoader):
         if is_ppt:
             from unstructured.partition.ppt import partition_ppt
 
-            return partition_ppt(filename=self.file_path)
+            return partition_ppt(filename=self.file_path, **self.unstructured_kwargs)
         else:
             from unstructured.partition.pptx import partition_pptx
 
-            return partition_pptx(filename=self.file_path)
+            return partition_pptx(filename=self.file_path, **self.unstructured_kwargs)

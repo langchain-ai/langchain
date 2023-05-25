@@ -2,8 +2,9 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
@@ -11,7 +12,7 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-class Banana(LLM, BaseModel):
+class Banana(LLM):
     """Wrapper around Banana large language models.
 
     To use, you should have the ``banana-dev`` python package installed,
@@ -80,12 +81,17 @@ class Banana(LLM, BaseModel):
         """Return type of llm."""
         return "banana"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call to Banana endpoint."""
         try:
             import banana_dev as banana
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import banana-dev python package. "
                 "Please install it with `pip install banana-dev`."
             )

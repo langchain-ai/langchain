@@ -23,7 +23,7 @@ with open("../pyproject.toml") as f:
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2022, Harrison Chase"
+copyright = "2023, Harrison Chase"
 author = "Harrison Chase"
 
 version = data["tool"]["poetry"]["version"]
@@ -103,5 +103,10 @@ html_static_path = ["_static"]
 html_css_files = [
     "css/custom.css",
 ]
+
+html_js_files = [
+    "js/mendablesearch.js",
+]
+
 nb_execution_mode = "off"
 myst_enable_extensions = ["colon_fence"]

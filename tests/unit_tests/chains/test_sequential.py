@@ -1,15 +1,15 @@
 """Test pipeline functionality."""
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pytest
-from pydantic import BaseModel
 
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.memory.simple import SimpleMemory
 
 
-class FakeChain(Chain, BaseModel):
+class FakeChain(Chain):
     """Fake Chain for testing purposes."""
 
     input_variables: List[str]
@@ -25,7 +25,11 @@ class FakeChain(Chain, BaseModel):
         """Input keys this chain returns."""
         return self.output_variables
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         outputs = {}
         for var in self.output_variables:
             variables = [inputs[k] for k in self.input_variables]
@@ -68,6 +72,13 @@ def test_sequential_usage_memory() -> None:
     output = chain({"foo": "123"})
     expected_output = {"baz": "123foofoo", "foo": "123", "zab": "rab"}
     assert output == expected_output
+    memory = SimpleMemory(memories={"zab": "rab", "foo": "rab"})
+    chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
+    chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
+    with pytest.raises(ValueError):
+        SequentialChain(
+            memory=memory, chains=[chain_1, chain_2], input_variables=["foo"]
+        )
 
 
 def test_sequential_usage_multiple_outputs() -> None:

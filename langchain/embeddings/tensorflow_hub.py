@@ -30,13 +30,20 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
         try:
             import tensorflow_hub
+        except ImportError:
+            raise ImportError(
+                "Could not import tensorflow-hub python package. "
+                "Please install it with `pip install tensorflow-hub``."
+            )
+        try:
             import tensorflow_text  # noqa
+        except ImportError:
+            raise ImportError(
+                "Could not import tensorflow_text python package. "
+                "Please install it with `pip install tensorflow_text``."
+            )
 
-            self.embed = tensorflow_hub.load(self.model_url)
-        except ImportError as e:
-            raise ValueError(
-                "Could not import some python packages." "Please install them."
-            ) from e
+        self.embed = tensorflow_hub.load(self.model_url)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -66,5 +73,5 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         text = text.replace("\n", " ")
-        embedding = self.embed(text).numpy()[0]
+        embedding = self.embed([text]).numpy()[0]
         return embedding.tolist()
