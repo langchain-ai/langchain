@@ -79,7 +79,7 @@ class BibtexLoader(BaseLoader):
             a list of documents with the document.page_content in text format
         """
         try:
-            import fitz  # noqa: E401
+            import fitz  # noqa: F401
         except ImportError:
             raise ImportError(
                 "PyMuPDF package not found, please install it with "
