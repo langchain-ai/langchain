@@ -4,6 +4,7 @@ from typing import List, Optional
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
+
 class TrelloLoader(BaseLoader):
     """Trello loader. Reads all cards from a Trello board.
 
@@ -20,8 +21,8 @@ class TrelloLoader(BaseLoader):
     """
 
     def __init__(
-        self, 
-        api_key: str, 
+        self,
+        api_key: str,
         api_token: str,
         board_name: str,
         include_card_name: bool = True,
@@ -67,18 +68,16 @@ class TrelloLoader(BaseLoader):
         client = TrelloClient(api_key=self.api_key, token=self.api_token)
 
         # Find the board with the matching name
-        board = next((b for b in client.list_boards()
-                     if b.name == self.board_name), None)
-        if board:
-            board_id = board.id
-        else:
+        board = next(
+            (b for b in client.list_boards() if b.name == self.board_name), None
+        )
+        if not board:
             raise ValueError(f"Board `{self.board_name}` not found.")
 
         # Create a dictionary with the list IDs as keys and the list names as values
         list_dict = {list_item.id: list_item.name for list_item in board.list_lists()}
-            
+
         # Get Cards on the board
-        board = client.get_board(board_id)
         cards = board.get_cards(card_filter=self.card_filter)
         for card in cards:
             text_content = ""
@@ -86,21 +85,27 @@ class TrelloLoader(BaseLoader):
                 text_content = card.name + "\n"
             description = card.description.strip()
             if description:
-                text_content += BeautifulSoup(card.description,
-                                              "lxml").get_text()
+                text_content += BeautifulSoup(card.description, "lxml").get_text()
 
             if self.include_checklist:
                 # Get all the checklit items on the card
                 items = []
                 for checklist in card.checklists:
-                    items.extend(
-                        [f"{item['name']}:{item['state']}" for item in checklist.items])
-                    text_content += f"\n{checklist.name}\n" + "\n".join(items)
+                    if checklist.items:
+                        items.extend(
+                            [
+                                f"{item['name']}:{item['state']}"
+                                for item in checklist.items
+                            ]
+                        )
+                        text_content += f"\n{checklist.name}\n" + "\n".join(items)
 
             if self.include_comments:
                 # Get all the comments on the card
-                comments = [BeautifulSoup(comment['data']['text'], "lxml").get_text()
-                            for comment in card.comments]
+                comments = [
+                    BeautifulSoup(comment["data"]["text"], "lxml").get_text()
+                    for comment in card.comments
+                ]
                 text_content += "Comments:" + "\n".join(comments)
 
             # Default metadata fields
@@ -116,7 +121,7 @@ class TrelloLoader(BaseLoader):
             if "list" in self.extra_metadata:
                 if card.list_id in list_dict:
                     metadata["list"] = list_dict[card.list_id]
-            if "is_close" in self.extra_metadata:
+            if "is_closed" in self.extra_metadata:
                 metadata["is_closed"] = card.is_closed
             if "due_date" in self.extra_metadata:
                 metadata["due_date"] = card.due_date
