@@ -159,6 +159,14 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         """
         self.__add_message(AIMessage(content=message))
 
+    def add_message(self, message: BaseMessage) -> None:
+        """Store a message in the cache.
+
+        Args:
+            message (BaseMessage): The message to store.
+        """
+        self.__add_message(message)
+
     def __add_message(self, message: BaseMessage) -> None:
         """Store a message in the cache.
 
