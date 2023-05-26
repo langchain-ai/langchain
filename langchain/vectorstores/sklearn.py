@@ -9,13 +9,10 @@ import json
 import os
 from abc import ABC, abstractmethod
 import importlib
-import logging
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-
-logger = logging.getLogger(__name__)
 
 def guard_import(
         module_name: str,
@@ -50,13 +47,10 @@ class BaseSerializer(ABC):
     @abstractmethod
     def save(self, data: Any) -> None:
         ''' Saves the data to the persist_path '''
-        logger.info('Saving data to %s using %s', self.persist_path, self.__class__.__name__)
 
     @abstractmethod
     def load(self) -> Any:
         ''' Loads the data from the persist_path '''
-        logger.info('Loading data from %s using %s', self.persist_path, self.__class__.__name__)
-        return None
 
 
 class JsonSerializer(BaseSerializer):
@@ -67,12 +61,10 @@ class JsonSerializer(BaseSerializer):
         return 'json'
 
     def save(self, data: Any) -> None:
-        super().save(data)
         with open(self.persist_path, 'w') as fp:
             json.dump(data, fp)
 
     def load(self) -> Any:
-        super().load()
         with open(self.persist_path, 'r') as fp:
             return json.load(fp)
 
@@ -89,12 +81,10 @@ class BsonSerializer(BaseSerializer):
         return 'bson'
 
     def save(self, data: Any) -> None:
-        super().save(data)
         with open(self.persist_path, 'wb') as fp:
             fp.write(self.bson.dumps(data))
 
     def load(self) -> Any:
-        super().load()
         with open(self.persist_path, 'rb') as fp:
             return self.bson.loads(fp.read())
 
@@ -113,7 +103,6 @@ class ParquetSerializer(BaseSerializer):
         return 'parquet'
 
     def save(self, data: Any) -> None:
-        super().save(data)
         df = self.pd.DataFrame(data)
         table = self.pa.Table.from_pandas(df)
         if os.path.exists(self.persist_path):
@@ -130,7 +119,6 @@ class ParquetSerializer(BaseSerializer):
             self.pq.write_table(table, self.persist_path)
 
     def load(self) -> Any:
-        super().load()
         table = self.pq.read_table(self.persist_path)
         df = table.to_pandas()
         return { col: series.tolist() for col, series in df.items() }
@@ -150,7 +138,7 @@ class SKLearnVectorStore(VectorStore):
     implementation. '''
 
     def __init__(self,
-        embedding_function: Embeddings,
+        embedding: Embeddings,
         persist_path: Optional[str] = None,
         serializer: Literal['json', 'bson', 'parquet'] = 'json',
         **kwargs: Any
@@ -163,7 +151,7 @@ class SKLearnVectorStore(VectorStore):
         metric = kwargs.get('metric', 'cosine')
         self._neighbors = sklearn_neighbors.NearestNeighbors(metric=metric, **kwargs)
         self._neighbors_fitted = False
-        self._embedding_function = embedding_function
+        self._embedding_function = embedding
         self._persist_path = persist_path
         self._serializer: Optional[BaseSerializer] = None
         if self._persist_path is not None:
@@ -250,6 +238,6 @@ class SKLearnVectorStore(VectorStore):
         persist_path: Optional[str] = None,
         **kwargs: Any
     ) -> 'SKLearnVectorStore':
-        vs = SKLearnVectorStore(embedding_function=embedding, persist_path=persist_path, **kwargs)
+        vs = SKLearnVectorStore(embedding=embedding, persist_path=persist_path, **kwargs)
         vs.add_texts(texts=texts, metadatas=metadatas, ids=ids, **kwargs)
         return vs
