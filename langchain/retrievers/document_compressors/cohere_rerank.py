@@ -50,7 +50,7 @@ class CohereRerank(BaseDocumentCompressor):
     def compress_documents(
         self, documents: Sequence[Document], query: str
     ) -> Sequence[Document]:
-        if len(documents)==0:   #to avoid empty api call
+        if len(documents) == 0:  # to avoid empty api call
             return []
         doc_list = list(documents)
         _docs = [d.page_content for d in doc_list]
