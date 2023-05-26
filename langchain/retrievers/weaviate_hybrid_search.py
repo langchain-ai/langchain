@@ -19,6 +19,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         alpha: float = 0.5,
         k: int = 4,
         attributes: Optional[List[str]] = None,
+        create_schema_if_missing: bool = True,
     ):
         try:
             import weaviate
@@ -40,7 +41,8 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         if attributes is not None:
             self._query_attrs.extend(attributes)
 
-        self._create_schema_if_missing()
+        if create_schema_if_missing:
+            self._create_schema_if_missing()
 
     def _create_schema_if_missing(self) -> None:
         class_obj = {
