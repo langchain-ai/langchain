@@ -40,7 +40,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         if attributes is not None:
             self._query_attrs.extend(attributes)
 
-        self._create_schema()
+        self._create_schema_if_missing()
 
     def _create_schema_if_missing(self) -> None:
         class_obj = {
