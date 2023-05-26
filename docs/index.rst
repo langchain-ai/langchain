@@ -1,4 +1,4 @@
-Introduction
+Welcome to LangChain
 ==========================
 
 Overview
@@ -8,12 +8,12 @@ Overview
 1. **Data-aware**: connect a language model to other sources of data
 2. **Agentic**: allow a language model to interact with its environment
 
-| This is the Python specific portion of the documentation. For a purely conceptual guide to LangChain, see `here <https://docs.langchain.com/docs/>`_. For the JavaScript documentation, see `here <https://js.langchain.com/docs/>`_.
+| Note: this documentation is Python-specific. There is a separate `Conceptual Guide <https://docs.langchain.com/docs/>`_ and `JavaScript documentation <https://js.langchain.com/docs/>`_.
 
 Getting Started
 ----------------
 
-We recommend heading to our `Quickstart Guide <./getting_started/getting_started.html>`_ to get set up and familiarize yourself with key concepts.
+We recommend heading to our `Quickstart Guide <./getting_started/getting_started.html>`_ to get set up and to familiarize yourself with key concepts.
 
 .. toctree::
    :maxdepth: 2
@@ -28,21 +28,21 @@ We recommend heading to our `Quickstart Guide <./getting_started/getting_started
 Modules
 -----------
 
-| LangChain provides standard, extendable interfaces and external integrations for the following modules (from least to most complex):
+| LangChain provides standard, extendable interfaces and external integrations for the following modules (from least to most complex)
 
-- `Models <./modules/models.html>`_: LLMs, chat models, text embedding models.
+- `Models <./modules/models.html>`_: LLMs, chat models, text embedding models
 
-- `Prompts <./modules/prompts.html>`_: Prompt management, optimization, and serialization.
+- `Prompts <./modules/prompts.html>`_: Prompt management, optimization, and serialization
 
-- `Memory <./modules/memory.html>`_: State that is persisted between calls of a chain/agent.
+- `Memory <./modules/memory.html>`_: State that is persisted between calls of a chain/agent
 
-- `Indexes <./modules/indexes.html>`_: Connect language models to application-specific data.
+- `Indexes <./modules/indexes.html>`_: Connect language models to application-specific data
 
-- `Chains <./modules/chains.html>`_: Structured sequences of calls.
+- `Chains <./modules/chains.html>`_: Structured sequences of calls
 
-- `Agents <./modules/agents.html>`_: LLMs that execute high-level directives given a set of tools.
+- `Agents <./modules/agents.html>`_: LLMs that execute high-level directives given a set of tools
 
-- `Callbacks <./modules/callbacks/getting_started.html>`_: Log and stream intermediate steps of any chain.
+- `Callbacks <./modules/callbacks/getting_started.html>`_: Log and stream intermediate steps of any chain
 
 .. toctree::
    :maxdepth: 1
@@ -61,29 +61,29 @@ Modules
 Use Cases
 ----------
 
-| Best practices and built-in implementations for common LangChain use cases:
+| Best practices and built-in implementations for common use cases
 
-- `Autonomous Agents <./use_cases/autonomous_agents.html>`_: Long-running agents that take many steps, like AutoGPT and BabyAGI.
+- `Autonomous Agents <./use_cases/autonomous_agents.html>`_: Long-running agents that take many steps, like AutoGPT and BabyAGI
 
-- `Personal Assistants <./use_cases/personal_assistants.html>`_: Taking actions, remembering interactions, and connecting to data.
+- `Personal Assistants <./use_cases/personal_assistants.html>`_: Taking actions, storing interactions, and connecting to data
 
-- `Question Answering <./use_cases/question_answering.html>`_: Answering questions over specific documents.
+- `Question Answering <./use_cases/question_answering.html>`_: Answering questions over specific documents
 
-- `Chatbots <./use_cases/chatbots.html>`_: Long-running conversations.
+- `Chatbots <./use_cases/chatbots.html>`_: Long-running conversations
 
-- `Data Analysis <./use_cases/tabular.html>`_: Using language models to query structured data.
+- `Data Analysis <./use_cases/tabular.html>`_: Using language models to query structured data
 
-- `Code Understanding <./use_cases/code.html>`_: Using language models to analyze code.
+- `Code Understanding <./use_cases/code.html>`_: Using language models to analyze code
 
-- `Interacting with APIs <./use_cases/apis.html>`_: Enabling language models to interact with APIs.
+- `Interacting with APIs <./use_cases/apis.html>`_: Enabling language models to interact with APIs
 
-- `Information Extraction <./use_cases/extraction.html>`_: Extract structured information from text.
+- `Information Extraction <./use_cases/extraction.html>`_: Extract structured information from text
 
-- `Summarization <./use_cases/summarization.html>`_: Compressing long text.
+- `Summarization <./use_cases/summarization.html>`_: Compressing long text
 
-- `Evaluation <./use_cases/evaluation.html>`_: Using language models to evaluate language models.
+- `Evaluation <./use_cases/evaluation.html>`_: Using language models to evaluate language models
 
-- `Agent Simulations <./use_cases/agent_simulations.html>`_: Putting agents in a sandbox and observing them.
+- `Agent Simulations <./use_cases/agent_simulations.html>`_: Putting agents in a sandbox and observing them
 
 
 .. toctree::
@@ -105,14 +105,14 @@ Use Cases
    ./use_cases/evaluation.rst
 
 
-Reference Docs
+Reference
 ---------------
 
-| Full documentation on all methods, classes, installation methods, and integration setups for LangChain.
+| All methods, classes, installation methods, and integration setups
 
 - `Installation <./reference/installation.html>`_
 
-- `Reference Documentation <./reference.html>`_
+- `API Reference <./reference.html>`_
 
 .. toctree::
    :maxdepth: 1
@@ -127,13 +127,13 @@ Reference Docs
 Ecosystem
 ------------
 
-| LangChain integrates a lot of different LLMs, systems, and products, and many systems and products depend on LangChain.
+| LangChain has integrations for many models, tools and applications, and many applications are built using LangChain
 
-- `Integrations <./integrations.html>`_: Guides for how other products can be used with LangChain.
+- `Integrations <./integrations.html>`_: Use your favorite models, tools and applications within LangChain
 
-- `Dependents <./dependents.html>`_: List of repositories that use LangChain.
+- `Dependents <./dependents.html>`_: Repositories that use LangChain
 
-- `Deployments <./ecosystem/deployments.html>`_: A collection of instructions, code snippets, and template repositories for deploying LangChain apps.
+- `Deployments <./ecosystem/deployments.html>`_: Instructions, code snippets, and template repositories for deploying LangChain apps
 
 
 .. toctree::
@@ -151,21 +151,19 @@ Ecosystem
 Additional Resources
 ---------------------
 
-| Additional resources we think may be useful as you develop your application:
+- `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: Share and explore other prompts, chains, and agents
 
-- `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: A place to share and explore other prompts, chains, and agents.
+- `Gallery <https://github.com/kyrolabs/awesome-langchain>`_: Great projects that use Langchain, compiled by the folks at `Kyrolabs <https://kyrolabs.com>`_
 
-- `Gallery <https://github.com/kyrolabs/awesome-langchain>`_: A collection of great projects that use Langchain, compiled by the folks at `Kyrolabs <https://kyrolabs.com>`_. Useful for finding inspiration and example implementations.
+- `Tracing <./additional_resources/tracing.html>`_: Log and visualize the execution of chains and agents
 
-- `Tracing <./additional_resources/tracing.html>`_: A guide on using tracing in LangChain to visualize the execution of chains and agents.
+- `Model Laboratory <./additional_resources/model_laboratory.html>`_: Experimenting with different prompts, models, and chains
 
-- `Model Laboratory <./additional_resources/model_laboratory.html>`_: Experimenting with different prompts, models, and chains.
+- `YouTube <./additional_resources/youtube.html>`_: Video tutorials
 
-- `YouTube <./additional_resources/youtube.html>`_: A collection of the LangChain tutorials and videos.
+- `Discord <https://discord.gg/6adMQxSpJS>`_: Discuss and share all things LangChain!
 
-- `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
-
-- `Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>`_: As you move your LangChains into production, we'd love to offer more comprehensive support. Please fill out this form and we'll set up a dedicated support Slack channel.
+- `Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>`_: Get a dedicated Slack channel with the LangChain team as you move your applications into production
 
 
 .. toctree::
