@@ -7,7 +7,7 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, Iterator, List, Optional
+from typing import Any, Iterator, List, Mapping, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -17,6 +17,7 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
     PDFMinerParser,
+    PDFPlumberParser,
     PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
@@ -102,7 +103,7 @@ class PyPDFLoader(BasePDFLoader):
         try:
             import pypdf  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
         self.parser = PyPDFParser()
@@ -193,8 +194,8 @@ class PDFMinerLoader(BasePDFLoader):
         try:
             from pdfminer.high_level import extract_text  # noqa:F401
         except ImportError:
-            raise ValueError(
-                "pdfminer package not found, please install it with "
+            raise ImportError(
+                "`pdfminer` package not found, please install it with "
                 "`pip install pdfminer.six`"
             )
 
@@ -221,8 +222,8 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
         try:
             from pdfminer.high_level import extract_text_to_fp  # noqa:F401
         except ImportError:
-            raise ValueError(
-                "pdfminer package not found, please install it with "
+            raise ImportError(
+                "`pdfminer` package not found, please install it with "
                 "`pip install pdfminer.six`"
             )
 
@@ -255,8 +256,8 @@ class PyMuPDFLoader(BasePDFLoader):
         try:
             import fitz  # noqa:F401
         except ImportError:
-            raise ValueError(
-                "PyMuPDF package not found, please install it with "
+            raise ImportError(
+                "`PyMuPDF` package not found, please install it with "
                 "`pip install pymupdf`"
             )
 
@@ -362,3 +363,29 @@ class MathpixPDFLoader(BasePDFLoader):
             contents = self.clean_pdf(contents)
         metadata = {"source": self.source, "file_path": self.source}
         return [Document(page_content=contents, metadata=metadata)]
+
+
+class PDFPlumberLoader(BasePDFLoader):
+    """Loader that uses pdfplumber to load PDF files."""
+
+    def __init__(
+        self, file_path: str, text_kwargs: Optional[Mapping[str, Any]] = None
+    ) -> None:
+        """Initialize with file path."""
+        try:
+            import pdfplumber  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "pdfplumber package not found, please install it with "
+                "`pip install pdfplumber`"
+            )
+
+        super().__init__(file_path)
+        self.text_kwargs = text_kwargs or {}
+
+    def load(self) -> List[Document]:
+        """Load file."""
+
+        parser = PDFPlumberParser(text_kwargs=self.text_kwargs)
+        blob = Blob.from_path(self.file_path)
+        return parser.parse(blob)

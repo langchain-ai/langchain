@@ -26,6 +26,18 @@ class ClickTool(BaseBrowserTool):
     description: str = "Click on an element with the given CSS selector"
     args_schema: Type[BaseModel] = ClickToolInput
 
+    visible_only: bool = True
+    """Whether to consider only visible elements."""
+    playwright_strict: bool = False
+    """Whether to employ Playwright's strict mode when clicking on elements."""
+    playwright_timeout: float = 1_000
+    """Timeout (in ms) for Playwright to wait for element to be ready."""
+
+    def _selector_effective(self, selector: str) -> str:
+        if not self.visible_only:
+            return selector
+        return f"{selector} >> visible=1"
+
     def _run(
         self,
         selector: str,
@@ -36,7 +48,17 @@ class ClickTool(BaseBrowserTool):
             raise ValueError(f"Synchronous browser not provided to {self.name}")
         page = get_current_page(self.sync_browser)
         # Navigate to the desired webpage before using this tool
-        page.click(selector)
+        selector_effective = self._selector_effective(selector=selector)
+        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+        try:
+            page.click(
+                selector_effective,
+                strict=self.playwright_strict,
+                timeout=self.playwright_timeout,
+            )
+        except PlaywrightTimeoutError:
+            return f"Unable to click on element '{selector}'"
         return f"Clicked element '{selector}'"
 
     async def _arun(
@@ -49,5 +71,15 @@ class ClickTool(BaseBrowserTool):
             raise ValueError(f"Asynchronous browser not provided to {self.name}")
         page = await aget_current_page(self.async_browser)
         # Navigate to the desired webpage before using this tool
-        await page.click(selector)
+        selector_effective = self._selector_effective(selector=selector)
+        from playwright.async_api import TimeoutError as PlaywrightTimeoutError
+
+        try:
+            await page.click(
+                selector_effective,
+                strict=self.playwright_strict,
+                timeout=self.playwright_timeout,
+            )
+        except PlaywrightTimeoutError:
+            return f"Unable to click on element '{selector}'"
         return f"Clicked element '{selector}'"

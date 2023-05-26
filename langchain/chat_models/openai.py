@@ -3,7 +3,17 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from pydantic import Extra, Field, root_validator
 from tenacity import (
@@ -30,7 +40,22 @@ from langchain.schema import (
 )
 from langchain.utils import get_from_dict_or_env
 
+if TYPE_CHECKING:
+    import tiktoken
+
 logger = logging.getLogger(__name__)
+
+
+def _import_tiktoken() -> Any:
+    try:
+        import tiktoken
+    except ImportError:
+        raise ValueError(
+            "Could not import tiktoken python package. "
+            "This is needed in order to calculate get_token_ids. "
+            "Please install it with `pip install tiktoken`."
+        )
+    return tiktoken
 
 
 def _create_retry_decorator(llm: ChatOpenAI) -> Callable[[Any], Any]:
@@ -112,14 +137,19 @@ class ChatOpenAI(BaseChatModel):
     """
 
     client: Any  #: :meta private:
-    model_name: str = "gpt-3.5-turbo"
+    model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    """Base URL path for API requests, 
+    leave blank if not using a proxy or service emulator."""
+    openai_api_base: Optional[str] = None
     openai_organization: Optional[str] = None
+    # to support explicit proxy for OpenAI
+    openai_proxy: Optional[str] = None
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     max_retries: int = 6
@@ -135,12 +165,12 @@ class ChatOpenAI(BaseChatModel):
         """Configuration for this pydantic object."""
 
         extra = Extra.ignore
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
-
+        all_required_field_names = cls.all_required_field_names()
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
@@ -153,8 +183,7 @@ class ChatOpenAI(BaseChatModel):
                 )
                 extra[field_name] = values.pop(field_name)
 
-        disallowed_model_kwargs = all_required_field_names | {"model"}
-        invalid_model_kwargs = disallowed_model_kwargs.intersection(extra.keys())
+        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
         if invalid_model_kwargs:
             raise ValueError(
                 f"Parameters {invalid_model_kwargs} should be specified explicitly. "
@@ -182,6 +211,12 @@ class ChatOpenAI(BaseChatModel):
             "OPENAI_API_BASE",
             default="",
         )
+        openai_proxy = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",
+        )
         try:
             import openai
 
@@ -195,6 +230,8 @@ class ChatOpenAI(BaseChatModel):
             openai.organization = openai_organization
         if openai_api_base:
             openai.api_base = openai_api_base
+        if openai_proxy:
+            openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
         try:
             values["client"] = openai.ChatCompletion
         except AttributeError:
@@ -347,42 +384,13 @@ class ChatOpenAI(BaseChatModel):
         """Get the identifying parameters."""
         return {**{"model_name": self.model_name}, **self._default_params}
 
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate num tokens with tiktoken package."""
-        # tiktoken NOT supported for Python 3.7 or below
-        if sys.version_info[1] <= 7:
-            return super().get_num_tokens(text)
-        try:
-            import tiktoken
-        except ImportError:
-            raise ValueError(
-                "Could not import tiktoken python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please install it with `pip install tiktoken`."
-            )
-        # create a GPT-3.5-Turbo encoder instance
-        enc = tiktoken.encoding_for_model(self.model_name)
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+        return "openai-chat"
 
-        # encode the text using the GPT-3.5-Turbo encoder
-        tokenized_text = enc.encode(text)
-
-        # calculate the number of tokens in the encoded text
-        return len(tokenized_text)
-
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
-        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
-
-        Official documentation: https://github.com/openai/openai-cookbook/blob/
-        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
-        try:
-            import tiktoken
-        except ImportError:
-            raise ValueError(
-                "Could not import tiktoken python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please install it with `pip install tiktoken`."
-            )
-
+    def _get_encoding_model(self) -> Tuple[str, tiktoken.Encoding]:
+        tiktoken_ = _import_tiktoken()
         model = self.model_name
         if model == "gpt-3.5-turbo":
             # gpt-3.5-turbo may change over time.
@@ -392,14 +400,31 @@ class ChatOpenAI(BaseChatModel):
             # gpt-4 may change over time.
             # Returning num tokens assuming gpt-4-0314.
             model = "gpt-4-0314"
-
         # Returns the number of tokens used by a list of messages.
         try:
-            encoding = tiktoken.encoding_for_model(model)
+            encoding = tiktoken_.encoding_for_model(model)
         except KeyError:
             logger.warning("Warning: model not found. Using cl100k_base encoding.")
-            encoding = tiktoken.get_encoding("cl100k_base")
+            model = "cl100k_base"
+            encoding = tiktoken_.get_encoding(model)
+        return model, encoding
 
+    def get_token_ids(self, text: str) -> List[int]:
+        """Get the tokens present in the text with tiktoken package."""
+        # tiktoken NOT supported for Python 3.7 or below
+        if sys.version_info[1] <= 7:
+            return super().get_token_ids(text)
+        _, encoding_model = self._get_encoding_model()
+        return encoding_model.encode(text)
+
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
+
+        Official documentation: https://github.com/openai/openai-cookbook/blob/
+        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
+        if sys.version_info[1] <= 7:
+            return super().get_num_tokens_from_messages(messages)
+        model, encoding = self._get_encoding_model()
         if model == "gpt-3.5-turbo-0301":
             # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_message = 4

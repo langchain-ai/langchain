@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
+from langchain.output_parsers import RegexParser
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.loading import load_prompt
 from langchain.prompts.prompt import PromptTemplate
@@ -158,5 +159,26 @@ def test_loading_few_shot_prompt_example_prompt() -> None:
                 {"input": "tall", "output": "short"},
             ],
             suffix="Input: {adjective}\nOutput:",
+        )
+        assert prompt == expected_prompt
+
+
+def test_loading_with_output_parser() -> None:
+    with change_directory():
+        prompt = load_prompt("prompt_with_output_parser.json")
+        expected_template = """\
+Given the following question and student answer, \
+provide a correct answer and score the student answer.
+Question: {question}
+Student Answer: {student_answer}
+Correct Answer:\
+"""
+        expected_prompt = PromptTemplate(
+            input_variables=["question", "student_answer"],
+            output_parser=RegexParser(
+                regex="(.*?)\nScore: (.*)",
+                output_keys=["answer", "score"],
+            ),
+            template=expected_template,
         )
         assert prompt == expected_prompt

@@ -22,7 +22,7 @@ class DataFrameLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load from the dataframe."""
         result = []
-        # For very large dataframes, this needs to yeild instead of building a list
+        # For very large dataframes, this needs to yield instead of building a list
         # but that would require chaging return type to a generator for BaseLoader
         # and all its subclasses, which is a bigger refactor. Marking as future TODO.
         # This change will allow us to extend this to Spark and Dask dataframes.

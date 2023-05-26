@@ -30,13 +30,17 @@ Community members can review the PR once tests pass. Tag maintainers/contributor
         Async
         - @agola11
 
-        DataLoader Abstractions
+        DataLoaders
         - @eyurtsev
 
-        LLM/Chat Wrappers
+        Models
         - @hwchase17
         - @agola11
 
-        Tools / Toolkits
+        Agents / Tools / Toolkits
         - @vowelparrot
+        
+        VectorStores / Retrievers / Memory
+        - @dev2049
+        
  -->

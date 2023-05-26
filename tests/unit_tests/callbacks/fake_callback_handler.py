@@ -1,9 +1,12 @@
 """A fake callback handler for testing purposes."""
-from typing import Any
+from itertools import chain
+from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 from pydantic import BaseModel
 
 from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
+from langchain.schema import BaseMessage
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -16,6 +19,7 @@ class BaseFakeCallbackHandler(BaseModel):
     ignore_llm_: bool = False
     ignore_chain_: bool = False
     ignore_agent_: bool = False
+    ignore_chat_model_: bool = False
 
     # add finer-grained counters for easier debugging of failing tests
     chain_starts: int = 0
@@ -27,6 +31,7 @@ class BaseFakeCallbackHandler(BaseModel):
     tool_ends: int = 0
     agent_actions: int = 0
     agent_ends: int = 0
+    chat_model_starts: int = 0
 
 
 class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
@@ -47,6 +52,7 @@ class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
         self.llm_streams += 1
 
     def on_chain_start_common(self) -> None:
+        print("CHAIN START")
         self.chain_starts += 1
         self.starts += 1
 
@@ -69,12 +75,18 @@ class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
         self.errors += 1
 
     def on_agent_action_common(self) -> None:
+        print("AGENT ACTION")
         self.agent_actions += 1
         self.starts += 1
 
     def on_agent_finish_common(self) -> None:
         self.agent_ends += 1
         self.ends += 1
+
+    def on_chat_model_start_common(self) -> None:
+        print("STARTING CHAT MODEL")
+        self.chat_model_starts += 1
+        self.starts += 1
 
     def on_text_common(self) -> None:
         self.text += 1
@@ -191,6 +203,20 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
 
     def __deepcopy__(self, memo: dict) -> "FakeCallbackHandler":
         return self
+
+
+class FakeCallbackHandlerWithChatStart(FakeCallbackHandler):
+    def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        assert all(isinstance(m, BaseMessage) for m in chain(*messages))
+        self.on_chat_model_start_common()
 
 
 class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixin):

@@ -148,3 +148,15 @@ def test_chroma_mmr_by_vector() -> None:
     embedded_query = embeddings.embed_query("foo")
     output = docsearch.max_marginal_relevance_search_by_vector(embedded_query, k=1)
     assert output == [Document(page_content="foo")]
+
+
+def test_chroma_with_include_parameter() -> None:
+    """Test end to end construction and include parameter."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+    )
+    output = docsearch.get(include=["embeddings"])
+    assert output["embeddings"] is not None
+    output = docsearch.get()
+    assert output["embeddings"] is None

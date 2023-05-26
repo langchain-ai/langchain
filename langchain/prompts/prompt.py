@@ -135,6 +135,12 @@ class PromptTemplate(StringPromptTemplate):
                 v for _, v, _, _ in Formatter().parse(template) if v is not None
             }
 
+        if "partial_variables" in kwargs:
+            partial_variables = kwargs["partial_variables"]
+            input_variables = {
+                var for var in input_variables if var not in partial_variables
+            }
+
         return cls(
             input_variables=list(sorted(input_variables)), template=template, **kwargs
         )

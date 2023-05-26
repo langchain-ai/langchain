@@ -31,6 +31,10 @@ class APIRequesterOutputParser(BaseOutputParser):
             return f"MESSAGE: {message_match.group(1).strip()}"
         return "ERROR making request"
 
+    @property
+    def _type(self) -> str:
+        return "api_requester"
+
 
 class APIRequesterChain(LLMChain):
     """Get the request parser."""

@@ -2,60 +2,62 @@
 
 Hi there! Thank you for even being interested in contributing to LangChain.
 As an open source project in a rapidly developing field, we are extremely open
-to contributions, whether it be in the form of a new feature, improved infra, or better documentation.
+to contributions, whether they be in the form of new features, improved infra, better documentation, or bug fixes.
+
+## 🗺️ Guidelines
+
+### 👩‍💻 Contributing Code
 
 To contribute to this project, please follow a ["fork and pull request"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow.
 Please do not try to push directly to this repo unless you are maintainer.
 
-## 🗺️Contributing Guidelines
+Please follow the checked-in pull request template when opening pull requests. Note related issues and tag relevant
+maintainers.
+
+Pull requests cannot land without passing the formatting, linting and testing checks first. See
+[Common Tasks](#-common-tasks) for how to run these checks locally.
+
+It's essential that we maintain great documentation and testing. If you:
+- Fix a bug
+  - Add a relevant unit or integration test when possible. These live in `tests/unit_tests` and `tests/integration_tests`.
+- Make an improvement
+  - Update any affected example notebooks and documentation. These lives in `docs`.
+  - Update unit and integration tests when relevant.
+- Add a feature
+  - Add a demo notebook in `docs/modules`.
+  - Add unit and integration tests.
+
+We're a small, building-oriented team. If there's something you'd like to add or change, opening a pull request is the
+best way to get our attention.
 
 ### 🚩GitHub Issues
 
 Our [issues](https://github.com/hwchase17/langchain/issues) page is kept up to date
-with bugs, improvements, and feature requests. There is a taxonomy of labels to help
-with sorting and discovery of issues of interest. These include:
+with bugs, improvements, and feature requests. 
 
-- prompts: related to prompt tooling/infra.
-- llms: related to LLM wrappers/tooling/infra.
-- chains
-- utilities: related to different types of utilities to integrate with (Python, SQL, etc.).
-- agents
-- memory
-- applications: related to example applications to build
+There is a taxonomy of labels to help with sorting and discovery of issues of interest. Please use these to help
+organize issues.
 
 If you start working on an issue, please assign it to yourself.
 
-If you are adding an issue, please try to keep it focused on a single modular bug/improvement/feature.
-If the two issues are related, or blocking, please link them rather than keep them as one single one.
+If you are adding an issue, please try to keep it focused on a single, modular bug/improvement/feature.
+If two issues are related, or blocking, please link them rather than combining them.
 
 We will try to keep these issues as up to date as possible, though
 with the rapid rate of develop in this field some may get out of date.
-If you notice this happening, please just let us know.
+If you notice this happening, please let us know.
 
 ### 🙋Getting Help
 
-Although we try to have a developer setup to make it as easy as possible for others to contribute (see below)
-it is possible that some pain point may arise around environment setup, linting, documentation, or other.
-Should that occur, please contact a maintainer! Not only do we want to help get you unblocked,
-but we also want to make sure that the process is smooth for future contributors.
+Our goal is to have the simplest developer setup possible. Should you experience any difficulty getting setup, please
+contact a maintainer! Not only do we want to help get you unblocked, but we also want to make sure that the process is
+smooth for future contributors.
 
 In a similar vein, we do enforce certain linting, formatting, and documentation standards in the codebase.
-If you are finding these difficult (or even just annoying) to work with,
-feel free to contact a maintainer for help - we do not want these to get in the way of getting
-good code into the codebase.
+If you are finding these difficult (or even just annoying) to work with, feel free to contact a maintainer for help -
+we do not want these to get in the way of getting good code into the codebase.
 
-### 🏭Release process
-
-As of now, LangChain has an ad hoc release process: releases are cut with high frequency by
-a developer and published to [PyPI](https://pypi.org/project/langchain/).
-
-LangChain follows the [semver](https://semver.org/) versioning standard. However, as pre-1.0 software,
-even patch releases may contain [non-backwards-compatible changes](https://semver.org/#spec-item-4).
-
-If your contribution has made its way into a release, we will want to give you credit on Twitter (only if you want though)!
-If you have a Twitter account you would like us to mention, please let us know in the PR or in another manner.
-
-## 🚀Quick Start
+## 🚀 Quick Start
 
 This project uses [Poetry](https://python-poetry.org/) as a dependency manager. Check out Poetry's [documentation on how to install it](https://python-poetry.org/docs/#installation) on your system before proceeding.
 
@@ -77,7 +79,7 @@ This will install all requirements for running the package, examples, linting, f
 
 Now, you should be able to run the common tasks in the following section. To double check, run `make test`, all tests should pass. If they don't you may need to pip install additional dependencies, such as `numexpr` and `openapi_schema_pydantic`.
 
-## ✅Common Tasks
+## ✅ Common Tasks
 
 Type `make` for a list of common tasks.
 
@@ -188,3 +190,17 @@ Finally, you can build the documentation as outlined below:
 ```bash
 make docs_build
 ```
+
+## 🏭 Release Process
+
+As of now, LangChain has an ad hoc release process: releases are cut with high frequency by
+a developer and published to [PyPI](https://pypi.org/project/langchain/).
+
+LangChain follows the [semver](https://semver.org/) versioning standard. However, as pre-1.0 software,
+even patch releases may contain [non-backwards-compatible changes](https://semver.org/#spec-item-4).
+
+### 🌟 Recognition
+
+If your contribution has made its way into a release, we will want to give you credit on Twitter (only if you want though)!
+If you have a Twitter account you would like us to mention, please let us know in the PR or in another manner.
+

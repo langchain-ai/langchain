@@ -8,8 +8,8 @@ from unittest import mock
 import pytest
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.tracers.langchain import LangChainTracerV2
-from langchain.callbacks.tracers.schemas import TracerSessionV2
+from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain.callbacks.tracers.schemas import TracerSession
 from langchain.chains.base import Chain
 from langchain.client.langchain import (
     LangChainPlusClient,
@@ -72,7 +72,7 @@ def test_headers() -> None:
         LangChainPlusClient, "_get_seeded_tenant_id", new=mock_get_seeded_tenant_id
     ):
         client = LangChainPlusClient(api_url="http://localhost:8000", api_key="123")
-        assert client._headers == {"authorization": "Bearer 123"}
+        assert client._headers == {"x-api-key": "123"}
 
     with mock.patch.object(
         LangChainPlusClient, "_get_seeded_tenant_id", new=mock_get_seeded_tenant_id
@@ -188,27 +188,25 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
 
     async def mock_arun_chain(
         example: Example,
-        tracer: Any,
         llm_or_chain: Union[BaseLanguageModel, Chain],
         n_repetitions: int,
+        tracer: Any,
     ) -> List[Dict[str, Any]]:
         return [
             {"result": f"Result for example {example.id}"} for _ in range(n_repetitions)
         ]
 
-    def mock_load_session(
-        self: Any, name: str, *args: Any, **kwargs: Any
-    ) -> TracerSessionV2:
-        return TracerSessionV2(name=name, tenant_id=_TENANT_ID, id=uuid.uuid4())
+    def mock_ensure_session(self: Any, *args: Any, **kwargs: Any) -> TracerSession:
+        return TracerSession(name="test_session", tenant_id=_TENANT_ID, id=uuid.uuid4())
 
     with mock.patch.object(
         LangChainPlusClient, "read_dataset", new=mock_read_dataset
     ), mock.patch.object(
         LangChainPlusClient, "list_examples", new=mock_list_examples
+    ), mock.patch(
+        "langchain.client.runner_utils._arun_llm_or_chain", new=mock_arun_chain
     ), mock.patch.object(
-        LangChainPlusClient, "_arun_llm_or_chain", new=mock_arun_chain
-    ), mock.patch.object(
-        LangChainTracerV2, "load_session", new=mock_load_session
+        LangChainTracer, "ensure_session", new=mock_ensure_session
     ):
         monkeypatch.setenv("LANGCHAIN_TENANT_ID", _TENANT_ID)
         client = LangChainPlusClient(
@@ -218,7 +216,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         num_repetitions = 3
         results = await client.arun_on_dataset(
             dataset_name="test",
-            llm_or_chain=chain,
+            llm_or_chain_factory=lambda: chain,
             concurrency_level=2,
             session_name="test_session",
             num_repetitions=num_repetitions,
