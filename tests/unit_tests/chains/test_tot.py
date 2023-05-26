@@ -24,7 +24,7 @@ sudoku_solution = "3,4,1,2|1,2,3,4|2,1,4,3|4,3,2,1"
 
 
 @pytest.fixture
-def fake_llm_counter() -> FakeLLM:
+def fake_llm_sudoku() -> FakeLLM:
     """This is a fake LLM that counts to 100."""
     queries = {
         i: json.dumps({"next_step": next_step.strip()})
@@ -45,19 +45,17 @@ class SudokuChecker(ToTChecker):
             return SolutionType.INVALID
 
 
-def test_solve_sudoku(fake_llm_counter: ToTChain) -> None:
+def test_solve_sudoku(fake_llm_sudoku: ToTChain) -> None:
     """Test simple question that should not need python."""
-    tot_chain = ToTChain(
-        llm=fake_llm_counter, checker=SudokuChecker(), k=len(solutions)
-    )
+    tot_chain = ToTChain(llm=fake_llm_sudoku, checker=SudokuChecker(), k=len(solutions))
     output = tot_chain.run({"problem_description": ""})
     assert output == sudoku_solution
 
 
-def test_solve_sudoku_k_too_small(fake_llm_counter: ToTChain) -> None:
+def test_solve_sudoku_k_too_small(fake_llm_sudoku: ToTChain) -> None:
     """Test simple question that should not need python."""
     tot_chain = ToTChain(
-        llm=fake_llm_counter, checker=SudokuChecker(), k=len(solutions) - 1
+        llm=fake_llm_sudoku, checker=SudokuChecker(), k=len(solutions) - 1
     )
     output = tot_chain.run({"problem_description": ""})
     assert output != sudoku_solution

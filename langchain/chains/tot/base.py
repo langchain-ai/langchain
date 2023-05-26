@@ -14,7 +14,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import Enum
 from textwrap import indent
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Set
 
 from pydantic import BaseModel, Extra, Field
 
@@ -38,7 +38,7 @@ class SolutionType(Enum):
 class Result(BaseModel):
     solution: str
     solution_type: SolutionType
-    children: set[Result] = Field(default_factory=set)
+    children: Set[Result] = Field(default_factory=set)
 
     def __hash__(self) -> int:
         return id(self)
@@ -198,43 +198,6 @@ class ToTChain(Chain):
     def current_level(self) -> int:
         return len(self.tot_memory.stack)
 
-    def log_request(
-        self, prompt: str, run_manager: Optional[CallbackManagerForChainRun] = None
-    ) -> None:
-        if run_manager is not None:
-            prefix = "    " * self.current_level
-            run_manager.on_text(
-                indent(f"ToT Request >>>\n{prompt}\n\n", prefix),
-                verbose=self.verbose,
-                color="green",
-            )
-
-    def log_response(
-        self, response: str, run_manager: Optional[CallbackManagerForChainRun] = None
-    ) -> None:
-        if run_manager is not None:
-            prefix = "    " * self.current_level
-            run_manager.on_text(
-                indent(f"ToT Response >>>\n{response}\n\n", prefix),
-                verbose=self.verbose,
-                color="green",
-            )
-
-    def log_ctrl_signal(
-        self,
-        ctrl_signal: Optional[str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> None:
-        if ctrl_signal is None:
-            ctrl_signal = "<None>"
-        if run_manager is not None:
-            prefix = "    " * self.current_level
-            run_manager.on_text(
-                indent(f"ToT Ctrl Signal >>>\n{ctrl_signal}\n\n", prefix),
-                verbose=self.verbose,
-                color="red",
-            )
-
     def predict(
         self, problem_description: str, partial_solution_summary: Optional[str] = None
     ) -> str:
@@ -273,10 +236,18 @@ class ToTChain(Chain):
     ) -> Dict[str, str]:
         if run_manager:
             run_manager.on_text(text="Starting the ToT solve procedure.\n")
-        solution = self.solve(inputs["problem_description"])
-        if solution is None:
-            return {self.output_key: "No solution found"}
-        return {self.output_key: solution}
+
+        problem_description = inputs["problem_description"]
+        ctrl_signal = None
+        for _ in range(self.k):
+            response = self.predict(problem_description, ctrl_signal)
+            result = self.checker(problem_description, response)
+            if result.solution_type == SolutionType.VALID_FINAL:
+                return {self.output_key: result.solution}
+            self.tot_memory.store(result)
+            ctrl_signal = self.tot_controller(self.tot_memory)
+
+        return {self.output_key: "No solution found"}
 
     async def _acall(
         self,
