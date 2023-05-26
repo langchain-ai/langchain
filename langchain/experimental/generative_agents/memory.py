@@ -61,11 +61,10 @@ class GenerativeAgentMemory(BaseMemory):
     def _get_topics_of_reflection(self, last_k: int = 50) -> List[str]:
         """Return the 3 most salient high-level questions about recent observations."""
         prompt = PromptTemplate.from_template(
-            """{observations}
-
-Given only the information above, what are the 3 most salient high-level questions we can answer about the subjects in the statements?
-Provide each question on a new line.
-        """
+            "{observations}\n\n"
+            "Given only the information above, what are the 3 most salient "
+            "high-level questions we can answer about the subjects in the statements?\n"
+            "Provide each question on a new line."
         )
         observations = self.memory_retriever.memory_stream[-last_k:]
         observation_str = "\n".join(
@@ -79,18 +78,16 @@ Provide each question on a new line.
     ) -> List[str]:
         """Generate 'insights' on a topic of reflection, based on pertinent memories."""
         prompt = PromptTemplate.from_template(
-            """Statements relevant to: '{topic}'
----
-{related_statements}
----
-What 5 high-level novel insights can you infer from the above statements that are relevant for answering the following question?
-Do not include any insights that are not relevant to the question.
-Do not repeat any insights that have already been made.
-
-Question: {topic}
-
-(example format: insight (because of 1, 5, 3))
-            """
+            "Statements relevant to: '{topic}'\n"
+            "---\n"
+            "{related_statements}\n"
+            "---\n"
+            "What 5 high-level novel insights can you infer from the above statements "
+            "that are relevant for answering the following question?\n"
+            "Do not include any insights that are not relevant to the question.\n"
+            "Do not repeat any insights that have already been made.\n\n"
+            "Question: {topic}\n\n"
+            "(example format: insight (because of 1, 5, 3))\n"
         )
 
         related_memories = self.fetch_memories(topic, now=now)
