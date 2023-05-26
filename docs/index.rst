@@ -65,11 +65,11 @@ Use Cases
 
 - `Autonomous Agents <./use_cases/autonomous_agents.html>`_: Long-running agents that take many steps, like AutoGPT and BabyAGI.
 
-- `Personal Assistants <./use_cases/personal_assistants.html>`_: Taking actions, remembering interactions, and having knowledge about data.
+- `Personal Assistants <./use_cases/personal_assistants.html>`_: Taking actions, remembering interactions, and connecting to data.
 
 - `Question Answering <./use_cases/question_answering.html>`_: Answering questions over specific documents.
 
-- `Chatbots <./use_cases/chatbots.html>`_: Language models love to chat, making this a very natural use of them.
+- `Chatbots <./use_cases/chatbots.html>`_: Long-running conversations.
 
 - `Data Analysis <./use_cases/tabular.html>`_: Using language models to query structured data.
 
