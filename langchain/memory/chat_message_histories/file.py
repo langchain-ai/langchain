@@ -42,6 +42,9 @@ class FileChatMessageHistory(BaseChatMessageHistory):
     def add_ai_message(self, message: str) -> None:
         self.append(AIMessage(content=message))
 
+    def add_message(self, message: BaseMessage) -> None:
+        self.append(message)
+
     def append(self, message: BaseMessage) -> None:
         """Append the message to the record in the local file"""
         messages = messages_to_dict(self.messages)
