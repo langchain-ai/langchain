@@ -132,9 +132,9 @@ To introduce the dependency to the toml file, please do the following:
   poetry add --optional [package_name]
   ```
 2. Add the dependency to the `extended_testing` extra (inside the pyproject.toml file)
-3. Update the poetry file
+3. Relock the poetry file to update the extra.
   ```bash
-  poetry update
+  poetry lock --no-update
   ```
 4. Use the `@pytest.mark.requires(package_name)` decorator for any tests that require the dependency.
 
