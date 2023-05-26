@@ -135,6 +135,21 @@ pytest-socket = "^0.6.0"
 optional = true
 
 [tool.poetry.group.test_integration.dependencies]
+# Do not add dependencies in the test_integration group
+# Instead:
+# 1. Add an optional dependency to the main group
+#       poetry add --optional [package name]
+# 2. Add the package name to the extended_testing extra (find it below)
+# 3. Relock the poetry file
+#       poetry lock --no-update
+# 4. Favor unit tests not integration tests. 
+#    Use the @pytest.mark.requires(pkg_name) decorator in unit_tests.
+#    Your tests should not rely on network access, as it prevents other
+#    developers from being able to easily run them.
+#    Instead write unit tests that use the `responses` library or mock.patch with
+#    fixtures. Keep the fixtures minimal.
+# See CONTRIBUTING.md for more instructions on working with optional dependencies.
+# https://github.com/hwchase17/langchain/blob/master/.github/CONTRIBUTING.md#working-with-optional-dependencies
 pytest-vcr = "^1.0.2"
 wrapt = "^1.15.0"
 openai = "^0.27.4"
@@ -162,6 +177,8 @@ cassandra-driver = "^3.27.0"
 arxiv = "^1.4"
 mastodon-py = "^1.8.1"
 momento = "^1.5.0"
+# Please do not add any dependencies in the test_integration group
+# See instructions above ^^
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
