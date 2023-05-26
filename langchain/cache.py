@@ -1,14 +1,29 @@
 """Beta Feature: base interface for cache."""
+from __future__ import annotations
+
 import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
+
+from langchain.utils import get_from_env
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -18,6 +33,9 @@ except ImportError:
 from langchain.embeddings.base import Embeddings
 from langchain.schema import Generation
 from langchain.vectorstores.redis import Redis as RedisVectorstore
+
+if TYPE_CHECKING:
+    import momento
 
 RETURN_VAL_TYPE = List[Generation]
 
@@ -426,13 +444,39 @@ class GPTCache(BaseCache):
         self.gptcache_dict.clear()
 
 
+def _ensure_cache_exists(cache_client: momento.CacheClient, cache_name: str) -> None:
+    """Create cache if it doesn't exist.
+
+    Raises:
+        SdkException: Momento service or network error
+        Exception: Unexpected response
+    """
+    from momento.responses import CreateCache
+
+    create_cache_response = cache_client.create_cache(cache_name)
+    if isinstance(create_cache_response, CreateCache.Success) or isinstance(
+        create_cache_response, CreateCache.CacheAlreadyExists
+    ):
+        return None
+    elif isinstance(create_cache_response, CreateCache.Error):
+        raise create_cache_response.inner_exception
+    else:
+        raise Exception(f"Unexpected response cache creation: {create_cache_response}")
+
+
+def _validate_ttl(ttl: Optional[timedelta]) -> None:
+    if ttl is not None and ttl <= timedelta(seconds=0):
+        raise ValueError(f"ttl must be positive but was {ttl}.")
+
+
 class MomentoCache(BaseCache):
     """Cache that uses Momento as a backend. See https://gomomento.com/"""
 
     def __init__(
         self,
-        cache_client: Any,
+        cache_client: momento.CacheClient,
         cache_name: str,
+        *,
         ttl: Optional[timedelta] = None,
         ensure_cache_exists: bool = True,
     ):
@@ -451,6 +495,8 @@ class MomentoCache(BaseCache):
 
         Raises:
             ImportError: Momento python package is not installed.
+            TypeError: cache_client is not of type momento.CacheClientObject
+            ValueError: ttl is non-null and non-negative
         """
         try:
             from momento import CacheClient
@@ -460,36 +506,39 @@ class MomentoCache(BaseCache):
                 "Please install it with `pip install momento`."
             )
         if not isinstance(cache_client, CacheClient):
-            raise ValueError("Please pass in a Momento CacheClient object.")
-        self.cache_client: CacheClient = cache_client
-        self.cache_name = cache_name
-        self.__validate_ttl(ttl)
-        self.ttl = ttl
+            raise TypeError("cache_client must be a momento.CacheClient object.")
+        _validate_ttl(ttl)
         if ensure_cache_exists:
-            self.__ensure_cache_exists()
+            _ensure_cache_exists(cache_client, cache_name)
 
-    def __validate_ttl(self, ttl: Optional[timedelta]) -> None:
-        if ttl is not None and ttl <= timedelta(seconds=0):
-            raise ValueError(f"ttl must be positive but was {ttl}.")
+        self.cache_client = cache_client
+        self.cache_name = cache_name
+        self.ttl = ttl
 
-    def __ensure_cache_exists(self) -> None:
-        """Create cache if it doesn't exist.
-
-        Raises:
-            SdkException: Momento service or network error
-            Exception: Unexpected response
-        """
-        from momento.responses import CreateCache
-
-        create_cache_response = self.cache_client.create_cache(self.cache_name)
-        if isinstance(create_cache_response, CreateCache.Success) or isinstance(
-            create_cache_response, CreateCache.CacheAlreadyExists
-        ):
-            pass
-        elif isinstance(create_cache_response, CreateCache.Error):
-            raise create_cache_response.inner_exception
-        else:
-            raise Exception(f"Unexpected response: {create_cache_response}")
+    @classmethod
+    def from_client_params(
+        cls,
+        cache_name: str,
+        ttl: timedelta,
+        *,
+        configuration: Optional[momento.config.Configuration] = None,
+        auth_token: Optional[str] = None,
+        **kwargs: Any,
+    ) -> MomentoCache:
+        """Construct cache from CacheClient parameters."""
+        try:
+            from momento import CacheClient, Configurations, CredentialProvider
+        except ImportError:
+            raise ImportError(
+                "Could not import momento python package. "
+                "Please install it with `pip install momento`."
+            )
+        if configuration is None:
+            configuration = Configurations.Laptop.v1()
+        auth_token = auth_token or get_from_env("auth_token", "MOMENTO_AUTH_TOKEN")
+        credentials = CredentialProvider.from_string(auth_token)
+        cache_client = CacheClient(configuration, credentials, default_ttl=ttl)
+        return cls(cache_client, cache_name, ttl=ttl, **kwargs)
 
     def __key(self, prompt: str, llm_string: str) -> str:
         """Compute cache key from prompt and associated model and settings.

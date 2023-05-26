@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import timedelta
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from langchain.schema import (
     AIMessage,
@@ -12,6 +12,30 @@ from langchain.schema import (
     _message_to_dict,
     messages_from_dict,
 )
+from langchain.utils import get_from_env
+
+if TYPE_CHECKING:
+    import momento
+
+
+def _ensure_cache_exists(cache_client: momento.CacheClient, cache_name: str) -> None:
+    """Create cache if it doesn't exist.
+
+    Raises:
+        SdkException: Momento service or network error
+        Exception: Unexpected response
+    """
+    from momento.responses import CreateCache
+
+    create_cache_response = cache_client.create_cache(cache_name)
+    if isinstance(create_cache_response, CreateCache.Success) or isinstance(
+        create_cache_response, CreateCache.CacheAlreadyExists
+    ):
+        return None
+    elif isinstance(create_cache_response, CreateCache.Error):
+        raise create_cache_response.inner_exception
+    else:
+        raise Exception(f"Unexpected response cache creation: {create_cache_response}")
 
 
 class MomentoChatMessageHistory(BaseChatMessageHistory):
@@ -21,8 +45,9 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
     def __init__(
         self,
         session_id: str,
-        cache_client: Any,
+        cache_client: momento.CacheClient,
         cache_name: str,
+        *,
         key_prefix: str = "message_store:",
         ttl: Optional[timedelta] = None,
         ensure_cache_exists: bool = True,
@@ -45,6 +70,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
 
         Raises:
             ImportError: Momento python package is not installed.
+            TypeError: cache_client is not of type momento.CacheClientObject
         """
         try:
             from momento import CacheClient
@@ -54,38 +80,43 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
                 "Could not import momento python package. "
                 "Please install it with `pip install momento`."
             )
-
-        self.cache_client: CacheClient = cache_client
+        if not isinstance(cache_client, CacheClient):
+            raise TypeError("cache_client must be a momento.CacheClient object.")
+        if ensure_cache_exists:
+            _ensure_cache_exists(cache_client, cache_name)
+        self.key = key_prefix + session_id
+        self.cache_client = cache_client
         self.cache_name = cache_name
-        self.session_id = session_id
-        self.key_prefix = key_prefix
         if ttl is not None:
             self.ttl = CollectionTtl.of(ttl)
         else:
             self.ttl = CollectionTtl.from_cache_ttl()
-        self.key = f"{self.key_prefix}{self.session_id}"
 
-        if ensure_cache_exists:
-            self.__ensure_cache_exists()
-
-    def __ensure_cache_exists(self) -> None:
-        """Create cache if it doesn't exist.
-
-        Raises:
-            SdkException: Momento service or network error.
-            Exception: Unexpected response.
-        """
-        from momento.responses import CreateCache
-
-        create_cache_response = self.cache_client.create_cache(self.cache_name)
-        if isinstance(create_cache_response, CreateCache.Success) or isinstance(
-            create_cache_response, CreateCache.CacheAlreadyExists
-        ):
-            pass
-        elif isinstance(create_cache_response, CreateCache.Error):
-            raise create_cache_response.inner_exception
-        else:
-            raise Exception(f"Unexpected response: {create_cache_response}")
+    @classmethod
+    def from_client_params(
+        cls,
+        session_id: str,
+        cache_name: str,
+        ttl: timedelta,
+        *,
+        configuration: Optional[momento.config.Configuration] = None,
+        auth_token: Optional[str] = None,
+        **kwargs: Any,
+    ) -> MomentoChatMessageHistory:
+        """Construct cache from CacheClient parameters."""
+        try:
+            from momento import CacheClient, Configurations, CredentialProvider
+        except ImportError:
+            raise ImportError(
+                "Could not import momento python package. "
+                "Please install it with `pip install momento`."
+            )
+        if configuration is None:
+            configuration = Configurations.Laptop.v1()
+        auth_token = auth_token or get_from_env("auth_token", "MOMENTO_AUTH_TOKEN")
+        credentials = CredentialProvider.from_string(auth_token)
+        cache_client = CacheClient(configuration, credentials, default_ttl=ttl)
+        return cls(session_id, cache_client, cache_name, ttl=ttl, **kwargs)
 
     @property
     def messages(self) -> list[BaseMessage]:  # type: ignore[override]
@@ -102,16 +133,15 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
 
         fetch_response = self.cache_client.list_fetch(self.cache_name, self.key)
 
-        items: list[dict] = []
         if isinstance(fetch_response, CacheListFetch.Hit):
             items = [json.loads(m) for m in fetch_response.value_list_string]
+            return messages_from_dict(items)
         elif isinstance(fetch_response, CacheListFetch.Miss):
-            pass
+            return []
         elif isinstance(fetch_response, CacheListFetch.Error):
             raise fetch_response.inner_exception
         else:
             raise Exception(f"Unexpected response: {fetch_response}")
-        return messages_from_dict(items)
 
     def add_user_message(self, message: str) -> None:
         """Store a user message in the cache.
@@ -146,7 +176,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
             self.cache_name, self.key, item, ttl=self.ttl
         )
         if isinstance(push_response, CacheListPushBack.Success):
-            pass
+            return None
         elif isinstance(push_response, CacheListPushBack.Error):
             raise push_response.inner_exception
         else:
@@ -163,7 +193,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
 
         delete_response = self.cache_client.delete(self.cache_name, self.key)
         if isinstance(delete_response, CacheDelete.Success):
-            pass
+            return None
         elif isinstance(delete_response, CacheDelete.Error):
             raise delete_response.inner_exception
         else:
