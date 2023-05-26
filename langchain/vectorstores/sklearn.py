@@ -116,7 +116,18 @@ class ParquetSerializer(BaseSerializer):
         super().save(data)
         df = self.pd.DataFrame(data)
         table = self.pa.Table.from_pandas(df)
-        self.pq.write_table(table, self.persist_path)
+        if os.path.exists(self.persist_path):
+            backup_path = str(self.persist_path) + '-backup'
+            os.rename(self.persist_path, backup_path)
+            try:
+                self.pq.write_table(table, self.persist_path)
+            except Exception as exc:
+                os.rename(backup_path, self.persist_path)
+                raise exc
+            else:
+                os.remove(backup_path)
+        else:
+            self.pq.write_table(table, self.persist_path)
 
     def load(self) -> Any:
         super().load()
