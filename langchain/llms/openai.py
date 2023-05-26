@@ -147,6 +147,8 @@ class BaseOpenAI(BaseLLM):
     openai_api_key: Optional[str] = None
     openai_api_base: Optional[str] = None
     openai_organization: Optional[str] = None
+    # to support explicit proxy for OpenAI
+    openai_proxy: Optional[str] = None
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
@@ -218,6 +220,12 @@ class BaseOpenAI(BaseLLM):
             "OPENAI_API_BASE",
             default="",
         )
+        openai_proxy = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",
+        )
         openai_organization = get_from_dict_or_env(
             values,
             "openai_organization",
@@ -232,6 +240,8 @@ class BaseOpenAI(BaseLLM):
                 openai.api_base = openai_api_base
             if openai_organization:
                 openai.organization = openai_organization
+            if openai_proxy:
+                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
             values["client"] = openai.Completion
         except ImportError:
             raise ImportError(
@@ -627,6 +637,8 @@ class OpenAIChat(BaseLLM):
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
     openai_api_base: Optional[str] = None
+    # to support explicit proxy for OpenAI
+    openai_proxy: Optional[str] = None
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     prefix_messages: List = Field(default_factory=list)
@@ -669,6 +681,12 @@ class OpenAIChat(BaseLLM):
             "OPENAI_API_BASE",
             default="",
         )
+        openai_proxy = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",
+        )
         openai_organization = get_from_dict_or_env(
             values, "openai_organization", "OPENAI_ORGANIZATION", default=""
         )
@@ -680,6 +698,8 @@ class OpenAIChat(BaseLLM):
                 openai.api_base = openai_api_base
             if openai_organization:
                 openai.organization = openai_organization
+            if openai_proxy:
+                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
