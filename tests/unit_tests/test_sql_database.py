@@ -114,14 +114,15 @@ def test_sql_database_run() -> None:
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     stmt = insert(user).values(
-        user_id=13, user_name="Harrison", user_bio="That is my Bio " * 20
+        user_id=13, user_name="Harrison", user_bio="That is my Bio " * 24
     )
     with engine.begin() as conn:
         conn.execute(stmt)
     db = SQLDatabase(engine)
     command = "select user_name, user_bio from user where user_id = 13"
     output = db.run(command)
-    user_bio = "That is my Bio " * 20
+    print(output)
+    user_bio = "That is my Bio " * 19 + "That is my..."
     expected_output = f"[('Harrison', '{user_bio}')]"
     assert output == expected_output
 

@@ -336,9 +336,11 @@ class SQLDatabase:
                 # Convert columns values to string to avoid issues with sqlalchmey
                 # trunacating text
                 if isinstance(result, list):
-                    return str(list(tuple(map(str, row)) for row in result))
+                    return str(
+                        list(tuple(map(utils.truncate_word, row)) for row in result)
+                    )
                 else:
-                    return str(tuple(map(str, result)))
+                    return str(tuple(map(utils.truncate_word, result)))
         return ""
 
     def get_table_info_no_throw(self, table_names: Optional[List[str]] = None) -> str:
