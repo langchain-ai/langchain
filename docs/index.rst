@@ -1,28 +1,19 @@
-Welcome to LangChain
+Introduction
 ==========================
 
-| **LangChain** is a framework for developing applications powered by language models. We believe that the most powerful and differentiated applications will not only call out to a language model, but will also be:
-1. *Data-aware*: connect a language model to other sources of data
-2. *Agentic*: allow a language model to interact with its environment
+Overview
+----------------
 
-| The LangChain framework is designed around these principles.
+| **LangChain** is a framework for developing applications powered by language models. It enables applications that are
+1. **Data-aware**: connect a language model to other sources of data
+2. **Agentic**: allow a language model to interact with its environment
 
 | This is the Python specific portion of the documentation. For a purely conceptual guide to LangChain, see `here <https://docs.langchain.com/docs/>`_. For the JavaScript documentation, see `here <https://js.langchain.com/docs/>`_.
 
 Getting Started
 ----------------
 
-| How to get started using LangChain to create an Language Model application.
-
-- `Quickstart Guide <./getting_started/getting_started.html>`_
-
-| Concepts and terminology.
-
-- `Concepts and terminology <./getting_started/concepts.html>`_
-
-| Tutorials created by community experts and presented on YouTube.
-
-- `Tutorials <./getting_started/tutorials.html>`_
+We recommend heading to our `Quickstart Guide <./getting_started/getting_started.html>`_ to get set up and familiarize yourself with key concepts.
 
 .. toctree::
    :maxdepth: 2
@@ -34,30 +25,24 @@ Getting Started
    getting_started/concepts.md
    getting_started/tutorials.md
 
-
 Modules
 -----------
 
-| These modules are the core abstractions which we view as the building blocks of any LLM-powered application.
-For each module LangChain provides standard, extendable interfaces. LangChain also provides external integrations and even end-to-end implementations for off-the-shelf use.
+| LangChain provides standard, extendable interfaces and external integrations for the following modules (from least to most complex):
 
-| The docs for each module contain quickstart examples, how-to guides, reference docs, and conceptual guides.
-
-| The modules are (from least to most complex):
-
-- `Models <./modules/models.html>`_: Supported model types and integrations.
+- `Models <./modules/models.html>`_: LLMs, chat models, text embedding models.
 
 - `Prompts <./modules/prompts.html>`_: Prompt management, optimization, and serialization.
 
-- `Memory <./modules/memory.html>`_: Memory refers to state that is persisted between calls of a chain/agent.
+- `Memory <./modules/memory.html>`_: State that is persisted between calls of a chain/agent.
 
-- `Indexes <./modules/indexes.html>`_: Language models become much more powerful when combined with application-specific data - this module contains interfaces and integrations for loading, querying and updating external data.
+- `Indexes <./modules/indexes.html>`_: Connect language models to application-specific data.
 
-- `Chains <./modules/chains.html>`_: Chains are structured sequences of calls (to an LLM or to a different utility).
+- `Chains <./modules/chains.html>`_: Structured sequences of calls.
 
-- `Agents <./modules/agents.html>`_: An agent is a Chain in which an LLM, given a high-level directive and a set of tools, repeatedly decides an action, executes the action and observes the outcome until the high-level directive is complete.
+- `Agents <./modules/agents.html>`_: LLMs that execute high-level directives given a set of tools.
 
-- `Callbacks <./modules/callbacks/getting_started.html>`_: Callbacks let you log and stream the intermediate steps of any chain, making it easy to observe, debug, and evaluate the internals of an application.
+- `Callbacks <./modules/callbacks/getting_started.html>`_: Log and stream intermediate steps of any chain.
 
 .. toctree::
    :maxdepth: 1
@@ -67,10 +52,10 @@ For each module LangChain provides standard, extendable interfaces. LangChain al
 
    ./modules/models.rst
    ./modules/prompts.rst
-   ./modules/memory.md
-   ./modules/indexes.md
-   ./modules/chains.md
-   ./modules/agents.md
+   ./modules/memory.rst
+   ./modules/indexes.rst
+   ./modules/chains.rst
+   ./modules/agents.rst
    ./modules/callbacks/getting_started.ipynb
 
 Use Cases
@@ -78,27 +63,27 @@ Use Cases
 
 | Best practices and built-in implementations for common LangChain use cases:
 
-- `Autonomous Agents <./use_cases/autonomous_agents.html>`_: Autonomous agents are long-running agents that take many steps in an attempt to accomplish an objective. Examples include AutoGPT and BabyAGI.
+- `Autonomous Agents <./use_cases/autonomous_agents.html>`_: Long-running agents that take many steps, like AutoGPT and BabyAGI.
 
-- `Agent Simulations <./use_cases/agent_simulations.html>`_: Putting agents in a sandbox and observing how they interact with each other and react to events can be an effective way to evaluate their long-range reasoning and planning abilities.
+- `Personal Assistants <./use_cases/personal_assistants.html>`_: Taking actions, remembering interactions, and having knowledge about data.
 
-- `Personal Assistants <./use_cases/personal_assistants.html>`_: One of the primary LangChain use cases. Personal assistants need to take actions, remember interactions, and have knowledge about your data.
-
-- `Question Answering <./use_cases/question_answering.html>`_: Another common LangChain use case. Answering questions over specific documents, only utilizing the information in those documents to construct an answer.
+- `Question Answering <./use_cases/question_answering.html>`_: Answering questions over specific documents.
 
 - `Chatbots <./use_cases/chatbots.html>`_: Language models love to chat, making this a very natural use of them.
 
-- `Querying Tabular Data <./use_cases/tabular.html>`_: Recommended reading if you want to use language models to query structured data (CSVs, SQL, dataframes, etc).
+- `Data Analysis <./use_cases/tabular.html>`_: Using language models to query structured data.
 
-- `Code Understanding <./use_cases/code.html>`_: Recommended reading if you want to use language models to analyze code.
+- `Code Understanding <./use_cases/code.html>`_: Using language models to analyze code.
 
-- `Interacting with APIs <./use_cases/apis.html>`_: Enabling language models to interact with APIs is extremely powerful. It gives them access to up-to-date information and allows them to take actions.
+- `Interacting with APIs <./use_cases/apis.html>`_: Enabling language models to interact with APIs.
 
-- `Extraction <./use_cases/extraction.html>`_: Extract structured information from text.
+- `Information Extraction <./use_cases/extraction.html>`_: Extract structured information from text.
 
-- `Summarization <./use_cases/summarization.html>`_: Compressing longer documents. A type of Data-Augmented Generation.
+- `Summarization <./use_cases/summarization.html>`_: Compressing long text.
 
-- `Evaluation <./use_cases/evaluation.html>`_: Generative models are hard to evaluate with traditional metrics. One promising approach is to use language models themselves to do the evaluation.
+- `Evaluation <./use_cases/evaluation.html>`_: Using language models to evaluate language models.
+
+- `Agent Simulations <./use_cases/agent_simulations.html>`_: Putting agents in a sandbox and observing them.
 
 
 .. toctree::
@@ -125,8 +110,7 @@ Reference Docs
 
 | Full documentation on all methods, classes, installation methods, and integration setups for LangChain.
 
-
-- `LangChain Installation <./reference/installation.html>`_
+- `Installation <./reference/installation.html>`_
 
 - `Reference Documentation <./reference.html>`_
 
@@ -143,10 +127,7 @@ Reference Docs
 Ecosystem
 ------------
 
-| LangChain integrates a lot of different LLMs, systems, and products.
-| From the other side, many systems and products depend on LangChain.
-| It creates a vibrant and thriving ecosystem.
-
+| LangChain integrates a lot of different LLMs, systems, and products, and many systems and products depend on LangChain.
 
 - `Integrations <./integrations.html>`_: Guides for how other products can be used with LangChain.
 
@@ -170,19 +151,19 @@ Ecosystem
 Additional Resources
 ---------------------
 
-| Additional resources we think may be useful as you develop your application!
+| Additional resources we think may be useful as you develop your application:
 
-- `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: The LangChainHub is a place to share and explore other prompts, chains, and agents.
+- `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: A place to share and explore other prompts, chains, and agents.
 
 - `Gallery <https://github.com/kyrolabs/awesome-langchain>`_: A collection of great projects that use Langchain, compiled by the folks at `Kyrolabs <https://kyrolabs.com>`_. Useful for finding inspiration and example implementations.
 
 - `Tracing <./additional_resources/tracing.html>`_: A guide on using tracing in LangChain to visualize the execution of chains and agents.
 
-- `Model Laboratory <./additional_resources/model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
-
-- `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
+- `Model Laboratory <./additional_resources/model_laboratory.html>`_: Experimenting with different prompts, models, and chains.
 
 - `YouTube <./additional_resources/youtube.html>`_: A collection of the LangChain tutorials and videos.
+
+- `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
 
 - `Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>`_: As you move your LangChains into production, we'd love to offer more comprehensive support. Please fill out this form and we'll set up a dedicated support Slack channel.
 
@@ -197,6 +178,6 @@ Additional Resources
    Gallery <https://github.com/kyrolabs/awesome-langchain>
    ./additional_resources/tracing.md
    ./additional_resources/model_laboratory.ipynb
-   Discord <https://discord.gg/6adMQxSpJS>
    ./additional_resources/youtube.md
+   Discord <https://discord.gg/6adMQxSpJS>
    Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>
