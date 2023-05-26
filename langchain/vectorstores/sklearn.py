@@ -3,12 +3,13 @@
 The vector store can be persisted in json, bson or parquet format.
 '''
 
-from typing import Any, Iterable, List, Optional, Type, TypeVar, Literal, Dict
+from typing import Any, Iterable, List, Optional, Tuple, Type, TypeVar, Literal, Dict
+from abc import ABC, abstractmethod
+import importlib
 from uuid import uuid4
 import json
 import os
-from abc import ABC, abstractmethod
-import importlib
+import math
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -228,6 +229,16 @@ class SKLearnVectorStore(VectorStore):
             page_content=self._texts[idx],
             metadata={ **{'_distance': dist, '_id': self._ids[idx]}, **self._metadatas[idx]}
         ) for idx, dist in zip(neigh_idxs, neigh_dists)]
+
+    def _similarity_search_with_relevance_scores(self,
+            query: str,
+            k: int = 4,
+            **kwargs: Any
+        ) -> List[Tuple[Document, float]]:
+        docs = self.similarity_search(query=query, k=k, **kwargs)
+        dists = [doc.metadata['_distance'] for doc in docs]
+        scores = [1 / math.exp(dist) for dist in dists]
+        return list(zip(docs, scores))
 
     @classmethod
     def from_texts(cls: Type['SKLearnVectorStore'],
