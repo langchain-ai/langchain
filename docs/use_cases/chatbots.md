@@ -18,4 +18,5 @@ Additional related resources include:
 - [Memory Examples](../modules/memory/how_to_guides.rst): A collection of how-to examples for working with memory.
 
 More end-to-end examples include:
+- [JarvisBase](https://github.com/peterw/JarvisBase): An end-to-end Customer Support assistant that transcribes user voice, performs Question Answering over a scraped documentation base, & answers in natural language. 
 - [Voice Assistant](chatbots/voice_assistant.ipynb): A notebook walking through how to create a voice assistant using LangChain.
