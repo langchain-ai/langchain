@@ -91,6 +91,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
             os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
             os.environ["OPENAI_API_VERSION"] = "2023-03-15-preview"
+            os.environ["OPENAI_PROXY"] = "http://your-corporate-proxy:8080"
 
             from langchain.embeddings.openai import OpenAIEmbeddings
             embeddings = OpenAIEmbeddings(
@@ -112,6 +113,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_api_base: Optional[str] = None
     # to support Azure OpenAI Service custom endpoints
     openai_api_type: Optional[str] = None
+    # to support explicit proxy for OpenAI
+    openai_proxy: Optional[str] = None
     embedding_ctx_length: int = 8191
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
@@ -148,6 +151,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_API_TYPE",
             default="",
         )
+        openai_proxy = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",
+        )
         if openai_api_type in ("azure", "azure_ad", "azuread"):
             default_api_version = "2022-12-01"
         else:
@@ -176,9 +185,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 openai.api_version = openai_api_version
             if openai_api_type:
                 openai.api_type = openai_api_type
+            if openai_proxy:
+                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
             values["client"] = openai.Embedding
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
@@ -192,66 +203,63 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         embeddings: List[List[float]] = [[] for _ in range(len(texts))]
         try:
             import tiktoken
-
-            tokens = []
-            indices = []
-            encoding = tiktoken.model.encoding_for_model(self.model)
-            for i, text in enumerate(texts):
-                if self.model.endswith("001"):
-                    # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
-                    # replace newlines, which can negatively affect performance.
-                    text = text.replace("\n", " ")
-                token = encoding.encode(
-                    text,
-                    allowed_special=self.allowed_special,
-                    disallowed_special=self.disallowed_special,
-                )
-                for j in range(0, len(token), self.embedding_ctx_length):
-                    tokens += [token[j : j + self.embedding_ctx_length]]
-                    indices += [i]
-
-            batched_embeddings = []
-            _chunk_size = chunk_size or self.chunk_size
-            for i in range(0, len(tokens), _chunk_size):
-                response = embed_with_retry(
-                    self,
-                    input=tokens[i : i + _chunk_size],
-                    engine=self.deployment,
-                    request_timeout=self.request_timeout,
-                    headers=self.headers,
-                )
-                batched_embeddings += [r["embedding"] for r in response["data"]]
-
-            results: List[List[List[float]]] = [[] for _ in range(len(texts))]
-            num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
-            for i in range(len(indices)):
-                results[indices[i]].append(batched_embeddings[i])
-                num_tokens_in_batch[indices[i]].append(len(tokens[i]))
-
-            for i in range(len(texts)):
-                _result = results[i]
-                if len(_result) == 0:
-                    average = embed_with_retry(
-                        self,
-                        input="",
-                        engine=self.deployment,
-                        request_timeout=self.request_timeout,
-                        headers=self.headers,
-                    )["data"][0]["embedding"]
-                else:
-                    average = np.average(
-                        _result, axis=0, weights=num_tokens_in_batch[i]
-                    )
-                embeddings[i] = (average / np.linalg.norm(average)).tolist()
-
-            return embeddings
-
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to for OpenAIEmbeddings. "
                 "Please install it with `pip install tiktoken`."
             )
+
+        tokens = []
+        indices = []
+        encoding = tiktoken.model.encoding_for_model(self.model)
+        for i, text in enumerate(texts):
+            if self.model.endswith("001"):
+                # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
+                # replace newlines, which can negatively affect performance.
+                text = text.replace("\n", " ")
+            token = encoding.encode(
+                text,
+                allowed_special=self.allowed_special,
+                disallowed_special=self.disallowed_special,
+            )
+            for j in range(0, len(token), self.embedding_ctx_length):
+                tokens += [token[j : j + self.embedding_ctx_length]]
+                indices += [i]
+
+        batched_embeddings = []
+        _chunk_size = chunk_size or self.chunk_size
+        for i in range(0, len(tokens), _chunk_size):
+            response = embed_with_retry(
+                self,
+                input=tokens[i : i + _chunk_size],
+                engine=self.deployment,
+                request_timeout=self.request_timeout,
+                headers=self.headers,
+            )
+            batched_embeddings += [r["embedding"] for r in response["data"]]
+
+        results: List[List[List[float]]] = [[] for _ in range(len(texts))]
+        num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
+        for i in range(len(indices)):
+            results[indices[i]].append(batched_embeddings[i])
+            num_tokens_in_batch[indices[i]].append(len(tokens[i]))
+
+        for i in range(len(texts)):
+            _result = results[i]
+            if len(_result) == 0:
+                average = embed_with_retry(
+                    self,
+                    input="",
+                    engine=self.deployment,
+                    request_timeout=self.request_timeout,
+                    headers=self.headers,
+                )["data"][0]["embedding"]
+            else:
+                average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
+            embeddings[i] = (average / np.linalg.norm(average)).tolist()
+
+        return embeddings
 
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint."""

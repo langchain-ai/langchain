@@ -119,17 +119,19 @@ def test_get_final_answer_multiline() -> None:
 def test_bad_action_input_line() -> None:
     """Test handling when no action input found."""
     llm_output = "Thought: I need to search for NBA\n" "Action: Search\n" "Thought: NBA"
-    with pytest.raises(OutputParserException):
+    with pytest.raises(OutputParserException) as e_info:
         get_action_and_input(llm_output)
+    assert e_info.value.observation is not None
 
 
 def test_bad_action_line() -> None:
-    """Test handling when no action input found."""
+    """Test handling when no action found."""
     llm_output = (
         "Thought: I need to search for NBA\n" "Thought: Search\n" "Action Input: NBA"
     )
-    with pytest.raises(OutputParserException):
+    with pytest.raises(OutputParserException) as e_info:
         get_action_and_input(llm_output)
+    assert e_info.value.observation is not None
 
 
 def test_from_chains() -> None:

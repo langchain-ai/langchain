@@ -31,7 +31,7 @@ def get_headers() -> Dict[str, Any]:
 
 
 def get_endpoint() -> str:
-    return os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
+    return os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:1984")
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))

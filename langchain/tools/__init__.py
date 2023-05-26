@@ -1,5 +1,11 @@
 """Core toolkit implementations."""
 
+from langchain.tools.azure_cognitive_services import (
+    AzureCogsFormRecognizerTool,
+    AzureCogsImageAnalysisTool,
+    AzureCogsSpeech2TextTool,
+    AzureCogsText2SpeechTool,
+)
 from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
 from langchain.tools.bing_search.tool import BingSearchResults, BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchResults, DuckDuckGoSearchRun
@@ -36,6 +42,11 @@ from langchain.tools.playwright import (
     NavigateTool,
 )
 from langchain.tools.plugin import AIPluginTool
+from langchain.tools.powerbi.tool import (
+    InfoPowerBITool,
+    ListPowerBITool,
+    QueryPowerBITool,
+)
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.shell.tool import ShellTool
 from langchain.tools.steamship_image_generation import SteamshipImageGenerationTool
@@ -51,6 +62,10 @@ from langchain.tools.zapier.tool import ZapierNLAListActions, ZapierNLARunAction
 __all__ = [
     "AIPluginTool",
     "APIOperation",
+    "AzureCogsFormRecognizerTool",
+    "AzureCogsImageAnalysisTool",
+    "AzureCogsSpeech2TextTool",
+    "AzureCogsText2SpeechTool",
     "BaseTool",
     "BaseTool",
     "BaseTool",
@@ -79,13 +94,16 @@ __all__ = [
     "GoogleSerperRun",
     "HumanInputRun",
     "IFTTTWebhook",
+    "InfoPowerBITool",
     "ListDirectoryTool",
+    "ListPowerBITool",
     "MetaphorSearchResults",
     "MoveFileTool",
     "NavigateBackTool",
     "NavigateTool",
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
+    "QueryPowerBITool",
     "ReadFileTool",
     "SceneXplainTool",
     "ShellTool",

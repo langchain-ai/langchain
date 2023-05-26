@@ -64,13 +64,13 @@ class LangChainPlusClient(BaseSettings):
     """Client for interacting with the LangChain+ API."""
 
     api_key: Optional[str] = Field(default=None, env="LANGCHAIN_API_KEY")
-    api_url: str = Field(default="http://localhost:8000", env="LANGCHAIN_ENDPOINT")
+    api_url: str = Field(default="http://localhost:1984", env="LANGCHAIN_ENDPOINT")
     tenant_id: Optional[str] = None
 
     @root_validator(pre=True)
     def validate_api_key_if_hosted(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Verify API key is provided if url not localhost."""
-        api_url: str = values.get("api_url", "http://localhost:8000")
+        api_url: str = values.get("api_url", "http://localhost:1984")
         api_key: Optional[str] = values.get("api_key")
         if not _is_localhost(api_url):
             if not api_key:
@@ -200,7 +200,7 @@ class LangChainPlusClient(BaseSettings):
         return Dataset(**result)
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
-    def read_run(self, run_id: str) -> Run:
+    def read_run(self, run_id: Union[str, UUID]) -> Run:
         """Read a run from the LangChain+ API."""
         response = self._get(f"/runs/{run_id}")
         raise_for_status_with_text(response)
@@ -267,6 +267,22 @@ class LangChainPlusClient(BaseSettings):
         response = self._get("/sessions")
         raise_for_status_with_text(response)
         yield from [TracerSession(**session) for session in response.json()]
+
+    @xor_args(("session_name", "session_id"))
+    def delete_session(
+        self, *, session_name: Optional[str] = None, session_id: Optional[str] = None
+    ) -> None:
+        """Delete a session from the LangChain+ API."""
+        if session_name is not None:
+            session_id = self.read_session(session_name=session_name).id
+        elif session_id is None:
+            raise ValueError("Must provide session_name or session_id")
+        response = requests.delete(
+            self.api_url + f"/sessions/{session_id}",
+            headers=self._headers,
+        )
+        raise_for_status_with_text(response)
+        return None
 
     def create_dataset(self, dataset_name: str, description: str) -> Dataset:
         """Create a dataset in the LangChain+ API."""
@@ -342,7 +358,7 @@ class LangChainPlusClient(BaseSettings):
     ) -> Example:
         """Create a dataset example in the LangChain+ API."""
         if dataset_id is None:
-            dataset_id = self.read_dataset(dataset_name).id
+            dataset_id = self.read_dataset(dataset_name=dataset_name).id
 
         data = {
             "inputs": inputs,
@@ -360,7 +376,7 @@ class LangChainPlusClient(BaseSettings):
         return Example(**result)
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
-    def read_example(self, example_id: str) -> Example:
+    def read_example(self, example_id: Union[str, UUID]) -> Example:
         """Read an example from the LangChain+ API."""
         response = self._get(f"/examples/{example_id}")
         raise_for_status_with_text(response)

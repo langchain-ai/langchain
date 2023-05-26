@@ -12,6 +12,7 @@ from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
+from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
 
 __all__ = [
     "OpenAICallbackHandler",
@@ -21,6 +22,7 @@ __all__ = [
     "MlflowCallbackHandler",
     "ClearMLCallbackHandler",
     "CometCallbackHandler",
+    "WhyLabsCallbackHandler",
     "AsyncIteratorCallbackHandler",
     "get_openai_callback",
     "tracing_enabled",
