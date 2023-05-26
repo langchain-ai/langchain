@@ -329,6 +329,8 @@ class SQLDatabase:
                     connection.exec_driver_sql(
                         f"ALTER SESSION SET search_path='{self._schema}'"
                     )
+                elif self.dialect == "bigquery":
+                    connection.exec_driver_sql(f"SET @@dataset_id='{self._schema}'")
                 else:
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.execute(text(command))
