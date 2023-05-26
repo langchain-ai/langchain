@@ -322,7 +322,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
                 elif isinstance(self.handle_tool_error, str):
                     observation = self.handle_tool_error
                 elif callable(self.handle_tool_error):
-                    observation = await self.handle_tool_error(e)
+                    observation = self.handle_tool_error(e)
                 else:
                     raise ValueError("Got unexpected type of `handle_tool_error`")
                 await run_manager.on_tool_end(
