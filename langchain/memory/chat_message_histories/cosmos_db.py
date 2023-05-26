@@ -148,6 +148,10 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         """Add a AI message to the memory."""
         self.upsert_messages(AIMessage(content=message))
 
+    def add_message(self, message: BaseMessage) -> None:
+        """Add a self-created message to the store"""
+        self.upsert_messages(message)
+
     def upsert_messages(self, new_message: Optional[BaseMessage] = None) -> None:
         """Update the cosmosdb item."""
         if new_message:

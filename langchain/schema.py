@@ -246,6 +246,11 @@ class BaseChatMessageHistory(ABC):
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        json.dump(f, messages)
 
+               def add_message(self, message: BaseMessage) -> None:
+                   messages = self.messages.append(_message_to_dict(message))
+                   with open(os.path.join(storage_path, session_id), 'w') as f:
+                       json.dump(f, messages)
+               
                def clear(self):
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        f.write("[]")
@@ -260,6 +265,10 @@ class BaseChatMessageHistory(ABC):
     @abstractmethod
     def add_ai_message(self, message: str) -> None:
         """Add an AI message to the store"""
+
+    @abstractmethod
+    def add_message(self, message: BaseMessage) -> None:
+        """Add a self-created message to the store"""
 
     @abstractmethod
     def clear(self) -> None:

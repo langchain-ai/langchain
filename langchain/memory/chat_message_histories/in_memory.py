@@ -19,5 +19,9 @@ class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
     def add_ai_message(self, message: str) -> None:
         self.messages.append(AIMessage(content=message))
 
+    def add_message(self, message: BaseMessage) -> None:
+        """Add a self-created message to the store"""
+        self.messages.append(message)
+
     def clear(self) -> None:
         self.messages = []
