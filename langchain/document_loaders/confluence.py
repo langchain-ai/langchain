@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class ConfluenceLoader(BaseLoader):
     """
     Load Confluence pages. Port of https://llamahub.ai/l/confluence
-    This currently supports both username/api_key and Oauth2 login.
+    This currently supports username/api_key, Oauth2 login or personal access token authentication.
 
     Specify a list page_ids and/or space_key to load in the corresponding pages into
     Document objects, if both are specified the union of both sets will be returned.
@@ -53,6 +53,8 @@ class ConfluenceLoader(BaseLoader):
     :type username: str, optional
     :param oauth2: _description_, defaults to {}
     :type oauth2: dict, optional
+    :param token: _description_, defaults to None
+    :type token: str, optional
     :param cloud: _description_, defaults to True
     :type cloud: bool, optional
     :param number_of_retries: How many times to retry, defaults to 3
@@ -73,6 +75,7 @@ class ConfluenceLoader(BaseLoader):
         api_key: Optional[str] = None,
         username: Optional[str] = None,
         oauth2: Optional[dict] = None,
+        token: Optional[str] = None,
         cloud: Optional[bool] = True,
         number_of_retries: Optional[int] = 3,
         min_retry_seconds: Optional[int] = 2,
@@ -80,7 +83,7 @@ class ConfluenceLoader(BaseLoader):
         confluence_kwargs: Optional[dict] = None,
     ):
         confluence_kwargs = confluence_kwargs or {}
-        errors = ConfluenceLoader.validate_init_args(url, api_key, username, oauth2)
+        errors = ConfluenceLoader.validate_init_args(url, api_key, username, oauth2, token)
         if errors:
             raise ValueError(f"Error(s) while validating input: {errors}")
 
@@ -101,6 +104,10 @@ class ConfluenceLoader(BaseLoader):
             self.confluence = Confluence(
                 url=url, oauth2=oauth2, cloud=cloud, **confluence_kwargs
             )
+        elif token:
+            self.confluence = Confluence(
+                url=url, token=token, cloud=cloud, **confluence_kwargs
+            )
         else:
             self.confluence = Confluence(
                 url=url,
@@ -116,6 +123,7 @@ class ConfluenceLoader(BaseLoader):
         api_key: Optional[str] = None,
         username: Optional[str] = None,
         oauth2: Optional[dict] = None,
+        token: Optional[str] = None,
     ) -> Union[List, None]:
         """Validates proper combinations of init arguments"""
 
@@ -145,6 +153,11 @@ class ConfluenceLoader(BaseLoader):
                 "You have either ommited require keys or added extra "
                 "keys to the oauth2 dictionary. key values should be "
                 "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']`"
+            )
+
+        if token and (api_key or username or oauth2):
+            errors.append(
+                "Cannot provide a value for `token` and a value for `api_key`, `username` or `oauth2`"
             )
 
         if errors:
