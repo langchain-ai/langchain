@@ -42,7 +42,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
 
         self._create_schema()
 
-    def _create_schema(self) -> None:
+    def _create_schema_if_missing(self) -> None:
         class_obj = {
             "class": self._index_name,
             "properties": [{"name": self._text_key, "dataType": ["text"]}],
