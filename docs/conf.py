@@ -49,6 +49,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",
+    'sphinx_tabs.tabs'
 ]
 source_suffix = [".ipynb", ".html", ".md", ".rst"]
 
