@@ -41,7 +41,7 @@ class WikipediaAPIWrapper(BaseModel):
             wikipedia.set_lang(values["lang"])
             values["wiki_client"] = wikipedia
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import wikipedia python package. "
                 "Please install it with `pip install wikipedia`."
             )

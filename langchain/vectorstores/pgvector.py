@@ -184,7 +184,7 @@ class PGVector(VectorStore):
         with Session(self._conn) as session:
             collection = self.get_collection(session)
             if not collection:
-                self.logger.error("Collection not found")
+                self.logger.warning("Collection not found")
                 return
             session.delete(collection)
             session.commit()
@@ -296,8 +296,18 @@ class PGVector(VectorStore):
         if filter is not None:
             filter_clauses = []
             for key, value in filter.items():
-                filter_by_metadata = EmbeddingStore.cmetadata[key].astext == str(value)
-                filter_clauses.append(filter_by_metadata)
+                IN = "in"
+                if isinstance(value, dict) and IN in map(str.lower, value):
+                    value_case_insensitive = {k.lower(): v for k, v in value.items()}
+                    filter_by_metadata = EmbeddingStore.cmetadata[key].astext.in_(
+                        value_case_insensitive[IN]
+                    )
+                    filter_clauses.append(filter_by_metadata)
+                else:
+                    filter_by_metadata = EmbeddingStore.cmetadata[key].astext == str(
+                        value
+                    )
+                    filter_clauses.append(filter_by_metadata)
 
             filter_by = sqlalchemy.and_(filter_by, *filter_clauses)
 

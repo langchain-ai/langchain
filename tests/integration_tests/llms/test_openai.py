@@ -19,6 +19,13 @@ def test_openai_call() -> None:
     assert isinstance(output, str)
 
 
+def test_openai_model_param() -> None:
+    llm = OpenAI(model="foo")
+    assert llm.model_name == "foo"
+    llm = OpenAI(model_name="foo")
+    assert llm.model_name == "foo"
+
+
 def test_openai_extra_kwargs() -> None:
     """Test extra kwargs to openai."""
     # Check that foo is saved in extra_kwargs.

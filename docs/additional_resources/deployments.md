@@ -29,6 +29,10 @@ It implements a Question Answering app and contains instructions for deploying t
 
 A minimal example on how to run LangChain on Vercel using Flask.
 
+## [FastAPI + Vercel](https://github.com/msoedov/langcorn)
+
+A minimal example on how to run LangChain on Vercel using FastAPI and LangCorn/Uvicorn.
+
 ## [Kinsta](https://github.com/kinsta/hello-world-langchain)
 
 A minimal example on how to deploy LangChain to [Kinsta](https://kinsta.com) using Flask.

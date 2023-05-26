@@ -39,7 +39,7 @@ Modules
 -----------
 
 | These modules are the core abstractions which we view as the building blocks of any LLM-powered application.
-For each module LangChain provides standard, extendable interfaces. LanghChain also provides external integrations and even end-to-end implementations for off-the-shelf use.
+For each module LangChain provides standard, extendable interfaces. LangChain also provides external integrations and even end-to-end implementations for off-the-shelf use.
 
 | The docs for each module contain quickstart examples, how-to guides, reference docs, and conceptual guides.
 
@@ -134,25 +134,31 @@ Reference Docs
    :hidden:
 
    ./reference/installation.md
-   ./reference/integrations.md
    ./reference.rst
 
 
-LangChain Ecosystem
--------------------
+Ecosystem
+------------
 
-| Guides for how other companies/products can be used with LangChain.
+| LangChain integrates a lot of different LLMs, systems, and products.
+From the other side, many systems and products depend on LangChain.
+It creates a vibrant and thriving ecosystem.
 
-- `LangChain Ecosystem <./ecosystem.html>`_
+
+- `Integrations <./integrations.html>`_: Guides for how other products can be used with LangChain.
+
+- `Dependents <./dependents.html>`_: List of repositories that use LangChain.
+
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :glob:
    :caption: Ecosystem
    :name: ecosystem
    :hidden:
 
-   ./ecosystem.rst
+   ./integrations.rst
+   ./dependents.md
 
 
 Additional Resources
@@ -162,7 +168,7 @@ Additional Resources
 
 - `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: The LangChainHub is a place to share and explore other prompts, chains, and agents.
 
-- `Gallery <./additional_resources/gallery.html>`_: A collection of our favorite projects that use LangChain. Useful for finding inspiration or seeing how things were done in other applications.
+- `Gallery <https://github.com/kyrolabs/awesome-langchain>`_: A collection of great projects that use Langchain, compiled by the folks at `Kyrolabs <https://kyrolabs.com>`_. Useful for finding inspiration and example implementations.
 
 - `Deployments <./additional_resources/deployments.html>`_: A collection of instructions, code snippets, and template repositories for deploying LangChain apps.
 
@@ -184,7 +190,7 @@ Additional Resources
    :hidden:
 
    LangChainHub <https://github.com/hwchase17/langchain-hub>
-   ./additional_resources/gallery.rst
+   Gallery <https://github.com/kyrolabs/awesome-langchain>
    ./additional_resources/deployments.md
    ./additional_resources/tracing.md
    ./additional_resources/model_laboratory.ipynb

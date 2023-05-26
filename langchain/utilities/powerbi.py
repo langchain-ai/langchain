@@ -1,11 +1,10 @@
 """Wrapper around a Power BI endpoint."""
-
 from __future__ import annotations
 
 import logging
 import os
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import aiohttp
 import requests
@@ -17,8 +16,13 @@ _LOGGER = logging.getLogger(__name__)
 
 BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg")
 
-if TYPE_CHECKING:
+try:
     from azure.core.credentials import TokenCredential
+except ImportError:
+    _LOGGER.log(
+        logging.WARNING,
+        "Could not import azure.core python package.",
+    )
 
 
 class PowerBIDataset(BaseModel):
@@ -67,8 +71,8 @@ class PowerBIDataset(BaseModel):
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + self.token,
             }
-        from azure.core.exceptions import (  # pylint: disable=import-outside-toplevel
-            ClientAuthenticationError,
+        from azure.core.exceptions import (
+            ClientAuthenticationError,  # pylint: disable=import-outside-toplevel
         )
 
         if self.credential:

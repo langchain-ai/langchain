@@ -1,7 +1,7 @@
 version: '3'
 services:
   langchain-frontend:
-    image: langchain/langchainplus-frontend:latest
+    image: langchain/${_LANGCHAINPLUS_IMAGE_PREFIX-}langchainplus-frontend:latest
     ports:
       - 80:80
     environment:
@@ -16,7 +16,7 @@ services:
       context: frontend-react/.
       dockerfile: Dockerfile
   langchain-backend:
-    image: langchain/langchainplus-backend:latest
+    image: langchain/${_LANGCHAINPLUS_IMAGE_PREFIX-}langchainplus-backend:latest
     environment:
       - PORT=8000
       - LANGCHAIN_ENV=local_docker

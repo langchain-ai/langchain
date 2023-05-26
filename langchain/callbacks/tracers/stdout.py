@@ -3,7 +3,7 @@ from typing import Any, List
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
-from langchain.input import get_colored_text
+from langchain.input import get_bolded_text, get_colored_text
 
 
 def try_json_stringify(obj: Any, fallback: str) -> str:
@@ -54,24 +54,28 @@ class ConsoleCallbackHandler(BaseTracer):
         crumbs = self.get_breadcrumbs(run)
         print(
             f"{get_colored_text('[chain/start]', color='green')} "
-            f"[{crumbs}] Entering Chain run with input:\n"
-            f"{try_json_stringify(run.inputs, '[inputs]')}"
+            + get_bolded_text(f"[{crumbs}] Entering Chain run with input:\n")
+            + f"{try_json_stringify(run.inputs, '[inputs]')}"
         )
 
     def _on_chain_end(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
         print(
             f"{get_colored_text('[chain/end]', color='blue')} "
-            f"[{crumbs}] [{elapsed(run)}] Exiting Chain run with output:\n"
-            f"{try_json_stringify(run.outputs, '[outputs]')}"
+            + get_bolded_text(
+                f"[{crumbs}] [{elapsed(run)}] Exiting Chain run with output:\n"
+            )
+            + f"{try_json_stringify(run.outputs, '[outputs]')}"
         )
 
     def _on_chain_error(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
         print(
             f"{get_colored_text('[chain/error]', color='red')} "
-            f"[{crumbs}] [{elapsed(run)}] Chain run errored with error:\n"
-            f"{try_json_stringify(run.error, '[error]')}"
+            + get_bolded_text(
+                f"[{crumbs}] [{elapsed(run)}] Chain run errored with error:\n"
+            )
+            + f"{try_json_stringify(run.error, '[error]')}"
         )
 
     def _on_llm_start(self, run: Run) -> None:
@@ -83,32 +87,36 @@ class ConsoleCallbackHandler(BaseTracer):
         )
         print(
             f"{get_colored_text('[llm/start]', color='green')} "
-            f"[{crumbs}] Entering LLM run with input:\n"
-            f"{try_json_stringify(inputs, '[inputs]')}"
+            + get_bolded_text(f"[{crumbs}] Entering LLM run with input:\n")
+            + f"{try_json_stringify(inputs, '[inputs]')}"
         )
 
     def _on_llm_end(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
         print(
             f"{get_colored_text('[llm/end]', color='blue')} "
-            f"[{crumbs}] [{elapsed(run)}] Exiting LLM run with output:\n"
-            f"{try_json_stringify(run.outputs, '[response]')}"
+            + get_bolded_text(
+                f"[{crumbs}] [{elapsed(run)}] Exiting LLM run with output:\n"
+            )
+            + f"{try_json_stringify(run.outputs, '[response]')}"
         )
 
     def _on_llm_error(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
         print(
             f"{get_colored_text('[llm/error]', color='red')} "
-            f"[{crumbs}] [{elapsed(run)}] LLM run errored with error:\n"
-            f"{try_json_stringify(run.error, '[error]')}"
+            + get_bolded_text(
+                f"[{crumbs}] [{elapsed(run)}] LLM run errored with error:\n"
+            )
+            + f"{try_json_stringify(run.error, '[error]')}"
         )
 
     def _on_tool_start(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
         print(
             f'{get_colored_text("[tool/start]", color="green")} '
-            f"[{crumbs}] Entering Tool run with input:\n"
-            f'"{run.inputs["input"].strip()}"'
+            + get_bolded_text(f"[{crumbs}] Entering Tool run with input:\n")
+            + f'"{run.inputs["input"].strip()}"'
         )
 
     def _on_tool_end(self, run: Run) -> None:
@@ -116,15 +124,17 @@ class ConsoleCallbackHandler(BaseTracer):
         if run.outputs:
             print(
                 f'{get_colored_text("[tool/end]", color="blue")} '
-                f"[{crumbs}] [{elapsed(run)}] Exiting Tool run with output:\n"
-                f'"{run.outputs["output"].strip()}"'
+                + get_bolded_text(
+                    f"[{crumbs}] [{elapsed(run)}] Exiting Tool run with output:\n"
+                )
+                + f'"{run.outputs["output"].strip()}"'
             )
 
     def _on_tool_error(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
         print(
             f"{get_colored_text('[tool/error]', color='red')} "
-            f"[{crumbs}] [{elapsed(run)}] "
-            f"Tool run errored with error:\n"
+            + get_bolded_text(f"[{crumbs}] [{elapsed(run)}] ")
+            + f"Tool run errored with error:\n"
             f"{run.error}"
         )
