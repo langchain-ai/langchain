@@ -19,4 +19,5 @@ Additional related resources include:
 
 More end-to-end examples include:
 - [JarvisBase](https://github.com/peterw/JarvisBase): An end-to-end Customer Support assistant that transcribes user voice, performs Question Answering over a scraped documentation base, & answers in natural language. 
+- [PDF Analysis Slack Chatbot](https://github.com/hollaugo/slack-financial-analysis-chatbot): Build an end-to-end Slack chatbot that chats with multiple PDF files (financial analysis in this case).
 - [Voice Assistant](chatbots/voice_assistant.ipynb): A notebook walking through how to create a voice assistant using LangChain.
