@@ -149,7 +149,8 @@ class SKLearnVectorStore(VectorStore):
 
         # non-persistent properties
         self._np = np
-        self._neighbors = sklearn_neighbors.NearestNeighbors(**kwargs)
+        metric = kwargs.get('metric', 'cosine')
+        self._neighbors = sklearn_neighbors.NearestNeighbors(metric=metric, **kwargs)
         self._neighbors_fitted = False
         self._embedding_function = embedding_function
         self._persist_path = persist_path
