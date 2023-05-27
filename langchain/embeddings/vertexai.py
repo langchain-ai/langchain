@@ -31,8 +31,13 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = self.client.get_embeddings(texts)
-        return [el.values for el in embeddings]
+        batch_size = 5
+        embeddings = []
+        for batch in range(0, len(texts), batch_size):
+            text_batch = texts[batch : batch + batch_size]
+            embeddings_batch = self.client.get_embeddings(text_batch)
+            embeddings.extend([el.values for el in embeddings_batch])
+        return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a text.
