@@ -16,8 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
-from geoalchemy import geometry
-
+from geoalchemy2 import Geometry
 
 from langchain import utils
 
