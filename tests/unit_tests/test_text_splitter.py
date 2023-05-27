@@ -4,19 +4,10 @@ import pytest
 from langchain.docstore.document import Document
 from langchain.text_splitter import (
     CharacterTextSplitter,
-    CppCodeTextSplitter,
-    GolangCodeTextSplitter,
-    JavaCodeTextSplitter,
-    JavaScriptCodeTextSplitter,
-    PhpCodeTextSplitter,
-    ProtoCodeTextSplitter,
+    CodeTextSplitter,
+    Language,
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
-    RSTCodeTextSplitter,
-    RubyCodeTextSplitter,
-    RustCodeTextSplitter,
-    ScalaCodeTextSplitter,
-    SwiftCodeTextSplitter,
 )
 
 
@@ -186,7 +177,9 @@ CHUNK_SIZE = 16
 
 
 def test_python_code_splitter() -> None:
-    splitter = PythonCodeTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=0)
+    splitter = CodeTextSplitter(
+        language=Language.PYTHON, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
     code = """
 def two_sum(nums, target):
     n = len(nums)
@@ -203,7 +196,9 @@ def two_sum(nums, target):
 
 
 def test_golang_code_splitter() -> None:
-    splitter = GolangCodeTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=0)
+    splitter = CodeTextSplitter(
+        language=Language.GO, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
     code = """
 func twoSum(nums []int, target int) []int {
     numMap := make(map[int]int)
@@ -225,7 +220,9 @@ func twoSum(nums []int, target int) []int {
 
 
 def test_rst_code_splitter() -> None:
-    splitter = RSTCodeTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=0)
+    splitter = CodeTextSplitter(
+        language=Language.RST, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
     code = """
 Sample Document
 ===============
@@ -260,7 +257,9 @@ This concludes the sample document.
 
 
 def test_proto_file_splitter() -> None:
-    splitter = ProtoCodeTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=0)
+    splitter = CodeTextSplitter(
+        language=Language.PROTO, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
     code = """
 syntax = "proto3";
 
@@ -278,7 +277,9 @@ message Person {
 
 
 def test_javascript_code_splitter() -> None:
-    splitter = JavaScriptCodeTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=0)
+    splitter = CodeTextSplitter(
+        language=Language.JS, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
     code = """
 function twoSum(nums, target) {
     let numMap = new Map();
@@ -300,7 +301,9 @@ function twoSum(nums, target) {
 
 
 def test_java_code_splitter() -> None:
-    splitter = JavaCodeTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=0)
+    splitter = CodeTextSplitter(
+        language=Language.JAVA, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
     code = """
 public class TwoSum {
     public int[] twoSum(int[] nums, int target) {
@@ -324,7 +327,9 @@ public class TwoSum {
 
 
 def test_cpp_code_splitter() -> None:
-    splitter = CppCodeTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=0)
+    splitter = CodeTextSplitter(
+        language=Language.CPP, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
     code = """
 #include <vector>
 #include <unordered_map>
@@ -352,7 +357,9 @@ public:
 
 
 def test_scala_code_splitter() -> None:
-    splitter = ScalaCodeTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=0)
+    splitter = CodeTextSplitter(
+        language=Language.SCALA, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
     code = """
 object TwoSum {
   def twoSum(nums: Array[Int], target: Int): Array[Int] = {
@@ -376,7 +383,9 @@ object TwoSum {
 
 
 def test_ruby_code_splitter() -> None:
-    splitter = RubyCodeTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=0)
+    splitter = CodeTextSplitter(
+        language=Language.RUBY, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
     code = """
 def two_sum(nums, target)
   num_map = {}
@@ -398,7 +407,9 @@ end
 
 
 def test_php_code_splitter() -> None:
-    splitter = PhpCodeTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=0)
+    splitter = CodeTextSplitter(
+        language=Language.PHP, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
     code = """
 function twoSum($nums, $target) {
     $numMap = [];
@@ -420,7 +431,9 @@ function twoSum($nums, $target) {
 
 
 def test_swift_code_splitter() -> None:
-    splitter = SwiftCodeTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=0)
+    splitter = CodeTextSplitter(
+        language=Language.SWIFT, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
     code = """
 func twoSum(_ nums: [Int], _ target: Int) -> [Int] {
     var numMap = [Int: Int]()
@@ -442,7 +455,9 @@ func twoSum(_ nums: [Int], _ target: Int) -> [Int] {
 
 
 def test_rust_code_splitter() -> None:
-    splitter = RustCodeTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=0)
+    splitter = CodeTextSplitter(
+        language=Language.RUST, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
     code = """
 fn two_sum(nums: &[i32], target: i32) -> Vec<i32> {
     let mut num_map = std::collections::HashMap::new();
