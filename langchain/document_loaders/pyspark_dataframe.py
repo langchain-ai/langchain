@@ -1,13 +1,18 @@
 """Load from a Spark Dataframe object"""
-import psutil
+import itertools
+import logging
 import sys
-from typing import Any, List, Optional, TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Tuple
+
+import psutil
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
+logger = logging.getLogger(__file__)
+
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame, SparkSession
+    from pyspark.sql import SparkSession
 
 
 class PySparkDataFrameLoader(BaseLoader):
@@ -15,20 +20,20 @@ class PySparkDataFrameLoader(BaseLoader):
 
     def __init__(
         self,
-        spark_session: Optional[SparkSession] = None,
+        spark_session: Optional["SparkSession"] = None,
         df: Optional[Any] = None,
         page_content_column: str = "text",
-        fraction_of_memory: int = 2,
+        fraction_of_memory: float = 0.1,
     ):
-        """Initialize with (any) dataframe object."""
+        """Initialize with a Spark DataFrame object."""
         try:
-            from pyspark.sql import SparkSession, DataFrame
+            from pyspark.sql import DataFrame, SparkSession
         except ImportError:
             raise ValueError(
                 "pyspark is not installed. Please install it with `pip install pyspark`"
             )
 
-        self._spark = (
+        self.spark = (
             spark_session if spark_session else SparkSession.builder.getOrCreate()
         )
 
@@ -39,33 +44,34 @@ class PySparkDataFrameLoader(BaseLoader):
         self.df = df
         self.page_content_column = page_content_column
         self.fraction_of_memory = fraction_of_memory
+        self.num_rows, self.max_num_rows = self.get_num_rows()
+        self.rdd_df = self.df.rdd.map(list)
+        self.column_names = self.df.columns
 
-    def load(self) -> List[Document]:
-        """Load from the dataframe."""
-        # From the Pandas Document Loader source code:
-        #
-        # For very large dataframes, this needs to yield instead of building a list
-        # but that would require chaging return type to a generator for BaseLoader
-        # and all its subclasses, which is a bigger refactor. Marking as future TODO.
-        result = []
-
-        # This code handles the loading functionality by choosing at most a fraction (1/2) of the driver node's
-        # memory availability
+    def get_num_rows(self) -> Tuple[int, int]:
+        """Gets the amount of "feasible" rows for the DataFrame"""
         row = self.df.limit(1).collect()[0]
         estimated_row_size = sys.getsizeof(row)
         mem_info = psutil.virtual_memory()
         available_memory = mem_info.available
-        max_num_rows = (
-            int(available_memory / estimated_row_size) // self.fraction_of_memory
+        max_num_rows = int(
+            (available_memory / estimated_row_size) * self.fraction_of_memory
         )
-        num_rows = min(max_num_rows, self.df.count())
+        return min(max_num_rows, self.df.count()), max_num_rows
 
-        rdd_df = self.df.rdd.map(list)
-        column_names = self.df.columns
-        for row in rdd_df.take(num_rows):
-            metadata = {column_names[i]: row[i] for i in range(len(row))}
+    def lazy_load(self) -> Iterator[Document]:
+        """A lazy loader for document content."""
+        for row in self.rdd_df.toLocalIterator():
+            metadata = {self.column_names[i]: row[i] for i in range(len(row))}
             text = metadata[self.page_content_column]
             metadata.pop(self.page_content_column)
-            result.append(Document(page_content=text, metadata=metadata))
+            yield Document(page_content=text, metadata=metadata)
 
-        return result
+    def load(self) -> List[Document]:
+        """Load from the dataframe."""
+        if self.df.count() > self.max_num_rows:
+            logger.warning(
+                f"The number of DataFrame rows is {self.df.count()}, but we will only include the amount of rows that can reasonably fit in memory: {self.num_rows}."
+            )
+        lazy_load_iterator = self.lazy_load()
+        return list(itertools.islice(lazy_load_iterator, self.num_rows))

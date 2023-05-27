@@ -98,6 +98,7 @@ azure-ai-formrecognizer = {version = "^3.2.1", optional = true}
 azure-ai-vision = {version = "^0.11.1b1", optional = true}
 azure-cognitiveservices-speech = {version = "^1.28.0", optional = true}
 bibtexparser = {version = "^1.4.0", optional = true}
+pyspark = {version = "^3.4.0", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -279,6 +280,7 @@ extended_testing = [
  "requests_toolbelt",
  "html2text",
  "scikit-learn",
+ "pyspark",
 ]
 
 [tool.ruff]
