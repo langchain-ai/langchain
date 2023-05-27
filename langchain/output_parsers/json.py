@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import List
 
 from langchain.schema import OutputParserException
 
 
 def parse_json_markdown(json_string: str) -> dict:
-    # Remove the triple backticks if present
-    json_string = json_string.replace("```json", "").replace("```", "")
+    # Remove all characters that are not { or [ from start of string
+    json_string = re.sub("^[^\[{]*", "", json_string)
 
-    # Strip whitespace and newlines from the start and end
-    json_string = json_string.strip()
+    # Remove all characters that are not } or ] from end of string
+    json_string = re.sub(r"[^}\]]*$", "", json_string)
 
     # Parse the JSON string into a Python dictionary
     parsed = json.loads(json_string)
