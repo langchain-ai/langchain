@@ -142,7 +142,7 @@ def _load_llm_bash_chain(config: dict, **kwargs: Any) -> LLMBashChain:
         llm_chain_config = config.pop("llm_chain")
         llm_chain = load_chain_from_config(llm_chain_config)
     elif "llm_path" in config:
-        llm_chain = load_llm(config.pop("llm_path"))
+        llm_chain = load_chain(config.pop("llm_path"))
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
     if "prompt" in config:
@@ -204,7 +204,7 @@ def _load_llm_math_chain(config: dict, **kwargs: Any) -> LLMMathChain:
         llm_chain_config = config.pop("llm_chain")
         llm_chain = load_chain_from_config(llm_chain_config)
     elif "llm_path" in config:
-        llm_chain = load_llm(config.pop("llm_path"))
+        llm_chain = load_chain(config.pop("llm_path"))
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
     if "prompt" in config:
@@ -233,7 +233,7 @@ def _load_pal_chain(config: dict, **kwargs: Any) -> PALChain:
         llm_chain_config = config.pop("llm_chain")
         llm_chain = load_chain_from_config(llm_chain_config)
     elif "llm_path" in config:
-        llm_chain = load_llm(config.pop("llm_path"))
+        llm_chain = load_chain(config.pop("llm_path"))
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
     if "prompt" in config:
