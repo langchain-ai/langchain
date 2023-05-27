@@ -123,14 +123,14 @@ class ElasticsearchEmbeddings(Embeddings):
 
         This method provides a way to create an instance of the ElasticsearchEmbeddings
         class using an existing Elasticsearch connection. The connection object is used
-        to create an MlClient, which is then used to initialize the ElasticsearchEmbeddings
-        instance.
+        to create an MlClient, which is then used to initialize the
+        ElasticsearchEmbeddings instance.
 
         Args:
         model_id (str): The model_id of the model deployed in the Elasticsearch cluster.
-        es_connection (elasticsearch.Elasticsearch): An existing Elasticsearch connection object.
-        input_field (str, optional): The name of the key for the input text field in the
-        document. Defaults to 'text_field'.
+        es_connection (elasticsearch.Elasticsearch): An existing Elasticsearch
+        connection object. input_field (str, optional): The name of the key for the
+        input text field in the document. Defaults to 'text_field'.
 
         Returns:
         ElasticsearchEmbeddings: An instance of the ElasticsearchEmbeddings class.
@@ -162,15 +162,16 @@ class ElasticsearchEmbeddings(Embeddings):
         ]
         embeddings_generator.embed_documents(documents)
         """
-        # Importing MlClient from elasticsearch.client within the method to avoid unnecessary import if the method is not used
+        # Importing MlClient from elasticsearch.client within the method to
+        # avoid unnecessary import if the method is not used
         from elasticsearch.client import MlClient
 
         # Create an MlClient from the given Elasticsearch connection
         client = MlClient(es_connection)
 
-        # Return a new instance of the ElasticsearchEmbeddings class with the MlClient, model_id, and input_field
+        # Return a new instance of the ElasticsearchEmbeddings class with
+        # the MlClient, model_id, and input_field
         return cls(client, model_id, input_field=input_field)
-
 
     def _embedding_func(self, texts: List[str]) -> List[List[float]]:
         """
