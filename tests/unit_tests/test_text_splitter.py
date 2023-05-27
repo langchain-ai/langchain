@@ -6,7 +6,6 @@ from langchain.text_splitter import (
     CharacterTextSplitter,
     CodeTextSplitter,
     Language,
-    PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
 )
 
