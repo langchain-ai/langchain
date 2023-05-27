@@ -7,6 +7,8 @@ from langchain.agents.chat.output_parser import ChatOutputParser
 from langchain.agents.chat.prompt import (
     FORMAT_INSTRUCTIONS,
     HUMAN_MESSAGE,
+    HUMAN_MESSAGE_PREFIX,
+    HUMAN_MESSAGE_SUFFIX,
     SYSTEM_MESSAGE_PREFIX,
     SYSTEM_MESSAGE_SUFFIX,
 )
@@ -72,23 +74,30 @@ class ChatAgent(Agent):
         system_message_prefix: str = SYSTEM_MESSAGE_PREFIX,
         system_message_suffix: str = SYSTEM_MESSAGE_SUFFIX,
         human_message: str = HUMAN_MESSAGE,
+        human_message_prefix: str = HUMAN_MESSAGE_PREFIX,
+        human_message_suffix: str = HUMAN_MESSAGE_SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
     ) -> BasePromptTemplate:
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
-        template = "\n\n".join(
+        system_message_template = "\n\n".join(
+          system_message_prefix,
+          system_message_suffix
+        )
+        human_message_template = human_message or "\n\n".join(
             [
-                system_message_prefix,
+                human_message_prefix,
                 tool_strings,
                 format_instructions,
-                system_message_suffix,
+                human_message_suffix,
+                human_message,
             ]
         )
         messages = [
-            SystemMessagePromptTemplate.from_template(template),
-            HumanMessagePromptTemplate.from_template(human_message),
+            SystemMessagePromptTemplate.from_template(system_message_template),
+            HumanMessagePromptTemplate.from_template(human_message_template),
         ]
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
