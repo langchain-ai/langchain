@@ -37,6 +37,40 @@ def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> 
     }
 
 
+def _default_knn_mapping(dim: int) -> Dict:
+    return {
+        "properties": {
+            "text": {"type": "text"},
+            "vector": {
+                "type": "dense_vector",
+                "dims": dim,
+                "index": True,
+                "similarity": "cosine"  # You can change this to "dot_product" or "l2_norm" as per your requirement
+            },
+        }
+    }
+
+
+def _default_knn_query(query_vector: Optional[List[float]] = None, model_id: Optional[str] = None, field: str = 'vector', size: int = 10) -> Dict:
+    if model_id:
+        query_vector = query_vector_builder(model_id)  # Assuming query_vector_builder is defined elsewhere
+    
+    if not query_vector:
+        raise ValueError("Either `query_vector` or `model_id` must be provided.")
+    
+    return {
+        "size": size,
+        "query": {
+            "knn": {
+                field: {
+                    "vector": query_vector,
+                    "k": size,
+                }
+            }
+        }
+    }
+
+
 # ElasticVectorSearch is a concrete implementation of the abstract base class
 # VectorStore, which defines a common interface for all vector database
 # implementations. By inheriting from the ABC class, ElasticVectorSearch can be
@@ -281,3 +315,55 @@ class ElasticVectorSearch(VectorStore, ABC):
             texts, metadatas=metadatas, refresh_indices=refresh_indices
         )
         return vectorsearch
+
+
+
+# kNN
+class ElasticKnnSearch(ElasticVectorSearch):
+    """Wrapper around Elasticsearch for k-nearest neighbors (kNN) search.
+
+    This class extends ElasticVectorSearch, supporting kNN search features.
+    """
+
+    def __init__(self, *args, **kwargs):
+        """Initialize an instance of ElasticKnnSearch."""
+        super().__init__(*args, **kwargs)
+        self.mapping = self._default_knn_mapping(dim=self.dim)  # Assuming dim is defined
+
+    @staticmethod
+    def _default_knn_mapping(dim: int) -> Dict:
+        """Generates a default index mapping for kNN search."""
+        return {
+            "properties": {
+                "text": {"type": "text"},
+                "vector": {
+                    "type": "dense_vector",
+                    "dims": dim,
+                    "index": True,
+                    "similarity": "dot_product"
+                }
+            }
+        }
+
+    def add_texts(self, texts: List[str], model_id: Optional[str] = None) -> None:
+        """Adds the provided texts to the Elasticsearch index."""
+        emb_func = self.embedding.encode
+        embeddings = emb_func(texts) if not model_id else emb_func(texts, model_id=model_id)
+        body = [
+            {"text": text, "vector": vector.tolist()}
+            for text, vector in zip(texts, embeddings)
+        ]
+        self.es.bulk(index=self.index_name, body=body, refresh=True)
+
+    def from_texts(self, texts: List[str], model_id: Optional[str] = None) -> None:
+        """Creates an index and adds the provided texts to it."""
+        self.create_index()
+        self.add_texts(texts, model_id=model_id)
+
+    def knn_search(self, query: Union[str, List[str]], k: int = 10, 
+                   model_id: Optional[str] = None) -> Dict:
+        """Performs a k-nearest neighbors (kNN) search."""
+        emb_func = self.embedding.encode
+        query_vector = emb_func(query) if not model_id else emb_func(query, model_id=model_id)
+        query_body = self._default_knn_query(query_vector=query_vector, size=k)
+        return self.es.search(index=self.index_name, body=query_body)
