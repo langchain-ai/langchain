@@ -1,3 +1,4 @@
+import re
 from typing import Union
 
 from langchain.agents.agent import AgentOutputParser
@@ -18,7 +19,15 @@ class ChatOutputParser(AgentOutputParser):
                 {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
             )
         try:
-            response = parse_json_markdown(text)
+            text = text.strip().replace("```json", "```")
+            markdown_section = re.search("```(.*?)```", text, re.DOTALL)
+            if markdown_section:
+                extracted_text = markdown_section.group(
+                    1
+                ).strip()  # remove leading/trailing whitespaces
+            else:
+                extracted_text = ""
+            response = parse_json_markdown(extracted_text)
             return AgentAction(response["action"], response["action_input"], text)
 
         except Exception:
