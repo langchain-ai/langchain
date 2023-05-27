@@ -38,8 +38,8 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
         "Input to this tool is a detailed and correct SQL query, output is a result from the database."
         "If the query is not correct, an error message will be returned."
         "If an error is returned, rewrite the query, check the query, and try again."
-        "If you encounter an issue with Unknown column 'xxxx' in 'field list', you can"
-        " try using InfoSQLDatabaseTool to query the correct table fields"
+        "If you encounter an issue with Unknown column 'xxxx' in 'field list', using "
+        "schema_sql_db to query the correct table fields"
     )
 
     def _run(
