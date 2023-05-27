@@ -2,24 +2,37 @@ How-To Guides
 =============
 
 A chain is made up of links, which can be either primitives or other chains.
-Primitives can be either `prompts <../prompts.html>`_, `llms <../llms.html>`_, `utils <../utils.html>`_, or other chains.
-The examples here are all end-to-end chains for specific applications.
-They are broken up into three categories:
+Primitives can be either `prompts <../prompts.html>`_, `models <../models.html>`_, arbitrary functions, or other chains.
+The examples here are broken up into three sections:
 
-1. `Generic Chains <./generic_how_to.html>`_: Generic chains, that are meant to help build other chains rather than serve a particular purpose.
-2. `CombineDocuments Chains <./combine_docs_how_to.html>`_: Chains aimed at making it easy to work with documents (question answering, summarization, etc).
-3. `Utility Chains <./utility_how_to.html>`_: Chains consisting of an LLMChain interacting with a specific util.
-4. `Asynchronous <./async_chain.html>`_: Covering asynchronous functionality.
+**Generic Functionality**
+
+Covers both generic chains (that are useful in a wide variety of applications) as well as generic functionality related to those chains.
 
 .. toctree::
    :maxdepth: 1
    :glob:
-   :hidden:
 
-   ./generic_how_to.rst
-   ./combine_docs_how_to.rst
-   ./utility_how_to.rst
+   ./generic/*
 
-In addition to different types of chains, we also have the following how-to guides for working with chains in general:
+**Index-related Chains**
 
-`Load From Hub <./generic/from_hub.html>`_: This notebook covers how to load chains from `LangChainHub <https://github.com/hwchase17/langchain-hub>`_.
+Chains related to working with indexes.
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   ./index_examples/*
+
+
+**All other chains**
+
+All other types of chains!
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   ./examples/*
+

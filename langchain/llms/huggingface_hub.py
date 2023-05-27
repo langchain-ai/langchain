@@ -1,29 +1,30 @@
 """Wrapper around HuggingFace APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_REPO_ID = "gpt2"
-VALID_TASKS = ("text2text-generation", "text-generation")
+VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 
-class HuggingFaceHub(LLM, BaseModel):
+class HuggingFaceHub(LLM):
     """Wrapper around HuggingFaceHub  models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
     environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
     it as a named parameter to the constructor.
 
-    Only supports `text-generation` and `text2text-generation` for now.
+    Only supports `text-generation`, `text2text-generation` and `summarization` for now.
 
     Example:
         .. code-block:: python
 
-            from langchain import HuggingFaceHub
+            from langchain.llms import HuggingFaceHub
             hf = HuggingFaceHub(repo_id="gpt2", huggingfacehub_api_token="my-api-key")
     """
 
@@ -31,7 +32,8 @@ class HuggingFaceHub(LLM, BaseModel):
     repo_id: str = DEFAULT_REPO_ID
     """Model name to use."""
     task: Optional[str] = None
-    """Task to call the model with. Should be a task that returns `generated_text`."""
+    """Task to call the model with.
+    Should be a task that returns `generated_text` or `summary_text`."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
@@ -66,7 +68,7 @@ class HuggingFaceHub(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import huggingface_hub python package. "
-                "Please it install it with `pip install huggingface_hub`."
+                "Please install it with `pip install huggingface_hub`."
             )
         return values
 
@@ -84,7 +86,12 @@ class HuggingFaceHub(LLM, BaseModel):
         """Return type of llm."""
         return "huggingface_hub"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
 
         Args:
@@ -108,6 +115,8 @@ class HuggingFaceHub(LLM, BaseModel):
             text = response[0]["generated_text"][len(prompt) :]
         elif self.client.task == "text2text-generation":
             text = response[0]["generated_text"]
+        elif self.client.task == "summarization":
+            text = response[0]["summary_text"]
         else:
             raise ValueError(
                 f"Got invalid task {self.client.task}, "

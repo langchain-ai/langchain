@@ -1,6 +1,10 @@
 """Test base LLM functionality."""
 from sqlalchemy import Column, Integer, Sequence, String, create_engine
-from sqlalchemy.orm import declarative_base
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 
 import langchain
 from langchain.cache import InMemoryCache, SQLAlchemyCache
@@ -27,7 +31,7 @@ def test_caching() -> None:
         [Generation(text="fizz")],
     ]
     expected_output = LLMResult(
-        expected_generations,
+        generations=expected_generations,
         llm_output=None,
     )
     assert output == expected_output
@@ -65,7 +69,7 @@ def test_custom_caching() -> None:
         [Generation(text="fizz")],
     ]
     expected_output = LLMResult(
-        expected_generations,
+        generations=expected_generations,
         llm_output=None,
     )
     assert output == expected_output

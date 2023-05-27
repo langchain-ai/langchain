@@ -1,16 +1,32 @@
 """Base interface for large language models to expose."""
+import inspect
 import json
+import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import yaml
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import Extra, Field, root_validator, validator
 
 import langchain
-from langchain.callbacks import get_callback_manager
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.schema import Generation, LLMResult
+from langchain.callbacks.manager import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForLLMRun,
+    CallbackManager,
+    CallbackManagerForLLMRun,
+    Callbacks,
+)
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    Generation,
+    LLMResult,
+    PromptValue,
+    get_buffer_string,
+)
 
 
 def _get_verbosity() -> bool:
@@ -53,13 +69,14 @@ def update_cache(
     return llm_output
 
 
-class BaseLLM(BaseModel, ABC):
+class BaseLLM(BaseLanguageModel, ABC):
     """LLM wrapper should take in a prompt and return a string."""
 
     cache: Optional[bool] = None
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
-    callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
+    callbacks: Callbacks = Field(default=None, exclude=True)
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -67,15 +84,16 @@ class BaseLLM(BaseModel, ABC):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @validator("callback_manager", pre=True, always=True)
-    def set_callback_manager(
-        cls, callback_manager: Optional[BaseCallbackManager]
-    ) -> BaseCallbackManager:
-        """If callback manager is None, set it.
-
-        This allows users to pass in None as callback manager, which is a nice UX.
-        """
-        return callback_manager or get_callback_manager()
+    @root_validator()
+    def raise_deprecation(cls, values: Dict) -> Dict:
+        """Raise deprecation warning if callback_manager is used."""
+        if values.get("callback_manager") is not None:
+            warnings.warn(
+                "callback_manager is deprecated. Please use callbacks instead.",
+                DeprecationWarning,
+            )
+            values["callbacks"] = values.pop("callback_manager", None)
+        return values
 
     @validator("verbose", pre=True, always=True)
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
@@ -90,18 +108,45 @@ class BaseLLM(BaseModel, ABC):
 
     @abstractmethod
     def _generate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
 
     @abstractmethod
     async def _agenerate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
 
+    def generate_prompt(
+        self,
+        prompts: List[PromptValue],
+        stop: Optional[List[str]] = None,
+        callbacks: Callbacks = None,
+    ) -> LLMResult:
+        prompt_strings = [p.to_string() for p in prompts]
+        return self.generate(prompt_strings, stop=stop, callbacks=callbacks)
+
+    async def agenerate_prompt(
+        self,
+        prompts: List[PromptValue],
+        stop: Optional[List[str]] = None,
+        callbacks: Callbacks = None,
+    ) -> LLMResult:
+        prompt_strings = [p.to_string() for p in prompts]
+        return await self.agenerate(prompt_strings, stop=stop, callbacks=callbacks)
+
     def generate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        callbacks: Callbacks = None,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
         # If string is passed in directly no errors will be raised but outputs will
@@ -111,23 +156,6 @@ class BaseLLM(BaseModel, ABC):
                 "Argument 'prompts' is expected to be of type List[str], received"
                 f" argument of type {type(prompts)}."
             )
-        disregard_cache = self.cache is not None and not self.cache
-        if langchain.llm_cache is None or disregard_cache:
-            # This happens when langchain.cache is None, but self.cache is True
-            if self.cache is not None and self.cache:
-                raise ValueError(
-                    "Asked to cache, but no cache found at `langchain.cache`."
-                )
-            self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts, verbose=self.verbose
-            )
-            try:
-                output = self._generate(prompts, stop=stop)
-            except (KeyboardInterrupt, Exception) as e:
-                self.callback_manager.on_llm_error(e, verbose=self.verbose)
-                raise e
-            self.callback_manager.on_llm_end(output, verbose=self.verbose)
-            return output
         params = self.dict()
         params["stop"] = stop
         (
@@ -136,16 +164,49 @@ class BaseLLM(BaseModel, ABC):
             missing_prompt_idxs,
             missing_prompts,
         ) = get_prompts(params, prompts)
-        if len(missing_prompts) > 0:
-            self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
+        disregard_cache = self.cache is not None and not self.cache
+        callback_manager = CallbackManager.configure(
+            callbacks, self.callbacks, self.verbose
+        )
+        new_arg_supported = inspect.signature(self._generate).parameters.get(
+            "run_manager"
+        )
+        if langchain.llm_cache is None or disregard_cache:
+            # This happens when langchain.cache is None, but self.cache is True
+            if self.cache is not None and self.cache:
+                raise ValueError(
+                    "Asked to cache, but no cache found at `langchain.cache`."
+                )
+            run_manager = callback_manager.on_llm_start(
+                {"name": self.__class__.__name__}, prompts, invocation_params=params
             )
             try:
-                new_results = self._generate(missing_prompts, stop=stop)
+                output = (
+                    self._generate(prompts, stop=stop, run_manager=run_manager)
+                    if new_arg_supported
+                    else self._generate(prompts, stop=stop)
+                )
             except (KeyboardInterrupt, Exception) as e:
-                self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                run_manager.on_llm_error(e)
                 raise e
-            self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
+            run_manager.on_llm_end(output)
+            return output
+        if len(missing_prompts) > 0:
+            run_manager = callback_manager.on_llm_start(
+                {"name": self.__class__.__name__},
+                missing_prompts,
+                invocation_params=params,
+            )
+            try:
+                new_results = (
+                    self._generate(missing_prompts, stop=stop, run_manager=run_manager)
+                    if new_arg_supported
+                    else self._generate(missing_prompts, stop=stop)
+                )
+            except (KeyboardInterrupt, Exception) as e:
+                run_manager.on_llm_error(e)
+                raise e
+            run_manager.on_llm_end(new_results)
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
@@ -155,26 +216,12 @@ class BaseLLM(BaseModel, ABC):
         return LLMResult(generations=generations, llm_output=llm_output)
 
     async def agenerate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        callbacks: Callbacks = None,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        disregard_cache = self.cache is not None and not self.cache
-        if langchain.llm_cache is None or disregard_cache:
-            # This happens when langchain.cache is None, but self.cache is True
-            if self.cache is not None and self.cache:
-                raise ValueError(
-                    "Asked to cache, but no cache found at `langchain.cache`."
-                )
-            self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts, verbose=self.verbose
-            )
-            try:
-                output = await self._agenerate(prompts, stop=stop)
-            except (KeyboardInterrupt, Exception) as e:
-                self.callback_manager.on_llm_error(e, verbose=self.verbose)
-                raise e
-            self.callback_manager.on_llm_end(output, verbose=self.verbose)
-            return output
         params = self.dict()
         params["stop"] = stop
         (
@@ -183,16 +230,51 @@ class BaseLLM(BaseModel, ABC):
             missing_prompt_idxs,
             missing_prompts,
         ) = get_prompts(params, prompts)
-        if len(missing_prompts) > 0:
-            self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
+        disregard_cache = self.cache is not None and not self.cache
+        callback_manager = AsyncCallbackManager.configure(
+            callbacks, self.callbacks, self.verbose
+        )
+        new_arg_supported = inspect.signature(self._agenerate).parameters.get(
+            "run_manager"
+        )
+        if langchain.llm_cache is None or disregard_cache:
+            # This happens when langchain.cache is None, but self.cache is True
+            if self.cache is not None and self.cache:
+                raise ValueError(
+                    "Asked to cache, but no cache found at `langchain.cache`."
+                )
+            run_manager = await callback_manager.on_llm_start(
+                {"name": self.__class__.__name__}, prompts, invocation_params=params
             )
             try:
-                new_results = await self._agenerate(missing_prompts, stop=stop)
+                output = (
+                    await self._agenerate(prompts, stop=stop, run_manager=run_manager)
+                    if new_arg_supported
+                    else await self._agenerate(prompts, stop=stop)
+                )
             except (KeyboardInterrupt, Exception) as e:
-                self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                await run_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
-            self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
+            await run_manager.on_llm_end(output, verbose=self.verbose)
+            return output
+        if len(missing_prompts) > 0:
+            run_manager = await callback_manager.on_llm_start(
+                {"name": self.__class__.__name__},
+                missing_prompts,
+                invocation_params=params,
+            )
+            try:
+                new_results = (
+                    await self._agenerate(
+                        missing_prompts, stop=stop, run_manager=run_manager
+                    )
+                    if new_arg_supported
+                    else await self._agenerate(missing_prompts, stop=stop)
+                )
+            except (KeyboardInterrupt, Exception) as e:
+                await run_manager.on_llm_error(e)
+                raise e
+            await run_manager.on_llm_end(new_results)
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
@@ -201,30 +283,64 @@ class BaseLLM(BaseModel, ABC):
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output)
 
-    def get_num_tokens(self, text: str) -> int:
-        """Get the number of tokens present in the text."""
-        # TODO: this method may not be exact.
-        # TODO: this method may differ based on model (eg codex).
-        try:
-            from transformers import GPT2TokenizerFast
-        except ImportError:
-            raise ValueError(
-                "Could not import transformers python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install transformers`."
-            )
-        # create a GPT-3 tokenizer instance
-        tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
-        # tokenize the text using the GPT-3 tokenizer
-        tokenized_text = tokenizer.tokenize(text)
-
-        # calculate the number of tokens in the tokenized text
-        return len(tokenized_text)
-
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def __call__(
+        self, prompt: str, stop: Optional[List[str]] = None, callbacks: Callbacks = None
+    ) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
-        return self.generate([prompt], stop=stop).generations[0][0].text
+        if not isinstance(prompt, str):
+            raise ValueError(
+                "Argument `prompt` is expected to be a string. Instead found "
+                f"{type(prompt)}. If you want to run the LLM on multiple prompts, use "
+                "`generate` instead."
+            )
+        return (
+            self.generate([prompt], stop=stop, callbacks=callbacks)
+            .generations[0][0]
+            .text
+        )
+
+    async def _call_async(
+        self, prompt: str, stop: Optional[List[str]] = None, callbacks: Callbacks = None
+    ) -> str:
+        """Check Cache and run the LLM on the given prompt and input."""
+        result = await self.agenerate([prompt], stop=stop, callbacks=callbacks)
+        return result.generations[0][0].text
+
+    def predict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        return self(text, stop=_stop)
+
+    def predict_messages(
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
+    ) -> BaseMessage:
+        text = get_buffer_string(messages)
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        content = self(text, stop=_stop)
+        return AIMessage(content=content)
+
+    async def apredict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        return await self._call_async(text, stop=_stop)
+
+    async def apredict_messages(
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
+    ) -> BaseMessage:
+        text = get_buffer_string(messages)
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        content = await self._call_async(text, stop=_stop)
+        return AIMessage(content=content)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -288,22 +404,56 @@ class LLM(BaseLLM):
     """
 
     @abstractmethod
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Run the LLM on the given prompt and input."""
 
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    ) -> str:
+        """Run the LLM on the given prompt and input."""
+        raise NotImplementedError("Async generation not implemented for this LLM.")
+
     def _generate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
         # TODO: add caching here.
         generations = []
+        new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
         for prompt in prompts:
-            text = self._call(prompt, stop=stop)
+            text = (
+                self._call(prompt, stop=stop, run_manager=run_manager)
+                if new_arg_supported
+                else self._call(prompt, stop=stop)
+            )
             generations.append([Generation(text=text)])
         return LLMResult(generations=generations)
 
     async def _agenerate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        raise NotImplementedError("Async generation not implemented for this LLM.")
+        generations = []
+        new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
+        for prompt in prompts:
+            text = (
+                await self._acall(prompt, stop=stop, run_manager=run_manager)
+                if new_arg_supported
+                else await self._acall(prompt, stop=stop)
+            )
+            generations.append([Generation(text=text)])
+        return LLMResult(generations=generations)

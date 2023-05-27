@@ -1,12 +1,11 @@
 """Chain that runs an arbitrary python function."""
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Optional
 
-from pydantic import BaseModel
-
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 
 
-class TransformChain(Chain, BaseModel):
+class TransformChain(Chain):
     """Chain transform chain output.
 
     Example:
@@ -37,5 +36,9 @@ class TransformChain(Chain, BaseModel):
         """
         return self.output_variables
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         return self.transform(inputs)

@@ -2,14 +2,34 @@
 import logging
 from typing import Any
 
+from langchain.embeddings.aleph_alpha import (
+    AlephAlphaAsymmetricSemanticEmbedding,
+    AlephAlphaSymmetricSemanticEmbedding,
+)
 from langchain.embeddings.cohere import CohereEmbeddings
+from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
+from langchain.embeddings.fake import FakeEmbeddings
+from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.huggingface import (
     HuggingFaceEmbeddings,
     HuggingFaceInstructEmbeddings,
 )
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
+from langchain.embeddings.jina import JinaEmbeddings
+from langchain.embeddings.llamacpp import LlamaCppEmbeddings
+from langchain.embeddings.minimax import MiniMaxEmbeddings
+from langchain.embeddings.modelscope_hub import ModelScopeEmbeddings
+from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
+from langchain.embeddings.self_hosted import SelfHostedEmbeddings
+from langchain.embeddings.self_hosted_hugging_face import (
+    SelfHostedHuggingFaceEmbeddings,
+    SelfHostedHuggingFaceInstructEmbeddings,
+)
+from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
+from langchain.embeddings.vertexai import VertexAIEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +37,25 @@ __all__ = [
     "OpenAIEmbeddings",
     "HuggingFaceEmbeddings",
     "CohereEmbeddings",
+    "ElasticsearchEmbeddings",
+    "JinaEmbeddings",
+    "LlamaCppEmbeddings",
     "HuggingFaceHubEmbeddings",
+    "ModelScopeEmbeddings",
     "TensorflowHubEmbeddings",
+    "SagemakerEndpointEmbeddings",
     "HuggingFaceInstructEmbeddings",
+    "MosaicMLInstructorEmbeddings",
+    "SelfHostedEmbeddings",
+    "SelfHostedHuggingFaceEmbeddings",
+    "SelfHostedHuggingFaceInstructEmbeddings",
+    "FakeEmbeddings",
+    "AlephAlphaAsymmetricSemanticEmbedding",
+    "AlephAlphaSymmetricSemanticEmbedding",
+    "SentenceTransformerEmbeddings",
+    "GooglePalmEmbeddings",
+    "MiniMaxEmbeddings",
+    "VertexAIEmbeddings",
 ]
 
 

@@ -10,6 +10,10 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 class StreamlitCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs to streamlit."""
 
+    def __init__(self) -> None:
+        self.tokens_area = st.empty()
+        self.tokens_stream = ""
+
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
@@ -17,6 +21,11 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         st.write("Prompts after formatting:")
         for prompt in prompts:
             st.write(prompt)
+
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Run on new LLM token. Only available when streaming is enabled."""
+        self.tokens_stream += token
+        self.tokens_area.write(self.tokens_stream)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Do nothing."""
@@ -48,10 +57,14 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_tool_start(
         self,
         serialized: Dict[str, Any],
-        action: AgentAction,
+        input_str: str,
         **kwargs: Any,
     ) -> None:
         """Print out the log in specified color."""
+        pass
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Run on agent action."""
         # st.write requires two spaces before a newline to render it
         st.markdown(action.log.replace("\n", "  \n"))
 

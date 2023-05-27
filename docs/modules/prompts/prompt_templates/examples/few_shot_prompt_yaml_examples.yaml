@@ -1,0 +1,15 @@
+_type: few_shot
+input_variables:
+    ["adjective"]
+prefix: 
+    Write antonyms for the following words.
+example_prompt:
+    _type: prompt
+    input_variables:
+        ["input", "output"]
+    template:
+        "Input: {input}\nOutput: {output}"
+examples:
+    examples.yaml
+suffix:
+    "Input: {adjective}\nOutput:"

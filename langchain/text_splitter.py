@@ -1,16 +1,33 @@
 """Functionality for splitting text."""
 from __future__ import annotations
 
+import copy
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, List, Optional
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Collection,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from langchain.docstore.document import Document
+from langchain.schema import BaseDocumentTransformer
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
+
+TS = TypeVar("TS", bound="TextSplitter")
 
 
-class TextSplitter(ABC):
+class TextSplitter(BaseDocumentTransformer, ABC):
     """Interface for splitting text into chunks."""
 
     def __init__(
@@ -41,14 +58,19 @@ class TextSplitter(ABC):
         documents = []
         for i, text in enumerate(texts):
             for chunk in self.split_text(text):
-                documents.append(Document(page_content=chunk, metadata=_metadatas[i]))
+                new_doc = Document(
+                    page_content=chunk, metadata=copy.deepcopy(_metadatas[i])
+                )
+                documents.append(new_doc)
         return documents
 
-    def split_documents(self, documents: List[Document]) -> List[Document]:
+    def split_documents(self, documents: Iterable[Document]) -> List[Document]:
         """Split documents."""
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return self.create_documents(texts, metadatas)
+        texts, metadatas = [], []
+        for doc in documents:
+            texts.append(doc.page_content)
+            metadatas.append(doc.metadata)
+        return self.create_documents(texts, metadatas=metadatas)
 
     def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
         text = separator.join(docs)
@@ -61,12 +83,17 @@ class TextSplitter(ABC):
     def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
+        separator_len = self._length_function(separator)
+
         docs = []
         current_doc: List[str] = []
         total = 0
         for d in splits:
             _len = self._length_function(d)
-            if total + _len >= self._chunk_size:
+            if (
+                total + _len + (separator_len if len(current_doc) > 0 else 0)
+                > self._chunk_size
+            ):
                 if total > self._chunk_size:
                     logger.warning(
                         f"Created a chunk of size {total}, "
@@ -80,12 +107,16 @@ class TextSplitter(ABC):
                     # - we have a larger chunk than in the chunk overlap
                     # - or if we still have any chunks and the length is long
                     while total > self._chunk_overlap or (
-                        total + _len > self._chunk_size and total > 0
+                        total + _len + (separator_len if len(current_doc) > 0 else 0)
+                        > self._chunk_size
+                        and total > 0
                     ):
-                        total -= self._length_function(current_doc[0])
+                        total -= self._length_function(current_doc[0]) + (
+                            separator_len if len(current_doc) > 1 else 0
+                        )
                         current_doc = current_doc[1:]
             current_doc.append(d)
-            total += _len
+            total += _len + (separator_len if len(current_doc) > 1 else 0)
         doc = self._join_docs(current_doc, separator)
         if doc is not None:
             docs.append(doc)
@@ -108,30 +139,65 @@ class TextSplitter(ABC):
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
-                "Please it install it with `pip install transformers`."
+                "Please install it with `pip install transformers`."
             )
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
     @classmethod
     def from_tiktoken_encoder(
-        cls, encoding_name: str = "gpt2", **kwargs: Any
-    ) -> TextSplitter:
+        cls: Type[TS],
+        encoding_name: str = "gpt2",
+        model_name: Optional[str] = None,
+        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        **kwargs: Any,
+    ) -> TS:
         """Text splitter that uses tiktoken encoder to count length."""
         try:
             import tiktoken
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate max_tokens_for_prompt. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
-        # create a GPT-3 encoder instance
-        enc = tiktoken.get_encoding(encoding_name)
+
+        if model_name is not None:
+            enc = tiktoken.encoding_for_model(model_name)
+        else:
+            enc = tiktoken.get_encoding(encoding_name)
 
         def _tiktoken_encoder(text: str) -> int:
-            return len(enc.encode(text))
+            return len(
+                enc.encode(
+                    text,
+                    allowed_special=allowed_special,
+                    disallowed_special=disallowed_special,
+                )
+            )
+
+        if issubclass(cls, TokenTextSplitter):
+            extra_kwargs = {
+                "encoding_name": encoding_name,
+                "model_name": model_name,
+                "allowed_special": allowed_special,
+                "disallowed_special": disallowed_special,
+            }
+            kwargs = {**kwargs, **extra_kwargs}
 
         return cls(length_function=_tiktoken_encoder, **kwargs)
+
+    def transform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Transform sequence of documents by splitting them."""
+        return self.split_documents(list(documents))
+
+    async def atransform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Asynchronously transform a sequence of documents by splitting them."""
+        raise NotImplementedError
 
 
 class CharacterTextSplitter(TextSplitter):
@@ -155,24 +221,41 @@ class CharacterTextSplitter(TextSplitter):
 class TokenTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at tokens."""
 
-    def __init__(self, encoding_name: str = "gpt2", **kwargs: Any):
+    def __init__(
+        self,
+        encoding_name: str = "gpt2",
+        model_name: Optional[str] = None,
+        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        **kwargs: Any,
+    ):
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
         try:
             import tiktoken
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
-        # create a GPT-3 encoder instance
-        self._tokenizer = tiktoken.get_encoding(encoding_name)
+
+        if model_name is not None:
+            enc = tiktoken.encoding_for_model(model_name)
+        else:
+            enc = tiktoken.get_encoding(encoding_name)
+        self._tokenizer = enc
+        self._allowed_special = allowed_special
+        self._disallowed_special = disallowed_special
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         splits = []
-        input_ids = self._tokenizer.encode(text)
+        input_ids = self._tokenizer.encode(
+            text,
+            allowed_special=self._allowed_special,
+            disallowed_special=self._disallowed_special,
+        )
         start_idx = 0
         cur_idx = min(start_idx + self._chunk_size, len(input_ids))
         chunk_ids = input_ids[start_idx:cur_idx]
@@ -216,7 +299,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
         for s in splits:
-            if len(s) < self._chunk_size:
+            if self._length_function(s) < self._chunk_size:
                 _good_splits.append(s)
             else:
                 if _good_splits:
@@ -275,3 +358,84 @@ class SpacyTextSplitter(TextSplitter):
         """Split incoming text and return chunks."""
         splits = (str(s) for s in self._tokenizer(text).sents)
         return self._merge_splits(splits, self._separator)
+
+
+class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Markdown-formatted headings."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a MarkdownTextSplitter."""
+        separators = [
+            # First, try to split along Markdown headings (starting with level 2)
+            "\n## ",
+            "\n### ",
+            "\n#### ",
+            "\n##### ",
+            "\n###### ",
+            # Note the alternative syntax for headings (below) is not handled here
+            # Heading level 2
+            # ---------------
+            # End of code block
+            "```\n\n",
+            # Horizontal lines
+            "\n\n***\n\n",
+            "\n\n---\n\n",
+            "\n\n___\n\n",
+            # Note that this splitter doesn't handle horizontal lines defined
+            # by *three or more* of ***, ---, or ___, but this is not handled
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class LatexTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Latex-formatted layout elements."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a LatexTextSplitter."""
+        separators = [
+            # First, try to split along Latex sections
+            "\n\\chapter{",
+            "\n\\section{",
+            "\n\\subsection{",
+            "\n\\subsubsection{",
+            # Now split by environments
+            "\n\\begin{enumerate}",
+            "\n\\begin{itemize}",
+            "\n\\begin{description}",
+            "\n\\begin{list}",
+            "\n\\begin{quote}",
+            "\n\\begin{quotation}",
+            "\n\\begin{verse}",
+            "\n\\begin{verbatim}",
+            ## Now split by math environments
+            "\n\\begin{align}",
+            "$$",
+            "$",
+            # Now split by the normal type of lines
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Python syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a PythonCodeTextSplitter."""
+        separators = [
+            # First, try to split along class definitions
+            "\nclass ",
+            "\ndef ",
+            "\n\tdef ",
+            # Now split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)

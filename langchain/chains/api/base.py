@@ -3,22 +3,26 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import Field, root_validator
 
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
 from langchain.prompts import BasePromptTemplate
-from langchain.requests import RequestsWrapper
+from langchain.requests import TextRequestsWrapper
 
 
-class APIChain(Chain, BaseModel):
+class APIChain(Chain):
     """Chain that makes API calls and summarizes the responses to answer a question."""
 
     api_request_chain: LLMChain
     api_answer_chain: LLMChain
-    requests_wrapper: RequestsWrapper = Field(exclude=True)
+    requests_wrapper: TextRequestsWrapper = Field(exclude=True)
     api_docs: str
     question_key: str = "question"  #: :meta private:
     output_key: str = "output"  #: :meta private:
@@ -61,16 +65,21 @@ class APIChain(Chain, BaseModel):
             )
         return values
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.question_key]
         api_url = self.api_request_chain.predict(
-            question=question, api_docs=self.api_docs
+            question=question,
+            api_docs=self.api_docs,
+            callbacks=_run_manager.get_child(),
         )
-        self.callback_manager.on_text(
-            api_url, color="green", end="\n", verbose=self.verbose
-        )
-        api_response = self.requests_wrapper.run(api_url)
-        self.callback_manager.on_text(
+        _run_manager.on_text(api_url, color="green", end="\n", verbose=self.verbose)
+        api_response = self.requests_wrapper.get(api_url)
+        _run_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose
         )
         answer = self.api_answer_chain.predict(
@@ -78,13 +87,42 @@ class APIChain(Chain, BaseModel):
             api_docs=self.api_docs,
             api_url=api_url,
             api_response=api_response,
+            callbacks=_run_manager.get_child(),
+        )
+        return {self.output_key: answer}
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        question = inputs[self.question_key]
+        api_url = await self.api_request_chain.apredict(
+            question=question,
+            api_docs=self.api_docs,
+            callbacks=_run_manager.get_child(),
+        )
+        await _run_manager.on_text(
+            api_url, color="green", end="\n", verbose=self.verbose
+        )
+        api_response = await self.requests_wrapper.aget(api_url)
+        await _run_manager.on_text(
+            api_response, color="yellow", end="\n", verbose=self.verbose
+        )
+        answer = await self.api_answer_chain.apredict(
+            question=question,
+            api_docs=self.api_docs,
+            api_url=api_url,
+            api_response=api_response,
+            callbacks=_run_manager.get_child(),
         )
         return {self.output_key: answer}
 
     @classmethod
     def from_llm_and_api_docs(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         api_docs: str,
         headers: Optional[dict] = None,
         api_url_prompt: BasePromptTemplate = API_URL_PROMPT,
@@ -93,7 +131,7 @@ class APIChain(Chain, BaseModel):
     ) -> APIChain:
         """Load chain from just an LLM and the api docs."""
         get_request_chain = LLMChain(llm=llm, prompt=api_url_prompt)
-        requests_wrapper = RequestsWrapper(headers=headers)
+        requests_wrapper = TextRequestsWrapper(headers=headers)
         get_answer_chain = LLMChain(llm=llm, prompt=api_response_prompt)
         return cls(
             api_request_chain=get_request_chain,

@@ -2,16 +2,20 @@
 
 from typing import Any, List, Mapping, Optional
 
-from pydantic import BaseModel
-
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chains.natbot.base import NatBotChain
 from langchain.llms.base import LLM
 
 
-class FakeLLM(LLM, BaseModel):
+class FakeLLM(LLM):
     """Fake LLM wrapper for testing purposes."""
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Return `foo` if longer than 10000 words, else `bar`."""
         if len(prompt) > 10000:
             return "foo"
@@ -30,7 +34,7 @@ class FakeLLM(LLM, BaseModel):
 
 def test_proper_inputs() -> None:
     """Test that natbot shortens inputs correctly."""
-    nat_bot_chain = NatBotChain(llm=FakeLLM(), objective="testing")
+    nat_bot_chain = NatBotChain.from_llm(FakeLLM(), objective="testing")
     url = "foo" * 10000
     browser_content = "foo" * 10000
     output = nat_bot_chain.execute(url, browser_content)
@@ -39,8 +43,8 @@ def test_proper_inputs() -> None:
 
 def test_variable_key_naming() -> None:
     """Test that natbot handles variable key naming correctly."""
-    nat_bot_chain = NatBotChain(
-        llm=FakeLLM(),
+    nat_bot_chain = NatBotChain.from_llm(
+        FakeLLM(),
         objective="testing",
         input_url_key="u",
         input_browser_content_key="b",

@@ -2,16 +2,17 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
-VALID_TASKS = ("text2text-generation", "text-generation")
+VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 
-class HuggingFaceEndpoint(LLM, BaseModel):
+class HuggingFaceEndpoint(LLM):
     """Wrapper around HuggingFaceHub Inference Endpoints.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
@@ -23,7 +24,7 @@ class HuggingFaceEndpoint(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import HuggingFaceEndpoint
+            from langchain.llms import HuggingFaceEndpoint
             endpoint_url = (
                 "https://abcdefghijklmnop.us-east-1.aws.endpoints.huggingface.cloud"
             )
@@ -36,7 +37,8 @@ class HuggingFaceEndpoint(LLM, BaseModel):
     endpoint_url: str = ""
     """Endpoint URL to use."""
     task: Optional[str] = None
-    """Task to call the model with. Should be a task that returns `generated_text`."""
+    """Task to call the model with.
+    Should be a task that returns `generated_text` or `summary_text`."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
@@ -70,8 +72,9 @@ class HuggingFaceEndpoint(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import huggingface_hub python package. "
-                "Please it install it with `pip install huggingface_hub`."
+                "Please install it with `pip install huggingface_hub`."
             )
+        values["huggingfacehub_api_token"] = huggingfacehub_api_token
         return values
 
     @property
@@ -88,7 +91,12 @@ class HuggingFaceEndpoint(LLM, BaseModel):
         """Return type of llm."""
         return "huggingface_endpoint"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
 
         Args:
@@ -121,13 +129,18 @@ class HuggingFaceEndpoint(LLM, BaseModel):
             )
         except requests.exceptions.RequestException as e:  # This is the correct syntax
             raise ValueError(f"Error raised by inference endpoint: {e}")
+        generated_text = response.json()
+        if "error" in generated_text:
+            raise ValueError(
+                f"Error raised by inference API: {generated_text['error']}"
+            )
         if self.task == "text-generation":
             # Text generation return includes the starter text.
-            generated_text = response.json()
             text = generated_text[0]["generated_text"][len(prompt) :]
         elif self.task == "text2text-generation":
-            generated_text = response.json()
             text = generated_text[0]["generated_text"]
+        elif self.task == "summarization":
+            text = generated_text[0]["summary_text"]
         else:
             raise ValueError(
                 f"Got invalid task {self.task}, "

@@ -1,28 +1,33 @@
 """Load prompts from disk."""
 import importlib
 import json
+import logging
 from pathlib import Path
 from typing import Union
 
 import yaml
 
-from langchain.prompts.base import BasePromptTemplate, RegexParser
+from langchain.output_parsers.regex import RegexParser
+from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
+logger = logging.getLogger(__name__)
 
 
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:
-    """Get the right type from the config and load it accordingly."""
-    prompt_type = config.pop("_type", "prompt")
-    if prompt_type == "prompt":
-        return _load_prompt(config)
-    elif prompt_type == "few_shot":
-        return _load_few_shot_prompt(config)
-    else:
-        raise ValueError
+    """Load prompt from Config Dict."""
+    if "_type" not in config:
+        logger.warning("No `_type` key found, defaulting to `prompt`.")
+    config_type = config.pop("_type", "prompt")
+
+    if config_type not in type_to_loader_dict:
+        raise ValueError(f"Loading {config_type} prompt not supported")
+
+    prompt_loader = type_to_loader_dict[config_type]
+    return prompt_loader(config)
 
 
 def _load_template(var_name: str, config: dict) -> dict:
@@ -69,15 +74,14 @@ def _load_examples(config: dict) -> dict:
 
 def _load_output_parser(config: dict) -> dict:
     """Load output parser."""
-    if "output_parser" in config:
-        if config["output_parser"] is not None:
-            _config = config["output_parser"]
-            output_parser_type = _config["_type"]
-            if output_parser_type == "regex_parser":
-                output_parser = RegexParser(**_config)
-            else:
-                raise ValueError(f"Unsupported output parser {output_parser_type}")
-            config["output_parser"] = output_parser
+    if "output_parser" in config and config["output_parser"]:
+        _config = config.pop("output_parser")
+        output_parser_type = _config.pop("_type")
+        if output_parser_type == "regex_parser":
+            output_parser = RegexParser(**_config)
+        else:
+            raise ValueError(f"Unsupported output parser {output_parser_type}")
+        config["output_parser"] = output_parser
     return config
 
 
@@ -150,3 +154,10 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
         raise ValueError(f"Got unsupported file type {file_path.suffix}")
     # Load the prompt from the config now.
     return load_prompt_from_config(config)
+
+
+type_to_loader_dict = {
+    "prompt": _load_prompt,
+    "few_shot": _load_few_shot_prompt,
+    # "few_shot_with_templates": _load_few_shot_with_templates_prompt,
+}

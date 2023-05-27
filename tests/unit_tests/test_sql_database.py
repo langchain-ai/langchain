@@ -1,3 +1,4 @@
+# flake8: noqa=E501
 """Test SQL database wrapper."""
 
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine, insert
@@ -27,12 +28,30 @@ def test_table_info() -> None:
     metadata_obj.create_all(engine)
     db = SQLDatabase(engine)
     output = db.table_info
-    expected_output = (
-        "Table 'company' has columns: company_id (INTEGER), "
-        "company_location (VARCHAR).",
-        "Table 'user' has columns: user_id (INTEGER), user_name (VARCHAR(16)).",
+    expected_output = """
+    CREATE TABLE user (
+            user_id INTEGER NOT NULL,
+            user_name VARCHAR(16) NOT NULL,
+            PRIMARY KEY (user_id)
     )
-    assert sorted(output.split("\n")) == sorted(expected_output)
+    /*
+    3 rows from user table:
+    user_id user_name
+    /*
+
+
+    CREATE TABLE company (
+            company_id INTEGER NOT NULL,
+            company_location VARCHAR NOT NULL,
+            PRIMARY KEY (company_id)
+    )
+    /*
+    3 rows from company table:
+    company_id company_location
+    */
+    """
+
+    assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
 
 
 def test_table_info_w_sample_rows() -> None:
@@ -50,14 +69,32 @@ def test_table_info_w_sample_rows() -> None:
     db = SQLDatabase(engine, sample_rows_in_table_info=2)
 
     output = db.table_info
-    expected_output = (
-        "Table 'company' has columns: company_id (INTEGER), "
-        "company_location (VARCHAR).\n"
-        "Table 'user' has columns: user_id (INTEGER), "
-        "user_name (VARCHAR(16)). Here is an example of 2 rows "
-        "from this table (long strings are truncated):\n13 Harrison\n14 Chase"
-    )
-    assert sorted(output.split("\n")) == sorted(expected_output.split("\n"))
+
+    expected_output = """
+        CREATE TABLE company (
+        company_id INTEGER NOT NULL,
+        company_location VARCHAR NOT NULL,
+        PRIMARY KEY (company_id)
+)
+        /*
+        2 rows from company table:
+        company_id company_location
+        */
+
+        CREATE TABLE user (
+        user_id INTEGER NOT NULL,
+        user_name VARCHAR(16) NOT NULL,
+        PRIMARY KEY (user_id)
+        )
+        /*
+        2 rows from user table:
+        user_id user_name
+        13 Harrison
+        14 Chase
+        */
+        """
+
+    assert sorted(output.split()) == sorted(expected_output.split())
 
 
 def test_sql_database_run() -> None:

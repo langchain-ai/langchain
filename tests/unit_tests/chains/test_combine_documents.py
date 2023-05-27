@@ -1,9 +1,11 @@
 """Test functionality related to combining documents."""
 
-from typing import Any, List, Tuple
+from typing import Any, List
 
 import pytest
 
+from langchain import PromptTemplate
+from langchain.chains.combine_documents.base import format_document
 from langchain.chains.combine_documents.map_reduce import (
     _collapse_docs,
     _split_list_of_docs,
@@ -12,11 +14,11 @@ from langchain.docstore.document import Document
 
 
 def _fake_docs_len_func(docs: List[Document]) -> int:
-    return len(_fake_combine_docs_func(docs)[0])
+    return len(_fake_combine_docs_func(docs))
 
 
-def _fake_combine_docs_func(docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
-    return "".join([d.page_content for d in docs]), {}
+def _fake_combine_docs_func(docs: List[Document], **kwargs: Any) -> str:
+    return "".join([d.page_content for d in docs])
 
 
 def test__split_list_long_single_doc() -> None:
@@ -116,3 +118,24 @@ def test__collapse_docs_metadata() -> None:
     }
     expected_output = Document(page_content="foobar", metadata=expected_metadata)
     assert output == expected_output
+
+
+def test_format_doc_with_metadata() -> None:
+    """Test format doc on a valid document."""
+    doc = Document(page_content="foo", metadata={"bar": "baz"})
+    prompt = PromptTemplate(
+        input_variables=["page_content", "bar"], template="{page_content}, {bar}"
+    )
+    expected_output = "foo, baz"
+    output = format_document(doc, prompt)
+    assert output == expected_output
+
+
+def test_format_doc_missing_metadata() -> None:
+    """Test format doc on a document with missing metadata."""
+    doc = Document(page_content="foo")
+    prompt = PromptTemplate(
+        input_variables=["page_content", "bar"], template="{page_content}, {bar}"
+    )
+    with pytest.raises(ValueError):
+        format_document(doc, prompt)

@@ -1,22 +1,23 @@
 """Test LLM Math functionality."""
 
 import json
+from typing import Any
 
 import pytest
 
 from langchain import LLMChain
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
-from langchain.requests import RequestsWrapper
+from langchain.requests import TextRequestsWrapper
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
-class FakeRequestsChain(RequestsWrapper):
+class FakeRequestsChain(TextRequestsWrapper):
     """Fake requests chain just for testing purposes."""
 
     output: str
 
-    def run(self, url: str) -> str:
+    def get(self, url: str, **kwargs: Any) -> str:
         """Just return the specified output."""
         return self.output
 

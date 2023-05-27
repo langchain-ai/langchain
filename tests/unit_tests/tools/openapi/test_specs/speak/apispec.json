@@ -1,0 +1,220 @@
+{
+   "openapi": "3.0.1",
+   "info": {
+      "title": "Speak",
+      "description": "Learn how to say anything in another language.",
+      "version": "v1"
+   },
+   "servers": [
+      {
+         "url": "https://api.speak.com"
+      }
+   ],
+   "paths": {
+      "/v1/public/openai/translate": {
+         "post": {
+            "operationId": "translate",
+            "summary": "Translate and explain how to say a specific phrase or word in another language.",
+            "requestBody": {
+               "required": true,
+               "content": {
+                  "application/json": {
+                     "schema": {
+                        "$ref": "#/components/schemas/translateRequest"
+                     }
+                  }
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "OK",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/translateResponse"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      },
+      "/v1/public/openai/explain-phrase": {
+         "post": {
+            "operationId": "explainPhrase",
+            "summary": "Explain the meaning and usage of a specific foreign language phrase that the user is asking about.",
+            "requestBody": {
+               "required": true,
+               "content": {
+                  "application/json": {
+                     "schema": {
+                        "$ref": "#/components/schemas/explainPhraseRequest"
+                     }
+                  }
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "OK",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/explainPhraseResponse"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      },
+      "/v1/public/openai/explain-task": {
+         "post": {
+            "operationId": "explainTask",
+            "summary": "Explain the best way to say or do something in a specific situation or context with a foreign language. Use this endpoint when the user asks more general or high-level questions.",
+            "requestBody": {
+               "required": true,
+               "content": {
+                  "application/json": {
+                     "schema": {
+                        "$ref": "#/components/schemas/explainTaskRequest"
+                     }
+                  }
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "OK",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/explainTaskResponse"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   },
+   "components": {
+      "schemas": {
+         "translateRequest": {
+            "type": "object",
+            "properties": {
+               "phrase_to_translate": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Phrase or concept to translate into the foreign language and explain further."
+               },
+               "learning_language": {
+                  "type": "string",
+                  "required": true,
+                  "description": "The foreign language that the user is learning and asking about. Always use the full name of the language (e.g. Spanish, French)."
+               },
+               "native_language": {
+                  "type": "string",
+                  "required": true,
+                  "description": "The user's native language. Infer this value from the language the user asked their question in. Always use the full name of the language (e.g. Spanish, French)."
+               },
+               "additional_context": {
+                  "type": "string",
+                  "required": true,
+                  "description": "A description of any additional context in the user's question that could affect the explanation - e.g. setting, scenario, situation, tone, speaking style and formality, usage notes, or any other qualifiers."
+               },
+               "full_query": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Full text of the user's question."
+               }
+            }
+         },
+         "translateResponse": {
+            "type": "object",
+            "properties": {
+               "explanation": {
+                  "type": "string",
+                  "description": "An explanation of how to say the input phrase in the foreign language."
+               }
+            }
+         },
+         "explainPhraseRequest": {
+            "type": "object",
+            "properties": {
+               "foreign_phrase": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Foreign language phrase or word that the user wants an explanation for."
+               },
+               "learning_language": {
+                  "type": "string",
+                  "required": true,
+                  "description": "The language that the user is asking their language question about. The value can be inferred from question - e.g. for \"Somebody said no mames to me, what does that mean\", the value should be \"Spanish\" because \"no mames\" is a Spanish phrase. Always use the full name of the language (e.g. Spanish, French)."
+               },
+               "native_language": {
+                  "type": "string",
+                  "required": true,
+                  "description": "The user's native language. Infer this value from the language the user asked their question in. Always use the full name of the language (e.g. Spanish, French)."
+               },
+               "additional_context": {
+                  "type": "string",
+                  "required": true,
+                  "description": "A description of any additional context in the user's question that could affect the explanation - e.g. setting, scenario, situation, tone, speaking style and formality, usage notes, or any other qualifiers."
+               },
+               "full_query": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Full text of the user's question."
+               }
+            }
+         },
+         "explainPhraseResponse": {
+            "type": "object",
+            "properties": {
+               "explanation": {
+                  "type": "string",
+                  "description": "An explanation of what the foreign language phrase means, and when you might use it."
+               }
+            }
+         },
+         "explainTaskRequest": {
+            "type": "object",
+            "properties": {
+               "task_description": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Description of the task that the user wants to accomplish or do. For example, \"tell the waiter they messed up my order\" or \"compliment someone on their shirt\""
+               },
+               "learning_language": {
+                  "type": "string",
+                  "required": true,
+                  "description": "The foreign language that the user is learning and asking about. The value can be inferred from question - for example, if the user asks \"how do i ask a girl out in mexico city\", the value should be \"Spanish\" because of Mexico City. Always use the full name of the language (e.g. Spanish, French)."
+               },
+               "native_language": {
+                  "type": "string",
+                  "required": true,
+                  "description": "The user's native language. Infer this value from the language the user asked their question in. Always use the full name of the language (e.g. Spanish, French)."
+               },
+               "additional_context": {
+                  "type": "string",
+                  "required": true,
+                  "description": "A description of any additional context in the user's question that could affect the explanation - e.g. setting, scenario, situation, tone, speaking style and formality, usage notes, or any other qualifiers."
+               },
+               "full_query": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Full text of the user's question."
+               }
+            }
+         },
+         "explainTaskResponse": {
+            "type": "object",
+            "properties": {
+               "explanation": {
+                  "type": "string",
+                  "description": "An explanation of the best thing to say in the foreign language to accomplish the task described in the user's question."
+               }
+            }
+         }
+      }
+   }
+}
