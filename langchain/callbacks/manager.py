@@ -5,9 +5,9 @@ import functools
 import logging
 import os
 import warnings
-from contextlib import contextmanager, asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union, cast
+from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union, cast, AsyncGenerator
 from uuid import UUID, uuid4
 
 import langchain
@@ -123,7 +123,7 @@ def trace_as_chain_group(
     session_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
     tenant_id: Optional[str] = None,
-    session_extra: Optional[Dict[str, Any]] = None
+    session_extra: Optional[Dict[str, Any]] = None,
 ) -> Generator[CallbackManager, None, None]:
     """Get a callback manager for a chain group in a context manager."""
     cb = LangChainTracer(
@@ -136,10 +136,7 @@ def trace_as_chain_group(
         inheritable_callbacks=[cb],
     )
 
-    run_manager = cm.on_chain_start(
-        {"name": group_name},
-        {}
-    )
+    run_manager = cm.on_chain_start({"name": group_name}, {})
     yield run_manager.get_child()
     run_manager.on_chain_end({})
 
@@ -151,8 +148,8 @@ async def atrace_as_chain_group(
     session_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
     tenant_id: Optional[str] = None,
-    session_extra: Optional[Dict[str, Any]] = None
-) -> Generator[AsyncCallbackManager, None, None]:
+    session_extra: Optional[Dict[str, Any]] = None,
+) -> AsyncGenerator[AsyncCallbackManager, None, None]:
     """Get a callback manager for a chain group in a context manager."""
     cb = LangChainTracer(
         tenant_id=tenant_id,
@@ -164,10 +161,7 @@ async def atrace_as_chain_group(
         inheritable_callbacks=[cb],
     )
 
-    run_manager = await cm.on_chain_start(
-        {"name": group_name},
-        {}
-    )
+    run_manager = await cm.on_chain_start({"name": group_name}, {})
     try:
         yield run_manager.get_child()
     finally:

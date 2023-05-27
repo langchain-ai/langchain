@@ -7,13 +7,15 @@ from aiohttp import ClientSession
 
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import tracing_enabled
-from langchain.callbacks.manager import tracing_v2_enabled
+from langchain.callbacks.manager import (
+    atrace_as_chain_group,
+    trace_as_chain_group,
+    tracing_v2_enabled,
+)
+from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain.callbacks.manager import trace_as_chain_group, atrace_as_chain_group
-
 
 questions = [
     (
@@ -205,8 +207,10 @@ async def test_trace_as_group_async() -> None:
         await chain.arun(product="toys", callbacks=group_manager)
 
     async with atrace_as_chain_group("my_group_2") as group_manager:
-        await asyncio.gather(*[
-            chain.arun(product="toys", callbacks=group_manager),
-            chain.arun(product="computers", callbacks=group_manager),
-            chain.arun(product="cars", callbacks=group_manager)
-        ])
+        await asyncio.gather(
+            *[
+                chain.arun(product="toys", callbacks=group_manager),
+                chain.arun(product="computers", callbacks=group_manager),
+                chain.arun(product="cars", callbacks=group_manager),
+            ]
+        )
