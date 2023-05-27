@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import json
 from typing import List
 
@@ -8,10 +9,16 @@ from langchain.schema import OutputParserException
 
 def parse_json_markdown(json_string: str) -> dict:
     # Remove the triple backticks if present
-    json_string = json_string.replace("```json", "").replace("```", "")
+    json_string = json_string.replace("```json", "").replace("```", "").replace("\n", "")
 
     # Strip whitespace and newlines from the start and end
     json_string = json_string.strip()
+
+    # ensure to extract json from llm output.
+    search = re.search(r".*{(.*)}.*", json_string)
+
+    if search:
+        json_string = "{ %s }" % search.group(1)
 
     # Parse the JSON string into a Python dictionary
     parsed = json.loads(json_string)
