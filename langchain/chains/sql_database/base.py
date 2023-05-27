@@ -41,7 +41,7 @@ class SQLDatabaseChain(Chain):
     max_tries: int = Field(1, ge=1)
     """Maximum number of times to try to run a query before giving up."""
     prompt: Optional[BasePromptTemplate] = None
-    """[Deprecated] Prompt to use to translate natural language to SQL."""\
+    """[Deprecated] Prompt to use to translate natural language to SQL."""
     top_k: int = 5
     """Number of results to return from the query"""
     input_key: str = "query"  #: :meta private:
@@ -228,6 +228,7 @@ class SQLDatabaseChain(Chain):
                 continue
         # Use specific exception here (check langchain specific exceptions and
         #  general python exceptions)
+        print(str(exception))
         raise exception  # find langchain specific exception to raise here
 
     # TODO: other implementations of handle, including logical errors
@@ -272,7 +273,7 @@ class SQLDatabaseSequentialChain(Chain):
     ) -> SQLDatabaseSequentialChain:
         """Load the necessary chains."""
         sql_chain = SQLDatabaseChain.from_llm(
-          # TODO: experiment with chainging max_tries
+          # TODO: experiment with changing max_tries
             llm, database, prompt=query_prompt, **kwargs
         )
         decider_chain = LLMChain(

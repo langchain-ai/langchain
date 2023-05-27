@@ -9,6 +9,8 @@ __pycache__/
 # C extensions
 *.so
 
+localconfig.py
+
 # Distribution / packaging
 .Python
 build/
