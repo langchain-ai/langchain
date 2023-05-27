@@ -5,8 +5,16 @@ from typing import List
 
 from langchain.schema import OutputParserException
 
+def remove_text_before_json(input_string: str) -> str:
+    index = input_string.find("```")
+    if index !=-1 :
+            return input_string[index:] 
+    return input_string
 
 def parse_json_markdown(json_string: str) -> dict:
+    # Remove any string before the json response
+    json_string = remove_text_before_json(json_string)
+    
     # Remove the triple backticks if present
     json_string = json_string.replace("```json", "").replace("```", "")
 
