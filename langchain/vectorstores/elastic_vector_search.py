@@ -332,17 +332,17 @@ class ElasticKnnSearch(ElasticVectorSearch):
     def __init__(self, *args, **kwargs):
         """Initialize an instance of ElasticKnnSearch."""
         super().__init__(*args, **kwargs)
-        self.mapping = self._default_knn_mapping(dim=self.dim)  # Assuming dim is defined
+        self.mapping = self._default_knn_mapping(dims=self.dims)  # Assuming dim is defined
 
     @staticmethod
-    def _default_knn_mapping(dim: int) -> Dict:
+    def _default_knn_mapping(dims: int) -> Dict:
         """Generates a default index mapping for kNN search."""
         return {
             "properties": {
                 "text": {"type": "text"},
                 "vector": {
                     "type": "dense_vector",
-                    "dims": dim,
+                    "dims": dims,
                     "index": True,
                     "similarity": "dot_product"
                 }
@@ -350,25 +350,43 @@ class ElasticKnnSearch(ElasticVectorSearch):
         }
 
     @staticmethod
-    def _default_knn_query(query_vector: Optional[List[float]] = None, model_id: Optional[str] = None, field: str = 'vector', size: int = 10) -> Dict:
-        if model_id:
-            query_vector = query_vector_builder(model_id)  # Assuming query_vector_builder is defined elsewhere
+    def _default_knn_query(query_vector: Optional[List[float]] = None,
+                           query: Optional[str] = None,
+                           model_id: Optional[str] = None,
+                           field: str = 'vector',
+                           size: int = 10,
+                           k: int = 10,
+                           num_candidates: int = 10
+                          ) -> Dict:
+        knn = {
+            "field": field,
+            "k": k, 
+            "num_candidates": num_candidates,
+        }
         
-        if not query_vector:
-            raise ValueError("Either `query_vector` or `model_id` must be provided.")
+        # Case 1: `query_vector` is provided, but not `query` and `model_id`
+        if query_vector and not (query and model_id):
+            knn["query_vector"] = query_vector
+        
+        # Case 2: `query` and `model_id` are provided, but not `query_vector`
+        elif query and model_id and not query_vector:
+            knn["query_vector_builder"] = {
+                "text_embedding": { 
+                    "model_id": model_id,  # use 'model_id' argument
+                    "model_text": query  # use 'query' argument
+                }
+            }
+        
+        else:
+            raise ValueError("Either `query_vector` or both `query` and `model_id` must be provided, but not both.")
         
         return {
             "size": size,
-            "query": {
-                "knn": {
-                    field: {
-                        "vector": query_vector,
-                        "k": size,
-                    }
-                }
-            }
+            "knn" : knn
         }
 
+
+    
 
     def add_texts(self, texts: List[str], model_id: Optional[str] = None) -> None:
         """Adds the provided texts to the Elasticsearch index."""
