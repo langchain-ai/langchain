@@ -332,7 +332,6 @@ class ElasticKnnSearch(ElasticVectorSearch):
     def __init__(self, *args, **kwargs):
         """Initialize an instance of ElasticKnnSearch."""
         super().__init__(*args, **kwargs)
-        self.mapping = self._default_knn_mapping(dims=self.dims)  # Assuming dim is defined
 
     @staticmethod
     def _default_knn_mapping(dims: int) -> Dict:
@@ -385,11 +384,22 @@ class ElasticKnnSearch(ElasticVectorSearch):
             "knn" : knn
         }
 
-
+    def create_index(self):
+        """Creates an Elasticsearch index."""
+        self.client.indices.create(
+            index=self.index_name,
+            body={"mappings": self.mapping},
+            ignore=400
+        )
     
-
+    
     def add_texts(self, texts: List[str], model_id: Optional[str] = None) -> None:
         """Adds the provided texts to the Elasticsearch index."""
+        
+        # Check if the index exists.
+        if not self.es.indices.exists(index=self.index_name):
+            # If the index does not exist, raise an exception.
+            raise Exception(f"The index '{self.index_name}' does not exist. If you want to create a new index while encoding texts, call 'from_texts' instead.")
     
         # Assign the encoding function from the instance's 'embedding' attribute to 'emb_func'
         emb_func = self.embedding.encode
@@ -418,7 +428,11 @@ class ElasticKnnSearch(ElasticVectorSearch):
         self.es.bulk(index=self.index_name, body=body, refresh=True)
 
     
-    def from_texts(self, texts: List[str], model_id: Optional[str] = None) -> None:
+    def from_texts(
+            self, texts: List[str],
+            dims: int,
+            model_id: Optional[str] = None
+        ) -> None:
         """
         Creates an Elasticsearch index and adds the provided texts (encoded as embeddings)
         to the created index.
@@ -427,6 +441,8 @@ class ElasticKnnSearch(ElasticVectorSearch):
         :param model_id: An optional id specifying the model to use for encoding the texts.
                          If not provided, the default encoding method is used.
         """
+        # Create the mapping using the provided dimensions.
+        self.mapping = self._default_knn_mapping(dims=dims)
     
         # Create a new Elasticsearch index.
         self.create_index()
