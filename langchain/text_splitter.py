@@ -447,13 +447,11 @@ class HtmlTextSplitter(RecursiveCharacterTextSplitter):
         """Initialize a HtmlTextSplitter."""
         separators = [
             # First, try to split along HTML tags
+            "<body>",
             "<div>",
-            "</div>",
             "<p>",
-            "</p>",
             "<br>",
             "<li>",
-            "</li>",
             "<h1>",
             "<h2>",
             "<h3>",
@@ -461,30 +459,22 @@ class HtmlTextSplitter(RecursiveCharacterTextSplitter):
             "<h5>",
             "<h6>",
             "<span>",
-            "</span>",
             "<table>",
-            "</table>",
             "<tr>",
-            "</tr>",
             "<td>",
-            "</td>",
             "<th>",
-            "</th>",
             "<ul>",
-            "</ul>",
             "<ol>",
-            "</ol>",
-            "<a href",
-            "<img src",
-            "<section>",
-            "</section>",
             "<header>",
-            "</header>",
             "<footer>",
-            "</footer>",
-            # Now split by the normal type of lines
-            " ",
-            "",
+            "<nav>",
+            # Head
+            "<head>",
+            "<style>",
+            "<script>",
+            "<meta>",
+            "<title>",
+            ""
         ]
         super().__init__(separators=separators, **kwargs)
 
