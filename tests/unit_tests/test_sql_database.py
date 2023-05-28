@@ -12,7 +12,7 @@ from sqlalchemy import (
     insert,
 )
 
-from langchain.sql_database import SQLDatabase
+from langchain.sql_database import SQLDatabase, truncate_word
 
 metadata_obj = MetaData()
 
@@ -119,11 +119,11 @@ def test_sql_database_run() -> None:
     with engine.begin() as conn:
         conn.execute(stmt)
     db = SQLDatabase(engine)
-    command = "select user_name, user_bio from user where user_id = 13"
+    command = "select user_id, user_name, user_bio from user where user_id = 13"
     output = db.run(command)
     print(output)
     user_bio = "That is my Bio " * 19 + "That is my..."
-    expected_output = f"[('Harrison', '{user_bio}')]"
+    expected_output = f"[(13, 'Harrison', '{user_bio}')]"
     assert output == expected_output
 
 
@@ -139,3 +139,11 @@ def test_sql_database_run_update() -> None:
     output = db.run(command)
     expected_output = ""
     assert output == expected_output
+
+
+def test_truncate_word():
+    assert truncate_word("Hello World", length=5) == "He..."
+    assert truncate_word("Hello World", length=0) == "Hello World"
+    assert truncate_word("Hello World", length=-10) == "Hello World"
+    assert truncate_word("Hello World", length=5, suffix="!!!") == "He!!!"
+    assert truncate_word("Hello World", length=12, suffix="!!!") == "Hello World"

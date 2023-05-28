@@ -20,6 +20,21 @@ def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
     )
 
 
+def truncate_word(content: str, *, length: int, suffix: str = "...") -> str:
+    """
+    Truncate a string to a certain number of words, based on the max string
+    length.
+    """
+
+    if not isinstance(content, str) or length <= 0:
+        return content
+
+    if len(content) <= length:
+        return content
+
+    return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
+
+
 class SQLDatabase:
     """SQLAlchemy wrapper around a database."""
 
@@ -34,6 +49,7 @@ class SQLDatabase:
         indexes_in_table_info: bool = False,
         custom_table_info: Optional[dict] = None,
         view_support: bool = False,
+        max_string_length: int = 300,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -87,6 +103,8 @@ class SQLDatabase:
                 for table in self._custom_table_info
                 if table in intersection
             )
+
+        self._max_string_length = max_string_length
 
         self._metadata = metadata or MetaData()
         # including view support if view_support = true
@@ -315,6 +333,7 @@ class SQLDatabase:
 
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
+
         """
         with self._engine.begin() as connection:
             if self._schema is not None:
@@ -337,10 +356,20 @@ class SQLDatabase:
                 # trunacating text
                 if isinstance(result, list):
                     return str(
-                        list(tuple(map(utils.truncate_word, row)) for row in result)
+                        [
+                            tuple(
+                                truncate_word(c, length=self._max_string_length)
+                                for c in r
+                            )
+                            for r in result
+                        ]
                     )
-                else:
-                    return str(tuple(map(utils.truncate_word, result)))
+
+                return str(
+                    tuple(
+                        truncate_word(c, length=self._max_string_length) for c in result
+                    )
+                )
         return ""
 
     def get_table_info_no_throw(self, table_names: Optional[List[str]] = None) -> str:
