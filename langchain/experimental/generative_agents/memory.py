@@ -34,7 +34,7 @@ class GenerativeAgentMemory(BaseMemory):
 
     aggregate_importance: float = 0.0  # : :meta private:
     """Track the sum of the 'importance' of recent memories.
-    
+
     Triggers reflection when it reaches reflection_threshold."""
 
     max_tokens_limit: int = 1200  # : :meta private:
@@ -56,6 +56,7 @@ class GenerativeAgentMemory(BaseMemory):
     def _parse_list(text: str) -> List[str]:
         """Parse a newline-separated string into a list of strings."""
         lines = re.split(r"\n", text.strip())
+        lines = [line for line in lines if line.strip()]  # remove empty lines
         return [re.sub(r"^\s*\d+\.\s*", "", line).strip() for line in lines]
 
     def _get_topics_of_reflection(self, last_k: int = 50) -> List[str]:
