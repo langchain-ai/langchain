@@ -4,7 +4,7 @@ from time import sleep
 from langchain.output_parsers.datetime import DatetimeOutputParser
 
 
-def test_boolean_output_parser_parse() -> None:
+def test_datetime_output_parser_parse() -> None:
     parser = DatetimeOutputParser()
 
     # Test valid input
