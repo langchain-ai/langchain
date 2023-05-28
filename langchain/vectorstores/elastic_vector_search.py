@@ -37,40 +37,6 @@ def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> 
     }
 
 
-#def _default_knn_mapping(dim: int) -> Dict:
-#    return {
-#        "properties": {
-#            "text": {"type": "text"},
-#            "vector": {
-#                "type": "dense_vector",
-#                "dims": dim,
-#                "index": True,
-#                "similarity": "cosine"  # You can change this to "dot_product" or "l2_norm" as per your requirement
-#            },
-#        }
-#    }
-
-
-#def _default_knn_query(query_vector: Optional[List[float]] = None, model_id: Optional[str] = None, field: str = 'vector', size: int = 10) -> Dict:
-#    if model_id:
-#        query_vector = query_vector_builder(model_id)  # Assuming query_vector_builder is defined elsewhere
-#    
-#    if not query_vector:
-#        raise ValueError("Either `query_vector` or `model_id` must be provided.")
-#    
-#    return {
-#        "size": size,
-#        "query": {
-#            "knn": {
-#                field: {
-#                    "vector": query_vector,
-#                    "k": size,
-#                }
-#            }
-#        }
-#    }
-
-
 # ElasticVectorSearch is a concrete implementation of the abstract base class
 # VectorStore, which defines a common interface for all vector database
 # implementations. By inheriting from the ABC class, ElasticVectorSearch can be
@@ -317,8 +283,6 @@ class ElasticVectorSearch(VectorStore, ABC):
         return vectorsearch
 
 
-
-# kNN
 class ElasticKnnSearch(ElasticVectorSearch):
     """
     ElasticKnnSearch is a wrapper around Elasticsearch for k-nearest neighbors 
