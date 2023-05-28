@@ -90,6 +90,8 @@ class ToolRun(BaseRun):
     child_chain_runs: List[ChainRun] = Field(default_factory=list)
     child_tool_runs: List[ToolRun] = Field(default_factory=list)
 
+# Begin V2 API Schemas
+
 
 class RunTypeEnum(str, Enum):
     """Enum for run types."""
@@ -142,6 +144,15 @@ class RunCreate(RunBase):
         extra["runtime"] = get_runtime_environment()
         values["extra"] = extra
         return values
+
+
+class RunUpdate(BaseModel):
+    end_time: Optional[datetime.datetime]
+    extra: Optional[dict]
+    error: Optional[str]
+    outputs: Optional[dict]
+    parent_run_id: Optional[UUID]
+    reference_example_id: Optional[UUID]
 
 
 ChainRun.update_forward_refs()
