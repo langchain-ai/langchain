@@ -21,16 +21,15 @@ class ChatOutputParser(AgentOutputParser):
         try:
             action_pattern = r'"action":\s*"([^"]*)"'
             action_input_pattern = r'"action_input":\s*"([^"]*)"'
-
             action_match = re.search(action_pattern, text)
             action_input_match = re.search(action_input_pattern, text)
 
-            if not (action_match or action_input_match):
+            if action_match and action_input_match:
+                action = action_match.group(1)
+                action_input = action_input_match.group(1)
+                return AgentAction(action, action_input, text)
+            else:
                 raise OutputParserException(f"Could not parse LLM output: {text}")
-
-            action = action_match.group(1)
-            action_input = action_input_match.group(1)
-            return AgentAction(action, action_input, text)
 
         except Exception:
             raise OutputParserException(f"Could not parse LLM output: {text}")
