@@ -9,15 +9,21 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 import requests
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, before_sleep_log
 from requests.exceptions import HTTPError
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import (
     Run,
     RunCreate,
-    RunUpdate,
     RunTypeEnum,
+    RunUpdate,
     TracerSession,
     TracerSessionCreate,
 )
@@ -55,7 +61,7 @@ retry_decorator = retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=4, max=10),
     retry=retry_if_exception_type(LangChainTracerAPIError),
-    before_sleep=before_sleep_log(logger, logging.WARNING)
+    before_sleep=before_sleep_log(logger, logging.WARNING),
 )
 
 
@@ -252,9 +258,7 @@ class LangChainTracer(BaseTracer):
                     f"Failed to update run to LangChain API. {e}"
                 )
             else:
-                raise LangChainTracerUserError(
-                    f"Failed to run to LangChain API. {e}"
-                )
+                raise LangChainTracerUserError(f"Failed to run to LangChain API. {e}")
         except Exception as e:
             raise LangChainTracerError(
                 f"Failed to update run to LangChain API. {e}"

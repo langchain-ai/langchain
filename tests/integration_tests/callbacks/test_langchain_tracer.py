@@ -8,8 +8,8 @@ from aiohttp import ClientSession
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import tracing_enabled
 from langchain.callbacks.manager import tracing_v2_enabled
-from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
+from langchain.llms import OpenAI
 
 questions = [
     (
