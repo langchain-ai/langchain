@@ -6,7 +6,11 @@ from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
 from pydantic import Extra
 
-from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain.chains.base import Chain
 
 
@@ -96,7 +100,7 @@ class MultiRouteChain(Chain):
     async def _acall(
         self,
         inputs: Dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
