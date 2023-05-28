@@ -121,7 +121,6 @@ def test_sql_database_run() -> None:
     db = SQLDatabase(engine)
     command = "select user_id, user_name, user_bio from user where user_id = 13"
     output = db.run(command)
-    print(output)
     user_bio = "That is my Bio " * 19 + "That is my..."
     expected_output = f"[(13, 'Harrison', '{user_bio}')]"
     assert output == expected_output
