@@ -434,7 +434,9 @@ class ElasticKnnSearch(ElasticVectorSearch):
         # Encode the provided texts and add them to the newly created index.
         self.add_texts(texts, model_id=model_id)
 
-    def knn_search(self, query: Union[str, List[str]], k: int = 10, 
+    def knn_search(self, query: Union[str, List[str]], 
+                   k: int = 10, 
+                   query_vector: Optional[List[float]] = None, 
                    model_id: Optional[str] = None) -> Dict:
         """
         Performs a k-nearest neighbors (kNN) search on the Elasticsearch index using the
@@ -444,39 +446,22 @@ class ElasticKnnSearch(ElasticVectorSearch):
                       The query is transformed into an embedding using the same model as 
                       the texts in the index.
         :param k: The number of nearest neighbors to return.
+        :param query_vector: An optional query vector.
         :param model_id: An optional id specifying the model to use for encoding the query.
                          If not provided, the default encoding method is used.
     
         :return: A dictionary containing the search results.
-    
-        Example:
-    
-        >>> knn_search = ElasticKnnSearch(...)
-        >>> results = knn_search.knn_search(query="Hello world", k=5)
-        >>> print(results)
         """
-    
-        # Assign the encoding function from the instance's 'embedding' attribute to 'emb_func'
-        emb_func = self.embedding.encode
-    
-        # Generate an embedding for the query text.
-        # If 'model_id' is provided, use it as an argument to 'emb_func'.
-        # Otherwise, call 'emb_func' with 'query' as the only argument.
-        query_vector = emb_func(query) if not model_id else emb_func(query, model_id=model_id)
-    
         # Generate the body of the search query by calling the '_default_knn_query' method.
         # This method generates a search query that Elasticsearch can interpret.
-        query_body = self._default_knn_query(query_vector=query_vector, size=k)
+        query_body = self._default_knn_query(query_vector=query_vector, query=query, model_id=model_id, size=k)
     
         # Perform the kNN search on the Elasticsearch index and return the results.
-        # 'self.es' is an Elasticsearch client.
-        # 'search' is a method for performing search queries on an Elasticsearch index.
-        # 'index=self.index_name' specifies which index to perform the search on.
-        # 'body=query_body' provides the search query.
         return self.es.search(index=self.index_name, body=query_body)
-
+    
+    
     def hybrid_search(self, query: Union[str, List[str]], k: int = 10, 
-                      model_id: Optional[str] = None) -> Dict:
+                      query_vector: Optional[List[float]] = None, model_id: Optional[str] = None) -> Dict:
         """
         Performs a hybrid search that combines a k-nearest neighbors (kNN) search 
         with a standard Elasticsearch query.
@@ -485,24 +470,15 @@ class ElasticKnnSearch(ElasticVectorSearch):
                       The query is transformed into an embedding using the same model as 
                       the texts in the index.
         :param k: The number of nearest neighbors to return.
+        :param query_vector: An optional query vector.
         :param model_id: An optional id specifying the model to use for encoding the query.
                          If not provided, the default encoding method is used.
     
         :return: A dictionary containing the search results.
         """
-        
-        # Assign the encoding function from the instance's 'embedding' attribute to 'emb_func'
-        emb_func = self.embedding.encode
-    
-        # Generate an embedding for the query text.
-        # If 'model_id' is provided, use it as an argument to 'emb_func'.
-        # Otherwise, call 'emb_func' with 'query' as the only argument.
-        query_vector = emb_func(query) if not model_id else emb_func(query, model_id=model_id)
-    
         # Generate the body of the kNN search query by calling the '_default_knn_query' method.
-        # This method generates a search query that Elasticsearch can interpret.
-        knn_query_body = self._default_knn_query(query_vector=query_vector, size=k)
-        
+        knn_query_body = self._default_knn_query(query_vector=query_vector, query=query, model_id=model_id, size=k)
+    
         # Modify the knn_query_body to add a "boost" parameter
         knn_query_body["query"]["knn"]["vector"]["boost"] = 0.1
     
@@ -517,7 +493,7 @@ class ElasticKnnSearch(ElasticVectorSearch):
                 }
             }
         }
-        
+    
         # Combine the kNN query and the standard Elasticsearch query
         combined_query_body = {
             "query": {
@@ -529,7 +505,7 @@ class ElasticKnnSearch(ElasticVectorSearch):
                 }
             }
         }
-    
+
         # Perform the hybrid search on the Elasticsearch index and return the results.
         # 'self.es' is an Elasticsearch client.
         # 'search' is a method for performing search queries on an Elasticsearch index.
