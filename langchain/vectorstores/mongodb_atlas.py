@@ -18,7 +18,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     To use, you should have both:
     - the ``pymongo`` python package installed
-    - a connection string associated with a MongoDB Atlas Cluster having deployed an Atlas Search index
+    - a connection string associated with a MongoDB Atlas Cluster having deployed an
+        Atlas Search index
 
     Example:
         .. code-block:: python
@@ -30,7 +31,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
             namespace = "<db_name>.<collection_name>"
             embeddings = OpenAIEmbeddings()
-            vectorstore = MongoDBAtlasVectorSearch(embeddings.embed_query, mongo_client, namespace)
+            vectorstore = MongoDBAtlasVectorSearch(mongo_client, namespace, embeddings)
     """
 
     def __init__(
@@ -117,16 +118,19 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """Return MongoDB documents most similar to query, along with scores.
 
         Use the knnBeta Operator available in MongoDB Atlas Search
-        This feature is in early access and available only for evaluation purposes, to validate functionality, and
-        to gather feedback from a small closed group of early access users. It is not recommended for production
-        deployments as we may introduce breaking changes.
-        https://www.mongodb.com/docs/atlas/atlas-search/knn-beta
+        This feature is in early access and available only for evaluation purposes, to
+        validate functionality, and to gather feedback from a small closed group of
+        early access users. It is not recommended for production deployments as we
+        may introduce breaking changes.
+        For more: https://www.mongodb.com/docs/atlas/atlas-search/knn-beta
 
         Args:
             query: Text to look up documents similar to.
             k: Optional Number of Documents to return. Defaults to 4.
-            pre_filter: Optional Dictionary of argument(s) to prefilter on document fields.
-            post_filter_pipeline: Optional Pipeline of MongoDB aggregation stages following the knnBeta search.
+            pre_filter: Optional Dictionary of argument(s) to prefilter on document
+                fields.
+            post_filter_pipeline: Optional Pipeline of MongoDB aggregation stages
+                following the knnBeta search.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -166,16 +170,19 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """Return MongoDB documents most similar to query.
 
         Use the knnBeta Operator available in MongoDB Atlas Search
-        This feature is in early access and available only for evaluation purposes, to validate functionality, and
-        to gather feedback from a small closed group of early access users. It is not recommended for production
-        deployments as we may introduce breaking changes.
-        https://www.mongodb.com/docs/atlas/atlas-search/knn-beta
+        This feature is in early access and available only for evaluation purposes, to
+        validate functionality, and to gather feedback from a small closed group of
+        early access users. It is not recommended for production deployments as we may
+        introduce breaking changes.
+        For more: https://www.mongodb.com/docs/atlas/atlas-search/knn-beta
 
         Args:
             query: Text to look up documents similar to.
             k: Optional Number of Documents to return. Defaults to 4.
-            pre_filter: Optional Dictionary of argument(s) to prefilter on document fields.
-            post_filter_pipeline: Optional Pipeline of MongoDB aggregation stages following the knnBeta search.
+            pre_filter: Optional Dictionary of argument(s) to prefilter on document
+                fields.
+            post_filter_pipeline: Optional Pipeline of MongoDB aggregation stages
+                following the knnBeta search.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -202,7 +209,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         This is a user-friendly interface that:
             1. Embeds documents.
-            2. Adds the documents to a provided MongoDB Atlas Vector Search index (Lucene)
+            2. Adds the documents to a provided MongoDB Atlas Vector Search index
+                (Lucene)
 
         This is intended to be a quick way to get started.
 
@@ -211,16 +219,15 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
                 from langchain.vectorstores import MongoDBAtlasVectorSearch
                 from langchain.embeddings import OpenAIEmbeddings
-                from pymongo import MongoClient
 
-                mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
+                connection_string = "<YOUR-CONNECTION-STRING>"
                 namespace = "<db_name>.<collection_name>"
                 embeddings = OpenAIEmbeddings()
                 vectorstore = MongoDBAtlasVectorSearch.from_texts(
                     texts,
                     embeddings,
                     meadatas=metadatas,
-                    client=client,
+                    connection_string=connection_string,
                     namespace=namespace
                 )
         """
