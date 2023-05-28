@@ -51,6 +51,7 @@ class SupabaseVectorStore(VectorStore):
         embedding: Embeddings,
         table_name: str,
         query_name: Union[str, None] = None,
+        metadatas: Optional[List[dict]] = None,
     ) -> None:
         """Initialize with supabase client."""
         try:
@@ -65,6 +66,7 @@ class SupabaseVectorStore(VectorStore):
         self._embedding: Embeddings = embedding
         self.table_name = table_name or "documents"
         self.query_name = query_name or "match_documents"
+        self.metadatas = metadatas or None
 
     def add_texts(
         self,
@@ -139,17 +141,32 @@ class SupabaseVectorStore(VectorStore):
         match_documents_params = dict(query_embedding=query, match_count=k)
         res = self._client.rpc(self.query_name, match_documents_params).execute()
 
-        match_result = [
-            (
-                Document(
-                    metadata=search.get("metadata", {}),  # type: ignore
-                    page_content=search.get("content", ""),
-                ),
-                search.get("similarity", 0.0),
-            )
-            for search in res.data
-            if search.get("content")
-        ]
+        if self.metadatas == None:
+            match_result = [
+                (
+                    Document(
+                        metadata=search.get("metadata", {}),  # type: ignore
+                        page_content=search.get("content", ""),
+                    ),
+                    search.get("similarity", 0.0),
+                )
+                for search in res.data
+                if search.get("content")
+            ]
+        else:
+            match_result = [
+                (
+                    Document(
+                        metadata=search.get("metadata", {}),  # type: ignore
+                        page_content=search.get("content", ""),
+                    ),
+                    search.get("similarity", 0.0),
+                )
+                for search in res.data
+                for metadata in self.metadatas
+                for key in metadata
+                if search.get("metadata")[key] == metadata[key]
+            ]
 
         return match_result
 
@@ -333,3 +350,4 @@ class SupabaseVectorStore(VectorStore):
             embedding[0], k, fetch_k, lambda_mult=lambda_mult
         )
         return docs
+
