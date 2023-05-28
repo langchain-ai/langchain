@@ -1,3 +1,4 @@
+import re
 from typing import Union
 
 from langchain.agents.agent import AgentOutputParser
@@ -18,8 +19,18 @@ class ChatOutputParser(AgentOutputParser):
                 {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
             )
         try:
-            response = parse_json_markdown(text)
-            return AgentAction(response["action"], response["action_input"], text)
+            action_pattern = r'"action":\s*"([^"]*)"'
+            action_input_pattern = r'"action_input":\s*"([^"]*)"'
+
+            action_match = re.search(action_pattern, text)
+            action_input_match = re.search(action_input_pattern, text)
+
+            if not (action_match or action_input_match):
+                raise OutputParserException(f"Could not parse LLM output: {text}")
+
+            action = action_match.group(1)
+            action_input = action_input_match.group(1)
+            return AgentAction(action, action_input, text)
 
         except Exception:
             raise OutputParserException(f"Could not parse LLM output: {text}")
