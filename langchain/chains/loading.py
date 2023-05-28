@@ -141,10 +141,10 @@ def _load_llm_bash_chain(config: dict, **kwargs: Any) -> LLMBashChain:
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
         llm_chain = load_chain_from_config(llm_chain_config)
-    elif "llm_path" in config:
-        llm_chain = load_chain(config.pop("llm_path"))
+    elif "llm_chain_path" in config:
+        llm_chain = load_chain(config.pop("llm_chain_path"))
     else:
-        raise ValueError("One of `llm` or `llm_path` must be present.")
+        raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
     if "prompt" in config:
         prompt_config = config.pop("prompt")
         prompt = load_prompt_from_config(prompt_config)
@@ -203,10 +203,10 @@ def _load_llm_math_chain(config: dict, **kwargs: Any) -> LLMMathChain:
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
         llm_chain = load_chain_from_config(llm_chain_config)
-    elif "llm_path" in config:
-        llm_chain = load_chain(config.pop("llm_path"))
+    elif "llm_chain_path" in config:
+        llm_chain = load_chain(config.pop("llm_chain_path"))
     else:
-        raise ValueError("One of `llm` or `llm_path` must be present.")
+        raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
     if "prompt" in config:
         prompt_config = config.pop("prompt")
         prompt = load_prompt_from_config(prompt_config)
@@ -232,10 +232,10 @@ def _load_pal_chain(config: dict, **kwargs: Any) -> PALChain:
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
         llm_chain = load_chain_from_config(llm_chain_config)
-    elif "llm_path" in config:
-        llm_chain = load_chain(config.pop("llm_path"))
+    elif "llm_chain_path" in config:
+        llm_chain = load_chain(config.pop("llm_chain_path"))
     else:
-        raise ValueError("One of `llm` or `llm_path` must be present.")
+        raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
     if "prompt" in config:
         prompt_config = config.pop("prompt")
         prompt = load_prompt_from_config(prompt_config)
