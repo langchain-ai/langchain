@@ -99,7 +99,9 @@ def test_persist_run(
         for run in sample_runs:
             lang_chain_tracer_v2._end_trace(run)
 
-        assert post.call_count == 3
+        assert post.call_count == sum(
+            [run.parent_run_id is None for run in sample_runs]
+        )
         assert get.call_count == 0
 
 
@@ -121,14 +123,10 @@ def test_persist_run_with_example_id(
         lang_chain_tracer_v2.example_id = example_id
         lang_chain_tracer_v2._persist_run(chain_run)
 
-        assert post.call_count == 3
+        assert post.call_count == 1
         assert get.call_count == 0
         posted_data = [
             json.loads(call_args[1]["data"]) for call_args in post.call_args_list
         ]
         assert posted_data[0]["id"] == str(chain_run.id)
         assert posted_data[0]["reference_example_id"] == str(example_id)
-        assert posted_data[1]["id"] == str(tool_run.id)
-        assert not posted_data[1].get("reference_example_id")
-        assert posted_data[2]["id"] == str(llm_run.id)
-        assert not posted_data[2].get("reference_example_id")

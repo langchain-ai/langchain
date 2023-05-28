@@ -127,13 +127,22 @@ class LangChainTracer(BaseTracer):
         self.session = TracerSession(**r.json())
         return self.session
 
-    def _persist_run_nested(self, run: Run) -> None:
-        """Persist a run."""
+    def _convert_to_create(self, run: Run) -> RunCreate:
+        """Convert a Run to a RunCreate."""
         session = self.ensure_session()
         child_runs = run.child_runs
-        run_dict = run.dict()
-        del run_dict["child_runs"]
+        run_dict = run.dict(exclude_none=True, exclude={"child_runs", "parent_run_id"})
         run_create = RunCreate(**run_dict, session_id=session.id)
+        run_create.child_runs = [
+            self._convert_to_create(child_run) for child_run in child_runs
+        ]
+        return run_create
+
+    def _persist_run(self, run: Run) -> None:
+        """Persist a run."""
+        run.reference_example_id = self.example_id
+        # TODO: Post first then patch
+        run_create = self._convert_to_create(run)
         try:
             response = requests.post(
                 f"{self._endpoint}/runs",
@@ -143,12 +152,3 @@ class LangChainTracer(BaseTracer):
             raise_for_status_with_text(response)
         except Exception as e:
             logging.warning(f"Failed to persist run: {e}")
-        for child_run in child_runs:
-            child_run.parent_run_id = run.id
-            self._persist_run_nested(child_run)
-
-    def _persist_run(self, run: Run) -> None:
-        """Persist a run."""
-        run.reference_example_id = self.example_id
-        # TODO: Post first then patch
-        self._persist_run_nested(run)

@@ -134,6 +134,7 @@ class Run(RunBase):
 class RunCreate(RunBase):
     name: str
     session_id: UUID
+    child_runs: List[RunCreate] = Field(default_factory=list)
 
     @root_validator(pre=True)
     def add_runtime_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -146,3 +147,5 @@ class RunCreate(RunBase):
 
 ChainRun.update_forward_refs()
 ToolRun.update_forward_refs()
+Run.update_forward_refs()
+RunCreate.update_forward_refs()
