@@ -111,14 +111,3 @@ def mock_now(dt_value):  # type: ignore
         yield datetime.datetime
     finally:
         datetime.datetime = real_datetime
-
-
-def truncate_word(content: str, length: int = 300, suffix: str = "...") -> str:
-    """
-    Truncate a string to a certain number of words, based on the max string
-    length.
-    """
-    if len(content) <= length:
-        return content
-
-    return str(content)[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
