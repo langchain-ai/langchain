@@ -80,6 +80,15 @@ TEXT_AFTER = """```
 ```
 This should do the trick"""
 
+TEXT_BEFORE_AND_AFTER = """Action: Testing
+
+```
+{
+  "foo": "bar"
+}
+```
+This should do the trick"""
+
 TEST_CASES = [
     GOOD_JSON,
     JSON_WITH_NEW_LINES,
