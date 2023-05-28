@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Dict
-
-from pymongo import MongoClient
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+
+if TYPE_CHECKING:
+    from pymongo import MongoClient
 
 logger = logging.getLogger(__name__)
 
@@ -34,35 +35,54 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Callable,
         client: MongoClient,
         namespace: str,
-        index_name: str = "default"
+        embedding: Embeddings,
+        *,
+        index_name: str = "default",
+        text_key: str = "text",
+        embedding_key: str = "embedding,",
     ):
+        """
+        Args:
+            client: MongoDB client.
+            namespace: MongoDB namespace to add the texts to.
+            embedding: Text embedding model to use.
+            text_key: MongoDB field that will contain the text for each
+                document.
+            embedding_key: MongoDB field that will contain the embedding for
+                each document.
+        """
         self._client = client
-        db_name, collection_name = namespace.split('.')
+        db_name, collection_name = namespace.split(".")
         self._collection = client[db_name][collection_name]
+        self._embedding = embedding
         self._index_name = index_name
-        self._embedding_function = embedding_function
+        self._text_key = text_key
+        self._embedding_key = embedding_key
 
     @classmethod
     def from_connection_string(
         cls,
-        embedding: Embeddings,
         connection_string: str,
         namespace: str,
-        index_name: str = "default"
+        embedding: Embeddings,
+        **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
+        try:
+            from pymongo import MongoClient
+        except ImportError:
+            raise ImportError(
+                "Could not import pymongo, please install it with "
+                "`pip install pymongo`."
+            )
         client = MongoClient(connection_string)
-        return cls(embedding.embed_query, client, namespace, index_name)
+        return cls(client, namespace, embedding, **kwargs)
 
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        namespace: Optional[str] = None,
-        text_key: str = "text",
-        embedding_key: str = "embedding",
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -70,39 +90,29 @@ class MongoDBAtlasVectorSearch(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-            namespace: Optional MongoDB namespace to add the texts to.
-            text_key: Optional MongoDB field that will contain the text for each document.
-            embedding_key: Optional MongoDB field that will contain the embedding for each document.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        collection = self._collection
-        if namespace is not None:
-            db_name, collection_name = namespace.split('.')
-            collection = self._client[db_name][collection_name]
-
         # Embed and create the documents
         docs = []
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
-            embedding = self._embedding_function(text)
-            docs.append({**metadata, text_key: text, embedding_key: embedding})
+            embedding = self._embedding.embed_documents([text])[0]
+            doc = {self._text_key: text, self._embedding_key: embedding, **metadata}
+            docs.append(doc)
 
         # insert in MongoDB Atlas
-        insert_result = collection.insert_many(docs)
+        insert_result = self._collection.insert_many(docs)
         return insert_result.inserted_ids
 
     def similarity_search_with_score(
         self,
         query: str,
+        *,
         k: int = 4,
         pre_filter: Optional[dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
-        namespace: Optional[str] = None,
-        index_name: Optional[str] = None,
-        text_key: str = "text",
-        embedding_key: str = "embedding"
     ) -> List[Tuple[Document, float]]:
         """Return MongoDB documents most similar to query, along with scores.
 
@@ -117,48 +127,32 @@ class MongoDBAtlasVectorSearch(VectorStore):
             k: Optional Number of Documents to return. Defaults to 4.
             pre_filter: Optional Dictionary of argument(s) to prefilter on document fields.
             post_filter_pipeline: Optional Pipeline of MongoDB aggregation stages following the knnBeta search.
-            namespace: Optional Namespace to search in. Default will search in the namespace passed in the constructor.
-            index_name: Optional Atlas Search Index to use. Default will be the index passed in the constructor.
-            text_key: Optional MongoDB field that contains the text for each document.
-            embedding_key: Optional MongoDB field that contains the embedding for each document.
 
         Returns:
             List of Documents most similar to the query and score for each
         """
-        collection = self._collection
-        if namespace is not None:
-            db_name, collection_name = namespace.split('.')
-            collection = self._client[db_name][collection_name]
-        index_name = index_name or self._index_name
-        query_vector = self._embedding_function(query)
         pipeline = [
             {
                 "$search": {
-                    "index": index_name,
+                    "index": self._index_name,
                     "knnBeta": {
-                        "vector": query_vector,
-                        "path": embedding_key,
+                        "vector": self._embedding.embed_query(query),
+                        "path": self._embedding_key,
                         "k": k,
-                        "filter": pre_filter or {}
-                    }
+                        "filter": pre_filter or {},
+                    },
                 }
             },
-            {
-                "$project": {
-                    "score": {"$meta": "searchScore"},
-                    embedding_key: 0
-                }
-            }
+            {"$project": {"score": {"$meta": "searchScore"}, self._embedding_key: 0}},
         ]
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
-        cursor = collection.aggregate(pipeline)
+        cursor = self._collection.aggregate(pipeline)
         docs = []
-        for document in cursor:
-            text = document.pop(text_key)
-            score = document.pop("score")
-            metadata = document
-            docs.append((Document(page_content=text, metadata=metadata), score))
+        for res in cursor:
+            text = res.pop(self._text_key)
+            score = res.pop("score")
+            docs.append((Document(page_content=text, metadata=res), score))
         return docs
 
     def similarity_search(
@@ -167,10 +161,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         pre_filter: Optional[dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
-        namespace: Optional[str] = None,
-        index_name: Optional[str] = None,
-        text_key: str = "text",
-        embedding_key: str = "embedding"
+        **kwargs: Any,
     ) -> List[Document]:
         """Return MongoDB documents most similar to query.
 
@@ -185,10 +176,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
             k: Optional Number of Documents to return. Defaults to 4.
             pre_filter: Optional Dictionary of argument(s) to prefilter on document fields.
             post_filter_pipeline: Optional Pipeline of MongoDB aggregation stages following the knnBeta search.
-            namespace: Optional Namespace to search in. Default will search in the namespace passed in the constructor.
-            index_name: Optional Atlas Search Index to use. Default will be the index passed in the constructor.
-            text_key: Optional MongoDB field that contains the text for each document.
-            embedding_key: Optional MongoDB field that contains the embedding for each document.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -197,11 +184,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             query,
             k=k,
             pre_filter=pre_filter,
-            post_filter_pipeline=namespace,
-            namespace=namespace,
-            index_name=pre_filter,
-            text_key=text_key,
-            embedding_key=embedding_key
+            post_filter_pipeline=post_filter_pipeline,
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -211,13 +194,13 @@ class MongoDBAtlasVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        text_key: str = "text",
-        embedding_key: str = "embedding",
-        **kwargs: Any
+        connection_string: Optional[str] = None,
+        namespace: Optional[str] = None,
+        **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
         """Construct MongoDBAtlasVectorSearch wrapper from raw documents.
 
-        This is a user friendly interface that:
+        This is a user-friendly interface that:
             1. Embeds documents.
             2. Adds the documents to a provided MongoDB Atlas Vector Search index (Lucene)
 
@@ -236,25 +219,17 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 vectorstore = MongoDBAtlasVectorSearch.from_texts(
                     texts,
                     embeddings,
-                    metadatas,
+                    meadatas=metadatas,
                     client=client,
                     namespace=namespace
                 )
         """
-        try:
-            client, namespace = kwargs["client"], kwargs["namespace"]
-        except KeyError:
-            raise ValueError("Please provide a MongoDB client and a namespace to query the documents")
-        index_name = kwargs.get("index_name", "default")
-        db_name, collection_name = namespace.split('.')
-        collection = client[db_name][collection_name]
-        # create embeddings
-        embeds = embedding.embed_documents(texts)
-        # create the documents
-        docs = []
-        for i, text in enumerate(texts):
-            metadata = metadatas[i] if metadatas else {}
-            docs.append({**metadata, text_key: text, embedding_key: embeds[i]})
-        # insert in MongoDB Atlas
-        collection.insert_many(docs)
-        return cls(embedding.embed_query, client, namespace, index_name)
+        if not connection_string or not namespace:
+            raise ValueError(
+                "Must provide 'connection_string' and 'namespace' named parameters."
+            )
+        vecstore = cls.from_connection_string(
+            connection_string, namespace, embedding, **kwargs
+        )
+        vecstore.add_texts(texts, metadatas=metadatas)
+        return vecstore
