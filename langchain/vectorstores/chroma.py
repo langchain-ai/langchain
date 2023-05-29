@@ -408,6 +408,14 @@ class Chroma(VectorStore):
             where_document=where_document,
         )
 
+    def get_all_ids(self) -> List[str]:
+        """Get all IDs associated with text.
+
+        Returns:
+            List of IDs
+        """
+        return self._collection.get(include=[])['ids']
+
     def persist(self) -> None:
         """Persist the collection.
 
