@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import pytest
 
@@ -13,36 +13,42 @@ from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 if TYPE_CHECKING:
     from pymongo import MongoClient
 
-INDEX_NAME = "langchain-test-index"  # name of the index
-NAMESPACE = "langchain_test_db.langchain_test_collection"  # name of the namespace
+INDEX_NAME = "langchain-test-index"
+NAMESPACE = "langchain_test_db.langchain_test_collection"
 CONNECTION_STRING = os.environ.get("MONGODB_ATLAS_URI")
+DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
 
 
-@pytest.mark.requires("pymongo")
-class TestMongoDBAtlasVectorSearch:
-    @classmethod
-    def test_collection(cls) -> MongoClient:
+def get_test_client() -> Optional[MongoClient]:
+    try:
         from pymongo import MongoClient
 
-        db_name, collection_name = NAMESPACE.split(".")
         client = MongoClient(CONNECTION_STRING)
-        test_collection = client[db_name][collection_name]
-        assert test_collection.count_documents({}) == 0
+        return client
+    except:
+        return None
 
+
+# Instantiate as constant instead of pytest fixture to prevent needing to make multiple
+# connections.
+TEST_CLIENT = get_test_client()
+
+
+class TestMongoDBAtlasVectorSearch:
     @classmethod
     def setup_class(cls) -> None:
         # insure the test collection is empty
-        assert cls.test_collection().count_documents({}) == 0
+        assert TEST_CLIENT[DB_NAME][COLLECTION_NAME].count_documents({}) == 0  # type: ignore[index]
 
     @classmethod
     def teardown_class(cls) -> None:
         # delete all the documents in the collection
-        cls.test_collection().delete_many({})
+        TEST_CLIENT[DB_NAME][COLLECTION_NAME].delete_many({})
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # delete all the documents in the collection
-        self.test_collection().delete_many({})
+        TEST_CLIENT[DB_NAME][COLLECTION_NAME].delete_many({})
 
     @pytest.mark.vcr()
     def test_from_documents(self, embedding: Embeddings) -> None:
@@ -58,6 +64,7 @@ class TestMongoDBAtlasVectorSearch:
             embedding,
             connection_string=CONNECTION_STRING,
             namespace=NAMESPACE,
+            index_name=INDEX_NAME,
         )
         output = vectorstore.similarity_search("Sandwich", k=1)
         assert output == [
@@ -73,7 +80,11 @@ class TestMongoDBAtlasVectorSearch:
             "That fence is purple.",
         ]
         vectorstore = MongoDBAtlasVectorSearch.from_texts(
-            texts, embedding, connection_string=CONNECTION_STRING, namespace=NAMESPACE
+            texts,
+            embedding,
+            connection_string=CONNECTION_STRING,
+            namespace=NAMESPACE,
+            index_name=INDEX_NAME,
         )
         output = vectorstore.similarity_search("Sandwich", k=1)
         assert output == [Document(page_content="What is a sandwich?")]
@@ -93,6 +104,7 @@ class TestMongoDBAtlasVectorSearch:
             metadatas=metadatas,
             connection_string=CONNECTION_STRING,
             namespace=NAMESPACE,
+            index_name=INDEX_NAME,
         )
         output = vectorstore.similarity_search("Sandwich", k=1)
         assert output == [

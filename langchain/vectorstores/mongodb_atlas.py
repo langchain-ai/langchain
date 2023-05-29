@@ -42,7 +42,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         *,
         index_name: str = "default",
         text_key: str = "text",
-        embedding_key: str = "embedding,",
+        embedding_key: str = "embedding",
     ):
         """
         Args:
@@ -85,7 +85,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> List:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -201,7 +201,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        connection_string: Optional[str] = None,
+        client: Optional[MongoClient] = None,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
@@ -216,27 +216,24 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         Example:
             .. code-block:: python
+                from pymongo import MongoClient
 
                 from langchain.vectorstores import MongoDBAtlasVectorSearch
                 from langchain.embeddings import OpenAIEmbeddings
 
-                connection_string = "<YOUR-CONNECTION-STRING>"
+                client = MongoClient("<YOUR-CONNECTION-STRING>")
                 namespace = "<db_name>.<collection_name>"
                 embeddings = OpenAIEmbeddings()
                 vectorstore = MongoDBAtlasVectorSearch.from_texts(
                     texts,
                     embeddings,
                     meadatas=metadatas,
-                    connection_string=connection_string,
+                    client=client,
                     namespace=namespace
                 )
         """
-        if not connection_string or not namespace:
-            raise ValueError(
-                "Must provide 'connection_string' and 'namespace' named parameters."
-            )
-        vecstore = cls.from_connection_string(
-            connection_string, namespace, embedding, **kwargs
-        )
+        if not client or not namespace:
+            raise ValueError("Must provide 'client' and 'namespace' named parameters.")
+        vecstore = cls(client, namespace, embedding, **kwargs)
         vecstore.add_texts(texts, metadatas=metadatas)
         return vecstore
