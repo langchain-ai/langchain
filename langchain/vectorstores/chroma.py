@@ -443,6 +443,39 @@ class Chroma(VectorStore):
             metadatas=[metadata],
         )
 
+    @xor_args(("embeddings", "documents", "texts"))
+    def upsert(
+        self,
+        ids: Optional[List[str]] = None,
+        embeddings: Optional[List[List[int, float]]] = None,
+        documents: Optional[List[Document]] = None,
+        texts: Iterable[str] = None,
+        metadatas: Optional[List[dict]] = None,
+    ) -> List[str]:
+        """Update the embeddings, metadatas or documents for provided ids,
+            or create them if they don't exist in the vectorstore.
+
+        Args:
+            ids (Optional[List[str]]): Optional list of IDs.
+            embeddings (Optional[List[List[int, float]]])
+            documents (Optional[List[Document]]): List of (langchain.schema.Document).
+            texts (Iterable[str]): Texts to add to the vectorstore.
+            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
+
+        Returns:
+            List[str]: List of IDs of the added texts.
+        """
+        if ids is None:
+            ids = [str(uuid.uuid1()) for _ in texts]
+
+        self._collection.upsert(
+            ids=ids,
+            embeddings=embeddings,
+            metadatas=metadatas,
+            documents=texts
+        )
+        return ids
+
     @classmethod
     def from_texts(
         cls: Type[Chroma],
