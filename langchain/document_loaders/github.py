@@ -1,20 +1,21 @@
+from abc import ABC
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import requests
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.utils import get_from_dict_or_env
 
 
-class GitHubLoader(BaseLoader, BaseModel):
+class BaseGitHubLoader(BaseLoader, BaseModel, ABC):
     """Load issues of a GitHub repository."""
 
-    repo: str = ""
+    repo: str
     """Name of repository"""
-    access_token: str = ""
+    access_token: str
     """Personal access token - see https://github.com/settings/tokens?type=beta"""
 
     @root_validator(pre=True)
@@ -32,27 +33,50 @@ class GitHubLoader(BaseLoader, BaseModel):
             "Authorization": f"Bearer {self.access_token}",
         }
 
-    def load(self, include_prs: bool = True, **kwargs: Any) -> List[Document]:
+
+class GitHubIssuesLoader(BaseGitHubLoader):
+    include_prs: bool = True
+    """If True include Pull Requests in results, otherwise ignore them."""
+    milestone: Union[int, Literal["*", "none"], None] = None
+    """If integer is passed, it should be a milestone's number field.
+        If the string * is passed, issues with any milestone are accepted.
+        If the string none is passed, issues without milestones are returned.
+    """
+    state: Literal["open", "closed", "all"] = "open"
+    """Filter on issue state. Can be one of: open, closed, all. Default is 'open'."""
+    assignee: Optional[Literal["*", "none"]] = None
+    """Filter on assigned user. Pass none for no user and * for any user."""
+    creator: Optional[str] = None
+    """Filter on the user that created the issue."""
+    mentioned: Optional[str] = None
+    """Filter on a user that's mentioned in the issue."""
+    labels: Optional[List[str]] = None
+    """Label names to filter one. Example: bug,ui,@high."""
+    sort: Literal["created", "updated", "comments"] = "created"
+    """What to sort results by. Can be one of: created, updated, comments.
+        Default is 'created'."""
+    direction: Literal["asc", "desc"] = "desc"
+    """The direction to sort the results by. Can be one of: asc, desc.
+        Default is 'desc'."""
+    since: Optional[str] = None
+    """Only show notifications updated after the given time.
+        This is a timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ."""
+
+    @validator("since")
+    def validate_since(cls, v: Optional[str]) -> Optional[str]:
+        if v:
+            try:
+                datetime.strptime(v, "%Y-%m-%dT%H:%M:%SZ")
+            except ValueError:
+                raise ValueError(
+                    "Invalid value for 'since'. Expected a date string in "
+                    f"YYYY-MM-DDTHH:MM:SSZ format. Received: {v}"
+                )
+        return v
+
+    def load(self) -> List[Document]:
         """
         Get issues of a GitHub repository.
-
-        Args:
-            include_prs: Should pull requests als be returned, or only issues?
-            milestone:
-                If integer is passed, it should be a milestone's number field.
-                If the string * is passed, issues with any milestone are accepted.
-                If the string none is passed, issues without milestones are returned.
-            state: Can be one of: open, closed, all. Default is 'open'.
-            assignee: Assigned user. Pass none for no user and * for any user.
-            creator: The user that created the issue.
-            mentioned: A user that's mentioned in the issue.
-            labels: A list of comma separated label names. Example: bug,ui,@high.
-            sort: What to sort results by. Can be one of: created, updated, comments.
-                Default is 'created'.
-            direction: The direction to sort the results by. Can be one of: asc, desc.
-                Default is 'desc'.
-            since: Only show notifications updated after the given time.
-                This is a timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ.
 
         Returns:
             A list of Documents with attributes:
@@ -61,7 +85,7 @@ class GitHubLoader(BaseLoader, BaseModel):
                     - url
                     - title
                     - creator
-                    - creation_time
+                    - created_at
                     - last_update_time
                     - closed_time
                     - number of comments
@@ -74,13 +98,11 @@ class GitHubLoader(BaseLoader, BaseModel):
                     - number
                     - is_pull_request
         """
-        url = self.build_url(**kwargs)
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(self.url, headers=self.headers)
         response.raise_for_status()
-
         issues = response.json()
         documents = [self.parse_issue(issue) for issue in issues]
-        if include_prs:
+        if self.include_prs:
             return documents
         else:
             return [doc for doc in documents if not doc.metadata["is_pull_request"]]
@@ -91,7 +113,7 @@ class GitHubLoader(BaseLoader, BaseModel):
             "url": issue["html_url"],
             "title": issue["title"],
             "creator": issue["user"]["login"],
-            "creation_time": issue["created_at"],
+            "created_at": issue["created_at"],
             "comments": issue["comments"],
             "state": issue["state"],
             "labels": [label["name"] for label in issue["labels"]],
@@ -103,46 +125,26 @@ class GitHubLoader(BaseLoader, BaseModel):
         }
         return Document(page_content=issue["body"], metadata=metadata)
 
-    def build_url(self, **kwargs: Any) -> str:
-        valid_kwargs = {
-            "milestone": {"*", "none"},  # todo: add milestone number
-            "state": {"open", "closed", "all"},
-            "sort": {"created", "updated", "comments"},
-            "direction": {"asc", "desc"},
+    @property
+    def query_params(self) -> str:
+        labels = ",".join(self.labels) if self.labels else self.labels
+        query_params_dict = {
+            "milestone": self.milestone,
+            "state": self.state,
+            "assignee": self.assignee,
+            "creator": self.creator,
+            "mentioned": self.mentioned,
+            "labels": labels,
+            "sort": self.sort,
+            "direction": self.direction,
+            "since": self.since,
         }
-
-        for key, value in kwargs.items():
-            # we validate these below or not at all
-            if key in ["labels", "since", "assignee", "creator", "mentioned"]:
-                continue
-
-            if key not in valid_kwargs:
-                raise ValueError(f"Invalid keyword argument: {key}")
-            if value not in valid_kwargs[key]:
-                raise ValueError(
-                    f"Invalid value for {key}: {value}. "
-                    f"Expected one of {valid_kwargs[key]}"
-                )
-
-        if "labels" in kwargs and not isinstance(kwargs["labels"], list):
-            raise ValueError("Invalid value for labels: Expected a list of strings")
-
-        if "since" in kwargs:
-            try:
-                datetime.strptime(kwargs["since"], "%Y-%m-%dT%H:%M:%SZ")
-            except ValueError:
-                raise ValueError(
-                    "Invalid value for since: Expected a date string in "
-                    "YYYY-MM-DDTHH:MM:SSZ format"
-                )
-
-        url = f"https://api.github.com/repos/{self.repo}/issues"
-        query_params_list = []
-        for k, v in kwargs.items():
-            if k == "labels" and isinstance(v, list):
-                # labels values should be a comma-separated list of values
-                v = ",".join(v)
-            query_params_list.append(f"{k}={v}")
+        query_params_list = [
+            f"{k}={v}" for k, v in query_params_dict.items() if v is not None
+        ]
         query_params = "&".join(query_params_list)
-        full_url = f"{url}?{query_params}"
-        return full_url
+        return query_params
+
+    @property
+    def url(self) -> str:
+        return f"https://api.github.com/repos/{self.repo}/issues?{self.query_params}"

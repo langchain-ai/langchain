@@ -1,12 +1,10 @@
-from langchain.document_loaders.github import GitHubLoader
+from langchain.document_loaders.github import GitHubIssuesLoader
 
 
-def test_integration() -> None:
-    title = (
-        "ChatOpenAI models don't work with prompts created via ChatPromptTemplate."
-        "from_role_strings"
-    )
-    loader = GitHubLoader(repo="hwchase17/langchain")
-    data = loader.load(creator="UmerHA")
-    titles = [d.metadata["title"] for d in data]
+def test_issues_load() -> None:
+    title = "DocumentLoader for GitHub"
+    loader = GitHubIssuesLoader(repo="hwchase17/langchain", creator="UmerHA", state="all")
+    docs = loader.load()
+    titles = [d.metadata["title"] for d in docs]
     assert title in titles
+    assert all(doc.metadata["creator"] == "UmerHA" for doc in docs)
