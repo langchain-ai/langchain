@@ -384,7 +384,7 @@ class Chroma(VectorStore):
             documents=documents_to_update
         )
 
-    def get(self, include: Optional[List[str]] = None) -> List[Document]:
+    def get(self, include: Optional[List[str]] = None) -> Dict[str, Any]:
         """Gets the collection.
 
         Args:
