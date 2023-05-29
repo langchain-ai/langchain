@@ -785,6 +785,8 @@ class AgentExecutor(Chain):
             else:
                 raise ValueError("Got unexpected type of `handle_parsing_errors`")
             output = AgentAction("_Exception", observation, text)
+            if run_manager:
+                run_manager.on_agent_action(output, color="green")
             tool_run_kwargs = self.agent.tool_run_logging_kwargs()
             observation = ExceptionTool().run(
                 output.tool_input,

@@ -46,6 +46,7 @@ from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.graphql import GraphQLAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
+from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
@@ -218,6 +219,14 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
     )
 
 
+def _get_twilio(**kwargs: Any) -> BaseTool:
+    return Tool(
+        name="Text Message",
+        description="Useful for when you need to send a text message to a provided phone number.",
+        func=TwilioAPIWrapper(**kwargs).run,
+    )
+
+
 def _get_searx_search(**kwargs: Any) -> BaseTool:
     return SearxSearchRun(wrapper=SearxSearchWrapper(**kwargs))
 
@@ -286,6 +295,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["serper_api_key", "aiosession"],
     ),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
+    "twilio": (_get_twilio, ["account_sid", "auth_token", "from_number"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
     "arxiv": (
