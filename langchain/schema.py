@@ -234,18 +234,6 @@ class BaseChatMessageHistory(ABC):
                        messages = json.loads(f.read())
                     return messages_from_dict(messages)
 
-               def add_user_message(self, message: str):
-                   message_ = HumanMessage(content=message)
-                   messages = self.messages.append(_message_to_dict(_message))
-                   with open(os.path.join(storage_path, session_id), 'w') as f:
-                       json.dump(f, messages)
-
-               def add_ai_message(self, message: str):
-                   message_ = AIMessage(content=message)
-                   messages = self.messages.append(_message_to_dict(_message))
-                   with open(os.path.join(storage_path, session_id), 'w') as f:
-                       json.dump(f, messages)
-
                def add_message(self, message: BaseMessage) -> None:
                    messages = self.messages.append(_message_to_dict(message))
                    with open(os.path.join(storage_path, session_id), 'w') as f:
@@ -266,9 +254,9 @@ class BaseChatMessageHistory(ABC):
         """Add an AI message to the store"""
         self.add_message(AIMessage(content=message))
 
-    @abstractmethod
     def add_message(self, message: BaseMessage) -> None:
         """Add a self-created message to the store"""
+        raise NotImplementedError
 
     @abstractmethod
     def clear(self) -> None:
