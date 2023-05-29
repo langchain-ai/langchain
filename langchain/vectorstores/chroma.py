@@ -493,22 +493,38 @@ class Chroma(VectorStore):
         client: Optional[chromadb.Client] = None,
         **kwargs: Any,
     ) -> Chroma:
-        """Create a Chroma vectorstore from a raw documents.
+        """Create a Chroma vectorstore from a raw documents.\n
+        Used to load data to vectorstore from List[str]
 
         If a persist_directory is specified, the collection will be persisted there.
         Otherwise, the data will be ephemeral in-memory.
 
-        Args:
+        Args:\n
             texts (List[str]): List of texts to add to the collection.
             collection_name (str): Name of the collection to create.
             persist_directory (Optional[str]): Directory to persist the collection.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
-            client_settings (Optional[chromadb.config.Settings]): Chroma client settings
+            client_settings(Optional[chromadb.config.Settings]):Chroma client settings
 
-        Returns:
+        Returns:\n
             Chroma: Chroma vectorstore.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.vectorstores import Chroma
+                from langchain.embeddings.sentence_transformer import (
+                    SentenceTransformerEmbeddings
+                )
+
+                embeddings = SentenceTransformerEmbeddings()
+                texts = [str, str, str, ...]
+
+                vectorstore =  Chroma.from_texts(
+                    texts=texts, embedding=embeddings,
+                )
         """
         chroma_collection = cls(
             collection_name=collection_name,
@@ -517,7 +533,10 @@ class Chroma(VectorStore):
             client_settings=client_settings,
             client=client,
         )
-        chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
+        chroma_collection.upsert(texts=texts, metadatas=metadatas, ids=ids)
+
+        if chroma_collection._persist_directory is not None:
+            chroma_collection.persist()
         return chroma_collection
 
     @classmethod
