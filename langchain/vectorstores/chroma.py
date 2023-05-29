@@ -162,16 +162,12 @@ class Chroma(VectorStore):
         Returns:
             List[str]: List of IDs of the added texts.
         """
-        # TODO: Handle the case where the user doesn't provide ids on the Collection
-        if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
-        embeddings = None
-        if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(list(texts))
-        self._collection.add(
-            metadatas=metadatas, embeddings=embeddings, documents=texts, ids=ids
+
+        return self.upsert(
+            ids=ids,
+            texts=texts,
+            metadatas=metadatas
         )
-        return ids
 
     def similarity_search(
         self,
