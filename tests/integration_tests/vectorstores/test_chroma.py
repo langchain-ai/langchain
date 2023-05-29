@@ -174,3 +174,24 @@ def test_chroma_with_include_parameter() -> None:
     assert output["embeddings"] is not None
     output = docsearch.get()
     assert output["embeddings"] is None
+
+
+def test_chroma_update() -> None:
+    "Tests updating a document"
+    doc1 = Document(page_content="foo")
+    doc2 = Document(page_content="bar")
+    docs = [doc1, doc2]
+
+    docsearch = Chroma.from_documents(
+        collection_name="test_collection", documents=docs, embedding=FakeEmbeddings()
+    )
+
+    assert docsearch.count() == 2
+
+    doc1.page_content = "baz"
+    doc2.metadata = {"page": "1"}
+    docsearch.update(docs)
+
+    output = docsearch.get()
+    assert output[0].page_content == "baz"
+    assert output[1].metadata == {"page": "1"}
