@@ -20,7 +20,7 @@ def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
     )
 
 
-def truncate_word(content: str, *, length: int, suffix: str = "...") -> str:
+def truncate_word(content: Any, *, length: int, suffix: str = "...") -> str:
     """
     Truncate a string to a certain number of words, based on the max string
     length.

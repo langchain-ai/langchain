@@ -140,7 +140,7 @@ def test_sql_database_run_update() -> None:
     assert output == expected_output
 
 
-def test_truncate_word():
+def test_truncate_word() -> None:
     assert truncate_word("Hello World", length=5) == "He..."
     assert truncate_word("Hello World", length=0) == "Hello World"
     assert truncate_word("Hello World", length=-10) == "Hello World"
