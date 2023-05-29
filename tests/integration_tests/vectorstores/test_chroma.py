@@ -51,8 +51,8 @@ def test_user_defined_foreign_id() -> None:
     )
 
     output = docsearch.get()
-    assert output[0].foreign_id == "1"
-    assert output[1].foreign_id == "2"
+    assert output["ids"][0] == "1"
+    assert output["ids"][1] == "2"
 
 
 def test_chroma_with_metadatas_with_scores() -> None:
@@ -193,8 +193,8 @@ def test_chroma_update() -> None:
     docsearch.update(docs)
 
     output = docsearch.get()
-    assert output[0].page_content == "baz"
-    assert output[1].metadata == {"page": "1"}
+    assert output['documents'][0] == "baz"
+    assert output['metadatas'][1] == {"page": "1"}
 
 
 def test_chroma_update_document() -> None:
