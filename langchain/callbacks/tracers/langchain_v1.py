@@ -7,7 +7,7 @@ from typing import Any, Optional, Union
 import requests
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.langchain import get_endpoint, get_headers
+from langchain.callbacks.tracers.langchain import get_headers
 from langchain.callbacks.tracers.schemas import (
     ChainRun,
     LLMRun,
