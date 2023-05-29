@@ -38,10 +38,11 @@ class GitHubLoader(BaseLoader, BaseModel):
 
         Args:
             include_prs: Should pull requests als be returned, or only issues?
-            milestone: If an integer is passed, it should refer to a milestone by its number field.
+            milestone:
+                If integer is passed, it should be a milestone's number field.
                 If the string * is passed, issues with any milestone are accepted.
                 If the string none is passed, issues without milestones are returned.
-            state: State of the issues to return. Can be one of: open, closed, all. Default is 'open'.
+            state: Can be one of: open, closed, all. Default is 'open'.
             assignee: Assigned user. Pass none for no user and * for any user.
             creator: The user that created the issue.
             mentioned: A user that's mentioned in the issue.
