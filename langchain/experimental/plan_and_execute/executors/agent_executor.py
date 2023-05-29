@@ -12,7 +12,7 @@ Current objective: {current_step}
 
 {agent_scratchpad}"""
 
-TASK_SUFFIX = """{objective}
+TASK_PREFIX = """{objective}
 
 """
 
@@ -28,7 +28,7 @@ def load_agent_executor(
 
     if include_task_in_prompt:
         input_variables.append("objective")
-        TEMPLATE = TASK_SUFFIX + TEMPLATE
+        TEMPLATE = TASK_PREFIX + TEMPLATE
 
     agent = StructuredChatAgent.from_llm_and_tools(
         llm,
