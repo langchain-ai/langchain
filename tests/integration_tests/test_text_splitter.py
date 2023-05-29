@@ -50,9 +50,7 @@ def test_token_text_splitter_from_tiktoken() -> None:
     assert expected_tokenizer == actual_tokenizer
 
 
-def test_GIVEN_sentence_transformer_token_text_splitter_AND_text_WHEN_count_tokens_THEN_number_of_tokens_in_text_is_returned() -> (
-    None
-):
+def test_sentence_transformers_count_tokens() -> None:
     splitter = SentenceTransformersTokenTextSplitter(
         model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
     )
@@ -67,9 +65,7 @@ def test_GIVEN_sentence_transformer_token_text_splitter_AND_text_WHEN_count_toke
     assert expected_token_count == token_count
 
 
-def test_GIVEN_sentence_transformer_token_text_splitter_AND_text_shorter_than_token_limit_WHEN_split_text_THEN_a_single_chunk_is_returned() -> (
-    None
-):
+def test_sentence_transformers_split_text() -> None:
     splitter = SentenceTransformersTokenTextSplitter(
         model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
     )
@@ -79,9 +75,7 @@ def test_GIVEN_sentence_transformer_token_text_splitter_AND_text_shorter_than_to
     assert expected_text_chunks == text_chunks
 
 
-def test_GIVEN_sentence_transformer_token_text_splitter_AND_text_longer_than_token_limit_WHEN_split_text_THEN_two_chunks_are_returned() -> (
-    None
-):
+def test_sentence_transformers_multiple_tokens() -> None:
     splitter = SentenceTransformersTokenTextSplitter(chunk_overlap=0)
     text = "Lorem "
 
@@ -93,7 +87,6 @@ def test_GIVEN_sentence_transformer_token_text_splitter_AND_text_longer_than_tok
     expected_number_of_chunks = 2
 
     assert expected_number_of_chunks == len(text_chunks)
-    assert (
-        splitter.count_tokens(text=text_chunks[1]) - count_start_and_end_tokens
-        == token_multiplier * text_token_count - splitter.maximum_tokens_per_chunk
-    )
+    actual = splitter.count_tokens(text=text_chunks[1]) - count_start_and_end_tokens
+    expected = token_multiplier * text_token_count - splitter.maximum_tokens_per_chunk
+    assert expected == actual

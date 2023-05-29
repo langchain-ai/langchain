@@ -221,7 +221,8 @@ class CharacterTextSplitter(TextSplitter):
         return self._merge_splits(splits, self._separator)
 
 
-# should be in newer Python versions (3.10+) @dataclass(frozen=True, kw_only=True, slots=True)
+# should be in newer Python versions (3.10+)
+# @dataclass(frozen=True, kw_only=True, slots=True)
 @dataclass(frozen=True)
 class Tokenizer:
     chunk_overlap: int
@@ -276,16 +277,18 @@ class TokenTextSplitter(TextSplitter):
         self._disallowed_special = disallowed_special
 
     def split_text(self, text: str) -> List[str]:
-        encode = lambda text: self._tokenizer.encode(
-            text,
-            allowed_special=self._allowed_special,
-            disallowed_special=self._disallowed_special,
-        )
+        def _encode(_text: str) -> List[int]:
+            return self._tokenizer.encode(
+                _text,
+                allowed_special=self._allowed_special,
+                disallowed_special=self._disallowed_special,
+            )
+
         tokenizer = Tokenizer(
             chunk_overlap=self._chunk_overlap,
             tokens_per_chunk=self._chunk_size,
             decode=self._tokenizer.decode,
-            encode=encode,
+            encode=_encode,
         )
 
         return split_text_on_tokens(text=text, tokenizer=tokenizer)
@@ -320,8 +323,10 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
         if self.tokens_per_chunk > self.maximum_tokens_per_chunk:
             raise ValueError(
-                f"""The token limit of the models "{self.model_name}" is: {self.maximum_tokens_per_chunk}.
-                Argument tokens_per_chunk={self.tokens_per_chunk} > maximum token limit."""
+                f"The token limit of the models '{self.model_name}'"
+                f" is: {self.maximum_tokens_per_chunk}."
+                f" Argument tokens_per_chunk={self.tokens_per_chunk}"
+                f" > maximum token limit."
             )
 
     def split_text(self, text: str) -> List[str]:
