@@ -144,6 +144,11 @@ class SerpAPIWrapper(BaseModel):
         ):
             toret = res["sports_results"]["game_spotlight"]
         elif (
+            "shopping_results" in res.keys()
+            and "title" in res["shopping_results"][0].keys()
+        ):
+            toret = res["shopping_results"][:3]
+        elif (
             "knowledge_graph" in res.keys()
             and "description" in res["knowledge_graph"].keys()
         ):

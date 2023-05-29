@@ -12,7 +12,6 @@ from langchain.utilities.vertexai import (
 )
 
 if TYPE_CHECKING:
-    from google.auth.credentials import Credentials
     from vertexai.language_models._language_models import _LanguageModel
 
 
@@ -34,9 +33,10 @@ class _VertexAICommon(BaseModel):
     "The default GCP project to use when making Vertex API calls."
     location: str = "us-central1"
     "The default location to use when making API calls."
-    credentials: Optional["Credentials"] = None
-    "The default custom credentials to use when making API calls. If not provided "
-    "credentials will be ascertained from the environment." ""
+    credentials: Any = None
+    "The default custom credentials (google.auth.credentials.Credentials) to use "
+    "when making API calls. If not provided, credentials will be ascertained from "
+    "the environment."
 
     @property
     def _default_params(self) -> Dict[str, Any]:
