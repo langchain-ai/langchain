@@ -1,5 +1,5 @@
 """Wrapper around Google VertexAI embedding models."""
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from pydantic import root_validator
 
@@ -23,13 +23,14 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         return values
 
     def embed_documents(
-        self, texts: List[str], batch_size: Optional[int] = 5
+        self, texts: List[str], batch_size: int = 5
     ) -> List[List[float]]:
         """Embed a list of strings. Vertex AI currently
         sets a max batch size of 5 strings.
 
         Args:
             texts: List[str] The list of strings to embed.
+            batch_size: [int] The batch size of embeddings to send to the model
 
         Returns:
             List of embeddings, one for each text.
