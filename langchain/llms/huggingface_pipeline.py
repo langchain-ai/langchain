@@ -204,12 +204,13 @@ class HuggingFacePipeline(LLM):
     def _call(
         self,
         prompt: str,
-        gen_args: Optional[dict] = None,
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        generation_kwargs: Optional[dict] = None,
+
     ) -> str:
         print("here2")
-        response = self.pipeline(prompt,generation_kwargs=gen_args)
+        response = self.pipeline(prompt,generation_kwargs=generation_kwargs)
         if self.pipeline.task == "text-generation":
             # Text generation return includes the starter text.
             text = response[0]["generated_text"][len(prompt) :]

@@ -409,6 +409,7 @@ class LLM(BaseLLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        generation_kwargs: Optional[dict] = None
     ) -> str:
         """Run the LLM on the given prompt and input."""
 
