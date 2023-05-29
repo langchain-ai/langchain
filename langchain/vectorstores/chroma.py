@@ -383,6 +383,8 @@ class Chroma(VectorStore):
             metadatas=metadatas_to_update,
             documents=documents_to_update
         )
+
+    def get(self, include: Optional[List[str]] = None) -> List[Document]:
         """Gets the collection.
 
         Args:
@@ -393,6 +395,10 @@ class Chroma(VectorStore):
             return self._collection.get(include=include)
         else:
             return self._collection.get()
+        
+    def count(self) -> int:
+        """Counts the number of documents in the collection."""
+        return self._collection.count()
 
     def persist(self) -> None:
         """Persist the collection.
