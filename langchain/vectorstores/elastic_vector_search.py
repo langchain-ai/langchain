@@ -10,10 +10,9 @@ from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_env
 from langchain.vectorstores.base import VectorStore
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from elasticsearch import Elasticsearch
+#from typing import TYPE_CHECKING
+#if TYPE_CHECKING:
+#    from elasticsearch import Elasticsearch
 
 
 
@@ -381,7 +380,7 @@ class ElasticKnnSearch(ElasticVectorSearch):
         else:
             # If credentials for a new Elasticsearch connection are provided, create a new connection.
             if es_cloud_id and es_user and es_password:
-                self.client = Elasticsearch(
+                self.client = elasticsearch.Elasticsearch(
                     cloud_id=es_cloud_id, 
                     basic_auth=(es_user, es_password)
                 )
