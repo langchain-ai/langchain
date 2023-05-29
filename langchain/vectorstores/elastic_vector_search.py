@@ -10,6 +10,10 @@ from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_env
 from langchain.vectorstores.base import VectorStore
 
+if TYPE_CHECKING:
+    from elasticsearch import Elasticsearch
+
+
 
 def _default_text_mapping(dim: int) -> Dict:
     return {
