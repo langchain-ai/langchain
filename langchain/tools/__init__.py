@@ -1,5 +1,11 @@
 """Core toolkit implementations."""
 
+from langchain.tools.azure_cognitive_services import (
+    AzureCogsFormRecognizerTool,
+    AzureCogsImageAnalysisTool,
+    AzureCogsSpeech2TextTool,
+    AzureCogsText2SpeechTool,
+)
 from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
 from langchain.tools.bing_search.tool import BingSearchResults, BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchResults, DuckDuckGoSearchRun
@@ -56,6 +62,10 @@ from langchain.tools.zapier.tool import ZapierNLAListActions, ZapierNLARunAction
 __all__ = [
     "AIPluginTool",
     "APIOperation",
+    "AzureCogsFormRecognizerTool",
+    "AzureCogsImageAnalysisTool",
+    "AzureCogsSpeech2TextTool",
+    "AzureCogsText2SpeechTool",
     "BaseTool",
     "BaseTool",
     "BaseTool",

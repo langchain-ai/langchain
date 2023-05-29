@@ -15,8 +15,11 @@ from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSear
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.redis import Redis
+from langchain.vectorstores.sklearn import SKLearnVectorStore
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
+from langchain.vectorstores.typesense import Typesense
+from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
 
@@ -37,10 +40,13 @@ __all__ = [
     "Annoy",
     "MyScale",
     "MyScaleSettings",
+    "SKLearnVectorStore",
     "SupabaseVectorStore",
     "AnalyticDB",
+    "Vectara",
     "Tair",
     "LanceDB",
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
+    "Typesense",
 ]

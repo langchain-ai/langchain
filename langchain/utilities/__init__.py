@@ -17,6 +17,7 @@ from langchain.utilities.python import PythonREPL
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.spark_sql import SparkSQL
+from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
@@ -24,21 +25,22 @@ __all__ = [
     "ApifyWrapper",
     "ArxivAPIWrapper",
     "BashProcess",
-    "TextRequestsWrapper",
+    "BingSearchAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",
+    "GooglePlacesAPIWrapper",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
-    "GooglePlacesAPIWrapper",
     "GraphQLAPIWrapper",
-    "WolframAlphaAPIWrapper",
-    "SerpAPIWrapper",
-    "SearxSearchWrapper",
-    "BingSearchAPIWrapper",
-    "WikipediaAPIWrapper",
-    "OpenWeatherMapAPIWrapper",
-    "PythonREPL",
     "LambdaWrapper",
-    "PowerBIDataset",
-    "SparkSQL",
     "MetaphorSearchAPIWrapper",
+    "OpenWeatherMapAPIWrapper",
+    "PowerBIDataset",
+    "PythonREPL",
+    "SearxSearchWrapper",
+    "SerpAPIWrapper",
+    "SparkSQL",
+    "TextRequestsWrapper",
+    "TwilioAPIWrapper",
+    "WikipediaAPIWrapper",
+    "WolframAlphaAPIWrapper",
 ]

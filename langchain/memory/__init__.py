@@ -3,6 +3,7 @@ from langchain.memory.buffer import (
     ConversationStringBufferMemory,
 )
 from langchain.memory.buffer_window import ConversationBufferWindowMemory
+from langchain.memory.chat_message_histories import MomentoChatMessageHistory
 from langchain.memory.chat_message_histories.cassandra import (
     CassandraChatMessageHistory,
 )
@@ -50,4 +51,5 @@ __all__ = [
     "FileChatMessageHistory",
     "MongoDBChatMessageHistory",
     "CassandraChatMessageHistory",
+    "MomentoChatMessageHistory",
 ]
