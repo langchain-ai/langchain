@@ -1,6 +1,6 @@
 from abc import ABC
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 import requests
 from pydantic import BaseModel, root_validator, validator
@@ -39,25 +39,24 @@ class GitHubIssuesLoader(BaseGitHubLoader):
     """If True include Pull Requests in results, otherwise ignore them."""
     milestone: Union[int, Literal["*", "none"], None] = None
     """If integer is passed, it should be a milestone's number field.
-        If the string * is passed, issues with any milestone are accepted.
-        If the string none is passed, issues without milestones are returned.
+        If the string '*' is passed, issues with any milestone are accepted.
+        If the string 'none' is passed, issues without milestones are returned.
     """
-    state: Literal["open", "closed", "all"] = "open"
-    """Filter on issue state. Can be one of: open, closed, all. Default is 'open'."""
-    assignee: Optional[Literal["*", "none"]] = None
-    """Filter on assigned user. Pass none for no user and * for any user."""
+    state: Optional[Literal["open", "closed", "all"]] = None
+    """Filter on issue state. Can be one of: 'open', 'closed', 'all'."""
+    assignee: Optional[str] = None
+    """Filter on assigned user. Pass 'none' for no user and '*' for any user."""
     creator: Optional[str] = None
     """Filter on the user that created the issue."""
     mentioned: Optional[str] = None
     """Filter on a user that's mentioned in the issue."""
     labels: Optional[List[str]] = None
     """Label names to filter one. Example: bug,ui,@high."""
-    sort: Literal["created", "updated", "comments"] = "created"
-    """What to sort results by. Can be one of: created, updated, comments.
+    sort: Optional[Literal["created", "updated", "comments"]] = None
+    """What to sort results by. Can be one of: 'created', 'updated', 'comments'.
         Default is 'created'."""
-    direction: Literal["asc", "desc"] = "desc"
-    """The direction to sort the results by. Can be one of: asc, desc.
-        Default is 'desc'."""
+    direction: Optional[Literal["asc", "desc"]] = None
+    """The direction to sort the results by. Can be one of: 'asc', 'desc'."""
     since: Optional[str] = None
     """Only show notifications updated after the given time.
         This is a timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ."""

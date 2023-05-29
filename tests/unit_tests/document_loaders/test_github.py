@@ -2,11 +2,11 @@ import pytest
 from pytest_mock import MockerFixture
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.github import GitHubLoader
+from langchain.document_loaders.github import GitHubIssuesLoader
 
 
 def test_initialization() -> None:
-    loader = GitHubLoader(repo="repo", access_token="access_token")
+    loader = GitHubIssuesLoader(repo="repo", access_token="access_token")
     assert loader.repo == "repo"
     assert loader.access_token == "access_token"
     assert loader.headers == {
@@ -15,9 +15,27 @@ def test_initialization() -> None:
     }
 
 
+def test_invalid_initialization() -> None:
+    # Invalid parameter
+    with pytest.raises(ValueError):
+        GitHubIssuesLoader(invalid="parameter")
+
+    # Invalid value for valid parameter
+    with pytest.raises(ValueError):
+        GitHubIssuesLoader(state="invalid_state")
+
+    # Invalid type for labels
+    with pytest.raises(ValueError):
+        GitHubIssuesLoader(labels="not_a_list")
+
+    # Invalid date format for since
+    with pytest.raises(ValueError):
+        GitHubIssuesLoader(since="not_a_date")
+
+
 def test_load(mocker: MockerFixture) -> None:
     mocker.patch("requests.get", return_value=mocker.MagicMock(json=lambda: []))
-    loader = GitHubLoader(repo="repo", access_token="access_token")
+    loader = GitHubIssuesLoader(repo="repo", access_token="access_token")
     documents = loader.load()
     assert documents == []
 
@@ -43,7 +61,7 @@ def test_parse_issue() -> None:
             "url": issue["html_url"],
             "title": issue["title"],
             "creator": issue["user"]["login"],  # type: ignore
-            "creation_time": issue["created_at"],
+            "created_at": issue["created_at"],
             "comments": issue["comments"],
             "state": issue["state"],
             "labels": [label["name"] for label in issue["labels"]],  # type: ignore
@@ -54,25 +72,29 @@ def test_parse_issue() -> None:
             "is_pull_request": False,
         },
     )
-    loader = GitHubLoader(repo="repo", access_token="access_token")
+    loader = GitHubIssuesLoader(repo="repo", access_token="access_token")
     document = loader.parse_issue(issue)
     assert document == expected_document
 
 
-def test_build_url() -> None:
-    loader = GitHubLoader(repo="repo", access_token="access_token")
-
+def test_url() -> None:
     # No parameters
-    url = loader.build_url()
-    assert url == "https://api.github.com/repos/repo/issues?"
+    loader = GitHubIssuesLoader(repo="repo", access_token="access_token")
+    assert loader.url == "https://api.github.com/repos/repo/issues?"
 
     # parameters: state,  sort
-    url = loader.build_url(state="open", sort="created")
-    assert url == "https://api.github.com/repos/repo/issues?state=open&sort=created"
+    loader = GitHubIssuesLoader(
+        repo="repo", access_token="access_token", state="open", sort="created"
+    )
+    assert (
+        loader.url == "https://api.github.com/repos/repo/issues?state=open&sort=created"
+    )
 
     # parameters: milestone, state, assignee, creator, mentioned, labels, sort,
     # direction, since
-    url = loader.build_url(
+    loader = GitHubIssuesLoader(
+        repo="repo",
+        access_token="access_token",
         milestone="*",
         state="closed",
         assignee="user1",
@@ -83,24 +105,8 @@ def test_build_url() -> None:
         direction="asc",
         since="2023-05-26T00:00:00Z",
     )
-    assert url == (
+    assert loader.url == (
         "https://api.github.com/repos/repo/issues?milestone=*&state=closed"
         "&assignee=user1&creator=user2&mentioned=user3&labels=bug,ui,@high"
         "&sort=comments&direction=asc&since=2023-05-26T00:00:00Z"
     )
-
-    # Invalid parameter
-    with pytest.raises(ValueError):
-        loader.build_url(invalid="parameter")
-
-    # Invalid value for valid parameter
-    with pytest.raises(ValueError):
-        loader.build_url(state="invalid_state")
-
-    # Invalid type for labels
-    with pytest.raises(ValueError):
-        loader.build_url(labels="not_a_list")
-
-    # Invalid date format for since
-    with pytest.raises(ValueError):
-        loader.build_url(since="not_a_date")
