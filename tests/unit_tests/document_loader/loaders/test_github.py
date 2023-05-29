@@ -51,7 +51,7 @@ def test_parse_issue() -> None:
             "milestone": issue["milestone"]["title"],  # type: ignore
             "locked": issue["locked"],
             "number": issue["number"],
-            "is_pull_request": False
+            "is_pull_request": False,
         },
     )
     loader = GitHubLoader(repo="repo", access_token="access_token")
