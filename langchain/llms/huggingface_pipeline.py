@@ -143,7 +143,7 @@ class HuggingFacePipeline(LLM):
                 f"currently only {VALID_TASKS} are supported"
             )
         if deepspeed_args is not None:
-            import deepseed
+            import deepspeed
             world_size = 1
             dtype = torch.float16
             pipeline.model = deepspeed.init_inference(pipeline.model,
