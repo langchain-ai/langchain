@@ -12,15 +12,29 @@ Current objective: {current_step}
 
 {agent_scratchpad}"""
 
+TASK_SUFFIX = """{objective}
+
+"""
+
 
 def load_agent_executor(
-    llm: BaseLanguageModel, tools: List[BaseTool], verbose: bool = False
+    llm: BaseLanguageModel,
+    tools: List[BaseTool],
+    include_task_in_prompt: bool = False,
+    verbose: bool = False,
 ) -> ChainExecutor:
+    input_variables = ["previous_steps", "current_step", "agent_scratchpad"]
+    TEMPLATE = HUMAN_MESSAGE_TEMPLATE
+
+    if include_task_in_prompt:
+        input_variables.append("objective")
+        TEMPLATE = TASK_SUFFIX + TEMPLATE
+
     agent = StructuredChatAgent.from_llm_and_tools(
         llm,
         tools,
-        human_message_template=HUMAN_MESSAGE_TEMPLATE,
-        input_variables=["previous_steps", "current_step", "agent_scratchpad"],
+        human_message_template=TEMPLATE,
+        input_variables=input_variables,
     )
     agent_executor = AgentExecutor.from_agent_and_tools(
         agent=agent, tools=tools, verbose=verbose
