@@ -447,13 +447,12 @@ class Chroma(VectorStore):
             metadatas=[metadata],
         )
 
-    @xor_args(("embeddings", "documents", "texts"))
     def upsert(
         self,
         ids: Optional[List[str]] = None,
-        embeddings: Optional[List[List[int, float]]] = None,
+        embeddings: Optional[List[List[Union[int, float]]]] = None,
         documents: Optional[List[Document]] = None,
-        texts: Iterable[str] = None,
+        texts: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
     ) -> List[str]:
         """Update the embeddings, metadatas or documents for provided ids,
@@ -469,14 +468,23 @@ class Chroma(VectorStore):
         Returns:
             List[str]: List of IDs of the added texts.
         """
-        if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+        if embeddings is None and documents is None and texts is None:
+            raise ValueError(
+                """For upsert you must provide atleast one of
+                (embeddings, documents, texts)"""
+            )
+        if documents is not None and texts is not None:
+            raise ValueError("You most provide either documents or texts, not both.")
 
+        if documents is not None:
+            texts = [doc.page_content for doc in documents]
+            metadatas = [doc.metadata for doc in documents]
+
+        length = len(texts) if texts is not None else len(embeddings)
+        if ids is None:
+            ids = [str(uuid.uuid1()) for _ in range(length)]
         self._collection.upsert(
-            ids=ids,
-            embeddings=embeddings,
-            metadatas=metadatas,
-            documents=texts
+            ids=ids, embeddings=embeddings, metadatas=metadatas, documents=texts
         )
         return ids
 
