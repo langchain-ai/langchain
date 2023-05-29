@@ -1,6 +1,6 @@
 from abc import ABC
 from datetime import datetime
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, Iterator, List, Literal, Optional, Union
 
 import requests
 from pydantic import BaseModel, root_validator, validator
@@ -73,6 +73,45 @@ class GitHubIssuesLoader(BaseGitHubLoader):
                 )
         return v
 
+    def lazy_load(self) -> Iterator[Document]:
+        """
+        Get issues of a GitHub repository.
+
+        Returns:
+            A list of Documents with attributes:
+                - page_content
+                - metadata
+                    - url
+                    - title
+                    - creator
+                    - created_at
+                    - last_update_time
+                    - closed_time
+                    - number of comments
+                    - state
+                    - labels
+                    - assignee
+                    - assignees
+                    - milestone
+                    - locked
+                    - number
+                    - is_pull_request
+        """
+        url: Optional[str] = self.url
+        while url:
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            issues = response.json()
+            for issue in issues:
+                doc = self.parse_issue(issue)
+                if not self.include_prs and doc.metadata["is_pull_request"]:
+                    continue
+                yield doc
+            if response.links and response.links.get("next"):
+                url = response.links["next"]["url"]
+            else:
+                url = None
+
     def load(self) -> List[Document]:
         """
         Get issues of a GitHub repository.
@@ -97,14 +136,7 @@ class GitHubIssuesLoader(BaseGitHubLoader):
                     - number
                     - is_pull_request
         """
-        response = requests.get(self.url, headers=self.headers)
-        response.raise_for_status()
-        issues = response.json()
-        documents = [self.parse_issue(issue) for issue in issues]
-        if self.include_prs:
-            return documents
-        else:
-            return [doc for doc in documents if not doc.metadata["is_pull_request"]]
+        return list(self.lazy_load())
 
     def parse_issue(self, issue: dict) -> Document:
         """Create Document objects from a list of GitHub issues."""
@@ -122,7 +154,8 @@ class GitHubIssuesLoader(BaseGitHubLoader):
             "number": issue["number"],
             "is_pull_request": "pull_request" in issue,
         }
-        return Document(page_content=issue["body"], metadata=metadata)
+        content = issue["body"] if issue["body"] is not None else ""
+        return Document(page_content=content, metadata=metadata)
 
     @property
     def query_params(self) -> str:
