@@ -388,18 +388,6 @@ class OutputParserException(ValueError):
         self.send_to_llm = send_to_llm
 
 
-class ToolException(Exception):
-    """An optional exception that tool throws when execution error occurs.
-
-    When this exception is thrown, the agent will not stop working,
-    but will handle the exception according to the handle_tool_error
-    variable of the tool, and the processing result will be returned
-    to the agent as observation, and printed in red on the console.
-    """
-
-    pass
-
-
 class BaseDocumentTransformer(ABC):
     """Base interface for transforming documents."""
 

@@ -24,7 +24,6 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
-from langchain.schema import ToolException
 
 
 class SchemaAnnotationError(TypeError):
@@ -111,6 +110,18 @@ def create_schema_from_function(
     return _create_subset_model(
         f"{model_name}Schema", inferred_model, list(filtered_args)
     )
+
+
+class ToolException(Exception):
+    """An optional exception that tool throws when execution error occurs.
+
+    When this exception is thrown, the agent will not stop working,
+    but will handle the exception according to the handle_tool_error
+    variable of the tool, and the processing result will be returned
+    to the agent as observation, and printed in red on the console.
+    """
+
+    pass
 
 
 class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
@@ -256,28 +267,36 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
                 if new_arg_supported
                 else self._run(*tool_args, **tool_kwargs)
             )
-        except (Exception, KeyboardInterrupt) as e:
-            if isinstance(e, ToolException) and self.handle_tool_error:
-                if isinstance(self.handle_tool_error, bool):
-                    if e.args:
-                        observation = e.args[0]
-                    else:
-                        observation = "Tool execution error"
-                elif isinstance(self.handle_tool_error, str):
-                    observation = self.handle_tool_error
-                elif callable(self.handle_tool_error):
-                    observation = self.handle_tool_error(e)
-                else:
-                    raise ValueError("Got unexpected type of `handle_tool_error`")
-                run_manager.on_tool_end(
-                    str(observation), color="red", name=self.name, **kwargs
-                )
-                return observation
-            else:
+        except ToolException as e:
+            if not self.handle_tool_error:
                 run_manager.on_tool_error(e)
                 raise e
-        run_manager.on_tool_end(str(observation), color=color, name=self.name, **kwargs)
-        return observation
+            elif isinstance(self.handle_tool_error, bool):
+                if e.args:
+                    observation = e.args[0]
+                else:
+                    observation = "Tool execution error"
+            elif isinstance(self.handle_tool_error, str):
+                observation = self.handle_tool_error
+            elif callable(self.handle_tool_error):
+                observation = self.handle_tool_error(e)
+            else:
+                raise ValueError(
+                    f"Got unexpected type of `handle_tool_error`. Expected bool, str "
+                    f"or callable. Received: {self.handle_tool_error}"
+                )
+            run_manager.on_tool_end(
+                str(observation), color="red", name=self.name, **kwargs
+            )
+            return observation
+        except (Exception, KeyboardInterrupt) as e:
+            run_manager.on_tool_error(e)
+            raise e
+        else:
+            run_manager.on_tool_end(
+                str(observation), color=color, name=self.name, **kwargs
+            )
+            return observation
 
     async def arun(
         self,
@@ -312,30 +331,36 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
                 if new_arg_supported
                 else await self._arun(*tool_args, **tool_kwargs)
             )
-        except (Exception, KeyboardInterrupt) as e:
-            if isinstance(e, ToolException) and self.handle_tool_error:
-                if isinstance(self.handle_tool_error, bool):
-                    if e.args:
-                        observation = e.args[0]
-                    else:
-                        observation = "Tool execution error"
-                elif isinstance(self.handle_tool_error, str):
-                    observation = self.handle_tool_error
-                elif callable(self.handle_tool_error):
-                    observation = self.handle_tool_error(e)
-                else:
-                    raise ValueError("Got unexpected type of `handle_tool_error`")
-                await run_manager.on_tool_end(
-                    str(observation), color="red", name=self.name, **kwargs
-                )
-                return observation
-            else:
+        except ToolException as e:
+            if not self.handle_tool_error:
                 await run_manager.on_tool_error(e)
                 raise e
-        await run_manager.on_tool_end(
-            str(observation), color=color, name=self.name, **kwargs
-        )
-        return observation
+            elif isinstance(self.handle_tool_error, bool):
+                if e.args:
+                    observation = e.args[0]
+                else:
+                    observation = "Tool execution error"
+            elif isinstance(self.handle_tool_error, str):
+                observation = self.handle_tool_error
+            elif callable(self.handle_tool_error):
+                observation = self.handle_tool_error(e)
+            else:
+                raise ValueError(
+                    f"Got unexpected type of `handle_tool_error`. Expected bool, str "
+                    f"or callable. Received: {self.handle_tool_error}"
+                )
+            await run_manager.on_tool_end(
+                str(observation), color="red", name=self.name, **kwargs
+            )
+            return observation
+        except (Exception, KeyboardInterrupt) as e:
+            await run_manager.on_tool_error(e)
+            raise e
+        else:
+            await run_manager.on_tool_end(
+                str(observation), color=color, name=self.name, **kwargs
+            )
+            return observation
 
     def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
         """Make tool callable."""
