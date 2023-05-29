@@ -19,6 +19,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         alpha: float = 0.5,
         k: int = 4,
         attributes: Optional[List[str]] = None,
+        create_schema_if_missing: bool = True,
     ):
         try:
             import weaviate
@@ -39,6 +40,19 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         self._query_attrs = [self._text_key]
         if attributes is not None:
             self._query_attrs.extend(attributes)
+
+        if create_schema_if_missing:
+            self._create_schema_if_missing()
+
+    def _create_schema_if_missing(self) -> None:
+        class_obj = {
+            "class": self._index_name,
+            "properties": [{"name": self._text_key, "dataType": ["text"]}],
+            "vectorizer": "text2vec-openai",
+        }
+
+        if not self._client.schema.exists(self._index_name):
+            self._client.schema.create_class(class_obj)
 
     class Config:
         """Configuration for this pydantic object."""
