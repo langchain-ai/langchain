@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+import torch
 
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.loading import load_llm
@@ -55,5 +56,11 @@ def test_init_with_pipeline() -> None:
         "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
     )
     llm = HuggingFacePipeline(pipeline=pipe)
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+def test_deepspeed_support():
+    model_id = "gpt2"
+    llm = HuggingFacePipeline.from_model_id(model_id=model_id, task="text-generation", model_kwargs={"torch_dtype":torch.float16}, deepspeed_args={"dtype": "fp16"})
     output = llm("Say foo:")
     assert isinstance(output, str)
