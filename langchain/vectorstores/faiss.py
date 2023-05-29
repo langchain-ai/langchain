@@ -193,8 +193,9 @@ class FAISS(VectorStore):
         """
         faiss = dependable_faiss_import()
         vector = np.array([embedding], dtype=np.float32)
-        if self._normalize_L2:
+        if getattr(self, "_normalize_L2", None):
             faiss.normalize_L2(vector)
+
         scores, indices = self.index.search(vector, k)
         docs = []
         for j, i in enumerate(indices[0]):

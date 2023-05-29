@@ -1,6 +1,7 @@
 """Wrapper around OpenAI embedding models."""
 from __future__ import annotations
 
+import os
 import logging
 from typing import (
     Any,
@@ -107,7 +108,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     client: Any  #: :meta private:
     model: str = "text-embedding-ada-002"
-    deployment: str = model  # to support Azure OpenAI Service custom deployment names
+    _deployment: str  # to support Azure OpenAI Service custom deployment names
     openai_api_version: Optional[str] = None
     # to support Azure OpenAI Service custom endpoints
     openai_api_base: Optional[str] = None
@@ -118,20 +119,60 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     embedding_ctx_length: int = 8191
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
-    allowed_special: Union[Literal["all"], Set[str]] = set()
-    disallowed_special: Union[Literal["all"], Set[str], Sequence[str]] = "all"
+    _allowed_special: Union[Literal["all"], Set[str]] = set()
+    _disallowed_special: Union[Literal["all"], Set[str], Sequence[str]] = "all"
     chunk_size: int = 1000
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    _request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout in seconds for the OpenAPI request."""
-    headers: Any = None
+    _headers: Any = None
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+
+    @property
+    def deployment(self) -> str:
+        """Get the deployment name."""
+        if getattr(self, "_deployment", None):
+            return self._deployment
+        return os.environ.get("OPENAI_EMBEDDINGS_DEPLOYMENT", "")
+
+    @property
+    def allowed_special(self) -> Union[Literal["all"], Set[str]]:
+        """Get the allowed special tokens."""
+        if getattr(self, "_allowed_special", None):
+            return self._allowed_special
+
+        return set()
+
+    @property
+    def disallowed_special(self) -> Union[Literal["all"], Set[str], Sequence[str]]:
+        """Get the disallowed special tokens."""
+        if getattr(self, "_disallowed_special", None):
+            return self._disallowed_special
+
+        return "all"
+
+    @property
+    def request_timeout(self) -> Optional[Union[float, Tuple[float, float]]]:
+        """Get the request timeout."""
+        if getattr(self, "_request_timeout", None):
+            return self._request_timeout
+
+        return None
+
+    @property
+    def headers(self) -> Any:
+        """Get the request headers."""
+        if getattr(self, "_headers", None):
+            return self._headers
+
+        return None
+
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
