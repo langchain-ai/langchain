@@ -12,8 +12,8 @@ from typing import (
     Optional,
     Tuple,
     Type,
-    Union
-    )
+    Union,
+)
 
 import numpy as np
 
@@ -163,11 +163,7 @@ class Chroma(VectorStore):
             List[str]: List of IDs of the added texts.
         """
 
-        return self.upsert(
-            ids=ids,
-            texts=texts,
-            metadatas=metadatas
-        )
+        return self.upsert(ids=ids, texts=texts, metadatas=metadatas)
 
     def similarity_search(
         self,
@@ -343,7 +339,6 @@ class Chroma(VectorStore):
         where_document: Optional[Dict[Any, Any]] = None,
         include: Optional[List[str]] = ["documents"],
     ) -> Dict[str, Any]:
-
         """Get embeddings and their associate data from the data store.
         If no ids or where filter is provided
         returns all embeddings up to limit starting at offset.
@@ -410,7 +405,7 @@ class Chroma(VectorStore):
         Returns:
             List of IDs
         """
-        return self._collection.get(include=[])['ids']
+        return self._collection.get(include=[])["ids"]
 
     def persist(self) -> None:
         """Persist the collection.
