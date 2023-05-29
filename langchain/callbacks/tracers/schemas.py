@@ -149,7 +149,6 @@ class RunCreate(RunBase):
 
 class RunUpdate(BaseModel):
     end_time: Optional[datetime.datetime]
-    extra: Optional[dict]
     error: Optional[str]
     outputs: Optional[dict]
     parent_run_id: Optional[UUID]

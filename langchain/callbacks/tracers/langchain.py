@@ -1,9 +1,9 @@
 """A Tracer implementation that records to LangChain endpoint."""
 from __future__ import annotations
 
-import asyncio
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
@@ -119,6 +119,8 @@ class LangChainTracer(BaseTracer):
         self.example_id = example_id
         self.session_name = session_name or os.getenv("LANGCHAIN_SESSION", "default")
         self.session_extra = session_extra
+        # set max_workers to 1 to process tasks in order
+        self.executor = ThreadPoolExecutor(max_workers=1)
 
     def on_chat_model_start(
         self,
@@ -189,26 +191,6 @@ class LangChainTracer(BaseTracer):
         self.session = TracerSession(**response.json())
         return self.session
 
-    # def _persist_run_nested(self, run: Run) -> None:
-    #     """Persist a run."""
-    #     session = self.ensure_session()
-    #     child_runs = run.child_runs
-    #     run_dict = run.dict()
-    #     del run_dict["child_runs"]
-    #     run_create = RunCreate(**run_dict, session_id=session.id)
-    #     try:
-    #         response = requests.post(
-    #             f"{self._endpoint}/runs",
-    #             data=run_create.json(),
-    #             headers=self._headers,
-    #         )
-    #         response.raise_for_status()
-    #     except Exception as e:
-    #         logging.warning(f"Failed to persist run: {e}")
-    #     for child_run in child_runs:
-    #         child_run.parent_run_id = run.id
-    #         self._persist_run_nested(child_run)
-    #
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
 
@@ -266,40 +248,40 @@ class LangChainTracer(BaseTracer):
 
     def _on_llm_start(self, run: Run) -> None:
         """Persist an LLM run."""
-        self._persist_run_single(run)
+        self.executor.submit(self._persist_run_single, run)
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Persist an LLM run."""
-        self._persist_run_single(run)
+        self.executor.submit(self._persist_run_single, run)
 
     def _on_llm_end(self, run: Run) -> None:
         """Process the LLM Run."""
-        self._update_run_single(run)
+        self.executor.submit(self._update_run_single, run)
 
     def _on_llm_error(self, run: Run) -> None:
         """Process the LLM Run upon error."""
-        self._update_run_single(run)
+        self.executor.submit(self._update_run_single, run)
 
     def _on_chain_start(self, run: Run) -> None:
         """Process the Chain Run upon start."""
-        self._persist_run_single(run)
+        self.executor.submit(self._persist_run_single, run)
 
     def _on_chain_end(self, run: Run) -> None:
         """Process the Chain Run."""
-        self._update_run_single(run)
+        self.executor.submit(self._update_run_single, run)
 
     def _on_chain_error(self, run: Run) -> None:
         """Process the Chain Run upon error."""
-        self._update_run_single(run)
+        self.executor.submit(self._update_run_single, run)
 
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""
-        self._persist_run_single(run)
+        self.executor.submit(self._persist_run_single, run)
 
     def _on_tool_end(self, run: Run) -> None:
         """Process the Tool Run."""
-        self._update_run_single(run)
+        self.executor.submit(self._update_run_single, run)
 
     def _on_tool_error(self, run: Run) -> None:
         """Process the Tool Run upon error."""
-        self._update_run_single(run)
+        self.executor.submit(self._update_run_single, run)
