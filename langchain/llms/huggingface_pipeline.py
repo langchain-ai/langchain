@@ -144,7 +144,13 @@ class HuggingFacePipeline(LLM):
                 f"currently only {VALID_TASKS} are supported"
             )
         if deepspeed_args is not None:
-            import deepspeed
+            try:
+                import deepspeed
+            except ImportError as e:
+                raise ValueError(
+                    "Could not import deepspeed python package. "
+                    "Please install it with `pip install deepspeed`."
+                ) from e
             world_size = 1
             if "dtype" in deepspeed_args:
                 deepspeed_dtype = deepspeed_args["dtype"]
