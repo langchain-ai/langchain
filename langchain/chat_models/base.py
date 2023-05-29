@@ -101,8 +101,24 @@ class BaseChatModel(BaseLanguageModel, ABC):
         arbitrary_types_allowed = True
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
-        # todo
-        return {}
+        """Combine general llm outputs by aggregating them into lists
+        e.g. [{"token_usage": 12}, {"token_usage": 18}] -> {"token_usage": [12, 18]}
+
+        Subclasses can override this function if there's a semantically better way to
+        combine llm outputs
+        e.g. [{"token_usage": 12}, {"token_usage": 18}] -> {"token_usage": 30}
+        """
+        combined_outputs = {}
+
+        for llm_output in llm_outputs:
+            if llm_output is not None:
+                for key, value in llm_output.items():
+                    if key not in combined_outputs:
+                        combined_outputs[key] = [value]
+                    else:
+                        combined_outputs[key].append(value)
+
+        return combined_outputs
 
     def generate(
         self,

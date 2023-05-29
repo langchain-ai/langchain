@@ -567,7 +567,7 @@ class MomentoCache(BaseCache):
         """
         from momento.responses import CacheGet
 
-        generations = []
+        generations: RETURN_VAL_TYPE = []
 
         get_response = self.cache_client.get(
             self.cache_name, self.__key(prompt, llm_string)

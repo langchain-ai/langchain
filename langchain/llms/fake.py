@@ -22,7 +22,6 @@ class FakeListLLM(LLM):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
-        """First try to lookup in queries, else return 'foo' or 'bar'."""
         response = self.responses[self.i]
         self.i += 1
         return response
