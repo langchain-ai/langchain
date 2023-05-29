@@ -20,8 +20,8 @@ TASK_SUFFIX = """{objective}
 def load_agent_executor(
     llm: BaseLanguageModel,
     tools: List[BaseTool],
-    include_task_in_prompt: bool = False,
     verbose: bool = False,
+    include_task_in_prompt: bool = False,
 ) -> ChainExecutor:
     input_variables = ["previous_steps", "current_step", "agent_scratchpad"]
     TEMPLATE = HUMAN_MESSAGE_TEMPLATE
