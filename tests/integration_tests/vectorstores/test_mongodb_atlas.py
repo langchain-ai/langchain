@@ -25,7 +25,7 @@ def get_test_client() -> Optional[MongoClient]:
 
         client = MongoClient(CONNECTION_STRING)
         return client
-    except:
+    except:  # noqa: E722
         return None
 
 
@@ -38,17 +38,17 @@ class TestMongoDBAtlasVectorSearch:
     @classmethod
     def setup_class(cls) -> None:
         # insure the test collection is empty
-        assert TEST_CLIENT[DB_NAME][COLLECTION_NAME].count_documents({}) == 0  # type: ignore[index]
+        assert TEST_CLIENT[DB_NAME][COLLECTION_NAME].count_documents({}) == 0  # type: ignore[index]  # noqa: E501
 
     @classmethod
     def teardown_class(cls) -> None:
         # delete all the documents in the collection
-        TEST_CLIENT[DB_NAME][COLLECTION_NAME].delete_many({})
+        TEST_CLIENT[DB_NAME][COLLECTION_NAME].delete_many({})  # type: ignore[index]
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # delete all the documents in the collection
-        TEST_CLIENT[DB_NAME][COLLECTION_NAME].delete_many({})
+        TEST_CLIENT[DB_NAME][COLLECTION_NAME].delete_many({})  # type: ignore[index]
 
     @pytest.mark.vcr()
     def test_from_documents(self, embedding: Embeddings) -> None:
