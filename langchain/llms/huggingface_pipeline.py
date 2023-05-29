@@ -80,6 +80,7 @@ class HuggingFacePipeline(LLM):
                 AutoModelForCausalLM,
                 AutoModelForSeq2SeqLM,
                 AutoTokenizer,
+                AutoConfig
             )
             from transformers import pipeline as hf_pipeline
 
@@ -145,12 +146,32 @@ class HuggingFacePipeline(LLM):
         if deepspeed_args is not None:
             import deepspeed
             world_size = 1
-            dtype = torch.float16
+            if "dtype" in deepspeed_args:
+                deepspeed_dtype = deepspeed_args["dtype"]
+                if deepspeed_dtype == "float32" or deepspeed_dtype == "fp32":
+                    deepspeed_dtype = torch.float32
+                elif deepspeed_dtype == "float16" or deepspeed_dtype == "fp16":
+                    deepspeed_dtype = torch.float16
+                elif deepspeed_dtype == "int8":
+                    deepspeed_dtype = torch.int8
+                else:
+                    raise ValueError(
+                        f"Got invalid dtype {deepspeed_dtype} for DeepSpeed"
+                    )
+
+            else:
+                deepspeed_dtype = torch.float16
+            if "max_tokens" in deepspeed_args:
+                max_tokens = deepspeed_args["max_tokens"]
+            else:
+                config = AutoConfig.from_pretrained(model_id, **_model_kwargs)
+                max_tokens = config.n_positions
+
             pipeline.model = deepspeed.init_inference(pipeline.model,
                                 mp_size=world_size,
-                                dtype=dtype,
+                                dtype=deepspeed_dtype,
                                 replace_method='auto',
-                                max_tokens=2048,
+                                max_tokens=max_tokens,
             replace_with_kernel_inject=True)
 
 
