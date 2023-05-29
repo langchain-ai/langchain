@@ -551,20 +551,38 @@ class Chroma(VectorStore):
         client: Optional[chromadb.Client] = None,  # Add this line
         **kwargs: Any,
     ) -> Chroma:
-        """Create a Chroma vectorstore from a list of documents.
+        """Create a Chroma vectorstore from a list of documents.\n
+        Used to load data to vectorstore from dataloaders(langchain.document_loaders)
 
         If a persist_directory is specified, the collection will be persisted there.
         Otherwise, the data will be ephemeral in-memory.
 
-        Args:
+        Args:\n
             collection_name (str): Name of the collection to create.
             persist_directory (Optional[str]): Directory to persist the collection.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
-            documents (List[Document]): List of documents to add to the vectorstore.
+            documents (List[Document]): List of documents(langchain.schema.Document).
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
-        Returns:
+        Returns:\n
             Chroma: Chroma vectorstore.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.vectorstores import Chroma
+                from langchain.embeddings.openai import OpenAIEmbeddings
+                from langchain.document_loaders import DirectoryLoader, PyMuPDFLoader
+
+                loader = DirectoryLoader(
+                    'dir', glob="**/*.pdf", loader_cls=PyMuPDFLoader)
+                documents = loader.load()
+                ...
+                embeddings = OpenAIEmbeddings()
+
+                vectorstore =  Chroma.from_documents(
+                    documents=documents, embedding=embeddings,
+                )
         """
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
