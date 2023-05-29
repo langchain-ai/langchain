@@ -349,13 +349,13 @@ class ConfluenceLoader(BaseLoader):
             attachment_texts = []
         text = BeautifulSoup(
             page["body"]["storage"]["value"], "lxml"
-        ).get_text() + "".join(attachment_texts)
+        ).get_text(" ", strip=True) + "".join(attachment_texts)
         if include_comments:
             comments = self.confluence.get_page_comments(
                 page["id"], expand="body.view.value", depth="all"
             )["results"]
             comment_texts = [
-                BeautifulSoup(comment["body"]["view"]["value"], "lxml").get_text()
+                BeautifulSoup(comment["body"]["view"]["value"], "lxml").get_text(" ", strip=True)
                 for comment in comments
             ]
             text = text + "".join(comment_texts)
