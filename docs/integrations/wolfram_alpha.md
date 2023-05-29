@@ -3,7 +3,7 @@
 >[WolframAlpha](https://en.wikipedia.org/wiki/WolframAlpha) is an answer engine developed by `Wolfram Research`. 
 > It answers factual queries by computing answers from externally sourced data.
 
-This page covers how to use the Wolfram Alpha API within LangChain.
+This page covers how to use the `Wolfram Alpha API` within LangChain.
 
 ## Installation and Setup
 - Install requirements with 
