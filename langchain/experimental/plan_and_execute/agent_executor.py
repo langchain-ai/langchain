@@ -41,7 +41,7 @@ class PlanAndExecute(Chain):
         for step in plan.steps:
             _new_inputs = {"previous_steps": self.step_container, "current_step": step}
             if "objective" in self.executor.chain.input_keys:
-                _new_inputs["objective"] = inputs["input"]
+                _new_inputs["objective"] = inputs[self.input_key]
 
             new_inputs = {**_new_inputs, **inputs}
             response = self.executor.step(
