@@ -10,6 +10,8 @@ from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_env
 from langchain.vectorstores.base import VectorStore
 
+from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
 
