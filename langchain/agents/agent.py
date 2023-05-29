@@ -941,7 +941,7 @@ class AgentExecutor(Chain):
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
-            [tool.name for tool in self.tools], excluded_colors=["green"]
+            [tool.name for tool in self.tools], excluded_colors=["green", "red"]
         )
         intermediate_steps: List[Tuple[AgentAction, str]] = []
         # Let's start tracking the number of iterations and time elapsed
