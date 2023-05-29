@@ -41,9 +41,9 @@ def test_chroma_with_metadatas() -> None:
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
-def test_user_defined_foreign_key() -> None:
-    doc1 = Document(page_content="foo", foreign_key="1")
-    doc2 = Document(page_content="bar", foreign_key="2")
+def test_user_defined_foreign_id() -> None:
+    doc1 = Document(page_content="foo", foreign_id="1")
+    doc2 = Document(page_content="bar", foreign_id="2")
     docs = [doc1, doc2]
 
     docsearch = Chroma.from_documents(
@@ -51,8 +51,8 @@ def test_user_defined_foreign_key() -> None:
     )
 
     output = docsearch.get()
-    assert output[0].foreign_key == "1"
-    assert output[1].foreign_key == "2"
+    assert output[0].foreign_id == "1"
+    assert output[1].foreign_id == "2"
 
 
 def test_chroma_with_metadatas_with_scores() -> None:
