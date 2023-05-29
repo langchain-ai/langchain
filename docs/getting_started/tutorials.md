@@ -1,8 +1,11 @@
 # Tutorials
 
-This is a collection of `LangChain` tutorials on `YouTube`.
+This is a collection of `LangChain` tutorials mostly on `YouTube`.
 
 ⛓ icon marks a new video [last update 2023-05-15]
+
+###
+[LangChain AI Handbook](https://www.pinecone.io/learn/langchain/) By **James Briggs** and **Francisco Ingham**
 
 ###
 [LangChain Tutorials](https://www.youtube.com/watch?v=FuqdVNB_8c0&list=PL9V0lbeJ69brU-ojMpU1Y7Ic58Tap0Cw6) by [Edrick](https://www.youtube.com/@edrickdch):
