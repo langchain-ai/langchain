@@ -15,7 +15,7 @@ class BooleanOutputParser(BaseOutputParser[bool]):
             boolean
 
         """
-        cleaned_text = text.strip()
+        cleaned_text = text.upper().strip()
         if cleaned_text not in (self.true_val, self.false_val):
             raise ValueError(
                 f"BooleanOutputParser expected output value to either be "
