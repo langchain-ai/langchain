@@ -29,11 +29,16 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     return [
         # TODO: Chroma can do batch querying,
         # we shouldn't hard code to the 1st result
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
+        (Document(
+            page_content=result[0],
+            metadata=result[1] or {},
+            foreign_id=result[3]),
+            result[2])
         for result in zip(
             results["documents"][0],
             results["metadatas"][0],
             results["distances"][0],
+            results["ids"][0],
         )
     ]
 
@@ -314,7 +319,70 @@ class Chroma(VectorStore):
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
 
-    def get(self, include: Optional[List[str]] = None) -> Dict[str, Any]:
+    # should take document or list of documents
+    def update(self, documents: List[Document] | Document) -> None:
+        """Updates the collection. Handles logic for determing if a document needs to be
+        re-embedded or not.
+
+        Args:
+            documents (List[Document]): List of documents to update.
+        """
+        if isinstance(documents, Document):
+            documents = [documents]
+        # this logic would ideally happen server-side, but Chroma does not do
+        # embedding server-side yet, so we need to do the roundtrip
+        # we could also re-embed everything, but that is wasteful
+        
+        # first filter documents that have foreign_ids
+        documents_with_foreign_ids = [d for d in documents if d.foreign_id is not None]
+
+        # get the existing documents from the db
+        existing_docs = self._collection.get(
+            ids=[d.foreign_id for d in documents_with_foreign_ids],
+            include=["metadatas", "embeddings", "documents"])
+
+        ids_to_update = []
+        documents_to_update = []
+        metadatas_to_update = []
+        embeddings = []
+
+        for documents_with_foreign_id in documents_with_foreign_ids:
+            document_content = documents_with_foreign_id.page_content
+
+            # this is the index of the document in the existing_docs
+            index = existing_docs['ids'].index(documents_with_foreign_id.foreign_id)
+
+            content_in_chroma = existing_docs['documents'][index]
+
+            if document_content != content_in_chroma:
+                # if the content has changed, we need to re-embed
+                ids_to_update.append(documents_with_foreign_id.foreign_id)
+                documents_to_update.append(document_content)
+                metadatas_to_update.append(documents_with_foreign_id.metadata)
+                
+                if self._embedding_function is not None:
+                    embeddings.append(
+                        self._embedding_function.embed_documents(
+                            list(document_content)
+                            )[0]
+                        )
+            
+            else:
+                # the user may still be updating metadata   
+                ids_to_update.append(documents_with_foreign_id.foreign_id)
+                documents_to_update.append(document_content)
+                metadatas_to_update.append(documents_with_foreign_id.metadata)
+                embeddings.append(existing_docs['embeddings'][index])
+            
+        if (len(ids_to_update) == 0):
+            return
+        
+        self._collection.update(
+            ids=ids_to_update,
+            embeddings=embeddings,
+            metadatas=metadatas_to_update,
+            documents=documents_to_update
+        )
         """Gets the collection.
 
         Args:
@@ -395,14 +463,13 @@ class Chroma(VectorStore):
         cls: Type[Chroma],
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
-        ids: Optional[List[str]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         client: Optional[chromadb.Client] = None,  # Add this line
         **kwargs: Any,
     ) -> Chroma:
-        """Create a Chroma vectorstore from a list of documents.
+        """Create a Chroma vectorstore from a list of LangChain Documents.
 
         If a persist_directory is specified, the collection will be persisted there.
         Otherwise, the data will be ephemeral in-memory.
@@ -417,8 +484,14 @@ class Chroma(VectorStore):
         Returns:
             Chroma: Chroma vectorstore.
         """
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
+        texts = []
+        metadatas = []
+        ids = []
+        for doc in documents:
+            texts.append(doc.page_content)
+            metadatas.append(doc.metadata)
+            ids.append(doc.foreign_id or str(uuid.uuid1()))
+        
         return cls.from_texts(
             texts=texts,
             embedding=embedding,

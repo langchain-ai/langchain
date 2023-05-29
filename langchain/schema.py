@@ -267,10 +267,15 @@ class BaseChatMessageHistory(ABC):
 
 
 class Document(BaseModel):
-    """Interface for interacting with a document."""
+    """Interface for interacting with a document.
+
+    foreign_id is an optional field that can be used to store an id from an
+    external vector database or other database.
+    """
 
     page_content: str
     metadata: dict = Field(default_factory=dict)
+    foreign_id: Optional[str] = None
 
 
 class BaseRetriever(ABC):

@@ -41,6 +41,20 @@ def test_chroma_with_metadatas() -> None:
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
+def test_user_defined_foreign_key() -> None:
+    doc1 = Document(page_content="foo", foreign_key="1")
+    doc2 = Document(page_content="bar", foreign_key="2")
+    docs = [doc1, doc2]
+
+    docsearch = Chroma.from_documents(
+        collection_name="test_collection", documents=docs, embedding=FakeEmbeddings()
+    )
+
+    output = docsearch.get()
+    assert output[0].foreign_key == "1"
+    assert output[1].foreign_key == "2"
+
+
 def test_chroma_with_metadatas_with_scores() -> None:
     """Test end to end construction and scored search."""
     texts = ["foo", "bar", "baz"]
