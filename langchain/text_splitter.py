@@ -19,12 +19,27 @@ from typing import (
     Union,
 )
 
+import re
 from langchain.docstore.document import Document
 from langchain.schema import BaseDocumentTransformer
 
 logger = logging.getLogger(__name__)
 
 TS = TypeVar("TS", bound="TextSplitter")
+
+
+def _split_text(text: str, separator: str):
+    # Now that we have the separator, split the text
+    if separator:
+        # The parentheses in the pattern keep the delimiters in the result.
+        _splits = re.split(f'([{separator}])', text)
+        splits = [_splits[i] + _splits[i + 1] for i in range(0, len(_splits) - 1, 2)]
+        if len(_splits) % 2 == 1:
+            splits += _splits[-1:]
+    else:
+        splits = list(text)
+    return splits
+
 
 
 class TextSplitter(BaseDocumentTransformer, ABC):
@@ -35,6 +50,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
+        keep_separator: bool = False
     ):
         """Create a new TextSplitter."""
         if chunk_overlap > chunk_size:
@@ -45,6 +61,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
+        self._keep_separator = keep_separator
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
@@ -80,7 +97,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         else:
             return text
 
-    def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:
+    def _merge_splits(self, splits: Iterable[str], separator: str = "") -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
         separator_len = self._length_function(separator)
@@ -211,11 +228,8 @@ class CharacterTextSplitter(TextSplitter):
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
-        if self._separator:
-            splits = text.split(self._separator)
-        else:
-            splits = list(text)
-        return self._merge_splits(splits, self._separator)
+        splits = _split_text(text, self._separator)
+        return self._merge_splits(splits)
 
 
 class TokenTextSplitter(TextSplitter):
@@ -291,25 +305,24 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             if _s in text:
                 separator = _s
                 break
-        # Now that we have the separator, split the text
-        if separator:
-            splits = text.split(separator)
-        else:
-            splits = list(text)
+        splits = _split_text(text, separator)
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
+        print(splits)
+        print(separator)
         for s in splits:
             if self._length_function(s) < self._chunk_size:
                 _good_splits.append(s)
             else:
                 if _good_splits:
-                    merged_text = self._merge_splits(_good_splits, separator)
+                    merged_text = self._merge_splits(_good_splits)
                     final_chunks.extend(merged_text)
                     _good_splits = []
                 other_info = self.split_text(s)
+                print(other_info)
                 final_chunks.extend(other_info)
         if _good_splits:
-            merged_text = self._merge_splits(_good_splits, separator)
+            merged_text = self._merge_splits(_good_splits)
             final_chunks.extend(merged_text)
         return final_chunks
 
