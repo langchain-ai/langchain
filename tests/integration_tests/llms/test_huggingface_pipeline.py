@@ -61,6 +61,6 @@ def test_init_with_pipeline() -> None:
 
 def test_deepspeed_support():
     model_id = "gpt2"
-    llm = HuggingFacePipeline.from_model_id(model_id=model_id, task="text-generation", model_kwargs={"torch_dtype":torch.float16}, deepspeed_args={"dtype": "fp16"})
+    llm = HuggingFacePipeline.from_model_id(model_id=model_id,device=0, task="text-generation", model_kwargs={"torch_dtype":torch.float16}, deepspeed_args={"dtype": "fp16"})
     output = llm("Say foo:")
     assert isinstance(output, str)
