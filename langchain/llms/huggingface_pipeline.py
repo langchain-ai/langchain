@@ -54,6 +54,8 @@ class HuggingFacePipeline(LLM):
     """Key word arguments passed to the model."""
     pipeline_kwargs: Optional[dict] = None
     """Key word arguments passed to the pipeline."""
+    deepspeed_args: Optional[dict] = None
+    """Key word arguments passed to the deepspeed plugin."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -68,8 +70,10 @@ class HuggingFacePipeline(LLM):
         device: int = -1,
         model_kwargs: Optional[dict] = None,
         pipeline_kwargs: Optional[dict] = None,
+        deepspeed_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> LLM:
+        print("kwargs", kwargs)
         """Construct the pipeline object from model_id and task."""
         try:
             from transformers import (
@@ -138,6 +142,18 @@ class HuggingFacePipeline(LLM):
                 f"Got invalid task {pipeline.task}, "
                 f"currently only {VALID_TASKS} are supported"
             )
+        if deepspeed_args is not None:
+            import deepseed
+            world_size = 1
+            dtype = torch.float16
+            pipeline.model = deepspeed.init_inference(pipeline.model,
+                                mp_size=world_size,
+                                dtype=dtype,
+                                replace_method='auto',
+                                max_tokens=2048,
+            replace_with_kernel_inject=True)
+
+
         return cls(
             pipeline=pipeline,
             model_id=model_id,
