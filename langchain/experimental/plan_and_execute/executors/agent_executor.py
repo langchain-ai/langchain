@@ -24,16 +24,16 @@ def load_agent_executor(
     include_task_in_prompt: bool = False,
 ) -> ChainExecutor:
     input_variables = ["previous_steps", "current_step", "agent_scratchpad"]
-    TEMPLATE = HUMAN_MESSAGE_TEMPLATE
+    template = HUMAN_MESSAGE_TEMPLATE
 
     if include_task_in_prompt:
         input_variables.append("objective")
-        TEMPLATE = TASK_PREFIX + TEMPLATE
+        template = TASK_PREFIX + template
 
     agent = StructuredChatAgent.from_llm_and_tools(
         llm,
         tools,
-        human_message_template=TEMPLATE,
+        human_message_template=template,
         input_variables=input_variables,
     )
     agent_executor = AgentExecutor.from_agent_and_tools(
