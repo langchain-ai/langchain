@@ -748,5 +748,6 @@ class CodeTextSplitter(RecursiveCharacterTextSplitter):
             ]
         else:
             raise ValueError(
-                f"Language {language} is not supported! Please choose from {list(Language)}"
+                f"Language {language} is not supported! "
+                f"Please choose from {list(Language)}"
             )
