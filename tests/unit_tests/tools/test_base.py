@@ -13,7 +13,12 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.tools.base import BaseTool, SchemaAnnotationError, StructuredTool
+from langchain.tools.base import (
+    BaseTool,
+    SchemaAnnotationError,
+    StructuredTool,
+    ToolException,
+)
 
 
 def test_unnamed_decorator() -> None:
@@ -479,3 +484,75 @@ async def test_create_async_tool() -> None:
     assert test_tool.description == "test_description"
     assert test_tool.coroutine is not None
     assert await test_tool.arun("foo") == "foo"
+
+
+class _FakeExceptionTool(BaseTool):
+    name = "exception"
+    description = "an exception-throwing tool"
+    exception: Exception = ToolException()
+
+    def _run(self) -> str:
+        raise self.exception
+
+    async def _arun(self) -> str:
+        raise self.exception
+
+
+def test_exception_handling_bool() -> None:
+    _tool = _FakeExceptionTool(handle_tool_error=True)
+    expected = "Tool execution error"
+    actual = _tool.run({})
+    assert expected == actual
+
+
+def test_exception_handling_str() -> None:
+    expected = "foo bar"
+    _tool = _FakeExceptionTool(handle_tool_error=expected)
+    actual = _tool.run({})
+    assert expected == actual
+
+
+def test_exception_handling_callable() -> None:
+    expected = "foo bar"
+    handling = lambda _: expected  # noqa: E731
+    _tool = _FakeExceptionTool(handle_tool_error=handling)
+    actual = _tool.run({})
+    assert expected == actual
+
+
+def test_exception_handling_non_tool_exception() -> None:
+    _tool = _FakeExceptionTool(exception=ValueError())
+    with pytest.raises(ValueError):
+        _tool.run({})
+
+
+@pytest.mark.asyncio
+async def test_async_exception_handling_bool() -> None:
+    _tool = _FakeExceptionTool(handle_tool_error=True)
+    expected = "Tool execution error"
+    actual = await _tool.arun({})
+    assert expected == actual
+
+
+@pytest.mark.asyncio
+async def test_async_exception_handling_str() -> None:
+    expected = "foo bar"
+    _tool = _FakeExceptionTool(handle_tool_error=expected)
+    actual = await _tool.arun({})
+    assert expected == actual
+
+
+@pytest.mark.asyncio
+async def test_async_exception_handling_callable() -> None:
+    expected = "foo bar"
+    handling = lambda _: expected  # noqa: E731
+    _tool = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await _tool.arun({})
+    assert expected == actual
+
+
+@pytest.mark.asyncio
+async def test_async_exception_handling_non_tool_exception() -> None:
+    _tool = _FakeExceptionTool(exception=ValueError())
+    with pytest.raises(ValueError):
+        await _tool.arun({})
