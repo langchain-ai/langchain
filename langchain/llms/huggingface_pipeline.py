@@ -73,7 +73,6 @@ class HuggingFacePipeline(LLM):
         deepspeed_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> LLM:
-        print("kwargs", kwargs)
         """Construct the pipeline object from model_id and task."""
         try:
             from transformers import (
