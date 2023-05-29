@@ -30,8 +30,8 @@ def test_messages(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> Non
             content="summary",
         ),
         messages=[
-            Message(content="message", role="ai"),
-            Message(content="message2", role="human"),
+            Message(content="message", role="ai", metadata={"key": "value"}),
+            Message(content="message2", role="human", metadata={"key2": "value2"}),
         ],
     )
     zep_chat.zep_client.get_memory.return_value = mock_memory  # type: ignore

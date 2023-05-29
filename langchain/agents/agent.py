@@ -773,7 +773,11 @@ class AgentExecutor(Chain):
                 raise e
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
-                observation = "Invalid or incomplete response"
+                if e.send_to_llm:
+                    observation = str(e.observation)
+                    text = str(e.llm_output)
+                else:
+                    observation = "Invalid or incomplete response"
             elif isinstance(self.handle_parsing_errors, str):
                 observation = self.handle_parsing_errors
             elif callable(self.handle_parsing_errors):
@@ -781,6 +785,8 @@ class AgentExecutor(Chain):
             else:
                 raise ValueError("Got unexpected type of `handle_parsing_errors`")
             output = AgentAction("_Exception", observation, text)
+            if run_manager:
+                run_manager.on_agent_action(output, color="green")
             tool_run_kwargs = self.agent.tool_run_logging_kwargs()
             observation = ExceptionTool().run(
                 output.tool_input,

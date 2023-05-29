@@ -52,13 +52,11 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         try:
             import firebase_admin
             from firebase_admin import firestore
-        except ImportError as e:
-            logger.error(
-                "Failed to import Firebase and Firestore: %s. "
-                "Make sure to install the 'firebase-admin' module.",
-                e,
+        except ImportError:
+            raise ImportError(
+                "Could not import firebase-admin python package. "
+                "Please install it with `pip install firebase-admin`."
             )
-            raise e
 
         # For multiple instances, only initialize the app once.
         try:

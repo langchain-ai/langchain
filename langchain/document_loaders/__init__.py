@@ -10,6 +10,7 @@ from langchain.document_loaders.azure_blob_storage_container import (
 from langchain.document_loaders.azure_blob_storage_file import (
     AzureBlobStorageFileLoader,
 )
+from langchain.document_loaders.bibtex import BibtexLoader
 from langchain.document_loaders.bigquery import BigQueryLoader
 from langchain.document_loaders.bilibili import BiliBiliLoader
 from langchain.document_loaders.blackboard import BlackboardLoader
@@ -46,8 +47,10 @@ from langchain.document_loaders.ifixit import IFixitLoader
 from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.document_loaders.image_captions import ImageCaptionLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
+from langchain.document_loaders.joplin import JoplinLoader
 from langchain.document_loaders.json_loader import JSONLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
+from langchain.document_loaders.mastodon import MastodonTootsLoader
 from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
@@ -99,6 +102,7 @@ from langchain.document_loaders.unstructured import (
 from langchain.document_loaders.url import UnstructuredURLLoader
 from langchain.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain.document_loaders.url_selenium import SeleniumURLLoader
+from langchain.document_loaders.weather import WeatherDataLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.document_loaders.whatsapp_chat import WhatsAppChatLoader
 from langchain.document_loaders.wikipedia import WikipediaLoader
@@ -126,6 +130,7 @@ __all__ = [
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
+    "BibtexLoader",
     "BigQueryLoader",
     "BiliBiliLoader",
     "BlackboardLoader",
@@ -158,8 +163,10 @@ __all__ = [
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",
+    "JoplinLoader",
     "JSONLoader",
     "MWDumpLoader",
+    "MastodonTootsLoader",
     "MathpixPDFLoader",
     "ModernTreasuryLoader",
     "NotebookLoader",
@@ -210,6 +217,7 @@ __all__ = [
     "UnstructuredRTFLoader",
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
+    "WeatherDataLoader",
     "WebBaseLoader",
     "WhatsAppChatLoader",
     "WikipediaLoader",
