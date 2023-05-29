@@ -32,6 +32,19 @@ vectara = Vectara(
 ```
 The customer_id, corpus_id and api_key are optional, and if they are not supplied will be read from the environment variables `VECTARA_CUSTOMER_ID`, `VECTARA_CORPUS_ID` and `VECTARA_API_KEY`, respectively.
 
+To query the vectorstore, you can use the `similarity_search` method (or `similarity_search_with_score`), which takes a query string and returns a list of results:
+```python
+results = vectara.similarity_score("How do I get a job?")
+```
+
+`similarity_score` also supports the following additional arguments:
+- `k`: number of results to return (default 5)
+- `lambda_val`: the [lexical matching](https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching) factor for hybrid search (default 0.025)
+- `filter`: a [filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview) to apply to the results (default None)
+- `num_sent_context`: number of sentences to include before/after the actual matching segment when returning results (default 5)
+
+The results are returned as a list of `SearchResult` objects, which contain the
+
 
 For a more detailed walkthrough of the Vectara wrapper, see one of the two example notebooks:
 * [Chat Over Documents with Vectara](./vectara/vectara_chat.html)
