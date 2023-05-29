@@ -22,17 +22,25 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         values["client"] = TextEmbeddingModel.from_pretrained(values["model_name"])
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed a list of strings.
+    def embed_documents(
+        self, texts: List[str], batch_size: int = 5
+    ) -> List[List[float]]:
+        """Embed a list of strings. Vertex AI currently
+        sets a max batch size of 5 strings.
 
         Args:
             texts: List[str] The list of strings to embed.
+            batch_size: [int] The batch size of embeddings to send to the model
 
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = self.client.get_embeddings(texts)
-        return [el.values for el in embeddings]
+        embeddings = []
+        for batch in range(0, len(texts), batch_size):
+            text_batch = texts[batch : batch + batch_size]
+            embeddings_batch = self.client.get_embeddings(text_batch)
+            embeddings.extend([el.values for el in embeddings_batch])
+        return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a text.
