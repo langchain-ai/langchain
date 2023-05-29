@@ -193,8 +193,8 @@ def test_chroma_update() -> None:
     docsearch.update(docs)
 
     output = docsearch.get()
-    assert output['documents'][0] == "baz"
-    assert output['metadatas'][1] == {"page": "1"}
+    assert output["documents"][0] == "baz"
+    assert output["metadatas"][1] == {"page": "1"}
 
 
 def test_chroma_update_document() -> None:

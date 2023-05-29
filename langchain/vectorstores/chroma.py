@@ -29,11 +29,12 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     return [
         # TODO: Chroma can do batch querying,
         # we shouldn't hard code to the 1st result
-        (Document(
-            page_content=result[0],
-            metadata=result[1] or {},
-            foreign_id=result[3]),
-            result[2])
+        (
+            Document(
+                page_content=result[0], metadata=result[1] or {}, foreign_id=result[3]
+            ),
+            result[2],
+        )
         for result in zip(
             results["documents"][0],
             results["metadatas"][0],
@@ -332,14 +333,15 @@ class Chroma(VectorStore):
         # this logic would ideally happen server-side, but Chroma does not do
         # embedding server-side yet, so we need to do the roundtrip
         # we could also re-embed everything, but that is wasteful
-        
+
         # first filter documents that have foreign_ids
         documents_with_foreign_ids = [d for d in documents if d.foreign_id is not None]
 
         # get the existing documents from the db
         existing_docs = self._collection.get(
             ids=[d.foreign_id for d in documents_with_foreign_ids],
-            include=["metadatas", "embeddings", "documents"])
+            include=["metadatas", "embeddings", "documents"],
+        )
 
         ids_to_update = []
         documents_to_update = []
@@ -350,38 +352,38 @@ class Chroma(VectorStore):
             document_content = documents_with_foreign_id.page_content
 
             # this is the index of the document in the existing_docs
-            index = existing_docs['ids'].index(documents_with_foreign_id.foreign_id)
+            index = existing_docs["ids"].index(documents_with_foreign_id.foreign_id)
 
-            content_in_chroma = existing_docs['documents'][index]
+            content_in_chroma = existing_docs["documents"][index]
 
             if document_content != content_in_chroma:
                 # if the content has changed, we need to re-embed
                 ids_to_update.append(documents_with_foreign_id.foreign_id)
                 documents_to_update.append(document_content)
                 metadatas_to_update.append(documents_with_foreign_id.metadata)
-                
+
                 if self._embedding_function is not None:
                     embeddings.append(
                         self._embedding_function.embed_documents(
                             list(document_content)
-                            )[0]
-                        )
-            
+                        )[0]
+                    )
+
             else:
-                # the user may still be updating metadata   
+                # the user may still be updating metadata
                 ids_to_update.append(documents_with_foreign_id.foreign_id)
                 documents_to_update.append(document_content)
                 metadatas_to_update.append(documents_with_foreign_id.metadata)
-                embeddings.append(existing_docs['embeddings'][index])
-            
-        if (len(ids_to_update) == 0):
+                embeddings.append(existing_docs["embeddings"][index])
+
+        if len(ids_to_update) == 0:
             return
-        
+
         self._collection.update(
             ids=ids_to_update,
             embeddings=embeddings,
             metadatas=metadatas_to_update,
-            documents=documents_to_update
+            documents=documents_to_update,
         )
 
     def get(self, include: Optional[List[str]] = None) -> Dict[str, Any]:
@@ -395,7 +397,7 @@ class Chroma(VectorStore):
             return self._collection.get(include=include)
         else:
             return self._collection.get()
-        
+
     def count(self) -> int:
         """Counts the number of documents in the collection."""
         return self._collection.count()
@@ -508,7 +510,7 @@ class Chroma(VectorStore):
             texts.append(doc.page_content)
             metadatas.append(doc.metadata)
             ids.append(doc.foreign_id or str(uuid.uuid1()))
-        
+
         return cls.from_texts(
             texts=texts,
             embedding=embedding,
