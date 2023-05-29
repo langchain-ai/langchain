@@ -17,11 +17,11 @@ class PredictionGuard(LLM):
     To use, you should have the ``predictionguard`` python package installed, and the
     environment variable ``PREDICTIONGUARD_TOKEN`` set with your access token, or pass
     it as a named parameter to the constructor. To use Prediction Guard's API along
-    with OpenAI models, set the environment variable ``OPENAI_API_KEY`` with your 
+    with OpenAI models, set the environment variable ``OPENAI_API_KEY`` with your
     OpenAI API key as well.
     Example:
         .. code-block:: python
-            pgllm = PredictionGuard(model="MPT-7B-Instruct", 
+            pgllm = PredictionGuard(model="MPT-7B-Instruct",
                                     token="my-access-token",
                                     output={
                                         "type": "boolean"
@@ -100,6 +100,7 @@ class PredictionGuard(LLM):
                 response = pgllm("Tell me a joke.")
         """
         import predictionguard as pg
+
         params = self._default_params
         if self.stop is not None and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
@@ -113,7 +114,7 @@ class PredictionGuard(LLM):
             prompt=prompt,
             output=self.output,
             temperature=params["temperature"],
-            max_tokens=params["max_tokens"]
+            max_tokens=params["max_tokens"],
         )
         text = response["choices"][0]["text"]
 
