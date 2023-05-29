@@ -23,3 +23,22 @@ def test_embedding_query() -> None:
     model = VertexAIEmbeddings()
     output = model.embed_query(document)
     assert len(output) == 768
+
+
+def test_paginated_texts() -> None:
+    documents = [
+        "foo bar",
+        "foo baz",
+        "bar foo",
+        "baz foo",
+        "bar bar",
+        "foo foo",
+        "baz baz",
+        "baz bar",
+    ]
+    model = VertexAIEmbeddings()
+    output = model.embed_documents(documents)
+    assert len(output) == 8
+    assert len(output[0]) == 768
+    assert model._llm_type == "vertexai"
+    assert model.model_name == model.client._model_id
