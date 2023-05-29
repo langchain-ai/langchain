@@ -455,6 +455,8 @@ class Language(str, Enum):
     RUST = "rust"
     SCALA = "scala"
     SWIFT = "swift"
+    MARKDOWN = "markdown"
+    LATEX = "latex"
 
 
 class CodeTextSplitter(RecursiveCharacterTextSplitter):
@@ -696,5 +698,53 @@ class CodeTextSplitter(RecursiveCharacterTextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.MARKDOWN:
+            return [
+                # First, try to split along Markdown headings (starting with level 2)
+                "\n## ",
+                "\n### ",
+                "\n#### ",
+                "\n##### ",
+                "\n###### ",
+                # Note the alternative syntax for headings (below) is not handled here
+                # Heading level 2
+                # ---------------
+                # End of code block
+                "```\n\n",
+                # Horizontal lines
+                "\n\n***\n\n",
+                "\n\n---\n\n",
+                "\n\n___\n\n",
+                # Note that this splitter doesn't handle horizontal lines defined
+                # by *three or more* of ***, ---, or ___, but this is not handled
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.LATEX:
+            return [
+                # First, try to split along Latex sections
+                "\n\\chapter{",
+                "\n\\section{",
+                "\n\\subsection{",
+                "\n\\subsubsection{",
+                # Now split by environments
+                "\n\\begin{enumerate}",
+                "\n\\begin{itemize}",
+                "\n\\begin{description}",
+                "\n\\begin{list}",
+                "\n\\begin{quote}",
+                "\n\\begin{quotation}",
+                "\n\\begin{verse}",
+                "\n\\begin{verbatim}",
+                ## Now split by math environments
+                "\n\\begin{align}",
+                "$$",
+                "$",
+                # Now split by the normal type of lines
+                " ",
+                "",
+            ]
         else:
-            raise Exception(f"Language {language} is not supported!")
+            raise ValueError(f"Language {language} is not supported! Please choose from {list(Language)}")
