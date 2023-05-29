@@ -116,13 +116,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
             return None
         return zep_memory
 
-    def add_user_message(self, message: str) -> None:
-        self.append(HumanMessage(content=message))
-
-    def add_ai_message(self, message: str) -> None:
-        self.append(AIMessage(content=message))
-
-    def append(self, message: BaseMessage) -> None:
+    def add_message(self, message: BaseMessage) -> None:
         """Append the message to the Zep memory history"""
         from zep_python import Memory, Message
 

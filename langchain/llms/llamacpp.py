@@ -279,3 +279,7 @@ class LlamaCpp(LLM):
                     token=token, verbose=self.verbose, log_probs=log_probs
                 )
             yield chunk
+
+    def get_num_tokens(self, text: str) -> int:
+        tokenized_text = self.client.tokenize(text.encode("utf-8"))
+        return len(tokenized_text)
