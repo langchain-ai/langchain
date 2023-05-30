@@ -145,6 +145,12 @@ def test_partial() -> None:
     assert new_result == "This is a 3 test."
     result = prompt.format(foo="foo")
     assert result == "This is a foo test."
+    # Test partialing with prompt templates
+    compose_prompt = PromptTemplate(input_variables=["bar"], template="sad and {bar}")
+    new_prompt = prompt.partial(foo=compose_prompt)
+    result = new_prompt.format(bar="happy")
+    assert result == "This is a sad and happy test."
+
 
 
 def test_prompt_from_jinja2_template() -> None:
