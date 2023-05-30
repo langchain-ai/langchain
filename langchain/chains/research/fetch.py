@@ -8,14 +8,14 @@ The module contains downloading interfaces.
 Sub-classing with the given interface should allow a user to add url based
 user-agents and authentication if needed.
 
-Downloading is batched by default to allow parallelizing efficiently.
+Downloading is batched by default to allow efficient parallelization.
 """
 
 import abc
 import asyncio
 import mimetypes
 from bs4 import BeautifulSoup
-from typing import Sequence, List, Any
+from typing import Sequence, List, Any, Optional
 
 from langchain.document_loaders import WebBaseLoader
 from langchain.document_loaders.blob_loaders import Blob
@@ -44,11 +44,11 @@ def _is_javascript_required(html_content: str) -> bool:
 
 class DownloadHandler(abc.ABC):
     def download(self, urls: Sequence[str]) -> List[Blob]:
-        """Download a url synchronously."""
+        """Download a batch of URLs synchronously."""
         raise NotImplementedError()
 
     async def adownload(self, urls: Sequence[str]) -> List[Blob]:
-        """Download a url asynchronously."""
+        """Download a batch of URLs asynchronously."""
         raise NotImplementedError()
 
 
@@ -72,13 +72,13 @@ class PlaywrightDownloadHandler(DownloadHandler):
         return html_content
 
     async def adownload(self, urls: Sequence[str]) -> List[Blob]:
-        """Download a url asynchronously using playwright.
+        """Download a batch of URLs asynchronously using playwright.
 
         Args:
-            url: The url to download.
+            urls: The urls to download.
 
         Returns:
-            The html content of the url.
+            list of blobs containing the downloaded content.
         """
         from playwright.async_api import async_playwright
 
@@ -92,11 +92,12 @@ class PlaywrightDownloadHandler(DownloadHandler):
 
 
 class RequestsDownloadHandler(DownloadHandler):
-    def __init__(self, web_downloader: WebBaseLoader):
+    def __init__(self, web_downloader: WebBaseLoader) -> None:
+        """Initialize the requests download handler."""
         self.web_downloader = web_downloader
 
-    def download(self, url: str) -> str:
-        """Download a url synchronously."""
+    def download(self, urls: Sequence[str]) -> str:
+        """Download a batch of URLS synchronously."""
         # Implement with threadpool.
         raise NotImplementedError()
 
@@ -110,15 +111,22 @@ class RequestsDownloadHandler(DownloadHandler):
 def _repackage_as_blobs(urls: Sequence[str], contents: Sequence[str]) -> List[Blob]:
     """Repackage the contents as blobs."""
     return [
-        Blob(data=content, mimetype=mimetypes.guess_type(url))
+        Blob(data=content, mimetype=mimetypes.guess_type(url)[0])
         for url, content in zip(urls, contents)
     ]
 
 
 class AutoDownloadHandler(DownloadHandler):
-    def __init__(self, web_downloader: WebBaseLoader) -> None:
+    """Download URLs using the requests library if possible.
+
+    Fallback to using playwright if javascript is required.
+    """
+
+    def __init__(self, web_downloader: Optional[WebBaseLoader] = None) -> None:
         """Initialize the auto download handler."""
-        self.requests_downloader = RequestsDownloadHandler(web_downloader)
+        self.requests_downloader = RequestsDownloadHandler(
+            web_downloader or WebBaseLoader(web_path=[])
+        )
         self.playwright_downloader = PlaywrightDownloadHandler()
 
     async def adownload(self, urls: Sequence[str]) -> List[Blob]:
@@ -132,7 +140,9 @@ class AutoDownloadHandler(DownloadHandler):
             for idx, (url, blob) in enumerate(zip(urls, blobs))
             if _is_javascript_required(blob.data)
         ]
-
         indexes, urls_to_redownload = zip(*must_redownload)
-        contents = await self.playwright_downloader.adownload(urls)
-        return contents
+        new_blobs = await self.playwright_downloader.adownload(urls_to_redownload)
+
+        for idx, blob in zip(indexes, new_blobs):
+            blobs[idx] = blob
+        return blobs
