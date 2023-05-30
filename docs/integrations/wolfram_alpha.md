@@ -1,12 +1,17 @@
-# Wolfram Alpha Wrapper
+# Wolfram Alpha
 
-This page covers how to use the Wolfram Alpha API within LangChain.
-It is broken into two parts: installation and setup, and then references to specific Wolfram Alpha wrappers.
+>[WolframAlpha](https://en.wikipedia.org/wiki/WolframAlpha) is an answer engine developed by `Wolfram Research`. 
+> It answers factual queries by computing answers from externally sourced data.
+
+This page covers how to use the `Wolfram Alpha API` within LangChain.
 
 ## Installation and Setup
-- Install requirements with `pip install wolframalpha`
+- Install requirements with 
+```bash
+pip install wolframalpha
+```
 - Go to wolfram alpha and sign up for a developer account [here](https://developer.wolframalpha.com/)
-- Create an app and get your APP ID
+- Create an app and get your `APP ID`
 - Set your APP ID as an environment variable `WOLFRAM_ALPHA_APPID`
 
 
