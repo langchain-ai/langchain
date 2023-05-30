@@ -44,7 +44,13 @@ class MRKLOutputParser(AgentOutputParser):
                 raise OutputParserException(f"Could not parse LLM output: `{text}`")
         action = match.group(1).strip()
         action_input = match.group(2)
-        return AgentAction(action, action_input.strip(" ").strip('"'), text)
+
+        output = action_input.strip(" ")
+        # ensure if its a well formed SQL query we don't remove any trailing " chars
+        if action_input.startswith('SELECT ') is False:
+            output = output.strip('"')
+
+        return AgentAction(action, output, text)
 
     @property
     def _type(self) -> str:
