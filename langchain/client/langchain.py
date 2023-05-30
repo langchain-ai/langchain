@@ -37,6 +37,8 @@ from langchain.client.models import (
     ExampleUpdate,
     Feedback,
     FeedbackCreate,
+    FeedbackSourceBase,
+    FeedbackSourceType,
     ListFeedbackQueryParams,
     ListRunsQueryParams,
     ModelFeedbackSource,
@@ -428,31 +430,6 @@ class LangChainPlusClient(BaseSettings):
         raise_for_status_with_text(response)
         return response.json()
 
-    def _create_feedback(
-        self,
-        run_id: str,
-        key: str,
-        feedback_source: Union[APIFeedbackSource, ModelFeedbackSource],
-        *,
-        score: Union[float, int, bool, None] = None,
-        value: Union[float, int, bool, str, dict, None] = None,
-    ) -> Feedback:
-        """Create a feedback in the LangChain+ API."""
-        feedback = FeedbackCreate(
-            run_id=run_id,
-            key=key,
-            score=score,
-            value=value,
-            feedback_source=feedback_source,
-        )
-        response = requests.post(
-            self.api_url + "/feedback",
-            headers=self._headers,
-            data=feedback.json(),
-        )
-        raise_for_status_with_text(response)
-        return Feedback(**feedback.dict())
-
     def create_feedback(
         self,
         run_id: str,
@@ -460,7 +437,10 @@ class LangChainPlusClient(BaseSettings):
         *,
         score: Union[float, int, bool, None] = None,
         value: Union[float, int, bool, str, dict, None] = None,
+        correction: Union[str, dict, None] = None,
+        comment: Union[str, None] = None,
         source_info: Optional[Dict[str, Any]] = None,
+        feedback_source_type: FeedbackSourceType = FeedbackSourceType.API,
     ) -> Feedback:
         """Create a feedback in the LangChain+ API.
 
@@ -471,16 +451,35 @@ class LangChainPlusClient(BaseSettings):
             score: The score to rate this run on the metric
                 or aspect.
             value: The display value or non-numeric value for this feedback.
+            correction: The proper ground truth for this run.
+            comment: A comment about this feedback.
             source_info: Information about the source of this feedback.
+            feedback_source_type: The type of feedback source.
         """
-        feedback_source = APIFeedbackSource(metadata=source_info)
-        return self._create_feedback(
+        if feedback_source_type == FeedbackSourceType.API:
+            feedback_source: FeedbackSourceBase = APIFeedbackSource(
+                metadata=source_info
+            )
+        elif feedback_source_type == FeedbackSourceType.MODEL:
+            feedback_source = ModelFeedbackSource(metadata=source_info)
+        else:
+            raise ValueError(f"Unknown feedback source type {feedback_source_type}")
+        feedback = FeedbackCreate(
             run_id=run_id,
             key=key,
-            feedback_source=feedback_source,
             score=score,
             value=value,
+            correction=correction,
+            comment=comment,
+            feedback_source=feedback_source,
         )
+        response = requests.post(
+            self.api_url + "/feedback",
+            headers=self._headers,
+            data=feedback.json(),
+        )
+        raise_for_status_with_text(response)
+        return Feedback(**feedback.dict())
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def read_feedback(self, feedback_id: str) -> Feedback:
@@ -512,32 +511,6 @@ class LangChainPlusClient(BaseSettings):
             headers=self._headers,
         )
         raise_for_status_with_text(response)
-
-    def evaluate_run(
-        self,
-        run_id: str,
-        evaluator: Callable[[Dict[str, Any], Dict[str, Any]], Dict[str, Any]],
-        feedback_key: str,
-        evaluator_info: Optional[Dict[str, Any]] = None,
-    ) -> Feedback:
-        run = self.read_run(run_id)
-        example = {**run.inputs}
-        if run.reference_example_id is not None:
-            example_ = self.read_example(run.reference_example_id)
-            if example_.outputs:
-                example.update(example_.outputs)
-        prediction = run.outputs or {}
-        evaluation = evaluator(example, prediction)
-        evaluator_info = evaluator_info or {}
-        evaluator_info["name"] = evaluator.__name__
-        feedback_source = ModelFeedbackSource(metadata=evaluator_info)
-        return self._create_feedback(
-            run_id=run_id,
-            key=feedback_key,
-            feedback_source=feedback_source,
-            score=evaluation.get("score"),
-            value=evaluation.get("value"),
-        )
 
     async def arun_on_dataset(
         self,

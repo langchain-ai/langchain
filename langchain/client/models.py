@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import Any, ClassVar, Dict, List, Mapping, Optional, Sequence, Union
 from uuid import UUID, uuid4
 
@@ -117,24 +118,33 @@ class ListRunsQueryParams(BaseModel):
         return values
 
 
-class APIFeedbackSource(BaseModel):
+class FeedbackSourceBase(BaseModel):
+    type: ClassVar[str]
+    metadata: Dict[str, Any] | None = None
+
+    class Config:
+        frozen = True
+
+
+class APIFeedbackSource(FeedbackSourceBase):
     """API feedback source."""
 
     type: ClassVar[str] = "api"
-    metadata: Optional[Dict[str, Any]] = None
-
-    class Config:
-        frozen = True
 
 
-class ModelFeedbackSource(BaseModel):
+class ModelFeedbackSource(FeedbackSourceBase):
     """Model feedback source."""
 
-    type: str = "model"
-    metadata: Optional[Dict[str, Any]] = None
+    type: ClassVar[str] = "model"
 
-    class Config:
-        frozen = True
+
+class FeedbackSourceType(Enum):
+    """Feedback source type."""
+
+    API = "api"
+    """General feedback submitted from the API."""
+    MODEL = "model"
+    """Model-assisted feedback."""
 
 
 class FeedbackBase(BaseModel):
