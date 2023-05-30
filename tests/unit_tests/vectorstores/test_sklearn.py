@@ -77,7 +77,7 @@ def test_sklearn_with_persistence(tmpdir: Path) -> None:
 
 
 @pytest.mark.requires("numpy", "sklearn")
-def test_chroma_mmr() -> None:
+def test_sklearn_mmr() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = SKLearnVectorStore.from_texts(texts=texts, embedding=FakeEmbeddings())
@@ -87,7 +87,7 @@ def test_chroma_mmr() -> None:
 
 
 @pytest.mark.requires("numpy", "sklearn")
-def test_chroma_mmr_by_vector() -> None:
+def test_sklearn_mmr_by_vector() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     embeddings = FakeEmbeddings()
