@@ -15,13 +15,13 @@ class BooleanOutputParser(BaseOutputParser[bool]):
             boolean
 
         """
-        cleaned_text = text.upper().strip()
-        if cleaned_text not in (self.true_val, self.false_val):
+        cleaned_text = text.strip()
+        if cleaned_text.upper() not in (self.true_val.upper(), self.false_val.upper()):
             raise ValueError(
                 f"BooleanOutputParser expected output value to either be "
                 f"{self.true_val} or {self.false_val}. Received {cleaned_text}."
             )
-        return cleaned_text == self.true_val
+        return cleaned_text.upper() == self.true_val.upper()
 
     @property
     def _type(self) -> str:
