@@ -125,7 +125,7 @@ class BaseConversationalRetrievalChain(Chain):
         return _output_keys
 
     @root_validator
-    def validate_combine_docs_chain(cls, values):
+    def validate_combine_docs_chain(cls, values: Dict) -> Dict:
         question_generator = values.get("question_generator")
         combine_docs_chain = values.get("combine_docs_chain")
 
