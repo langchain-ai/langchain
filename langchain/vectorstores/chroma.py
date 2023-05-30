@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Ty
 
 import numpy as np
 
+from langchain.docstore.base import DocManager
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import xor_args
@@ -63,6 +64,7 @@ class Chroma(VectorStore):
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[Dict] = None,
         client: Optional[chromadb.Client] = None,
+        doc_manager: Optional[DocManager] = None,
     ) -> None:
         """Initialize with Chroma client."""
         try:
@@ -97,6 +99,7 @@ class Chroma(VectorStore):
             else None,
             metadata=collection_metadata,
         )
+        self._doc_manager = doc_manager
 
     @xor_args(("query_texts", "query_embeddings"))
     def __query_collection(
@@ -152,6 +155,10 @@ class Chroma(VectorStore):
             List[str]: List of IDs of the added texts.
         """
         # TODO: Handle the case where the user doesn't provide ids on the Collection
+        if self._doc_manager and ids:
+            raise ValueError
+        elif not ids:
+            ids = self._doc_manager.add_texts(texts, metadatas=metadatas)
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
         embeddings = None
@@ -346,20 +353,40 @@ class Chroma(VectorStore):
             document_id (str): ID of the document to update.
             document (Document): Document to update.
         """
-        text = document.page_content
-        metadata = document.metadata
+        return self.update_existing_documents([document_id], [document])
+
+    def update_existing_documents(
+        self, document_ids: List[str], documents: List[Document]
+    ) -> None:
+        """Update a document in the collection."""
+        texts, metadatas = zip(*((d.page_content, d.metadata) for d in documents))
         if self._embedding_function is None:
             raise ValueError(
                 "For update, you must specify an embedding function on creation."
             )
-        embeddings = self._embedding_function.embed_documents(list(text))
+        embeddings = self._embedding_function.embed_documents(list(texts))
+        self._collection.update(document_ids, embeddings, list(texts), list(metadatas))
 
-        self._collection.update(
-            ids=[document_id],
-            embeddings=[embeddings[0]],
-            documents=[text],
-            metadatas=[metadata],
-        )
+    def update(self, documents: List[Document]) -> List[str]:
+        if self._doc_manager:
+            has_id = [self._doc_manager.contains_doc(doc) for doc in documents]
+            old_ids = [
+                self._doc_manager.get_doc_id(d) for h, d in zip(has_id, documents) if h
+            ]
+            new_ids = self.add_documents(
+                [d for h, d in zip(has_id, documents) if not h]
+            )
+            all_ids = []
+            old_idx, new_idx = 0, 0
+            for i, is_old in enumerate(has_id):
+                if is_old:
+                    all_ids.append(old_ids[old_idx])
+                    old_idx += 1
+                else:
+                    all_ids.append(new_ids[new_idx])
+                    new_idx += 1
+        else:
+            return self.add_documents(documents)
 
     @classmethod
     def from_texts(
