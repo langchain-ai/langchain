@@ -110,3 +110,32 @@ class TestMongoDBAtlasVectorSearch:
         assert output == [
             Document(page_content="What is a sandwich?", metadata={"c": 1})
         ]
+
+    @pytest.mark.vcr()
+    def test_from_texts_with_metadatas_and_pre_filter(self, embedding: Embeddings) -> None:
+        texts = [
+            "Dogs are tough.",
+            "Cats have fluff.",
+            "What is a sandwich?",
+            "The fence is purple.",
+        ]
+        metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
+        vectorstore = MongoDBAtlasVectorSearch.from_texts(
+            texts,
+            embedding,
+            metadatas=metadatas,
+            client=TEST_CLIENT,
+            namespace=NAMESPACE,
+            index_name=INDEX_NAME,
+        )
+        output = vectorstore.similarity_search(
+            "Sandwich",
+            k=1,
+            pre_filter={
+                "range": {
+                    "lte": 0,
+                    "path": "c"
+                }
+            }
+        )
+        assert output == []
