@@ -151,7 +151,9 @@ async def _arun_searches(queries: Sequence[str]) -> List[Mapping[str, Any]]:
 # PUBLIC API
 
 
-class GenericQueryGenerator(AbstractQueryGenerator):
+class LLMBasedQueryGenerator(AbstractQueryGenerator):
+    """A generic query generator implementation."""
+
     def __init__(self, llm: BaseLanguageModel) -> None:
         """Initialize the query generator."""
         self.llm = llm
@@ -164,6 +166,12 @@ class GenericQueryGenerator(AbstractQueryGenerator):
 
 
 class GenericSearcher(AbstractSearcher):
+    """A generic searcher implementation.
+
+    Generic searcher is parameterized by the search engine to allow for
+    extending it to other search engines in the future.
+    """
+
     def __init__(self, search_engine: str = "serp") -> None:
         """Initialize the searcher.
 
@@ -174,6 +182,22 @@ class GenericSearcher(AbstractSearcher):
             raise NotImplementedError("Only serp is supported at the moment.")
 
     def asearch(self, queries: Sequence[str]) -> List[Mapping[str, Any]]:
-        """Run a search for the given query."""
+        """Run a search for the given query.
+
+        Args:
+            queries: a list of queries to run
+
+        Returns:
+            a list of search results
+        """
         results = await _arun_searches(queries)
-        return _deduplicate_objects(results, "link")
+        deduplicated_results = _deduplicate_objects(results, "link")
+        records = [
+            {
+                "title": result["title"],
+                "snippet": result["snippet"],
+                "link": result["link"],
+            }
+            for result in deduplicated_results
+        ]
+        return records

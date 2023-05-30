@@ -65,17 +65,6 @@ def _extract_records(blob: Blob) -> Tuple[List[Dict[str, Any]], Tuple[str, ...]]
             ],
             ("link", "content", "before", "after"),
         )
-    elif blob.mimetype == "application/json":  # Represent search results
-        data = json.loads(blob.as_string())
-        results = data["results"]
-        return [
-            {
-                "title": result["title"],
-                "snippet": result["snippet"],
-                "link": result["link"],
-            }
-            for result in results
-        ], ("link", "title", "snippet")
     else:
         raise ValueError(
             "Can only extract records from HTML/JSON blobs. Got {blob.mimetype}"

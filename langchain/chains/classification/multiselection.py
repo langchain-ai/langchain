@@ -164,6 +164,8 @@ class MultiSelectChain(Chain):
         columns = inputs.get("columns", None)
 
         selected = []
+        # TODO(): Balance choices into equal batches with constraint dependent
+        # on context window and prompt
         max_choices = 30
 
         for choice_batch in batch(choices, max_choices):
