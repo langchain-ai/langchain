@@ -17,6 +17,7 @@ from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 DEFAULT_K = 4  # Number of Documents to return.
+DEFAULT_FETCH_K = 20  # Number of Documents to initially fetch during MMR search.
 
 
 def guard_import(
@@ -261,13 +262,13 @@ class SKLearnVectorStore(VectorStore):
     def similarity_search(
         self, query: str, k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Document]:
-        docs_scores = self.similarity_search_with_score(query=query, k=k, **kwargs)
+        docs_scores = self.similarity_search_with_score(query, k=k, **kwargs)
         return [doc for doc, _ in docs_scores]
 
     def _similarity_search_with_relevance_scores(
         self, query: str, k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        docs_dists = self.similarity_search_with_score(query=query, k=k, **kwargs)
+        docs_dists = self.similarity_search_with_score(query, k=k, **kwargs)
         docs, dists = zip(*docs_dists)
         scores = [1 / math.exp(dist) for dist in dists]
         return list(zip(list(docs), scores))
@@ -276,7 +277,7 @@ class SKLearnVectorStore(VectorStore):
         self,
         embedding: List[float],
         k: int = DEFAULT_K,
-        fetch_k: int = 20,
+        fetch_k: int = DEFAULT_FETCH_K,
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
@@ -318,7 +319,7 @@ class SKLearnVectorStore(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
-        fetch_k: int = 20,
+        fetch_k: int = DEFAULT_FETCH_K,
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
