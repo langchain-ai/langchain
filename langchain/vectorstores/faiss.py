@@ -114,8 +114,9 @@ class FAISS(VectorStore):
         starting_len = len(self.index_to_docstore_id)
         faiss = dependable_faiss_import()
         vector = np.array(embeddings, dtype=np.float32)
-        if self._normalize_L2:
+        if getattr(self, "_normalize_L2", False):
             faiss.normalize_L2(vector)
+
         self.index.add(vector)
         # Get list of index, id, and docs.
         full_info = [(starting_len + i, ids[i], doc) for i, doc in enumerate(documents)]
