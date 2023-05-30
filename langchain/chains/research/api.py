@@ -13,8 +13,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.chains.classification.multiselection import (
-    IDParser,
-    _extract_content_from_tag,
     MultiSelectChain,
 )
 from langchain.document_loaders.base import BaseBlobParser
@@ -23,43 +21,14 @@ from langchain.document_loaders.parsers.html.markdownify import MarkdownifyHTMLP
 from langchain.schema import BaseOutputParser, Document
 from langchain.text_splitter import TextSplitter
 
-Parser = MarkdownifyHTMLParser(tags_to_remove=("svg", "img", "script", "style", "a"))
 
-
-class AHrefExtractor(BaseOutputParser[List[str]]):
-    """An output parser that extracts all a-href links."""
-
-    def parse(self, text: str) -> List[str]:
-        return _extract_href_tags(text)
-
-
-URL_CRAWLING_PROMPT = PromptTemplate.from_template(
-    """\
-Here is a list of URLs extracted from a page titled: `{title}`.
-
-```csv
-{urls}
-```
-
----
-
-Here is a question:
-
-{question}
-
----
-
-
-Please output the ids of the URLs that may contain content relevant to answer the question. \
-Use only the information csv table of URLs to determine relevancy.
-
-Format your answer inside of an <ids> tags, separating the ids by a comma.
-
-For example, if the 132 and 133 URLs are relevant, you would write: <ids>132,133</ids>
-
-Begin:""",
-    output_parser=IDParser(),
-)
+def _extract_content_from_tag(html: str, tag: str) -> List[str]:
+    """Extract content from the given tag."""
+    soup = BeautifulSoup(html, "lxml")
+    queries = []
+    for query in soup.find_all(tag):
+        queries.append(query.text)
+    return queries
 
 
 def _get_surrounding_text(tag: PageElement, n: int, *, is_before: bool = True) -> str:
@@ -94,7 +63,7 @@ def _get_surrounding_text(tag: PageElement, n: int, *, is_before: bool = True) -
     return text
 
 
-def get_ahref_snippets(html: str, num_chars: int = 0) -> Dict[str, Any]:
+def _get_ahref_snippets(html: str, num_chars: int = 0) -> Dict[str, Any]:
     """Get a list of <a> tags as snippets from the given html.
 
     Args:
@@ -155,11 +124,12 @@ class QueryExtractor(BaseOutputParser[List[str]]):
 # TODO(Eugene): add a version that works for chat models as well w/ human system message?
 QUERY_GENERATION_PROMPT = PromptTemplate.from_template(
     """\
-Suggest a few different search queries that could be used to identify web-pages that could answer \
-the following question.
+Suggest a few different search queries that could be used to identify web-pages \
+that could answer the following question.
 
-If the question is about a named entity start by listing very general searches (e.g., just the named entity) \
-and then suggest searches more scoped to the question.
+If the question is about a named entity start by listing very general \
+searches (e.g., just the named entity) and then suggest searches more \
+scoped to the question.
 
 Input: ```Where did John Snow from Cambridge, UK work?```
 Output: <query>John Snow</query>
@@ -209,7 +179,17 @@ def generate_queries(llm: BaseLanguageModel, question: str) -> List[str]:
 def _deduplicate_objects(
     dicts: Sequence[Mapping[str, Any]], key: str
 ) -> List[Mapping[str, Any]]:
-    """Deduplicate objects by the given key."""
+    """Deduplicate objects by the given key.
+
+    TODO(Eugene): add a way to add weights to the objects.
+
+    Args:
+        dicts: a list of dictionaries to deduplicate.
+        key: the key to deduplicate by.
+
+    Returns:
+        a list of deduplicated dictionaries.
+    """
     unique_values = set()
     deduped: List[Mapping[str, Any]] = []
 
@@ -250,10 +230,10 @@ class BlobCrawler(abc.ABC):
         """Explore the blob and identify links to related content that is relevant to the query."""
 
 
-def _extract_records(blob: Blob) -> Tuple[List[Mapping[str, Any]], Tuple[str, ...]]:
+def _extract_records(blob: Blob) -> Tuple[List[Dict[str, Any]], Tuple[str, ...]]:
     """Extract records from a blob."""
     if blob.mimetype == "text/html":
-        info = get_ahref_snippets(blob.as_string(), num_chars=100)
+        info = _get_ahref_snippets(blob.as_string(), num_chars=100)
         return (
             [
                 {

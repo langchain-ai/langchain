@@ -4,15 +4,26 @@ from __future__ import annotations
 import csv
 from bs4 import BeautifulSoup
 from io import StringIO
-from typing import Sequence, Mapping, Any, Optional, Dict, List, cast, Set
+from itertools import islice
+from typing import (
+    Sequence,
+    Mapping,
+    Any,
+    Optional,
+    Dict,
+    List,
+    cast,
+    Set,
+    TypeVar,
+    Iterable,
+    Iterator,
+)
 
 from langchain import LLMChain, PromptTemplate
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.schema import BaseOutputParser
-from typing import TypedDict
-
 
 MULTI_SELECT_TEMPLATE = """\
 Here is a table in CSV format:
@@ -114,25 +125,11 @@ def _write_records_to_string(
     return buffer.getvalue()
 
 
-class MultiSelectionInput(TypedDict):
-    """Input for the multi-selection chain."""
-
-    question: str
-    records: Sequence[Mapping[str, Any]]
-    delimiter: str
-    columns: Optional[Sequence[str]]
+T = TypeVar("T")
 
 
-class MultiSelectionOutput(TypedDict):
-    """Output for the multi-selection chain."""
-
-    records: Sequence[Mapping[str, Any]]
-
-
-from itertools import islice
-
-
-def batch(iterable, size):
+def batch(iterable: Iterable[T], size) -> Iterator[List[T]]:
+    """Batch an iterable into chunks of size `size`."""
     iterator = iter(iterable)
     while True:
         batch = list(islice(iterator, size))
@@ -160,7 +157,7 @@ class MultiSelectChain(Chain):
         self,
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> MultiSelectionOutput:
+    ) -> Dict[str, Any]:
         """Run the chain."""
         choices = inputs["choices"]
         question = inputs["question"]
