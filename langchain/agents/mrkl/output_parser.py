@@ -45,12 +45,12 @@ class MRKLOutputParser(AgentOutputParser):
         action = match.group(1).strip()
         action_input = match.group(2)
 
-        output = action_input.strip(" ")
+        tool_input = action_input.strip(" ")
         # ensure if its a well formed SQL query we don't remove any trailing " chars
-        if action_input.startswith('SELECT ') is False:
-            output = output.strip('"')
+        if tool_input.startswith("SELECT ") is False:
+            tool_input = tool_input.strip('"')
 
-        return AgentAction(action, output, text)
+        return AgentAction(action, tool_input, text)
 
     @property
     def _type(self) -> str:
