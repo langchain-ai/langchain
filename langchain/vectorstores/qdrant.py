@@ -6,7 +6,6 @@ import warnings
 from hashlib import md5
 from operator import itemgetter
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -33,12 +32,11 @@ except ImportError:
         "Please install it with `pip install qdrant-client`."
     )
 
-from qdrant_client.http import models as rest
 from qdrant_client.conversions import common_types
+from qdrant_client.http import models as rest
 
-MetadataFilter = Union[
-    Dict[str, Union[str, int, bool, dict, list]], common_types.Filter
-]
+DictFilter = Dict[str, Union[str, int, bool, dict, list]]
+MetadataFilter = Union[DictFilter, common_types.Filter]
 
 
 class Qdrant(VectorStore):
@@ -228,7 +226,8 @@ class Qdrant(VectorStore):
         if filter is not None and isinstance(filter, dict):
             warnings.warn(
                 "Using dict as a `filter` is deprecated. Please use qdrant-client "
-                "filters directly: https://qdrant.tech/documentation/concepts/filtering/",
+                "filters directly: "
+                "https://qdrant.tech/documentation/concepts/filtering/",
                 DeprecationWarning,
             )
             qdrant_filter = self._qdrant_filter_from_dict(filter)
@@ -499,7 +498,7 @@ class Qdrant(VectorStore):
         return out
 
     def _qdrant_filter_from_dict(
-        self, filter: Optional[MetadataFilter]
+        self, filter: Optional[DictFilter]
     ) -> Optional[rest.Filter]:
         if not filter:
             return None

@@ -26,8 +26,8 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
     """Fake embeddings which remember all the texts seen so far to return consistent
     vectors for the same texts."""
 
-    def __init__(self):
-        self.known_texts = []
+    def __init__(self) -> None:
+        self.known_texts: List[str] = []
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Return consistent embeddings for each text seen so far."""

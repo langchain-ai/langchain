@@ -2,13 +2,12 @@
 from typing import Callable, Optional
 
 import pytest
+from qdrant_client.http import models as rest
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-
-from qdrant_client.http import models as rest
 
 
 @pytest.mark.parametrize(
