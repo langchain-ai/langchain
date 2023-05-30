@@ -42,7 +42,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         *,
         index_name: str = "default",
         text_key: str = "text",
-        embedding_key: str = "embedding"
+        embedding_key: str = "embedding",
     ):
         """
         Args:
@@ -77,7 +77,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 "Could not import pymongo, please install it with "
                 "`pip install pymongo`."
             )
-        client = MongoClient(connection_string)
+        client: MongoClient = MongoClient(connection_string)
         return cls(client, namespace, embedding, **kwargs)
 
     def add_texts(
@@ -96,20 +96,22 @@ class MongoDBAtlasVectorSearch(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
 
-        def insert_documents_in_batches(to_insert: List[Tuple[str, Dict[str, Any]]]) -> List:
+        def insert_documents_in_batches(
+            to_insert: List[Tuple[str, Dict[str, Any]]]
+        ) -> List:
             if not to_insert:
                 return []
             # Embed and create the documents
             embeddings = self._embedding.embed_documents([t for t, _ in to_insert])
-            batch_to_insert = ([
+            batch_to_insert = [
                 {self._text_key: t, self._embedding_key: embedding, **m}
                 for (t, m), embedding in zip(to_insert, embeddings)
-            ])
+            ]
             # insert the documents in MongoDB Atlas
             insert_result = self._collection.insert_many(batch_to_insert)
             return insert_result.inserted_ids
 
-        batch_size = kwargs.get('batch_size', 100)  # Threshold for batch processing
+        batch_size = kwargs.get("batch_size", 100)  # Threshold for batch processing
         texts_with_metadata = []
         result_ids = []
         for i, text in enumerate(texts):
@@ -157,13 +159,14 @@ class MongoDBAtlasVectorSearch(VectorStore):
                     "knnBeta": {
                         "vector": self._embedding.embed_query(query),
                         "path": self._embedding_key,
-                        "k": k,
-                        "filter": pre_filter or {},
+                        "k": k
                     },
                 }
             },
             {"$project": {"score": {"$meta": "searchScore"}, self._embedding_key: 0}},
         ]
+        if pre_filter is not None:
+            pipeline[0]["$search"]["knnBeta"]["filter"] = pre_filter
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
         cursor = self._collection.aggregate(pipeline)

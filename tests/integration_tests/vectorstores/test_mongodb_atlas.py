@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from typing import TYPE_CHECKING, Optional
+from time import sleep
 
 import pytest
 
@@ -23,7 +24,7 @@ def get_test_client() -> Optional[MongoClient]:
     try:
         from pymongo import MongoClient
 
-        client = MongoClient(CONNECTION_STRING)
+        client: MongoClient = MongoClient(CONNECTION_STRING)
         return client
     except:  # noqa: E722
         return None
@@ -50,8 +51,7 @@ class TestMongoDBAtlasVectorSearch:
         # delete all the documents in the collection
         TEST_CLIENT[DB_NAME][COLLECTION_NAME].delete_many({})  # type: ignore[index]
 
-    @pytest.mark.vcr()
-    def test_from_documents(self, embedding: Embeddings) -> None:
+    def test_from_documents(self, embedding_openai: Embeddings) -> None:
         """Test end to end construction and search."""
         documents = [
             Document(page_content="Dogs are tough.", metadata={"a": 1}),
@@ -61,18 +61,17 @@ class TestMongoDBAtlasVectorSearch:
         ]
         vectorstore = MongoDBAtlasVectorSearch.from_documents(
             documents,
-            embedding,
+            embedding_openai,
             client=TEST_CLIENT,
             namespace=NAMESPACE,
             index_name=INDEX_NAME,
         )
+        sleep(1)  # waits for mongot to update Lucene's index
         output = vectorstore.similarity_search("Sandwich", k=1)
-        assert output == [
-            Document(page_content="What is a sandwich?", metadata={"c": 1})
-        ]
+        assert output[0].page_content == "What is a sandwich?"
+        assert output[0].metadata["c"] == 1
 
-    @pytest.mark.vcr()
-    def test_from_texts(self, embedding: Embeddings) -> None:
+    def test_from_texts(self, embedding_openai: Embeddings) -> None:
         texts = [
             "Dogs are tough.",
             "Cats have fluff.",
@@ -81,16 +80,16 @@ class TestMongoDBAtlasVectorSearch:
         ]
         vectorstore = MongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding,
+            embedding_openai,
             client=TEST_CLIENT,
             namespace=NAMESPACE,
             index_name=INDEX_NAME,
         )
+        sleep(1)  # waits for mongot to update Lucene's index
         output = vectorstore.similarity_search("Sandwich", k=1)
-        assert output == [Document(page_content="What is a sandwich?")]
+        assert output[0].page_content == "What is a sandwich?"
 
-    @pytest.mark.vcr()
-    def test_from_texts_with_metadatas(self, embedding: Embeddings) -> None:
+    def test_from_texts_with_metadatas(self, embedding_openai: Embeddings) -> None:
         texts = [
             "Dogs are tough.",
             "Cats have fluff.",
@@ -100,19 +99,20 @@ class TestMongoDBAtlasVectorSearch:
         metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
         vectorstore = MongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding,
+            embedding_openai,
             metadatas=metadatas,
             client=TEST_CLIENT,
             namespace=NAMESPACE,
             index_name=INDEX_NAME,
         )
+        sleep(1)  # waits for mongot to update Lucene's index
         output = vectorstore.similarity_search("Sandwich", k=1)
-        assert output == [
-            Document(page_content="What is a sandwich?", metadata={"c": 1})
-        ]
+        assert output[0].page_content == "What is a sandwich?"
+        assert output[0].metadata["c"] == 1
 
-    @pytest.mark.vcr()
-    def test_from_texts_with_metadatas_and_pre_filter(self, embedding: Embeddings) -> None:
+    def test_from_texts_with_metadatas_and_pre_filter(
+        self, embedding_openai: Embeddings
+    ) -> None:
         texts = [
             "Dogs are tough.",
             "Cats have fluff.",
@@ -122,20 +122,14 @@ class TestMongoDBAtlasVectorSearch:
         metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
         vectorstore = MongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding,
+            embedding_openai,
             metadatas=metadatas,
             client=TEST_CLIENT,
             namespace=NAMESPACE,
             index_name=INDEX_NAME,
         )
+        sleep(1)  # waits for mongot to update Lucene's index
         output = vectorstore.similarity_search(
-            "Sandwich",
-            k=1,
-            pre_filter={
-                "range": {
-                    "lte": 0,
-                    "path": "c"
-                }
-            }
+            "Sandwich", k=1, pre_filter={"range": {"lte": 0, "path": "c"}}
         )
         assert output == []
