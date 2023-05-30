@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-
+import google.auth
 
 class BigQueryLoader(BaseLoader):
     """Loads a query result from BigQuery into a list of documents.
@@ -15,12 +15,12 @@ class BigQueryLoader(BaseLoader):
     """
 
     def __init__(
-            self,
-            query: str,
-            project: Optional[str] = None,
-            page_content_columns: Optional[List[str]] = None,
-            metadata_columns: Optional[List[str]] = None,
-            credentials=None,
+        self,
+        query: str,
+        project: Optional[str] = None,
+        page_content_columns: Optional[List[str]] = None,
+        metadata_columns: Optional[List[str]] = None,
+        credentials: Optional[google.auth.credentials.Credentials] = None,
     ):
         """
         :param query: The query to run in BigQuery.
