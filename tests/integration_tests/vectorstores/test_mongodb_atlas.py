@@ -62,7 +62,7 @@ class TestMongoDBAtlasVectorSearch:
         vectorstore = MongoDBAtlasVectorSearch.from_documents(
             documents,
             embedding,
-            connection_string=CONNECTION_STRING,
+            client=TEST_CLIENT,
             namespace=NAMESPACE,
             index_name=INDEX_NAME,
         )
@@ -82,7 +82,7 @@ class TestMongoDBAtlasVectorSearch:
         vectorstore = MongoDBAtlasVectorSearch.from_texts(
             texts,
             embedding,
-            connection_string=CONNECTION_STRING,
+            client=TEST_CLIENT,
             namespace=NAMESPACE,
             index_name=INDEX_NAME,
         )
@@ -102,7 +102,7 @@ class TestMongoDBAtlasVectorSearch:
             texts,
             embedding,
             metadatas=metadatas,
-            connection_string=CONNECTION_STRING,
+            client=TEST_CLIENT,
             namespace=NAMESPACE,
             index_name=INDEX_NAME,
         )
