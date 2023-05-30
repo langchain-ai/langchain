@@ -1,4 +1,4 @@
-Airbyte JSON
+# Airbyte
 
 >[Airbyte](https://github.com/airbytehq/airbyte) is a data integration platform for ELT pipelines from APIs, 
 > databases & files to warehouses & lakes. It has the largest catalog of ELT connectors to data warehouses and databases.
