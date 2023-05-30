@@ -337,7 +337,7 @@ function helloWorld() {
 }
 
 // Call the function
-helloWorld();p
+helloWorld();
     """
     chunks = splitter.split_text(code)
     assert chunks == [
@@ -349,7 +349,7 @@ helloWorld();p
         "}",
         "// Call the",
         "function",
-        "helloWorld();p",
+        "helloWorld();",
     ]
 
 
