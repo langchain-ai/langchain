@@ -25,6 +25,7 @@ from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.discord import DiscordChatLoader
 from langchain.document_loaders.docugami import DocugamiLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
+from langchain.document_loaders.fauna import FaunaLoader
 from langchain.document_loaders.email import (
     OutlookMessageLoader,
     UnstructuredEmailLoader,
@@ -143,6 +144,7 @@ __all__ = [
     "DocugamiLoader",
     "Docx2txtLoader",
     "DuckDBLoader",
+    "FaunaLoader",
     "EverNoteLoader",
     "FacebookChatLoader",
     "GCSDirectoryLoader",
