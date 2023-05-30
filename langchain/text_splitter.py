@@ -477,6 +477,7 @@ class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
         ]
         super().__init__(separators=separators, **kwargs)
 
+
 class HtmlTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along HTML layout elements."""
 
@@ -511,7 +512,7 @@ class HtmlTextSplitter(RecursiveCharacterTextSplitter):
             "<script>",
             "<meta>",
             "<title>",
-            ""
+            "",
         ]
         super().__init__(separators=separators, **kwargs)
 
