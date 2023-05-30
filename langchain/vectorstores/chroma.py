@@ -13,6 +13,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -26,6 +27,7 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 if TYPE_CHECKING:
     import chromadb
     import chromadb.config
+    from chromadb.api.types import maybe_cast_one_to_many
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
@@ -162,7 +164,7 @@ class Chroma(VectorStore):
         Returns:
             List[str]: List of IDs of the added texts.
         """
-
+        texts = cast(List, texts)
         return self.upsert(ids=ids, texts=texts, metadatas=metadatas)
 
     def similarity_search(
@@ -463,6 +465,14 @@ class Chroma(VectorStore):
         Returns:
             List[str]: List of IDs of the added texts.
         """
+        try:
+            from chromadb.api.types import maybe_cast_one_to_many
+        except ImportError:
+            raise ValueError(
+                "Could not import chromadb python package. "
+                "Please install it with `pip install chromadb`."
+            )
+
         if embeddings is None and documents is None and texts is None:
             raise ValueError(
                 """For upsert you must provide atleast one of
@@ -475,7 +485,9 @@ class Chroma(VectorStore):
             texts = [doc.page_content for doc in documents]
             metadatas = [doc.metadata for doc in documents]
 
-        length = len(texts) if texts is not None else len(embeddings)
+        texts = maybe_cast_one_to_many(texts)
+        embeddings = maybe_cast_one_to_many(embeddings)
+        length = len(texts) if texts is not None else len(embeddings)  # type: ignore[arg-type]
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in range(length)]
         self._collection.upsert(
