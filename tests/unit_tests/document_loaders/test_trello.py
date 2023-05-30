@@ -4,7 +4,6 @@ from typing import Any, Optional
 from unittest.mock import patch
 
 import pytest
-from bs4 import BeautifulSoup
 
 from langchain.document_loaders.trello import TrelloLoader
 
@@ -202,6 +201,8 @@ class TestTrelloLoader(unittest.TestCase):
         """
         Test loading a board cards with all metadata.
         """
+        from bs4 import BeautifulSoup
+
         trello_loader = TrelloLoader.from_credentials(
             "QA",
             api_key="API_KEY",
