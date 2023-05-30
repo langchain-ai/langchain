@@ -12,7 +12,6 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Sequence,
     TypeVar,
     Union,
 )
