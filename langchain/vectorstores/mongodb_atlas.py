@@ -42,7 +42,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         *,
         index_name: str = "default",
         text_key: str = "text",
-        embedding_key: str = "embedding",
+        embedding_key: str = "embedding"
     ):
         """
         Args:
@@ -83,7 +83,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -95,17 +95,32 @@ class MongoDBAtlasVectorSearch(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        # Embed and create the documents
-        docs = []
+
+        def insert_documents_in_batches(to_insert: List[Tuple[str, Dict[str, Any]]]) -> List:
+            if not to_insert:
+                return []
+            # Embed and create the documents
+            embeddings = self._embedding.embed_documents([t for t, _ in to_insert])
+            batch_to_insert = ([
+                {self._text_key: t, self._embedding_key: embedding, **m}
+                for (t, m), embedding in zip(to_insert, embeddings)
+            ])
+            # insert the documents in MongoDB Atlas
+            insert_result = self._collection.insert_many(batch_to_insert)
+            return insert_result.inserted_ids
+
+        batch_size = kwargs.get('batch_size', 100)  # Threshold for batch processing
+        texts_with_metadata = []
+        result_ids = []
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
-            embedding = self._embedding.embed_documents([text])[0]
-            doc = {self._text_key: text, self._embedding_key: embedding, **metadata}
-            docs.append(doc)
+            texts_with_metadata.append((text, metadata))
+            if len(texts_with_metadata) == batch_size:
+                result_ids.extend(insert_documents_in_batches(texts_with_metadata))
+                texts_with_metadata = []
+        result_ids.extend(insert_documents_in_batches(texts_with_metadata))
 
-        # insert in MongoDB Atlas
-        insert_result = self._collection.insert_many(docs)
-        return insert_result.inserted_ids
+        return result_ids
 
     def similarity_search_with_score(
         self,
@@ -227,7 +242,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 vectorstore = MongoDBAtlasVectorSearch.from_texts(
                     texts,
                     embeddings,
-                    meadatas=metadatas,
+                    metadatas=metadatas,
                     client=client,
                     namespace=namespace
                 )
