@@ -8,12 +8,13 @@ from pathlib import Path
 from typing import (
     Dict,
     Generic,
+    Iterable,
     Iterator,
     List,
     Optional,
     Sequence,
     TypeVar,
-    Union, Iterable,
+    Union,
 )
 
 from langchain.docstore.document import Document
