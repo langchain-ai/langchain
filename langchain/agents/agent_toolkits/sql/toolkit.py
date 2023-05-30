@@ -44,12 +44,15 @@ class SQLDatabaseToolkit(BaseToolkit):
             "Input to this tool is a comma-separated list of tables, output is the schema "
             "and sample rows for those tables."
             "Be sure that the tables actually exist by calling list_tables_sql_db first!"
-
             "Example Input: 'table1, table2, table3'"
         )
         return [
-            QuerySQLDataBaseTool(db=self.db, description=query_sql_database_tool_description),
-            InfoSQLDatabaseTool(db=self.db, description=info_sql_database_tool_description),
+            QuerySQLDataBaseTool(
+                db=self.db, description=query_sql_database_tool_description
+            ),
+            InfoSQLDatabaseTool(
+                db=self.db, description=info_sql_database_tool_description
+            ),
             ListSQLDatabaseTool(db=self.db),
             QueryCheckerTool(db=self.db, llm=self.llm),
         ]
