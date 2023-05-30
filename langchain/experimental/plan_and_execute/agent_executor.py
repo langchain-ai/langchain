@@ -39,10 +39,11 @@ class PlanAndExecute(Chain):
         if run_manager:
             run_manager.on_text(str(plan), verbose=self.verbose)
         for step in plan.steps:
-            _new_inputs = {"previous_steps": self.step_container, "current_step": step}
-            if "objective" in self.executor.chain.input_keys:
-                _new_inputs["objective"] = inputs[self.input_key]
-
+            _new_inputs = {
+                "previous_steps": self.step_container,
+                "current_step": step,
+                "objective": inputs[self.input_key],
+            }
             new_inputs = {**_new_inputs, **inputs}
             response = self.executor.step(
                 new_inputs,
