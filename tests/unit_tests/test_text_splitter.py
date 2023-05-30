@@ -187,25 +187,41 @@ def test_split_documents() -> None:
     assert splitter.split_documents(docs) == expected_output
 
 
+def test_python_text_splitter() -> None:
+    splitter = PythonCodeTextSplitter(chunk_size=30, chunk_overlap=0)
+    splits = splitter.split_text(FAKE_PYTHON_TEXT)
+    split_0 = """class Foo:\n\n    def bar():"""
+    split_1 = """def foo():"""
+    split_2 = """def testing_func():"""
+    split_3 = """def bar():"""
+    expected_splits = [split_0, split_1, split_2, split_3]
+    assert splits == expected_splits
+
+
 CHUNK_SIZE = 16
+
 
 def test_python_code_splitter() -> None:
     splitter = CodeTextSplitter(
         language=Language.PYTHON, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
-def two_sum(nums, target):
-    n = len(nums)
-    for i in range(n):
-        for j in range(i + 1, n):
-            if nums[i] + nums[j] == target:
-                return [i, j]
-    
-    return []
+def hello_world():
+    print("Hello, World!")
+
+# Call the function
+hello_world()
     """
     chunks = splitter.split_text(code)
-    for c in chunks:
-        assert len(c) <= CHUNK_SIZE
+    assert chunks == [
+        "def",
+        "hello_world():",
+        'print("Hello,',
+        'World!")',
+        "# Call the",
+        "function",
+        "hello_world()",
+    ]
 
 
 def test_golang_code_splitter() -> None:
@@ -213,23 +229,32 @@ def test_golang_code_splitter() -> None:
         language=Language.GO, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
-func twoSum(nums []int, target int) []int {
-    numMap := make(map[int]int)
+package main
 
-    for i, num := range nums {
-        complement := target - num
-        if index, ok := numMap[complement]; ok {
-            return []int{index, i}
-        }
-        numMap[num] = i
-    }
+import "fmt"
 
-    return []int{}
+func helloWorld() {
+    fmt.Println("Hello, World!")
+}
+
+func main() {
+    helloWorld()
 }
     """
     chunks = splitter.split_text(code)
-    for c in chunks:
-        assert len(c) <= CHUNK_SIZE
+    assert chunks == [
+        "package main",
+        'import "fmt"',
+        "func",
+        "helloWorld() {",
+        'fmt.Println("He',
+        "llo,",
+        'World!")',
+        "}",
+        "func main() {",
+        "helloWorld()",
+        "}",
+    ]
 
 
 def test_rst_code_splitter() -> None:
@@ -251,22 +276,21 @@ Lists
 - Item 1
 - Item 2
 - Item 3
-
-Code Block
-----------
-
-.. code-block:: python
-
-   print("Hello, world!")
-
-Conclusion
-----------
-
-This concludes the sample document.
     """
     chunks = splitter.split_text(code)
-    for c in chunks:
-        assert len(c) <= CHUNK_SIZE
+    assert chunks == [
+        "Sample Document",
+        "===============",
+        "Section",
+        "-------",
+        "This is the",
+        "content of the",
+        "section.",
+        "Lists\n-----",
+        "- Item 1",
+        "- Item 2",
+        "- Item 3",
+    ]
 
 
 def test_proto_file_splitter() -> None:
@@ -285,8 +309,22 @@ message Person {
 }
     """
     chunks = splitter.split_text(code)
-    for c in chunks:
-        assert len(c) <= CHUNK_SIZE
+    assert chunks == [
+        "syntax =",
+        '"proto3";',
+        "package",
+        "example;",
+        "message Person",
+        "{",
+        "string name",
+        "= 1;",
+        "int32 age =",
+        "2;",
+        "repeated",
+        "string hobbies",
+        "= 3;",
+        "}",
+    ]
 
 
 def test_javascript_code_splitter() -> None:
@@ -294,23 +332,25 @@ def test_javascript_code_splitter() -> None:
         language=Language.JS, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
-function twoSum(nums, target) {
-    let numMap = new Map();
-
-    for (let i = 0; i < nums.length; i++) {
-        let complement = target - nums[i];
-        if (numMap.has(complement)) {
-            return [numMap.get(complement), i];
-        }
-        numMap.set(nums[i], i);
-    }
-
-    return [];
+function helloWorld() {
+  console.log("Hello, World!");
 }
+
+// Call the function
+helloWorld();p
     """
     chunks = splitter.split_text(code)
-    for c in chunks:
-        assert len(c) <= CHUNK_SIZE
+    assert chunks == [
+        "function",
+        "helloWorld() {",
+        'console.log("He',
+        "llo,",
+        'World!");',
+        "}",
+        "// Call the",
+        "function",
+        "helloWorld();p",
+    ]
 
 
 def test_java_code_splitter() -> None:
@@ -318,25 +358,25 @@ def test_java_code_splitter() -> None:
         language=Language.JAVA, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
-public class TwoSum {
-    public int[] twoSum(int[] nums, int target) {
-        Map<Integer, Integer> numMap = new HashMap<>();
-
-        for (int i = 0; i < nums.length; i++) {
-            int complement = target - nums[i];
-            if (numMap.containsKey(complement)) {
-                return new int[] { numMap.get(complement), i };
-            }
-            numMap.put(nums[i], i);
-        }
-
-        return new int[] {};
+public class HelloWorld {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
     }
 }
     """
     chunks = splitter.split_text(code)
-    for c in chunks:
-        assert len(c) <= CHUNK_SIZE
+    assert chunks == [
+        "public class",
+        "HelloWorld {",
+        "public",
+        "static void",
+        "main(String[]",
+        "args) {",
+        "System.out.prin",
+        'tln("Hello,',
+        'World!");',
+        "}\n}",
+    ]
 
 
 def test_cpp_code_splitter() -> None:
@@ -344,29 +384,24 @@ def test_cpp_code_splitter() -> None:
         language=Language.CPP, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
-#include <vector>
-#include <unordered_map>
+#include <iostream>
 
-class Solution {
-public:
-    std::vector<int> twoSum(std::vector<int>& nums, int target) {
-        std::unordered_map<int, int> numMap;
-
-        for (int i = 0; i < nums.size(); i++) {
-            int complement = target - nums[i];
-            if (numMap.count(complement)) {
-                return { numMap[complement], i };
-            }
-            numMap[nums[i]] = i;
-        }
-
-        return {};
-    }
-};
+int main() {
+    std::cout << "Hello, World!" << std::endl;
+    return 0;
+}
     """
     chunks = splitter.split_text(code)
-    for c in chunks:
-        assert len(c) <= CHUNK_SIZE
+    assert chunks == [
+        "#include",
+        "<iostream>",
+        "int main() {",
+        "std::cout",
+        '<< "Hello,',
+        'World!" <<',
+        "std::endl;",
+        "return 0;\n}",
+    ]
 
 
 def test_scala_code_splitter() -> None:
@@ -374,25 +409,24 @@ def test_scala_code_splitter() -> None:
         language=Language.SCALA, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
-object TwoSum {
-  def twoSum(nums: Array[Int], target: Int): Array[Int] = {
-    val numMap = scala.collection.mutable.Map[Int, Int]()
-
-    for (i <- nums.indices) {
-      val complement = target - nums(i)
-      if (numMap.contains(complement)) {
-        return Array(numMap(complement), i)
-      }
-      numMap(nums(i)) = i
-    }
-
-    Array.empty[Int]
+object HelloWorld {
+  def main(args: Array[String]): Unit = {
+    println("Hello, World!")
   }
 }
     """
     chunks = splitter.split_text(code)
-    for c in chunks:
-        assert len(c) <= CHUNK_SIZE
+    assert chunks == [
+        "object",
+        "HelloWorld {",
+        "def",
+        "main(args:",
+        "Array[String]):",
+        "Unit = {",
+        'println("Hello,',
+        'World!")',
+        "}\n}",
+    ]
 
 
 def test_ruby_code_splitter() -> None:
@@ -400,23 +434,20 @@ def test_ruby_code_splitter() -> None:
         language=Language.RUBY, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
-def two_sum(nums, target)
-  num_map = {}
-
-  nums.each_with_index do |num, i|
-    complement = target - num
-    if num_map.key?(complement)
-      return [num_map[complement], i]
-    end
-    num_map[num] = i
-  end
-
-  []
+def hello_world
+  puts "Hello, World!"
 end
+
+hello_world
     """
     chunks = splitter.split_text(code)
-    for c in chunks:
-        assert len(c) <= CHUNK_SIZE
+    assert chunks == [
+        "def hello_world",
+        'puts "Hello,',
+        'World!"',
+        "end",
+        "hello_world",
+    ]
 
 
 def test_php_code_splitter() -> None:
@@ -424,23 +455,26 @@ def test_php_code_splitter() -> None:
         language=Language.PHP, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
-function twoSum($nums, $target) {
-    $numMap = [];
-
-    foreach ($nums as $i => $num) {
-        $complement = $target - $num;
-        if (isset($numMap[$complement])) {
-            return [$numMap[$complement], $i];
-        }
-        $numMap[$num] = $i;
-    }
-
-    return [];
+<?php
+function hello_world() {
+    echo "Hello, World!";
 }
+
+hello_world();
+?>
     """
     chunks = splitter.split_text(code)
-    for c in chunks:
-        assert len(c) <= CHUNK_SIZE
+    assert chunks == [
+        "<?php",
+        "function",
+        "hello_world() {",
+        "echo",
+        '"Hello,',
+        'World!";',
+        "}",
+        "hello_world();",
+        "?>",
+    ]
 
 
 def test_swift_code_splitter() -> None:
@@ -448,23 +482,21 @@ def test_swift_code_splitter() -> None:
         language=Language.SWIFT, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
-func twoSum(_ nums: [Int], _ target: Int) -> [Int] {
-    var numMap = [Int: Int]()
-
-    for (i, num) in nums.enumerated() {
-        let complement = target - num
-        if let index = numMap[complement] {
-            return [index, i]
-        }
-        numMap[num] = i
-    }
-
-    return []
+func helloWorld() {
+    print("Hello, World!")
 }
+
+helloWorld()
     """
     chunks = splitter.split_text(code)
-    for c in chunks:
-        assert len(c) <= CHUNK_SIZE
+    assert chunks == [
+        "func",
+        "helloWorld() {",
+        'print("Hello,',
+        'World!")',
+        "}",
+        "helloWorld()",
+    ]
 
 
 def test_rust_code_splitter() -> None:
@@ -472,30 +504,9 @@ def test_rust_code_splitter() -> None:
         language=Language.RUST, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
-fn two_sum(nums: &[i32], target: i32) -> Vec<i32> {
-    let mut num_map = std::collections::HashMap::new();
-
-    for (i, &num) in nums.iter().enumerate() {
-        let complement = target - num;
-        if let Some(&index) = num_map.get(&complement) {
-            return vec![index as i32, i as i32];
-        }
-        num_map.insert(num, i);
-    }
-
-    vec![]
+fn main() {
+    println!("Hello, World!");
 }
     """
     chunks = splitter.split_text(code)
-    for c in chunks:
-        assert len(c) <= CHUNK_SIZE
-        
-def test_python_text_splitter() -> None:
-    splitter = PythonCodeTextSplitter(chunk_size=30, chunk_overlap=0)
-    splits = splitter.split_text(FAKE_PYTHON_TEXT)
-    split_0 = """class Foo:\n\n    def bar():"""
-    split_1 = """def foo():"""
-    split_2 = """def testing_func():"""
-    split_3 = """def bar():"""
-    expected_splits = [split_0, split_1, split_2, split_3]
-    assert splits == expected_splits
+    assert chunks == ["fn main() {", 'println!("Hello', ",", 'World!");', "}"]
