@@ -362,12 +362,13 @@ class Chroma(VectorStore):
     ) -> None:
         """Update a document in the collection."""
         texts, metadatas = zip(*((d.page_content, d.metadata) for d in documents))
+        texts_list = list(texts)
         if self._embedding_function is None:
             raise ValueError(
                 "For update, you must specify an embedding function on creation."
             )
-        embeddings = self._embedding_function.embed_documents(list(texts))
-        self._collection.update(document_ids, embeddings, list(texts), list(metadatas))
+        embeddings = self._embedding_function.embed_documents(texts_list)
+        self._collection.update(document_ids, embeddings, texts_list, list(metadatas))
 
     def update(self, documents: List[Document]) -> List[str]:
         if self._doc_manager:
