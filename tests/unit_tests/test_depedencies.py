@@ -83,4 +83,6 @@ def test_imports() -> None:
     from langchain.llms import OpenAI  # noqa: F401
     from langchain.prompts import BasePromptTemplate  # noqa: F401
     from langchain.retrievers import VespaRetriever  # noqa: F401
+    from langchain.tools import DuckDuckGoSearchResults  # noqa: F401
+    from langchain.utilities import SerpAPIWrapper  # noqa: F401
     from langchain.vectorstores import FAISS  # noqa: F401
