@@ -4,7 +4,7 @@
 
 ## Installation and Setup
 
-The Figma API Requires an `access token`, `node_ids`, and a `file key`.
+The Figma API requires an `access token`, `node_ids`, and a `file key`.
 
 The `file key` can be pulled from the URL.  https://www.figma.com/file/{filekey}/sampleFilename
 

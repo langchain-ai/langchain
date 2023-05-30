@@ -1,6 +1,6 @@
 # Reddit
 
->[Reddit (reddit)](www.reddit.com) is an American social news aggregation, content rating, and discussion website.
+>[Reddit](www.reddit.com) is an American social news aggregation, content rating, and discussion website.
 
 ## Installation and Setup
 
