@@ -249,11 +249,6 @@ class LangChainPlusClient(BaseSettings):
             params=params,
         )
         raise_for_status_with_text(response)
-        response = self._get(
-            path,
-            params=params,
-        )
-        raise_for_status_with_text(response)
         result = response.json()
         if isinstance(result, list):
             if len(result) == 0:
