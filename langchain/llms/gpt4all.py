@@ -142,6 +142,8 @@ class GPT4All(LLM):
                 model_type=values["backend"],
                 allow_download=False,
             )
+            # set n_threads
+            values["client"].model.set_thread_count(values["n_threads"])
             values["backend"] = values["client"].model.model_type
 
         except ImportError:
