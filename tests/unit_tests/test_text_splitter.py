@@ -6,8 +6,22 @@ from langchain.text_splitter import (
     CharacterTextSplitter,
     CodeTextSplitter,
     Language,
+    PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
 )
+
+FAKE_PYTHON_TEXT = """
+class Foo:
+
+    def bar():
+
+
+def foo():
+
+def testing_func():
+
+def bar():
+"""
 
 
 def test_character_text_splitter() -> None:
@@ -137,15 +151,16 @@ Bye!\n\n-H."""
         "Okay then",
         "f f f f.",
         "This is a",
-        "a weird",
+        "weird",
         "text to",
-        "write, but",
-        "gotta test",
-        "the",
-        "splittingg",
-        "ggg",
+        "write,",
+        "but gotta",
+        "test the",
+        "splitting",
+        "gggg",
         "some how.",
-        "Bye!\n\n-H.",
+        "Bye!",
+        "-H.",
     ]
     assert output == expected_output
 
@@ -173,7 +188,6 @@ def test_split_documents() -> None:
 
 
 CHUNK_SIZE = 16
-
 
 def test_python_code_splitter() -> None:
     splitter = CodeTextSplitter(
@@ -475,3 +489,13 @@ fn two_sum(nums: &[i32], target: i32) -> Vec<i32> {
     chunks = splitter.split_text(code)
     for c in chunks:
         assert len(c) <= CHUNK_SIZE
+        
+def test_python_text_splitter() -> None:
+    splitter = PythonCodeTextSplitter(chunk_size=30, chunk_overlap=0)
+    splits = splitter.split_text(FAKE_PYTHON_TEXT)
+    split_0 = """class Foo:\n\n    def bar():"""
+    split_1 = """def foo():"""
+    split_2 = """def testing_func():"""
+    split_3 = """def bar():"""
+    expected_splits = [split_0, split_1, split_2, split_3]
+    assert splits == expected_splits

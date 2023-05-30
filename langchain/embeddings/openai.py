@@ -91,6 +91,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
             os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
             os.environ["OPENAI_API_VERSION"] = "2023-03-15-preview"
+            os.environ["OPENAI_PROXY"] = "http://your-corporate-proxy:8080"
 
             from langchain.embeddings.openai import OpenAIEmbeddings
             embeddings = OpenAIEmbeddings(
@@ -112,6 +113,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_api_base: Optional[str] = None
     # to support Azure OpenAI Service custom endpoints
     openai_api_type: Optional[str] = None
+    # to support explicit proxy for OpenAI
+    openai_proxy: Optional[str] = None
     embedding_ctx_length: int = 8191
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
@@ -148,6 +151,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_API_TYPE",
             default="",
         )
+        openai_proxy = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",
+        )
         if openai_api_type in ("azure", "azure_ad", "azuread"):
             default_api_version = "2022-12-01"
         else:
@@ -176,6 +185,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 openai.api_version = openai_api_version
             if openai_api_type:
                 openai.api_type = openai_api_type
+            if openai_proxy:
+                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
             values["client"] = openai.Embedding
         except ImportError:
             raise ImportError(
