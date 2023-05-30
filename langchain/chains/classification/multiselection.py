@@ -38,7 +38,7 @@ Begin:"""
 
 def _extract_content_from_tag(html: str, tag: str) -> List[str]:
     """Extract content from the given tag."""
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, "lxml")
     queries = []
     for query in soup.find_all(tag):
         queries.append(query.text)

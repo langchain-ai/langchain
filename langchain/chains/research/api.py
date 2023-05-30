@@ -12,7 +12,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from langchain.chains.research.multiselection import (
+from langchain.chains.classification.multiselection import (
     IDParser,
     _extract_content_from_tag,
     MultiSelectChain,
