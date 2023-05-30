@@ -12,9 +12,8 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Set,
     TypeVar,
-    Union,
+    Union, Iterable,
 )
 
 from langchain.docstore.document import Document
@@ -34,7 +33,7 @@ class Docstore(ABC):
         """
 
 
-class AddableMixin(object, ABC):
+class AddableMixin(ABC):
     """Mixin class that supports adding texts."""
 
     @abstractmethod
@@ -50,11 +49,11 @@ class DocManager(ABC, Generic[UID_TYPE]):
         self._add(doc, uid)
         return uid
 
-    def lazy_add_docs(self, docs: Iterator[Document]) -> Iterator[UID_TYPE]:
+    def lazy_add_docs(self, docs: Iterable[Document]) -> Iterator[UID_TYPE]:
         for doc in docs:
             yield self.add(doc)
 
-    def add_docs(self, docs: Sequence[Document]) -> List[UID_TYPE]:
+    def add_docs(self, docs: Iterable[Document]) -> List[UID_TYPE]:
         return list(self.lazy_add_docs(docs))
 
     def add_text(self, text: str, metadata: Optional[dict] = None) -> UID_TYPE:
@@ -62,14 +61,14 @@ class DocManager(ABC, Generic[UID_TYPE]):
         return self.add(Document(page_content=text, metadata=_metadata))
 
     def lazy_add_texts(
-        self, texts: Iterator[str], metadatas: Optional[Iterator[dict]] = None
+        self, texts: Iterable[str], metadatas: Optional[Iterable[dict]] = None
     ) -> Iterator[UID_TYPE]:
         _metadatas = metadatas or ({} for _ in texts)
         for text, metadata in zip(texts, _metadatas):
             yield self.add_text(text, metadata=metadata)
 
     def add_texts(
-        self, texts: List[str], metadatas: Optional[List[dict]] = None
+        self, texts: Iterable[str], metadatas: Optional[Iterable[dict]] = None
     ) -> List[UID_TYPE]:
         return list(self.lazy_add_texts(texts, metadatas=metadatas))
 

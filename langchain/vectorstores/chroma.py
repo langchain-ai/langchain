@@ -157,17 +157,19 @@ class Chroma(VectorStore):
         # TODO: Handle the case where the user doesn't provide ids on the Collection
         if self._doc_manager and ids:
             raise ValueError
-        elif not ids:
-            ids = self._doc_manager.add_texts(texts, metadatas=metadatas)
-        if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+        elif self._doc_manager:
+            _ids = self._doc_manager.add_texts(texts, metadatas=metadatas)
+        elif ids is None:
+            _ids = [str(uuid.uuid1()) for _ in texts]
+        else:
+            _ids = ids
         embeddings = None
         if self._embedding_function is not None:
             embeddings = self._embedding_function.embed_documents(list(texts))
         self._collection.add(
-            metadatas=metadatas, embeddings=embeddings, documents=texts, ids=ids
+            metadatas=metadatas, embeddings=embeddings, documents=texts, ids=_ids
         )
-        return ids
+        return _ids
 
     def similarity_search(
         self,
@@ -385,6 +387,7 @@ class Chroma(VectorStore):
                 else:
                     all_ids.append(new_ids[new_idx])
                     new_idx += 1
+            return all_ids
         else:
             return self.add_documents(documents)
 
