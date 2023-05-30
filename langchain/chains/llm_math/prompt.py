@@ -1,7 +1,8 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
+from langchain.utilities.locale import _
 
-_PROMPT_TEMPLATE = """Translate a math problem into a expression that can be executed using Python's numexpr library. Use the output of running this code to answer the question.
+_PROMPT_TEMPLATE = _("""Translate a math problem into a expression that can be executed using Python's numexpr library. Use the output of running this code to answer the question.
 
 Question: ${{Question with math problem.}}
 ```text
@@ -26,7 +27,7 @@ Question: What is 37593 * 67?
 Answer: 2518731
 
 Question: {question}
-"""
+""")
 
 PROMPT = PromptTemplate(
     input_variables=["question"],

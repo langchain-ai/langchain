@@ -1,13 +1,13 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
-
-API_URL_PROMPT_TEMPLATE = """You are given the below API Documentation:
+from langchain.utilities.locale import _
+API_URL_PROMPT_TEMPLATE = _("""You are given the below API Documentation:
 {api_docs}
 Using this documentation, generate the full API url to call for answering the user question.
 You should build the API url in order to get a response that is as short as possible, while still getting the necessary information to answer the question. Pay attention to deliberately exclude any unnecessary pieces of data in the API call.
 
 Question:{question}
-API url:"""
+API url:""")
 
 API_URL_PROMPT = PromptTemplate(
     input_variables=[
@@ -19,7 +19,7 @@ API_URL_PROMPT = PromptTemplate(
 
 API_RESPONSE_PROMPT_TEMPLATE = (
     API_URL_PROMPT_TEMPLATE
-    + """ {api_url}
+    + _(""" {api_url}
 
 Here is the response from the API:
 
@@ -27,7 +27,7 @@ Here is the response from the API:
 
 Summarize this response to answer the original question.
 
-Summary:"""
+Summary:""")
 )
 
 API_RESPONSE_PROMPT = PromptTemplate(

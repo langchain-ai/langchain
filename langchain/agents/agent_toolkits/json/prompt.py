@@ -1,6 +1,8 @@
 # flake8: noqa
+from langchain.utilities.locale import _
 
-JSON_PREFIX = """You are an agent designed to interact with JSON.
+
+JSON_PREFIX = _("""You are an agent designed to interact with JSON.
 Your goal is to return a final answer by interacting with the JSON.
 You have access to the following tools which help you learn more about the JSON you are interacting with.
 Only use the below tools. Only use the information returned by the below tools to construct your final answer.
@@ -17,9 +19,9 @@ Always begin your interaction with the `json_spec_list_keys` tool with input "da
 Note that sometimes the value at a given path is large. In this case, you will get an error "Value is a large dictionary, should explore its keys directly".
 In this case, you should ALWAYS follow up by using the `json_spec_list_keys` tool to see what keys exist at that path.
 Do not simply refer the user to the JSON or a section of the JSON, as this is not a valid answer. Keep digging until you find the answer and explicitly return it.
-"""
-JSON_SUFFIX = """Begin!"
+""")
+JSON_SUFFIX = _("""Begin!"
 
 Question: {input}
 Thought: I should look at the keys that exist in data to see what I have access to
-{agent_scratchpad}"""
+{agent_scratchpad}""")

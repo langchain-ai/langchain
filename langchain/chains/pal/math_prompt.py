@@ -1,8 +1,9 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
+from langchain.utilities.locale import _
 
 template = (
-    '''
+    _('''
 Q: Olivia has $23. She bought five bagels for $3 each. How much money does she have left?
 
 # solution in Python:
@@ -151,7 +152,7 @@ def solution():
 Q: {question}
 
 # solution in Python:
-'''.strip()
+''').strip()
     + "\n\n\n"
 )
 MATH_PROMPT = PromptTemplate(input_variables=["question"], template=template)

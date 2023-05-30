@@ -1,8 +1,9 @@
 # flake8: noqa
 from langchain.output_parsers.regex import RegexParser
 from langchain.prompts import PromptTemplate
+from langchain.utilities.locale import _
 
-template = """You are a teacher coming up with questions to ask on a quiz. 
+template = _("""You are a teacher coming up with questions to ask on a quiz. 
 Given the following document, please generate a question and answer based on that document.
 
 Example Format:
@@ -16,7 +17,7 @@ These questions should be detailed and be based explicitly on information in the
 
 <Begin Document>
 {doc}
-<End Document>"""
+<End Document>""")
 output_parser = RegexParser(
     regex=r"QUESTION: (.*?)\nANSWER: (.*)", output_keys=["query", "answer"]
 )

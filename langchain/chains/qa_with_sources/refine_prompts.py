@@ -1,8 +1,9 @@
 # flake8: noqa
 from langchain.prompts import PromptTemplate
+from langchain.utilities.locale import _
 
 DEFAULT_REFINE_PROMPT_TMPL = (
-    "The original question is as follows: {question}\n"
+    _("The original question is as follows: {question}\n"
     "We have provided an existing answer, including sources: {existing_answer}\n"
     "We have the opportunity to refine the existing answer"
     "(only if needed) with some more context below.\n"
@@ -12,7 +13,7 @@ DEFAULT_REFINE_PROMPT_TMPL = (
     "Given the new context, refine the original answer to better "
     "answer the question. "
     "If you do update it, please update the sources as well. "
-    "If the context isn't useful, return the original answer."
+    "If the context isn't useful, return the original answer.")
 )
 DEFAULT_REFINE_PROMPT = PromptTemplate(
     input_variables=["question", "existing_answer", "context_str"],
@@ -21,12 +22,12 @@ DEFAULT_REFINE_PROMPT = PromptTemplate(
 
 
 DEFAULT_TEXT_QA_PROMPT_TMPL = (
-    "Context information is below. \n"
+    _("Context information is below. \n"
     "---------------------\n"
     "{context_str}"
     "\n---------------------\n"
     "Given the context information and not prior knowledge, "
-    "answer the question: {question}\n"
+    "answer the question: {question}\n")
 )
 DEFAULT_TEXT_QA_PROMPT = PromptTemplate(
     input_variables=["context_str", "question"], template=DEFAULT_TEXT_QA_PROMPT_TMPL

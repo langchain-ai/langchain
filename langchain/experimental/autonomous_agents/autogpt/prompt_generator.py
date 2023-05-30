@@ -2,6 +2,7 @@ import json
 from typing import List
 
 from langchain.tools.base import BaseTool
+from langchain.utilities.locale import _
 
 FINISH_NAME = "finish"
 
@@ -136,18 +137,18 @@ def get_prompt(tools: List[BaseTool]) -> str:
 
     # Add constraints to the PromptGenerator object
     prompt_generator.add_constraint(
-        "~4000 word limit for short term memory. "
+        _("~4000 word limit for short term memory. "
         "Your short term memory is short, "
-        "so immediately save important information to files."
+        "so immediately save important information to files.")
     )
     prompt_generator.add_constraint(
-        "If you are unsure how you previously did something "
+        _("If you are unsure how you previously did something "
         "or want to recall past events, "
-        "thinking about similar events will help you remember."
+        "thinking about similar events will help you remember.")
     )
-    prompt_generator.add_constraint("No user assistance")
+    prompt_generator.add_constraint(_("No user assistance"))
     prompt_generator.add_constraint(
-        'Exclusively use the commands listed in double quotes e.g. "command name"'
+        _('Exclusively use the commands listed in double quotes e.g. "command name"')
     )
 
     # Add commands to the PromptGenerator object
@@ -156,28 +157,28 @@ def get_prompt(tools: List[BaseTool]) -> str:
 
     # Add resources to the PromptGenerator object
     prompt_generator.add_resource(
-        "Internet access for searches and information gathering."
+        _("Internet access for searches and information gathering.")
     )
-    prompt_generator.add_resource("Long Term memory management.")
+    prompt_generator.add_resource(_("Long Term memory management."))
     prompt_generator.add_resource(
-        "GPT-3.5 powered Agents for delegation of simple tasks."
+        _("GPT-3.5 powered Agents for delegation of simple tasks.")
     )
-    prompt_generator.add_resource("File output.")
+    prompt_generator.add_resource(_("File output."))
 
     # Add performance evaluations to the PromptGenerator object
     prompt_generator.add_performance_evaluation(
-        "Continuously review and analyze your actions "
-        "to ensure you are performing to the best of your abilities."
+        _("Continuously review and analyze your actions "
+        "to ensure you are performing to the best of your abilities.")
     )
     prompt_generator.add_performance_evaluation(
-        "Constructively self-criticize your big-picture behavior constantly."
+        _("Constructively self-criticize your big-picture behavior constantly.")
     )
     prompt_generator.add_performance_evaluation(
-        "Reflect on past decisions and strategies to refine your approach."
+        _("Reflect on past decisions and strategies to refine your approach.")
     )
     prompt_generator.add_performance_evaluation(
-        "Every command has a cost, so be smart and efficient. "
-        "Aim to complete tasks in the least number of steps."
+        _("Every command has a cost, so be smart and efficient. "
+        "Aim to complete tasks in the least number of steps.")
     )
 
     # Generate the prompt string

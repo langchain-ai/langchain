@@ -6,21 +6,22 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from langchain.utilities.locale import _
 
-prompt_template = """Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+prompt_template = _("""Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
 
 {context}
 
 Question: {question}
-Helpful Answer:"""
+Helpful Answer:""")
 PROMPT = PromptTemplate(
     template=prompt_template, input_variables=["context", "question"]
 )
 
-system_template = """Use the following pieces of context to answer the users question. 
+system_template = _("""Use the following pieces of context to answer the users question. 
 If you don't know the answer, just say that you don't know, don't try to make up an answer.
 ----------------
-{context}"""
+{context}""")
 messages = [
     SystemMessagePromptTemplate.from_template(system_template),
     HumanMessagePromptTemplate.from_template("{question}"),

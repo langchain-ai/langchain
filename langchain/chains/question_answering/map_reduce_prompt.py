@@ -6,19 +6,20 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.prompts.prompt import PromptTemplate
+from langchain.utilities.locale import _
 
-question_prompt_template = """Use the following portion of a long document to see if any of the text is relevant to answer the question. 
+question_prompt_template = _("""Use the following portion of a long document to see if any of the text is relevant to answer the question. 
 Return any relevant text verbatim.
 {context}
 Question: {question}
-Relevant text, if any:"""
+Relevant text, if any:""")
 QUESTION_PROMPT = PromptTemplate(
     template=question_prompt_template, input_variables=["context", "question"]
 )
-system_template = """Use the following portion of a long document to see if any of the text is relevant to answer the question. 
+system_template = _("""Use the following portion of a long document to see if any of the text is relevant to answer the question. 
 Return any relevant text verbatim.
 ______________________
-{context}"""
+{context}""")
 messages = [
     SystemMessagePromptTemplate.from_template(system_template),
     HumanMessagePromptTemplate.from_template("{question}"),
@@ -30,7 +31,7 @@ QUESTION_PROMPT_SELECTOR = ConditionalPromptSelector(
     default_prompt=QUESTION_PROMPT, conditionals=[(is_chat_model, CHAT_QUESTION_PROMPT)]
 )
 
-combine_prompt_template = """Given the following extracted parts of a long document and a question, create a final answer. 
+combine_prompt_template = _("""Given the following extracted parts of a long document and a question, create a final answer. 
 If you don't know the answer, just say that you don't know. Don't try to make up an answer.
 
 QUESTION: Which state/country's law governs the interpretation of the contract?
@@ -59,15 +60,15 @@ QUESTION: {question}
 =========
 {summaries}
 =========
-FINAL ANSWER:"""
+FINAL ANSWER:""")
 COMBINE_PROMPT = PromptTemplate(
     template=combine_prompt_template, input_variables=["summaries", "question"]
 )
 
-system_template = """Given the following extracted parts of a long document and a question, create a final answer. 
+system_template = _("""Given the following extracted parts of a long document and a question, create a final answer. 
 If you don't know the answer, just say that you don't know. Don't try to make up an answer.
 ______________________
-{summaries}"""
+{summaries}""")
 messages = [
     SystemMessagePromptTemplate.from_template(system_template),
     HumanMessagePromptTemplate.from_template("{question}"),

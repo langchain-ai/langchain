@@ -1,8 +1,9 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
+from langchain.utilities.locale import _
 
 EXAMPLES = [
-    """Setup: You are now playing a fast paced round of TextWorld! Here is your task for
+    _("""Setup: You are now playing a fast paced round of TextWorld! Here is your task for
 today. First of all, you could, like, try to travel east. After that, take the
 binder from the locker. With the binder, place the binder on the mantelpiece.
 Alright, thanks!
@@ -42,10 +43,10 @@ Your score has just gone up by one point.
 Thought: The End has occurred
 Action: Finish[yes]
 
-"""
+""")
 ]
-SUFFIX = """\n\nSetup: {input}
-{agent_scratchpad}"""
+SUFFIX = _("""\n\nSetup: {input}
+{agent_scratchpad}""")
 
 TEXTWORLD_PROMPT = PromptTemplate.from_examples(
     EXAMPLES, SUFFIX, ["input", "agent_scratchpad"]

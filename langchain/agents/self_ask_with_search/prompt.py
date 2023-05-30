@@ -1,7 +1,8 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
+from langchain.utilities.locale import _
 
-_DEFAULT_TEMPLATE = """Question: Who lived longer, Muhammad Ali or Alan Turing?
+_DEFAULT_TEMPLATE = _("""Question: Who lived longer, Muhammad Ali or Alan Turing?
 Are follow up questions needed here: Yes.
 Follow up: How old was Muhammad Ali when he died?
 Intermediate answer: Muhammad Ali was 74 years old when he died.
@@ -38,7 +39,7 @@ Intermediate answer: New Zealand.
 So the final answer is: No
 
 Question: {input}
-Are followup questions needed here:{agent_scratchpad}"""
+Are followup questions needed here:{agent_scratchpad}""")
 PROMPT = PromptTemplate(
     input_variables=["input", "agent_scratchpad"], template=_DEFAULT_TEMPLATE
 )

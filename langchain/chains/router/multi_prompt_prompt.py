@@ -1,6 +1,7 @@
 """Prompt for the router chain in the multi-prompt chain."""
+from langchain.utilities.locale import _
 
-MULTI_PROMPT_ROUTER_TEMPLATE = """\
+MULTI_PROMPT_ROUTER_TEMPLATE = _("""\
 Given a raw text input to a language model select the model prompt best suited for \
 the input. You will be given the names of the available prompts and a description of \
 what the prompt is best suited for. You may also revise the original input if you \
@@ -28,4 +29,4 @@ modifications are needed.
 {{input}}
 
 << OUTPUT >>
-"""
+""")

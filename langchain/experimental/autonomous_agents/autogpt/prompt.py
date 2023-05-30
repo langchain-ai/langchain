@@ -10,7 +10,7 @@ from langchain.prompts.chat import (
 from langchain.schema import BaseMessage, HumanMessage, SystemMessage
 from langchain.tools.base import BaseTool
 from langchain.vectorstores.base import VectorStoreRetriever
-
+from langchain.utilities.locale import _
 
 class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
     ai_name: str
@@ -21,12 +21,12 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
 
     def construct_full_prompt(self, goals: List[str]) -> str:
         prompt_start = (
-            "Your decisions must always be made independently "
+            _("Your decisions must always be made independently "
             "without seeking user assistance.\n"
             "Play to your strengths as an LLM and pursue simple "
             "strategies with no legal complications.\n"
             "If you have completed all your tasks, make sure to "
-            'use the "finish" command.'
+            'use the "finish" command.')
         )
         # Construct full prompt
         full_prompt = (

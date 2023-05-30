@@ -8,9 +8,9 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
+from langchain.utilities.locale import _
 
-
-EVAL_TEMPLATE = """An AI language model has been given access to the following set of tools to help answer a user's question.
+EVAL_TEMPLATE = _("""An AI language model has been given access to the following set of tools to help answer a user's question.
 
 The tools given to the AI model are:
 
@@ -32,9 +32,9 @@ i. Is the final answer helpful?
 ii. Does the AI language use a logical sequence of tools to answer the question?
 iii. Does the AI language model use the tools in a helpful way?
 iv. Does the AI language model use too many steps to answer the question?
-v. Are the appropriate tools used to answer the question?"""
+v. Are the appropriate tools used to answer the question?""")
 
-EXAMPLE_INPUT = """An AI language model has been given acces to the following set of tools to help answer a user's question.
+EXAMPLE_INPUT = _("""An AI language model has been given acces to the following set of tools to help answer a user's question.
 
 The tools given to the AI model are:
 
@@ -73,9 +73,9 @@ i. Is the final answer helpful?
 ii. Does the AI language use a logical sequence of tools to answer the question?
 iii. Does the AI language model use the tools in a helpful way?
 iv. Does the AI language model use too many steps to answer the question?
-v. Are the appropriate tools used to answer the question?"""
+v. Are the appropriate tools used to answer the question?""")
 
-EXAMPLE_OUTPUT = """First, let's evaluate the final answer. The final uses good reasoning but is wrong. 2,857 divided by 305 is not 17.5.\
+EXAMPLE_OUTPUT = _("""First, let's evaluate the final answer. The final uses good reasoning but is wrong. 2,857 divided by 305 is not 17.5.\
 The model should have used the calculator to figure this out. Second does the model use a logical sequence of tools to answer the question?\
 The way model uses the search is not helpful. The model should have used the search tool to figure the width of the US or the height of the statue.\
 The model didn't use the calculator tool and gave an incorrect answer. The search API should be used for current events or specific questions.\
@@ -84,7 +84,7 @@ The model did not use the appropriate tools to answer the question.\
     
 Judgment: Given the good reasoning in the final answer but otherwise poor performance, we give the model a score of 2.
 
-Score: 2"""
+Score: 2""")
 
 EVAL_CHAT_PROMPT = ChatPromptTemplate.from_messages(
     messages=[

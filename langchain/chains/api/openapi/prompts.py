@@ -1,5 +1,7 @@
 # flake8: noqa
-REQUEST_TEMPLATE = """You are a helpful AI Assistant. Please provide JSON arguments to agentFunc() based on the user's instructions.
+from langchain.utilities.locale import _
+
+REQUEST_TEMPLATE = _("""You are a helpful AI Assistant. Please provide JSON arguments to agentFunc() based on the user's instructions.
 
 API_SCHEMA: ```typescript
 {schema}
@@ -32,8 +34,8 @@ Concise response requesting the additional information that would make calling t
 Begin
 -----
 ARGS:
-"""
-RESPONSE_TEMPLATE = """You are a helpful AI assistant trained to answer user queries from API responses.
+""")
+RESPONSE_TEMPLATE = _("""You are a helpful AI assistant trained to answer user queries from API responses.
 You attempted to call an API, which resulted in:
 API_RESPONSE: {response}
 
@@ -54,4 +56,4 @@ You MUST respond as a markdown json code block. The person you are responding to
 
 Begin:
 ---
-"""
+""")

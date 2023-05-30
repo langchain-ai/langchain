@@ -11,23 +11,25 @@ from langchain.schema import (
     OutputParserException,
     PromptValue,
 )
+from langchain.utilities.locale import _
 
-NAIVE_COMPLETION_RETRY = """Prompt:
+
+NAIVE_COMPLETION_RETRY = _("""Prompt:
 {prompt}
 Completion:
 {completion}
 
 Above, the Completion did not satisfy the constraints given in the Prompt.
-Please try again:"""
+Please try again:""")
 
-NAIVE_COMPLETION_RETRY_WITH_ERROR = """Prompt:
+NAIVE_COMPLETION_RETRY_WITH_ERROR = _("""Prompt:
 {prompt}
 Completion:
 {completion}
 
 Above, the Completion did not satisfy the constraints given in the Prompt.
 Details: {error}
-Please try again:"""
+Please try again:""")
 
 NAIVE_RETRY_PROMPT = PromptTemplate.from_template(NAIVE_COMPLETION_RETRY)
 NAIVE_RETRY_WITH_ERROR_PROMPT = PromptTemplate.from_template(

@@ -1,8 +1,9 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
+from langchain.utilities.locale import _
 
 template = (
-    """
+    _("""
 # Generate Python3 Code to solve problems
 # Q: On the nightstand, there is a red pencil, a purple mug, a burgundy keychain, a fuchsia teddy bear, a black plate, and a blue stress ball. What color is the stress ball?
 # Put objects into a dictionary for quick look up
@@ -70,7 +71,7 @@ answer = num_non_orange
 
 
 # Q: {question}
-""".strip()
+""").strip()
     + "\n"
 )
 

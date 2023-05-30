@@ -1,6 +1,7 @@
 """Prompt for the router chain in the multi-retrieval qa chain."""
+from langchain.utilities.locale import _
 
-MULTI_RETRIEVAL_ROUTER_TEMPLATE = """\
+MULTI_RETRIEVAL_ROUTER_TEMPLATE = _("""\
 Given a query to a question answering system select the system best suited \
 for the input. You will be given the names of the available systems and a description \
 of what questions the system is best suited for. You may also revise the original \
@@ -27,4 +28,4 @@ modifications are needed.
 {{input}}
 
 << OUTPUT >>
-"""
+""")

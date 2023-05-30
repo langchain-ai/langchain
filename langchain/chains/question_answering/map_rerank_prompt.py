@@ -1,13 +1,14 @@
 # flake8: noqa
 from langchain.output_parsers.regex import RegexParser
 from langchain.prompts import PromptTemplate
+from langchain.utilities.locale import _
 
 output_parser = RegexParser(
     regex=r"(.*?)\nScore: (.*)",
     output_keys=["answer", "score"],
 )
 
-prompt_template = """Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+prompt_template = _("""Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
 
 In addition to giving an answer, also return a score of how fully it answered the user's question. This should be in the following format:
 
@@ -58,7 +59,7 @@ Context:
 {context}
 ---------
 Question: {question}
-Helpful Answer:"""
+Helpful Answer:""")
 PROMPT = PromptTemplate(
     template=prompt_template,
     input_variables=["context", "question"],

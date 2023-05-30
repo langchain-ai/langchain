@@ -1,7 +1,8 @@
 # flake8: noqa
 from langchain.prompts import PromptTemplate
+from langchain.utilities.locale import _
 
-template = """You are a teacher grading a quiz.
+template = _("""You are a teacher grading a quiz.
 You are given a question, the student's answer, and the true answer, and are asked to score the student answer as either CORRECT or INCORRECT.
 
 Example Format:
@@ -15,12 +16,12 @@ Grade the student answers based ONLY on their factual accuracy. Ignore differenc
 QUESTION: {query}
 STUDENT ANSWER: {result}
 TRUE ANSWER: {answer}
-GRADE:"""
+GRADE:""")
 PROMPT = PromptTemplate(
     input_variables=["query", "result", "answer"], template=template
 )
 
-context_template = """You are a teacher grading a quiz.
+context_template = _("""You are a teacher grading a quiz.
 You are given a question, the context the question is about, and the student's answer. You are asked to score the student's answer as either CORRECT or INCORRECT, based on the context.
 
 Example Format:
@@ -34,13 +35,13 @@ Grade the student answers based ONLY on their factual accuracy. Ignore differenc
 QUESTION: {query}
 CONTEXT: {context}
 STUDENT ANSWER: {result}
-GRADE:"""
+GRADE:""")
 CONTEXT_PROMPT = PromptTemplate(
     input_variables=["query", "context", "result"], template=context_template
 )
 
 
-cot_template = """You are a teacher grading a quiz.
+cot_template = _("""You are a teacher grading a quiz.
 You are given a question, the context the question is about, and the student's answer. You are asked to score the student's answer as either CORRECT or INCORRECT, based on the context.
 Write out in a step by step manner your reasoning to be sure that your conclusion is correct. Avoid simply stating the correct answer at the outset.
 
@@ -56,7 +57,7 @@ Grade the student answers based ONLY on their factual accuracy. Ignore differenc
 QUESTION: {query}
 CONTEXT: {context}
 STUDENT ANSWER: {result}
-EXPLANATION:"""
+EXPLANATION:""")
 COT_PROMPT = PromptTemplate(
     input_variables=["query", "context", "result"], template=cot_template
 )

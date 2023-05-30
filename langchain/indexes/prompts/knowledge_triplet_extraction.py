@@ -2,9 +2,10 @@
 
 from langchain.graphs.networkx_graph import KG_TRIPLE_DELIMITER
 from langchain.prompts.prompt import PromptTemplate
+from langchain.utilities.locale import _
 
 _DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (
-    "You are a networked intelligence helping a human track knowledge triples"
+    _("You are a networked intelligence helping a human track knowledge triples"
     " about all relevant people, things, concepts, etc. and integrating"
     " them with your knowledge stored within your weights"
     " as well as that stored in a knowledge graph."
@@ -28,7 +29,7 @@ _DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (
     "END OF EXAMPLE\n\n"
     "EXAMPLE\n"
     "{text}"
-    "Output:"
+    "Output:")
 )
 
 KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT = PromptTemplate(

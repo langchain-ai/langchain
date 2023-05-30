@@ -1,7 +1,8 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
+from langchain.utilities.locale import _
 
-_DEFAULT_ENTITY_MEMORY_CONVERSATION_TEMPLATE = """You are an assistant to a human, powered by a large language model trained by OpenAI.
+_DEFAULT_ENTITY_MEMORY_CONVERSATION_TEMPLATE = _("""You are an assistant to a human, powered by a large language model trained by OpenAI.
 
 You are designed to be able to assist with a wide range of tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. As a language model, you are able to generate human-like text based on the input you receive, allowing you to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.
 
@@ -16,14 +17,14 @@ Current conversation:
 {history}
 Last line:
 Human: {input}
-You:"""
+You:""")
 
 ENTITY_MEMORY_CONVERSATION_TEMPLATE = PromptTemplate(
     input_variables=["entities", "history", "input"],
     template=_DEFAULT_ENTITY_MEMORY_CONVERSATION_TEMPLATE,
 )
 
-_DEFAULT_SUMMARIZER_TEMPLATE = """Progressively summarize the lines of conversation provided, adding onto the previous summary returning a new summary.
+_DEFAULT_SUMMARIZER_TEMPLATE = _("""Progressively summarize the lines of conversation provided, adding onto the previous summary returning a new summary.
 
 EXAMPLE
 Current summary:
@@ -43,12 +44,12 @@ Current summary:
 New lines of conversation:
 {new_lines}
 
-New summary:"""
+New summary:""")
 SUMMARY_PROMPT = PromptTemplate(
     input_variables=["summary", "new_lines"], template=_DEFAULT_SUMMARIZER_TEMPLATE
 )
 
-_DEFAULT_ENTITY_EXTRACTION_TEMPLATE = """You are an AI assistant reading the transcript of a conversation between an AI and a human. Extract all of the proper nouns from the last line of conversation. As a guideline, a proper noun is generally capitalized. You should definitely extract all names and places.
+_DEFAULT_ENTITY_EXTRACTION_TEMPLATE = _("""You are an AI assistant reading the transcript of a conversation between an AI and a human. Extract all of the proper nouns from the last line of conversation. As a guideline, a proper noun is generally capitalized. You should definitely extract all names and places.
 
 The conversation history is provided just in case of a coreference (e.g. "What do you know about him" where "him" is defined in a previous line) -- ignore items mentioned there that are not in the last line.
 
@@ -81,12 +82,12 @@ Conversation history (for reference only):
 Last line of conversation (for extraction):
 Human: {input}
 
-Output:"""
+Output:""")
 ENTITY_EXTRACTION_PROMPT = PromptTemplate(
     input_variables=["history", "input"], template=_DEFAULT_ENTITY_EXTRACTION_TEMPLATE
 )
 
-_DEFAULT_ENTITY_SUMMARIZATION_TEMPLATE = """You are an AI assistant helping a human keep track of facts about relevant people, places, and concepts in their life. Update the summary of the provided entity in the "Entity" section based on the last line of your conversation with the human. If you are writing the summary for the first time, return a single sentence.
+_DEFAULT_ENTITY_SUMMARIZATION_TEMPLATE = _("""You are an AI assistant helping a human keep track of facts about relevant people, places, and concepts in their life. Update the summary of the provided entity in the "Entity" section based on the last line of your conversation with the human. If you are writing the summary for the first time, return a single sentence.
 The update should only include facts that are relayed in the last line of conversation about the provided entity, and should only contain facts about the provided entity.
 
 If there is no new information about the provided entity or the information is not worth noting (not an important or relevant fact to remember long-term), return the existing summary unchanged.
@@ -102,7 +103,7 @@ Existing summary of {entity}:
 
 Last line of conversation:
 Human: {input}
-Updated summary:"""
+Updated summary:""")
 
 ENTITY_SUMMARIZATION_PROMPT = PromptTemplate(
     input_variables=["entity", "summary", "history", "input"],
@@ -112,7 +113,7 @@ ENTITY_SUMMARIZATION_PROMPT = PromptTemplate(
 
 KG_TRIPLE_DELIMITER = "<|>"
 _DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (
-    "You are a networked intelligence helping a human track knowledge triples"
+    _("You are a networked intelligence helping a human track knowledge triples"
     " about all relevant people, things, concepts, etc. and integrating"
     " them with your knowledge stored within your weights"
     " as well as that stored in a knowledge graph."
@@ -156,7 +157,7 @@ _DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (
     "{history}"
     "\nLast line of conversation (for extraction):\n"
     "Human: {input}\n\n"
-    "Output:"
+    "Output:")
 )
 
 KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT = PromptTemplate(

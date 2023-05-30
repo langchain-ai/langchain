@@ -6,8 +6,9 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.prompts.prompt import PromptTemplate
+from langchain.utilities.locale import _
 
-templ1 = """You are a smart assistant designed to help high school teachers come up with reading comprehension questions.
+templ1 = _("""You are a smart assistant designed to help high school teachers come up with reading comprehension questions.
 Given a piece of text, you must come up with a question and answer pair that can be used to test a student's reading comprehension abilities.
 When coming up with this question/answer pair, you must respond in the following format:
 ```
@@ -18,17 +19,17 @@ When coming up with this question/answer pair, you must respond in the following
 ```
 
 Everything between the ``` must be valid json.
-"""
-templ2 = """Please come up with a question/answer pair, in the specified JSON format, for the following text:
+""")
+templ2 = _("""Please come up with a question/answer pair, in the specified JSON format, for the following text:
 ----------------
-{text}"""
+{text}""")
 CHAT_PROMPT = ChatPromptTemplate.from_messages(
     [
         SystemMessagePromptTemplate.from_template(templ1),
         HumanMessagePromptTemplate.from_template(templ2),
     ]
 )
-templ = """You are a smart assistant designed to help high school teachers come up with reading comprehension questions.
+templ = _("""You are a smart assistant designed to help high school teachers come up with reading comprehension questions.
 Given a piece of text, you must come up with a question and answer pair that can be used to test a student's reading comprehension abilities.
 When coming up with this question/answer pair, you must respond in the following format:
 ```
@@ -42,7 +43,7 @@ Everything between the ``` must be valid json.
 
 Please come up with a question/answer pair, in the specified JSON format, for the following text:
 ----------------
-{text}"""
+{text}""")
 PROMPT = PromptTemplate.from_template(templ)
 
 PROMPT_SELECTOR = ConditionalPromptSelector(
