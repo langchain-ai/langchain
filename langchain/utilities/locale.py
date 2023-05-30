@@ -12,7 +12,7 @@ def localize(domain=None,lang=None,locales=None):
     lang = lang or os.environ.get('LANG', 'en_US')
     locales = locales or os.environ.get('LOCALE_PATH', 'langchain/locale')
 
-    # 加载语言包
+    # load domain's locale
     gettext.bindtextdomain(domain, locales)
     gettext.textdomain(domain)
     return gettext.gettext
