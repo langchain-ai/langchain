@@ -8,6 +8,8 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
+from qdrant_client.http import models as rest
+
 
 @pytest.mark.parametrize(
     ["content_payload_key", "metadata_payload_key"],
@@ -96,6 +98,45 @@ def test_qdrant_similarity_search_filters() -> None:
         Document(
             page_content="bar",
             metadata={"page": 1, "metadata": {"page": 2, "pages": [3, -1]}},
+        )
+    ]
+
+
+def test_qdrant_similarity_search_filters_with_qdrant_filters() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [
+        {"page": i, "details": {"page": i + 1, "pages": [i + 2, -1]}}
+        for i in range(len(texts))
+    ]
+    docsearch = Qdrant.from_texts(
+        texts,
+        FakeEmbeddings(),
+        metadatas=metadatas,
+        location=":memory:",
+    )
+
+    qdrant_filter = rest.Filter(
+        must=[
+            rest.FieldCondition(
+                key="metadata.page",
+                match=rest.MatchValue(value=1),
+            ),
+            rest.FieldCondition(
+                key="metadata.details.page",
+                match=rest.MatchValue(value=2),
+            ),
+            rest.FieldCondition(
+                key="metadata.details.pages",
+                match=rest.MatchAny(any=[3]),
+            ),
+        ]
+    )
+    output = docsearch.similarity_search("foo", k=1, filter=qdrant_filter)
+    assert output == [
+        Document(
+            page_content="bar",
+            metadata={"page": 1, "details": {"page": 2, "pages": [3, -1]}},
         )
     ]
 

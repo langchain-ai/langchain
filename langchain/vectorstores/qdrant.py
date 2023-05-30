@@ -25,11 +25,20 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
-if TYPE_CHECKING:
-    from qdrant_client.http import models as rest
+try:
+    import qdrant_client
+except ImportError:
+    raise ValueError(
+        "Could not import qdrant-client python package. "
+        "Please install it with `pip install qdrant-client`."
+    )
 
+from qdrant_client.http import models as rest
+from qdrant_client.conversions import common_types
 
-MetadataFilter = Dict[str, Union[str, int, bool, dict, list]]
+MetadataFilter = Union[
+    Dict[str, Union[str, int, bool, dict, list]], common_types.Filter
+]
 
 
 class Qdrant(VectorStore):
@@ -61,14 +70,6 @@ class Qdrant(VectorStore):
         embedding_function: Optional[Callable] = None,  # deprecated
     ):
         """Initialize with necessary components."""
-        try:
-            import qdrant_client
-        except ImportError:
-            raise ValueError(
-                "Could not import qdrant-client python package. "
-                "Please install it with `pip install qdrant-client`."
-            )
-
         if not isinstance(client, qdrant_client.QdrantClient):
             raise ValueError(
                 f"client should be an instance of qdrant_client.QdrantClient, "
@@ -169,8 +170,6 @@ class Qdrant(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        from qdrant_client.http import models as rest
-
         texts = list(
             texts
         )  # otherwise iterable might be exhausted after id calculation
@@ -226,10 +225,20 @@ class Qdrant(VectorStore):
             List of Documents most similar to the query and score for each.
         """
 
+        if filter is not None and isinstance(filter, dict):
+            warnings.warn(
+                "Using dict as a `filter` is deprecated. Please use qdrant-client "
+                "filters directly: https://qdrant.tech/documentation/concepts/filtering/",
+                DeprecationWarning,
+            )
+            qdrant_filter = self._qdrant_filter_from_dict(filter)
+        else:
+            qdrant_filter = filter
+
         results = self.client.search(
             collection_name=self.collection_name,
             query_vector=self._embed_query(query),
-            query_filter=self._qdrant_filter_from_dict(filter),
+            query_filter=qdrant_filter,
             with_payload=True,
             limit=k,
         )
@@ -377,15 +386,6 @@ class Qdrant(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
         """
-        try:
-            import qdrant_client
-        except ImportError:
-            raise ValueError(
-                "Could not import qdrant-client python package. "
-                "Please install it with `pip install qdrant-client`."
-            )
-
-        from qdrant_client.http import models as rest
 
         # Just do a single quick embedding to get vector size
         partial_embeddings = embedding.embed_documents(texts[:1])
@@ -477,8 +477,6 @@ class Qdrant(VectorStore):
         )
 
     def _build_condition(self, key: str, value: Any) -> List[rest.FieldCondition]:
-        from qdrant_client.http import models as rest
-
         out = []
 
         if isinstance(value, dict):
@@ -503,8 +501,6 @@ class Qdrant(VectorStore):
     def _qdrant_filter_from_dict(
         self, filter: Optional[MetadataFilter]
     ) -> Optional[rest.Filter]:
-        from qdrant_client.http import models as rest
-
         if not filter:
             return None
 
