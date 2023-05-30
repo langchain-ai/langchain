@@ -271,7 +271,7 @@ class SKLearnVectorStore(VectorStore):
         scores = [1 / math.exp(dist) for dist in dists]
         return list(zip(list(docs), scores))
 
-    def _max_marginal_relevance_search_by_vector(
+    def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
         k: int = DEFAULT_K,
@@ -340,7 +340,7 @@ class SKLearnVectorStore(VectorStore):
             )
 
         embedding = self._embedding_function.embed_query(query)
-        docs = self._max_marginal_relevance_search_by_vector(
+        docs = self.max_marginal_relevance_search_by_vector(
             embedding, k, fetch_k, lambda_mul=lambda_mult
         )
         return docs
