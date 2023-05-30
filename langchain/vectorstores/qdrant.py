@@ -6,6 +6,7 @@ import warnings
 from hashlib import md5
 from operator import itemgetter
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -24,19 +25,12 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
-try:
-    import qdrant_client
-except ImportError:
-    raise ValueError(
-        "Could not import qdrant-client python package. "
-        "Please install it with `pip install qdrant-client`."
-    )
+if TYPE_CHECKING:
+    from qdrant_client.conversions import common_types
+    from qdrant_client.http import models as rest
 
-from qdrant_client.conversions import common_types
-from qdrant_client.http import models as rest
-
-DictFilter = Dict[str, Union[str, int, bool, dict, list]]
-MetadataFilter = Union[DictFilter, common_types.Filter]
+    DictFilter = Dict[str, Union[str, int, bool, dict, list]]
+    MetadataFilter = Union[DictFilter, common_types.Filter]
 
 
 class Qdrant(VectorStore):
@@ -68,6 +62,14 @@ class Qdrant(VectorStore):
         embedding_function: Optional[Callable] = None,  # deprecated
     ):
         """Initialize with necessary components."""
+        try:
+            import qdrant_client
+        except ImportError:
+            raise ValueError(
+                "Could not import qdrant-client python package. "
+                "Please install it with `pip install qdrant-client`."
+            )
+
         if not isinstance(client, qdrant_client.QdrantClient):
             raise ValueError(
                 f"client should be an instance of qdrant_client.QdrantClient, "
@@ -168,6 +170,8 @@ class Qdrant(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
+        from qdrant_client.http import models as rest
+
         texts = list(
             texts
         )  # otherwise iterable might be exhausted after id calculation
@@ -385,6 +389,15 @@ class Qdrant(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
         """
+        try:
+            import qdrant_client
+        except ImportError:
+            raise ValueError(
+                "Could not import qdrant-client python package. "
+                "Please install it with `pip install qdrant-client`."
+            )
+
+        from qdrant_client.http import models as rest
 
         # Just do a single quick embedding to get vector size
         partial_embeddings = embedding.embed_documents(texts[:1])
@@ -476,6 +489,8 @@ class Qdrant(VectorStore):
         )
 
     def _build_condition(self, key: str, value: Any) -> List[rest.FieldCondition]:
+        from qdrant_client.http import models as rest
+
         out = []
 
         if isinstance(value, dict):
@@ -500,6 +515,8 @@ class Qdrant(VectorStore):
     def _qdrant_filter_from_dict(
         self, filter: Optional[DictFilter]
     ) -> Optional[rest.Filter]:
+        from qdrant_client.http import models as rest
+
         if not filter:
             return None
 
