@@ -124,6 +124,24 @@ class BaseConversationalRetrievalChain(Chain):
             _output_keys = _output_keys + ["generated_question"]
         return _output_keys
 
+    @root_validator
+    def validate_combine_docs_chain(cls, values):
+        question_generator = values.get("question_generator")
+        combine_docs_chain = values.get("combine_docs_chain")
+
+        if (
+            question_generator is None
+            and "context" not in combine_docs_chain.llm_chain.prompt.input_variables
+        ):
+            warnings.warn(
+                "If the `conect` variable is not set for the prompt of `combine_docs_chain` "
+                "when `question_generator` is None, using the default combined prompt - "
+                "langchain.chains.conversational_retrieval.prompts.CHAT_RETRIEVAL_QA_PROMPT"
+            )
+            combine_docs_chain.llm_chain.prompt = CHAT_RETRIEVAL_QA_PROMPT
+
+        return values
+
     @abstractmethod
     def _get_docs(
         self,
@@ -162,12 +180,6 @@ class BaseConversationalRetrievalChain(Chain):
         if self.rephrase_question:
             new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        if (
-            self.question_generator is None
-            and "context"
-            not in self.combine_docs_chain.llm_chain.prompt.input_variables
-        ):
-            self.combine_docs_chain.llm_chain.prompt = CHAT_RETRIEVAL_QA_PROMPT
         answer = self.combine_docs_chain.run(
             input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
         )
@@ -216,12 +228,6 @@ class BaseConversationalRetrievalChain(Chain):
         if self.rephrase_question:
             new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        if (
-            self.question_generator is None
-            and "context"
-            not in self.combine_docs_chain.llm_chain.prompt.input_variables
-        ):
-            self.combine_docs_chain.llm_chain.prompt = CHAT_RETRIEVAL_QA_PROMPT
         answer = await self.combine_docs_chain.arun(
             input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
         )
