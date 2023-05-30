@@ -1,0 +1,36 @@
+# Aleph Alpha
+
+>[Aleph Alpha](https://docs.aleph-alpha.com/) was founded in 2019 with the mission to research and build the foundational technology for an era of strong AI. The team of international scientists, engineers, and innovators researches, develops, and deploys transformative AI like large language and multimodal models and runs the fastest European commercial AI cluster.
+
+>[The Luminous series](https://docs.aleph-alpha.com/docs/introduction/luminous/) is a family of large language models.
+
+## Installation and Setup
+
+```bash
+pip install aleph-alpha-client
+```
+
+You have to create a new token. Please, see [instructions](https://docs.aleph-alpha.com/docs/account/#create-a-new-token).
+
+```python
+from getpass import getpass
+
+ALEPH_ALPHA_API_KEY = getpass()
+```
+
+
+## LLM
+
+See a [usage example](../modules/models/llms/integrations/aleph_alpha.ipynb).
+
+```python
+from langchain.llms import AlephAlpha
+```
+
+## Text Embedding Models
+
+See a [usage example](../modules/models/text_embedding/examples/aleph_alpha.ipynb).
+
+```python
+from langchain.embeddings import AlephAlphaSymmetricSemanticEmbedding, AlephAlphaAsymmetricSemanticEmbedding
+```

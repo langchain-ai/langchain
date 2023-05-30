@@ -74,6 +74,11 @@ class DirectoryLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
         p = Path(self.path)
+        if not p.exists():
+            raise FileNotFoundError(f"Directory not found: '{self.path}'")
+        if not p.is_dir():
+            raise ValueError(f"Expected directory, got file: '{self.path}'")
+
         docs: List[Document] = []
         items = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
 

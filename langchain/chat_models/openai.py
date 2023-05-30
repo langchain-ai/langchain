@@ -148,6 +148,8 @@ class ChatOpenAI(BaseChatModel):
     leave blank if not using a proxy or service emulator."""
     openai_api_base: Optional[str] = None
     openai_organization: Optional[str] = None
+    # to support explicit proxy for OpenAI
+    openai_proxy: Optional[str] = None
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     max_retries: int = 6
@@ -209,6 +211,12 @@ class ChatOpenAI(BaseChatModel):
             "OPENAI_API_BASE",
             default="",
         )
+        openai_proxy = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",
+        )
         try:
             import openai
 
@@ -222,6 +230,8 @@ class ChatOpenAI(BaseChatModel):
             openai.organization = openai_organization
         if openai_api_base:
             openai.api_base = openai_api_base
+        if openai_proxy:
+            openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
         try:
             values["client"] = openai.ChatCompletion
         except AttributeError:

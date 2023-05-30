@@ -3,6 +3,7 @@ from langchain.chat_models.azure_openai import AzureChatOpenAI
 from langchain.chat_models.google_palm import ChatGooglePalm
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
+from langchain.chat_models.vertexai import ChatVertexAI
 
 __all__ = [
     "ChatOpenAI",
@@ -10,4 +11,5 @@ __all__ = [
     "PromptLayerChatOpenAI",
     "ChatAnthropic",
     "ChatGooglePalm",
+    "ChatVertexAI",
 ]

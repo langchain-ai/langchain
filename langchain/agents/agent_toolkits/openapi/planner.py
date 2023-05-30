@@ -115,9 +115,8 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
     description = REQUESTS_PATCH_TOOL_DESCRIPTION
 
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    llm_chain = LLMChain(
-        llm=OpenAI(),
-        prompt=PARSING_PATCH_PROMPT,
+    llm_chain: LLMChain = Field(
+        default_factory=_get_default_llm_chain_factory(PARSING_PATCH_PROMPT)
     )
 
     def _run(self, text: str) -> str:
@@ -140,9 +139,8 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
     description = REQUESTS_DELETE_TOOL_DESCRIPTION
 
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    llm_chain = LLMChain(
-        llm=OpenAI(),
-        prompt=PARSING_DELETE_PROMPT,
+    llm_chain: LLMChain = Field(
+        default_factory=_get_default_llm_chain_factory(PARSING_DELETE_PROMPT)
     )
 
     def _run(self, text: str) -> str:
