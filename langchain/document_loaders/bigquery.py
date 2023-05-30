@@ -1,8 +1,10 @@
 from typing import List, Optional
 
+import google.auth
+
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-import google.auth
+
 
 class BigQueryLoader(BaseLoader):
     """Loads a query result from BigQuery into a list of documents.
