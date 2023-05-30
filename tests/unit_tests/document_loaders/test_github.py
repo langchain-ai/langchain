@@ -34,7 +34,9 @@ def test_invalid_initialization() -> None:
 
 
 def test_load(mocker: MockerFixture) -> None:
-    mocker.patch("requests.get", return_value=mocker.MagicMock(json=lambda: []))
+    mocker.patch(
+        "requests.get", return_value=mocker.MagicMock(json=lambda: [], links=None)
+    )
     loader = GitHubIssuesLoader(repo="repo", access_token="access_token")
     documents = loader.load()
     assert documents == []
