@@ -1,11 +1,12 @@
 """Module for initiating a set of searches relevant for answering the question."""
-import abc
-
+import asyncio
+import itertools
 from bs4 import BeautifulSoup
 from typing import Sequence, List, Mapping, Any
 
 from langchain import PromptTemplate, LLMChain, serpapi
 from langchain.base_language import BaseLanguageModel
+from langchain.chains.research.typedefs import AbstractQueryGenerator, AbstractSearcher
 from langchain.schema import BaseOutputParser
 
 
@@ -118,7 +119,7 @@ def _deduplicate_objects(
     return deduped
 
 
-def run_searches(queries: Sequence[str]) -> List[Mapping[str, Any]]:
+def _run_searches(queries: Sequence[str]) -> List[Mapping[str, Any]]:
     """Run the given queries and return the unique results.
 
     Args:
@@ -133,31 +134,46 @@ def run_searches(queries: Sequence[str]) -> List[Mapping[str, Any]]:
         result = wrapper.results(query)
         organic_results = result["organic_results"]
         results.extend(organic_results)
+    return results
 
-    unique_results = _deduplicate_objects(results, "link")
-    return unique_results
+
+async def _arun_searches(queries: Sequence[str]) -> List[Mapping[str, Any]]:
+    """Run the given queries and return the unique results."""
+    wrapper = serpapi.SerpAPIWrapper()
+    tasks = [wrapper.results(query) for query in queries]
+    results = await asyncio.gather(*tasks)
+
+    return list(
+        itertools.chain.from_iterable(result["organic_results"] for result in results)
+    )
 
 
 # PUBLIC API
 
 
-def generate_queries(llm: BaseLanguageModel, question: str) -> List[str]:
-    """Generate queries using a Chain."""
-    chain = LLMChain(prompt=QUERY_GENERATION_PROMPT, llm=llm)
-    queries = chain.predict_and_parse(question=question)
-    return queries
+class GenericQueryGenerator(AbstractQueryGenerator):
+    def __init__(self, llm: BaseLanguageModel) -> None:
+        """Initialize the query generator."""
+        self.llm = llm
+
+    def generate_queries(self, question: str) -> List[str]:
+        """Generate queries using a Chain."""
+        chain = LLMChain(prompt=QUERY_GENERATION_PROMPT, llm=self.llm)
+        queries = chain.predict_and_parse(question=question)
+        return queries
 
 
-class AbstractSearcher(abc.ABC):
-    @abc.abstractmethod
-    def search(self, query: str) -> List[Mapping[str, Any]]:
-        """Run a search for the given query.
+class GenericSearcher(AbstractSearcher):
+    def __init__(self, search_engine: str = "serp") -> None:
+        """Initialize the searcher.
 
         Args:
-            query: the query to run the search for.
+            search_engine: the search engine to use. Placeholder for future work.
         """
-        raise NotImplementedError()
+        if search_engine != "serp":
+            raise NotImplementedError("Only serp is supported at the moment.")
 
-    # def search_all(self, queries: Sequence[str]) -> List[Mapping[str, Any]]:
-    #     """Run a search for all the given queries."""
-    #     raise NotImplementedError
+    def asearch(self, queries: Sequence[str]) -> List[Mapping[str, Any]]:
+        """Run a search for the given query."""
+        results = await _arun_searches(queries)
+        return _deduplicate_objects(results, "link")

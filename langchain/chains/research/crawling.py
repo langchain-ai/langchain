@@ -4,7 +4,6 @@ The main idea behind the crawling module is to identify additional links
 that are worth exploring to find more documents that may be relevant for being
 able to answer the question correctly.
 """
-import abc
 import json
 import urllib.parse
 from bs4 import PageElement, BeautifulSoup
@@ -12,6 +11,7 @@ from typing import List, Dict, Any, Tuple
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.classification.multiselection import MultiSelectChain
+from langchain.chains.research.typedefs import BlobCrawler
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.html.markdownify import MarkdownifyHTMLParser
@@ -80,14 +80,6 @@ def _extract_records(blob: Blob) -> Tuple[List[Dict[str, Any]], Tuple[str, ...]]
         raise ValueError(
             "Can only extract records from HTML/JSON blobs. Got {blob.mimetype}"
         )
-
-
-class BlobCrawler(abc.ABC):
-    """Crawl a blob and identify links to related content."""
-
-    @abc.abstractmethod
-    def crawl(self, blob: Blob, query: str) -> List[str]:
-        """Explore the blob and identify links to related content that is relevant to the query."""
 
 
 class ChainCrawler(BlobCrawler):
