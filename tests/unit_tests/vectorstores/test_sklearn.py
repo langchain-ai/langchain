@@ -76,26 +76,26 @@ def test_sklearn_with_persistence(tmpdir: Path) -> None:
     assert len(output) == 1
     assert output[0].page_content == "foo"
 
+
 @pytest.mark.requires("numpy", "sklearn")
 def test_chroma_mmr() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
-    docsearch = SKLearnVectorStore.from_texts(
-        texts=texts, embedding=FakeEmbeddings()
-    )
+    docsearch = SKLearnVectorStore.from_texts(texts=texts, embedding=FakeEmbeddings())
     output = docsearch.max_marginal_relevance_search("foo", k=1, fetch_k=3)
     assert len(output) == 1
     assert output[0].page_content == "foo"
+
 
 @pytest.mark.requires("numpy", "sklearn")
 def test_chroma_mmr_by_vector() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     embeddings = FakeEmbeddings()
-    docsearch = SKLearnVectorStore.from_texts(
-        texts=texts, embedding=embeddings
-    )
+    docsearch = SKLearnVectorStore.from_texts(texts=texts, embedding=embeddings)
     embedded_query = embeddings.embed_query("foo")
-    output = docsearch.max_marginal_relevance_search_by_vector(embedded_query, k=1, fetch_k=3)
+    output = docsearch.max_marginal_relevance_search_by_vector(
+        embedded_query, k=1, fetch_k=3
+    )
     assert len(output) == 1
     assert output[0].page_content == "foo"

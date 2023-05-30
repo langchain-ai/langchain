@@ -18,6 +18,7 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 
 DEFAULT_K = 4  # Number of Documents to return.
 
+
 def guard_import(
     module_name: str, *, pip_name: Optional[str] = None, package: Optional[str] = None
 ) -> Any:
@@ -225,11 +226,8 @@ class SKLearnVectorStore(VectorStore):
         self._neighbors.fit(self._embeddings_np)
         self._neighbors_fitted = True
 
-    def _similarity_index_search_with_score(self,
-        query_embedding: List[float],
-        *,
-        k: int = DEFAULT_K,
-        **kwargs: Any
+    def _similarity_index_search_with_score(
+        self, query_embedding: List[float], *, k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Tuple[int, float]]:
         """Search k embeddings similar to the query embedding. Returns a list of
         (index, distance) tuples."""
@@ -249,13 +247,16 @@ class SKLearnVectorStore(VectorStore):
         indices_dists = self._similarity_index_search_with_score(
             query_embedding=query_embedding, k=k, **kwargs
         )
-        return [(
-            Document(
-                page_content=self._texts[idx],
-                metadata={ "id": self._ids[idx], **self._metadatas[idx] }
-            ),
-            dist
-        ) for idx, dist in indices_dists]
+        return [
+            (
+                Document(
+                    page_content=self._texts[idx],
+                    metadata={"id": self._ids[idx], **self._metadatas[idx]},
+                ),
+                dist,
+            )
+            for idx, dist in indices_dists
+        ]
 
     def similarity_search(
         self, query: str, k: int = DEFAULT_K, **kwargs: Any
@@ -308,8 +309,9 @@ class SKLearnVectorStore(VectorStore):
         return [
             Document(
                 page_content=self._texts[idx],
-                metadata={ "id": self._ids[idx], **self._metadatas[idx] }
-            ) for idx in mmr_indices
+                metadata={"id": self._ids[idx], **self._metadatas[idx]},
+            )
+            for idx in mmr_indices
         ]
 
     def max_marginal_relevance_search(
