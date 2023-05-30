@@ -181,7 +181,7 @@ class ElasticVectorSearch(VectorStore, ABC):
 
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
-            _id = str(uuid.uuid4())
+            _id = str(metadata.pop("_id", uuid.uuid4())
             request = {
                 "_op_type": "index",
                 "_index": self.index_name,
