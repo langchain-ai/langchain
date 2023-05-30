@@ -477,6 +477,44 @@ class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
         ]
         super().__init__(separators=separators, **kwargs)
 
+class HtmlTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along HTML layout elements."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a HtmlTextSplitter."""
+        separators = [
+            # First, try to split along HTML tags
+            "<body>",
+            "<div>",
+            "<p>",
+            "<br>",
+            "<li>",
+            "<h1>",
+            "<h2>",
+            "<h3>",
+            "<h4>",
+            "<h5>",
+            "<h6>",
+            "<span>",
+            "<table>",
+            "<tr>",
+            "<td>",
+            "<th>",
+            "<ul>",
+            "<ol>",
+            "<header>",
+            "<footer>",
+            "<nav>",
+            # Head
+            "<head>",
+            "<style>",
+            "<script>",
+            "<meta>",
+            "<title>",
+            ""
+        ]
+        super().__init__(separators=separators, **kwargs)
+
 
 class Language(str, Enum):
     CPP = "cpp"
