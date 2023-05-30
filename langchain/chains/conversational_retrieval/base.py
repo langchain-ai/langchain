@@ -195,6 +195,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         chain_type: str = "stuff",
         verbose: bool = False,
+        condense_question_llm: Optional[BaseLanguageModel] = None,
         combine_docs_chain_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
@@ -206,8 +207,10 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             verbose=verbose,
             **combine_docs_chain_kwargs,
         )
+
+        _llm = condense_question_llm or llm
         condense_question_chain = LLMChain(
-            llm=llm, prompt=condense_question_prompt, verbose=verbose
+            llm=_llm, prompt=condense_question_prompt, verbose=verbose
         )
         return cls(
             retriever=retriever,
@@ -254,7 +257,6 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         chain_type: str = "stuff",
         combine_docs_chain_kwargs: Optional[Dict] = None,
-        condense_question_llm: Optional[BaseLanguageModel] = None,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
         """Load chain from LLM."""
@@ -264,8 +266,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
             chain_type=chain_type,
             **combine_docs_chain_kwargs,
         )
-        _llm = condense_question_llm or llm
-        condense_question_chain = LLMChain(llm=_llm, prompt=condense_question_prompt)
+        condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
         return cls(
             vectorstore=vectorstore,
             combine_docs_chain=doc_chain,
