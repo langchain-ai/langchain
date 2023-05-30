@@ -1,16 +1,24 @@
-from typing import List, Optional
+from typing import List, Optional, Sequence
 from langchain.docstore.document import Document
 
 from langchain.document_loaders.base import BaseLoader
 
 
 class FaunaLoader(BaseLoader):
+    """
+    Attributes:
+        query (str): The FQL query string to execute.
+        page_content_field (str): The field that contains the content of each page.
+        secret (str): The secret key for authenticating to FaunaDB.
+        metadata_fields (Optional[Sequence[str]]): Optional list of field names to include in metadata.
+        after (Optional[str]): The Fauna cursor for pagination. Default is None.
+    """
     def __init__(
         self,
         query: str,
         page_content_field: str,
         secrect: str,
-        metadata_fields: Optional[List[str]] = None,
+        metadata_fields: Optional[Sequence[str]] = None,
         after: Optional[str] = None,
     ):
         self.query = query
@@ -45,12 +53,9 @@ class FaunaLoader(BaseLoader):
                     page_content=page_content,
                     metadata={"id": result.id, "ts": result.ts},
                 )
-                documents.append(document)
+                yield document
         if page.after is not None:
-            documents.append(
-                Document(
-                    page_content="Next Page Exists",
-                    metadata={"after": page.after},
-                )
+            yield Document(
+                page_content="Next Page Exists",
+                metadata={"after": page.after},
             )
-        return documents
