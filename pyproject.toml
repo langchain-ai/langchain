@@ -303,6 +303,7 @@ extended_testing = [
  "py-trello",
  "scikit-learn",
  "pyspark",
+ "qdrant-client"
 ]
 
 [tool.ruff]
