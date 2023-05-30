@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import os
 import shutil
@@ -6,7 +7,7 @@ import subprocess
 from contextlib import contextmanager
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Generator, List, Optional
+from typing import Dict, Generator, List, Mapping, Optional, Union, cast
 
 import requests
 import yaml
@@ -17,6 +18,50 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 _DIR = Path(__file__).parent
+
+
+def pprint_services(services_status: List[Mapping[str, Union[str, List[str]]]]) -> None:
+    # Loop through and collect Service, State, and Publishers["PublishedPorts"]
+    # for each service
+    services = []
+    for service in services_status:
+        service_status: Dict[str, str] = {
+            "Service": str(service["Service"]),
+            "Status": str(service["Status"]),
+        }
+        publishers = cast(List[Dict], service.get("Publishers", []))
+        if publishers:
+            service_status["PublishedPorts"] = ", ".join(
+                [str(publisher["PublishedPort"]) for publisher in publishers]
+            )
+        services.append(service_status)
+
+    max_service_len = max(len(service["Service"]) for service in services)
+    max_state_len = max(len(service["Status"]) for service in services)
+    service_message = [
+        "\n"
+        + "Service".ljust(max_service_len + 2)
+        + "Status".ljust(max_state_len + 2)
+        + "Published Ports"
+    ]
+    for service in services:
+        service_str = service["Service"].ljust(max_service_len + 2)
+        state_str = service["Status"].ljust(max_state_len + 2)
+        ports_str = service.get("PublishedPorts", "")
+        service_message.append(service_str + state_str + ports_str)
+
+    langchain_endpoint: str = "http://localhost:1984"
+    used_ngrok = any(["ngrok" in service["Service"] for service in services])
+    if used_ngrok:
+        langchain_endpoint = get_ngrok_url(auth_token=None)
+
+    service_message.append(
+        "\nTo connect, set the following environment variables"
+        " in your LangChain application:"
+        "\nLANGCHAIN_TRACING_V2=true"
+        f"\nLANGCHAIN_ENDPOINT={langchain_endpoint}"
+    )
+    logger.info("\n".join(service_message))
 
 
 def get_docker_compose_command() -> List[str]:
@@ -173,6 +218,7 @@ class PlusCommand:
         expose: bool = False,
         auth_token: Optional[str] = None,
         dev: bool = False,
+        openai_api_key: Optional[str] = None,
     ) -> None:
         """Run the LangChainPlus server locally.
 
@@ -180,9 +226,16 @@ class PlusCommand:
             expose: If True, expose the server to the internet using ngrok.
             auth_token: The ngrok authtoken to use (visible in the ngrok dashboard).
                 If not provided, ngrok server session length will be restricted.
+            dev: If True, use the development (rc) image of LangChainPlus.
+            openai_api_key: The OpenAI API key to use for LangChainPlus
+                If not provided, the OpenAI API Key will be read from the
+                OPENAI_API_KEY environment variable. If neither are provided,
+                some features of LangChainPlus will not be available.
         """
         if dev:
             os.environ["_LANGCHAINPLUS_IMAGE_PREFIX"] = "rc-"
+        if openai_api_key is not None:
+            os.environ["OPENAI_API_KEY"] = openai_api_key
         if expose:
             self._start_and_expose(auth_token=auth_token)
         else:
@@ -213,6 +266,36 @@ class PlusCommand:
                 "logs",
             ]
         )
+
+    def status(self) -> None:
+        """Provide information about the status LangChainPlus server."""
+
+        command = [
+            *self.docker_compose_command,
+            "-f",
+            str(self.docker_compose_file),
+            "ps",
+            "--format",
+            "json",
+        ]
+
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        try:
+            command_stdout = result.stdout.decode("utf-8")
+            services_status = json.loads(command_stdout)
+        except json.JSONDecodeError:
+            logger.error("Error checking LangChainPlus server status.")
+            return
+        if services_status:
+            logger.info("The LangChainPlus server is currently running.")
+            pprint_services(services_status)
+        else:
+            logger.info("The LangChainPlus server is not running.")
+            return
 
 
 def env() -> None:
@@ -250,9 +333,20 @@ def main() -> None:
         action="store_true",
         help="Use the development version of the LangChainPlus image.",
     )
+    server_start_parser.add_argument(
+        "--openai-api-key",
+        default=os.getenv("OPENAI_API_KEY"),
+        help="The OpenAI API key to use for LangChainPlus."
+        " If not provided, the OpenAI API Key will be read from the"
+        " OPENAI_API_KEY environment variable. If neither are provided,"
+        " some features of LangChainPlus will not be available.",
+    )
     server_start_parser.set_defaults(
         func=lambda args: server_command.start(
-            expose=args.expose, auth_token=args.ngrok_authtoken, dev=args.dev
+            expose=args.expose,
+            auth_token=args.ngrok_authtoken,
+            dev=args.dev,
+            openai_api_key=args.openai_api_key,
         )
     )
 
@@ -265,7 +359,10 @@ def main() -> None:
         "logs", description="Show the LangChainPlus server logs."
     )
     server_logs_parser.set_defaults(func=lambda args: server_command.logs())
-
+    server_status_parser = server_subparsers.add_parser(
+        "status", description="Show the LangChainPlus server status."
+    )
+    server_status_parser.set_defaults(func=lambda args: server_command.status())
     env_parser = subparsers.add_parser("env")
     env_parser.set_defaults(func=lambda args: env())
 
