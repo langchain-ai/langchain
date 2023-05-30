@@ -1,13 +1,11 @@
 # Unstructured
 
-This page covers how to use the [`unstructured`](https://github.com/Unstructured-IO/unstructured)
-ecosystem within LangChain. The `unstructured` package from
+>The `unstructured` package from
 [Unstructured.IO](https://www.unstructured.io/) extracts clean text from raw source documents like
 PDFs and Word documents.
+This page covers how to use the [`unstructured`](https://github.com/Unstructured-IO/unstructured)
+ecosystem within LangChain. 
 
-
-This page is broken into two parts: installation and setup, and then references to specific
-`unstructured` wrappers.
 
 ## Installation and Setup
 
