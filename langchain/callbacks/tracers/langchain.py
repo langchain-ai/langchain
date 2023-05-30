@@ -198,8 +198,11 @@ class LangChainTracer(BaseTracer):
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
         session = self.ensure_session()
-        run.reference_example_id = self.example_id
-        run_create = RunCreate(**run.dict(), session_id=session.id)
+        if run.parent_run_id is None:
+            run.parent_run_id = self.example_id
+        run_dict = run.dict()
+        del run_dict["child_runs"]
+        run_create = RunCreate(**run_dict, session_id=session.id)
         response = None
         try:
             response = requests.post(
@@ -248,40 +251,40 @@ class LangChainTracer(BaseTracer):
 
     def _on_llm_start(self, run: Run) -> None:
         """Persist an LLM run."""
-        self.executor.submit(self._persist_run_single, run)
+        self.executor.submit(self._persist_run_single, run.copy(deep=True))
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Persist an LLM run."""
-        self.executor.submit(self._persist_run_single, run)
+        self.executor.submit(self._persist_run_single, run.copy(deep=True))
 
     def _on_llm_end(self, run: Run) -> None:
         """Process the LLM Run."""
-        self.executor.submit(self._update_run_single, run)
+        self.executor.submit(self._update_run_single, run.copy(deep=True))
 
     def _on_llm_error(self, run: Run) -> None:
         """Process the LLM Run upon error."""
-        self.executor.submit(self._update_run_single, run)
+        self.executor.submit(self._update_run_single, run.copy(deep=True))
 
     def _on_chain_start(self, run: Run) -> None:
         """Process the Chain Run upon start."""
-        self.executor.submit(self._persist_run_single, run)
+        self.executor.submit(self._persist_run_single, run.copy(deep=True))
 
     def _on_chain_end(self, run: Run) -> None:
         """Process the Chain Run."""
-        self.executor.submit(self._update_run_single, run)
+        self.executor.submit(self._update_run_single, run.copy(deep=True))
 
     def _on_chain_error(self, run: Run) -> None:
         """Process the Chain Run upon error."""
-        self.executor.submit(self._update_run_single, run)
+        self.executor.submit(self._update_run_single, run.copy(deep=True))
 
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""
-        self.executor.submit(self._persist_run_single, run)
+        self.executor.submit(self._persist_run_single, run.copy(deep=True))
 
     def _on_tool_end(self, run: Run) -> None:
         """Process the Tool Run."""
-        self.executor.submit(self._update_run_single, run)
+        self.executor.submit(self._update_run_single, run.copy(deep=True))
 
     def _on_tool_error(self, run: Run) -> None:
         """Process the Tool Run upon error."""
-        self.executor.submit(self._update_run_single, run)
+        self.executor.submit(self._update_run_single, run.copy(deep=True))
