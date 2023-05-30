@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -11,6 +21,8 @@ if TYPE_CHECKING:
     from pymongo import MongoClient
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_INSERT_BATCH_SIZE = 100
 
 
 class MongoDBAtlasVectorSearch(VectorStore):
@@ -95,34 +107,34 @@ class MongoDBAtlasVectorSearch(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-
-        def insert_documents_in_batches(
-            to_insert: List[Tuple[str, Dict[str, Any]]]
-        ) -> List:
-            if not to_insert:
-                return []
-            # Embed and create the documents
-            embeddings = self._embedding.embed_documents([t for t, _ in to_insert])
-            batch_to_insert = [
-                {self._text_key: t, self._embedding_key: embedding, **m}
-                for (t, m), embedding in zip(to_insert, embeddings)
-            ]
-            # insert the documents in MongoDB Atlas
-            insert_result = self._collection.insert_many(batch_to_insert)
-            return insert_result.inserted_ids
-
-        batch_size = kwargs.get("batch_size", 100)  # Threshold for batch processing
-        texts_with_metadata = []
+        batch_size = kwargs.get("batch_size", DEFAULT_INSERT_BATCH_SIZE)
+        _metadatas: Union[List, Generator] = metadatas or ({} for _ in texts)
+        texts_batch = []
+        metadatas_batch = []
         result_ids = []
-        for i, text in enumerate(texts):
-            metadata = metadatas[i] if metadatas else {}
-            texts_with_metadata.append((text, metadata))
-            if len(texts_with_metadata) == batch_size:
-                result_ids.extend(insert_documents_in_batches(texts_with_metadata))
-                texts_with_metadata = []
-        result_ids.extend(insert_documents_in_batches(texts_with_metadata))
-
+        for i, (text, metadata) in enumerate(zip(texts, _metadatas)):
+            texts_batch.append(text)
+            metadatas_batch.append(metadata)
+            if (i + 1) % batch_size == 0:
+                result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))
+                texts_batch = []
+                metadatas_batch = []
+        if texts_batch:
+            result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))
         return result_ids
+
+    def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
+        if not texts:
+            return []
+        # Embed and create the documents
+        embeddings = self._embedding.embed_documents(texts)
+        to_insert = [
+            {self._text_key: t, self._embedding_key: embedding, **m}
+            for t, m, embedding in zip(texts, metadatas, embeddings)
+        ]
+        # insert the documents in MongoDB Atlas
+        insert_result = self._collection.insert_many(to_insert)
+        return insert_result.inserted_ids
 
     def similarity_search_with_score(
         self,
@@ -152,21 +164,22 @@ class MongoDBAtlasVectorSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        knn_beta = {
+            "vector": self._embedding.embed_query(query),
+            "path": self._embedding_key,
+            "k": k,
+        }
+        if pre_filter:
+            knn_beta["filter"] = pre_filter
         pipeline = [
             {
                 "$search": {
                     "index": self._index_name,
-                    "knnBeta": {
-                        "vector": self._embedding.embed_query(query),
-                        "path": self._embedding_key,
-                        "k": k
-                    },
+                    "knnBeta": knn_beta,
                 }
             },
             {"$project": {"score": {"$meta": "searchScore"}, self._embedding_key: 0}},
         ]
-        if pre_filter is not None:
-            pipeline[0]["$search"]["knnBeta"]["filter"] = pre_filter
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
         cursor = self._collection.aggregate(pipeline)
