@@ -131,6 +131,7 @@ class BaseConversationalRetrievalChain(Chain):
 
         if (
             question_generator is None
+            and isinstance(combine_docs_chain, BaseCombineDocumentsChain)
             and "context" not in combine_docs_chain.llm_chain.prompt.input_variables
         ):
             warnings.warn(
