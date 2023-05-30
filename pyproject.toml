@@ -96,6 +96,7 @@ openlm = {version = "^0.0.5", optional = true}
 azure-ai-formrecognizer = {version = "^3.2.1", optional = true}
 azure-ai-vision = {version = "^0.11.1b1", optional = true}
 azure-cognitiveservices-speech = {version = "^1.28.0", optional = true}
+py-trello = {version = "^0.19.0", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -274,7 +275,8 @@ extended_testing = [
  "zep-python",
  "gql",
  "requests_toolbelt",
- "html2text"
+ "html2text",
+ "py-trello"
 ]
 
 [tool.ruff]
