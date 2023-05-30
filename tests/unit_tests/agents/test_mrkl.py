@@ -82,7 +82,10 @@ def test_get_action_and_input_sql_query() -> None:
     """
     action, action_input = get_action_and_input(llm_output)
     assert action == "query_sql_db"
-    assert action_input == "SELECT \"UserName\", MAX(totalpayment) FROM user_shifts GROUP BY \"UserName\""
+    assert (
+        action_input
+        == 'SELECT "UserName", MAX(totalpayment) FROM user_shifts GROUP BY "UserName"'
+    )
 
 
 def test_get_final_answer() -> None:
