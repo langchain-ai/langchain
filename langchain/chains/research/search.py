@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from typing import Sequence, List, Mapping, Any
 
 from langchain import PromptTemplate, LLMChain, serpapi
+from langchain.chains import LLMBashChain
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.research.typedefs import AbstractQueryGenerator, AbstractSearcher
 from langchain.schema import BaseOutputParser
@@ -172,14 +173,20 @@ class GenericSearcher(AbstractSearcher):
     extending it to other search engines in the future.
     """
 
-    def __init__(self, search_engine: str = "serp") -> None:
+    def __init__(
+        self,
+        link_selection_llm,
+        search_engine: str = "serp",
+    ) -> None:
         """Initialize the searcher.
 
         Args:
+            link_selection_llm: the language model to use for link selection.
             search_engine: the search engine to use. Placeholder for future work.
         """
         if search_engine != "serp":
             raise NotImplementedError("Only serp is supported at the moment.")
+        self.link_selection_llm = link_selection_llm
 
     def asearch(self, queries: Sequence[str]) -> List[Mapping[str, Any]]:
         """Run a search for the given query.
@@ -200,4 +207,5 @@ class GenericSearcher(AbstractSearcher):
             }
             for result in deduplicated_results
         ]
+
         return records

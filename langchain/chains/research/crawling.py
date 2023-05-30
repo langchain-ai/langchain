@@ -82,7 +82,7 @@ class ChainCrawler(BlobCrawler):
         records, columns = _extract_records(blob)
 
         result = self.chain(
-            inputs={"question": question, "choices": records, "columns": columns}
+            inputs={"question": question, "choices": records, "columns": columns},
         )
 
         selected_records = result["selected"]
