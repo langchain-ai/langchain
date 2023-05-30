@@ -246,7 +246,7 @@ class SKLearnVectorStore(VectorStore):
     ) -> List[Tuple[Document, float]]:
         query_embedding = self._embedding_function.embed_query(query)
         indices_dists = self._similarity_index_search_with_score(
-            query_embedding=query_embedding, k=k, **kwargs
+            query_embedding, k=k, **kwargs
         )
         return [
             (
@@ -296,13 +296,13 @@ class SKLearnVectorStore(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         indices_dists = self._similarity_index_search_with_score(
-            query_embedding=embedding, k=fetch_k, **kwargs
+            embedding, k=fetch_k, **kwargs
         )
         indices, _ = zip(*indices_dists)
         result_embeddings = self._embeddings_np[indices,]
         mmr_selected = maximal_marginal_relevance(
-            query_embedding=self._np.array(embedding, dtype=self._np.float32),
-            embedding_list=result_embeddings,
+            self._np.array(embedding, dtype=self._np.float32),
+            result_embeddings,
             k=k,
             lambda_mult=lambda_mult,
         )
