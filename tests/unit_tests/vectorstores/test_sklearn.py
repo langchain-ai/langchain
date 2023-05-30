@@ -4,7 +4,6 @@ from pathlib import Path
 import pytest
 
 from langchain.vectorstores import SKLearnVectorStore
-from langchain.docstore.document import Document
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
