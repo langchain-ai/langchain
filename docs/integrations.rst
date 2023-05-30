@@ -20,6 +20,12 @@ Integrations by Module
 - `Toolkit Integrations <./modules/agents/toolkits.html>`_
 
 
+Dependencies
+----------------
+
+| LangChain depends on `several hungered Python packages <https://github.com/hwchase17/langchain/network/dependencies>`_.
+
+
 All Integrations
 -------------------------------------------
 

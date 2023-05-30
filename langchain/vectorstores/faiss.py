@@ -175,9 +175,8 @@ class FAISS(VectorStore):
                 f"adding items, which {self.docstore} does not"
             )
         # Embed and create the documents.
+        texts, embeddings = zip(*text_embeddings)
 
-        texts = [te[0] for te in text_embeddings]
-        embeddings = [te[1] for te in text_embeddings]
         return self.__add(texts, embeddings, metadatas=metadatas, ids=ids, **kwargs)
 
     def similarity_search_with_score_by_vector(

@@ -5,10 +5,8 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Optional
 
 from langchain.schema import (
-    AIMessage,
     BaseChatMessageHistory,
     BaseMessage,
-    HumanMessage,
     _message_to_dict,
     messages_from_dict,
 )
@@ -143,23 +141,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         else:
             raise Exception(f"Unexpected response: {fetch_response}")
 
-    def add_user_message(self, message: str) -> None:
-        """Store a user message in the cache.
-
-        Args:
-            message (str): The message to store.
-        """
-        self.__add_message(HumanMessage(content=message))
-
-    def add_ai_message(self, message: str) -> None:
-        """Store an AI message in the cache.
-
-        Args:
-            message (str): The message to store.
-        """
-        self.__add_message(AIMessage(content=message))
-
-    def __add_message(self, message: BaseMessage) -> None:
+    def add_message(self, message: BaseMessage) -> None:
         """Store a message in the cache.
 
         Args:
