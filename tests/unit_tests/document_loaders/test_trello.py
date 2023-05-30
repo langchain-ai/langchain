@@ -1,22 +1,22 @@
 import unittest
-from typing import List, Optional
 from collections import namedtuple
+from typing import Any, Optional
+from unittest.mock import patch
+
 import pytest
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from unittest.mock import MagicMock, patch
-from langchain.document_loaders.trello import TrelloLoader
 from bs4 import BeautifulSoup
 
+from langchain.document_loaders.trello import TrelloLoader
 
-def list_to_objects(dict_list):
+
+def list_to_objects(dict_list: list) -> list:
     """Helper to convert dict objects."""
     return [
         namedtuple("Object", d.keys())(**d) for d in dict_list if isinstance(d, dict)
     ]
 
 
-def card_list_to_objects(cards):
+def card_list_to_objects(cards: list) -> list:
     """Helper to convert dict cards into trello weird mix of objects and dictionaries"""
     for card in cards:
         card["checklists"] = list_to_objects(card.get("checklists"))
@@ -29,17 +29,17 @@ class MockBoard:
     Defining Trello mock board internal object to use in the patched method.
     """
 
-    def __init__(self, id, name, cards, lists):
+    def __init__(self, id: str, name: str, cards: list, lists: list):
         self.id = id
         self.name = name
         self.cards = cards
         self.lists = lists
 
-    def get_cards(self, card_filter: Optional[str] = ""):
+    def get_cards(self, card_filter: Optional[str] = "") -> list:
         """We do not need to test the card-filter since is on Trello Client side."""
         return self.cards
 
-    def list_lists(self):
+    def list_lists(self) -> list:
         return self.lists
 
 
@@ -75,7 +75,7 @@ TRELLO_CARDS_QA = [
         "id": "12350aca6952888df7975903",
         "name": "Closed Card Title",
         "description": "This is the <em>description</em> of Closed Card.",
-        "is_closed": True,
+        "closed": True,
         "labels": [],
         "due_date": "",
         "url": "https://trello.com/card/12350aca6952888df7975903",
@@ -107,7 +107,7 @@ TRELLO_CARDS_QA = [
         "id": "45650aca6952888df7975903",
         "name": "Card 2",
         "description": "This is the description of <strong>Card 2</strong>.",
-        "is_closed": False,
+        "closed": False,
         "labels": [{"name": "Medium"}, {"name": "Task"}],
         "due_date": "",
         "url": "https://trello.com/card/45650aca6952888df7975903",
@@ -119,7 +119,7 @@ TRELLO_CARDS_QA = [
         "id": "55550aca6952888df7975903",
         "name": "Camera",
         "description": "<div></div>",
-        "is_closed": False,
+        "closed": False,
         "labels": [{"name": "Task"}],
         "due_date": "",
         "url": "https://trello.com/card/55550aca6952888df7975903",
@@ -145,7 +145,10 @@ TRELLO_CARDS_QA = [
         "comments": [
             {
                 "data": {
-                    "text": "to follow group of players use Group Camera feature of cinemachine."
+                    "text": (
+                        "to follow group of players use Group Camera feature of "
+                        "cinemachine."
+                    )
                 }
             },
             {
@@ -160,7 +163,7 @@ TRELLO_CARDS_QA = [
 
 
 @pytest.fixture
-def mock_trello_client():
+def mock_trello_client() -> Any:
     """Fixture that creates a mock for trello.TrelloClient."""
     # Create a mock `trello.TrelloClient` object.
     with patch("trello.TrelloClient") as mock_trello_client:
@@ -174,8 +177,8 @@ def mock_trello_client():
             MockBoard("55559f6002dd973ad8cdbfb7", "QA", cards_qa_objs, list_objs),
         ]
 
-        # Patch `get_boards()` method of the mock `TrelloClient` object to return the mock list
-        # of boards.
+        # Patch `get_boards()` method of the mock `TrelloClient` object to return the
+        # mock list of boards.
         mock_trello_client.return_value.list_boards.return_value = boards
         yield mock_trello_client.return_value
 
@@ -183,26 +186,26 @@ def mock_trello_client():
 @pytest.mark.usefixtures("mock_trello_client")
 @pytest.mark.requires("trello", "bs4", "lxml")
 class TestTrelloLoader(unittest.TestCase):
-    def test_empty_board(self):
+    def test_empty_board(self) -> None:
         """
         Test loading a board with no cards.
         """
-        trello_loader = TrelloLoader(
+        trello_loader = TrelloLoader.from_credentials(
+            "Research",
             api_key="API_KEY",
-            api_token="API_TOKEN",
-            board_name="Research",
+            token="API_TOKEN",
         )
         documents = trello_loader.load()
         self.assertEqual(len(documents), 0, "Empty board returns an empty list.")
 
-    def test_complete_text_and_metadata(self):
+    def test_complete_text_and_metadata(self) -> None:
         """
         Test loading a board cards with all metadata.
         """
-        trello_loader = TrelloLoader(
+        trello_loader = TrelloLoader.from_credentials(
+            "QA",
             api_key="API_KEY",
-            api_token="API_TOKEN",
-            board_name="QA",
+            token="API_TOKEN",
         )
         documents = trello_loader.load()
         self.assertEqual(len(documents), len(TRELLO_CARDS_QA), "Card count matches.")
@@ -233,7 +236,7 @@ class TestTrelloLoader(unittest.TestCase):
                 "url": "https://trello.com/card/12350aca6952888df7975903",
                 "labels": [],
                 "list": "Done",
-                "is_closed": True,
+                "closed": True,
                 "due_date": "",
             },
             "Metadata of Closed Card Matches.",
@@ -262,7 +265,7 @@ class TestTrelloLoader(unittest.TestCase):
                 "url": "https://trello.com/card/45650aca6952888df7975903",
                 "labels": ["Medium", "Task"],
                 "list": "In Progress",
-                "is_closed": False,
+                "closed": False,
                 "due_date": "",
             },
             "Metadata of Card 2 Matches.",
@@ -293,20 +296,20 @@ class TestTrelloLoader(unittest.TestCase):
                 "url": "https://trello.com/card/55550aca6952888df7975903",
                 "labels": ["Task"],
                 "list": "Selected for Milestone",
-                "is_closed": False,
+                "closed": False,
                 "due_date": "",
             },
             "Metadata of Camera Card matches.",
         )
 
-    def test_partial_text_and_metadata(self):
+    def test_partial_text_and_metadata(self) -> None:
         """
         Test loading a board cards removing some text and metadata.
         """
-        trello_loader = TrelloLoader(
+        trello_loader = TrelloLoader.from_credentials(
+            "QA",
             api_key="API_KEY",
-            api_token="API_TOKEN",
-            board_name="QA",
+            token="API_TOKEN",
             extra_metadata=("list"),
             include_card_name=False,
             include_checklist=False,
