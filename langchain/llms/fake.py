@@ -27,6 +27,9 @@ class FakeListLLM(LLM):
         self.i += 1
         return response
 
+    async def _acall(self, prompt: str, *args: Any, **kwargs: Any) -> str:
+        return self._call(prompt, *args, **kwargs)
+
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         return {"responses": self.responses}
