@@ -6,9 +6,12 @@ import pytest
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import Qdrant
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from tests.integration_tests.vectorstores.fake_embeddings import (
+    ConsistentFakeEmbeddings,
+)
 
 
+@pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize(
     ["content_payload_key", "metadata_payload_key"],
     [
@@ -18,36 +21,59 @@ from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
         ("foo", Qdrant.METADATA_KEY),
     ],
 )
-def test_qdrant(content_payload_key: str, metadata_payload_key: str) -> None:
+def test_qdrant_similarity_search(
+    batch_size: int, content_payload_key: str, metadata_payload_key: str
+) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = Qdrant.from_texts(
         texts,
-        FakeEmbeddings(),
+        ConsistentFakeEmbeddings(),
         location=":memory:",
         content_payload_key=content_payload_key,
         metadata_payload_key=metadata_payload_key,
+        batch_size=batch_size,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
 
-def test_qdrant_add_documents() -> None:
+@pytest.mark.parametrize("batch_size", [1, 64])
+def test_qdrant_add_documents(batch_size: int) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
-    docsearch: Qdrant = Qdrant.from_texts(texts, FakeEmbeddings(), location=":memory:")
+    docsearch: Qdrant = Qdrant.from_texts(
+        texts, ConsistentFakeEmbeddings(), location=":memory:", batch_size=batch_size
+    )
 
     new_texts = ["foobar", "foobaz"]
-    docsearch.add_documents([Document(page_content=content) for content in new_texts])
+    docsearch.add_documents(
+        [Document(page_content=content) for content in new_texts], batch_size=batch_size
+    )
     output = docsearch.similarity_search("foobar", k=1)
-    # FakeEmbeddings return the same query embedding as the first document embedding
-    # computed in `embedding.embed_documents`. Since embed_documents is called twice,
-    # "foo" embedding is the same as "foobar" embedding
+    # StatefulFakeEmbeddings return the same query embedding as the first document
+    # embedding computed in `embedding.embed_documents`. Thus, "foo" embedding is the
+    # same as "foobar" embedding
     assert output == [Document(page_content="foobar")] or output == [
         Document(page_content="foo")
     ]
 
 
+@pytest.mark.parametrize("batch_size", [1, 64])
+def test_qdrant_add_texts_returns_all_ids(batch_size: int) -> None:
+    docsearch: Qdrant = Qdrant.from_texts(
+        ["foobar"],
+        ConsistentFakeEmbeddings(),
+        location=":memory:",
+        batch_size=batch_size,
+    )
+
+    ids = docsearch.add_texts(["foo", "bar", "baz"])
+    assert 3 == len(ids)
+    assert 3 == len(set(ids))
+
+
+@pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize(
     ["content_payload_key", "metadata_payload_key"],
     [
@@ -58,24 +84,26 @@ def test_qdrant_add_documents() -> None:
     ],
 )
 def test_qdrant_with_metadatas(
-    content_payload_key: str, metadata_payload_key: str
+    batch_size: int, content_payload_key: str, metadata_payload_key: str
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = Qdrant.from_texts(
         texts,
-        FakeEmbeddings(),
+        ConsistentFakeEmbeddings(),
         metadatas=metadatas,
         location=":memory:",
         content_payload_key=content_payload_key,
         metadata_payload_key=metadata_payload_key,
+        batch_size=batch_size,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": 0})]
 
 
-def test_qdrant_similarity_search_filters() -> None:
+@pytest.mark.parametrize("batch_size", [1, 64])
+def test_qdrant_similarity_search_filters(batch_size: int) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [
@@ -84,9 +112,10 @@ def test_qdrant_similarity_search_filters() -> None:
     ]
     docsearch = Qdrant.from_texts(
         texts,
-        FakeEmbeddings(),
+        ConsistentFakeEmbeddings(),
         metadatas=metadatas,
         location=":memory:",
+        batch_size=batch_size,
     )
 
     output = docsearch.similarity_search(
@@ -100,6 +129,7 @@ def test_qdrant_similarity_search_filters() -> None:
     ]
 
 
+@pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize(
     ["content_payload_key", "metadata_payload_key"],
     [
@@ -110,18 +140,19 @@ def test_qdrant_similarity_search_filters() -> None:
     ],
 )
 def test_qdrant_max_marginal_relevance_search(
-    content_payload_key: str, metadata_payload_key: str
+    batch_size: int, content_payload_key: str, metadata_payload_key: str
 ) -> None:
     """Test end to end construction and MRR search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = Qdrant.from_texts(
         texts,
-        FakeEmbeddings(),
+        ConsistentFakeEmbeddings(),
         metadatas=metadatas,
         location=":memory:",
         content_payload_key=content_payload_key,
         metadata_payload_key=metadata_payload_key,
+        batch_size=batch_size,
     )
     output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
     assert output == [
@@ -133,9 +164,9 @@ def test_qdrant_max_marginal_relevance_search(
 @pytest.mark.parametrize(
     ["embeddings", "embedding_function"],
     [
-        (FakeEmbeddings(), None),
-        (FakeEmbeddings().embed_query, None),
-        (None, FakeEmbeddings().embed_query),
+        (ConsistentFakeEmbeddings(), None),
+        (ConsistentFakeEmbeddings().embed_query, None),
+        (None, ConsistentFakeEmbeddings().embed_query),
     ],
 )
 def test_qdrant_embedding_interface(
@@ -157,7 +188,7 @@ def test_qdrant_embedding_interface(
 @pytest.mark.parametrize(
     ["embeddings", "embedding_function"],
     [
-        (FakeEmbeddings(), FakeEmbeddings().embed_query),
+        (ConsistentFakeEmbeddings(), ConsistentFakeEmbeddings().embed_query),
         (None, None),
     ],
 )
