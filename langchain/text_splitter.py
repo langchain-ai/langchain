@@ -34,7 +34,7 @@ def _split_text(text: str, separator: str, keep_separator: bool) -> List[str]:
     if separator:
         if keep_separator:
             # The parentheses in the pattern keep the delimiters in the result.
-            _splits = re.split(f"(?={separator})", text)
+            _splits = re.split(f"(?={re.escape(separator)})", text)
         else:
             splits = text.split(separator)
     else:
