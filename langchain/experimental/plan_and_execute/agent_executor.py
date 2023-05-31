@@ -14,7 +14,7 @@ from langchain.experimental.plan_and_execute.schema import (
 
 class PlanAndExecute(Chain):
     planner: BasePlanner
-    executer: BaseExecutor
+    executor: BaseExecutor
     step_container: BaseStepContainer = Field(default_factory=ListStepContainer)
     input_key: str = "input"
     output_key: str = "output"
@@ -41,7 +41,7 @@ class PlanAndExecute(Chain):
         for step in plan.steps:
             _new_inputs = {"previous_steps": self.step_container, "current_step": step}
             new_inputs = {**_new_inputs, **inputs}
-            response = self.executer.step(
+            response = self.executor.step(
                 new_inputs,
                 callbacks=run_manager.get_child() if run_manager else None,
             )

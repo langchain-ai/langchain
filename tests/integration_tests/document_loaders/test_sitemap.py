@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -122,3 +123,12 @@ def test_sitemap_metadata_default() -> None:
     assert len(documents) > 1
     assert "source" in documents[0].metadata
     assert "loc" in documents[0].metadata
+
+
+def test_local_sitemap() -> None:
+    """Test sitemap loader."""
+    file_path = Path(__file__).parent.parent / "examples/sitemap.xml"
+    loader = SitemapLoader(str(file_path))
+    documents = loader.load()
+    assert len(documents) > 1
+    assert "🦜🔗" in documents[0].page_content

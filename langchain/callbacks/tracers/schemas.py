@@ -6,47 +6,44 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
 
+from langchain.env import get_runtime_environment
 from langchain.schema import LLMResult
 
 
-class TracerSessionBase(BaseModel):
-    """Base class for TracerSession."""
+class TracerSessionV1Base(BaseModel):
+    """Base class for TracerSessionV1."""
 
     start_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     name: Optional[str] = None
     extra: Optional[Dict[str, Any]] = None
 
 
-class TracerSessionCreate(TracerSessionBase):
-    """Create class for TracerSession."""
-
-    pass
+class TracerSessionV1Create(TracerSessionV1Base):
+    """Create class for TracerSessionV1."""
 
 
-class TracerSession(TracerSessionBase):
-    """TracerSession schema."""
+class TracerSessionV1(TracerSessionV1Base):
+    """TracerSessionV1 schema."""
 
     id: int
 
 
-class TracerSessionV2Base(TracerSessionBase):
-    """A creation class for TracerSessionV2."""
+class TracerSessionBase(TracerSessionV1Base):
+    """A creation class for TracerSession."""
 
     tenant_id: UUID
 
 
-class TracerSessionV2Create(TracerSessionV2Base):
-    """A creation class for TracerSessionV2."""
+class TracerSessionCreate(TracerSessionBase):
+    """A creation class for TracerSession."""
 
     id: Optional[UUID]
 
-    pass
 
-
-class TracerSessionV2(TracerSessionV2Base):
-    """TracerSession schema for the V2 API."""
+class TracerSession(TracerSessionBase):
+    """TracerSessionV1 schema for the V2 API."""
 
     id: UUID
 
@@ -94,6 +91,9 @@ class ToolRun(BaseRun):
     child_tool_runs: List[ToolRun] = Field(default_factory=list)
 
 
+# Begin V2 API Schemas
+
+
 class RunTypeEnum(str, Enum):
     """Enum for run types."""
 
@@ -108,29 +108,51 @@ class RunBase(BaseModel):
     id: Optional[UUID]
     start_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     end_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
-    extra: dict
+    extra: Optional[Dict[str, Any]] = None
     error: Optional[str]
     execution_order: int
+    child_execution_order: Optional[int]
     serialized: dict
     inputs: dict
     outputs: Optional[dict]
-    session_id: UUID
     reference_example_id: Optional[UUID]
     run_type: RunTypeEnum
     parent_run_id: Optional[UUID]
-
-
-class RunCreate(RunBase):
-    """Schema to create a run in the DB."""
-
-    name: Optional[str]
-    child_runs: List[RunCreate] = Field(default_factory=list)
 
 
 class Run(RunBase):
     """Run schema when loading from the DB."""
 
     name: str
+    child_runs: List[Run] = Field(default_factory=list)
+
+    @root_validator(pre=True)
+    def assign_name(cls, values: dict) -> dict:
+        """Assign name to the run."""
+        if "name" not in values:
+            values["name"] = values["serialized"]["name"]
+        return values
+
+
+class RunCreate(RunBase):
+    name: str
+    session_id: UUID
+
+    @root_validator(pre=True)
+    def add_runtime_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Add env info to the run."""
+        extra = values.get("extra", {})
+        extra["runtime"] = get_runtime_environment()
+        values["extra"] = extra
+        return values
+
+
+class RunUpdate(BaseModel):
+    end_time: Optional[datetime.datetime]
+    error: Optional[str]
+    outputs: Optional[dict]
+    parent_run_id: Optional[UUID]
+    reference_example_id: Optional[UUID]
 
 
 ChainRun.update_forward_refs()

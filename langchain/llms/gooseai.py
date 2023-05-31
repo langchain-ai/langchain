@@ -100,7 +100,7 @@ class GooseAI(LLM):
             openai.api_base = "https://api.goose.ai/v1"
             values["client"] = openai.Completion
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )

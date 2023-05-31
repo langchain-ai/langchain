@@ -1,6 +1,6 @@
 # flake8: noqa
 QUESTION_TO_QUERY = """
-Answer the question below with a DAX query that can be sent to Power BI. DAX queries have a simple syntax comprised of just one required keyword, EVALUATE, and several optional keywords: ORDER BY, START AT, DEFINE, MEASURE, VAR, TABLE, and COLUMN. Each keyword defines a statement used for the duration of the query. Any time < or > are used in the text below it means that those values need to be replaced by table, columns or other things. 
+Answer the question below with a DAX query that can be sent to Power BI. DAX queries have a simple syntax comprised of just one required keyword, EVALUATE, and several optional keywords: ORDER BY, START AT, DEFINE, MEASURE, VAR, TABLE, and COLUMN. Each keyword defines a statement used for the duration of the query. Any time < or > are used in the text below it means that those values need to be replaced by table, columns or other things. If the question is not something you can answer with a DAX query, reply with "I cannot answer this" and the question will be escalated to a human.
 
 Some DAX functions return a table instead of a scalar, and must be wrapped in a function that evaluates the table and returns a scalar; unless the table is a single column, single row table, then it is treated as a scalar value. Most DAX functions require one or more arguments, which can include tables, columns, expressions, and values. However, some functions, such as PI, do not require any arguments, but always require parentheses to indicate the null argument. For example, you must always type PI(), not PI. You can also nest functions within other functions. 
 
@@ -31,6 +31,8 @@ DATEDIFF(date1, date2, <interval>) - Returns the difference between two date val
 DATEVALUE(<date_text>) - Returns a date value that represents the specified date.
 YEAR(<date>), QUARTER(<date>), MONTH(<date>), DAY(<date>), HOUR(<date>), MINUTE(<date>), SECOND(<date>) - Returns the part of the date for the specified date.
 
+Finally, make sure to escape double quotes with a single backslash, and make sure that only table names have single quotes around them, while names of measures or the values of columns that you want to compare against are in escaped double quotes. Newlines are not necessary and can be skipped. The queries are serialized as json and so will have to fit be compliant with json syntax. Sometimes you will get a question, a DAX query and a error, in that case you need to rewrite the DAX query to get the correct answer.
+
 The following tables exist: {tables}
 
 and the schema's for some are given here:
@@ -38,25 +40,26 @@ and the schema's for some are given here:
 
 Examples:
 {examples}
+
 Question: {tool_input}
 DAX: 
 """
 
 DEFAULT_FEWSHOT_EXAMPLES = """
 Question: How many rows are in the table <table>?
-DAX: EVALUATE ROW("Number of rows", COUNTROWS(<table>))
+DAX: EVALUATE ROW(\"Number of rows\", COUNTROWS(<table>))
 ----
 Question: How many rows are in the table <table> where <column> is not empty?
-DAX: EVALUATE ROW("Number of rows", COUNTROWS(FILTER(<table>, <table>[<column>] <> "")))
+DAX: EVALUATE ROW(\"Number of rows\", COUNTROWS(FILTER(<table>, <table>[<column>] <> \"\")))
 ----
 Question: What was the average of <column> in <table>?
-DAX: EVALUATE ROW("Average", AVERAGE(<table>[<column>]))
+DAX: EVALUATE ROW(\"Average\", AVERAGE(<table>[<column>]))
 ----
 """
 
-BAD_REQUEST_RESPONSE = (
-    "Bad request. Please ask the question_to_query_powerbi tool to provide the query."
+RETRY_RESPONSE = (
+    "{tool_input} DAX: {query} Error: {error}. Please supply a new DAX query."
 )
-BAD_REQUEST_RESPONSE_ESCALATED = "You already tried this, please try a different query."
+BAD_REQUEST_RESPONSE = "Error on this question, the error was {error}, you can try to rephrase the question."
 SCHEMA_ERROR_RESPONSE = "Bad request, are you sure the table name is correct?"
 UNAUTHORIZED_RESPONSE = "Unauthorized. Try changing your authentication, do not retry."

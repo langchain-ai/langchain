@@ -74,6 +74,16 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         prompt = PromptTemplate.from_template(template)
         return cls(prompt=prompt, **kwargs)
 
+    @classmethod
+    def from_template_file(
+        cls: Type[MessagePromptTemplateT],
+        template_file: Union[str, Path],
+        input_variables: List[str],
+        **kwargs: Any,
+    ) -> MessagePromptTemplateT:
+        prompt = PromptTemplate.from_file(template_file, input_variables)
+        return cls(prompt=prompt, **kwargs)
+
     @abstractmethod
     def format(self, **kwargs: Any) -> BaseMessage:
         """To a BaseMessage."""
@@ -144,12 +154,18 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
 
     @classmethod
+    def from_template(cls, template: str, **kwargs: Any) -> ChatPromptTemplate:
+        prompt_template = PromptTemplate.from_template(template, **kwargs)
+        message = HumanMessagePromptTemplate(prompt=prompt_template)
+        return cls.from_messages([message])
+
+    @classmethod
     def from_role_strings(
         cls, string_messages: List[Tuple[str, str]]
     ) -> ChatPromptTemplate:
         messages = [
             ChatMessagePromptTemplate(
-                content=PromptTemplate.from_template(template), role=role
+                prompt=PromptTemplate.from_template(template), role=role
             )
             for role, template in string_messages
         ]
@@ -160,7 +176,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         cls, string_messages: List[Tuple[Type[BaseMessagePromptTemplate], str]]
     ) -> ChatPromptTemplate:
         messages = [
-            role(content=PromptTemplate.from_template(template))
+            role(prompt=PromptTemplate.from_template(template))
             for role, template in string_messages
         ]
         return cls.from_messages(messages)

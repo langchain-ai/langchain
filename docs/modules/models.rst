@@ -28,6 +28,14 @@ Specifically, these models take a list of Chat Messages as input, and return a C
 The third type of models we cover are text embedding models.
 These models take text as input and return a list of floats.
 
+Getting Started
+---------------
+
+.. toctree::
+   :maxdepth: 1
+
+   ./models/getting_started.ipynb
+
 
 Go Deeper
 ---------

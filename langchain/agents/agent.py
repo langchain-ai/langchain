@@ -7,11 +7,12 @@ import logging
 import time
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import yaml
 from pydantic import BaseModel, root_validator
 
+from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import InvalidTool
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
@@ -33,6 +34,7 @@ from langchain.schema import (
     AgentFinish,
     BaseMessage,
     BaseOutputParser,
+    OutputParserException,
 )
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
@@ -132,7 +134,11 @@ class BaseSingleActionAgent(BaseModel):
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
         _dict = super().dict()
-        _dict["_type"] = str(self._agent_type)
+        _type = self._agent_type
+        if isinstance(_type, AgentType):
+            _dict["_type"] = str(_type.value)
+        else:
+            _dict["_type"] = _type
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -307,6 +313,12 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
     def input_keys(self) -> List[str]:
         return list(set(self.llm_chain.input_keys) - {"intermediate_steps"})
 
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of agent."""
+        _dict = super().dict()
+        del _dict["output_parser"]
+        return _dict
+
     def plan(
         self,
         intermediate_steps: List[Tuple[AgentAction, str]],
@@ -375,6 +387,12 @@ class Agent(BaseSingleActionAgent):
     llm_chain: LLMChain
     output_parser: AgentOutputParser
     allowed_tools: Optional[List[str]] = None
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of agent."""
+        _dict = super().dict()
+        del _dict["output_parser"]
+        return _dict
 
     def get_allowed_tools(self) -> Optional[List[str]]:
         return self.allowed_tools
@@ -608,7 +626,9 @@ class AgentExecutor(Chain):
     max_iterations: Optional[int] = 15
     max_execution_time: Optional[float] = None
     early_stopping_method: str = "force"
-    handle_parsing_errors: bool = False
+    handle_parsing_errors: Union[
+        bool, str, Callable[[OutputParserException], str]
+    ] = False
 
     @classmethod
     def from_agent_and_tools(
@@ -744,15 +764,32 @@ class AgentExecutor(Chain):
                 callbacks=run_manager.get_child() if run_manager else None,
                 **inputs,
             )
-        except Exception as e:
-            if not self.handle_parsing_errors:
+        except OutputParserException as e:
+            if isinstance(self.handle_parsing_errors, bool):
+                raise_error = not self.handle_parsing_errors
+            else:
+                raise_error = False
+            if raise_error:
                 raise e
-            text = str(e).split("`")[1]
-            observation = "Invalid or incomplete response"
+            text = str(e)
+            if isinstance(self.handle_parsing_errors, bool):
+                if e.send_to_llm:
+                    observation = str(e.observation)
+                    text = str(e.llm_output)
+                else:
+                    observation = "Invalid or incomplete response"
+            elif isinstance(self.handle_parsing_errors, str):
+                observation = self.handle_parsing_errors
+            elif callable(self.handle_parsing_errors):
+                observation = self.handle_parsing_errors(e)
+            else:
+                raise ValueError("Got unexpected type of `handle_parsing_errors`")
             output = AgentAction("_Exception", observation, text)
+            if run_manager:
+                run_manager.on_agent_action(output, color="green")
             tool_run_kwargs = self.agent.tool_run_logging_kwargs()
             observation = ExceptionTool().run(
-                output.tool,
+                output.tool_input,
                 verbose=self.verbose,
                 color=None,
                 callbacks=run_manager.get_child() if run_manager else None,
@@ -818,15 +855,26 @@ class AgentExecutor(Chain):
                 callbacks=run_manager.get_child() if run_manager else None,
                 **inputs,
             )
-        except Exception as e:
-            if not self.handle_parsing_errors:
+        except OutputParserException as e:
+            if isinstance(self.handle_parsing_errors, bool):
+                raise_error = not self.handle_parsing_errors
+            else:
+                raise_error = False
+            if raise_error:
                 raise e
-            text = str(e).split("`")[1]
-            observation = "Invalid or incomplete response"
+            text = str(e)
+            if isinstance(self.handle_parsing_errors, bool):
+                observation = "Invalid or incomplete response"
+            elif isinstance(self.handle_parsing_errors, str):
+                observation = self.handle_parsing_errors
+            elif callable(self.handle_parsing_errors):
+                observation = self.handle_parsing_errors(e)
+            else:
+                raise ValueError("Got unexpected type of `handle_parsing_errors`")
             output = AgentAction("_Exception", observation, text)
             tool_run_kwargs = self.agent.tool_run_logging_kwargs()
             observation = await ExceptionTool().arun(
-                output.tool,
+                output.tool_input,
                 verbose=self.verbose,
                 color=None,
                 callbacks=run_manager.get_child() if run_manager else None,
@@ -893,7 +941,7 @@ class AgentExecutor(Chain):
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
-            [tool.name for tool in self.tools], excluded_colors=["green"]
+            [tool.name for tool in self.tools], excluded_colors=["green", "red"]
         )
         intermediate_steps: List[Tuple[AgentAction, str]] = []
         # Let's start tracking the number of iterations and time elapsed

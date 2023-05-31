@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from urllib.parse import parse_qs, urlparse
 
 from pydantic import root_validator
 from pydantic.dataclasses import dataclass
@@ -70,8 +71,8 @@ class GoogleApiClient:
                 "You must run"
                 "`pip install --upgrade "
                 "google-api-python-client google-auth-httplib2 "
-                "google-auth-oauthlib"
-                "youtube-transcript-api`"
+                "google-auth-oauthlib "
+                "youtube-transcript-api` "
                 "to use the Google Drive loader"
             )
 
@@ -97,6 +98,47 @@ class GoogleApiClient:
         return creds
 
 
+ALLOWED_SCHEMAS = {"http", "https"}
+ALLOWED_NETLOCK = {
+    "youtu.be",
+    "m.youtube.com",
+    "youtube.com",
+    "www.youtube.com",
+    "www.youtube-nocookie.com",
+    "vid.plus",
+}
+
+
+def _parse_video_id(url: str) -> Optional[str]:
+    """Parse a youtube url and return the video id if valid, otherwise None."""
+    parsed_url = urlparse(url)
+
+    if parsed_url.scheme not in ALLOWED_SCHEMAS:
+        return None
+
+    if parsed_url.netloc not in ALLOWED_NETLOCK:
+        return None
+
+    path = parsed_url.path
+
+    if path.endswith("/watch"):
+        query = parsed_url.query
+        parsed_query = parse_qs(query)
+        if "v" in parsed_query:
+            ids = parsed_query["v"]
+            video_id = ids if isinstance(ids, str) else ids[0]
+        else:
+            return None
+    else:
+        path = parsed_url.path.lstrip("/")
+        video_id = path.split("/")[-1]
+
+    if len(video_id) != 11:  # Video IDs are 11 characters long
+        return None
+
+    return video_id
+
+
 class YoutubeLoader(BaseLoader):
     """Loader that loads Youtube transcripts."""
 
@@ -113,10 +155,20 @@ class YoutubeLoader(BaseLoader):
         self.language = language
         self.continue_on_failure = continue_on_failure
 
+    @staticmethod
+    def extract_video_id(youtube_url: str) -> str:
+        """Extract video id from common YT urls."""
+        video_id = _parse_video_id(youtube_url)
+        if not video_id:
+            raise ValueError(
+                f"Could not determine the video ID for the URL {youtube_url}"
+            )
+        return video_id
+
     @classmethod
     def from_youtube_url(cls, youtube_url: str, **kwargs: Any) -> YoutubeLoader:
         """Given youtube URL, load video."""
-        video_id = youtube_url.split("youtube.com/watch?v=")[-1]
+        video_id = cls.extract_video_id(youtube_url)
         return cls(video_id, **kwargs)
 
     def load(self) -> List[Document]:
@@ -239,8 +291,8 @@ class GoogleApiYoutubeLoader(BaseLoader):
                 "You must run"
                 "`pip install --upgrade "
                 "google-api-python-client google-auth-httplib2 "
-                "google-auth-oauthlib"
-                "youtube-transcript-api`"
+                "google-auth-oauthlib "
+                "youtube-transcript-api` "
                 "to use the Google Drive loader"
             )
 
@@ -305,7 +357,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
             raise ImportError(
                 "You must run"
                 "`pip install --upgrade "
-                "youtube-transcript-api`"
+                "youtube-transcript-api` "
                 "to use the youtube loader"
             )
 

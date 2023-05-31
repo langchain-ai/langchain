@@ -18,7 +18,9 @@ from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.metaphor_search.tool import MetaphorSearchResults
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
+from langchain.tools.graphql.tool import BaseGraphQLTool
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import (
@@ -33,16 +35,21 @@ from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.shell.tool import ShellTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
+from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain.utilities import ArxivAPIWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
+from langchain.utilities.graphql import GraphQLAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
+from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 
 
 def _get_python_repl() -> BaseTool:
@@ -212,6 +219,14 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
     )
 
 
+def _get_twilio(**kwargs: Any) -> BaseTool:
+    return Tool(
+        name="Text Message",
+        description="Useful for when you need to send a text message to a provided phone number.",
+        func=TwilioAPIWrapper(**kwargs).run,
+    )
+
+
 def _get_searx_search(**kwargs: Any) -> BaseTool:
     return SearxSearchRun(wrapper=SearxSearchWrapper(**kwargs))
 
@@ -225,6 +240,10 @@ def _get_bing_search(**kwargs: Any) -> BaseTool:
     return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
 
 
+def _get_metaphor_search(**kwargs: Any) -> BaseTool:
+    return MetaphorSearchResults(api_wrapper=MetaphorSearchAPIWrapper(**kwargs))
+
+
 def _get_ddg_search(**kwargs: Any) -> BaseTool:
     return DuckDuckGoSearchRun(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
 
@@ -235,6 +254,16 @@ def _get_human_tool(**kwargs: Any) -> BaseTool:
 
 def _get_scenexplain(**kwargs: Any) -> BaseTool:
     return SceneXplainTool(**kwargs)
+
+
+def _get_graphql_tool(**kwargs: Any) -> BaseTool:
+    graphql_endpoint = kwargs["graphql_endpoint"]
+    wrapper = GraphQLAPIWrapper(graphql_endpoint=graphql_endpoint)
+    return BaseGraphQLTool(graphql_wrapper=wrapper)
+
+
+def _get_openweathermap(**kwargs: Any) -> BaseTool:
+    return OpenWeatherMapQueryRun(api_wrapper=OpenWeatherMapAPIWrapper(**kwargs))
 
 
 _EXTRA_LLM_TOOLS: Dict[
@@ -258,6 +287,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["searx_host", "engines", "num_results", "aiosession"],
     ),
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
+    "metaphor-search": (_get_metaphor_search, ["metaphor_api_key"]),
     "ddg-search": (_get_ddg_search, []),
     "google-serper": (_get_google_serper, ["serper_api_key", "aiosession"]),
     "google-serper-results-json": (
@@ -265,6 +295,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["serper_api_key", "aiosession"],
     ),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
+    "twilio": (_get_twilio, ["account_sid", "auth_token", "from_number"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
     "arxiv": (
@@ -277,6 +308,8 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["awslambda_tool_name", "awslambda_tool_description", "function_name"],
     ),
     "sceneXplain": (_get_scenexplain, []),
+    "graphql": (_get_graphql_tool, ["graphql_endpoint"]),
+    "openweathermap-api": (_get_openweathermap, ["openweathermap_api_key"]),
 }
 
 
