@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 from string import Template
 import logging
 
+from nebula3.Exception import IOErrorException
 
 rel_query = Template(
     """
@@ -17,7 +18,7 @@ RETRY_TIMES = 3
 
 class NebulaGraph:
     """NebulaGraph wrapper for graph operations
-    NebulaGraph inherits methods from Neo4jGraph to bring ease to user space.
+    NebulaGraph inherits methods from Neo4jGraph to bring ease to the user space.
     """
 
     def __init__(
@@ -108,8 +109,6 @@ class NebulaGraph:
         """Query NebulaGraph database."""
         from nebula3.Exception import NoValidSessionException
         from nebula3.fbthrift.transport.TTransport import TTransportException
-
-        retry = retry
         try:
             return self.session_pool.execute_parameter(query, params)
         except NoValidSessionException:
