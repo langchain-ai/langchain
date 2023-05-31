@@ -6,7 +6,10 @@ from typing import Any, Dict, List, Optional, Type, cast
 from pydantic import root_validator
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains import LLMChain
 from langchain.chains.router.base import RouterChain
 from langchain.output_parsers.json import parse_and_check_json_markdown
@@ -55,6 +58,19 @@ class LLMRouterChain(RouterChain):
         output = cast(
             Dict[str, Any],
             self.llm_chain.predict_and_parse(callbacks=callbacks, **inputs),
+        )
+        return output
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
+        callbacks = _run_manager.get_child()
+        output = cast(
+            Dict[str, Any],
+            await self.llm_chain.apredict_and_parse(callbacks=callbacks, **inputs),
         )
         return output
 
