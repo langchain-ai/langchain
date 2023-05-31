@@ -139,7 +139,7 @@ def test_qdrant_similarity_search_filters_with_qdrant_filters() -> None:
     ]
     docsearch = Qdrant.from_texts(
         texts,
-        FakeEmbeddings(),
+        ConsistentFakeEmbeddings(),
         metadatas=metadatas,
         location=":memory:",
     )
