@@ -2,8 +2,6 @@ from typing import Any, Dict, List
 from string import Template
 import logging
 
-from nebula3.Exception import IOErrorException
-
 rel_query = Template(
     """
 MATCH ()-[e:`$edge_type`]->()
@@ -109,6 +107,8 @@ class NebulaGraph:
         """Query NebulaGraph database."""
         from nebula3.Exception import NoValidSessionException
         from nebula3.fbthrift.transport.TTransport import TTransportException
+        from nebula3.Exception import IOErrorException
+
         try:
             return self.session_pool.execute_parameter(query, params)
         except NoValidSessionException:
