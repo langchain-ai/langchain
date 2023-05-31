@@ -148,7 +148,7 @@ class RedisEntityStore(BaseEntityStore):
             self.redis_client.delete(*keybatch)
 
 
-class SqliteEntityStore(BaseEntityStore):
+class SQLiteEntityStore(BaseEntityStore):
     """SQLite-backed Entity store"""
 
     session_id: str = "default"
