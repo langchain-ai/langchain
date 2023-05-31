@@ -257,7 +257,7 @@ def test_qdrant_stores_duplicated_texts() -> None:
     collection_name = "test"
     client.recreate_collection(
         collection_name,
-        vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE)
+        vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE),
     )
 
     vec_store = Qdrant(
