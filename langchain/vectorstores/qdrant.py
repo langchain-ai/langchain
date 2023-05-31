@@ -181,7 +181,7 @@ class Qdrant(VectorStore):
             # Take the corresponding metadata for each text in a batch
             batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
 
-            batch_ids = [md5(text.encode("utf-8")).hexdigest() for text in batch_texts]
+            batch_ids = [uuid.uuid4().hex for _ in batch_texts]
 
             self.client.upsert(
                 collection_name=self.collection_name,
@@ -447,10 +447,12 @@ class Qdrant(VectorStore):
             # Generate the embeddings for all the texts in a batch
             batch_embeddings = embedding.embed_documents(batch_texts)
 
+            batch_ids = [uuid.uuid4().hex for _ in batch_texts]
+
             client.upsert(
                 collection_name=collection_name,
                 points=rest.Batch.construct(
-                    ids=[md5(text.encode("utf-8")).hexdigest() for text in batch_texts],
+                    ids=batch_ids,
                     vectors=batch_embeddings,
                     payloads=cls._build_payloads(
                         batch_texts,

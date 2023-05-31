@@ -247,3 +247,25 @@ def test_qdrant_embedding_interface_raises(
             embeddings=embeddings,
             embedding_function=embedding_function,
         )
+
+
+def test_qdrant_stores_duplicated_texts() -> None:
+    from qdrant_client import QdrantClient
+    from qdrant_client.http import models as rest
+
+    client = QdrantClient(":memory:")
+    collection_name = "test"
+    client.recreate_collection(
+        collection_name,
+        vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE)
+    )
+
+    vec_store = Qdrant(
+        client,
+        collection_name,
+        embeddings=ConsistentFakeEmbeddings(),
+    )
+    ids = vec_store.add_texts(["abc", "abc"], [{"a": 1}, {"a": 2}])
+
+    assert 2 == len(set(ids))
+    assert 2 == client.count(collection_name).count
