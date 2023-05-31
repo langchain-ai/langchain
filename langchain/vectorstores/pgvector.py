@@ -231,8 +231,8 @@ class PGVector(VectorStore):
         self,
         texts: List[str],
         embeddings: List[List[float]],
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
+        metadatas: List[dict],
+        ids: List[str],
         **kwargs: Any,
     ) -> None:
         """Add embeddings to the vectorstore.
@@ -240,7 +240,7 @@ class PGVector(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             embeddings: List of list of embedding vectors.
-            metadatas: Optional list of metadatas associated with the texts.
+            metadatas: List of metadatas associated with the texts.
             kwargs: vectorstore specific parameters
         """
         with Session(self._conn) as session:
