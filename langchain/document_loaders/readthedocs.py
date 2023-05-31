@@ -74,27 +74,13 @@ class ReadTheDocsLoader(BaseLoader):
 
         soup = BeautifulSoup(data, **self.bs_kwargs)
 
-        # default tags
-        html_tags = [
-            ("div", {"role": "main"}),
-            ("main", {"id": "main-content"}),
-        ]
-
-        if self.custom_html_tag is not None:
-            html_tags.append(self.custom_html_tag)
-
-        text = None
-
-        # reversed order. check the custom one first
-        for tag, attrs in html_tags[::-1]:
-            text = soup.find(tag, attrs)
-            # if found, break
-            if text is not None:
-                break
-
+        # Check for the body tag
+        text = soup.find('body')
+        
         if text is not None:
             text = text.get_text()
         else:
             text = ""
-        # trim empty lines
+
+        # Trim empty lines
         return "\n".join([t for t in text.split("\n") if t])
