@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 class ConfluenceLoader(BaseLoader):
     """
     Load Confluence pages. Port of https://llamahub.ai/l/confluence
-    This currently supports username/api_key, Oauth2 login or personal access token authentication.
+    This currently supports username/api_key, Oauth2 login or personal access token
+    authentication.
 
     Specify a list page_ids and/or space_key to load in the corresponding pages into
     Document objects, if both are specified the union of both sets will be returned.
@@ -159,7 +160,8 @@ class ConfluenceLoader(BaseLoader):
 
         if token and (api_key or username or oauth2):
             errors.append(
-                "Cannot provide a value for `token` and a value for `api_key`, `username` or `oauth2`"
+                "Cannot provide a value for `token` and a value for `api_key`, "
+                "`username` or `oauth2`"
             )
 
         if errors:
