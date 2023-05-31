@@ -317,7 +317,7 @@ class SQLDatabase:
             f"{sample_rows_str}"
         )
 
-    def run(self, command: str, fetch: str = "all") -> str:
+    def run(self, command: str, fetch: str = "all", ignore_column_names: bool = True) -> str:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
@@ -334,7 +334,7 @@ class SQLDatabase:
                 else:
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.execute(text(command))
-            column_names = tuple(cursor.keys())
+            column_names = None if ignore_column_names else tuple(cursor.keys())
             if cursor.returns_rows:
                 if fetch == "all":
                     result = cursor.fetchall()
@@ -342,7 +342,9 @@ class SQLDatabase:
                     result = cursor.fetchone()[0]  # type: ignore
                 else:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
-                result.insert(0, column_names)
+
+                if column_names:
+                    result.insert(0, column_names)
                 return str(result)
         return ""
 
