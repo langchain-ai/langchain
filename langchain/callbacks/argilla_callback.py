@@ -125,7 +125,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 f"with the label `langchain`."
             ) from e
         
-        supported_fields = ["prompt", "completion"]
+        supported_fields = ["prompt", "response"]
         if supported_fields != [field.name for field in self.dataset.fields]:
             raise ValueError(
                 f"`FeedbackDataset` with name={self.dataset_name} in the workspace={self.workspace_name} "
@@ -163,7 +163,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                     {
                         "fields": {
                             "prompt": prompt,
-                            "completion": generation.text.strip(),
+                            "response": generation.text.strip(),
                         },
                     }
                     for generation in generations
