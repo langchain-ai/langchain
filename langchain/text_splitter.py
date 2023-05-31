@@ -369,7 +369,9 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         return self._split_text(text, self._separators)
 
     @classmethod
-    def from_language(cls, language: Language, **kwargs: Any):
+    def from_language(
+        cls, language: Language, **kwargs: Any
+    ) -> RecursiveCharacterTextSplitter:
         separators = cls.get_separators_for_language(language)
         return cls(separators=separators, **kwargs)
 
