@@ -3,12 +3,13 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_REPO_ID = "gpt2"
-VALID_TASKS = ("text2text-generation", "text-generation")
+VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 
 class HuggingFaceHub(LLM):
@@ -18,7 +19,7 @@ class HuggingFaceHub(LLM):
     environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
     it as a named parameter to the constructor.
 
-    Only supports `text-generation` and `text2text-generation` for now.
+    Only supports `text-generation`, `text2text-generation` and `summarization` for now.
 
     Example:
         .. code-block:: python
@@ -31,7 +32,8 @@ class HuggingFaceHub(LLM):
     repo_id: str = DEFAULT_REPO_ID
     """Model name to use."""
     task: Optional[str] = None
-    """Task to call the model with. Should be a task that returns `generated_text`."""
+    """Task to call the model with.
+    Should be a task that returns `generated_text` or `summary_text`."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
@@ -84,7 +86,12 @@ class HuggingFaceHub(LLM):
         """Return type of llm."""
         return "huggingface_hub"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
 
         Args:
@@ -108,6 +115,8 @@ class HuggingFaceHub(LLM):
             text = response[0]["generated_text"][len(prompt) :]
         elif self.client.task == "text2text-generation":
             text = response[0]["generated_text"]
+        elif self.client.task == "summarization":
+            text = response[0]["summary_text"]
         else:
             raise ValueError(
                 f"Got invalid task {self.client.task}, "

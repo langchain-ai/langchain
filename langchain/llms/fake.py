@@ -1,6 +1,10 @@
 """Fake LLM wrapper for testing purposes."""
 from typing import Any, List, Mapping, Optional
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms.base import LLM
 
 
@@ -15,12 +19,28 @@ class FakeListLLM(LLM):
         """Return type of llm."""
         return "fake-list"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        """First try to lookup in queries, else return 'foo' or 'bar'."""
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
+        """Return next response"""
+        response = self.responses[self.i]
+        self.i += 1
+        return response
+
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    ) -> str:
+        """Return next response"""
         response = self.responses[self.i]
         self.i += 1
         return response
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
-        return {}
+        return {"responses": self.responses}

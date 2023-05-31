@@ -156,10 +156,10 @@ class JiraAPIWrapper(BaseModel):
             import json
         except ImportError:
             raise ImportError(
-                "json is not installed. " "Please install it with `pip install json`"
+                "json is not installed. Please install it with `pip install json`"
             )
         params = json.loads(query)
-        return self.jira.create_issue(fields=dict(params))
+        return self.jira.issue_create(fields=dict(params))
 
     def other(self, query: str) -> str:
         context = {"self": self}

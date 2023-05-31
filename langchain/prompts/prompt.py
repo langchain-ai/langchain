@@ -3,23 +3,16 @@ from __future__ import annotations
 
 from pathlib import Path
 from string import Formatter
-from typing import Any, Dict, List, Set, Union
+from typing import Any, Dict, List, Union
 
-from jinja2 import Environment, meta
 from pydantic import Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
+    _get_jinja2_variables_from_template,
     check_valid_template,
 )
-
-
-def _get_jinja2_variables_from_template(template: str) -> Set[str]:
-    env = Environment()
-    ast = env.parse(template)
-    variables = meta.find_undeclared_variables(ast)
-    return variables
 
 
 class PromptTemplate(StringPromptTemplate):
@@ -140,6 +133,12 @@ class PromptTemplate(StringPromptTemplate):
         else:
             input_variables = {
                 v for _, v, _, _ in Formatter().parse(template) if v is not None
+            }
+
+        if "partial_variables" in kwargs:
+            partial_variables = kwargs["partial_variables"]
+            input_variables = {
+                var for var in input_variables if var not in partial_variables
             }
 
         return cls(

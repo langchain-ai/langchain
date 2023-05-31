@@ -9,7 +9,7 @@ from langchain.agents.mrkl.output_parser import MRKLOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.prompts import PromptTemplate
-from langchain.schema import AgentAction
+from langchain.schema import AgentAction, OutputParserException
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -48,6 +48,44 @@ def test_get_action_and_input_newline() -> None:
     action, action_input = get_action_and_input(llm_output)
     assert action == "Python"
     assert action_input == "```\nimport unittest\n\nunittest.main()\n```"
+
+
+def test_get_action_and_input_newline_after_keyword() -> None:
+    """Test getting an action and action input from the text
+    when there is a new line before the action
+    (after the keywords "Action:" and "Action Input:")
+    """
+    llm_output = """
+    I can use the `ls` command to list the contents of the directory \
+    and `grep` to search for the specific file.
+
+    Action:
+    Terminal
+
+    Action Input:
+    ls -l ~/.bashrc.d/
+    """
+
+    action, action_input = get_action_and_input(llm_output)
+    assert action == "Terminal"
+    assert action_input == "ls -l ~/.bashrc.d/\n"
+
+
+def test_get_action_and_input_sql_query() -> None:
+    """Test getting the action and action input from the text
+    when the LLM output is a well formed SQL query
+    """
+    llm_output = """
+    I should query for the largest single shift payment for every unique user.
+    Action: query_sql_db
+    Action Input: \
+    SELECT "UserName", MAX(totalpayment) FROM user_shifts GROUP BY "UserName" """
+    action, action_input = get_action_and_input(llm_output)
+    assert action == "query_sql_db"
+    assert (
+        action_input
+        == 'SELECT "UserName", MAX(totalpayment) FROM user_shifts GROUP BY "UserName"'
+    )
 
 
 def test_get_final_answer() -> None:
@@ -98,17 +136,19 @@ def test_get_final_answer_multiline() -> None:
 def test_bad_action_input_line() -> None:
     """Test handling when no action input found."""
     llm_output = "Thought: I need to search for NBA\n" "Action: Search\n" "Thought: NBA"
-    with pytest.raises(ValueError):
+    with pytest.raises(OutputParserException) as e_info:
         get_action_and_input(llm_output)
+    assert e_info.value.observation is not None
 
 
 def test_bad_action_line() -> None:
-    """Test handling when no action input found."""
+    """Test handling when no action found."""
     llm_output = (
         "Thought: I need to search for NBA\n" "Thought: Search\n" "Action Input: NBA"
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(OutputParserException) as e_info:
         get_action_and_input(llm_output)
+    assert e_info.value.observation is not None
 
 
 def test_from_chains() -> None:

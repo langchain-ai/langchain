@@ -36,6 +36,15 @@ This is where output parsers come in.
 Output Parsers are responsible for (1) instructing the model how output should be formatted,
 (2) parsing output into the desired formatting (including retrying if necessary).
 
+Getting Started
+---------------
+
+.. toctree::
+   :maxdepth: 1
+
+   ./prompts/getting_started.ipynb
+
+
 
 Go Deeper
 ---------

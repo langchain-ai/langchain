@@ -2,13 +2,14 @@ from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel, Extra, Field
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain.document_loaders.base import BaseLoader
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
+from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
@@ -29,7 +30,9 @@ class VectorStoreIndexWrapper(BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def query(self, question: str, llm: Optional[BaseLLM] = None, **kwargs: Any) -> str:
+    def query(
+        self, question: str, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
+    ) -> str:
         """Query the vectorstore."""
         llm = llm or OpenAI(temperature=0)
         chain = RetrievalQA.from_chain_type(
@@ -38,7 +41,7 @@ class VectorStoreIndexWrapper(BaseModel):
         return chain.run(question)
 
     def query_with_sources(
-        self, question: str, llm: Optional[BaseLLM] = None, **kwargs: Any
+        self, question: str, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
     ) -> dict:
         """Query the vectorstore and get back sources."""
         llm = llm or OpenAI(temperature=0)
@@ -67,7 +70,11 @@ class VectorstoreIndexCreator(BaseModel):
         docs = []
         for loader in loaders:
             docs.extend(loader.load())
-        sub_docs = self.text_splitter.split_documents(docs)
+        return self.from_documents(docs)
+
+    def from_documents(self, documents: List[Document]) -> VectorStoreIndexWrapper:
+        """Create a vectorstore index from documents."""
+        sub_docs = self.text_splitter.split_documents(documents)
         vectorstore = self.vectorstore_cls.from_documents(
             sub_docs, self.embedding, **self.vectorstore_kwargs
         )

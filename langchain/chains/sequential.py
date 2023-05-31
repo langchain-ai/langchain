@@ -1,8 +1,12 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 from langchain.input import get_color_mapping
 
@@ -86,10 +90,31 @@ class SequentialChain(Chain):
 
         return values
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         known_values = inputs.copy()
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         for i, chain in enumerate(self.chains):
-            outputs = chain(known_values, return_only_outputs=True)
+            callbacks = _run_manager.get_child()
+            outputs = chain(known_values, return_only_outputs=True, callbacks=callbacks)
+            known_values.update(outputs)
+        return {k: known_values[k] for k in self.output_variables}
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        known_values = inputs.copy()
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        callbacks = _run_manager.get_child()
+        for i, chain in enumerate(self.chains):
+            outputs = await chain.acall(
+                known_values, return_only_outputs=True, callbacks=callbacks
+            )
             known_values.update(outputs)
         return {k: known_values[k] for k in self.output_variables}
 
@@ -140,14 +165,37 @@ class SimpleSequentialChain(Chain):
                 )
         return values
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         _input = inputs[self.input_key]
         color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
         for i, chain in enumerate(self.chains):
-            _input = chain.run(_input)
+            _input = chain.run(_input, callbacks=_run_manager.get_child())
             if self.strip_outputs:
                 _input = _input.strip()
-            self.callback_manager.on_text(
+            _run_manager.on_text(
+                _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
+            )
+        return {self.output_key: _input}
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        callbacks = _run_manager.get_child()
+        _input = inputs[self.input_key]
+        color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
+        for i, chain in enumerate(self.chains):
+            _input = await chain.arun(_input, callbacks=callbacks)
+            if self.strip_outputs:
+                _input = _input.strip()
+            await _run_manager.on_text(
                 _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
             )
         return {self.output_key: _input}

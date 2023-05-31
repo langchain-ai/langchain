@@ -2,15 +2,36 @@
 from __future__ import annotations
 
 import uuid
+import warnings
+from hashlib import md5
+from itertools import islice
 from operator import itemgetter
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
+
+import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
-MetadataFilter = Dict[str, Union[str, int, bool]]
+if TYPE_CHECKING:
+    from qdrant_client.conversions import common_types
+    from qdrant_client.http import models as rest
+
+    DictFilter = Dict[str, Union[str, int, bool, dict, list]]
+    MetadataFilter = Union[DictFilter, common_types.Filter]
 
 
 class Qdrant(VectorStore):
@@ -36,9 +57,10 @@ class Qdrant(VectorStore):
         self,
         client: Any,
         collection_name: str,
-        embedding_function: Callable,
+        embeddings: Optional[Embeddings] = None,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
+        embedding_function: Optional[Callable] = None,  # deprecated
     ):
         """Initialize with necessary components."""
         try:
@@ -55,16 +77,90 @@ class Qdrant(VectorStore):
                 f"got {type(client)}"
             )
 
+        if embeddings is None and embedding_function is None:
+            raise ValueError(
+                "`embeddings` value can't be None. Pass `Embeddings` instance."
+            )
+
+        if embeddings is not None and embedding_function is not None:
+            raise ValueError(
+                "Both `embeddings` and `embedding_function` are passed. "
+                "Use `embeddings` only."
+            )
+
+        self.embeddings = embeddings
+        self._embeddings_function = embedding_function
         self.client: qdrant_client.QdrantClient = client
         self.collection_name = collection_name
-        self.embedding_function = embedding_function
         self.content_payload_key = content_payload_key or self.CONTENT_KEY
         self.metadata_payload_key = metadata_payload_key or self.METADATA_KEY
+
+        if embedding_function is not None:
+            warnings.warn(
+                "Using `embedding_function` is deprecated. "
+                "Pass `Embeddings` instance to `embeddings` instead."
+            )
+
+        if not isinstance(embeddings, Embeddings):
+            warnings.warn(
+                "`embeddings` should be an instance of `Embeddings`."
+                "Using `embeddings` as `embedding_function` which is deprecated"
+            )
+            self._embeddings_function = embeddings
+            self.embeddings = None
+
+    def _embed_query(self, query: str) -> List[float]:
+        """Embed query text.
+
+        Used to provide backward compatibility with `embedding_function` argument.
+
+        Args:
+            query: Query text.
+
+        Returns:
+            List of floats representing the query embedding.
+        """
+        if self.embeddings is not None:
+            embedding = self.embeddings.embed_query(query)
+        else:
+            if self._embeddings_function is not None:
+                embedding = self._embeddings_function(query)
+            else:
+                raise ValueError("Neither of embeddings or embedding_function is set")
+        return embedding.tolist() if hasattr(embedding, "tolist") else embedding
+
+    def _embed_texts(self, texts: Iterable[str]) -> List[List[float]]:
+        """Embed search texts.
+
+        Used to provide backward compatibility with `embedding_function` argument.
+
+        Args:
+            texts: Iterable of texts to embed.
+
+        Returns:
+            List of floats representing the texts embedding.
+        """
+        if self.embeddings is not None:
+            embeddings = self.embeddings.embed_documents(list(texts))
+            if hasattr(embeddings, "tolist"):
+                embeddings = embeddings.tolist()
+        elif self._embeddings_function is not None:
+            embeddings = []
+            for text in texts:
+                embedding = self._embeddings_function(text)
+                if hasattr(embeddings, "tolist"):
+                    embedding = embedding.tolist()
+                embeddings.append(embedding)
+        else:
+            raise ValueError("Neither of embeddings or embedding_function is set")
+
+        return embeddings
 
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        batch_size: int = 64,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -78,20 +174,30 @@ class Qdrant(VectorStore):
         """
         from qdrant_client.http import models as rest
 
-        ids = [uuid.uuid4().hex for _ in texts]
-        self.client.upsert(
-            collection_name=self.collection_name,
-            points=rest.Batch.construct(
-                ids=ids,
-                vectors=[self.embedding_function(text) for text in texts],
-                payloads=self._build_payloads(
-                    texts,
-                    metadatas,
-                    self.content_payload_key,
-                    self.metadata_payload_key,
+        ids = []
+        texts_iterator = iter(texts)
+        metadatas_iterator = iter(metadatas or [])
+        while batch_texts := list(islice(texts_iterator, batch_size)):
+            # Take the corresponding metadata for each text in a batch
+            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
+
+            batch_ids = [md5(text.encode("utf-8")).hexdigest() for text in batch_texts]
+
+            self.client.upsert(
+                collection_name=self.collection_name,
+                points=rest.Batch.construct(
+                    ids=batch_ids,
+                    vectors=self._embed_texts(batch_texts),
+                    payloads=self._build_payloads(
+                        batch_texts,
+                        batch_metadatas,
+                        self.content_payload_key,
+                        self.metadata_payload_key,
+                    ),
                 ),
-            ),
-        )
+            )
+
+            ids.extend(batch_ids)
 
         return ids
 
@@ -128,11 +234,22 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each.
         """
-        embedding = self.embedding_function(query)
+
+        if filter is not None and isinstance(filter, dict):
+            warnings.warn(
+                "Using dict as a `filter` is deprecated. Please use qdrant-client "
+                "filters directly: "
+                "https://qdrant.tech/documentation/concepts/filtering/",
+                DeprecationWarning,
+            )
+            qdrant_filter = self._qdrant_filter_from_dict(filter)
+        else:
+            qdrant_filter = filter
+
         results = self.client.search(
             collection_name=self.collection_name,
-            query_vector=embedding,
-            query_filter=self._qdrant_filter_from_dict(filter),
+            query_vector=self._embed_query(query),
+            query_filter=qdrant_filter,
             with_payload=True,
             limit=k,
         )
@@ -151,6 +268,7 @@ class Qdrant(VectorStore):
         query: str,
         k: int = 4,
         fetch_k: int = 20,
+        lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -163,11 +281,15 @@ class Qdrant(VectorStore):
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
                      Defaults to 20.
-
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        embedding = self.embedding_function(query)
+
+        embedding = self._embed_query(query)
         results = self.client.search(
             collection_name=self.collection_name,
             query_vector=embedding,
@@ -176,7 +298,9 @@ class Qdrant(VectorStore):
             limit=fetch_k,
         )
         embeddings = [result.vector for result in results]
-        mmr_selected = maximal_marginal_relevance(embedding, embeddings, k=k)
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding), embeddings, k=k, lambda_mult=lambda_mult
+        )
         return [
             self._document_from_scored_point(
                 results[i], self.content_payload_key, self.metadata_payload_key
@@ -205,6 +329,7 @@ class Qdrant(VectorStore):
         distance_func: str = "Cosine",
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
+        batch_size: int = 64,
         **kwargs: Any,
     ) -> Qdrant:
         """Construct Qdrant wrapper from a list of texts.
@@ -257,7 +382,7 @@ class Qdrant(VectorStore):
             **kwargs:
                 Additional arguments passed directly into REST client initialization
 
-        This is a user friendly interface that:
+        This is a user-friendly interface that:
             1. Creates embeddings, one for each text
             2. Initializes the Qdrant database as an in-memory docstore by default
                (and overridable to a remote docstore)
@@ -313,24 +438,33 @@ class Qdrant(VectorStore):
             ),
         )
 
-        # Now generate the embeddings for all the texts
-        embeddings = embedding.embed_documents(texts)
+        texts_iterator = iter(texts)
+        metadatas_iterator = iter(metadatas or [])
+        while batch_texts := list(islice(texts_iterator, batch_size)):
+            # Take the corresponding metadata for each text in a batch
+            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
 
-        client.upsert(
-            collection_name=collection_name,
-            points=rest.Batch.construct(
-                ids=[uuid.uuid4().hex for _ in texts],
-                vectors=embeddings,
-                payloads=cls._build_payloads(
-                    texts, metadatas, content_payload_key, metadata_payload_key
+            # Generate the embeddings for all the texts in a batch
+            batch_embeddings = embedding.embed_documents(batch_texts)
+
+            client.upsert(
+                collection_name=collection_name,
+                points=rest.Batch.construct(
+                    ids=[md5(text.encode("utf-8")).hexdigest() for text in batch_texts],
+                    vectors=batch_embeddings,
+                    payloads=cls._build_payloads(
+                        batch_texts,
+                        batch_metadatas,
+                        content_payload_key,
+                        metadata_payload_key,
+                    ),
                 ),
-            ),
-        )
+            )
 
         return cls(
             client=client,
             collection_name=collection_name,
-            embedding_function=embedding.embed_query,
+            embeddings=embedding,
             content_payload_key=content_payload_key,
             metadata_payload_key=metadata_payload_key,
         )
@@ -372,18 +506,42 @@ class Qdrant(VectorStore):
             metadata=scored_point.payload.get(metadata_payload_key) or {},
         )
 
-    def _qdrant_filter_from_dict(self, filter: Optional[MetadataFilter]) -> Any:
-        if filter is None or 0 == len(filter):
-            return None
-
+    def _build_condition(self, key: str, value: Any) -> List[rest.FieldCondition]:
         from qdrant_client.http import models as rest
 
-        return rest.Filter(
-            must=[
+        out = []
+
+        if isinstance(value, dict):
+            for _key, value in value.items():
+                out.extend(self._build_condition(f"{key}.{_key}", value))
+        elif isinstance(value, list):
+            for _value in value:
+                if isinstance(_value, dict):
+                    out.extend(self._build_condition(f"{key}[]", _value))
+                else:
+                    out.extend(self._build_condition(f"{key}", _value))
+        else:
+            out.append(
                 rest.FieldCondition(
                     key=f"{self.metadata_payload_key}.{key}",
                     match=rest.MatchValue(value=value),
                 )
+            )
+
+        return out
+
+    def _qdrant_filter_from_dict(
+        self, filter: Optional[DictFilter]
+    ) -> Optional[rest.Filter]:
+        from qdrant_client.http import models as rest
+
+        if not filter:
+            return None
+
+        return rest.Filter(
+            must=[
+                condition
                 for key, value in filter.items()
+                for condition in self._build_condition(key, value)
             ]
         )

@@ -53,7 +53,14 @@ class ObsidianLoader(BaseLoader):
 
             front_matter = self._parse_front_matter(text)
             text = self._remove_front_matter(text)
-            metadata = {"source": str(p.name), "path": str(p), **front_matter}
+            metadata = {
+                "source": str(p.name),
+                "path": str(p),
+                "created": p.stat().st_ctime,
+                "last_modified": p.stat().st_mtime,
+                "last_accessed": p.stat().st_atime,
+                **front_matter,
+            }
             docs.append(Document(page_content=text, metadata=metadata))
 
         return docs

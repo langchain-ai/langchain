@@ -7,7 +7,7 @@ from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.agents.agent_toolkits.nla.tool import NLATool
-from langchain.llms.base import BaseLLM
+from langchain.base_language import BaseLanguageModel
 from langchain.requests import Requests
 from langchain.tools.base import BaseTool
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
@@ -26,7 +26,7 @@ class NLAToolkit(BaseToolkit):
 
     @staticmethod
     def _get_http_operation_tools(
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         spec: OpenAPISpec,
         requests: Optional[Requests] = None,
         verbose: bool = False,
@@ -53,7 +53,7 @@ class NLAToolkit(BaseToolkit):
     @classmethod
     def from_llm_and_spec(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         spec: OpenAPISpec,
         requests: Optional[Requests] = None,
         verbose: bool = False,
@@ -68,7 +68,7 @@ class NLAToolkit(BaseToolkit):
     @classmethod
     def from_llm_and_url(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         open_api_url: str,
         requests: Optional[Requests] = None,
         verbose: bool = False,
@@ -83,7 +83,7 @@ class NLAToolkit(BaseToolkit):
     @classmethod
     def from_llm_and_ai_plugin(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         ai_plugin: AIPlugin,
         requests: Optional[Requests] = None,
         verbose: bool = False,
@@ -103,7 +103,7 @@ class NLAToolkit(BaseToolkit):
     @classmethod
     def from_llm_and_ai_plugin_url(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         ai_plugin_url: str,
         requests: Optional[Requests] = None,
         verbose: bool = False,

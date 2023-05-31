@@ -91,7 +91,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         text: str,
         color: Optional[str] = None,
         end: str = "",
-        **kwargs: Optional[str],
+        **kwargs: Any,
     ) -> None:
         """Run when agent ends."""
         print_text(text, color=color if color else self.color, end=end)

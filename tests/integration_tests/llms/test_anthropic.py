@@ -3,7 +3,7 @@ from typing import Generator
 
 import pytest
 
-from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.manager import CallbackManager
 from langchain.llms.anthropic import Anthropic
 from langchain.schema import LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -11,14 +11,14 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
-    llm = Anthropic(model="bare-nano-0")
+    llm = Anthropic(model="test")
     output = llm("Say foo:")
     assert isinstance(output, str)
 
 
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    llm = Anthropic(model="bare-nano-0")
+    llm = Anthropic(model="test")
     generator = llm.stream("I'm Pickle Rick")
 
     assert isinstance(generator, Generator)

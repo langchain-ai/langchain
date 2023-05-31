@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
@@ -60,7 +61,12 @@ class DeepInfra(LLM):
         """Return type of llm."""
         return "deepinfra"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to DeepInfra's inference API endpoint.
 
         Args:
@@ -88,7 +94,8 @@ class DeepInfra(LLM):
 
         if res.status_code != 200:
             raise ValueError("Error raised by inference API")
-        text = res.json()[0]["generated_text"]
+        t = res.json()
+        text = t["results"][0]["generated_text"]
 
         if stop is not None:
             # I believe this is required since the stop tokens

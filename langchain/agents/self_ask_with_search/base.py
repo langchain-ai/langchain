@@ -8,7 +8,8 @@ from langchain.agents.agent_types import AgentType
 from langchain.agents.self_ask_with_search.output_parser import SelfAskOutputParser
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
-from langchain.llms.base import BaseLLM
+from langchain.agents.utils import validate_tools_single_input
+from langchain.base_language import BaseLanguageModel
 from langchain.prompts.base import BasePromptTemplate
 from langchain.tools.base import BaseTool
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
@@ -36,6 +37,8 @@ class SelfAskWithSearchAgent(Agent):
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+        validate_tools_single_input(cls.__name__, tools)
+        super()._validate_tools(tools)
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
@@ -68,13 +71,16 @@ class SelfAskWithSearchChain(AgentExecutor):
 
     def __init__(
         self,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         search_chain: Union[GoogleSerperAPIWrapper, SerpAPIWrapper],
         **kwargs: Any,
     ):
         """Initialize with just an LLM and a search chain."""
         search_tool = Tool(
-            name="Intermediate Answer", func=search_chain.run, description="Search"
+            name="Intermediate Answer",
+            func=search_chain.run,
+            coroutine=search_chain.arun,
+            description="Search",
         )
         agent = SelfAskWithSearchAgent.from_llm_and_tools(llm, [search_tool])
         super().__init__(agent=agent, tools=[search_tool], **kwargs)

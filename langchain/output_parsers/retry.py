@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TypeVar
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
-    BaseLanguageModel,
     BaseOutputParser,
     OutputParserException,
     PromptValue,
@@ -78,14 +78,14 @@ class RetryOutputParser(BaseOutputParser[T]):
 
     @property
     def _type(self) -> str:
-        return self.parser._type
+        return "retry"
 
 
 class RetryWithErrorOutputParser(BaseOutputParser[T]):
     """Wraps a parser and tries to fix parsing errors.
 
     Does this by passing the original prompt, the completion, AND the error
-    that was raised to another language and telling it that the completion
+    that was raised to another language model and telling it that the completion
     did not work, and raised the given error. Differs from RetryOutputParser
     in that this implementation provides the error that was raised back to the
     LLM, which in theory should give it more information on how to fix it.
@@ -122,3 +122,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
+
+    @property
+    def _type(self) -> str:
+        return "retry_with_error"

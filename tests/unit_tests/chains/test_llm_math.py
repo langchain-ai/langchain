@@ -17,7 +17,7 @@ def fake_llm_math_chain() -> LLMMathChain:
         _PROMPT_TEMPLATE.format(question="foo"): "foo",
     }
     fake_llm = FakeLLM(queries=queries)
-    return LLMMathChain(llm=fake_llm, input_key="q", output_key="a")
+    return LLMMathChain.from_llm(fake_llm, input_key="q", output_key="a")
 
 
 def test_simple_question(fake_llm_math_chain: LLMMathChain) -> None:

@@ -1,9 +1,13 @@
 # flake8: noqa
 """Tools for making requests to an API endpoint."""
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 
 from langchain.requests import TextRequestsWrapper
 from langchain.tools.base import BaseTool
@@ -12,6 +16,11 @@ from langchain.tools.base import BaseTool
 def _parse_input(text: str) -> Dict[str, Any]:
     """Parse the json string into a dict."""
     return json.loads(text)
+
+
+def _clean_url(url: str) -> str:
+    """Strips quotes from the url."""
+    return url.strip("\"'")
 
 
 class BaseRequestsTool(BaseModel):
@@ -26,13 +35,19 @@ class RequestsGetTool(BaseRequestsTool, BaseTool):
     name = "requests_get"
     description = "A portal to the internet. Use this when you need to get specific content from a website. Input should be a  url (i.e. https://www.google.com). The output will be the text response of the GET request."
 
-    def _run(self, url: str) -> str:
+    def _run(
+        self, url: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
         """Run the tool."""
-        return self.requests_wrapper.get(url)
+        return self.requests_wrapper.get(_clean_url(url))
 
-    async def _arun(self, url: str) -> str:
+    async def _arun(
+        self,
+        url: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Run the tool asynchronously."""
-        return await self.requests_wrapper.aget(url)
+        return await self.requests_wrapper.aget(_clean_url(url))
 
 
 class RequestsPostTool(BaseRequestsTool, BaseTool):
@@ -47,19 +62,27 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
     The output will be the text response of the POST request.
     """
 
-    def _run(self, text: str) -> str:
+    def _run(
+        self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
         """Run the tool."""
         try:
             data = _parse_input(text)
-            return self.requests_wrapper.post(data["url"], data["data"])
+            return self.requests_wrapper.post(_clean_url(data["url"]), data["data"])
         except Exception as e:
             return repr(e)
 
-    async def _arun(self, text: str) -> str:
+    async def _arun(
+        self,
+        text: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Run the tool asynchronously."""
         try:
             data = _parse_input(text)
-            return await self.requests_wrapper.apost(data["url"], data["data"])
+            return await self.requests_wrapper.apost(
+                _clean_url(data["url"]), data["data"]
+            )
         except Exception as e:
             return repr(e)
 
@@ -76,19 +99,27 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
     The output will be the text response of the PATCH request.
     """
 
-    def _run(self, text: str) -> str:
+    def _run(
+        self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
         """Run the tool."""
         try:
             data = _parse_input(text)
-            return self.requests_wrapper.patch(data["url"], data["data"])
+            return self.requests_wrapper.patch(_clean_url(data["url"]), data["data"])
         except Exception as e:
             return repr(e)
 
-    async def _arun(self, text: str) -> str:
+    async def _arun(
+        self,
+        text: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Run the tool asynchronously."""
         try:
             data = _parse_input(text)
-            return await self.requests_wrapper.apatch(data["url"], data["data"])
+            return await self.requests_wrapper.apatch(
+                _clean_url(data["url"]), data["data"]
+            )
         except Exception as e:
             return repr(e)
 
@@ -105,19 +136,27 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
     The output will be the text response of the PUT request.
     """
 
-    def _run(self, text: str) -> str:
+    def _run(
+        self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
         """Run the tool."""
         try:
             data = _parse_input(text)
-            return self.requests_wrapper.put(data["url"], data["data"])
+            return self.requests_wrapper.put(_clean_url(data["url"]), data["data"])
         except Exception as e:
             return repr(e)
 
-    async def _arun(self, text: str) -> str:
+    async def _arun(
+        self,
+        text: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Run the tool asynchronously."""
         try:
             data = _parse_input(text)
-            return await self.requests_wrapper.aput(data["url"], data["data"])
+            return await self.requests_wrapper.aput(
+                _clean_url(data["url"]), data["data"]
+            )
         except Exception as e:
             return repr(e)
 
@@ -128,10 +167,18 @@ class RequestsDeleteTool(BaseRequestsTool, BaseTool):
     name = "requests_delete"
     description = "A portal to the internet. Use this when you need to make a DELETE request to a URL. Input should be a specific url, and the output will be the text response of the DELETE request."
 
-    def _run(self, url: str) -> str:
+    def _run(
+        self,
+        url: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Run the tool."""
-        return self.requests_wrapper.delete(url)
+        return self.requests_wrapper.delete(_clean_url(url))
 
-    async def _arun(self, url: str) -> str:
+    async def _arun(
+        self,
+        url: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Run the tool asynchronously."""
-        return await self.requests_wrapper.adelete(url)
+        return await self.requests_wrapper.adelete(_clean_url(url))

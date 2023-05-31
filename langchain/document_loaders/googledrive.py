@@ -10,7 +10,7 @@
 #   https://cloud.google.com/iam/docs/service-accounts-create
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from pydantic import BaseModel, root_validator, validator
 
@@ -30,11 +30,11 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     document_ids: Optional[List[str]] = None
     file_ids: Optional[List[str]] = None
     recursive: bool = False
+    file_types: Optional[Sequence[str]] = None
+    load_trashed_files: bool = False
 
     @root_validator
-    def validate_folder_id_or_document_ids(
-        cls, values: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that either folder_id or document_ids is set, but not both."""
         if values.get("folder_id") and (
             values.get("document_ids") or values.get("file_ids")
@@ -49,6 +49,35 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             and not values.get("file_ids")
         ):
             raise ValueError("Must specify either folder_id, document_ids, or file_ids")
+
+        file_types = values.get("file_types")
+        if file_types:
+            if values.get("document_ids") or values.get("file_ids"):
+                raise ValueError(
+                    "file_types can only be given when folder_id is given,"
+                    " (not when document_ids or file_ids are given)."
+                )
+            type_mapping = {
+                "document": "application/vnd.google-apps.document",
+                "sheet": "application/vnd.google-apps.spreadsheet",
+                "pdf": "application/pdf",
+            }
+            allowed_types = list(type_mapping.keys()) + list(type_mapping.values())
+            short_names = ", ".join([f"'{x}'" for x in type_mapping.keys()])
+            full_names = ", ".join([f"'{x}'" for x in type_mapping.values()])
+            for file_type in file_types:
+                if file_type not in allowed_types:
+                    raise ValueError(
+                        f"Given file type {file_type} is not supported. "
+                        f"Supported values are: {short_names}; and "
+                        f"their full-form names: {full_names}"
+                    )
+
+            # replace short-form file types by full-form file types
+            def full_form(x: str) -> str:
+                return type_mapping[x] if x in type_mapping else x
+
+            values["file_types"] = [full_form(file_type) for file_type in file_types]
         return values
 
     @validator("credentials_path")
@@ -68,10 +97,10 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             from google_auth_oauthlib.flow import InstalledAppFlow
         except ImportError:
             raise ImportError(
-                "You must run"
+                "You must run "
                 "`pip install --upgrade "
                 "google-api-python-client google-auth-httplib2 "
-                "google-auth-oauthlib`"
+                "google-auth-oauthlib` "
                 "to use the Google Drive loader."
             )
 
@@ -171,16 +200,26 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         }
         return Document(page_content=text, metadata=metadata)
 
-    def _load_documents_from_folder(self, folder_id: str) -> List[Document]:
+    def _load_documents_from_folder(
+        self, folder_id: str, *, file_types: Optional[Sequence[str]] = None
+    ) -> List[Document]:
         """Load documents from a folder."""
         from googleapiclient.discovery import build
 
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
         files = self._fetch_files_recursive(service, folder_id)
+        # If file types filter is provided, we'll filter by the file type.
+        if file_types:
+            _files = [f for f in files if f["mimeType"] in file_types]  # type: ignore
+        else:
+            _files = files
+
         returns = []
         for file in files:
-            if file["mimeType"] == "application/vnd.google-apps.document":
+            if file["trashed"] and not self.load_trashed_files:
+                continue
+            elif file["mimeType"] == "application/vnd.google-apps.document":
                 returns.append(self._load_document_from_id(file["id"]))  # type: ignore
             elif file["mimeType"] == "application/vnd.google-apps.spreadsheet":
                 returns.extend(self._load_sheet_from_id(file["id"]))  # type: ignore
@@ -188,7 +227,6 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 returns.extend(self._load_file_from_id(file["id"]))  # type: ignore
             else:
                 pass
-
         return returns
 
     def _fetch_files_recursive(
@@ -202,7 +240,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 pageSize=1000,
                 includeItemsFromAllDrives=True,
                 supportsAllDrives=True,
-                fields="nextPageToken, files(id, name, mimeType, parents)",
+                fields="nextPageToken, files(id, name, mimeType, parents, trashed)",
             )
             .execute()
         )
@@ -271,7 +309,9 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     def load(self) -> List[Document]:
         """Load documents."""
         if self.folder_id:
-            return self._load_documents_from_folder(self.folder_id)
+            return self._load_documents_from_folder(
+                self.folder_id, file_types=self.file_types
+            )
         elif self.document_ids:
             return self._load_documents_from_ids()
         else:

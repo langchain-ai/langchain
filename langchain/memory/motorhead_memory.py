@@ -23,7 +23,7 @@ class MotorheadMemory(BaseChatMemory):
         messages = res_data.get("messages", [])
         context = res_data.get("context", "NONE")
 
-        for message in messages:
+        for message in reversed(messages):
             if message["role"] == "AI":
                 self.chat_memory.add_ai_message(message["content"])
             else:

@@ -1,4 +1,4 @@
-from csv import DictReader
+import csv
 from typing import Dict, List, Optional
 
 from langchain.docstore.document import Document
@@ -36,25 +36,26 @@ class CSVLoader(BaseLoader):
         self.file_path = file_path
         self.source_column = source_column
         self.encoding = encoding
-        if csv_args is None:
-            self.csv_args = {
-                "delimiter": ",",
-                "quotechar": '"',
-            }
-        else:
-            self.csv_args = csv_args
+        self.csv_args = csv_args or {}
 
     def load(self) -> List[Document]:
-        docs = []
+        """Load data into document objects."""
 
+        docs = []
         with open(self.file_path, newline="", encoding=self.encoding) as csvfile:
-            csv = DictReader(csvfile, **self.csv_args)  # type: ignore
-            for i, row in enumerate(csv):
+            csv_reader = csv.DictReader(csvfile, **self.csv_args)  # type: ignore
+            for i, row in enumerate(csv_reader):
                 content = "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
-                if self.source_column is not None:
-                    source = row[self.source_column]
-                else:
-                    source = self.file_path
+                try:
+                    source = (
+                        row[self.source_column]
+                        if self.source_column is not None
+                        else self.file_path
+                    )
+                except KeyError:
+                    raise ValueError(
+                        f"Source column '{self.source_column}' not found in CSV file."
+                    )
                 metadata = {"source": source, "row": i}
                 doc = Document(page_content=content, metadata=metadata)
                 docs.append(doc)

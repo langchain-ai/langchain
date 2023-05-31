@@ -21,12 +21,18 @@ class TestModel(BaseModel):
     additional_fields: Optional[str] = Field(
         description="Additional fields", default=None
     )
+    for_new_lines: str = Field(description="To be used to test newlines")
+
+
+# Prevent pytest from trying to run tests on TestModel
+TestModel.__test__ = False  # type: ignore[attr-defined]
 
 
 DEF_RESULT = """{
     "action": "Update",
     "action_input": "The PydanticOutputParser class is powerful",
-    "additional_fields": null
+    "additional_fields": null,
+    "for_new_lines": "not_escape_newline:\n escape_newline: \\n"
 }"""
 
 # action 'update' with a lowercase 'u' to test schema validation failure.
@@ -40,6 +46,7 @@ DEF_EXPECTED_RESULT = TestModel(
     action=Actions.UPDATE,
     action_input="The PydanticOutputParser class is powerful",
     additional_fields=None,
+    for_new_lines="not_escape_newline:\n escape_newline: \n",
 )
 
 

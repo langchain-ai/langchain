@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
@@ -129,7 +130,11 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             return self.combine_document_chain
 
     def combine_docs(
-        self, docs: List[Document], token_max: int = 3000, **kwargs: Any
+        self,
+        docs: List[Document],
+        token_max: int = 3000,
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Tuple[str, dict]:
         """Combine documents in a map reduce manner.
 
@@ -138,12 +143,15 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         """
         results = self.llm_chain.apply(
             # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs]
+            [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
+            callbacks=callbacks,
         )
-        return self._process_results(results, docs, token_max, **kwargs)
+        return self._process_results(
+            results, docs, token_max, callbacks=callbacks, **kwargs
+        )
 
     async def acombine_docs(
-        self, docs: List[Document], **kwargs: Any
+        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
         """Combine documents in a map reduce manner.
 
@@ -152,15 +160,17 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         """
         results = await self.llm_chain.aapply(
             # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs]
+            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
+            callbacks=callbacks,
         )
-        return self._process_results(results, docs, **kwargs)
+        return self._process_results(results, docs, callbacks=callbacks, **kwargs)
 
     def _process_results(
         self,
         results: List[Dict],
         docs: List[Document],
         token_max: int = 3000,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[str, dict]:
         question_result_key = self.llm_chain.output_key
@@ -173,7 +183,9 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         num_tokens = length_func(result_docs, **kwargs)
 
         def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
-            return self._collapse_chain.run(input_documents=docs, **kwargs)
+            return self._collapse_chain.run(
+                input_documents=docs, callbacks=callbacks, **kwargs
+            )
 
         while num_tokens is not None and num_tokens > token_max:
             new_result_doc_list = _split_list_of_docs(
@@ -183,15 +195,15 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             for docs in new_result_doc_list:
                 new_doc = _collapse_docs(docs, _collapse_docs_func, **kwargs)
                 result_docs.append(new_doc)
-            num_tokens = self.combine_document_chain.prompt_length(
-                result_docs, **kwargs
-            )
+            num_tokens = length_func(result_docs, **kwargs)
         if self.return_intermediate_steps:
             _results = [r[self.llm_chain.output_key] for r in results]
             extra_return_dict = {"intermediate_steps": _results}
         else:
             extra_return_dict = {}
-        output = self.combine_document_chain.run(input_documents=result_docs, **kwargs)
+        output = self.combine_document_chain.run(
+            input_documents=result_docs, callbacks=callbacks, **kwargs
+        )
         return output, extra_return_dict
 
     @property
