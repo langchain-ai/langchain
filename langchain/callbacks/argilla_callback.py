@@ -72,7 +72,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             import argilla as rg  # noqa: F401
         except ImportError:
             raise ImportError(
-                "To use the Argilla callback manager you need to have the `argilla` python "
+                "To use the Argilla callback manager you need to have the `argilla` Python "
                 "package installed. Please install it with `pip install argilla`"
             )
 
@@ -130,7 +130,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             raise ValueError(
                 f"`FeedbackDataset` with name={self.dataset_name} in the workspace={self.workspace_name} "
                 "had fields that are not supported yet for the `langchain` integration. Supported fields are: "
-                f"{supported_fields}, and the current `FeedbackDataset` fields are {[field.name for field in self.dataset.fields]}."
+                f"{supported_fields}, and the current `FeedbackDataset` fields are {[field.name for field in self.dataset.fields]}. "
                 "For more information on how to create a `langchain`-compatible `FeedbackDataset` in Argilla, "
                 "please visit TODO."
             )
