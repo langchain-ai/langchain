@@ -117,7 +117,6 @@ class LangChainTracer(BaseTracer):
     @retry_decorator
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
-        session = self.ensure_session()
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
         run_dict = run.dict()
