@@ -47,7 +47,7 @@ class WebBaseLoader(BaseLoader):
     default_parser: str = "html.parser"
     """Default parser to use for BeautifulSoup."""
 
-    requests_kwargs = {}
+    requests_kwargs: dict[str, Any] = {}
     """kwargs for requests"""
 
     def __init__(
