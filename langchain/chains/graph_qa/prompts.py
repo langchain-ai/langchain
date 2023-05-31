@@ -61,3 +61,14 @@ Helpful Answer:"""
 CYPHER_QA_PROMPT = PromptTemplate(
     input_variables=["context", "question"], template=CYPHER_QA_TEMPLATE
 )
+
+NEBULAGRAPH_EXTRA_INSTRUCTIONS = """Note: NebulaGraph Cypher requires explicit label specification 
+when referring to node properties, such as using Person.name instead of just name for a Person label.\n"""
+
+NGQL_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
+    "Note: ", NEBULAGRAPH_EXTRA_INSTRUCTIONS)
+
+
+NGQL_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "question"], template=NGQL_GENERATION_TEMPLATE
+)
