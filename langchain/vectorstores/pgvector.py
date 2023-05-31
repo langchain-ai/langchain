@@ -207,14 +207,44 @@ class PGVector(VectorStore):
     ) -> PGVector:
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
-        
+
         if not metadatas:
             metadatas = [{} for _ in texts]
 
         connection_string = cls.get_connection_string(kwargs)
 
-        with Session(cls._conn) as session:
-            collection = cls.get_collection(session)
+        store = cls(
+            connection_string=connection_string,
+            collection_name=collection_name,
+            embedding_function=embedding,
+            distance_strategy=distance_strategy,
+            pre_delete_collection=pre_delete_collection,
+        )
+
+        store.add_embeddings(
+            texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
+        )
+
+        return store
+
+    def add_embeddings(
+        self,
+        texts: List[str],
+        embeddings: List[List[float]],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Add embeddings to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            embeddings: List of list of embedding vectors.
+            metadatas: Optional list of metadatas associated with the texts.
+            kwargs: vectorstore specific parameters
+        """
+        with Session(self._conn) as session:
+            collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
             for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
@@ -227,15 +257,6 @@ class PGVector(VectorStore):
                 collection.embeddings.append(embedding_store)
                 session.add(embedding_store)
             session.commit()
-
-        return cls(
-            connection_string=connection_string,
-            collection_name=collection_name,
-            embedding_function=embedding,
-            distance_strategy=distance_strategy,
-            pre_delete_collection=pre_delete_collection,
-            **kwargs,
-        )
 
     def add_texts(
         self,
@@ -425,8 +446,7 @@ class PGVector(VectorStore):
         "Either pass it as a parameter
         or set the PGVECTOR_CONNECTION_STRING environment variable.
         """
-
-        embeddings = cls.embedding_function.embed_documents(list(texts))
+        embeddings = embedding.embed_documents(list(texts))
 
         return cls.__from(
             texts,
@@ -439,7 +459,7 @@ class PGVector(VectorStore):
             pre_delete_collection=pre_delete_collection,
             **kwargs,
         )
-    
+
     @classmethod
     def from_embeddings(
         cls,
@@ -452,6 +472,24 @@ class PGVector(VectorStore):
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> PGVector:
+        """Construct PGVector wrapper from raw documents and pre-
+        generated embeddings.
+
+        Return VectorStore initialized from documents and embeddings.
+        Postgres connection string is required
+        "Either pass it as a parameter
+        or set the PGVECTOR_CONNECTION_STRING environment variable.
+
+        Example:
+            .. code-block:: python
+
+                from langchain import PGVector
+                from langchain.embeddings import OpenAIEmbeddings
+                embeddings = OpenAIEmbeddings()
+                text_embeddings = embeddings.embed_documents(texts)
+                text_embedding_pairs = list(zip(texts, text_embeddings))
+                faiss = PGVector.from_embeddings(text_embedding_pairs, embeddings)
+        """
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
 
@@ -466,7 +504,7 @@ class PGVector(VectorStore):
             pre_delete_collection=pre_delete_collection,
             **kwargs,
         )
-    
+
     @classmethod
     def get_connection_string(cls, kwargs: Dict[str, Any]) -> str:
         connection_string: str = get_from_dict_or_env(
