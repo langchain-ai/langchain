@@ -334,6 +334,7 @@ class SQLDatabase:
                 else:
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.execute(text(command))
+            column_names = tuple(cursor.keys())
             if cursor.returns_rows:
                 if fetch == "all":
                     result = cursor.fetchall()
@@ -341,6 +342,7 @@ class SQLDatabase:
                     result = cursor.fetchone()[0]  # type: ignore
                 else:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
+                result.insert(0, column_names)
                 return str(result)
         return ""
 
