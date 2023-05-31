@@ -83,7 +83,9 @@ class ConfluenceLoader(BaseLoader):
         confluence_kwargs: Optional[dict] = None,
     ):
         confluence_kwargs = confluence_kwargs or {}
-        errors = ConfluenceLoader.validate_init_args(url, api_key, username, oauth2, token)
+        errors = ConfluenceLoader.validate_init_args(
+            url, api_key, username, oauth2, token
+        )
         if errors:
             raise ValueError(f"Error(s) while validating input: {errors}")
 
