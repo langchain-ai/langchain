@@ -61,6 +61,7 @@ def test_feedback_cycle(
     """Test that feedback is correctly created and updated."""
     monkeypatch.setenv("LANGCHAIN_TRACING_V2", "true")
     monkeypatch.setenv("LANGCHAIN_SESSION", f"Feedback Testing {uuid4()}")
+    monkeypatch.setenv("LANGCHAIN_ENDPOINT", "http://localhost:1984")
     llm = ChatOpenAI(temperature=0)
     tools = load_tools(["serpapi", "llm-math"], llm=llm)
     agent = initialize_agent(

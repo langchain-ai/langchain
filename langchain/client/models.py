@@ -108,7 +108,7 @@ class ListRunsQueryParams(BaseModel):
         extra = "forbid"
         frozen = True
 
-    @root_validator
+    @root_validator(allow_reuse=True)
     def validate_time_range(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that start_time <= end_time."""
         start_time = values.get("start_time")
@@ -120,7 +120,7 @@ class ListRunsQueryParams(BaseModel):
 
 class FeedbackSourceBase(BaseModel):
     type: ClassVar[str]
-    metadata: Dict[str, Any] | None = None
+    metadata: Optional[Dict[str, Any]] = None
 
     class Config:
         frozen = True
