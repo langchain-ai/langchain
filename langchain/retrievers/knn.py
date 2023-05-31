@@ -58,7 +58,7 @@ class KNNRetriever(BaseRetriever, BaseModel):
                 self.relevancy_threshold is None
                 or normalized_similarities[row] >= self.relevancy_threshold
             )
-        ]   
+        ]
         return top_k_results
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
