@@ -99,6 +99,11 @@ class Bedrock(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that AWS credentials to and python package exists in environment."""
+
+        # Skip creating new client if passed in constructor
+        if "client" in values:
+            return values
+
         try:
             import boto3
 
