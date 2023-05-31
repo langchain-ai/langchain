@@ -397,126 +397,6 @@ class SpacyTextSplitter(TextSplitter):
         return self._merge_splits(splits, self._separator)
 
 
-class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
-    """Attempts to split the text along Markdown-formatted headings."""
-
-    def __init__(self, **kwargs: Any):
-        """Initialize a MarkdownTextSplitter."""
-        separators = [
-            # First, try to split along Markdown headings (starting with level 2)
-            "\n## ",
-            "\n### ",
-            "\n#### ",
-            "\n##### ",
-            "\n###### ",
-            # Note the alternative syntax for headings (below) is not handled here
-            # Heading level 2
-            # ---------------
-            # End of code block
-            "```\n\n",
-            # Horizontal lines
-            "\n\n***\n\n",
-            "\n\n---\n\n",
-            "\n\n___\n\n",
-            # Note that this splitter doesn't handle horizontal lines defined
-            # by *three or more* of ***, ---, or ___, but this is not handled
-            "\n\n",
-            "\n",
-            " ",
-            "",
-        ]
-        super().__init__(separators=separators, **kwargs)
-
-
-class LatexTextSplitter(RecursiveCharacterTextSplitter):
-    """Attempts to split the text along Latex-formatted layout elements."""
-
-    def __init__(self, **kwargs: Any):
-        """Initialize a LatexTextSplitter."""
-        separators = [
-            # First, try to split along Latex sections
-            "\n\\chapter{",
-            "\n\\section{",
-            "\n\\subsection{",
-            "\n\\subsubsection{",
-            # Now split by environments
-            "\n\\begin{enumerate}",
-            "\n\\begin{itemize}",
-            "\n\\begin{description}",
-            "\n\\begin{list}",
-            "\n\\begin{quote}",
-            "\n\\begin{quotation}",
-            "\n\\begin{verse}",
-            "\n\\begin{verbatim}",
-            ## Now split by math environments
-            "\n\\begin{align}",
-            "$$",
-            "$",
-            # Now split by the normal type of lines
-            " ",
-            "",
-        ]
-        super().__init__(separators=separators, **kwargs)
-
-
-class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
-    """Attempts to split the text along Python syntax."""
-
-    def __init__(self, **kwargs: Any):
-        """Initialize a PythonCodeTextSplitter."""
-        separators = [
-            # First, try to split along class definitions
-            "\nclass ",
-            "\ndef ",
-            "\n\tdef ",
-            # Now split by the normal type of lines
-            "\n\n",
-            "\n",
-            " ",
-            "",
-        ]
-        super().__init__(separators=separators, **kwargs)
-
-
-class HtmlTextSplitter(RecursiveCharacterTextSplitter):
-    """Attempts to split the text along HTML layout elements."""
-
-    def __init__(self, **kwargs: Any):
-        """Initialize a HtmlTextSplitter."""
-        separators = [
-            # First, try to split along HTML tags
-            "<body>",
-            "<div>",
-            "<p>",
-            "<br>",
-            "<li>",
-            "<h1>",
-            "<h2>",
-            "<h3>",
-            "<h4>",
-            "<h5>",
-            "<h6>",
-            "<span>",
-            "<table>",
-            "<tr>",
-            "<td>",
-            "<th>",
-            "<ul>",
-            "<ol>",
-            "<header>",
-            "<footer>",
-            "<nav>",
-            # Head
-            "<head>",
-            "<style>",
-            "<script>",
-            "<meta>",
-            "<title>",
-            "",
-        ]
-        super().__init__(separators=separators, **kwargs)
-
-
 class Language(str, Enum):
     CPP = "cpp"
     GO = "go"
@@ -532,6 +412,7 @@ class Language(str, Enum):
     SWIFT = "swift"
     MARKDOWN = "markdown"
     LATEX = "latex"
+    HTML = "html"
 
 
 class CodeTextSplitter(RecursiveCharacterTextSplitter):
@@ -545,10 +426,11 @@ class CodeTextSplitter(RecursiveCharacterTextSplitter):
         Args:
             Language: The programming language to use
         """
-        separators = self._get_separators_for_language(language)
+        separators = self.get_separators_for_language(language)
         super().__init__(separators=separators, **kwargs)
 
-    def _get_separators_for_language(self, language: Language) -> List[str]:
+    @staticmethod
+    def get_separators_for_language(language: Language) -> List[str]:
         if language == Language.CPP:
             return [
                 # Split along class definitions
@@ -821,8 +703,65 @@ class CodeTextSplitter(RecursiveCharacterTextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.HTML:
+            return [
+                # First, try to split along HTML tags
+                "<body>",
+                "<div>",
+                "<p>",
+                "<br>",
+                "<li>",
+                "<h1>",
+                "<h2>",
+                "<h3>",
+                "<h4>",
+                "<h5>",
+                "<h6>",
+                "<span>",
+                "<table>",
+                "<tr>",
+                "<td>",
+                "<th>",
+                "<ul>",
+                "<ol>",
+                "<header>",
+                "<footer>",
+                "<nav>",
+                # Head
+                "<head>",
+                "<style>",
+                "<script>",
+                "<meta>",
+                "<title>",
+                "",
+            ]
         else:
             raise ValueError(
                 f"Language {language} is not supported! "
                 f"Please choose from {list(Language)}"
             )
+
+
+# For backwards compatibility
+class PythonCodeTextSplitter(CodeTextSplitter):
+    """Attempts to split the text along Python syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a PythonCodeTextSplitter."""
+        super().__init__(language=Language.PYTHON, **kwargs)
+
+
+class MarkdownTextSplitter(CodeTextSplitter):
+    """Attempts to split the text along Markdown-formatted headings."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a MarkdownTextSplitter."""
+        super().__init__(language=Language.MARKDOWN, **kwargs)
+
+
+class LatexTextSplitter(CodeTextSplitter):
+    """Attempts to split the text along Latex-formatted layout elements."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a LatexTextSplitter."""
+        super().__init__(language=Language.LATEX, **kwargs)
