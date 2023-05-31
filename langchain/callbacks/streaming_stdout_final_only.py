@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-DEFAULT_ANSWER_PREFIX_TOKENS = ["\nFinal", " Answer", ":"]
+DEFAULT_ANSWER_PREFIX_TOKENS = ["Final", "Answer", ":"]
 
 
 class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
@@ -18,7 +18,7 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
         super().__init__()
         if answer_prefix_tokens is None:
             answer_prefix_tokens = DEFAULT_ANSWER_PREFIX_TOKENS
-        self.answer_prefix_tokens = answer_prefix_tokens
+        self.answer_prefix_tokens = [token.strip() for token in answer_prefix_tokens]
         self.last_tokens = [""] * len(answer_prefix_tokens)
         self.answer_reached = False
 
@@ -32,7 +32,7 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
         """Run on new LLM token. Only available when streaming is enabled."""
 
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
-        self.last_tokens.append(token)
+        self.last_tokens.append(token.strip())
         if len(self.last_tokens) > len(self.answer_prefix_tokens):
             self.last_tokens.pop(0)
 
