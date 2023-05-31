@@ -192,6 +192,51 @@ class PGVector(VectorStore):
     def get_collection(self, session: Session) -> Optional["CollectionStore"]:
         return CollectionStore.get_by_name(session, self.collection_name)
 
+    @classmethod
+    def __from(
+        cls,
+        texts: List[str],
+        embeddings: List[List[float]],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+        distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
+        pre_delete_collection: bool = False,
+        **kwargs: Any,
+    ) -> PGVector:
+        if ids is None:
+            ids = [str(uuid.uuid1()) for _ in texts]
+        
+        if not metadatas:
+            metadatas = [{} for _ in texts]
+
+        connection_string = cls.get_connection_string(kwargs)
+
+        with Session(cls._conn) as session:
+            collection = cls.get_collection(session)
+            if not collection:
+                raise ValueError("Collection not found")
+            for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
+                embedding_store = EmbeddingStore(
+                    embedding=embedding,
+                    document=text,
+                    cmetadata=metadata,
+                    custom_id=id,
+                )
+                collection.embeddings.append(embedding_store)
+                session.add(embedding_store)
+            session.commit()
+
+        return cls(
+            connection_string=connection_string,
+            collection_name=collection_name,
+            embedding_function=embedding,
+            distance_strategy=distance_strategy,
+            pre_delete_collection=pre_delete_collection,
+            **kwargs,
+        )
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -381,19 +426,47 @@ class PGVector(VectorStore):
         or set the PGVECTOR_CONNECTION_STRING environment variable.
         """
 
-        connection_string = cls.get_connection_string(kwargs)
+        embeddings = cls.embedding_function.embed_documents(list(texts))
 
-        store = cls(
-            connection_string=connection_string,
+        return cls.__from(
+            texts,
+            embeddings,
+            embedding,
+            metadatas=metadatas,
+            ids=ids,
             collection_name=collection_name,
-            embedding_function=embedding,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
+            **kwargs,
         )
+    
+    @classmethod
+    def from_embeddings(
+        cls,
+        text_embeddings: List[Tuple[str, List[float]]],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+        distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
+        ids: Optional[List[str]] = None,
+        pre_delete_collection: bool = False,
+        **kwargs: Any,
+    ) -> PGVector:
+        texts = [t[0] for t in text_embeddings]
+        embeddings = [t[1] for t in text_embeddings]
 
-        store.add_texts(texts=texts, metadatas=metadatas, ids=ids, **kwargs)
-        return store
-
+        return cls.__from(
+            texts,
+            embeddings,
+            embedding,
+            metadatas=metadatas,
+            ids=ids,
+            collection_name=collection_name,
+            distance_strategy=distance_strategy,
+            pre_delete_collection=pre_delete_collection,
+            **kwargs,
+        )
+    
     @classmethod
     def get_connection_string(cls, kwargs: Dict[str, Any]) -> str:
         connection_string: str = get_from_dict_or_env(
