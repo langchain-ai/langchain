@@ -135,6 +135,9 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 "please visit TODO."
             )
 
+        self.prompts = []
+        self.in_chain = False
+
         warnings.warn(
             "The `ArgillaCallbackHandler` is currently in beta and is subject to change "
             "based on updates to `langchain`. Please report any issues to "
@@ -144,11 +147,11 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
-        """Record the prompts when an LLM starts."""
-        if not hasattr(self, "prompts"):
+        """Save the prompts in memory when an LLM starts."""
+        if not self.in_chain:
             self.prompts = prompts
-        else:
-            self.prompts.extend(prompts)
+        if len(self.prompts) == 0:
+            self.prompts = prompts
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Do nothing when a new token is generated."""
@@ -156,6 +159,10 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Log records to Argilla when an LLM ends."""
+        # Do nothing if we are in a chain, since we will log the records when the chain ends
+        if self.in_chain:
+            return
+
         # Creates the records as `FeedbackRecord`s and adds them to the `FeedbackDataset`
         for prompt, generations in zip(self.prompts, response.generations):
             self.dataset.add_records(
@@ -173,6 +180,9 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         # Push the records to Argilla
         self.dataset.push_to_argilla()
 
+        # Reset the prompts
+        self.prompts = []
+
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
@@ -183,11 +193,49 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Do nothing when LLM chain starts."""
-        pass
+        self.in_chain = True
+        if "input" in inputs:
+            self.prompts = inputs["input"] if isinstance(inputs["input"], list) else [inputs["input"]]
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Do nothing when LLM chain ends."""
-        pass
+        self.in_chain = False
+        
+        if "outputs" in outputs:
+            # Creates the records as `FeedbackRecord`s and adds them to the `FeedbackDataset`
+            self.dataset.add_records(
+                records=[
+                    {
+                        "fields": {
+                            "prompt": prompt,
+                            "response": output["text"].strip(),
+                        },
+                    }
+                    for prompt, output in zip(self.prompts, outputs["outputs"])
+                ]
+            )
+        elif "output" in outputs:
+            # Creates the records as `FeedbackRecord`s and adds them to the `FeedbackDataset`
+            self.dataset.add_records(
+                records=[
+                    {
+                        "fields": {
+                            "prompt": " ".join(self.prompts),
+                            "response": outputs["output"].strip(),
+                        },
+                    }
+                ]
+            )
+        else:
+            raise ValueError(
+                "The `outputs` dictionary did not contain the expected keys `outputs` or `output`."
+            )
+
+        # Push the records to Argilla
+        self.dataset.push_to_argilla()
+
+        # Reset the prompts
+        self.prompts = []
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
