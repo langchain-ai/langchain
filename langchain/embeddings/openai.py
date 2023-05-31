@@ -16,7 +16,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, PrivateAttr, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -105,7 +105,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client: Any  #: :meta private:
+    _client: Any = PrivateAttr()  #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model  # to support Azure OpenAI Service custom deployment names
     openai_api_version: Optional[str] = None
@@ -307,3 +307,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         embedding = self._embedding_func(text, engine=self.deployment)
         return embedding
+
+    @property
+    def client(self) -> Any:
+        return self._client
