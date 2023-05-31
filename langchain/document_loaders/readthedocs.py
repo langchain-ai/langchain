@@ -75,8 +75,8 @@ class ReadTheDocsLoader(BaseLoader):
         soup = BeautifulSoup(data, **self.bs_kwargs)
 
         # Check for the body tag
-        text = soup.find('body')
-        
+        text = soup.find("body")
+
         if text is not None:
             text = text.get_text()
         else:
