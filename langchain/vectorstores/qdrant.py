@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import uuid
 import warnings
-from hashlib import md5
 from itertools import islice
 from operator import itemgetter
 from typing import (
