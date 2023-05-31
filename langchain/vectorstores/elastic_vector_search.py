@@ -10,11 +10,6 @@ from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_env
 from langchain.vectorstores.base import VectorStore
 
-#from typing import TYPE_CHECKING
-#if TYPE_CHECKING:
-#    from elasticsearch import Elasticsearch
-
-
 
 def _default_text_mapping(dim: int) -> Dict:
     return {
@@ -290,81 +285,7 @@ class ElasticVectorSearch(VectorStore, ABC):
 
 class ElasticKnnSearch(ElasticVectorSearch):
     """
-    ElasticKnnSearch is a wrapper around Elasticsearch for k-nearest neighbors 
-    (kNN) search. It extends the ElasticVectorSearch, providing additional 
-    functionality for kNN search features. It is used for adding texts to an 
-    Elasticsearch index and performing a kNN search on the added texts.
-    
-    ElasticKnnSearch uses embeddings from the `ElasticVectorSearch` parent 
-    class to convert text into numerical vectors. These vectors are then 
-    indexed in an Elasticsearch index. The `knn_search` method allows 
-    performing a kNN search, which finds the k nearest vector neighbors to a 
-    given query vector.
-    
-    Usage:
-    ```python
-    from elasticsearch import Elasticsearch
-    from langchain.vectorstores import ElasticKnnSearch
-
-    # Using a pre-existing Elasticsearch connection
-    es_conn = Elasticsearch([{'host': 'localhost', 'port': 9200}])
-    knn_search = ElasticKnnSearch(es_connection=es_conn, index_name="my_index", embeddings=my_embedding)
-
-    # OR create a new connection using provided credentials
-    knn_search = ElasticKnnSearch(es_cloud_id="my_cloud_id", es_user="my_user", es_password="my_password", index_name="my_index", embeddings=my_embedding)
-
-    # Add texts to the Elasticsearch index
-    texts = ["Hello, world!", "Machine learning is fun.", "I love Python."]
-    knn_search.add_texts(texts)
-
-    # Perform kNN search
-    result = knn_search.knn_search("Hello", k=2)
-    print(result)
-    ```
-
-    Args:
-    es_connection : Elasticsearch, optional
-        A pre-existing Elasticsearch client connection. If not provided, a new connection will be created using the provided credentials (default is None).
-
-    es_cloud_id : str, optional
-        The cloud ID of the Elasticsearch service. Required if creating a new connection and no pre-existing connection is provided (default is None).
-
-    es_user : str, optional
-        The username to use for authentication when creating a new connection. Required if creating a new connection and no pre-existing connection is provided (default is None).
-
-    es_password : str, optional
-        The password to use for authentication when creating a new connection. Required if creating a new connection and no pre-existing connection is provided (default is None).
-
-    index_name : str
-        The name of the Elasticsearch index to use for the kNN search.
-
-    embeddings : Embeddings
-        The embeddings to use for the kNN search.
-
-    *args : 
-        Additional positional arguments to be passed to the superclass initializer.
-
-    **kwargs : 
-        Additional keyword arguments to be passed to the superclass initializer.
-
-    Methods:
-    add_texts(texts: List[str], model_id: Optional[str] = None): Adds the 
-    provided texts to the Elasticsearch index.
-    
-    from_texts(texts: List[str], model_id: Optional[str] = None): Creates an 
-    index and adds the provided texts to it.
-    
-    knn_search(query: Union[str, List[str]], k: int = 10, 
-    model_id: Optional[str] = None): Performs a k-nearest neighbors (kNN) search.
-    
-    hybrid_search(query: Union[str, List[str]], k: int = 10, 
-    model_id: Optional[str] = None): Performs a hybrid search that combines a 
-    k-nearest neighbors (kNN) search with a standard Elasticsearch query.
-
-    Raises
-    ------
-    ValueError
-        If neither a pre-existing Elasticsearch client connectionquote("class ElasticKnnSearch(ElasticVectorSearch):", "body=combined_query_body) returns the search results.")
+        TODO docstrings
     """
 
     def __init__(
