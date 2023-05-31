@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import copy
 import logging
+import re
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import (
     AbstractSet,
     Any,
@@ -27,6 +29,23 @@ logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="TextSplitter")
 
 
+def _split_text(text: str, separator: str, keep_separator: bool) -> List[str]:
+    # Now that we have the separator, split the text
+    if separator:
+        if keep_separator:
+            # The parentheses in the pattern keep the delimiters in the result.
+            _splits = re.split(f"({separator})", text)
+            splits = [_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)]
+            if len(_splits) % 2 == 0:
+                splits += _splits[-1:]
+            splits = [_splits[0]] + splits
+        else:
+            splits = text.split(separator)
+    else:
+        splits = list(text)
+    return [s for s in splits if s != ""]
+
+
 class TextSplitter(BaseDocumentTransformer, ABC):
     """Interface for splitting text into chunks."""
 
@@ -35,8 +54,16 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
+        keep_separator: bool = False,
     ):
-        """Create a new TextSplitter."""
+        """Create a new TextSplitter.
+
+        Args:
+            chunk_size: Maximum size of chunks to return
+            chunk_overlap: Overlap in characters between chunks
+            length_function: Function that measures the length of given chunks
+            keep_separator: Whether or not to keep the separator in the chunks
+        """
         if chunk_overlap > chunk_size:
             raise ValueError(
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
@@ -45,6 +72,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
+        self._keep_separator = keep_separator
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
@@ -211,11 +239,9 @@ class CharacterTextSplitter(TextSplitter):
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
-        if self._separator:
-            splits = text.split(self._separator)
-        else:
-            splits = list(text)
-        return self._merge_splits(splits, self._separator)
+        splits = _split_text(text, self._separator, self._keep_separator)
+        _separator = "" if self._keep_separator else self._separator
+        return self._merge_splits(splits, _separator)
 
 
 class TokenTextSplitter(TextSplitter):
@@ -274,44 +300,55 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     that works.
     """
 
-    def __init__(self, separators: Optional[List[str]] = None, **kwargs: Any):
+    def __init__(
+        self,
+        separators: Optional[List[str]] = None,
+        keep_separator: bool = True,
+        **kwargs: Any,
+    ):
         """Create a new TextSplitter."""
-        super().__init__(**kwargs)
+        super().__init__(keep_separator=keep_separator, **kwargs)
         self._separators = separators or ["\n\n", "\n", " ", ""]
 
-    def split_text(self, text: str) -> List[str]:
+    def _split_text(self, text: str, separators: List[str]) -> List[str]:
         """Split incoming text and return chunks."""
         final_chunks = []
         # Get appropriate separator to use
-        separator = self._separators[-1]
-        for _s in self._separators:
+        separator = separators[-1]
+        new_separators = None
+        for i, _s in enumerate(separators):
             if _s == "":
                 separator = _s
                 break
             if _s in text:
                 separator = _s
+                new_separators = separators[i + 1 :]
                 break
-        # Now that we have the separator, split the text
-        if separator:
-            splits = text.split(separator)
-        else:
-            splits = list(text)
+
+        splits = _split_text(text, separator, self._keep_separator)
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
+        _separator = "" if self._keep_separator else separator
         for s in splits:
             if self._length_function(s) < self._chunk_size:
                 _good_splits.append(s)
             else:
                 if _good_splits:
-                    merged_text = self._merge_splits(_good_splits, separator)
+                    merged_text = self._merge_splits(_good_splits, _separator)
                     final_chunks.extend(merged_text)
                     _good_splits = []
-                other_info = self.split_text(s)
-                final_chunks.extend(other_info)
+                if new_separators is None:
+                    final_chunks.append(s)
+                else:
+                    other_info = self._split_text(s, new_separators)
+                    final_chunks.extend(other_info)
         if _good_splits:
-            merged_text = self._merge_splits(_good_splits, separator)
+            merged_text = self._merge_splits(_good_splits, _separator)
             final_chunks.extend(merged_text)
         return final_chunks
+
+    def split_text(self, text: str) -> List[str]:
+        return self._split_text(text, self._separators)
 
 
 class NLTKTextSplitter(TextSplitter):
@@ -439,3 +476,353 @@ class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
             "",
         ]
         super().__init__(separators=separators, **kwargs)
+
+
+class HtmlTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along HTML layout elements."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a HtmlTextSplitter."""
+        separators = [
+            # First, try to split along HTML tags
+            "<body>",
+            "<div>",
+            "<p>",
+            "<br>",
+            "<li>",
+            "<h1>",
+            "<h2>",
+            "<h3>",
+            "<h4>",
+            "<h5>",
+            "<h6>",
+            "<span>",
+            "<table>",
+            "<tr>",
+            "<td>",
+            "<th>",
+            "<ul>",
+            "<ol>",
+            "<header>",
+            "<footer>",
+            "<nav>",
+            # Head
+            "<head>",
+            "<style>",
+            "<script>",
+            "<meta>",
+            "<title>",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class Language(str, Enum):
+    CPP = "cpp"
+    GO = "go"
+    JAVA = "java"
+    JS = "js"
+    PHP = "php"
+    PROTO = "proto"
+    PYTHON = "python"
+    RST = "rst"
+    RUBY = "ruby"
+    RUST = "rust"
+    SCALA = "scala"
+    SWIFT = "swift"
+    MARKDOWN = "markdown"
+    LATEX = "latex"
+
+
+class CodeTextSplitter(RecursiveCharacterTextSplitter):
+    def __init__(self, language: Language, **kwargs: Any):
+        """
+        A generic code text splitter supporting many programming languages.
+        Example:
+            splitter = CodeTextSplitter(
+                language=Language.JAVA
+            )
+        Args:
+            Language: The programming language to use
+        """
+        separators = self._get_separators_for_language(language)
+        super().__init__(separators=separators, **kwargs)
+
+    def _get_separators_for_language(self, language: Language) -> List[str]:
+        if language == Language.CPP:
+            return [
+                # Split along class definitions
+                "\nclass ",
+                # Split along function definitions
+                "\nvoid ",
+                "\nint ",
+                "\nfloat ",
+                "\ndouble ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                "\ncase ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.GO:
+            return [
+                # Split along function definitions
+                "\nfunc ",
+                "\nvar ",
+                "\nconst ",
+                "\ntype ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nswitch ",
+                "\ncase ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.JAVA:
+            return [
+                # Split along class definitions
+                "\nclass ",
+                # Split along method definitions
+                "\npublic ",
+                "\nprotected ",
+                "\nprivate ",
+                "\nstatic ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                "\ncase ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.JS:
+            return [
+                # Split along function definitions
+                "\nfunction ",
+                "\nconst ",
+                "\nlet ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                "\ncase ",
+                "\ndefault ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.PHP:
+            return [
+                # Split along function definitions
+                "\nfunction ",
+                # Split along class definitions
+                "\nclass ",
+                # Split along control flow statements
+                "\nif ",
+                "\nforeach ",
+                "\nwhile ",
+                "\ndo ",
+                "\nswitch ",
+                "\ncase ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.PROTO:
+            return [
+                # Split along message definitions
+                "\nmessage ",
+                # Split along service definitions
+                "\nservice ",
+                # Split along enum definitions
+                "\nenum ",
+                # Split along option definitions
+                "\noption ",
+                # Split along import statements
+                "\nimport ",
+                # Split along syntax declarations
+                "\nsyntax ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.PYTHON:
+            return [
+                # First, try to split along class definitions
+                "\nclass ",
+                "\ndef ",
+                "\n\tdef ",
+                # Now split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.RST:
+            return [
+                # Split along section titles
+                "\n===\n",
+                "\n---\n",
+                "\n***\n",
+                # Split along directive markers
+                "\n.. ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.RUBY:
+            return [
+                # Split along method definitions
+                "\ndef ",
+                "\nclass ",
+                # Split along control flow statements
+                "\nif ",
+                "\nunless ",
+                "\nwhile ",
+                "\nfor ",
+                "\ndo ",
+                "\nbegin ",
+                "\nrescue ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.RUST:
+            return [
+                # Split along function definitions
+                "\nfn ",
+                "\nconst ",
+                "\nlet ",
+                # Split along control flow statements
+                "\nif ",
+                "\nwhile ",
+                "\nfor ",
+                "\nloop ",
+                "\nmatch ",
+                "\nconst ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.SCALA:
+            return [
+                # Split along class definitions
+                "\nclass ",
+                "\nobject ",
+                # Split along method definitions
+                "\ndef ",
+                "\nval ",
+                "\nvar ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nmatch ",
+                "\ncase ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.SWIFT:
+            return [
+                # Split along function definitions
+                "\nfunc ",
+                # Split along class definitions
+                "\nclass ",
+                "\nstruct ",
+                "\nenum ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\ndo ",
+                "\nswitch ",
+                "\ncase ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.MARKDOWN:
+            return [
+                # First, try to split along Markdown headings (starting with level 2)
+                "\n## ",
+                "\n### ",
+                "\n#### ",
+                "\n##### ",
+                "\n###### ",
+                # Note the alternative syntax for headings (below) is not handled here
+                # Heading level 2
+                # ---------------
+                # End of code block
+                "```\n\n",
+                # Horizontal lines
+                "\n\n***\n\n",
+                "\n\n---\n\n",
+                "\n\n___\n\n",
+                # Note that this splitter doesn't handle horizontal lines defined
+                # by *three or more* of ***, ---, or ___, but this is not handled
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.LATEX:
+            return [
+                # First, try to split along Latex sections
+                "\n\\chapter{",
+                "\n\\section{",
+                "\n\\subsection{",
+                "\n\\subsubsection{",
+                # Now split by environments
+                "\n\\begin{enumerate}",
+                "\n\\begin{itemize}",
+                "\n\\begin{description}",
+                "\n\\begin{list}",
+                "\n\\begin{quote}",
+                "\n\\begin{quotation}",
+                "\n\\begin{verse}",
+                "\n\\begin{verbatim}",
+                ## Now split by math environments
+                "\n\\begin{align}",
+                "$$",
+                "$",
+                # Now split by the normal type of lines
+                " ",
+                "",
+            ]
+        else:
+            raise ValueError(
+                f"Language {language} is not supported! "
+                f"Please choose from {list(Language)}"
+            )

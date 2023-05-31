@@ -6,6 +6,8 @@ Thank you for contributing to LangChain! Your PR will appear in our release unde
 Replace this with a description of the change, the issue it fixes (if applicable), and relevant context. List any dependencies required for this change.
 
 After you're done, someone will review your PR. They may suggest improvements. If no one reviews your PR within a few days, feel free to @-mention the same people again, as notifications can get lost.
+
+Finally, we'd love to show appreciation for your contribution - if you'd like us to shout you out on Twitter, please also include your handle!
 -->
 
 <!-- Remove if not applicable -->
@@ -52,5 +54,5 @@ Community members can review the PR once tests pass. Tag maintainers/contributor
 
   VectorStores / Retrievers / Memory
   - @dev2049
-        
+
  -->

@@ -4,6 +4,7 @@ from __future__ import annotations
 import uuid
 import warnings
 from hashlib import md5
+from itertools import islice
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -158,6 +159,7 @@ class Qdrant(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        batch_size: int = 64,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -171,24 +173,30 @@ class Qdrant(VectorStore):
         """
         from qdrant_client.http import models as rest
 
-        texts = list(
-            texts
-        )  # otherwise iterable might be exhausted after id calculation
-        ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
+        ids = []
+        texts_iterator = iter(texts)
+        metadatas_iterator = iter(metadatas or [])
+        while batch_texts := list(islice(texts_iterator, batch_size)):
+            # Take the corresponding metadata for each text in a batch
+            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
 
-        self.client.upsert(
-            collection_name=self.collection_name,
-            points=rest.Batch.construct(
-                ids=ids,
-                vectors=self._embed_texts(texts),
-                payloads=self._build_payloads(
-                    texts,
-                    metadatas,
-                    self.content_payload_key,
-                    self.metadata_payload_key,
+            batch_ids = [md5(text.encode("utf-8")).hexdigest() for text in batch_texts]
+
+            self.client.upsert(
+                collection_name=self.collection_name,
+                points=rest.Batch.construct(
+                    ids=batch_ids,
+                    vectors=self._embed_texts(batch_texts),
+                    payloads=self._build_payloads(
+                        batch_texts,
+                        batch_metadatas,
+                        self.content_payload_key,
+                        self.metadata_payload_key,
+                    ),
                 ),
-            ),
-        )
+            )
+
+            ids.extend(batch_ids)
 
         return ids
 
@@ -309,6 +317,7 @@ class Qdrant(VectorStore):
         distance_func: str = "Cosine",
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
+        batch_size: int = 64,
         **kwargs: Any,
     ) -> Qdrant:
         """Construct Qdrant wrapper from a list of texts.
@@ -361,7 +370,7 @@ class Qdrant(VectorStore):
             **kwargs:
                 Additional arguments passed directly into REST client initialization
 
-        This is a user friendly interface that:
+        This is a user-friendly interface that:
             1. Creates embeddings, one for each text
             2. Initializes the Qdrant database as an in-memory docstore by default
                (and overridable to a remote docstore)
@@ -417,19 +426,28 @@ class Qdrant(VectorStore):
             ),
         )
 
-        # Now generate the embeddings for all the texts
-        embeddings = embedding.embed_documents(texts)
+        texts_iterator = iter(texts)
+        metadatas_iterator = iter(metadatas or [])
+        while batch_texts := list(islice(texts_iterator, batch_size)):
+            # Take the corresponding metadata for each text in a batch
+            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
 
-        client.upsert(
-            collection_name=collection_name,
-            points=rest.Batch.construct(
-                ids=[md5(text.encode("utf-8")).hexdigest() for text in texts],
-                vectors=embeddings,
-                payloads=cls._build_payloads(
-                    texts, metadatas, content_payload_key, metadata_payload_key
+            # Generate the embeddings for all the texts in a batch
+            batch_embeddings = embedding.embed_documents(batch_texts)
+
+            client.upsert(
+                collection_name=collection_name,
+                points=rest.Batch.construct(
+                    ids=[md5(text.encode("utf-8")).hexdigest() for text in batch_texts],
+                    vectors=batch_embeddings,
+                    payloads=cls._build_payloads(
+                        batch_texts,
+                        batch_metadatas,
+                        content_payload_key,
+                        metadata_payload_key,
+                    ),
                 ),
-            ),
-        )
+            )
 
         return cls(
             client=client,
