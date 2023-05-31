@@ -1,3 +1,4 @@
+from langchain.output_parsers.datetime import DatetimeOutputParser
 from langchain.output_parsers.fix import OutputFixingParser
 from langchain.output_parsers.list import (
     CommaSeparatedListOutputParser,
@@ -22,4 +23,5 @@ __all__ = [
     "RetryOutputParser",
     "RetryWithErrorOutputParser",
     "OutputFixingParser",
+    "DatetimeOutputParser",
 ]
