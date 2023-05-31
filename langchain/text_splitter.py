@@ -293,6 +293,24 @@ class TokenTextSplitter(TextSplitter):
         return splits
 
 
+class Language(str, Enum):
+    CPP = "cpp"
+    GO = "go"
+    JAVA = "java"
+    JS = "js"
+    PHP = "php"
+    PROTO = "proto"
+    PYTHON = "python"
+    RST = "rst"
+    RUBY = "ruby"
+    RUST = "rust"
+    SCALA = "scala"
+    SWIFT = "swift"
+    MARKDOWN = "markdown"
+    LATEX = "latex"
+    HTML = "html"
+
+
 class RecursiveCharacterTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at characters.
 
@@ -350,84 +368,10 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     def split_text(self, text: str) -> List[str]:
         return self._split_text(text, self._separators)
 
-
-class NLTKTextSplitter(TextSplitter):
-    """Implementation of splitting text that looks at sentences using NLTK."""
-
-    def __init__(self, separator: str = "\n\n", **kwargs: Any):
-        """Initialize the NLTK splitter."""
-        super().__init__(**kwargs)
-        try:
-            from nltk.tokenize import sent_tokenize
-
-            self._tokenizer = sent_tokenize
-        except ImportError:
-            raise ImportError(
-                "NLTK is not installed, please install it with `pip install nltk`."
-            )
-        self._separator = separator
-
-    def split_text(self, text: str) -> List[str]:
-        """Split incoming text and return chunks."""
-        # First we naively split the large input into a bunch of smaller ones.
-        splits = self._tokenizer(text)
-        return self._merge_splits(splits, self._separator)
-
-
-class SpacyTextSplitter(TextSplitter):
-    """Implementation of splitting text that looks at sentences using Spacy."""
-
-    def __init__(
-        self, separator: str = "\n\n", pipeline: str = "en_core_web_sm", **kwargs: Any
-    ):
-        """Initialize the spacy text splitter."""
-        super().__init__(**kwargs)
-        try:
-            import spacy
-        except ImportError:
-            raise ImportError(
-                "Spacy is not installed, please install it with `pip install spacy`."
-            )
-        self._tokenizer = spacy.load(pipeline)
-        self._separator = separator
-
-    def split_text(self, text: str) -> List[str]:
-        """Split incoming text and return chunks."""
-        splits = (str(s) for s in self._tokenizer(text).sents)
-        return self._merge_splits(splits, self._separator)
-
-
-class Language(str, Enum):
-    CPP = "cpp"
-    GO = "go"
-    JAVA = "java"
-    JS = "js"
-    PHP = "php"
-    PROTO = "proto"
-    PYTHON = "python"
-    RST = "rst"
-    RUBY = "ruby"
-    RUST = "rust"
-    SCALA = "scala"
-    SWIFT = "swift"
-    MARKDOWN = "markdown"
-    LATEX = "latex"
-    HTML = "html"
-
-
-class CodeTextSplitter(RecursiveCharacterTextSplitter):
-    def __init__(self, language: Language, **kwargs: Any):
-        """
-        A generic code text splitter supporting many programming languages.
-        Example:
-            splitter = CodeTextSplitter(
-                language=Language.JAVA
-            )
-        Args:
-            Language: The programming language to use
-        """
-        separators = self.get_separators_for_language(language)
-        super().__init__(separators=separators, **kwargs)
+    @classmethod
+    def from_language(cls, language: Language, **kwargs: Any):
+        separators = cls.get_separators_for_language(language)
+        return cls(separators=separators, **kwargs)
 
     @staticmethod
     def get_separators_for_language(language: Language) -> List[str]:
@@ -742,26 +686,75 @@ class CodeTextSplitter(RecursiveCharacterTextSplitter):
             )
 
 
+class NLTKTextSplitter(TextSplitter):
+    """Implementation of splitting text that looks at sentences using NLTK."""
+
+    def __init__(self, separator: str = "\n\n", **kwargs: Any):
+        """Initialize the NLTK splitter."""
+        super().__init__(**kwargs)
+        try:
+            from nltk.tokenize import sent_tokenize
+
+            self._tokenizer = sent_tokenize
+        except ImportError:
+            raise ImportError(
+                "NLTK is not installed, please install it with `pip install nltk`."
+            )
+        self._separator = separator
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        # First we naively split the large input into a bunch of smaller ones.
+        splits = self._tokenizer(text)
+        return self._merge_splits(splits, self._separator)
+
+
+class SpacyTextSplitter(TextSplitter):
+    """Implementation of splitting text that looks at sentences using Spacy."""
+
+    def __init__(
+        self, separator: str = "\n\n", pipeline: str = "en_core_web_sm", **kwargs: Any
+    ):
+        """Initialize the spacy text splitter."""
+        super().__init__(**kwargs)
+        try:
+            import spacy
+        except ImportError:
+            raise ImportError(
+                "Spacy is not installed, please install it with `pip install spacy`."
+            )
+        self._tokenizer = spacy.load(pipeline)
+        self._separator = separator
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        splits = (str(s) for s in self._tokenizer(text).sents)
+        return self._merge_splits(splits, self._separator)
+
+
 # For backwards compatibility
-class PythonCodeTextSplitter(CodeTextSplitter):
+class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Python syntax."""
 
     def __init__(self, **kwargs: Any):
         """Initialize a PythonCodeTextSplitter."""
-        super().__init__(language=Language.PYTHON, **kwargs)
+        seperators = self.get_separators_for_language(Language.PYTHON)
+        super().__init__(separators=seperators, **kwargs)
 
 
-class MarkdownTextSplitter(CodeTextSplitter):
+class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Markdown-formatted headings."""
 
     def __init__(self, **kwargs: Any):
         """Initialize a MarkdownTextSplitter."""
-        super().__init__(language=Language.MARKDOWN, **kwargs)
+        seperators = self.get_separators_for_language(Language.MARKDOWN)
+        super().__init__(separators=seperators, **kwargs)
 
 
-class LatexTextSplitter(CodeTextSplitter):
+class LatexTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Latex-formatted layout elements."""
 
     def __init__(self, **kwargs: Any):
         """Initialize a LatexTextSplitter."""
-        super().__init__(language=Language.LATEX, **kwargs)
+        seperators = self.get_separators_for_language(Language.LATEX)
+        super().__init__(separators=seperators, **kwargs)
