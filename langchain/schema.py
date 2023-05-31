@@ -80,6 +80,7 @@ class HumanMessage(BaseMessage):
     """Type of message that is spoken by the human."""
 
     example: bool = False
+    name: Optional[str] = None
 
     @property
     def type(self) -> str:
@@ -119,7 +120,10 @@ class ChatMessage(BaseMessage):
 
 
 def _message_to_dict(message: BaseMessage) -> dict:
-    return {"type": message.type, "data": message.dict()}
+    message_dict = {"type": message.type, "data": message.dict()}
+    if isinstance(message, HumanMessage) and message.name is not None:
+        message_dict["data"]["name"] = message.name
+    return message_dict
 
 
 def messages_to_dict(messages: List[BaseMessage]) -> List[dict]:
