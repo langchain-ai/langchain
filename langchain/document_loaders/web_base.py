@@ -47,6 +47,9 @@ class WebBaseLoader(BaseLoader):
     default_parser: str = "html.parser"
     """Default parser to use for BeautifulSoup."""
 
+    requests_kwargs = {}
+    """kwargs for requests"""
+
     def __init__(
         self, web_path: Union[str, List[str]], header_template: Optional[dict] = None
     ):
@@ -170,7 +173,7 @@ class WebBaseLoader(BaseLoader):
 
         self._check_parser(parser)
 
-        html_doc = self.session.get(url)
+        html_doc = self.session.get(url, **self.requests_kwargs)
         html_doc.encoding = html_doc.apparent_encoding
         return BeautifulSoup(html_doc.text, parser)
 
