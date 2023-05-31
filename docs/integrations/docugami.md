@@ -1,10 +1,10 @@
 # Docugami
 
-This page covers how to use [Docugami](https://docugami.com) within LangChain.
+>[Docugami](https://docugami.com) converts business documents into a Document XML Knowledge Graph, generating forests of 
+> XML semantic trees representing entire documents. 
+> This is a rich representation that includes the semantic and 
+> structural characteristics of various chunks in the document as an XML tree.
 
-## What is Docugami?
-
-Docugami converts business documents into a Document XML Knowledge Graph, generating forests of XML semantic trees representing entire documents. This is a rich representation that includes the semantic and structural characteristics of various chunks in the document as an XML tree.
 
 ## Quick start
 
@@ -15,7 +15,7 @@ Docugami converts business documents into a Document XML Knowledge Graph, genera
 6. Use the DocugamiLoader as detailed in [this notebook](../modules/indexes/document_loaders/examples/docugami.ipynb), to get rich semantic chunks for your documents.
 7. Optionally, build and publish one or more [reports or abstracts](https://help.docugami.com/home/reports). This helps Docugami improve the semantic XML with better tags based on your preferences, which are then added to the DocugamiLoader output as metadata. Use techniques like [self-querying retriever](https://python.langchain.com/en/latest/modules/indexes/retrievers/examples/self_query_retriever.html) to do high accuracy Document QA.
 
-# Advantages vs Other Chunking Techniques
+## Advantages vs Other Chunking Techniques
 
 Appropriate chunking of your documents is critical for retrieval from documents. Many chunking techniques exist, including simple ones that rely on whitespace and recursive chunk splitting based on character length. Docugami offers a different approach:
 
