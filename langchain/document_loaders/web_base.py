@@ -2,7 +2,7 @@
 import asyncio
 import logging
 import warnings
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, Dict
 
 import aiohttp
 import requests
@@ -47,7 +47,7 @@ class WebBaseLoader(BaseLoader):
     default_parser: str = "html.parser"
     """Default parser to use for BeautifulSoup."""
 
-    requests_kwargs: dict[str, Any] = {}
+    requests_kwargs: Dict[str, Any] = {}
     """kwargs for requests"""
 
     def __init__(
