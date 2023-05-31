@@ -89,7 +89,7 @@ class Replicate(LLM):
         try:
             import replicate as replicate_python
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import replicate python package. "
                 "Please install it with `pip install replicate`."
             )

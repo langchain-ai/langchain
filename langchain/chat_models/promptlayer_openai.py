@@ -1,6 +1,6 @@
 """PromptLayer wrapper."""
 import datetime
-from typing import List, Optional
+from typing import Any, List, Mapping, Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -109,3 +109,15 @@ class PromptLayerChatOpenAI(ChatOpenAI):
                     generation.generation_info = {}
                 generation.generation_info["pl_request_id"] = pl_request_id
         return generated_responses
+
+    @property
+    def _llm_type(self) -> str:
+        return "promptlayer-openai-chat"
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        return {
+            **super()._identifying_params,
+            "pl_tags": self.pl_tags,
+            "return_pl_id": self.return_pl_id,
+        }

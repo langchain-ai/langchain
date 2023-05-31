@@ -4,7 +4,7 @@ import json
 import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import yaml
 from pydantic import Extra, Field, root_validator, validator
@@ -19,7 +19,14 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
-from langchain.schema import Generation, LLMResult, PromptValue
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    Generation,
+    LLMResult,
+    PromptValue,
+    get_buffer_string,
+)
 
 
 def _get_verbosity() -> bool:
@@ -149,6 +156,14 @@ class BaseLLM(BaseLanguageModel, ABC):
                 "Argument 'prompts' is expected to be of type List[str], received"
                 f" argument of type {type(prompts)}."
             )
+        params = self.dict()
+        params["stop"] = stop
+        (
+            existing_prompts,
+            llm_string,
+            missing_prompt_idxs,
+            missing_prompts,
+        ) = get_prompts(params, prompts)
         disregard_cache = self.cache is not None and not self.cache
         callback_manager = CallbackManager.configure(
             callbacks, self.callbacks, self.verbose
@@ -163,7 +178,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             run_manager = callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts
+                {"name": self.__class__.__name__}, prompts, invocation_params=params
             )
             try:
                 output = (
@@ -176,17 +191,11 @@ class BaseLLM(BaseLanguageModel, ABC):
                 raise e
             run_manager.on_llm_end(output)
             return output
-        params = self.dict()
-        params["stop"] = stop
-        (
-            existing_prompts,
-            llm_string,
-            missing_prompt_idxs,
-            missing_prompts,
-        ) = get_prompts(params, prompts)
         if len(missing_prompts) > 0:
             run_manager = callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, missing_prompts
+                {"name": self.__class__.__name__},
+                missing_prompts,
+                invocation_params=params,
             )
             try:
                 new_results = (
@@ -213,6 +222,14 @@ class BaseLLM(BaseLanguageModel, ABC):
         callbacks: Callbacks = None,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
+        params = self.dict()
+        params["stop"] = stop
+        (
+            existing_prompts,
+            llm_string,
+            missing_prompt_idxs,
+            missing_prompts,
+        ) = get_prompts(params, prompts)
         disregard_cache = self.cache is not None and not self.cache
         callback_manager = AsyncCallbackManager.configure(
             callbacks, self.callbacks, self.verbose
@@ -227,7 +244,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             run_manager = await callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts
+                {"name": self.__class__.__name__}, prompts, invocation_params=params
             )
             try:
                 output = (
@@ -240,18 +257,11 @@ class BaseLLM(BaseLanguageModel, ABC):
                 raise e
             await run_manager.on_llm_end(output, verbose=self.verbose)
             return output
-        params = self.dict()
-        params["stop"] = stop
-        (
-            existing_prompts,
-            llm_string,
-            missing_prompt_idxs,
-            missing_prompts,
-        ) = get_prompts(params, prompts)
         if len(missing_prompts) > 0:
             run_manager = await callback_manager.on_llm_start(
                 {"name": self.__class__.__name__},
                 missing_prompts,
+                invocation_params=params,
             )
             try:
                 new_results = (
@@ -277,11 +287,60 @@ class BaseLLM(BaseLanguageModel, ABC):
         self, prompt: str, stop: Optional[List[str]] = None, callbacks: Callbacks = None
     ) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
+        if not isinstance(prompt, str):
+            raise ValueError(
+                "Argument `prompt` is expected to be a string. Instead found "
+                f"{type(prompt)}. If you want to run the LLM on multiple prompts, use "
+                "`generate` instead."
+            )
         return (
             self.generate([prompt], stop=stop, callbacks=callbacks)
             .generations[0][0]
             .text
         )
+
+    async def _call_async(
+        self, prompt: str, stop: Optional[List[str]] = None, callbacks: Callbacks = None
+    ) -> str:
+        """Check Cache and run the LLM on the given prompt and input."""
+        result = await self.agenerate([prompt], stop=stop, callbacks=callbacks)
+        return result.generations[0][0].text
+
+    def predict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        return self(text, stop=_stop)
+
+    def predict_messages(
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
+    ) -> BaseMessage:
+        text = get_buffer_string(messages)
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        content = self(text, stop=_stop)
+        return AIMessage(content=content)
+
+    async def apredict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        return await self._call_async(text, stop=_stop)
+
+    async def apredict_messages(
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
+    ) -> BaseMessage:
+        text = get_buffer_string(messages)
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        content = await self._call_async(text, stop=_stop)
+        return AIMessage(content=content)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

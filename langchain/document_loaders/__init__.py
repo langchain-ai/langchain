@@ -10,6 +10,7 @@ from langchain.document_loaders.azure_blob_storage_container import (
 from langchain.document_loaders.azure_blob_storage_file import (
     AzureBlobStorageFileLoader,
 )
+from langchain.document_loaders.bibtex import BibtexLoader
 from langchain.document_loaders.bigquery import BigQueryLoader
 from langchain.document_loaders.bilibili import BiliBiliLoader
 from langchain.document_loaders.blackboard import BlackboardLoader
@@ -23,6 +24,7 @@ from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.discord import DiscordChatLoader
+from langchain.document_loaders.docugami import DocugamiLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import (
     OutlookMessageLoader,
@@ -35,6 +37,7 @@ from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
 from langchain.document_loaders.git import GitLoader
 from langchain.document_loaders.gitbook import GitbookLoader
+from langchain.document_loaders.github import GitHubIssuesLoader
 from langchain.document_loaders.googledrive import GoogleDriveLoader
 from langchain.document_loaders.gutenberg import GutenbergLoader
 from langchain.document_loaders.hn import HNLoader
@@ -45,8 +48,10 @@ from langchain.document_loaders.ifixit import IFixitLoader
 from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.document_loaders.image_captions import ImageCaptionLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
+from langchain.document_loaders.joplin import JoplinLoader
 from langchain.document_loaders.json_loader import JSONLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
+from langchain.document_loaders.mastodon import MastodonTootsLoader
 from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
@@ -60,6 +65,7 @@ from langchain.document_loaders.pdf import (
     OnlinePDFLoader,
     PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
+    PDFPlumberLoader,
     PyMuPDFLoader,
     PyPDFDirectoryLoader,
     PyPDFium2Loader,
@@ -67,6 +73,8 @@ from langchain.document_loaders.pdf import (
     UnstructuredPDFLoader,
 )
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
+from langchain.document_loaders.psychic import PsychicLoader
+from langchain.document_loaders.pyspark_dataframe import PySparkDataFrameLoader
 from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
@@ -79,9 +87,14 @@ from langchain.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain.document_loaders.spreedly import SpreedlyLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.stripe import StripeLoader
-from langchain.document_loaders.telegram import TelegramChatLoader
+from langchain.document_loaders.telegram import (
+    TelegramChatApiLoader,
+    TelegramChatFileLoader,
+)
 from langchain.document_loaders.text import TextLoader
+from langchain.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain.document_loaders.toml import TomlLoader
+from langchain.document_loaders.trello import TrelloLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredAPIFileIOLoader,
@@ -92,6 +105,7 @@ from langchain.document_loaders.unstructured import (
 from langchain.document_loaders.url import UnstructuredURLLoader
 from langchain.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain.document_loaders.url_selenium import SeleniumURLLoader
+from langchain.document_loaders.weather import WeatherDataLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.document_loaders.whatsapp_chat import WhatsAppChatLoader
 from langchain.document_loaders.wikipedia import WikipediaLoader
@@ -108,6 +122,9 @@ from langchain.document_loaders.youtube import (
 # Legacy: only for backwards compat. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
 
+# For backwards compatability
+TelegramChatLoader = TelegramChatFileLoader
+
 __all__ = [
     "AZLyricsLoader",
     "AirbyteJSONLoader",
@@ -116,6 +133,7 @@ __all__ = [
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
+    "BibtexLoader",
     "BigQueryLoader",
     "BiliBiliLoader",
     "BlackboardLoader",
@@ -129,6 +147,7 @@ __all__ = [
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
+    "DocugamiLoader",
     "Docx2txtLoader",
     "DuckDBLoader",
     "EverNoteLoader",
@@ -136,6 +155,7 @@ __all__ = [
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GitLoader",
+    "GitHubIssuesLoader",
     "GitbookLoader",
     "GoogleApiClient",
     "GoogleApiYoutubeLoader",
@@ -147,8 +167,10 @@ __all__ = [
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",
+    "JoplinLoader",
     "JSONLoader",
     "MWDumpLoader",
+    "MastodonTootsLoader",
     "MathpixPDFLoader",
     "ModernTreasuryLoader",
     "NotebookLoader",
@@ -160,12 +182,14 @@ __all__ = [
     "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
+    "PDFPlumberLoader",
     "PagedPDFSplitter",
     "PlaywrightURLLoader",
     "PyMuPDFLoader",
     "PyPDFDirectoryLoader",
     "PyPDFLoader",
     "PyPDFium2Loader",
+    "PySparkDataFrameLoader",
     "PythonLoader",
     "ReadTheDocsLoader",
     "RedditPostsLoader",
@@ -176,11 +200,13 @@ __all__ = [
     "SeleniumURLLoader",
     "SitemapLoader",
     "SlackDirectoryLoader",
+    "TelegramChatFileLoader",
+    "TelegramChatApiLoader",
     "SpreedlyLoader",
     "StripeLoader",
-    "TelegramChatLoader",
     "TextLoader",
     "TomlLoader",
+    "TrelloLoader",
     "TwitterTweetLoader",
     "UnstructuredAPIFileIOLoader",
     "UnstructuredAPIFileLoader",
@@ -197,8 +223,12 @@ __all__ = [
     "UnstructuredRTFLoader",
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
+    "WeatherDataLoader",
     "WebBaseLoader",
     "WhatsAppChatLoader",
     "WikipediaLoader",
     "YoutubeLoader",
+    "TelegramChatLoader",
+    "ToMarkdownLoader",
+    "PsychicLoader",
 ]

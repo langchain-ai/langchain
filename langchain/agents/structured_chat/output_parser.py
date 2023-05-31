@@ -40,6 +40,10 @@ class StructuredChatOutputParser(AgentOutputParser):
         except Exception as e:
             raise OutputParserException(f"Could not parse LLM output: {text}") from e
 
+    @property
+    def _type(self) -> str:
+        return "structured_chat"
+
 
 class StructuredChatOutputParserWithRetries(AgentOutputParser):
     base_parser: AgentOutputParser = Field(default_factory=StructuredChatOutputParser)
@@ -76,3 +80,7 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
             return cls(base_parser=base_parser)
         else:
             return cls()
+
+    @property
+    def _type(self) -> str:
+        return "structured_chat_with_retries"

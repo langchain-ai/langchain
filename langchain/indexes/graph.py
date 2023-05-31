@@ -28,3 +28,15 @@ class GraphIndexCreator(BaseModel):
         for triple in knowledge:
             graph.add_triple(triple)
         return graph
+
+    async def afrom_text(self, text: str) -> NetworkxEntityGraph:
+        """Create graph index from text asynchronously."""
+        if self.llm is None:
+            raise ValueError("llm should not be None")
+        graph = self.graph_type()
+        chain = LLMChain(llm=self.llm, prompt=KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT)
+        output = await chain.apredict(text=text)
+        knowledge = parse_triples(output)
+        for triple in knowledge:
+            graph.add_triple(triple)
+        return graph

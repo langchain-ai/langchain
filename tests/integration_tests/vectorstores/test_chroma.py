@@ -148,3 +148,49 @@ def test_chroma_mmr_by_vector() -> None:
     embedded_query = embeddings.embed_query("foo")
     output = docsearch.max_marginal_relevance_search_by_vector(embedded_query, k=1)
     assert output == [Document(page_content="foo")]
+
+
+def test_chroma_with_include_parameter() -> None:
+    """Test end to end construction and include parameter."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+    )
+    output = docsearch.get(include=["embeddings"])
+    assert output["embeddings"] is not None
+    output = docsearch.get()
+    assert output["embeddings"] is None
+
+
+def test_chroma_update_document() -> None:
+    """Test the update_document function in the Chroma class."""
+
+    # Initial document content and id
+    initial_content = "foo"
+    document_id = "doc1"
+
+    # Create an instance of Document with initial content and metadata
+    original_doc = Document(page_content=initial_content, metadata={"page": "0"})
+
+    # Initialize a Chroma instance with the original document
+    docsearch = Chroma.from_documents(
+        collection_name="test_collection",
+        documents=[original_doc],
+        embedding=FakeEmbeddings(),
+        ids=[document_id],
+    )
+
+    # Define updated content for the document
+    updated_content = "updated foo"
+
+    # Create a new Document instance with the updated content and the same id
+    updated_doc = Document(page_content=updated_content, metadata={"page": "0"})
+
+    # Update the document in the Chroma instance
+    docsearch.update_document(document_id=document_id, document=updated_doc)
+
+    # Perform a similarity search with the updated content
+    output = docsearch.similarity_search(updated_content, k=1)
+
+    # Assert that the updated document is returned by the search
+    assert output == [Document(page_content=updated_content, metadata={"page": "0"})]
