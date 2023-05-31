@@ -27,10 +27,11 @@ from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
+    from qdrant_client.conversions import common_types
     from qdrant_client.http import models as rest
 
-
-MetadataFilter = Dict[str, Union[str, int, bool, dict, list]]
+    DictFilter = Dict[str, Union[str, int, bool, dict, list]]
+    MetadataFilter = Union[DictFilter, common_types.Filter]
 
 
 class Qdrant(VectorStore):
@@ -234,10 +235,21 @@ class Qdrant(VectorStore):
             List of Documents most similar to the query and score for each.
         """
 
+        if filter is not None and isinstance(filter, dict):
+            warnings.warn(
+                "Using dict as a `filter` is deprecated. Please use qdrant-client "
+                "filters directly: "
+                "https://qdrant.tech/documentation/concepts/filtering/",
+                DeprecationWarning,
+            )
+            qdrant_filter = self._qdrant_filter_from_dict(filter)
+        else:
+            qdrant_filter = filter
+
         results = self.client.search(
             collection_name=self.collection_name,
             query_vector=self._embed_query(query),
-            query_filter=self._qdrant_filter_from_dict(filter),
+            query_filter=qdrant_filter,
             with_payload=True,
             limit=k,
         )
@@ -519,7 +531,7 @@ class Qdrant(VectorStore):
         return out
 
     def _qdrant_filter_from_dict(
-        self, filter: Optional[MetadataFilter]
+        self, filter: Optional[DictFilter]
     ) -> Optional[rest.Filter]:
         from qdrant_client.http import models as rest
 

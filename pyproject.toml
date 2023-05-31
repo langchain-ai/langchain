@@ -306,7 +306,7 @@ extended_testing = [
  "html2text",
  "py-trello",
  "scikit-learn",
- "pyspark",
+ "pyspark"
 ]
 
 [tool.ruff]
