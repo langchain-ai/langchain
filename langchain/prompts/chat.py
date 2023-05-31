@@ -69,7 +69,10 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
     @classmethod
     def from_template(
-        cls: Type[MessagePromptTemplateT], template: str, template_format="f-string", **kwargs: Any
+        cls: Type[MessagePromptTemplateT],
+        template: str,
+        template_format="f-string",
+        **kwargs: Any,
     ) -> MessagePromptTemplateT:
         prompt = PromptTemplate.from_template(template, template_format=template_format)
         return cls(prompt=prompt, **kwargs)
