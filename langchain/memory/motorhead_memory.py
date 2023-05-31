@@ -24,7 +24,7 @@ class MotorheadMemory(BaseChatMemory):
         is_managed = self.url == MANAGED_URL
 
         headers = {
-          "Content-Type": "application/json",
+            "Content-Type": "application/json",
         }
 
         if is_managed and not (self.api_key and self.client_id):
