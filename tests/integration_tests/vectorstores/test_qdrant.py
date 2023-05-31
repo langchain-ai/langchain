@@ -2,6 +2,7 @@
 from typing import Callable, Optional
 
 import pytest
+from qdrant_client.http import models as rest
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -125,6 +126,45 @@ def test_qdrant_similarity_search_filters(batch_size: int) -> None:
         Document(
             page_content="bar",
             metadata={"page": 1, "metadata": {"page": 2, "pages": [3, -1]}},
+        )
+    ]
+
+
+def test_qdrant_similarity_search_filters_with_qdrant_filters() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [
+        {"page": i, "details": {"page": i + 1, "pages": [i + 2, -1]}}
+        for i in range(len(texts))
+    ]
+    docsearch = Qdrant.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        metadatas=metadatas,
+        location=":memory:",
+    )
+
+    qdrant_filter = rest.Filter(
+        must=[
+            rest.FieldCondition(
+                key="metadata.page",
+                match=rest.MatchValue(value=1),
+            ),
+            rest.FieldCondition(
+                key="metadata.details.page",
+                match=rest.MatchValue(value=2),
+            ),
+            rest.FieldCondition(
+                key="metadata.details.pages",
+                match=rest.MatchAny(any=[3]),
+            ),
+        ]
+    )
+    output = docsearch.similarity_search("foo", k=1, filter=qdrant_filter)
+    assert output == [
+        Document(
+            page_content="bar",
+            metadata={"page": 1, "details": {"page": 2, "pages": [3, -1]}},
         )
     ]
 
