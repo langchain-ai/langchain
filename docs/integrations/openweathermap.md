@@ -1,11 +1,21 @@
-# OpenWeatherMap API
+# OpenWeatherMap
 
-This page covers how to use the OpenWeatherMap API within LangChain.
-It is broken into two parts: installation and setup, and then references to specific OpenWeatherMap API wrappers.
+>[OpenWeatherMap](https://openweathermap.org/api/) provides all essential weather data for a specific location:
+>- Current weather
+>- Minute forecast for 1 hour
+>- Hourly forecast for 48 hours
+>- Daily forecast for 8 days
+>- National weather alerts
+>- Historical weather data for 40+ years back
+
+This page covers how to use the `OpenWeatherMap API` within LangChain.
 
 ## Installation and Setup
 
-- Install requirements with `pip install pyowm`
+- Install requirements with
+```bash
+pip install pyowm
+```
 - Go to OpenWeatherMap and sign up for an account to get your API key [here](https://openweathermap.org/api/)
 - Set your API key as `OPENWEATHERMAP_API_KEY` environment variable
 
