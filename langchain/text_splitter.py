@@ -441,8 +441,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nfunction ",
                 "\nconst ",
                 "\nlet ",
-                "\nvar",
-                "\nclass",
+                "\nvar ",
+                "\nclass ",
                 # Split along control flow statements
                 "\nif ",
                 "\nfor ",
