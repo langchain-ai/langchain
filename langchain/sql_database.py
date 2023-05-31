@@ -37,6 +37,7 @@ class SQLDatabase:
         metadata: Optional[MetaData] = None,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
+        ignore_column_names_on_query: bool = True,
         sample_rows_in_table_info: int = 3,
         indexes_in_table_info: bool = False,
         custom_table_info: Optional[dict] = None,
@@ -45,6 +46,7 @@ class SQLDatabase:
         """Create engine from database URI."""
         self._engine = engine
         self._schema = schema
+        self._ignore_column_names_on_query = ignore_column_names_on_query
         if include_tables and ignore_tables:
             raise ValueError("Cannot specify both include_tables and ignore_tables")
 
@@ -317,7 +319,7 @@ class SQLDatabase:
             f"{sample_rows_str}"
         )
 
-    def run(self, command: str, fetch: str = "all", ignore_column_names: bool = True) -> str:
+    def run(self, command: str, fetch: str = "all") -> str:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
@@ -334,7 +336,7 @@ class SQLDatabase:
                 else:
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.execute(text(command))
-            column_names = None if ignore_column_names else tuple(cursor.keys())
+            column_names = None if self._ignore_column_names_on_query else tuple(cursor.keys())
             if cursor.returns_rows:
                 if fetch == "all":
                     result = cursor.fetchall()
