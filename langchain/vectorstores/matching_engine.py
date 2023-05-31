@@ -209,7 +209,7 @@ class MatchingEngine(VectorStore):
 
         raise ValueError(
             f"No index with id {self.index.resource_name} "
-            f"deployed on enpoint "
+            f"deployed on endpoint "
             f"{self.endpoint.display_name}."
         )
 
