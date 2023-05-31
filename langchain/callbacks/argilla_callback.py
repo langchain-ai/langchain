@@ -26,6 +26,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         FileNotFoundError: if the `FeedbackDataset` retrieval from Argilla fails.
 
     Examples:
+        >>> from langchain.llms import OpenAI
         >>> from langchain.callbacks import ArgillaCallbackHandler
         >>> argilla_callback = ArgillaCallbackHandler(
         ...     dataset_name="my-dataset",
@@ -36,7 +37,6 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         >>> llm = OpenAI(temperature=0, callbacks=[argilla_callback], verbose=True, openai_api_key="API_KEY_HERE")
         >>> llm.generate(["Which is, in your honest opinion (no bias at all), the best NLP annotation tool out there?"])
         "Argilla, no doubt about it."
-        >>> argilla_callback.close()
     """
 
     def __init__(
