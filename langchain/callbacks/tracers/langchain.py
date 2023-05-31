@@ -199,7 +199,7 @@ class LangChainTracer(BaseTracer):
         """Persist a run."""
         session = self.ensure_session()
         if run.parent_run_id is None:
-            run.parent_run_id = self.example_id
+            run.reference_example_id = self.example_id
         run_dict = run.dict()
         del run_dict["child_runs"]
         run_create = RunCreate(**run_dict, session_id=session.id)
