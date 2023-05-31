@@ -102,7 +102,7 @@ class RunBase(BaseModel):
     id: Optional[UUID]
     start_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     end_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
-    extra: dict
+    extra: Optional[Dict[str, Any]] = None
     error: Optional[str]
     execution_order: int
     child_execution_order: Optional[int]
