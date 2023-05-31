@@ -1,4 +1,5 @@
 """Test Qdrant functionality."""
+import tempfile
 from typing import Callable, Optional
 
 import pytest
@@ -269,3 +270,19 @@ def test_qdrant_stores_duplicated_texts() -> None:
 
     assert 2 == len(set(ids))
     assert 2 == client.count(collection_name).count
+
+
+def test_qdrant_from_texts_stores_duplicated_texts() -> None:
+    from qdrant_client import QdrantClient
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["abc", "abc"],
+            ConsistentFakeEmbeddings(),
+            collection_name="test",
+            path=str(tmpdir),
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        assert 2 == client.count("test").count
