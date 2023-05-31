@@ -27,7 +27,7 @@ class MotorheadMemory(BaseChatMemory):
           "Content-Type": "application/json",
         }
 
-        if is_managed and not (self.api_key or self.client_id):
+        if is_managed and not (self.api_key and self.client_id):
             raise ValueError(
                 "You must provide an API key or a client ID to use the managed version of Motorhead. Visit https://getmetal.io for more information."
             )
