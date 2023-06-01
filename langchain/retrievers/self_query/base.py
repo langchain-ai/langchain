@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, root_validator
 from langchain import LLMChain
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.query_constructor.base import load_query_constructor_chain
-from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
+from langchain.chains.query_constructor.ir import StructuredQuery, Visitor, Operation
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
@@ -76,6 +76,23 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         )
         if self.verbose:
             print(structured_query)
+
+        # Check if the filter is an operation with only one argument
+        if (
+            isinstance(structured_query.filter, Operation)
+            and len(structured_query.filter.arguments) == 1
+        ):
+            if self.verbose:
+                print(
+                    (
+                        "Only one argument provided to the Operation. "
+                        "Passing argument directly instead of wrapping in Operation."
+                    )
+                )
+            structured_query.filter = structured_query.filter.arguments[0]
+            if self.verbose:
+                print(structured_query)
+
         new_query, new_kwargs = self.structured_query_translator.visit_structured_query(
             structured_query
         )
