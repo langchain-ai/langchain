@@ -218,7 +218,7 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        results = self.similarity_search_with_score(query, k, filter)
+        results = self.similarity_search_with_score(query, k, filter=filter)
         return list(map(itemgetter(0), results))
 
     def similarity_search_with_score(
@@ -245,7 +245,6 @@ class Qdrant(VectorStore):
             qdrant_filter = self._qdrant_filter_from_dict(filter)
         else:
             qdrant_filter = filter
-
         results = self.client.search(
             collection_name=self.collection_name,
             query_vector=self._embed_query(query),
