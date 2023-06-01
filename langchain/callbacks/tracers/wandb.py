@@ -14,7 +14,6 @@ from typing import (
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
-from langchain.utils import guard_import
 
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
@@ -182,9 +181,16 @@ class WandbTracer(BaseTracer):
         ```
         """
         super().__init__(**kwargs)
-        wandb = guard_import("wandb")
+        try:
+            import wandb
+            from wandb.sdk.data_types import trace_tree
+        except ImportError as e:
+            raise ImportError(
+                "Could not import wandb python package."
+                "Please install it with `pip install wandb`."
+            ) from e
         self._wandb = wandb
-        self._trace_tree = wandb.sdk.data_types.trace_tree
+        self._trace_tree = trace_tree
         self._run_args = run_args
         self._ensure_run(should_print_url=(wandb.run is None))
 
