@@ -71,3 +71,11 @@ See a [usage example](../modules/indexes/document_loaders/examples/chatgpt_loade
 ```python
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 ```
+
+## Retriever
+
+See a [usage example](../modules/indexes/retrievers/examples/chatgpt-plugin.ipynb).
+
+```python
+from langchain.retrievers import ChatGPTPluginRetriever
+```
