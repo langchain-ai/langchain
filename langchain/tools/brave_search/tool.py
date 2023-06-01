@@ -40,4 +40,4 @@ class BraveSearch(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError("BingSearchResults does not support async")
+        raise NotImplementedError("BraveSearch does not support async")
