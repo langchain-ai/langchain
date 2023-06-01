@@ -348,7 +348,18 @@ class Chroma(VectorStore):
         """
         text = document.page_content
         metadata = document.metadata
-        self._collection.update_document(document_id, text, metadata)
+        if self._embedding_function is None:
+            raise ValueError(
+                "For update, you must specify an embedding function on creation."
+            )
+        embeddings = self._embedding_function.embed_documents(list(text))
+
+        self._collection.update(
+            ids=[document_id],
+            embeddings=[embeddings[0]],
+            documents=[text],
+            metadatas=[metadata],
+        )
 
     @classmethod
     def from_texts(

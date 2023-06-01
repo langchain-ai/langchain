@@ -49,6 +49,22 @@ def test_pgvector() -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_pgvector_embeddings() -> None:
+    """Test end to end construction with embeddings and search."""
+    texts = ["foo", "bar", "baz"]
+    text_embeddings = FakeEmbeddingsWithAdaDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    docsearch = PGVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+
 def test_pgvector_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
