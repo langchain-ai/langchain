@@ -496,7 +496,7 @@ class FAISS(VectorStore):
     def load_local(
         cls, folder_path: str, embeddings: Embeddings, index_name: str = "index"
     ) -> FAISS:
-        """Load FAISS index, docstore, and index_to_docstore_id to disk.
+        """Load FAISS index, docstore, and index_to_docstore_id from disk.
 
         Args:
             folder_path: folder path to load index, docstore,
