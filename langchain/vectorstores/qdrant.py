@@ -383,10 +383,10 @@ class Qdrant(VectorStore):
                 Additional arguments passed directly into REST client initialization
 
         This is a user-friendly interface that:
-            1. Creates embeddings, one for each text
-            2. Initializes the Qdrant database as an in-memory docstore by default
-               (and overridable to a remote docstore)
-            3. Adds the text embeddings to the Qdrant database
+        1. Creates embeddings, one for each text
+        2. Initializes the Qdrant database as an in-memory docstore by default
+           (and overridable to a remote docstore)
+        3. Adds the text embeddings to the Qdrant database
 
         This is intended to be a quick way to get started.
 

@@ -67,29 +67,31 @@ class ElasticsearchEmbeddings(Embeddings):
             es_password: (str, optional): Elasticsearch password.
 
         Example Usage:
-            from langchain.embeddings import ElasticsearchEmbeddings
+            .. code-block:: python
 
-            # Define the model ID and input field name (if different from default)
-            model_id = "your_model_id"
-            # Optional, only if different from 'text_field'
-            input_field = "your_input_field"
+                from langchain.embeddings import ElasticsearchEmbeddings
 
-            # Credentials can be passed in two ways. Either set the env vars
-            # ES_CLOUD_ID, ES_USER, ES_PASSWORD and they will be automatically pulled
-            # in, or pass them in directly as kwargs.
-            embeddings = ElasticsearchEmbeddings.from_credentials(
-                model_id,
-                input_field=input_field,
-                # es_cloud_id="foo",
-                # es_user="bar",
-                # es_password="baz",
-            )
+                # Define the model ID and input field name (if different from default)
+                model_id = "your_model_id"
+                # Optional, only if different from 'text_field'
+                input_field = "your_input_field"
 
-            documents = [
-                "This is an example document.",
-                "Another example document to generate embeddings for.",
-            ]
-            embeddings_generator.embed_documents(documents)
+                # Credentials can be passed in two ways. Either set the env vars
+                # ES_CLOUD_ID, ES_USER, ES_PASSWORD and they will be automatically pulled
+                # in, or pass them in directly as kwargs.
+                embeddings = ElasticsearchEmbeddings.from_credentials(
+                    model_id,
+                    input_field=input_field,
+                    # es_cloud_id="foo",
+                    # es_user="bar",
+                    # es_password="baz",
+                )
+
+                documents = [
+                    "This is an example document.",
+                    "Another example document to generate embeddings for.",
+                ]
+                embeddings_generator.embed_documents(documents)
         """
         try:
             from elasticsearch import Elasticsearch
