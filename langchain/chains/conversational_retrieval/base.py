@@ -12,6 +12,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
+    Callbacks,
 )
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -197,6 +198,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         verbose: bool = False,
         condense_question_llm: Optional[BaseLanguageModel] = None,
         combine_docs_chain_kwargs: Optional[Dict] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
         """Load chain from LLM."""
@@ -205,6 +207,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             llm,
             chain_type=chain_type,
             verbose=verbose,
+            callbacks=callbacks,
             **combine_docs_chain_kwargs,
         )
 
@@ -216,6 +219,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             retriever=retriever,
             combine_docs_chain=doc_chain,
             question_generator=condense_question_chain,
+            callbacks=callbacks,
             **kwargs,
         )
 
