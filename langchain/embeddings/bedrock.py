@@ -69,7 +69,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that AWS credentials to and python package exists in environment."""
 
-        if "client" in values:
+        if values["client"] is not None:
             return values
 
         try:
