@@ -15,6 +15,7 @@ from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSear
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.redis import Redis
+from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
 from langchain.vectorstores.typesense import Typesense
@@ -32,6 +33,7 @@ __all__ = [
     "Qdrant",
     "Milvus",
     "Zilliz",
+    "SingleStoreDB",
     "Chroma",
     "OpenSearchVectorSearch",
     "AtlasDB",

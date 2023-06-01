@@ -945,6 +945,30 @@ urllib3 = ">=1.25.4,<1.27"
 crt = ["awscrt (==0.16.9)"]
 
 [[package]]
+name = "build"
+version = "0.10.0"
+description = "A simple, correct Python build frontend"
+category = "main"
+optional = false
+python-versions = ">= 3.7"
+files = [
+    {file = "build-0.10.0-py3-none-any.whl", hash = "sha256:af266720050a66c893a6096a2f410989eeac74ff9a68ba194b3f6473e8e26171"},
+    {file = "build-0.10.0.tar.gz", hash = "sha256:d5b71264afdb5951d6704482aac78de887c80691c52b88a9ad195983ca2c9269"},
+]
+
+[package.dependencies]
+colorama = {version = "*", markers = "os_name == \"nt\""}
+packaging = ">=19.0"
+pyproject_hooks = "*"
+tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
+
+[package.extras]
+docs = ["furo (>=2021.08.31)", "sphinx (>=4.0,<5.0)", "sphinx-argparse-cli (>=1.5)", "sphinx-autodoc-typehints (>=1.10)"]
+test = ["filelock (>=3)", "pytest (>=6.2.4)", "pytest-cov (>=2.12)", "pytest-mock (>=2)", "pytest-rerunfailures (>=9.1)", "pytest-xdist (>=1.34)", "setuptools (>=42.0.0)", "setuptools (>=56.0.0)", "toml (>=0.10.0)", "wheel (>=0.36.0)"]
+typing = ["importlib-metadata (>=5.1)", "mypy (==0.991)", "tomli", "typing-extensions (>=3.7.4.3)"]
+virtualenv = ["virtualenv (>=20.0.35)"]
+
+[[package]]
 name = "cachetools"
 version = "5.3.0"
 description = "Extensible memoizing collections and decorators"
@@ -6921,6 +6945,7 @@ files = [
     {file = "pylance-0.4.12-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:2b86fb8dccc03094c0db37bef0d91bda60e8eb0d1eddf245c6971450c8d8a53f"},
     {file = "pylance-0.4.12-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:0bc82914b13204187d673b5f3d45f93219c38a0e9d0542ba251074f639669789"},
     {file = "pylance-0.4.12-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5a4bcce77f99ecd4cbebbadb01e58d5d8138d40eb56bdcdbc3b20b0475e7a472"},
+    {file = "pylance-0.4.12-cp38-abi3-win_amd64.whl", hash = "sha256:9616931c5300030adb9626d22515710a127d1e46a46737a7a0f980b52f13627c"},
 ]
 
 [package.dependencies]
@@ -7161,6 +7186,21 @@ files = [
 [package.extras]
 doc = ["sphinx", "sphinx_rtd_theme"]
 test = ["flake8", "isort", "pytest"]
+
+[[package]]
+name = "pyproject-hooks"
+version = "1.0.0"
+description = "Wrappers to call pyproject.toml-based build backend hooks."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pyproject_hooks-1.0.0-py3-none-any.whl", hash = "sha256:283c11acd6b928d2f6a7c73fa0d01cb2bdc5f07c57a2eeb6e83d5e56b97976f8"},
+    {file = "pyproject_hooks-1.0.0.tar.gz", hash = "sha256:f271b298b97f5955d53fb12b72c1fb1948c22c1a6b70b315c54cedaca0264ef5"},
+]
+
+[package.dependencies]
+tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 
 [[package]]
 name = "pyrsistent"
@@ -8308,6 +8348,39 @@ files = [
 ]
 
 [[package]]
+name = "singlestoredb"
+version = "0.6.1"
+description = "Interface to the SingleStore database and cluster management APIs"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "singlestoredb-0.6.1-cp36-abi3-macosx_10_9_universal2.whl", hash = "sha256:bf1769e53993981420650a02c59ba367913d9f0256948cc98f6f9d464f74852a"},
+    {file = "singlestoredb-0.6.1-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a4e90fa1dfde1e31f7abe011f75d9dc8cccbc35b968ed8381bd44c0b7dd4026b"},
+    {file = "singlestoredb-0.6.1-cp36-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:44d361c3fa4de6228b525d0b1d22db75790d8e6fb84c3d0b2213bf41774d4323"},
+    {file = "singlestoredb-0.6.1-cp36-abi3-win32.whl", hash = "sha256:ad9543c41286a2095718ad7e133cc8b3b5de938f731157fbb2d4d2b0d1623aff"},
+    {file = "singlestoredb-0.6.1-cp36-abi3-win_amd64.whl", hash = "sha256:f9f9feda947b9fe9182863758118c8961ebb74281098b42894c99b58d30b2526"},
+    {file = "singlestoredb-0.6.1.tar.gz", hash = "sha256:2e00f4cd869dc1ecf33df853c521ebd6ce913af2bf3b2f98675ffa3dc6911636"},
+]
+
+[package.dependencies]
+build = "*"
+PyJWT = "*"
+requests = "*"
+sqlparams = "*"
+wheel = "*"
+
+[package.extras]
+dataframe = ["ibis-singlestoredb"]
+dbt = ["dbt-singlestore"]
+ed22519 = ["PyNaCl (>=1.4.0)"]
+gssapi = ["gssapi"]
+ibis = ["ibis-singlestoredb"]
+kerberos = ["gssapi"]
+rsa = ["cryptography"]
+sqlalchemy = ["sqlalchemy-singlestoredb"]
+
+[[package]]
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -8839,6 +8912,18 @@ optional = true
 python-versions = "*"
 files = [
     {file = "sqlitedict-2.1.0.tar.gz", hash = "sha256:03d9cfb96d602996f1d4c2db2856f1224b96a9c431bdd16e78032a72940f9e8c"},
+]
+
+[[package]]
+name = "sqlparams"
+version = "5.1.0"
+description = "Convert between various DB API 2.0 parameter styles."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "sqlparams-5.1.0-py3-none-any.whl", hash = "sha256:ee4ef620a5197535e5ebb9217e2f453f08b044634b3d890f3d6701e4f838c85c"},
+    {file = "sqlparams-5.1.0.tar.gz", hash = "sha256:1abe87a0684567265b2b86f5a482d5c37db237c0268d4c81774ffedce4300199"},
 ]
 
 [[package]]
@@ -9515,7 +9600,7 @@ files = [
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -10912,4 +10997,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5e83a1f4ca8c0d3107363e393485174fd72ce9db93db5dc7c21b2dd37b184e66"
+content-hash = "06003a166f3724d6e09f2ab2bb8763b4f47af8776fa7cb8ce4e1848537fe24bd"
