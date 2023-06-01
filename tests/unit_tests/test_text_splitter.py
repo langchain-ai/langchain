@@ -1,5 +1,6 @@
 """Test text splitting functionality."""
 import pytest
+from typing import List
 
 from langchain.docstore.document import Document
 from langchain.text_splitter import (
@@ -162,6 +163,28 @@ Bye!\n\n-H."""
         "-H.",
     ]
     assert output == expected_output
+
+
+def test_batched_recursive_character_text_splitter() -> None:
+    """Test recursive text splitter with batched length."""
+    num_length_calls = 0
+
+    def _batched_length(texts: List[str]) -> List[int]:
+        nonlocal num_length_calls
+        num_length_calls += 1
+        return [len(text) for text in texts]
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        separators=["\n", " "],
+        length_function=_batched_length,
+        batched_length=True,
+        chunk_size=1,
+        chunk_overlap=0,
+    )
+    output = text_splitter.split_text("a\nb c")
+    assert output == ["a", "b", "c"]
+    # Called each time text is split, and an additional time for each separator
+    assert num_length_calls == 4
 
 
 def test_split_documents() -> None:
