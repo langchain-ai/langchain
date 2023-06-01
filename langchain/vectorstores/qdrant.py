@@ -27,8 +27,10 @@ from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
+    from qdrant_client import grpc
     from qdrant_client.conversions import common_types
     from qdrant_client.http import models as rest
+    from qdrant_client.qdrant_remote import QdrantRemote
 
     DictFilter = Dict[str, Union[str, int, bool, dict, list]]
     MetadataFilter = Union[DictFilter, common_types.Filter]
@@ -67,25 +69,23 @@ class Qdrant(VectorStore):
             import qdrant_client
         except ImportError:
             raise ValueError(
-                "Could not import qdrant-client python package. "
-                "Please install it with `pip install qdrant-client`."
+                (
+                    "Could not import qdrant-client python package. "
+                    "Please install it with `pip install qdrant-client`."
+                )
             )
 
         if not isinstance(client, qdrant_client.QdrantClient):
             raise ValueError(
-                f"client should be an instance of qdrant_client.QdrantClient, "
-                f"got {type(client)}"
+                (f"client should be an instance of qdrant_client.QdrantClient, " f"got {type(client)}")  # noqa: E501
             )
 
         if embeddings is None and embedding_function is None:
-            raise ValueError(
-                "`embeddings` value can't be None. Pass `Embeddings` instance."
-            )
+            raise ValueError("`embeddings` value can't be None. Pass `Embeddings` instance.")  # noqa: E501
 
         if embeddings is not None and embedding_function is not None:
             raise ValueError(
-                "Both `embeddings` and `embedding_function` are passed. "
-                "Use `embeddings` only."
+                "Both `embeddings` and `embedding_function` are passed. " "Use `embeddings` only."  # noqa: E501
             )
 
         self.embeddings = embeddings
@@ -97,8 +97,10 @@ class Qdrant(VectorStore):
 
         if embedding_function is not None:
             warnings.warn(
-                "Using `embedding_function` is deprecated. "
-                "Pass `Embeddings` instance to `embeddings` instead."
+                (
+                    "Using `embedding_function` is deprecated. "
+                    "Pass `Embeddings` instance to `embeddings` instead."  # noqa: E501
+                )
             )
 
         if not isinstance(embeddings, Embeddings):
@@ -201,6 +203,62 @@ class Qdrant(VectorStore):
 
         return ids
 
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        batch_size: int = 64,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        from qdrant_client import grpc
+        from qdrant_client.conversions.conversion import payload_to_grpc
+
+        grpc_points = self.client.async_grpc_points
+
+        ids = []
+        texts_iterator = iter(texts)
+        metadatas_iterator = iter(metadatas or [])
+        while batch_texts := list(islice(texts_iterator, batch_size)):
+            # Take the corresponding metadata for each text in a batch
+            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
+
+            batch_ids = [md5(text.encode("utf-8")).hexdigest() for text in batch_texts]
+            points = [
+                grpc.PointStruct(
+                    id=grpc.PointId(uuid=id),
+                    vectors=grpc.Vectors(vector=grpc.Vector(data=vector)),
+                    payload=payload_to_grpc(payload),
+                )
+                for id, vector, payload in zip(
+                    batch_ids,
+                    self._embed_texts(batch_texts),
+                    self._build_payloads(
+                        batch_texts,
+                        batch_metadatas,
+                        self.content_payload_key,
+                        self.metadata_payload_key,
+                    ),
+                )
+            ]
+            await grpc_points.Upsert(
+                grpc.UpsertPoints(
+                    collection_name=self.collection_name,
+                    points=points,
+                )
+            )
+            ids.extend(batch_ids)
+
+        return ids
+
     def similarity_search(
         self,
         query: str,
@@ -219,6 +277,30 @@ class Qdrant(VectorStore):
             List of Documents most similar to the query.
         """
         results = self.similarity_search_with_score(query, k, filter)
+        return list(map(itemgetter(0), results))
+
+    async def asimilarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[MetadataFilter] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+        if not isinstance(self.client, QdrantRemote):
+            raise NotImplementedError(
+                "Async similarity search is only supported for remote clients",
+            )
+        results = await self.asimilarity_search_with_score(query, k, filter)
         return list(map(itemgetter(0), results))
 
     def similarity_search_with_score(
@@ -256,11 +338,71 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    result, self.content_payload_key, self.metadata_payload_key
+                    result,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
                 ),
                 result.score,
             )
             for result in results
+        ]
+
+    async def asimilarity_search_with_score(
+        self, query: str, k: int = 4, filter: Optional[MetadataFilter] = None
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+
+        Returns:
+            List of Documents most similar to the query and score for each.
+        """
+
+        if not isinstance(self.client, QdrantRemote):
+            raise NotImplementedError(
+                "Async similarity search is only supported for remote clients",
+            )
+
+        from qdrant_client import grpc
+        from qdrant_client.conversions.conversion import RestToGrpc
+
+        grpc_points = self.client.async_grpc_points
+
+        if filter is not None and isinstance(filter, dict):
+            warnings.warn(
+                "Using dict as a `filter` is deprecated. Please use qdrant-client "
+                "filters directly: "
+                "https://qdrant.tech/documentation/concepts/filtering/",
+                DeprecationWarning,
+            )
+            qdrant_filter = self._qdrant_filter_from_dict_grpc(filter)
+        elif filter is not None and isinstance(filter, rest.Filter):
+            qdrant_filter = RestToGrpc.convert_filter(filter)
+        else:
+            qdrant_filter = filter
+        response = await grpc_points.Search(
+            grpc.SearchPoints(
+                collection_name=self.collection_name,
+                vector=self._embed_query(query),
+                filter=qdrant_filter,
+                with_payload=grpc.WithPayloadSelector(enable=True),
+                limit=k,
+            )
+        )
+
+        return [
+            (
+                self._document_from_scored_point_grpc(
+                    result,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                ),
+                result.score,
+            )
+            for result in response.result  # type: ignore
         ]
 
     def max_marginal_relevance_search(
@@ -299,11 +441,84 @@ class Qdrant(VectorStore):
         )
         embeddings = [result.vector for result in results]
         mmr_selected = maximal_marginal_relevance(
-            np.array(embedding), embeddings, k=k, lambda_mult=lambda_mult
+            np.array(embedding),
+            embeddings,
+            k=k,
+            lambda_mult=lambda_mult,
         )
         return [
             self._document_from_scored_point(
-                results[i], self.content_payload_key, self.metadata_payload_key
+                results[i],
+                self.content_payload_key,
+                self.metadata_payload_key,
+            )
+            for i in mmr_selected
+        ]
+
+    async def amax_marginal_relevance_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                     Defaults to 20.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        if not isinstance(self.client, QdrantRemote):
+            raise NotImplementedError(
+                "Async similarity search is only supported for remote clients",
+            )
+
+        from qdrant_client import grpc
+        from qdrant_client.conversions.conversion import GrpcToRest
+
+        grpc_points = self.client.async_grpc_points
+        embedding = self._embed_query(query)
+        response = await grpc_points.Search(
+            grpc.SearchPoints(
+                collection_name=self.collection_name,
+                vector=embedding,
+                with_payload=grpc.WithPayloadSelector(enable=True),
+                with_vectors=grpc.WithVectorsSelector(enable=True),
+                limit=fetch_k,
+            )
+        )
+        embeddings: List[rest.VectorStruct] = [
+            GrpcToRest.convert_vectors(
+                result.vectors,
+            )
+            for result in response.result
+        ]
+        mmr_selected: List[int] = maximal_marginal_relevance(
+            np.array(embedding),
+            embeddings,
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+        return [
+            (
+                self._document_from_scored_point_grpc(
+                    response.result[i],
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                ),
+                response.result[i].score,
             )
             for i in mmr_selected
         ]
@@ -403,7 +618,7 @@ class Qdrant(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import qdrant-client python package. "
-                "Please install it with `pip install qdrant-client`."
+                "Please install it with `pip install qdrant-client`."  # noqa: E501
             )
 
         from qdrant_client.http import models as rest
@@ -506,6 +721,21 @@ class Qdrant(VectorStore):
             metadata=scored_point.payload.get(metadata_payload_key) or {},
         )
 
+    @classmethod
+    def _document_from_scored_point_grpc(
+        cls,
+        scored_point: Any,
+        content_payload_key: str,
+        metadata_payload_key: str,
+    ) -> Document:
+        from qdrant_client.conversions.conversion import grpc_to_payload
+
+        payload = grpc_to_payload(scored_point.payload)
+        return Document(
+            page_content=payload[content_payload_key],
+            metadata=payload.get(metadata_payload_key) or {},
+        )
+
     def _build_condition(self, key: str, value: Any) -> List[rest.FieldCondition]:
         from qdrant_client.http import models as rest
 
@@ -530,9 +760,42 @@ class Qdrant(VectorStore):
 
         return out
 
-    def _qdrant_filter_from_dict(
-        self, filter: Optional[DictFilter]
-    ) -> Optional[rest.Filter]:
+    def _build_condition_grpc(self, key: str, value: Any) -> List[grpc.Condition]:
+        from qdrant_client import grpc
+
+        out: List[grpc.Condition] = []
+
+        if isinstance(value, dict):
+            for _key, value in value.items():
+                out.extend(self._build_condition_grpc(f"{key}.{_key}", value))
+        elif isinstance(value, list):
+            for _value in value:
+                if isinstance(_value, dict):
+                    out.extend(self._build_condition_grpc(f"{key}[]", _value))
+                else:
+                    out.extend(self._build_condition_grpc(f"{key}", _value))
+        else:
+            if isinstance(value, str):
+                value_type = "text"
+            elif isinstance(value, int):
+                value_type = "interger"
+            elif isinstance(value, bool):
+                value_type = "boolean"
+            else:
+                raise TypeError(f"Unsupported type {type(value)}")
+
+            out.append(
+                grpc.Condition(
+                    field=grpc.FieldCondition(  # type: ignore
+                        key=f"{self.metadata_payload_key}.{key}",
+                        match=grpc.Match(**{value_type: value}),  # type: ignore
+                    )
+                )
+            )
+
+        return out
+
+    def _qdrant_filter_from_dict(self, filter: Optional[DictFilter]) -> Optional[rest.Filter]:  # noqa: E501
         from qdrant_client.http import models as rest
 
         if not filter:
@@ -542,6 +805,26 @@ class Qdrant(VectorStore):
             must=[
                 condition
                 for key, value in filter.items()
-                for condition in self._build_condition(key, value)
+                for condition in self._build_condition(
+                    key,
+                    value,
+                )
+            ]
+        )
+
+    def _qdrant_filter_from_dict_grpc(self, filter: Optional[DictFilter]) -> Optional[rest.Filter]:  # noqa: E501
+        from qdrant_client import grpc
+
+        if not filter:
+            return None
+
+        return grpc.Filter(
+            must=[
+                condition
+                for key, value in filter.items()
+                for condition in self._build_condition_grpc(
+                    key,
+                    value,
+                )
             ]
         )
