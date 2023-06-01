@@ -16,7 +16,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, Extra, PrivateAttr, root_validator
+from pydantic import BaseModel, Extra, PrivateAttr
 from tenacity import (
     before_sleep_log,
     retry,
@@ -128,13 +128,16 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Timeout in seconds for the OpenAPI request."""
     headers: Any = None
 
+    def __init__(self, **data: Dict[str, Any]):
+        self.validate_environment(data)
+        super().__init__(**data)
+
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    def validate_environment(self, values: Dict) -> None:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
@@ -187,13 +190,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 openai.api_type = openai_api_type
             if openai_proxy:
                 openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
-            values["client"] = openai.Embedding
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        return values
+
+        self._client = openai.Embedding
 
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
