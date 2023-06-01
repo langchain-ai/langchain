@@ -19,6 +19,7 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
+    AIMessagePromptTemplate,
 )
 from langchain.schema import AgentAction
 from langchain.tools.base import BaseTool
@@ -131,6 +132,107 @@ class ChatAgent(Agent):
             output_parser=_output_parser,
             **kwargs,
         )
+
+    @property
+    def _agent_type(self) -> str:
+        raise ValueError
+
+
+class InceptionChatAgent(Agent):
+    output_parser: AgentOutputParser = Field(default_factory=ChatOutputParser)
+
+    @property
+    def observation_prefix(self) -> str:
+        """Prefix to append the observation with."""
+        return "Observation: "
+
+    @property
+    def llm_prefix(self) -> str:
+        """Prefix to append the llm call with."""
+        return "Thought:"
+
+    @classmethod
+    def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
+        return ChatOutputParser()
+
+    @classmethod
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+        super()._validate_tools(tools)
+        validate_tools_single_input(class_name=cls.__name__, tools=tools)
+
+    @property
+    def _stop(self) -> List[str]:
+        return ["Observation:"]
+
+    @classmethod
+    def from_llm_and_tools(
+        cls,
+        llm: BaseLanguageModel,
+        tools: Sequence[BaseTool],
+        callback_manager: Optional[BaseCallbackManager] = None,
+        output_parser: Optional[AgentOutputParser] = None,
+        system_message_prefix: str = SYSTEM_MESSAGE_PREFIX,
+        system_message_suffix: str = SYSTEM_MESSAGE_SUFFIX,
+            human_message: str = "{input}",
+            ai_message: str = "{agent_scratchpad}",
+        format_instructions: str = FORMAT_INSTRUCTIONS,
+        input_variables: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Agent:
+        """Construct an agent from an LLM and tools."""
+        cls._validate_tools(tools)
+        prompt = cls.create_prompt(
+            tools,
+            system_message_prefix=system_message_prefix,
+            system_message_suffix=system_message_suffix,
+            human_message=human_message,
+            ai_message=ai_message,
+            format_instructions=format_instructions,
+            input_variables=input_variables,
+        )
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=prompt,
+            callback_manager=callback_manager,
+        )
+        tool_names = [tool.name for tool in tools]
+        _output_parser = output_parser or cls._get_default_output_parser()
+        return cls(
+            llm_chain=llm_chain,
+            allowed_tools=tool_names,
+            output_parser=_output_parser,
+            **kwargs,
+        )
+    @classmethod
+    def create_prompt(
+            cls,
+            tools: Sequence[BaseTool],
+            system_message_prefix: str = SYSTEM_MESSAGE_PREFIX,
+            system_message_suffix: str = SYSTEM_MESSAGE_SUFFIX,
+            human_message: str = "{input}",
+            ai_message: str = "{agent_scratchpad}",
+            format_instructions: str = FORMAT_INSTRUCTIONS,
+            input_variables: Optional[List[str]] = None,
+    ) -> BasePromptTemplate:
+        tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+        tool_names = ", ".join([tool.name for tool in tools])
+        format_instructions = format_instructions.format(tool_names=tool_names)
+        template = "\n\n".join(
+            [
+                system_message_prefix,
+                tool_strings,
+                format_instructions,
+                system_message_suffix,
+            ]
+        )
+        messages = [
+            SystemMessagePromptTemplate.from_template(template),
+            HumanMessagePromptTemplate.from_template(human_message),
+            AIMessagePromptTemplate.from_template(ai_message)
+        ]
+        if input_variables is None:
+            input_variables = ["input", "agent_scratchpad"]
+        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
     @property
     def _agent_type(self) -> str:

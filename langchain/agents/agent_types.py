@@ -11,3 +11,4 @@ class AgentType(str, Enum):
     STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION = (
         "structured-chat-zero-shot-react-description"
     )
+    INCEPTION_CHAT_AGENT = "inception-chat-agent"

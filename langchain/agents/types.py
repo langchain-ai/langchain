@@ -2,7 +2,7 @@ from typing import Dict, Type
 
 from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.agent_types import AgentType
-from langchain.agents.chat.base import ChatAgent
+from langchain.agents.chat.base import ChatAgent, InceptionChatAgent
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.agents.mrkl.base import ZeroShotAgent
@@ -18,4 +18,5 @@ AGENT_TO_CLASS: Dict[AgentType, Type[BaseSingleActionAgent]] = {
     AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION: ChatAgent,
     AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION: ConversationalChatAgent,
     AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION: StructuredChatAgent,
+    AgentType.INCEPTION_CHAT_AGENT: InceptionChatAgent,
 }
