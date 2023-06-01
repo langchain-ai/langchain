@@ -3,6 +3,7 @@
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
 from langchain.document_loaders.arxiv import ArxivLoader
+from langchain.document_loaders.audio import AudioFileLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.azure_blob_storage_container import (
     AzureBlobStorageContainerLoader,
@@ -131,6 +132,7 @@ __all__ = [
     "AirbyteJSONLoader",
     "ApifyDatasetLoader",
     "ArxivLoader",
+    "AudioFileLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
