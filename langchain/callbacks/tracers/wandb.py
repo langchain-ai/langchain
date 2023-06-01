@@ -11,19 +11,21 @@ except ImportError:
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypedDict, Union
 
 import wandb.util
-from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
 from wandb.sdk.data_types import trace_tree
 from wandb.sdk.lib.paths import StrPath
 
+from langchain.callbacks.tracers.base import BaseTracer
+from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
+
 if TYPE_CHECKING:
+    from wandb import Settings as WBSettings
+    from wandb.wandb_run import Run as WBRun
+
     from langchain.callbacks.tracers.schemas import Run
     from langchain.chains.base import Chain
     from langchain.llms.base import BaseLLM
     from langchain.models.base import BaseLanguageModel
     from langchain.tools.base import BaseTool
-    from wandb import Settings as WBSettings
-    from wandb.wandb_run import Run as WBRun
 
 
 PRINT_WARNINGS = True
