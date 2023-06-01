@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any, Optional, Union
 
 import requests
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.langchain import get_endpoint, get_headers
+from langchain.callbacks.tracers.langchain import get_headers
 from langchain.callbacks.tracers.schemas import (
     ChainRun,
     LLMRun,
@@ -20,6 +21,10 @@ from langchain.schema import get_buffer_string
 from langchain.utils import raise_for_status_with_text
 
 
+def _get_endpoint() -> str:
+    return os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
+
+
 class LangChainTracerV1(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
@@ -27,7 +32,7 @@ class LangChainTracerV1(BaseTracer):
         """Initialize the LangChain tracer."""
         super().__init__(**kwargs)
         self.session: Optional[TracerSessionV1] = None
-        self._endpoint = get_endpoint()
+        self._endpoint = _get_endpoint()
         self._headers = get_headers()
 
     def _convert_to_v1_run(self, run: Run) -> Union[LLMRun, ChainRun, ToolRun]:

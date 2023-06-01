@@ -72,3 +72,17 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "pytest-watcher",
         "responses",
     ]
+
+
+def test_imports() -> None:
+    """Test that you can import all top level things okay."""
+    from langchain.chains import LLMChain  # noqa: F401
+    from langchain.chat_models import ChatOpenAI  # noqa: F401
+    from langchain.document_loaders import BSHTMLLoader  # noqa: F401
+    from langchain.embeddings import OpenAIEmbeddings  # noqa: F401
+    from langchain.llms import OpenAI  # noqa: F401
+    from langchain.prompts import BasePromptTemplate  # noqa: F401
+    from langchain.retrievers import VespaRetriever  # noqa: F401
+    from langchain.tools import DuckDuckGoSearchResults  # noqa: F401
+    from langchain.utilities import SerpAPIWrapper  # noqa: F401
+    from langchain.vectorstores import FAISS  # noqa: F401
