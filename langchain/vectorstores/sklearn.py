@@ -3,7 +3,6 @@
 The vector store can be persisted in json, bson or parquet format.
 """
 
-import importlib
 import json
 import math
 import os
@@ -13,26 +12,12 @@ from uuid import uuid4
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.utils import guard_import
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 DEFAULT_K = 4  # Number of Documents to return.
 DEFAULT_FETCH_K = 20  # Number of Documents to initially fetch during MMR search.
-
-
-def guard_import(
-    module_name: str, *, pip_name: Optional[str] = None, package: Optional[str] = None
-) -> Any:
-    """Dynamically imports a module and raises a helpful exception if the module is not
-    installed."""
-    try:
-        module = importlib.import_module(module_name, package)
-    except ImportError:
-        raise ImportError(
-            f"Could not import {module_name} python package. "
-            f"Please install it with `pip install {pip_name or module_name}`."
-        )
-    return module
 
 
 class BaseSerializer(ABC):
