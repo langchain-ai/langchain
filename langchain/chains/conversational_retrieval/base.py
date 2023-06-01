@@ -213,7 +213,10 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
 
         _llm = condense_question_llm or llm
         condense_question_chain = LLMChain(
-            llm=_llm, prompt=condense_question_prompt, verbose=verbose, callbacks=callbacks,
+            llm=_llm,
+            prompt=condense_question_prompt,
+            verbose=verbose,
+            callbacks=callbacks,
         )
         return cls(
             retriever=retriever,
@@ -272,7 +275,9 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
             callbacks=callbacks,
             **combine_docs_chain_kwargs,
         )
-        condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt, callbacks=callbacks)
+        condense_question_chain = LLMChain(
+            llm=llm, prompt=condense_question_prompt, callbacks=callbacks
+        )
         return cls(
             vectorstore=vectorstore,
             combine_docs_chain=doc_chain,
