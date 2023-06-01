@@ -135,8 +135,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 "please visit TODO."
             )
 
-        self.prompts = []
-        self.in_chain = False
+        self.prompts = {}
 
         warnings.warn(
             "The `ArgillaCallbackHandler` is currently in beta and is subject to change "
@@ -148,10 +147,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Save the prompts in memory when an LLM starts."""
-        if not self.in_chain:
-            self.prompts = prompts
-        if len(self.prompts) == 0:
-            self.prompts = prompts
+        self.prompts.update({str(kwargs["parent_run_id"] or kwargs["run_id"]): prompts})
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Do nothing when a new token is generated."""
@@ -160,11 +156,12 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Log records to Argilla when an LLM ends."""
         # Do nothing if we are in a chain, since we will log the records when the chain ends
-        if self.in_chain:
+        if kwargs["parent_run_id"]:
             return
 
         # Creates the records as `FeedbackRecord`s and adds them to the `FeedbackDataset`
-        for prompt, generations in zip(self.prompts, response.generations):
+        prompts = self.prompts[str(kwargs["run_id"])]
+        for prompt, generations in zip(prompts, response.generations):
             self.dataset.add_records(
                 records=[
                     {
@@ -172,16 +169,15 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                             "prompt": prompt,
                             "response": generation.text.strip(),
                         },
-                    }
-                    for generation in generations
+                    } for generation in generations
                 ]
             )
         
         # Push the records to Argilla
         self.dataset.push_to_argilla()
 
-        # Reset the prompts
-        self.prompts = []
+        # Pop current run from `self.runs`
+        self.prompts.pop(str(kwargs["run_id"]))
 
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -193,14 +189,12 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Do nothing when LLM chain starts."""
-        self.in_chain = True
         if "input" in inputs:
-            self.prompts = inputs["input"] if isinstance(inputs["input"], list) else [inputs["input"]]
+            self.prompts.update({str(kwargs["parent_run_id"] or kwargs["run_id"]): inputs["input"] if isinstance(inputs["input"], list) else [inputs["input"]]})
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Do nothing when LLM chain ends."""
-        self.in_chain = False
-        
+        prompts = self.prompts[str(kwargs["parent_run_id"] or kwargs["run_id"])]
         if "outputs" in outputs:
             # Creates the records as `FeedbackRecord`s and adds them to the `FeedbackDataset`
             self.dataset.add_records(
@@ -211,7 +205,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                             "response": output["text"].strip(),
                         },
                     }
-                    for prompt, output in zip(self.prompts, outputs["outputs"])
+                    for prompt, output in zip(prompts, outputs["outputs"])
                 ]
             )
         elif "output" in outputs:
@@ -220,7 +214,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 records=[
                     {
                         "fields": {
-                            "prompt": " ".join(self.prompts),
+                            "prompt": " ".join(prompts),
                             "response": outputs["output"].strip(),
                         },
                     }
@@ -234,8 +228,8 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         # Push the records to Argilla
         self.dataset.push_to_argilla()
 
-        # Reset the prompts
-        self.prompts = []
+        # Pop current run from `self.runs`
+        self.prompts.pop(str(kwargs["parent_run_id"] or kwargs["run_id"]))
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
