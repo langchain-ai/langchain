@@ -16,7 +16,7 @@ from langchain.graphs.neo4j_graph import Neo4jGraph
 from langchain.prompts.base import BasePromptTemplate
 
 
-def extract_code_block(text):
+def extract_code_block(text) -> str:
     # The pattern to find Cypher code enclosed in triple backticks
     pattern = r"```(.*?)```"
 
