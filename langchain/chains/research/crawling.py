@@ -4,7 +4,6 @@ The main idea behind the crawling module is to identify additional links
 that are worth exploring to find more documents that may be relevant for being
 able to answer the question correctly.
 """
-import json
 import urllib.parse
 from bs4 import PageElement, BeautifulSoup
 from typing import List, Dict, Any, Tuple

@@ -89,11 +89,13 @@ class DocReadingChain(Chain):
         return {"document": summary_doc}
 
 
-class ParallelApply(Chain):
-    """Utility chain to apply a given chain in parallel across input documents."""
+class ParallelApplyChain(Chain):
+    """Utility chain to apply a given chain in parallel across input documents.
+
+    This chain needs to handle a limit on concurrency.
+    """
 
     chain: Chain
-    max_concurrency: int
 
     @property
     def input_keys(self) -> List[str]:

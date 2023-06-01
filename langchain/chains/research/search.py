@@ -1,9 +1,9 @@
 """Module for initiating a set of searches relevant for answering the question."""
 from __future__ import annotations
+
 import asyncio
-import itertools
 from bs4 import BeautifulSoup
-from typing import Sequence, List, Mapping, Any, Optional, Union, Dict
+from typing import Sequence, List, Mapping, Any, Optional, Dict
 
 from langchain import PromptTemplate, LLMChain, serpapi
 from langchain.base_language import BaseLanguageModel
@@ -11,9 +11,9 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from langchain.chains.base import Chain
 from langchain.chains.classification.multiselection import MultiSelectChain
 from langchain.schema import BaseOutputParser
-from langchain.chains.base import Chain
 
 
 def _extract_content_from_tag(html: str, tag: str) -> List[str]:
@@ -204,8 +204,8 @@ def make_query_generator(llm: BaseLanguageModel) -> LLMChain:
     """
     return LLMChain(
         llm=llm,
-        output_keys=["urls"],
-        promp=QUERY_GENERATION_PROMPT,
+        output_key="urls",
+        prompt=QUERY_GENERATION_PROMPT,
     )
 
 
@@ -230,11 +230,12 @@ class GenericSearcher(Chain):
     To extend implementation:
     * Parameterize the search engine (to allow for non serp api search engines)
     * Expose an abstract interface for query generator and link selection model
+    * Expose promoted answers from search engines as blobs that should be summarized
     """
 
     query_generator: LLMChain
     """An LLM that is used to break down a complex question into a list of simpler queries."""
-    link_selection_model: LLMChain
+    link_selection_model: Chain
     """An LLM that is used to select the most relevant urls from the search results."""
     top_k_per_search: int = -1
     """The number of top urls to select from each search."""
@@ -255,20 +256,21 @@ class GenericSearcher(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         question = inputs["question"]
-        response = self.query_generator.predict_and_parse(
+        queries = self.query_generator.predict_and_parse(
             callbacks=run_manager.get_child(), question=question
         )
-        queries = response["queries"]
         results = _run_searches(queries, top_k=self.top_k_per_search)
         deuped_results = _deduplicate_objects(results, "link")
         records = [
             {"link": result["link"], "title": result["title"]}
             for result in deuped_results
         ]
-        response_ = self.link_selection_model.predict_and_parse(
+        response_ = self.link_selection_model(
+            {
+                "question": question,
+                "choices": records,
+            },
             callbacks=run_manager.get_child(),
-            question=question,
-            choices=records,
         )
         return {"urls": [result["link"] for result in response_["selected"]]}
 
@@ -278,33 +280,37 @@ class GenericSearcher(Chain):
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         question = inputs["question"]
-        response = await self.query_generator.apredict_and_parse(
+        queries = await self.query_generator.apredict_and_parse(
             callbacks=run_manager.get_child(), question=question
         )
-        queries = response["queries"]
-        results = await _arun_searches(queries)
+        results = _run_searches(queries, top_k=self.top_k_per_search)
         deuped_results = _deduplicate_objects(results, "link")
         records = [
             {"link": result["link"], "title": result["title"]}
             for result in deuped_results
         ]
-        response_ = self.link_selection_model.predict_and_parse(
+        response_ = await self.link_selection_model.acall(
+            {
+                "question": question,
+                "choices": records,
+            },
             callbacks=run_manager.get_child(),
-            question=question,
-            choices=records,
         )
         return {"urls": [result["link"] for result in response_["selected"]]}
 
     @classmethod
-    def from_llm(
+    def from_llms(
         cls,
         link_selection_llm: BaseLanguageModel,
         query_generation_llm: BaseLanguageModel,
+        *,
+        top_k_per_search: int = -1,
     ) -> GenericSearcher:
         """Initialize the searcher from a language model."""
         link_selection_model = MultiSelectChain.from_default(llm=link_selection_llm)
-        query_generation_model = make_query_generator(llm=query_generation_llm)
+        query_generation_model = make_query_generator(query_generation_llm)
         return cls(
             link_selection_model=link_selection_model,
             query_generator=query_generation_model,
+            top_k_per_search=top_k_per_search,
         )
