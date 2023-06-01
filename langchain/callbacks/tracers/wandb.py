@@ -1,115 +1,44 @@
 """A Tracer Implementation that records activity to Weights & Biases."""
-try:
-    import wandb  # noqa: F401
-except ImportError:
-    raise ImportError(
-        "To use the WandbTracer you need to have the `wandb` python "
-        "package installed. Please install it with `pip install wandb`"
-    )
+from __future__ import annotations
 
-
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypedDict, Union
-
-import wandb.util
-from wandb.sdk.data_types import trace_tree
-from wandb.sdk.lib.paths import StrPath
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    TypedDict,
+    Union,
+)
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
+from langchain.utils import guard_import
 
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
+    from wandb.sdk.data_types import trace_tree
+    from wandb.sdk.lib.paths import StrPath
     from wandb.wandb_run import Run as WBRun
-
-    from langchain.callbacks.tracers.schemas import Run
-    from langchain.chains.base import Chain
-    from langchain.llms.base import BaseLLM
-    from langchain.models.base import BaseLanguageModel
-    from langchain.tools.base import BaseTool
 
 
 PRINT_WARNINGS = True
 
 
-def print_wandb_init_message(run_url: str) -> None:
-    wandb.termlog(
-        f"Streaming LangChain activity to W&B at {run_url}\n"
-        "`WandbTracer` is currently in beta.\n"
-        "Please report any issues to https://github.com/wandb/wandb/issues with the tag `langchain`."
-    )
-
-
-def safely_convert_lc_run_to_wb_span(run: Run) -> Optional["trace_tree.Span"]:
-    try:
-        return _convert_lc_run_to_wb_span(run)
-    except Exception as e:
-        if PRINT_WARNINGS:
-            wandb.termwarn(
-                f"Skipping trace saving - unable to safely convert LangChain Run into W&B Trace due to: {e}"
-            )
-    return None
-
-
-def safely_get_span_producing_model(run: Run) -> Any:
-    try:
-        return run.serialized.get("_self")
-    except Exception as e:
-        if PRINT_WARNINGS:
-            wandb.termwarn(
-                f"Skipping model saving - unable to safely retrieve LangChain model due to: {e}"
-            )
-    return None
-
-
-def safely_convert_model_to_dict(
-    model: Union["BaseLanguageModel", "BaseLLM", "BaseTool", "Chain"]
-) -> Optional[dict]:
-    """Returns the model dict if possible, otherwise returns None.
-
-    Given that Models are all user defined, this operation is not always possible.
-    """
-    data = None
-    message = None
-    try:
-        data = model.dict()
-    except Exception as e:
-        message = str(e)
-        if hasattr(model, "agent"):
-            try:
-                data = model.agent.dict()
-            except Exception as e:
-                message = str(e)
-
-    if data is not None and not isinstance(data, dict):
-        message = (
-            f"Model's dict transformation resulted in {type(data)}, expected a dict."
-        )
-        data = None
-
-    if data is not None:
-        data = _replace_type_with_kind(data)
-    else:
-        if PRINT_WARNINGS:
-            wandb.termwarn(
-                f"Skipping model saving - unable to safely convert LangChain Model to dictionary due to: {message}"
-            )
-
-    return data
-
-
-def _convert_lc_run_to_wb_span(run: "Run") -> "trace_tree.Span":
+def _convert_lc_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
     if run.run_type == RunTypeEnum.llm:
-        return _convert_llm_run_to_wb_span(run)
+        return _convert_llm_run_to_wb_span(trace_tree, run)
     elif run.run_type == RunTypeEnum.chain:
-        return _convert_chain_run_to_wb_span(run)
+        return _convert_chain_run_to_wb_span(trace_tree, run)
     elif run.run_type == RunTypeEnum.tool:
-        return _convert_tool_run_to_wb_span(run)
+        return _convert_tool_run_to_wb_span(trace_tree, run)
     else:
-        return _convert_run_to_wb_span(run)
+        return _convert_run_to_wb_span(trace_tree, run)
 
 
-def _convert_llm_run_to_wb_span(run: "Run") -> "trace_tree.Span":
-    base_span = _convert_run_to_wb_span(run)
+def _convert_llm_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
+    base_span = _convert_run_to_wb_span(trace_tree, run)
 
     base_span.results = [
         trace_tree.Result(
@@ -132,12 +61,13 @@ def _convert_llm_run_to_wb_span(run: "Run") -> "trace_tree.Span":
     return base_span
 
 
-def _convert_chain_run_to_wb_span(run: "Run") -> "trace_tree.Span":
-    base_span = _convert_run_to_wb_span(run)
+def _convert_chain_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
+    base_span = _convert_run_to_wb_span(trace_tree, run)
 
     base_span.results = [trace_tree.Result(inputs=run.inputs, outputs=run.outputs)]
     base_span.child_spans = [
-        _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
+        _convert_lc_run_to_wb_span(trace_tree, child_run)
+        for child_run in run.child_runs
     ]
     base_span.span_kind = (
         trace_tree.SpanKind.AGENT
@@ -148,18 +78,19 @@ def _convert_chain_run_to_wb_span(run: "Run") -> "trace_tree.Span":
     return base_span
 
 
-def _convert_tool_run_to_wb_span(run: "Run") -> "trace_tree.Span":
-    base_span = _convert_run_to_wb_span(run)
+def _convert_tool_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
+    base_span = _convert_run_to_wb_span(trace_tree, run)
     base_span.results = [trace_tree.Result(inputs=run.inputs, outputs=run.outputs)]
     base_span.child_spans = [
-        _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
+        _convert_lc_run_to_wb_span(trace_tree, child_run)
+        for child_run in run.child_runs
     ]
     base_span.span_kind = trace_tree.SpanKind.TOOL
 
     return base_span
 
 
-def _convert_run_to_wb_span(run: "Run") -> "trace_tree.Span":
+def _convert_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
     attributes = {**run.extra} if run.extra else {}
     attributes["execution_order"] = run.execution_order
 
@@ -176,7 +107,7 @@ def _convert_run_to_wb_span(run: "Run") -> "trace_tree.Span":
     )
 
 
-def _replace_type_with_kind(data: dict) -> dict:
+def _replace_type_with_kind(data: Any) -> Any:
     if isinstance(data, dict):
         # W&B TraceTree expects "_kind" instead of "_type" since `_type` is special
         # in W&B.
@@ -218,74 +149,87 @@ class WandbRunArgs(TypedDict):
     monitor_gym: Optional[bool]
     save_code: Optional[bool]
     id: Optional[str]
-    settings: Union["WBSettings", Dict[str, Any], None]
+    settings: Union[WBSettings, Dict[str, Any], None]
 
 
 class WandbTracer(BaseTracer):
     """Callback Handler that logs to Weights and Biases.
 
-    This handler will log the model architecture and run traces to Weights and Biases. This will
-    ensure that all LangChain activity is logged to W&B.
+    This handler will log the model architecture and run traces to Weights and Biases.
+    This will ensure that all LangChain activity is logged to W&B.
     """
 
-    _run: Optional["WBRun"] = None
+    _run: Optional[WBRun] = None
     _run_args: Optional[WandbRunArgs] = None
 
     def __init__(self, run_args: Optional[WandbRunArgs] = None, **kwargs: Any) -> None:
         """Initializes the WandbTracer.
 
         Parameters:
-            run_args: (dict, optional) Arguments to pass to `wandb.init()`. If not provided, `wandb.init()` will be
-                called with no arguments. Please refer to the `wandb.init` for more details.
+            run_args: (dict, optional) Arguments to pass to `wandb.init()`. If not
+                provided, `wandb.init()` will be called with no arguments. Please
+                refer to the `wandb.init` for more details.
 
-        To use W&B to monitor all LangChain activity, add this tracer like any other langchain callback
+        To use W&B to monitor all LangChain activity, add this tracer like any other
+        LangChain callback:
         ```
         from wandb.integration.langchain import WandbTracer
-        LLMChain(llm, callbacks=[WandbTracer()])
-        # end of notebook / script:
-        WandbTracer.finish()
-        ```.
+
+        tracer = WandbTracer()
+        chain = LLMChain(llm, callbacks=[tracer])
+        # ...end of notebook / script:
+        tracer.finish()
+        ```
         """
         super().__init__(**kwargs)
+        wandb = guard_import("wandb")
+        self._wandb = wandb
+        self._trace_tree = wandb.sdk.data_types.trace_tree
         self._run_args = run_args
         self._ensure_run(should_print_url=(wandb.run is None))
 
-    @staticmethod
-    def finish() -> None:
+    def finish(self) -> None:
         """Waits for all asynchronous processes to finish and data to upload.
 
         Proxy for `wandb.finish()`.
         """
-        wandb.finish()
+        self._wandb.finish()
 
-    def _log_trace_from_run(self, run: "Run") -> None:
+    def _log_trace_from_run(self, run: Run) -> None:
         """Logs a LangChain Run to W*B as a W&B Trace."""
         self._ensure_run()
 
-        root_span = safely_convert_lc_run_to_wb_span(run)
-        if root_span is None:
+        try:
+            root_span = _convert_lc_run_to_wb_span(self._trace_tree, run)
+        except Exception as e:
+            if PRINT_WARNINGS:
+                self._wandb.termwarn(
+                    f"Skipping trace saving - unable to safely convert LangChain Run "
+                    f"into W&B Trace due to: {e}"
+                )
             return
 
         model_dict = None
 
-        # TODO: Uncomment this once we have a way to get the clean serialized parent dict from a run
+        # TODO: Add something like this once we have a way to get the clean serialized
+        # parent dict from a run:
         # serialized_parent = safely_get_span_producing_model(run)
         # if serialized_parent is not None:
-        #     model_dict = safely_convert_model_to_dict(serialized_parent)
+        #   model_dict = safely_convert_model_to_dict(serialized_parent)
 
-        model_trace = trace_tree.WBTraceTree(
+        model_trace = self._trace_tree.WBTraceTree(
             root_span=root_span,
             model_dict=model_dict,
         )
-        if wandb.run is not None:
-            wandb.run.log({"langchain_trace": model_trace})
+        if self._wandb.run is not None:
+            self._wandb.run.log({"langchain_trace": model_trace})
 
     def _ensure_run(self, should_print_url: bool = False) -> None:
         """Ensures an active W&B run exists.
 
         If not, will start a new run with the provided run_args.
         """
-        if wandb.run is None:
+        if self._wandb.run is None:
             # Make a shallow copy of the run args, so we don't modify the original
             run_args = self._run_args or {}  # type: ignore
             run_args: dict = {**run_args}  # type: ignore
@@ -296,12 +240,19 @@ class WandbTracer(BaseTracer):
                 run_args["settings"] = {"silent": True}  # type: ignore
 
             # Start the run and add the stream table
-            wandb.init(**run_args)
-            if wandb.run is not None:
+            self._wandb.init(**run_args)
+            if self._wandb.run is not None:
                 if should_print_url:
-                    print_wandb_init_message(wandb.run.settings.run_url)
+                    run_url = self._wandb.run.settings.run_url
+                    self._wandb.termlog(
+                        f"Streaming LangChain activity to W&B at {run_url}\n"
+                        "`WandbTracer` is currently in beta.\n"
+                        "Please report any issues to "
+                        "https://github.com/wandb/wandb/issues with the tag "
+                        "`langchain`."
+                    )
 
-                wandb.run._label(repo="langchain")
+                self._wandb.run._label(repo="langchain")
 
     def _persist_run(self, run: "Run") -> None:
         """Persist a run."""

@@ -200,8 +200,9 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             notes=self.notes,
         )
         warning = (
-            "DEPRECATION: The `WandbCallbackHandler` will soon be deprecated in favor of "
-            "the `WandbTracer`. Please update your code to use the `WandbTracer` instead."
+            "DEPRECATION: The `WandbCallbackHandler` will soon be deprecated in favor "
+            "of the `WandbTracer`. Please update your code to use the `WandbTracer` "
+            "instead."
         )
         wandb.termwarn(
             warning,
