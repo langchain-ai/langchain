@@ -66,7 +66,7 @@ class ElasticsearchEmbeddings(Embeddings):
             es_user: (str, optional): Elasticsearch username.
             es_password: (str, optional): Elasticsearch password.
 
-        Example Usage:
+        Example:
             .. code-block:: python
 
                 from langchain.embeddings import ElasticsearchEmbeddings
@@ -137,32 +137,35 @@ class ElasticsearchEmbeddings(Embeddings):
         Returns:
         ElasticsearchEmbeddings: An instance of the ElasticsearchEmbeddings class.
 
-        Example Usage:
-        from elasticsearch import Elasticsearch
-        from langchain.embeddings import ElasticsearchEmbeddings
+        Example:
+            .. code-block:: python
 
-        # Define the model ID and input field name (if different from default)
-        model_id = "your_model_id"
-        # Optional, only if different from 'text_field'
-        input_field = "your_input_field"
+                from elasticsearch import Elasticsearch
 
-        # Create Elasticsearch connection
-        es_connection = Elasticsearch(
-            hosts=["localhost:9200"], http_auth=("user", "password")
-        )
+                from langchain.embeddings import ElasticsearchEmbeddings
 
-        # Instantiate ElasticsearchEmbeddings using the existing connection
-        embeddings = ElasticsearchEmbeddings.from_es_connection(
-            model_id,
-            es_connection,
-            input_field=input_field,
-        )
+                # Define the model ID and input field name (if different from default)
+                model_id = "your_model_id"
+                # Optional, only if different from 'text_field'
+                input_field = "your_input_field"
 
-        documents = [
-            "This is an example document.",
-            "Another example document to generate embeddings for.",
-        ]
-        embeddings_generator.embed_documents(documents)
+                # Create Elasticsearch connection
+                es_connection = Elasticsearch(
+                    hosts=["localhost:9200"], http_auth=("user", "password")
+                )
+
+                # Instantiate ElasticsearchEmbeddings using the existing connection
+                embeddings = ElasticsearchEmbeddings.from_es_connection(
+                    model_id,
+                    es_connection,
+                    input_field=input_field,
+                )
+
+                documents = [
+                    "This is an example document.",
+                    "Another example document to generate embeddings for.",
+                ]
+                embeddings_generator.embed_documents(documents)
         """
         # Importing MlClient from elasticsearch.client within the method to
         # avoid unnecessary import if the method is not used
