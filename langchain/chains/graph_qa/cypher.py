@@ -1,6 +1,8 @@
 """Question answering over a graph."""
 from __future__ import annotations
 
+import re
+
 from typing import Any, Dict, List, Optional
 
 from pydantic import Field
@@ -12,6 +14,16 @@ from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_Q
 from langchain.chains.llm import LLMChain
 from langchain.graphs.neo4j_graph import Neo4jGraph
 from langchain.prompts.base import BasePromptTemplate
+
+
+def extract_code_block(text):
+    # The pattern to find Cypher code enclosed in triple backticks
+    pattern = r"```(.*?)```"
+
+    # Find all matches in the input text
+    matches = re.findall(pattern, text, re.DOTALL)
+
+    return matches[0] if matches else None
 
 
 class GraphCypherQAChain(Chain):
@@ -72,6 +84,11 @@ class GraphCypherQAChain(Chain):
         generated_cypher = self.cypher_generation_chain.run(
             {"question": question, "schema": self.graph.get_schema}, callbacks=callbacks
         )
+
+        # Check if Cypher code is wrapped in backticks
+        code_block = extract_code_block(generated_cypher)
+        if code_block:
+            generated_cypher = code_block
 
         _run_manager.on_text("Generated Cypher:", end="\n", verbose=self.verbose)
         _run_manager.on_text(
