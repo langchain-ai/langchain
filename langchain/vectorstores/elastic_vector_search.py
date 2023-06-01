@@ -239,6 +239,28 @@ class ElasticVectorSearch(VectorStore, ABC):
             for hit in hits
         ]
         return docs_and_scores
+    
+    def similarity_search_with_score_and_threshold(
+        self, query: str, k: int = 4, threshold: float = 0.8, filter: Optional[dict] = None, **kwargs: Any
+    ):
+        """
+        Perform a similarity search with a score threshold, returning documents that are most similar to the query.
+        
+        Args:
+            query (str): The text to look up documents similar to.
+            k (int): Maximum number of documents to return. Defaults to 4.
+            threshold (float): The minimum similarity score required to include a document. Defaults to 0.8.
+            filter (Optional[dict]): Additional filtering options to apply during the search. Defaults to None.
+            **kwargs: Additional keyword arguments.
+            
+        Returns:
+            List of tuples containing documents and their corresponding similarity scores.
+        """
+        docs_and_scores = self.similarity_search_with_score(query, k, filter=filter)
+        threshold_filtered_docs_and_scores = [
+            doc_and_score for doc_and_score in docs_and_scores if 1 - doc_and_score[1] >= threshold
+        ]
+        return threshold_filtered_docs_and_scores
 
     @classmethod
     def from_texts(
