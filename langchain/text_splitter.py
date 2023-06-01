@@ -113,7 +113,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         else:
             return text
 
-    def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:
+    def _merge_splits(
+        self, splits: Iterable[str], separator: str, lengths: Optional[Iterable[int]] = None
+    ) -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
         separator_len = self._text_lengths([separator])[0]
@@ -122,7 +124,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         current_doc: List[str] = []
         current_doc_lengths: List[int] = []
         total = 0
-        split_lengths = self._text_lengths(splits)
+        split_lengths = lengths or self._text_lengths(splits)
         for d, _len in zip(splits, split_lengths):
             if (
                 total + _len + (separator_len if len(current_doc) > 0 else 0)
@@ -446,23 +448,26 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         splits = _split_text_with_regex(text, separator, self._keep_separator)
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
+        _good_split_lengths = []
         _separator = "" if self._keep_separator else separator
         split_lengths = self._text_lengths(splits)
         for s, _len in zip(splits, split_lengths):
             if _len < self._chunk_size:
                 _good_splits.append(s)
+                _good_split_lengths.append(_len)
             else:
                 if _good_splits:
-                    merged_text = self._merge_splits(_good_splits, _separator)
+                    merged_text = self._merge_splits(_good_splits, _separator, lengths=_good_split_lengths)
                     final_chunks.extend(merged_text)
                     _good_splits = []
+                    _good_split_lengths = []
                 if new_separators is None:
                     final_chunks.append(s)
                 else:
                     other_info = self._split_text(s, new_separators)
                     final_chunks.extend(other_info)
         if _good_splits:
-            merged_text = self._merge_splits(_good_splits, _separator)
+            merged_text = self._merge_splits(_good_splits, _separator, lengths=_good_split_lengths)
             final_chunks.extend(merged_text)
         return final_chunks
 
