@@ -360,7 +360,7 @@ class Chroma(VectorStore):
 
         self._collection.update(
             ids=[document_id],
-            embeddings=[embeddings[0]],
+            embeddings=embeddings,
             documents=[text],
             metadatas=[metadata],
         )
