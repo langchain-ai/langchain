@@ -128,7 +128,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Timeout in seconds for the OpenAPI request."""
     headers: Any = None
 
-    def __init__(self, **data: Any]):
+    def __init__(self, **data: Any):
         self.validate_environment(data)
         super().__init__(**data)
 
