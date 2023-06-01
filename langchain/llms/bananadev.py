@@ -23,6 +23,7 @@ class Banana(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import Banana
             banana = Banana(model_key="")
     """

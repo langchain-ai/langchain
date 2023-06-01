@@ -60,7 +60,7 @@ def test_add_ai_message(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) 
 
 @pytest.mark.requires("zep_python")
 def test_append(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> None:
-    zep_chat.append(AIMessage(content="test message"))
+    zep_chat.add_message(AIMessage(content="test message"))
     zep_chat.zep_client.add_memory.assert_called_once()  # type: ignore
 
 
