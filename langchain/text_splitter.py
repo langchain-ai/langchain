@@ -56,7 +56,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self,
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
-        length_function: Callable[[str], int] = len,
+        length_function: Union[Callable[[str], int], Callable[[List[str]], List[int]]] = len,
+        batched_length: bool = False,
         keep_separator: bool = False,
     ):
         """Create a new TextSplitter.
@@ -75,6 +76,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
+        self._batched_length = batched_length
         self._keep_separator = keep_separator
 
     @abstractmethod
@@ -114,13 +116,14 @@ class TextSplitter(BaseDocumentTransformer, ABC):
     def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
-        separator_len = self._length_function(separator)
+        separator_len = self._text_lengths([separator])[0]
 
         docs = []
         current_doc: List[str] = []
+        current_doc_lengths: List[int] = []
         total = 0
-        for d in splits:
-            _len = self._length_function(d)
+        split_lengths = self._text_lengths(splits)
+        for d, _len in zip(splits, split_lengths):
             if (
                 total + _len + (separator_len if len(current_doc) > 0 else 0)
                 > self._chunk_size
@@ -142,16 +145,23 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                         > self._chunk_size
                         and total > 0
                     ):
-                        total -= self._length_function(current_doc[0]) + (
+                        total -= current_doc_lengths[0] + (
                             separator_len if len(current_doc) > 1 else 0
                         )
                         current_doc = current_doc[1:]
+                        current_doc_lengths = current_doc_lengths[1:]
             current_doc.append(d)
+            current_doc_lengths.append(_len)
             total += _len + (separator_len if len(current_doc) > 1 else 0)
         doc = self._join_docs(current_doc, separator)
         if doc is not None:
             docs.append(doc)
         return docs
+
+    def _text_lengths(self, texts: List[str]) -> List[int]:
+        if self._batched_length:
+            return self._length_function(texts)
+        return [self._length_function(text) for text in texts]
 
     @classmethod
     def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
@@ -164,15 +174,15 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     "Tokenizer received was not an instance of PreTrainedTokenizerBase"
                 )
 
-            def _huggingface_tokenizer_length(text: str) -> int:
-                return len(tokenizer.encode(text))
+            def _huggingface_tokenizer_length(texts: List[str]) -> List[int]:
+                return tokenizer(texts, truncation=False, return_length=True).lengths
 
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-        return cls(length_function=_huggingface_tokenizer_length, **kwargs)
+        return cls(length_function=_huggingface_tokenizer_length, batched_length = True, **kwargs)
 
     @classmethod
     def from_tiktoken_encoder(
@@ -437,8 +447,9 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
         _separator = "" if self._keep_separator else separator
-        for s in splits:
-            if self._length_function(s) < self._chunk_size:
+        split_lengths = self._text_lengths(splits)
+        for s, _len in zip(splits, split_lengths):
+            if _len < self._chunk_size:
                 _good_splits.append(s)
             else:
                 if _good_splits:
