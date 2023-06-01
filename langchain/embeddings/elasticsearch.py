@@ -77,8 +77,8 @@ class ElasticsearchEmbeddings(Embeddings):
                 input_field = "your_input_field"
 
                 # Credentials can be passed in two ways. Either set the env vars
-                # ES_CLOUD_ID, ES_USER, ES_PASSWORD and they will be automatically pulled
-                # in, or pass them in directly as kwargs.
+                # ES_CLOUD_ID, ES_USER, ES_PASSWORD and they will be automatically
+                # pulled in, or pass them in directly as kwargs.
                 embeddings = ElasticsearchEmbeddings.from_credentials(
                     model_id,
                     input_field=input_field,
