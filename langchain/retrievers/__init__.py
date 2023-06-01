@@ -18,6 +18,7 @@ from langchain.retrievers.vespa_retriever import VespaRetriever
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
 from langchain.retrievers.wikipedia import WikipediaRetriever
 from langchain.retrievers.zep import ZepRetriever
+from langchain.retrievers.docarray import DocArrayRetriever
 
 __all__ = [
     "ArxivRetriever",
@@ -38,4 +39,5 @@ __all__ = [
     "WeaviateHybridSearchRetriever",
     "WikipediaRetriever",
     "ZepRetriever",
+    "DocArrayRetriever",
 ]
