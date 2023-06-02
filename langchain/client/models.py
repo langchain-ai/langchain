@@ -1,9 +1,10 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, ClassVar, Dict, List, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, root_validator
+from typing_extensions import Literal
 
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
 
@@ -119,7 +120,7 @@ class ListRunsQueryParams(BaseModel):
 
 
 class FeedbackSourceBase(BaseModel):
-    type: ClassVar[str]
+    type: str
     metadata: Optional[Dict[str, Any]] = None
 
     class Config:
@@ -129,13 +130,13 @@ class FeedbackSourceBase(BaseModel):
 class APIFeedbackSource(FeedbackSourceBase):
     """API feedback source."""
 
-    type: ClassVar[str] = "api"
+    type: Literal["api"] = "api"
 
 
 class ModelFeedbackSource(FeedbackSourceBase):
     """Model feedback source."""
 
-    type: ClassVar[str] = "model"
+    type: Literal["model"] = "model"
 
 
 class FeedbackSourceType(Enum):
@@ -186,7 +187,7 @@ class Feedback(FeedbackBase):
     """Schema for getting feedback."""
 
     id: UUID
-    feedback_source: Optional[Dict] = None
+    feedback_source: FeedbackSourceBase
     """The source of the feedback. In this case"""
 
 

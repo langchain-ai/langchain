@@ -6,9 +6,9 @@ from langchainplus_sdk.evaluation.evaluator import EvaluationResult
 from langchainplus_sdk.schemas import Example, Run
 from pydantic import BaseModel
 from pyparsing import abstractmethod
+
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-
 from langchain.chains.llm import LLMChain
 from langchain.schema import BaseOutputParser
 
@@ -60,6 +60,13 @@ class StringRunEvalInputMapper(RunEvalInputMapper, BaseModel):
 class RunEvaluatorOutputParser(BaseOutputParser[EvaluationResult]):
     """Parse the output of a run."""
 
+    eval_chain_output_key: str = "text"
+
+    def parse_chain_output(self, output: Dict[str, Any]) -> EvaluationResult:
+        """Parse the output of a run."""
+        text = output[self.eval_chain_output_key]
+        return self.parse(text)
+
 
 class ChoicesOutputParser(RunEvaluatorOutputParser):
     """Parse a feedback run with optional choices."""
@@ -70,13 +77,27 @@ class ChoicesOutputParser(RunEvaluatorOutputParser):
     def parse(self, text: str) -> EvaluationResult:
         """Parse the last line of the text and return an evaluation result."""
         lines = text.strip().split()
-        value = lines[-1]
+        value = lines[-1].strip()
         score = self.choices_map.get(value, 0) if self.choices_map else None
         comment = " ".join(lines[:-1]) if len(lines) > 1 else None
         return EvaluationResult(
             key=self.evaluation_name,
             score=score,
             value=value,
+            comment=comment,
+        )
+
+
+class LabelingOutputParser(RunEvaluatorOutputParser):
+    """Simple labeling parser that doesn't interpret the results."""
+
+    def parse(self, text: str) -> EvaluationResult:
+        """Parse the last line of the text and return an evaluation result."""
+        lines = text.strip().split()
+        value = lines[-1].strip()
+        comment = " ".join(lines[:-1]) if len(lines) > 1 else None
+        return EvaluationResult(
+            key=value,
             comment=comment,
         )
 
@@ -113,8 +134,8 @@ class RunEvaluator(Chain):
         chain_input = self.input_mapper.map(run, example)
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         chain_output = self.eval_chain(chain_input, callbacks=_run_manager.get_child())
-        feedback = chain_output["text"]
-        return {"feedback": self.output_parser.parse(feedback)}
+        feedback = self.output_parser.parse_chain_output(chain_output)
+        return {"feedback": feedback}
 
     def evaluate_run(
         self, run: Run, example: Optional[Example] = None
