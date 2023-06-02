@@ -12,8 +12,6 @@ class OpenAIWhisperParser(BaseBlobParser):
         import os
         import openai
 
-        with blob as audio_file_path:
-            audio_file = open(audio_file_path , 'rb')
-            fpath , fname = os.path.split(audio_file_path)
-            transcript = openai.Audio.transcribe("whisper-1",audio_file)
-            yield Document(page_content=transcript.text,metadata={"source":fname})
+        with blob.as_bytes_io() as f:
+            transcript = openai.Audio.transcribe('whisper-1', f)
+            yield Document(page_content=transcript.text,metadata={"source":blob.source})

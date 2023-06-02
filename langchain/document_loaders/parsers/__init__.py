@@ -6,9 +6,11 @@ from langchain.document_loaders.parsers.pdf import (
     PyPDFium2Parser,
     PyPDFParser,
 )
+from langchain.document_loaders.parsers.audio import OpenAIWhisperParser
 
 __all__ = [
     "BS4HTMLParser",
+    "OpenAIWhisperParser",
     "PDFMinerParser",
     "PDFPlumberParser",
     "PyMuPDFParser",
