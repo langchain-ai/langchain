@@ -1,6 +1,5 @@
-from typing import List, Sequence, Mapping, Any
-
 import abc
+from typing import Any, List, Mapping, Sequence
 
 from langchain.callbacks.manager import Callbacks
 from langchain.document_loaders.blob_loaders import Blob

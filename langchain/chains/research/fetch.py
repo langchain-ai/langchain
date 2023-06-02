@@ -14,7 +14,7 @@ Downloading is batched by default to allow efficient parallelization.
 import abc
 import asyncio
 import mimetypes
-from typing import Sequence, List, Any, Optional
+from typing import Any, List, Optional, Sequence
 
 from bs4 import BeautifulSoup
 

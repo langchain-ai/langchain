@@ -2,28 +2,29 @@
 from __future__ import annotations
 
 import csv
-from bs4 import BeautifulSoup
 from io import StringIO
 from itertools import islice
 from typing import (
-    Sequence,
-    Mapping,
     Any,
-    Optional,
     Dict,
-    List,
-    cast,
-    Set,
-    TypeVar,
     Iterable,
     Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+    cast,
 )
+
+from bs4 import BeautifulSoup
 
 from langchain import LLMChain, PromptTemplate
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
-    CallbackManagerForChainRun,
     AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
 from langchain.schema import BaseOutputParser

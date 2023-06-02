@@ -1,9 +1,9 @@
 """Tests for the downloader."""
 from langchain.chains.research.fetch import (
     AutoDownloadHandler,
-    _is_javascript_required,
-    RequestsDownloadHandler,
     PlaywrightDownloadHandler,
+    RequestsDownloadHandler,
+    _is_javascript_required,
 )
 
 

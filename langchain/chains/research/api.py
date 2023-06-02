@@ -1,22 +1,21 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Optional, Any, Union, Literal, List, Dict, Mapping
 import itertools
-
+from typing import Any, Dict, List, Literal, Mapping, Optional, Union
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
-    CallbackManagerForChainRun,
     AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.chains.research.fetch import DownloadHandler, AutoDownloadHandler
+from langchain.chains.research.fetch import AutoDownloadHandler, DownloadHandler
 from langchain.chains.research.readers import DocReadingChain, ParallelApplyChain
 from langchain.chains.research.search import GenericSearcher
-from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.document_loaders.parsers.html.markdownify import MarkdownifyHTMLParser
+from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
 class Research(Chain):

@@ -5,8 +5,9 @@ that are worth exploring to find more documents that may be relevant for being
 able to answer the question correctly.
 """
 import urllib.parse
-from bs4 import PageElement, BeautifulSoup
-from typing import List, Dict, Any, Tuple
+from typing import Any, Dict, List, Tuple
+
+from bs4 import BeautifulSoup, PageElement
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.classification.multiselection import MultiSelectChain

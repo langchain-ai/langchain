@@ -1,10 +1,10 @@
 """Module contains supporting chains for research use case."""
 import asyncio
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import (
-    CallbackManagerForChainRun,
     AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
 from langchain.schema import Document

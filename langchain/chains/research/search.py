@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import asyncio
-from bs4 import BeautifulSoup
-from typing import Sequence, List, Mapping, Any, Optional, Dict
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
-from langchain import PromptTemplate, LLMChain, serpapi
+from bs4 import BeautifulSoup
+
+from langchain import LLMChain, PromptTemplate, serpapi
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
