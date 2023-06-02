@@ -32,6 +32,7 @@ from langchain.document_loaders.email import (
 )
 from langchain.document_loaders.epub import UnstructuredEPubLoader
 from langchain.document_loaders.evernote import EverNoteLoader
+from langchain.document_loaders.excel import UnstructuredExcelLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
@@ -214,6 +215,7 @@ __all__ = [
     "UnstructuredAPIFileLoader",
     "UnstructuredEPubLoader",
     "UnstructuredEmailLoader",
+    "UnstructuredExcelLoader",
     "UnstructuredFileIOLoader",
     "UnstructuredFileLoader",
     "UnstructuredHTMLLoader",
