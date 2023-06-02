@@ -7,7 +7,7 @@ rel_query = Template(
 MATCH ()-[e:`$edge_type`]->()
   WITH e limit 1
 MATCH (m)-[:`$edge_type`]->(n) WHERE id(m) == src(e) AND id(n) == dst(e)
-RETURN "(:" + tags(m)[0] + ")-[:`$edge_type`]->(:" + tags(n)[0] + ")" AS rels
+RETURN "(:" + tags(m)[0] + ")-[:$edge_type]->(:" + tags(n)[0] + ")" AS rels
 """
 )
 
@@ -31,10 +31,11 @@ class NebulaGraph:
         """Create a new NebulaGraph wrapper instance."""
         try:
             import nebula3
+            import pandas
         except ImportError:
             raise ValueError(
-                "Please install NebulaGraph Python client first: "
-                "`pip install nebula3-python`"
+                "Please install NebulaGraph Python client and pandas first: "
+                "`pip install nebula3-python pandas`"
             )
 
         self.username = username
@@ -50,7 +51,7 @@ class NebulaGraph:
         try:
             self.refresh_schema()
         except Exception as e:
-            raise ValueError(f"Could not refresh schema. " f"Error: {e}")
+            raise ValueError(f"Could not refresh schema. Error: {e}")
 
     def _get_session_pool(self):
         assert all(
@@ -88,7 +89,7 @@ class NebulaGraph:
                 "Please ensure that the username and password are correct"
             )
         except RuntimeError as e:
-            raise ValueError("Error initializing session pool. " f"Error: {e}")
+            raise ValueError("Error initializing session pool. Error: {e}")
 
         return session_pool
 
@@ -103,14 +104,22 @@ class NebulaGraph:
         """Returns the schema of the NebulaGraph database"""
         return self.schema
 
-    def query(self, query: str, params: dict = {}, retry: int = 0) -> Any:
+    def execute(self, query: str, params: dict = {}, retry: int = 0) -> Any:
         """Query NebulaGraph database."""
         from nebula3.Exception import NoValidSessionException
         from nebula3.fbthrift.transport.TTransport import TTransportException
         from nebula3.Exception import IOErrorException
 
         try:
-            return self.session_pool.execute_parameter(query, params)
+            result = self.session_pool.execute_parameter(query, params)
+            if not result.is_succeeded():
+                logging.warning(
+                    f"Error executing query to NebulaGraph. "
+                    f"Error: {result.error_msg()}\n"
+                    f"Query: {query} \n"
+                )
+            return result
+
         except NoValidSessionException:
             logging.warning(
                 f"No valid session found in session pool. "
@@ -132,10 +141,10 @@ class NebulaGraph:
                     f"query: {query} \n"
                     f"Error: {e}"
                 )
-                return self.query(query, params, retry)
+                return self.execute(query, params, retry)
             else:
                 raise ValueError(
-                    f"Error executing query to NebulaGraph. " f"Error: {e}"
+                    f"Error executing query to NebulaGraph. Error: {e}"
                 )
 
         except (TTransportException, IOErrorException) as e:
@@ -147,36 +156,36 @@ class NebulaGraph:
                     f"Retrying ({retry}/{RETRY_TIMES})...\n to recreate session pool"
                 )
                 self.session_pool = self._get_session_pool()
-                return self.query(query, params, retry)
+                return self.execute(query, params, retry)
 
     def refresh_schema(self) -> None:
         """
         Refreshes the NebulaGraph schema information.
         """
         tags_schema, edge_types_schema, relationships = [], [], []
-        for tag in self.query("SHOW TAGS").column_values("Name"):
+        for tag in self.execute("SHOW TAGS").column_values("Name"):
             tag_name = tag.cast()
             tag_schema = {"tag": tag_name, "properties": []}
-            r = self.query(f"DESCRIBE TAG `{tag_name}`")
+            r = self.execute(f"DESCRIBE TAG `{tag_name}`")
             props, types = r.column_values("Field"), r.column_values("Type")
             for i in range(r.row_size()):
                 tag_schema["properties"].append(
-                    {"name": props[i].cast(), "type": types[i].cast()}
+                    (props[i].cast(), types[i].cast())
                 )
             tags_schema.append(tag_schema)
-        for edge_type in self.query("SHOW EDGES").column_values("Name"):
+        for edge_type in self.execute("SHOW EDGES").column_values("Name"):
             edge_type_name = edge_type.cast()
             edge_schema = {"edge": edge_type_name, "properties": []}
-            r = self.query(f"DESCRIBE EDGE `{edge_type_name}`")
+            r = self.execute(f"DESCRIBE EDGE `{edge_type_name}`")
             props, types = r.column_values("Field"), r.column_values("Type")
             for i in range(r.row_size()):
                 edge_schema["properties"].append(
-                    {"name": props[i].cast(), "type": types[i].cast()}
+                    (props[i].cast(), types[i].cast())
                 )
             edge_types_schema.append(edge_schema)
 
             # build relationships types
-            r = self.query(
+            r = self.execute(
                 rel_query.substitute(edge_type=edge_type_name)
             ).column_values("rels")
             if len(r) > 0:
@@ -187,3 +196,14 @@ class NebulaGraph:
             f"Edge properties: {edge_types_schema}\n"
             f"Relationships: {relationships}\n"
         )
+
+    def query(self, query: str, retry: int = 0) -> Dict[str, Any]:
+        result = self.execute(query, retry=retry)
+        import pandas as pd
+        columns = result.keys()
+        d: Dict[str, list] = {}
+        for col_num in range(result.col_size()):
+            col_name = columns[col_num]
+            col_list = result.column_values(col_name)
+            d[col_name] = [x.cast() for x in col_list]
+        return d

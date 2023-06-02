@@ -49,6 +49,28 @@ CYPHER_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"], template=CYPHER_GENERATION_TEMPLATE
 )
 
+NEBULAGRAPH_EXTRA_INSTRUCTIONS = """
+Instructions:
+NebulaGraph Cypher is dialect rather than standard:
+1. it requires explicit label specification when referring to node properties: v.`Foo`.name
+2. it uses double equals sign for comparison: "==" instead of "="
+for exampple, CORRECT:
+MATCH (v:`Foo`)-[e]->() WHERE v.`Foo`.`age` == 30
+RETURN v.`Foo`.name, e.`degree`;
+INCORRECT:
+MATCH (v:Foo) WHERE v.age = 30
+RETURN v.name, e.degree
+---\n"""
+
+NGQL_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
+    "Generate Cypher", "Generate NebulaGraph Cypher").replace(
+    "Instructions:", NEBULAGRAPH_EXTRA_INSTRUCTIONS)
+
+
+NGQL_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "question"], template=NGQL_GENERATION_TEMPLATE
+)
+
 CYPHER_QA_TEMPLATE = """You are an assistant that helps to form nice and human understandable answers.
 The information part contains the provided information that you must use to construct an answer.
 The provided information is authorative, you must never doubt it or try to use your internal knowledge to correct it.
@@ -61,15 +83,4 @@ Question: {question}
 Helpful Answer:"""
 CYPHER_QA_PROMPT = PromptTemplate(
     input_variables=["context", "question"], template=CYPHER_QA_TEMPLATE
-)
-
-NEBULAGRAPH_EXTRA_INSTRUCTIONS = """Note: NebulaGraph Cypher requires explicit label specification 
-when referring to node properties, such as using Person.name instead of just name for a Person label.\n"""
-
-NGQL_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
-    "Note: ", NEBULAGRAPH_EXTRA_INSTRUCTIONS)
-
-
-NGQL_GENERATION_PROMPT = PromptTemplate(
-    input_variables=["schema", "question"], template=NGQL_GENERATION_TEMPLATE
 )

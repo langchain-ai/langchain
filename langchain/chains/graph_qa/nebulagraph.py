@@ -48,7 +48,7 @@ class NebulaGraphQAChain(Chain):
         qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
         ngql_prompt: BasePromptTemplate = NGQL_GENERATION_PROMPT,
         **kwargs: Any,
-    ) -> GraphNgqlQAChain:
+    ) -> NebulaGraphQAChain:
         """Initialize from LLM."""
         qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
         ngql_generation_chain = LLMChain(llm=llm, prompt=ngql_prompt)
@@ -83,6 +83,7 @@ class NebulaGraphQAChain(Chain):
         _run_manager.on_text(
             str(context), color="green", end="\n", verbose=self.verbose
         )
+
         result = self.qa_chain(
             {"question": question, "context": context},
             callbacks=callbacks,
