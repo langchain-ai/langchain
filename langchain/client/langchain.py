@@ -10,7 +10,6 @@ from typing import (
     Callable,
     Dict,
     Iterator,
-    List,
     Mapping,
     Optional,
     Sequence,
