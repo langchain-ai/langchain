@@ -70,7 +70,7 @@ class PlaywrightDownloadHandler(DownloadHandler):
         """
         self.timeout = timeout
 
-    def download(self, urls: Sequence[str]) -> List[Blob]:
+    def download(self, urls: Sequence[str]) -> List[MaybeBlob]:
         """Download list of urls synchronously."""
         return asyncio.run(self.adownload(urls))
 
@@ -87,7 +87,7 @@ class PlaywrightDownloadHandler(DownloadHandler):
             html_content = None
         return html_content
 
-    async def adownload(self, urls: Sequence[str]) -> List[Blob]:
+    async def adownload(self, urls: Sequence[str]) -> List[MaybeBlob]:
         """Download a batch of URLs asynchronously using playwright.
 
         Args:
@@ -112,7 +112,7 @@ class RequestsDownloadHandler(DownloadHandler):
         """Initialize the requests download handler."""
         self.web_downloader = web_downloader or WebBaseLoader(web_path=[])
 
-    def download(self, urls: Sequence[str]) -> str:
+    def download(self, urls: Sequence[str]) -> List[MaybeBlob]:
         """Download a batch of URLS synchronously."""
         return asyncio.run(self.adownload(urls))
 
@@ -160,7 +160,7 @@ class AutoDownloadHandler(DownloadHandler):
         must_redownload = [
             (idx, url)
             for idx, (url, blob) in enumerate(zip(urls, blobs))
-            if _is_javascript_required(blob.as_string())
+            if blob is not None and _is_javascript_required(blob.as_string())
         ]
         if must_redownload:
             indexes, urls_to_redownload = zip(*must_redownload)

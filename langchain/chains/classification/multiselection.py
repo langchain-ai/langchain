@@ -132,8 +132,17 @@ def _write_records_to_string(
 T = TypeVar("T")
 
 
-def batch(iterable: Iterable[T], size) -> Iterator[List[T]]:
-    """Batch an iterable into chunks of size `size`."""
+def _batch(iterable: Iterable[T], size: int) -> Iterator[List[T]]:
+    """Batch an iterable into chunks of size `size`.
+
+    Args:
+        iterable: the iterable to batch
+        size: the size of each batch
+
+    Returns:
+        iterator over batches of size `size` except for last batch which will be up
+        to size `size`
+    """
     iterator = iter(iterable)
     while True:
         batch = list(islice(iterator, size))
@@ -167,12 +176,12 @@ class MultiSelectChain(Chain):
         question = inputs["question"]
         columns = inputs.get("columns", None)
 
-        selected = []
+        selected: List[Mapping[str, Any]] = []
         # TODO(): Balance choices into equal batches with constraint dependent
         # on context window and prompt
         max_choices = 30
 
-        for choice_batch in batch(choices, max_choices):
+        for choice_batch in _batch(choices, max_choices):
             records_with_ids = [
                 {**record, "id": idx} for idx, record in enumerate(choice_batch)
             ]
@@ -185,7 +194,7 @@ class MultiSelectChain(Chain):
                 self.llm_chain.predict_and_parse(
                     records=records_str,
                     question=question,
-                    callbacks=run_manager.get_child(),
+                    callbacks=run_manager.get_child() if run_manager else None,
                 ),
             )
             valid_indexes = [idx for idx in indexes if 0 <= idx < len(choice_batch)]
@@ -204,12 +213,12 @@ class MultiSelectChain(Chain):
         question = inputs["question"]
         columns = inputs.get("columns", None)
 
-        selected = []
+        selected: List[Mapping[str, Any]] = []
         # TODO(): Balance choices into equal batches with constraint dependent
         # on context window and prompt
         max_choices = 30
 
-        for choice_batch in batch(choices, max_choices):
+        for choice_batch in _batch(choices, max_choices):
             records_with_ids = [
                 {**record, "id": idx} for idx, record in enumerate(choice_batch)
             ]
@@ -222,7 +231,7 @@ class MultiSelectChain(Chain):
                 await self.llm_chain.apredict_and_parse(
                     records=records_str,
                     question=question,
-                    callbacks=run_manager.get_child(),
+                    callbacks=run_manager.get_child() if run_manager else None,
                 ),
             )
             valid_indexes = [idx for idx in indexes if 0 <= idx < len(choice_batch)]

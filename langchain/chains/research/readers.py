@@ -59,7 +59,7 @@ class DocReadingChain(Chain):
 
         response = self.chain(
             {"input_documents": _sub_docs, "question": question},
-            callbacks=run_manager.get_child(),
+            callbacks=run_manager.get_child() if run_manager else None,
         )
         summary_doc = Document(
             page_content=response["output_text"],
@@ -83,7 +83,7 @@ class DocReadingChain(Chain):
 
         results = await self.chain.acall(
             {"input_documents": _sub_docs, "question": question},
-            callbacks=run_manager.get_child(),
+            callbacks=run_manager.get_child() if run_manager else None,
         )
         summary_doc = Document(
             page_content=results["output_text"],

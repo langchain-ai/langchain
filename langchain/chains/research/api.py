@@ -36,7 +36,8 @@ class Research(Chain):
 
     Limitations:
         * This research chain only implements a single hop at the moment; i.e.,
-          it goes from the questions to a list of URLs to documents to compiling answers.
+          it goes from the questions to a list of URLs to documents to compiling
+          answers.
         * The reader chain needs to match the task. For example, if using a QA refine
           chain, a task of collecting a list of entries from a long document will
           fail because the QA refine chain is not designed to handle such a task.
@@ -145,7 +146,8 @@ class Research(Chain):
             top_k_per_search: The number of documents to return per search.
             max_concurrency: The maximum number of concurrent reads.
             max_num_pages_per_doc: The maximum number of pages to read per document.
-            text_splitter: The text splitter to use to split the document into smaller chunks.
+            text_splitter: The text splitter to use to split the document into
+                           smaller chunks.
             download_handler: The download handler to use to download the documents.
                               Provide either a download handler or the name of a
                               download handler.

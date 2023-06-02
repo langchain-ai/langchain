@@ -167,7 +167,7 @@ async def _arun_searches(
         a list of unique search results
     """
     wrapper = serpapi.SerpAPIWrapper()
-    tasks = [wrapper.results(query) for query in queries]
+    tasks = [wrapper.aresults(query) for query in queries]
     results = await asyncio.gather(*tasks)
 
     finalized_results = []
@@ -218,7 +218,8 @@ class GenericSearcher(Chain):
 
     1. Breaking a complex question into a series of simpler queries using an LLM.
     2. Running the queries against a search engine.
-    3. Selecting the most relevant urls using an LLM (can be replaced with tf-idf or other models).
+    3. Selecting the most relevant urls using an LLM (can be replaced with tf-idf
+       or other models).
 
     This chain is not meant to be used for questions requiring multiple hops to answer.
 
@@ -236,7 +237,7 @@ class GenericSearcher(Chain):
     """
 
     query_generator: LLMChain
-    """An LLM that is used to break down a complex question into a list of simpler queries."""
+    """An LLM used to break down a complex question into a list of simpler queries."""
     link_selection_model: Chain
     """An LLM that is used to select the most relevant urls from the search results."""
     top_k_per_search: int = -1
