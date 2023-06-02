@@ -288,7 +288,8 @@ def test_qdrant_from_texts_stores_duplicated_texts() -> None:
         assert 2 == client.count("test").count
 
 
-def test_qdrant_from_texts_stores_ids() -> None:
+@pytest.mark.parametrize("batch_size", [1, 64])
+def test_qdrant_from_texts_stores_ids(batch_size: int) -> None:
     from qdrant_client import QdrantClient
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -302,6 +303,7 @@ def test_qdrant_from_texts_stores_ids() -> None:
             ids=ids,
             collection_name="test",
             path=str(tmpdir),
+            batch_size=batch_size,
         )
         del vec_store
 
@@ -311,7 +313,8 @@ def test_qdrant_from_texts_stores_ids() -> None:
         assert set(ids) == set(stored_ids)
 
 
-def test_qdrant_add_texts_stores_ids() -> None:
+@pytest.mark.parametrize("batch_size", [1, 64])
+def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
     from qdrant_client import QdrantClient
 
     ids = [
@@ -327,7 +330,7 @@ def test_qdrant_add_texts_stores_ids() -> None:
     )
 
     vec_store = Qdrant(client, "test", ConsistentFakeEmbeddings())
-    returned_ids = vec_store.add_texts(["abc", "def"], ids=ids)
+    returned_ids = vec_store.add_texts(["abc", "def"], ids=ids, batch_size=batch_size)
 
     assert all(first == second for first, second in zip(ids, returned_ids))
     assert 2 == client.count("test").count
