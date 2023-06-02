@@ -49,7 +49,7 @@ class BaseLoader(ABC):
 class BaseBlobParser(ABC):
     """Abstract interface for blob parsers.
 
-    A blob parser is provides a way to parse raw data stored in a blob into one
+    A blob parser provides a way to parse raw data stored in a blob into one
     or more documents.
 
     The parser can be composed with blob loaders, making it easy to re-use
@@ -85,3 +85,85 @@ class BaseBlobParser(ABC):
             List of documents
         """
         return list(self.lazy_parse(blob))
+
+
+class BaseBlobTransformer(ABC):
+    """Abstract interface for blob transformers.
+
+    A blob transformer provides a way to transform raw data stored in a blob into a
+    different data format.
+
+    The transformer can be composed with blob loaders, making it easy to re-use
+    a transformer independent of how the blob was originally loaded.
+    """
+
+    @abstractmethod
+    def lazy_transform(self, blob: Blob) -> Blob:
+        """Lazy transformer interface.
+
+        Subclasses are required to implement this method.
+
+        Args:
+            blob: Blob instance
+
+        Returns:
+            Blob
+        """
+
+    def transform(self, blob: Blob) -> Blob:
+        """Eagerly transform the blob into a different type.
+
+        This is a convenience method for interactive development environment.
+
+        Production applications should favor the lazy_parse method instead.
+
+        Subclasses should generally not over-ride this transform method.
+
+        Args:
+            blob: Blob instance
+
+        Returns:
+            Blob
+        """
+        return self.lazy_transform(blob)
+
+
+class BaseBlobSplitter(ABC):
+    """Abstract interface for blob splitters.
+
+    A blob splitter provides a way to transform raw data stored in a blob into a
+    different data format.
+
+    The transformer can be composed with blob loaders, making it easy to re-use
+    a transformer independent of how the blob was originally loaded.
+    """
+
+    @abstractmethod
+    def lazy_split(self, blob: Blob) -> Iterator[Blob]:
+        """Lazy split interface.
+
+        Subclasses are required to implement this method.
+
+        Args:
+            blob: Blob instance
+
+        Returns:
+            Generator of blobs
+        """
+
+    def split_blob(self, blob: Blob) -> List[Blob]:
+        """Eagerly split the blob into a list of blobs.
+
+        This is a convenience method for interactive development environment.
+
+        Production applications should favor the lazy_split method instead.
+
+        Subclasses should generally not over-ride this split method.
+
+        Args:
+            blob: Blob instance
+
+        Returns:
+            List of blobs
+        """
+        return list(self.lazy_split(blob))
