@@ -1,8 +1,5 @@
 """Tests for the downloader."""
-from langchain.chains.research.fetch import (
-    AutoDownloadHandler,
-    PlaywrightDownloadHandler,
-    RequestsDownloadHandler,
+from langchain.chains.research.download import (
     _is_javascript_required,
 )
 
@@ -22,17 +19,11 @@ def test_is_javascript_required():
     assert _is_javascript_required(
         """
     <html>
-    <body>
     <script>
     console.log("Javascript is required.");
     </script>
+    <body>
     </body>
     </html>
     """
     )
-
-
-def test_requests_handler():
-    """Test that the requests handler is working."""
-    handler = RequestsDownloadHandler()
-    fetch = handler.download(["https://www.google.com"])
