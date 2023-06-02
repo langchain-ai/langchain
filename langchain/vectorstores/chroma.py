@@ -356,11 +356,11 @@ class Chroma(VectorStore):
             raise ValueError(
                 "For update, you must specify an embedding function on creation."
             )
-        embeddings = self._embedding_function.embed_documents(list(text))
+        embeddings = self._embedding_function.embed_documents([text])
 
         self._collection.update(
             ids=[document_id],
-            embeddings=[embeddings[0]],
+            embeddings=embeddings,
             documents=[text],
             metadatas=[metadata],
         )

@@ -49,7 +49,6 @@ class ExampleUpdate(BaseModel):
 class DatasetBase(BaseModel):
     """Dataset base model."""
 
-    tenant_id: UUID
     name: str
     description: Optional[str] = None
 
@@ -68,6 +67,7 @@ class Dataset(DatasetBase):
     """Dataset ORM model."""
 
     id: UUID
+    tenant_id: UUID
     created_at: datetime
     modified_at: Optional[datetime] = Field(default=None)
 
