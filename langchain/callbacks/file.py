@@ -10,7 +10,7 @@ class FileCallbackHandler(BaseCallbackHandler):
     """Callback Handler that writes to a file."""
 
     def __init__(
-        self, filename: str, mode: str = "w", color: Optional[str] = None
+        self, filename: str, mode: str = "a", color: Optional[str] = None
     ) -> None:
         """Initialize callback handler."""
         self.file = open(filename, mode)
