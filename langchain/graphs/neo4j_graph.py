@@ -6,6 +6,7 @@ YIELD label, other, elementType, type, property
 WHERE NOT type = "RELATIONSHIP" AND elementType = "node"
 WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
 RETURN {labels: nodeLabels, properties: properties} AS output
+
 """
 
 rel_properties_query = """
@@ -62,7 +63,7 @@ class Neo4jGraph:
             raise ValueError(
                 "Could not use APOC procedures. "
                 "Please ensure the APOC plugin is installed in Neo4j and that "
-                "the procedure 'apoc.meta.data()' is allowed in Neo4j configuration "
+                "'apoc.meta.data()' is allowed in Neo4j configuration "
             )
 
     @property
