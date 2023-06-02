@@ -61,8 +61,8 @@ class Neo4jGraph:
         except neo4j.exceptions.ClientError:
             raise ValueError(
                 "Could not use APOC procedures. "
-                "Please ensure the APOC plugin is installed in Neo4j "
-                "and that the procedure 'apoc.meta.data()' is allowed in your configuration. "
+                "Please ensure the APOC plugin is installed in Neo4j and that "
+                "the procedure 'apoc.meta.data()' is allowed in Neo4j configuration "
             )
 
     @property
