@@ -1,6 +1,7 @@
 """Callback handlers that allow listening to events in LangChain."""
 
 from langchain.callbacks.aim_callback import AimCallbackHandler
+from langchain.callbacks.argilla_callback import ArgillaCallbackHandler
 from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
 from langchain.callbacks.human import HumanApprovalCallbackHandler
@@ -17,6 +18,7 @@ from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
 
 __all__ = [
+    "ArgillaCallbackHandler",
     "OpenAICallbackHandler",
     "StdOutCallbackHandler",
     "AimCallbackHandler",
