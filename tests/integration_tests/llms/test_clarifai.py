@@ -23,6 +23,7 @@ def test_clarifai_call() -> None:
         with an overall character similar to that of a rope in that it is flexible and curved in compression \
         but linear, rigid, and load-bearing in tension. A chain may consist of two or more links."
     )
+
     assert isinstance(output, str)
     assert llm._llm_type == "clarifai"
     assert llm.model_id == "text-summarization-english-pegasus"

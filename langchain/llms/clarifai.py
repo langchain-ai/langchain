@@ -27,6 +27,8 @@ class Clarifai(LLM):
 
     stub: Any  #: :meta private:
     metadata: Any
+    userDataObject: Any
+
     model_id: Optional[str] = None
     """Model id to use."""
 
@@ -41,6 +43,8 @@ class Clarifai(LLM):
 
     clarifai_pat_key: Optional[str] = None
 
+    api_base: str = "https://api.clarifai.com"
+
     stop: Optional[List[str]] = None
 
     class Config:
@@ -51,14 +55,12 @@ class Clarifai(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that we have all required info to access Clarifai platform and python package exists in environment."""
-        clarifai_pat_key = get_from_dict_or_env(
-            values, "clarifai_pat_key", "CLARIFAI_PAT_KEY"
-        )
+        values["clarifai_pat_key"] = get_from_dict_or_env(values, "clarifai_pat_key", "CLARIFAI_PAT_KEY")
         user_id = values.get("user_id")
         app_id = values.get("app_id")
         model_id = values.get("model_id")
 
-        if clarifai_pat_key is None:
+        if values["clarifai_pat_key"] is None:
             raise ValueError("Please provide a clarifai_pat_key.")
         if user_id is None:
             raise ValueError("Please provide a user_id.")
@@ -66,8 +68,6 @@ class Clarifai(LLM):
             raise ValueError("Please provide a app_id.")
         if model_id is None:
             raise ValueError("Please provide a model_id.")
-
-        values["metadata"] = (("authorization", "Key " + clarifai_pat_key),)
 
         try:
             from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
@@ -79,8 +79,7 @@ class Clarifai(LLM):
             from clarifai_grpc.grpc.api.status import status_code_pb2
         except ImportError:
             raise ImportError(
-                "Could not import cohere python package. "
-                "Please install it with `pip install clarifai`."
+                "Could not import cohere python package. " "Please install it with `pip install clarifai`."
             )
         return values
 
@@ -121,25 +120,23 @@ class Clarifai(LLM):
         """
 
         try:
-            from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
             from clarifai_grpc.grpc.api import (
                 resources_pb2,
                 service_pb2,
-                service_pb2_grpc,
             )
             from clarifai_grpc.grpc.api.status import status_code_pb2
+            from clarifai.auth.helper import ClarifaiAuthHelper
+            from clarifai.client import create_stub
         except ImportError:
             raise ImportError(
-                "Could not import clarifai python package. "
-                "Please install it with `pip install clarifai`."
+                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
             )
 
-        channel = ClarifaiChannel.get_grpc_channel()
-        self.stub = service_pb2_grpc.V2Stub(channel)
-
-        userDataObject = resources_pb2.UserAppIDSet(
-            user_id=self.user_id, app_id=self.app_id
+        auth = ClarifaiAuthHelper(
+            user_id=self.user_id, app_id=self.app_id, pat=self.clarifai_pat_key, base=self.api_base
         )
+        self.userDataObject = auth.get_user_app_id_proto()
+        self.stub = create_stub(auth)
 
         params = self._default_params
         if self.stop is not None and stop is not None:
@@ -150,25 +147,16 @@ class Clarifai(LLM):
             params["stop_sequences"] = stop
 
         post_model_outputs_request = service_pb2.PostModelOutputsRequest(
-            user_app_id=userDataObject,  # The userDataObject is created in the overview and is required when using a PAT
+            user_app_id=self.userDataObject,  # The userDataObject is created in the overview and is required when using a PAT
             model_id=self.model_id,
             version_id=self.model_version_id,  # This is optional. Defaults to the latest model version
-            inputs=[
-                resources_pb2.Input(
-                    data=resources_pb2.Data(text=resources_pb2.Text(raw=prompt))
-                )
-            ],
+            inputs=[resources_pb2.Input(data=resources_pb2.Data(text=resources_pb2.Text(raw=prompt)))],
         )
-        post_model_outputs_response = self.stub.PostModelOutputs(
-            post_model_outputs_request, metadata=self.metadata
-        )
+        post_model_outputs_response = self.stub.PostModelOutputs(post_model_outputs_request)
 
         if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
             print(post_model_outputs_response.status)
-            raise Exception(
-                "Post model outputs failed, status: "
-                + post_model_outputs_response.status.description
-            )
+            raise Exception("Post model outputs failed, status: " + post_model_outputs_response.status.description)
 
         text = post_model_outputs_response.outputs[0].data.text.raw
 
