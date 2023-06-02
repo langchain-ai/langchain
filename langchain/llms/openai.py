@@ -144,11 +144,11 @@ class BaseOpenAI(BaseLLM):
     """Generates best_of completions server-side and returns the "best"."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[str] = None
-    openai_api_base: Optional[str] = None
-    openai_organization: Optional[str] = None
+    openai_api_key: Optional[str] = Field(None, exclude=True, alias="api_key")
+    openai_api_base: Optional[str] = Field(None, exclude=True, alias="api_base")
+    openai_organization: Optional[str] = Field(None, exclude=True, alias="organization")
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = Field(None, exclude=True, alias="proxy")
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
@@ -163,6 +163,8 @@ class BaseOpenAI(BaseLLM):
     """Set of special tokens that are allowed。"""
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
+    pass_creds_at_invocation: bool = False
+    """"""
 
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
@@ -234,7 +236,18 @@ class BaseOpenAI(BaseLLM):
         )
         try:
             import openai
+        except ImportError:
+            raise ImportError(
+                "Could not import openai python package. "
+                "Please install it with `pip install openai`."
+            )
 
+        if values["pass_creds_at_invocation"]:
+            values["openai_api_key"] = openai_api_key
+            values["openai_api_base"] = openai_api_base
+            values["openai_proxy"] = openai_proxy
+            values["openai_organization"] = openai_organization
+        else:
             openai.api_key = openai_api_key
             if openai_api_base:
                 openai.api_base = openai_api_base
@@ -242,12 +255,7 @@ class BaseOpenAI(BaseLLM):
                 openai.organization = openai_organization
             if openai_proxy:
                 openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
-            values["client"] = openai.Completion
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
+        values["client"] = openai.Completion
         if values["streaming"] and values["n"] > 1:
             raise ValueError("Cannot stream results when n > 1.")
         if values["streaming"] and values["best_of"] > 1:
@@ -452,7 +460,17 @@ class BaseOpenAI(BaseLLM):
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
-        return self._default_params
+        if self.pass_creds_at_invocation:
+            creds = {
+                "api_key": self.openai_api_key,
+                "api_base": self.openai_api_base,
+                "proxy": self.openai_proxy,
+                "organization": self.openai_organization,
+            }
+            creds = {k: v for k, v in creds.items() if v}
+        else:
+            creds = {}
+        return {**creds, **self._default_params}
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

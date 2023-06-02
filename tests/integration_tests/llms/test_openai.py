@@ -51,6 +51,13 @@ def test_openai_extra_kwargs() -> None:
         OpenAI(model_kwargs={"model": "text-davinci-003"})
 
 
+def test_openai_call_creds_at_invocation() -> None:
+    """Test valid call to openai."""
+    llm = OpenAI(max_tokens=10, pass_creds_at_invocation=True)
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+
 def test_openai_llm_output_contains_model_name() -> None:
     """Test llm_output contains model_name."""
     llm = OpenAI(max_tokens=10)
