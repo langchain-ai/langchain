@@ -13,6 +13,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
+    from google.cloud import firestore
     from google.cloud import storage
     from google.cloud.aiplatform import MatchingEngineIndex, MatchingEngineIndexEndpoint
     from google.oauth2.service_account import Credentials
@@ -41,8 +42,10 @@ class MatchingEngine(VectorStore):
         index: MatchingEngineIndex,
         endpoint: MatchingEngineIndexEndpoint,
         embedding: Embeddings,
-        gcs_client: storage.Client,
-        gcs_bucket_name: str,
+        gcs_client: Optional[storage.Client] = None,
+        firestore_client: Optional[firestore.Client] = None,
+        gcs_bucket_name: Optional[str] = None,
+        firestore_collection_name: Optional[str] = None,
         credentials: Optional[Credentials] = None,
     ):
         """Vertex Matching Engine implementation of the vector store.
@@ -80,19 +83,24 @@ class MatchingEngine(VectorStore):
         self.index = index
         self.endpoint = endpoint
         self.embedding = embedding
-        self.gcs_client = gcs_client
         self.credentials = credentials
+        self.gcs_client = gcs_client
         self.gcs_bucket_name = gcs_bucket_name
+        self.firestore_client = firestore_client
+        self.firestore_collection_name = firestore_collection_name
+        if not (firestore_collection_name or gcs_bucket_name):
+            raise ValueError("Storage not specified. Either a firestore collection or gcs bucket must be provided!")
 
     def _validate_google_libraries_installation(self) -> None:
         """Validates that Google libraries that are needed are installed."""
         try:
             from google.cloud import aiplatform, storage  # noqa: F401
             from google.oauth2 import service_account  # noqa: F401
+            from google.cloud import firestore
         except ImportError:
             raise ImportError(
                 "You must run `pip install --upgrade "
-                "google-cloud-aiplatform google-cloud-storage`"
+                "google-cloud-aiplatform google-cloud-storage google-cloud-firestore`"
                 "to use the MatchingEngine Vectorstore."
             )
 
@@ -117,13 +125,23 @@ class MatchingEngine(VectorStore):
         jsons = []
         ids = []
         # Could be improved with async.
-        for embedding, text in zip(embeddings, texts):
-            id = str(uuid.uuid4())
-            ids.append(id)
-            jsons.append({"id": id, "embedding": embedding})
-            self._upload_to_gcs(text, f"documents/{id}")
+        if self.gcs_client:
+            for embedding, text in zip(embeddings, texts):
+                id = str(uuid.uuid4())
+                ids.append(id)
+                jsons.append({"id": id, "embedding": embedding})
+                self._upload_to_gcs(text, f"documents/{id}")
 
-        logger.debug(f"Uploaded {len(ids)} documents to GCS.")
+            logger.debug(f"Uploaded {len(ids)} documents to GCS.")
+        
+        else:
+            for embedding, text in zip(embeddings, texts):
+                id = str(uuid.uuid4())
+                ids.append(id)
+                jsons.append({"id": id, "embedding": embedding})
+                self._upload_to_firestore(text, id)
+
+            logger.debug(f"Uploaded {len(ids)} documents to Firestore.")
 
         # Creating json lines from the embedded documents.
         result_str = "\n".join([json.dumps(x) for x in jsons])
@@ -143,7 +161,7 @@ class MatchingEngine(VectorStore):
         logger.debug("Updated index with new configuration.")
 
         return ids
-
+    
     def _upload_to_gcs(self, data: str, gcs_location: str) -> None:
         """Uploads data to gcs_location.
 
@@ -155,6 +173,18 @@ class MatchingEngine(VectorStore):
         blob = bucket.blob(gcs_location)
         blob.upload_from_string(data)
 
+    def _upload_to_firestore(self, data: str, id) -> None:
+        """Uploads data to firestore_collection.
+
+        Args:
+            data: The data that will be stored.
+            id: The id for the data record.
+        """
+        data_load = {
+            'content': data
+        }
+        self.firestore_client.collection(self.firestore_collection_name).document(id).set(data_load)
+        
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
@@ -188,9 +218,14 @@ class MatchingEngine(VectorStore):
         # and the similarity_search method only recevies one query. This
         # means that the match method will always return an array with only
         # one element.
-        for doc in response[0]:
-            page_content = self._download_from_gcs(f"documents/{doc.id}")
-            results.append(Document(page_content=page_content))
+        if self.gcs_client:
+            for doc in response[0]:
+                page_content = self._download_from_gcs(f"documents/{doc.id}")
+                results.append(Document(page_content=page_content))
+        else:
+            for doc in response[0]:
+                page_content = self.firestore_client.collection(self.firestore_collection_name).document(doc.id).get().to_dict()['content']
+                results.append(Document(page_content=page_content))
 
         logger.debug("Downloaded documents for query.")
 
@@ -246,9 +281,10 @@ class MatchingEngine(VectorStore):
         cls: Type["MatchingEngine"],
         project_id: str,
         region: str,
-        gcs_bucket_name: str,
         index_id: str,
         endpoint_id: str,
+        gcs_bucket_name: Optional[str] = None,
+        firestore_collection_name: Optional[str] = None,
         credentials_path: Optional[str] = None,
         embedding: Optional[Embeddings] = None,
     ) -> "MatchingEngine":
@@ -270,14 +306,21 @@ class MatchingEngine(VectorStore):
         Returns:
             A configured MatchingEngine with the texts added to the index.
         """
-        gcs_bucket_name = cls._validate_gcs_bucket(gcs_bucket_name)
         credentials = cls._create_credentials_from_file(credentials_path)
         index = cls._create_index_by_id(index_id, project_id, region, credentials)
         endpoint = cls._create_endpoint_by_id(
             endpoint_id, project_id, region, credentials
         )
-
-        gcs_client = cls._get_gcs_client(credentials, project_id)
+        if gcs_bucket_name:
+            gcs_bucket_name = cls._validate_gcs_bucket(gcs_bucket_name)
+            gcs_client = cls._get_gcs_client(credentials, project_id)
+            firestore_client = None
+        elif firestore_collection_name:
+            firestore_client = cls._get_firestore_client(credentials, project_id)
+            gcs_client = None
+        else:
+            raise ValueError("Either gcs_bucket_name or firestore_collection_name must be provided!")
+            
         cls._init_aiplatform(project_id, region, gcs_bucket_name, credentials)
 
         return cls(
@@ -286,8 +329,10 @@ class MatchingEngine(VectorStore):
             endpoint=endpoint,
             embedding=embedding or cls._get_default_embeddings(),
             gcs_client=gcs_client,
+            firestore_client = firestore_client,
             credentials=credentials,
             gcs_bucket_name=gcs_bucket_name,
+            firestore_collection_name=firestore_collection_name
         )
 
     @classmethod
@@ -400,6 +445,20 @@ class MatchingEngine(VectorStore):
 
         return storage.Client(credentials=credentials, project=project_id)
 
+    @classmethod
+    def _get_firestore_client(
+        cls, credentials: "Credentials", project_id: str
+    ) -> "firestore.Client":
+        """Lazily creates a Firestore client.
+
+        Returns:
+            A configured Firestore client.
+        """
+
+        from google.cloud import firestore
+
+        return firestore.Client(credentials=credentials)
+    
     @classmethod
     def _init_aiplatform(
         cls,
