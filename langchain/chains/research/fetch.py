@@ -110,7 +110,7 @@ class RequestsDownloadHandler(DownloadHandler):
 def _repackage_as_blobs(urls: Sequence[str], contents: Sequence[str]) -> List[Blob]:
     """Repackage the contents as blobs."""
     return [
-        Blob(data=content, mimetype=mimetypes.guess_type(url)[0])
+        Blob(data=content, mimetype=mimetypes.guess_type(url)[0], path=url)
         for url, content in zip(urls, contents)
     ]
 
