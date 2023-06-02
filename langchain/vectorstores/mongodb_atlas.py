@@ -10,6 +10,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    TypeVar,
     Union,
 )
 
@@ -18,9 +19,9 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
-    from pymongo import MongoClient
     from pymongo.collection import Collection
-    from pymongo.typings import _DocumentType
+
+MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def __init__(
         self,
-        collection: Collection[_DocumentType],
+        collection: Collection[MongoDBDocumentType],
         embedding: Embeddings,
         *,
         index_name: str = "default",
@@ -232,7 +233,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        collection: Optional[Collection[_DocumentType]] = None,
+        collection: Optional[Collection[MongoDBDocumentType]] = None,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
         """Construct MongoDBAtlasVectorSearch wrapper from raw documents.

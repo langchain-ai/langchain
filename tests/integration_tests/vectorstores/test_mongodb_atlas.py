@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from time import sleep
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -19,20 +19,9 @@ NAMESPACE = "langchain_test_db.langchain_test_collection"
 CONNECTION_STRING = os.environ.get("MONGODB_ATLAS_URI")
 DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
 
-
-def get_test_client() -> Optional[MongoClient]:
-    try:
-        from pymongo import MongoClient
-
-        client: MongoClient = MongoClient(CONNECTION_STRING)
-        return client
-    except:  # noqa: E722
-        return None
-
-
 # Instantiate as constant instead of pytest fixture to prevent needing to make multiple
 # connections.
-TEST_CLIENT = get_test_client()
+TEST_CLIENT = MongoClient(CONNECTION_STRING)
 collection = TEST_CLIENT[DB_NAME][COLLECTION_NAME]
 
 
