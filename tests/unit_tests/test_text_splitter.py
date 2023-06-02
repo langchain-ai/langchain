@@ -4,7 +4,6 @@ import pytest
 from langchain.docstore.document import Document
 from langchain.text_splitter import (
     CharacterTextSplitter,
-    CodeTextSplitter,
     Language,
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
@@ -202,8 +201,8 @@ CHUNK_SIZE = 16
 
 
 def test_python_code_splitter() -> None:
-    splitter = CodeTextSplitter(
-        language=Language.PYTHON, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.PYTHON, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 def hello_world():
@@ -225,8 +224,8 @@ hello_world()
 
 
 def test_golang_code_splitter() -> None:
-    splitter = CodeTextSplitter(
-        language=Language.GO, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.GO, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 package main
@@ -258,8 +257,8 @@ func main() {
 
 
 def test_rst_code_splitter() -> None:
-    splitter = CodeTextSplitter(
-        language=Language.RST, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.RST, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 Sample Document
@@ -294,8 +293,8 @@ Lists
 
 
 def test_proto_file_splitter() -> None:
-    splitter = CodeTextSplitter(
-        language=Language.PROTO, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.PROTO, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 syntax = "proto3";
@@ -328,8 +327,8 @@ message Person {
 
 
 def test_javascript_code_splitter() -> None:
-    splitter = CodeTextSplitter(
-        language=Language.JS, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.JS, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 function helloWorld() {
@@ -354,8 +353,8 @@ helloWorld();
 
 
 def test_java_code_splitter() -> None:
-    splitter = CodeTextSplitter(
-        language=Language.JAVA, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.JAVA, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 public class HelloWorld {
@@ -380,8 +379,8 @@ public class HelloWorld {
 
 
 def test_cpp_code_splitter() -> None:
-    splitter = CodeTextSplitter(
-        language=Language.CPP, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.CPP, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 #include <iostream>
@@ -405,8 +404,8 @@ int main() {
 
 
 def test_scala_code_splitter() -> None:
-    splitter = CodeTextSplitter(
-        language=Language.SCALA, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.SCALA, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 object HelloWorld {
@@ -430,8 +429,8 @@ object HelloWorld {
 
 
 def test_ruby_code_splitter() -> None:
-    splitter = CodeTextSplitter(
-        language=Language.RUBY, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.RUBY, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 def hello_world
@@ -451,8 +450,8 @@ hello_world
 
 
 def test_php_code_splitter() -> None:
-    splitter = CodeTextSplitter(
-        language=Language.PHP, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.PHP, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 <?php
@@ -478,8 +477,8 @@ hello_world();
 
 
 def test_swift_code_splitter() -> None:
-    splitter = CodeTextSplitter(
-        language=Language.SWIFT, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.SWIFT, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 func helloWorld() {
@@ -500,8 +499,8 @@ helloWorld()
 
 
 def test_rust_code_splitter() -> None:
-    splitter = CodeTextSplitter(
-        language=Language.RUST, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.RUST, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 fn main() {

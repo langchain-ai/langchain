@@ -11,7 +11,9 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Mapping,
     Optional,
+    Sequence,
     Tuple,
     Union,
 )
@@ -27,11 +29,19 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.tracers.schemas import Run, TracerSession
 from langchain.chains.base import Chain
 from langchain.client.models import (
+    APIFeedbackSource,
     Dataset,
     DatasetCreate,
     Example,
     ExampleCreate,
+    ExampleUpdate,
+    Feedback,
+    FeedbackCreate,
+    FeedbackSourceBase,
+    FeedbackSourceType,
+    ListFeedbackQueryParams,
     ListRunsQueryParams,
+    ModelFeedbackSource,
 )
 from langchain.client.runner_utils import arun_on_examples, run_on_examples
 from langchain.utils import raise_for_status_with_text, xor_args
@@ -158,8 +168,8 @@ class LangChainPlusClient(BaseSettings):
         df: pd.DataFrame,
         name: str,
         description: str,
-        input_keys: List[str],
-        output_keys: List[str],
+        input_keys: Sequence[str],
+        output_keys: Sequence[str],
     ) -> Dataset:
         """Upload a dataframe as individual examples to the LangChain+ API."""
         dataset = self.create_dataset(dataset_name=name, description=description)
@@ -173,8 +183,8 @@ class LangChainPlusClient(BaseSettings):
         self,
         csv_file: Union[str, Tuple[str, BytesIO]],
         description: str,
-        input_keys: List[str],
-        output_keys: List[str],
+        input_keys: Sequence[str],
+        output_keys: Sequence[str],
     ) -> Dataset:
         """Upload a CSV file to the LangChain+ API."""
         files = {"file": csv_file}
@@ -223,10 +233,7 @@ class LangChainPlusClient(BaseSettings):
         query_params = ListRunsQueryParams(
             session_id=session_id, run_type=run_type, **kwargs
         )
-        filtered_params = {
-            k: v for k, v in query_params.dict().items() if v is not None
-        }
-        response = self._get("/runs", params=filtered_params)
+        response = self._get("/runs", params=query_params.dict(exclude_none=True))
         raise_for_status_with_text(response)
         yield from [Run(**run) for run in response.json()]
 
@@ -279,7 +286,9 @@ class LangChainPlusClient(BaseSettings):
         raise_for_status_with_text(response)
         return None
 
-    def create_dataset(self, dataset_name: str, description: str) -> Dataset:
+    def create_dataset(
+        self, dataset_name: str, *, description: Optional[str] = None
+    ) -> Dataset:
         """Create a dataset in the LangChain+ API."""
         dataset = DatasetCreate(
             tenant_id=self.tenant_id,
@@ -393,6 +402,110 @@ class LangChainPlusClient(BaseSettings):
         response = self._get("/examples", params=params)
         raise_for_status_with_text(response)
         yield from [Example(**dataset) for dataset in response.json()]
+
+    def update_example(
+        self,
+        example_id: str,
+        *,
+        inputs: Optional[Dict[str, Any]] = None,
+        outputs: Optional[Mapping[str, Any]] = None,
+        dataset_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Update a specific example."""
+        example = ExampleUpdate(
+            inputs=inputs,
+            outputs=outputs,
+            dataset_id=dataset_id,
+        )
+        response = requests.patch(
+            f"{self.api_url}/examples/{example_id}",
+            headers=self._headers,
+            data=example.json(exclude_none=True),
+        )
+        raise_for_status_with_text(response)
+        return response.json()
+
+    def create_feedback(
+        self,
+        run_id: str,
+        key: str,
+        *,
+        score: Union[float, int, bool, None] = None,
+        value: Union[float, int, bool, str, dict, None] = None,
+        correction: Union[str, dict, None] = None,
+        comment: Union[str, None] = None,
+        source_info: Optional[Dict[str, Any]] = None,
+        feedback_source_type: FeedbackSourceType = FeedbackSourceType.API,
+    ) -> Feedback:
+        """Create a feedback in the LangChain+ API.
+
+        Args:
+            run_id: The ID of the run to provide feedback on.
+            key: The name of the metric, tag, or 'aspect' this
+                feedback is about.
+            score: The score to rate this run on the metric
+                or aspect.
+            value: The display value or non-numeric value for this feedback.
+            correction: The proper ground truth for this run.
+            comment: A comment about this feedback.
+            source_info: Information about the source of this feedback.
+            feedback_source_type: The type of feedback source.
+        """
+        if feedback_source_type == FeedbackSourceType.API:
+            feedback_source: FeedbackSourceBase = APIFeedbackSource(
+                metadata=source_info
+            )
+        elif feedback_source_type == FeedbackSourceType.MODEL:
+            feedback_source = ModelFeedbackSource(metadata=source_info)
+        else:
+            raise ValueError(f"Unknown feedback source type {feedback_source_type}")
+        feedback = FeedbackCreate(
+            run_id=run_id,
+            key=key,
+            score=score,
+            value=value,
+            correction=correction,
+            comment=comment,
+            feedback_source=feedback_source,
+        )
+        response = requests.post(
+            self.api_url + "/feedback",
+            headers=self._headers,
+            data=feedback.json(),
+        )
+        raise_for_status_with_text(response)
+        return Feedback(**feedback.dict())
+
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    def read_feedback(self, feedback_id: str) -> Feedback:
+        """Read a feedback from the LangChain+ API."""
+        response = self._get(f"/feedback/{feedback_id}")
+        raise_for_status_with_text(response)
+        return Feedback(**response.json())
+
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    def list_feedback(
+        self,
+        *,
+        run_ids: Optional[Sequence[Union[str, UUID]]] = None,
+        **kwargs: Any,
+    ) -> Iterator[Feedback]:
+        """List the feedback objects on the LangChain+ API."""
+        params = ListFeedbackQueryParams(
+            run=run_ids,
+            **kwargs,
+        )
+        response = self._get("/feedback", params=params.dict(exclude_none=True))
+        raise_for_status_with_text(response)
+        yield from [Feedback(**feedback) for feedback in response.json()]
+
+    def delete_feedback(self, feedback_id: str) -> None:
+        """Delete a feedback by ID."""
+        response = requests.delete(
+            f"{self.api_url}/feedback/{feedback_id}",
+            headers=self._headers,
+        )
+        raise_for_status_with_text(response)
 
     async def arun_on_dataset(
         self,

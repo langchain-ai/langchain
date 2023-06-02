@@ -52,6 +52,7 @@ from langchain.document_loaders.joplin import JoplinLoader
 from langchain.document_loaders.json_loader import JSONLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.mastodon import MastodonTootsLoader
+from langchain.document_loaders.max_compute import MaxComputeLoader
 from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
@@ -172,6 +173,7 @@ __all__ = [
     "MWDumpLoader",
     "MastodonTootsLoader",
     "MathpixPDFLoader",
+    "MaxComputeLoader",
     "ModernTreasuryLoader",
     "NotebookLoader",
     "NotionDBLoader",

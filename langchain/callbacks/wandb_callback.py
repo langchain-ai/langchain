@@ -200,9 +200,9 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             notes=self.notes,
         )
         warning = (
-            "The wandb callback is currently in beta and is subject to change "
-            "based on updates to `langchain`. Please report any issues to "
-            "https://github.com/wandb/wandb/issues with the tag `langchain`."
+            "DEPRECATION: The `WandbCallbackHandler` will soon be deprecated in favor "
+            "of the `WandbTracer`. Please update your code to use the `WandbTracer` "
+            "instead."
         )
         wandb.termwarn(
             warning,
