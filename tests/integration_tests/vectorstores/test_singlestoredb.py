@@ -16,7 +16,6 @@ TEST_RESULT = [Document(page_content="foo"), Document(page_content="foo")]
 
 def drop(table_name: str) -> None:
     import singlestoredb as s2
-
     with s2.connect(TEST_SINGLESTOREDB_URL) as conn:
         conn.autocommit(True)
         with conn.cursor() as cursor:
@@ -49,8 +48,8 @@ def test_singlestoredb(texts: List[str]) -> None:
     docsearch = SingleStoreDB.from_texts(
         texts,
         NormilizedFakeEmbeddings(),
-        connection_url=TEST_SINGLESTOREDB_URL,
         table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == TEST_SINGLE_RESULT
@@ -64,8 +63,8 @@ def test_singlestoredb_new_vector(texts: List[str]) -> None:
     docsearch = SingleStoreDB.from_texts(
         texts,
         NormilizedFakeEmbeddings(),
-        connection_url=TEST_SINGLESTOREDB_URL,
         table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
     )
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)
@@ -80,14 +79,14 @@ def test_singlestoredb_from_existing(texts: List[str]) -> None:
     SingleStoreDB.from_texts(
         texts,
         NormilizedFakeEmbeddings(),
-        connection_url=TEST_SINGLESTOREDB_URL,
         table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
     )
     # Test creating from an existing
     docsearch2 = SingleStoreDB(
-        TEST_SINGLESTOREDB_URL,
         NormilizedFakeEmbeddings().embed_query,
         table_name="test_singlestoredb_from_existing",
+        host=TEST_SINGLESTOREDB_URL,
     )
     output = docsearch2.similarity_search("foo", k=1)
     assert output == TEST_SINGLE_RESULT
@@ -102,8 +101,8 @@ def test_singlestoredb_from_documents(texts: List[str]) -> None:
     docsearch = SingleStoreDB.from_documents(
         docs,
         NormilizedFakeEmbeddings(),
-        connection_url=TEST_SINGLESTOREDB_URL,
         table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == TEST_SINGLE_WITH_METADATA_RESULT
@@ -118,13 +117,13 @@ def test_singlestoredb_add_texts_to_existing(texts: List[str]) -> None:
     SingleStoreDB.from_texts(
         texts,
         NormilizedFakeEmbeddings(),
-        connection_url=TEST_SINGLESTOREDB_URL,
         table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
     )
     docsearch = SingleStoreDB(
-        TEST_SINGLESTOREDB_URL,
         NormilizedFakeEmbeddings().embed_query,
         table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
     )
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)

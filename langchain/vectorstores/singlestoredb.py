@@ -13,6 +13,8 @@ from typing import (
     Type,
 )
 
+from sqlalchemy.pool import QueuePool
+
 from pydantic import BaseModel, root_validator
 
 from langchain.docstore.document import Document
@@ -34,22 +36,12 @@ class SingleStoreDB(VectorStore):
 
             embeddings = OpenAIEmbeddings()
             vectorstore = SingleStoreDB(
-                connection_url="https://user:password@127.0.0.1:3306/database"
                 embedding_function=embeddings.embed_query,
+                host="https://user:password@127.0.0.1:3306/database"
             )
     """
 
-    def __init__(
-        self,
-        connection_url: str,
-        embedding_function: Callable,
-        table_name: str = "embeddings",
-        content_field: str = "content",
-        metadata_field: str = "metadata",
-        vector_field: str = "vector",
-        **kwargs: Any,
-    ):
-        """Initialize with necessary components."""
+    def _get_connection(self: SingleStoreDB) -> Any:
         try:
             import singlestoredb as s2
         except ImportError:
@@ -57,37 +49,47 @@ class SingleStoreDB(VectorStore):
                 "Could not import singlestoredb python package. "
                 "Please install it with `pip install singlestoredb`."
             )
+        return s2.connect(**self.connection_kwargs)
+
+    def __init__(
+        self,
+        embedding_function: Callable,
+        table_name: str = "embeddings",
+        content_field: str = "content",
+        metadata_field: str = "metadata",
+        vector_field: str = "vector",
+        pool_size: int = 5,
+        max_overflow: int = 10,
+        timeout: float = 30,
+        **kwargs: Any,
+    ):
+        """Initialize with necessary components."""
 
         self.embedding_function = embedding_function
         self.table_name = table_name
         self.content_field = content_field
         self.metadata_field = metadata_field
         self.vector_field = vector_field
-        try:
-            # connect to singlestoredb from url
-            conn = s2.connect(connection_url)
-            # check if the connection was established
-            if not conn.is_connected():
-                raise ValueError("connection was not established")
-            conn.autocommit(True)
-        except ValueError as e:
-            raise ValueError(f"SingleStoreDB failed to connect: {e}")
-
-        self.conn = conn
+        self.connection_kwargs = kwargs
+        self.connection_pool = QueuePool(self._get_connection, max_overflow=max_overflow, pool_size=pool_size, timeout=timeout)
         self._create_table()
 
     def _create_table(self: SingleStoreDB) -> None:
-        with self.conn.cursor() as cur:
-            cur.execute(
-                """CREATE TABLE IF NOT EXISTS {}
-                ({} TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
-                {} BLOB, {} JSON);""".format(
-                    self.table_name,
-                    self.content_field,
-                    self.vector_field,
-                    self.metadata_field,
-                ),
-            )
+        conn = self.connection_pool.connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """CREATE TABLE IF NOT EXISTS {}
+                    ({} TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+                    {} BLOB, {} JSON);""".format(
+                        self.table_name,
+                        self.content_field,
+                        self.vector_field,
+                        self.metadata_field,
+                    ),
+                )
+        finally:
+            conn.close()
 
     def add_texts(
         self,
@@ -108,25 +110,28 @@ class SingleStoreDB(VectorStore):
         Returns:
             List[str]: empty list
         """
-
-        with self.conn.cursor() as cur:
-            # Write data to singlestore db
-            for i, text in enumerate(texts):
-                # Use provided values by default or fallback
-                metadata = metadatas[i] if metadatas else {}
-                embedding = (
-                    embeddings[i] if embeddings else self.embedding_function(text)
-                )
-                cur.execute(
-                    "INSERT INTO {} VALUES (%s, JSON_ARRAY_PACK(%s), %s)".format(
-                        self.table_name
-                    ),
-                    (
-                        text,
-                        "[{}]".format(",".join(map(str, embedding))),
-                        json.dumps(metadata),
-                    ),
-                )
+        conn = self.connection_pool.connect()
+        try:
+            with conn.cursor() as cur:
+                # Write data to singlestore db
+                for i, text in enumerate(texts):
+                    # Use provided values by default or fallback
+                    metadata = metadatas[i] if metadatas else {}
+                    embedding = (
+                        embeddings[i] if embeddings else self.embedding_function(text)
+                    )
+                    cur.execute(
+                        "INSERT INTO {} VALUES (%s, JSON_ARRAY_PACK(%s), %s)".format(
+                            self.table_name
+                        ),
+                        (
+                            text,
+                            "[{}]".format(",".join(map(str, embedding))),
+                            json.dumps(metadata),
+                        ),
+                    )
+        finally:
+            conn.close()
         return []
 
     def similarity_search(
@@ -159,29 +164,33 @@ class SingleStoreDB(VectorStore):
         """
         # Creates embedding vector from user query
         embedding = self.embedding_function(query)
-
-        with self.conn.cursor() as cur:
-            cur.execute(
-                """SELECT {}, {}, DOT_PRODUCT({}, JSON_ARRAY_PACK(%s)) as __score 
-                FROM {} ORDER BY __score DESC LIMIT %s""".format(
-                    self.content_field,
-                    self.metadata_field,
-                    self.vector_field,
-                    self.table_name,
-                ),
-                (
-                    "[{}]".format(",".join(map(str, embedding))),
-                    k,
-                ),
-            )
-
-            return [
-                (
-                    Document(page_content=row[0], metadata=row[1]),
-                    float(row[2]),
+        conn = self.connection_pool.connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """SELECT {}, {}, DOT_PRODUCT({}, JSON_ARRAY_PACK(%s)) as __score 
+                    FROM {} ORDER BY __score DESC LIMIT %s""".format(
+                        self.content_field,
+                        self.metadata_field,
+                        self.vector_field,
+                        self.table_name,
+                    ),
+                    (
+                        "[{}]".format(",".join(map(str, embedding))),
+                        k,
+                    ),
                 )
-                for row in cur.fetchall()
-            ]
+
+                result = [
+                    (
+                        Document(page_content=row[0], metadata=row[1]),
+                        float(row[2]),
+                    )
+                    for row in cur.fetchall()
+                ]
+        finally:
+            conn.close()
+        return result
 
     @classmethod
     def from_texts(
@@ -193,6 +202,9 @@ class SingleStoreDB(VectorStore):
         content_field: str = "content",
         metadata_field: str = "metadata",
         vector_field: str = "vector",
+        pool_size: int = 5,
+        max_overflow: int = 10,
+        timeout: float = 30,
         **kwargs: Any,
     ) -> SingleStoreDB:
         """Create a SingleStoreDB vectorstore from raw documents.
@@ -209,24 +221,20 @@ class SingleStoreDB(VectorStore):
                 s2 = SingleStoreDB.from_texts(
                     texts,
                     embeddings,
-                    connection_url="username:password@localhost:3306/database"
+                    host="username:password@localhost:3306/database"
                 )
         """
 
-        connection_url = get_from_dict_or_env(
-            kwargs, "connection_url", "SINGLESTOREDB_URL"
-        )
-
-        if "connection_url" in kwargs:
-            kwargs.pop("connection_url")
 
         instance = cls(
-            connection_url=connection_url,
             table_name=table_name,
             content_field=content_field,
             metadata_field=metadata_field,
             vector_field=vector_field,
             embedding_function=embedding.embed_query,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            timeout=timeout,
             **kwargs,
         )
         instance.add_texts(texts, metadatas, embedding.embed_documents(texts), **kwargs)
