@@ -20,26 +20,6 @@ class FileCallbackHandler(BaseCallbackHandler):
         """Destructor to cleanup when done."""
         self.file.close()
 
-    def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
-    ) -> None:
-        """Print out the prompts."""
-        pass
-
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        """Do nothing."""
-        pass
-
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        """Do nothing."""
-        pass
-
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
-        """Do nothing."""
-        pass
-
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
@@ -54,21 +34,6 @@ class FileCallbackHandler(BaseCallbackHandler):
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain."""
         print_text("\n\033[1m> Finished chain.\033[0m", end="\n", file=self.file)
-
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
-        """Do nothing."""
-        pass
-
-    def on_tool_start(
-        self,
-        serialized: Dict[str, Any],
-        input_str: str,
-        **kwargs: Any,
-    ) -> None:
-        """Do nothing."""
-        pass
 
     def on_agent_action(
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
@@ -90,12 +55,6 @@ class FileCallbackHandler(BaseCallbackHandler):
         print_text(output, color=color if color else self.color, file=self.file)
         if llm_prefix is not None:
             print_text(f"\n{llm_prefix}", file=self.file)
-
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
-        """Do nothing."""
-        pass
 
     def on_text(
         self,
