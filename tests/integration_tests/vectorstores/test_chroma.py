@@ -4,8 +4,8 @@ import pytest
 from langchain.docstore.document import Document
 from langchain.vectorstores import Chroma
 from tests.integration_tests.vectorstores.fake_embeddings import (
-    FakeEmbeddings,
     ConsistentFakeEmbeddings,
+    FakeEmbeddings,
 )
 
 
