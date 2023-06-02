@@ -196,8 +196,6 @@ class Clarifai(VectorStore):
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        persist_directory: Optional[str] = None,
         **kwargs: Any,
     ) -> Clarifai:
         """Create a Clarifai vectorstore from a raw documents.
@@ -231,8 +229,6 @@ class Clarifai(VectorStore):
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,
-        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        persist_directory: Optional[str] = None,
         **kwargs: Any,
     ) -> Clarifai:
         """Create a Clarifai vectorstore from a list of documents.
