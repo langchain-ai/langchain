@@ -3,14 +3,22 @@ from __future__ import annotations
 
 import uuid
 from abc import ABC
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, Mapping
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_env
 from langchain.vectorstores.base import VectorStore
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -310,26 +318,12 @@ class ElasticVectorSearch(VectorStore, ABC):
             )
         return response
 
+
 class ElasticKnnSearch(ElasticVectorSearch):
     """
     A class for performing k-Nearest Neighbors (k-NN) search on an Elasticsearch index.
     The class is designed for a text search scenario where documents are text strings
     and their embeddings are vector representations of those strings.
-
-    Examples in the jupyter notebook: https://github.com/hwchase17/langchain/blob/master/docs/modules/indexes/vectorstores/examples/elasticsearch.ipynb
-
-    Methods
-    -------
-    create_index()
-        Creates an Elasticsearch index.
-    add_texts(texts, model_id)
-        Adds the provided texts to the Elasticsearch index.
-    from_texts(texts, dims, model_id)
-        Creates a new Elasticsearch index and adds the provided texts to it.
-    knn_search(query, k, query_vector, model_id, size, source, fields)
-        Performs a k-NN search on the Elasticsearch index.
-    knn_hybrid_search(query, k, query_vector, model_id, size, source, knn_boost, query_boost, fields)
-        Performs a hybrid search (combining k-NN search and standard Elasticsearch query) on the Elasticsearch index.
     """
 
     def __init__(
@@ -340,25 +334,22 @@ class ElasticKnnSearch(ElasticVectorSearch):
         es_cloud_id: Optional[str] = None,
         es_user: Optional[str] = None,
         es_password: Optional[str] = None,
-#        *args, **kwargs
     ):
         """
-        Initializes an instance of the ElasticKnnSearch class and sets up the Elasticsearch client.
+        Initializes an instance of the ElasticKnnSearch class and sets up the
+            Elasticsearch client.
 
-        Parameters
-        ----------
-        index_name : str
-            The name of the Elasticsearch index.
-        embedding : Embeddings
-            An instance of the Embeddings class, used to generate vector representations of text strings.
-        es_connection : Elasticsearch, optional
-            An existing Elasticsearch connection.
-        es_cloud_id : str, optional
-            The Cloud ID of the Elasticsearch instance. Required if creating a new connection.
-        es_user : str, optional
-            The username for the Elasticsearch instance. Required if creating a new connection.
-        es_password : str, optional
-            The password for the Elasticsearch instance. Required if creating a new connection.
+        Args:
+            index_name: The name of the Elasticsearch index.
+            embedding: An instance of the Embeddings class, used to generate vector
+                representations of text strings.
+            es_connection: An existing Elasticsearch connection.
+            es_cloud_id: The Cloud ID of the Elasticsearch instance. Required if
+                creating a new connection.
+            es_user: The username for the Elasticsearch instance. Required if
+                creating a new connection.
+            es_password: The password for the Elasticsearch instance. Required if
+                creating a new connection.
         """
 
         try:
@@ -369,10 +360,6 @@ class ElasticKnnSearch(ElasticVectorSearch):
                 "Please install it with `pip install elasticsearch`."
             )
 
-        # need to import to test as only ElasticsearchEmbeddings supports model_id arg
-        from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
-
-
         self.embedding = embedding
         self.index_name = index_name
 
@@ -380,18 +367,17 @@ class ElasticKnnSearch(ElasticVectorSearch):
         if es_connection is not None:
             self.client = es_connection
         else:
-            # If credentials for a new Elasticsearch connection are provided, create a new connection.
+            # If credentials for a new Elasticsearch connection are provided,
+            # create a new connection.
             if es_cloud_id and es_user and es_password:
                 self.client = elasticsearch.Elasticsearch(
-                    cloud_id=es_cloud_id,
-                    basic_auth=(es_user, es_password)
+                    cloud_id=es_cloud_id, basic_auth=(es_user, es_password)
                 )
             else:
                 raise ValueError(
                     """Either provide a pre-existing Elasticsearch connection, \
                 or valid credentials for creating a new connection."""
-                    )
-
+                )
 
     @staticmethod
     def _default_knn_mapping(dims: int) -> Dict:
@@ -403,27 +389,28 @@ class ElasticKnnSearch(ElasticVectorSearch):
                     "type": "dense_vector",
                     "dims": dims,
                     "index": True,
-                    "similarity": "dot_product"
-                }
+                    "similarity": "dot_product",
+                },
             }
         }
 
     @staticmethod
-    def _default_knn_query(query_vector: Optional[List[float]] = None,
-                           query: Optional[str] = None,
-                           model_id: Optional[str] = None,
-                           field: Optional[str] = 'vector',
-                           k: Optional[int] = 10,
-                           num_candidates: Optional[int] = 10
-                          ) -> Dict:
-        knn = {
+    def _default_knn_query(
+        query_vector: Optional[List[float]] = None,
+        query: Optional[str] = None,
+        model_id: Optional[str] = None,
+        field: Optional[str] = "vector",
+        k: Optional[int] = 10,
+        num_candidates: Optional[int] = 10,
+    ) -> Dict:
+        knn: Dict = {
             "field": field,
             "k": k,
             "num_candidates": num_candidates,
         }
 
         # Case 1: `query_vector` is provided, but not `model_id` -> use query_vector
-        if query_vector and not  model_id:
+        if query_vector and not model_id:
             knn["query_vector"] = query_vector
 
         # Case 2: `query` and `model_id` are provided, -> use query_vector_builder
@@ -431,279 +418,138 @@ class ElasticKnnSearch(ElasticVectorSearch):
             knn["query_vector_builder"] = {
                 "text_embedding": {
                     "model_id": model_id,  # use 'model_id' argument
-                    "model_text": query  # use 'query' argument
+                    "model_text": query,  # use 'query' argument
                 }
             }
 
         else:
-            raise ValueError("Either `query_vector` or `model_id` must be provided, but not both.")
+            raise ValueError(
+                "Either `query_vector` or `model_id` must be provided, but not both."
+            )
 
         return knn
 
-    def create_index(self) -> None:
-        """
-        Creates an Elasticsearch index. The name of the index is specified during the instantiation of the class.
-        """
-        self.client.indices.create(
-            index=self.index_name,
-            mappings= self.mapping
-        )
-
-
-    def add_texts(self,
-              texts: Iterable[str],
-              metadatas: Optional[List[Dict[Any, Any]]] = None,
-              model_id: Optional[str] = None,
-              refresh_indices: bool = False,
-              **kwargs: Any
-              ) -> None:
- #             ) -> List[str]:
-
-        """
-        Adds the provided texts to the Elasticsearch index.
-        This assumes the index already exists. if you wish to create a new index while indexing texts
-        call `from_texts` method
-
-        Parameters
-        ----------
-        texts : list of str
-            The texts to add to the index.
-        model_id : str, optional
-            The ID of the model to use for generating text embeddings. If not provided, the default embedding model is used.
-        """
-
-        try:
-            from elasticsearch.helpers import bulk
-        except ImportError:
-            raise ImportError(
-                "Could not import elasticsearch python package. "
-                "Please install it with `pip install elasticsearch`."
-            )
-
-        # Check if the index exists.
-        if not self.client.indices.exists(index=self.index_name):
-            # If the index does not exist, raise an exception.
-            raise Exception(f"The index '{self.index_name}' does not exist. If you want to create a new index while encoding texts, call 'from_texts' instead.")
-
-        # Assign the encoding function from the instance's 'embedding' attribute to 'emb_func'
-        emb_func = self.embedding.embed_documents
-
-        # Generate embeddings for the input texts.
-        # If 'model_id' is provided, use it as an argument to 'emb_func'.
-        # Otherwise, call 'emb_func' with 'texts' as the only argument.
-        #embeddings = emb_func(list(texts)) if not model_id else emb_func(list(texts), model_id=model_id)
-        if model_id:
-            if isinstance(emb_func, ElasticsearchEmbeddings):
-                embeddings = emb_func(list(texts), model_id=model_id)
-            else:
-                raise ValueError("model_id is only supported with ElasticsearchEmbeddings")
-        else:
-            embeddings = emb_func(list(texts))
-
-
-
-        # Create a list of dictionaries, each containing a text and its corresponding embedding.
-        # 'zip(texts, embeddings)' is used to iterate over 'texts' and 'embeddings' in parallel.
-        body = [
-            {
-                '_op_type': 'index',
-                '_index': self.index_name,
-                "text": text,
-                "vector": vector
-            }
-            for text, vector in zip(texts, embeddings)
-        ]
-
-        # Add the list of text-embedding pairs to the Elasticsearch index.
-        bulk(self.client, body)
-
-
-
-    def from_texts(
-            self, texts: List[str],
-            dims: int,
-            model_id: Optional[str] = None
-        ) -> None:
-
-        """
-        Creates a new Elasticsearch index and adds the provided texts to it.
-
-        This method first generates a default index mapping for k-NN search, using the provided dimensions. It then
-        creates a new Elasticsearch index with this mapping. Finally, it encodes the provided texts and adds them
-        to the newly created index.
-
-        Parameters
-        ----------
-        texts : list of str
-            The texts to add to the index.
-        dims : int
-            The dimensionality of the vector space in which the embeddings lie. This is used to generate
-            the index mapping for k-NN search.
-        model_id : str, optional
-            The ID of the model to use for generating text embeddings. If not provided, the default embedding
-            model is used.
-
-        Raises
-        ------
-        Exception
-            If the Elasticsearch index does not exist.
-        """
-
-        # Create the mapping using the provided dimensions.
-        self.mapping = self._default_knn_mapping(dims=dims)
-
-        # Create a new Elasticsearch index.
-        self.create_index()
-
-        # Encode the provided texts and add them to the newly created index.
-        self.add_texts(texts, model_id=model_id)
-
-
-    def knn_search(self,
-                   #query: Optional[Union[str, List[str]]] = None,
-                   query: Optional[str] = None,
-                   k: Optional[int] = 10,
-                   query_vector: Optional[List[float]] = None,
-                   model_id: Optional[str] = None,
-                   size: Optional[int] = 10,
-                   source: Optional[bool] = True,
-                   #fields: Optional[Union[list[str], None]] = None
-                   fields: Optional[Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]] = None,
-                  ) -> Dict:
-
+    def knn_search(
+        self,
+        query: Optional[str] = None,
+        k: Optional[int] = 10,
+        query_vector: Optional[List[float]] = None,
+        model_id: Optional[str] = None,
+        size: Optional[int] = 10,
+        source: Optional[bool] = True,
+        fields: Optional[
+            Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
+        ] = None,
+    ) -> Dict:
         """
         Performs a k-nearest neighbor (k-NN) search on the Elasticsearch index.
 
-        The search can be conducted using either a raw query vector or a model ID. The method first generates
-        the body of the search query, which can be interpreted by Elasticsearch. It then performs the k-NN
+        The search can be conducted using either a raw query vector or a model ID.
+        The method first generates
+        the body of the search query, which can be interpreted by Elasticsearch.
+        It then performs the k-NN
         search on the Elasticsearch index and returns the results.
 
-        Parameters
-        ----------
-        query : str or list of str, optional
-            The query or queries to be used for the search. Required if `query_vector` is not provided.
-        k : int, optional
-            The number of nearest neighbors to return. Defaults to 10.
-        query_vector : list of float, optional
-            The query vector to be used for the search. Required if `query` is not provided.
-        model_id : str, optional
-            The ID of the model to use for generating the query vector, if `query` is provided.
-        size : int, optional
-            The number of search hits to return. Defaults to 10.
-        source : bool, optional
-            Whether to include the source of each hit in the results. Defaults to True.
-        fields : list of str or None, optional
-            The fields to include in the source of each hit. If None, all fields are included. Defaults to None.
+        Args:
+            query: The query or queries to be used for the search. Required if
+                `query_vector` is not provided.
+            k: The number of nearest neighbors to return. Defaults to 10.
+            query_vector: The query vector to be used for the search. Required if
+                `query` is not provided.
+            model_id: The ID of the model to use for generating the query vector, if
+                `query` is provided.
+            size: The number of search hits to return. Defaults to 10.
+            source: Whether to include the source of each hit in the results.
+            fields: The fields to include in the source of each hit. If None, all
+                fields are included.
 
-        Returns
-        -------
-        dict
+        Returns:
             The search results.
 
-        Raises
-        ------
-        ValueError
-            If neither `query_vector` nor `model_id` is provided, or if both are provided.
+        Raises:
+            ValueError: If neither `query_vector` nor `model_id` is provided, or if
+                both are provided.
         """
 
         knn_query_body = self._default_knn_query(
-            query_vector=query_vector,
-            query=query,
-            model_id=model_id,
-            k=k        )
+            query_vector=query_vector, query=query, model_id=model_id, k=k
+        )
 
         # Perform the kNN search on the Elasticsearch index and return the results.
-        return dict(self.client.search(
+        res = self.client.search(
             index=self.index_name,
             knn=knn_query_body,
             size=size,
             source=source,
-            fields=fields
-        ))
+            fields=fields,
+        )
+        return dict(res)
 
+    def knn_hybrid_search(
+        self,
+        query: Optional[str] = None,
+        k: Optional[int] = 10,
+        query_vector: Optional[List[float]] = None,
+        model_id: Optional[str] = None,
+        size: Optional[int] = 10,
+        source: Optional[bool] = True,
+        knn_boost: Optional[float] = 0.9,
+        query_boost: Optional[float] = 0.1,
+        fields: Optional[
+            Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
+        ] = None,
+    ) -> Dict[Any, Any]:
+        """Performs a hybrid k-nearest neighbor (k-NN) and text-based search on the
+            Elasticsearch index.
 
-    def knn_hybrid_search(self,
-                    #query: Union[str, List[str]],
-                    query: Optional[str] = None,
-                    k: Optional[int] = 10,
-                    query_vector: Optional[List[float]] = None,
-                    model_id: Optional[str] = None,
-                    size: Optional[int] = 10,
-                    source: Optional[bool] = True,
-                    knn_boost: Optional[float] = 0.9,
-                    query_boost: Optional[float] = 0.1,
-                    #fields: Optional[Union[list[str], None]] = None
-                    #fields: Optional[List[Mapping[str, Any]]] = None
-                    fields: Optional[Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]] = None,
-                    ) -> Dict[Any, Any]:
+        The search can be conducted using either a raw query vector or a model ID.
+        The method first generates
+        the body of the k-NN search query and the text-based query, which can be
+        interpreted by Elasticsearch.
+        It then performs the hybrid search on the Elasticsearch index and returns the
+        results.
 
-        """
-        Performs a hybrid k-nearest neighbor (k-NN) and text-based search on the Elasticsearch index.
+        Args:
+            query: The query or queries to be used for the search. Required if
+                `query_vector` is not provided.
+            k: The number of nearest neighbors to return. Defaults to 10.
+            query_vector: The query vector to be used for the search. Required if
+                `query` is not provided.
+            model_id: The ID of the model to use for generating the query vector, if
+                `query` is provided.
+            size: The number of search hits to return. Defaults to 10.
+            source: Whether to include the source of each hit in the results.
+            knn_boost: The boost factor for the k-NN part of the search.
+            query_boost: The boost factor for the text-based part of the search.
+            fields
+                The fields to include in the source of each hit. If None, all fields are
+                included. Defaults to None.
 
-        The search can be conducted using either a raw query vector or a model ID. The method first generates
-        the body of the k-NN search query and the text-based query, which can be interpreted by Elasticsearch.
-        It then performs the hybrid search on the Elasticsearch index and returns the results.
-
-        Parameters
-        ----------
-        query : str or list of str
-            The query or queries to be used for the search. Required if `query_vector` is not provided.
-        k : int, optional
-            The number of nearest neighbors to return. Defaults to 10.
-        query_vector : list of float, optional
-            The query vector to be used for the search. Required if `query` is not provided.
-        model_id : str, optional
-            The ID of the model to use for generating the query vector, if `query` is provided.
-        size : int, optional
-            The number of search hits to return. Defaults to 10.
-        source : bool, optional
-            Whether to include the source of each hit in the results. Defaults to True.
-        knn_boost : int, optional
-            The boost factor for the k-NN part of the search. Defaults to 0.9.
-        query_boost : int, optional
-            The boost factor for the text-based part of the search. Defaults to 0.1.
-        fields : list of str or None, optional
-            The fields to include in the source of each hit. If None, all fields are included. Defaults to None.
-
-        Returns
-        -------
-        dict
+        Returns:
             The search results.
 
-        Raises
-        ------
-        ValueError
-            If neither `query_vector` nor `model_id` is provided, or if both are provided.
+        Raises:
+            ValueError: If neither `query_vector` nor `model_id` is provided, or if
+                both are provided.
         """
 
-
         knn_query_body = self._default_knn_query(
-            query_vector=query_vector,
-            query=query,
-            model_id=model_id,
-            k=k)
+            query_vector=query_vector, query=query, model_id=model_id, k=k
+        )
 
         # Modify the knn_query_body to add a "boost" parameter
         knn_query_body["boost"] = knn_boost
 
         # Generate the body of the standard Elasticsearch query
-        match_query_body = {
-                "match": {
-                    "text": {
-                        "query": query,
-                        "boost": query_boost
-                    }
-                }
-            }
-
+        match_query_body = {"match": {"text": {"query": query, "boost": query_boost}}}
 
         # Perform the hybrid search on the Elasticsearch index and return the results.
-        return dict(self.client.search(
-                            index=self.index_name,
-                            query=match_query_body,
-                            knn=knn_query_body,
-                            fields=fields,
-                            size=size,
-                            source=source
-                          ))
-
+        res = self.client.search(
+            index=self.index_name,
+            query=match_query_body,
+            knn=knn_query_body,
+            fields=fields,
+            size=size,
+            source=source,
+        )
+        return dict(res)
