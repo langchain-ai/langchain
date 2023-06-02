@@ -1,5 +1,6 @@
 """Handle chained inputs."""
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TextIO
+
 
 _TEXT_COLOR_MAPPING = {
     "blue": "36;1",
@@ -33,13 +34,10 @@ def get_bolded_text(text: str) -> str:
 
 
 def print_text(
-    text: str, color: Optional[str] = None, end: str = "", file=None
+    text: str, color: Optional[str] = None, end: str = "", file: Optional[TextIO] = None
 ) -> None:
     """Print text with highlighting and no end characters."""
-    if color is None:
-        text_to_print = text
-    else:
-        text_to_print = get_colored_text(text, color)
+    text_to_print = get_colored_text(text, color) if color else text
     print(text_to_print, end=end, file=file)
     if file:
         file.flush()  # ensure all printed content are written to file

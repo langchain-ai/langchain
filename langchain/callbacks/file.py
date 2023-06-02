@@ -16,7 +16,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         self.file = open(filename, mode)
         self.color = color
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destructor to cleanup when done."""
         self.file.close()
 
