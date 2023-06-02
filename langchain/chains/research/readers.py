@@ -34,7 +34,7 @@ class DocReadingChain(Chain):
     @property
     def output_keys(self) -> List[str]:
         """Return the output keys."""
-        return ["document"]
+        return ["answer"]
 
     def _call(
         self,
@@ -62,7 +62,7 @@ class DocReadingChain(Chain):
             page_content=response["output_text"],
             metadata=source_document.metadata,
         )
-        return {"document": summary_doc}
+        return {"answer": summary_doc}
 
     async def _acall(
         self,
@@ -86,7 +86,7 @@ class DocReadingChain(Chain):
             metadata=doc.metadata,
         )
 
-        return {"document": summary_doc}
+        return {"answer": summary_doc}
 
 
 class ParallelApplyChain(Chain):
