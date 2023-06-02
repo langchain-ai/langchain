@@ -9,9 +9,11 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 class FileCallbackHandler(BaseCallbackHandler):
     """Callback Handler that writes to a file."""
 
-    def __init__(self, filename: str, color: Optional[str] = None) -> None:
+    def __init__(
+        self, filename: str, mode: str = "w", color: Optional[str] = None
+    ) -> None:
         """Initialize callback handler."""
-        self.file = open(filename, "w")
+        self.file = open(filename, mode)
         self.color = color
 
     def __del__(self):
@@ -44,12 +46,14 @@ class FileCallbackHandler(BaseCallbackHandler):
         """Print out that we are entering a chain."""
         class_name = serialized["name"]
         print_text(
-            f"\n\n\033[1m> Entering new {class_name} chain...\033[0m", file=self.file
+            f"\n\n\033[1m> Entering new {class_name} chain...\033[0m",
+            end="\n",
+            file=self.file,
         )
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain."""
-        print_text("\n\033[1m> Finished chain.\033[0m", file=self.file)
+        print_text("\n\033[1m> Finished chain.\033[0m", end="\n", file=self.file)
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
