@@ -79,6 +79,8 @@ class ChainCrawler(BlobCrawler):
 
     def crawl(self, blob: Blob, question: str) -> List[str]:
         """Explore the blob and suggest additional content to explore."""
+        if not blob.source:
+            raise NotImplementedError()
         records, columns = _extract_records(blob)
 
         result = self.chain(

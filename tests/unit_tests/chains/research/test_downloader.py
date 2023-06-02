@@ -4,7 +4,7 @@ from langchain.chains.research.download import (
 )
 
 
-def test_is_javascript_required():
+def test_is_javascript_required() -> None:
     """Check whether a given page should be re-downloaded with javascript executed."""
     assert not _is_javascript_required(
         """

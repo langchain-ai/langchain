@@ -85,10 +85,12 @@ class Research(Chain):
         urls = search_results["urls"]
         blobs = self.downloader.download(urls)
         parser = MarkdownifyHTMLParser()
-        docs = itertools.chain.from_iterable(parser.lazy_parse(blob) for blob in blobs)
-        inputs = [{"doc": doc, "question": question} for doc in docs]
+        docs = itertools.chain.from_iterable(
+            parser.lazy_parse(blob) for blob in blobs if blob is not None
+        )
+        _inputs = [{"doc": doc, "question": question} for doc in docs]
         results = self.reader(
-            inputs, callbacks=run_manager.get_child() if run_manager else None
+            _inputs, callbacks=run_manager.get_child() if run_manager else None
         )
         return {
             "docs": [result["answer"] for result in results["inputs"]],
@@ -111,9 +113,9 @@ class Research(Chain):
         docs = itertools.chain.from_iterable(
             parser.lazy_parse(blob) for blob in blobs if blob is not None
         )
-        inputs = [{"doc": doc, "question": question} for doc in docs]
+        _inputs = [{"doc": doc, "question": question} for doc in docs]
         results = await self.reader.acall(
-            inputs,
+            _inputs,
             callbacks=run_manager.get_child() if run_manager else None,
         )
         return {
@@ -157,7 +159,9 @@ class Research(Chain):
         if isinstance(text_splitter, str):
             if text_splitter == "recursive":
                 _text_splitter_kwargs = text_splitter_kwargs or {}
-                _text_splitter = RecursiveCharacterTextSplitter(**_text_splitter_kwargs)
+                _text_splitter: TextSplitter = RecursiveCharacterTextSplitter(
+                    **_text_splitter_kwargs
+                )
             else:
                 raise ValueError(f"Invalid text splitter: {text_splitter}")
         elif isinstance(text_splitter, TextSplitter):
@@ -167,7 +171,7 @@ class Research(Chain):
 
         if isinstance(download_handler, str):
             if download_handler == "auto":
-                _download_handler = AutoDownloadHandler()
+                _download_handler: DownloadHandler = AutoDownloadHandler()
             else:
                 raise ValueError(f"Invalid download handler: {download_handler}")
         elif isinstance(download_handler, DownloadHandler):

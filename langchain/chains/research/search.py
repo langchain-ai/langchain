@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import typing
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from bs4 import BeautifulSoup
@@ -257,8 +258,12 @@ class GenericSearcher(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         question = inputs["question"]
-        queries = self.query_generator.predict_and_parse(
-            callbacks=run_manager.get_child(), question=question
+        queries = typing.cast(
+            List[str],
+            self.query_generator.predict_and_parse(
+                callbacks=run_manager.get_child() if run_manager else None,
+                question=question,
+            ),
         )
         results = _run_searches(queries, top_k=self.top_k_per_search)
         deuped_results = _deduplicate_objects(results, "link")
@@ -271,7 +276,7 @@ class GenericSearcher(Chain):
                 "question": question,
                 "choices": records,
             },
-            callbacks=run_manager.get_child(),
+            callbacks=run_manager.get_child() if run_manager else None,
         )
         return {"urls": [result["link"] for result in response_["selected"]]}
 
@@ -281,8 +286,12 @@ class GenericSearcher(Chain):
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         question = inputs["question"]
-        queries = await self.query_generator.apredict_and_parse(
-            callbacks=run_manager.get_child(), question=question
+        queries = typing.cast(
+            List[str],
+            await self.query_generator.apredict_and_parse(
+                callbacks=run_manager.get_child() if run_manager else None,
+                question=question,
+            ),
         )
         results = _run_searches(queries, top_k=self.top_k_per_search)
         deuped_results = _deduplicate_objects(results, "link")
@@ -295,7 +304,7 @@ class GenericSearcher(Chain):
                 "question": question,
                 "choices": records,
             },
-            callbacks=run_manager.get_child(),
+            callbacks=run_manager.get_child() if run_manager else None,
         )
         return {"urls": [result["link"] for result in response_["selected"]]}
 
