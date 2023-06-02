@@ -19,6 +19,7 @@ services:
       - PORT=1984
       - LANGCHAIN_ENV=local_docker
       - LOG_LEVEL=warning
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     ports:
       - 1984:1984
     depends_on:

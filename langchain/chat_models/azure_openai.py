@@ -24,11 +24,13 @@ class AzureChatOpenAI(ChatOpenAI):
     - ``OPENAI_API_KEY``
     - ``OPENAI_API_BASE``
     - ``OPENAI_API_VERSION``
+    - ``OPENAI_PROXY``
 
     For exmaple, if you have `gpt-35-turbo` deployed, with the deployment name
     `35-turbo-dev`, the constructor should look like:
 
     .. code-block:: python
+
         AzureChatOpenAI(
             deployment_name="35-turbo-dev",
             openai_api_version="2023-03-15-preview",
@@ -46,6 +48,7 @@ class AzureChatOpenAI(ChatOpenAI):
     openai_api_version: str = ""
     openai_api_key: str = ""
     openai_organization: str = ""
+    openai_proxy: str = ""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -76,6 +79,12 @@ class AzureChatOpenAI(ChatOpenAI):
             "OPENAI_ORGANIZATION",
             default="",
         )
+        openai_proxy = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",
+        )
         try:
             import openai
 
@@ -85,6 +94,8 @@ class AzureChatOpenAI(ChatOpenAI):
             openai.api_key = openai_api_key
             if openai_organization:
                 openai.organization = openai_organization
+            if openai_proxy:
+                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

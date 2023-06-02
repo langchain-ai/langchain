@@ -115,7 +115,36 @@ To get a report of current coverage, run the following:
 make coverage
 ```
 
+### Working with Optional Dependencies
+
+Langchain relies heavily on optional dependencies to keep the Langchain package lightweight.
+
+If you're adding a new dependency to Langchain, assume that it will be an optional dependency, and
+that most users won't have it installed.
+
+Users that do not have the dependency installed should be able to **import** your code without
+any side effects (no warnings, no errors, no exceptions). 
+
+To introduce the dependency to the pyproject.toml file correctly, please do the following: 
+
+1. Add the dependency to the main group as an optional dependency
+  ```bash
+  poetry add --optional [package_name]
+  ```
+2. Open pyproject.toml and add the dependency to the `extended_testing` extra
+3. Relock the poetry file to update the extra.
+  ```bash
+  poetry lock --no-update
+  ```
+4. Add a unit test that the very least attempts to import the new code. Ideally the unit
+test makes use of lightweight fixtures to test the logic of the code.
+5. Please use the `@pytest.mark.requires(package_name)` decorator for any tests that require the dependency.
+
 ### Testing
+
+See section about optional dependencies.
+
+#### Unit Tests
 
 Unit tests cover modular logic that does not require calls to outside APIs.
 
@@ -133,7 +162,19 @@ make docker_tests
 
 If you add new logic, please add a unit test.
 
+
+
+#### Integration Tests
+
 Integration tests cover logic that requires making calls to outside APIs (often integration with other services).
+
+**warning** Almost no tests should be integration tests. 
+
+  Tests that require making network connections make it difficult for other
+  developers to test the code.
+
+  Instead favor relying on `responses` library and/or mock.patch to mock
+  requests using small fixtures.
 
 To run integration tests:
 
