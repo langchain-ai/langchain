@@ -33,6 +33,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
     def parse(self, text: str) -> StructuredQuery:
         try:
             expected_keys = ["query", "filter"]
+            allowed_keys = ["query", "filter", "limit"]
             parsed = parse_and_check_json_markdown(text, expected_keys)
             if len(parsed["query"]) == 0:
                 parsed["query"] = " "
@@ -40,10 +41,10 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
                 parsed["filter"] = None
             else:
                 parsed["filter"] = self.ast_parse(parsed["filter"])
+            if not parsed.get("limit"):
+                parsed.pop("limit", None)
             return StructuredQuery(
-                query=parsed["query"],
-                filter=parsed["filter"],
-                limit=parsed.get("limit"),
+                **{k: v for k, v in parsed.items() if k in allowed_keys}
             )
         except Exception as e:
             raise OutputParserException(
