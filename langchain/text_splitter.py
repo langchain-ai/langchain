@@ -514,7 +514,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # Split along section titles
                 "\n===\n",
                 "\n---\n",
-                "\n***\n",
+                "\n\*\*\*\n",
                 # Split along directive markers
                 "\n.. ",
                 # Split by the normal type of lines
