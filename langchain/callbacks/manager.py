@@ -153,6 +153,8 @@ def _handle_event(
             else:
                 logger.warning(f"Error in {event_name} callback: {e}")
         except Exception as e:
+            if handler.raise_error:
+                raise e
             logging.warning(f"Error in {event_name} callback: {e}")
 
 
