@@ -12,7 +12,10 @@ from langchain.text_splitter import TextSplitter
 
 
 class DocReadingChain(Chain):
-    """A chain that reads the document.
+    """A reader chain should use one of the QA chains to answer a question.
+
+    This chain is also responsible for splitting the document into smaller chunks
+    and then passing the chunks to an underlying QA chain.
 
     A brute force chain that reads an entire document (or the first N pages).
     """
@@ -43,11 +46,8 @@ class DocReadingChain(Chain):
     ) -> Dict[str, Any]:
         """Process a long document synchronously."""
         source_document = inputs["doc"]
-
-        if not isinstance(source_document, Document):
-            raise TypeError(f"Expected a Document, got {type(source_document)}")
-
         question = inputs["question"]
+
         sub_docs = self.text_splitter.split_documents([source_document])
         if self.max_num_docs > 0:
             _sub_docs = sub_docs[: self.max_num_docs]
@@ -70,9 +70,9 @@ class DocReadingChain(Chain):
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Process a long document asynchronously."""
-        doc = inputs["doc"]
+        source_document = inputs["doc"]
         question = inputs["question"]
-        sub_docs = self.text_splitter.split_documents([doc])
+        sub_docs = self.text_splitter.split_documents([source_document])
         if self.max_num_docs > 0:
             _sub_docs = sub_docs[: self.max_num_docs]
         else:
@@ -83,7 +83,7 @@ class DocReadingChain(Chain):
         )
         summary_doc = Document(
             page_content=results["output_text"],
-            metadata=doc.metadata,
+            metadata=source_document.metadata,
         )
 
         return {"answer": summary_doc}
