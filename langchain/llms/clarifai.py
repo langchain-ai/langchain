@@ -7,27 +7,25 @@ from pydantic import Extra, root_validator
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
 
 class Clarifai(LLM):
-    """Wrapper around Cohere large language models.
+    """Wrapper around Clarifai's large language models.
 
-    To use, you should have the ``cohere`` python package installed, and the
-    environment variable ``COHERE_API_KEY`` set with your API key, or pass
+    To use, you should have the ``clarifai`` python package installed, and the
+    environment variable ``CLARIFAI_PAT_KEY`` set with your PAT key, or pass
     it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
-            from langchain.llms import Cohere
-            cohere = Cohere(model="gptd-instruct-tft", cohere_api_key="my-api-key")
+            from langchain.llms import Clarifai
+            clarifai_llm = Clarifai(clarifai_pat_key=CLARIFAI_PAT_KEY, user_id=USER_ID, app_id=APP_ID, model_id=MODEL_ID)
     """
 
     stub: Any  #: :meta private:
-    request: Any
     metadata: Any
     model_id: Optional[str] = None
     """Model id to use."""
@@ -57,22 +55,21 @@ class Clarifai(LLM):
         user_id = values.get("user_id")
         app_id = values.get("app_id")
         model_id = values.get("model_id")
-        model_version_id = values.get("model_version_id")
 
         try:
             from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
             from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
+            from clarifai_grpc.grpc.api.status import status_code_pb2
 
-            channel = ClarifaiChannel.get_grpc_channel()
-            values["stub"] = service_pb2_grpc.V2Stub(channel)
+            if clarifai_pat_key is None:
+                raise ValueError("Please provide a clarifai_pat_key.")
+            if user_id is None:
+                raise ValueError("Please provide a user_id.")
+            if app_id is None:
+                raise ValueError("Please provide a app_id.")
+            if model_id is None:
+                raise ValueError("Please provide a model_id.")
 
-            userDataObject = resources_pb2.UserAppIDSet(user_id=user_id, app_id=app_id)
-            values["request"] = service_pb2.PostModelOutputsRequest(
-                user_app_id=userDataObject,  # The userDataObject is created in the overview and is required when using a PAT
-                model_id=model_id,
-                version_id=model_version_id,  # This is optional. Defaults to the latest model version
-                inputs=[],
-            )
             values["metadata"] = (("authorization", "Key " + clarifai_pat_key),)
 
         except ImportError:
@@ -102,7 +99,7 @@ class Clarifai(LLM):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
-        """Call out to Cohere's generate endpoint.
+        """Call out to Clarfai's PostModelOutputs endpoint.
 
         Args:
             prompt: The prompt to pass into the model.
@@ -114,16 +111,22 @@ class Clarifai(LLM):
         Example:
             .. code-block:: python
 
-                response = cohere("Tell me a joke.")
+                response = clarifai_llm("Tell me a joke.")
         """
 
         try:
             from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
             from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
+            from clarifai_grpc.grpc.api.status import status_code_pb2
         except ImportError:
             raise ImportError(
-                "Could not import cohere python package. " "Please install it with `pip install clarifai`."
+                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
             )
+
+        channel = ClarifaiChannel.get_grpc_channel()
+        self.stub = service_pb2_grpc.V2Stub(channel)
+
+        userDataObject = resources_pb2.UserAppIDSet(user_id=self.user_id, app_id=self.app_id)
 
         params = self._default_params
         if self.stop is not None and stop is not None:
@@ -133,16 +136,20 @@ class Clarifai(LLM):
         else:
             params["stop_sequences"] = stop
 
-        self.request.inputs.add(data=resources_pb2.Data(text=resources_pb2.Text(raw=prompt)))
-        post_model_outputs_response = self.stub.PostModelOutputs(self.request, metadata=self.metadata)
+        post_model_outputs_request = service_pb2.PostModelOutputsRequest(
+            user_app_id=userDataObject,  # The userDataObject is created in the overview and is required when using a PAT
+            model_id=self.model_id,
+            version_id=self.model_version_id,  # This is optional. Defaults to the latest model version
+            inputs=[resources_pb2.Input(data=resources_pb2.Data(text=resources_pb2.Text(raw=prompt)))],
+        )
+        post_model_outputs_response = self.stub.PostModelOutputs(post_model_outputs_request, metadata=self.metadata)
 
-        if post_model_outputs_response.status.code != 10000:
+        if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
             print(post_model_outputs_response.status)
             raise Exception("Post model outputs failed, status: " + post_model_outputs_response.status.description)
 
         text = post_model_outputs_response.outputs[0].data.text.raw
 
-        # If stop tokens are provided, Cohere's endpoint returns them.
         # In order to make this consistent with other endpoints, we strip them.
         if stop is not None or self.stop is not None:
             text = enforce_stop_tokens(text, params["stop_sequences"])
