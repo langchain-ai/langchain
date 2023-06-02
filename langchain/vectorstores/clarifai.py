@@ -47,7 +47,7 @@ class Clarifai(VectorStore):
                     "Could not find CLARIFAI_PAT in your environment. "
                     "Please set that env variable with a valid personal access token from https://clarifai.com/settings/security."
                 )
-            pat = os.environ["CLARIFAI_PAT"]
+            pat = os.environ["CLARIFAI_PAT_KEY"]
 
         from clarifai.auth.helper import DEFAULT_BASE, ClarifaiAuthHelper
         from clarifai.client import create_stub
@@ -116,7 +116,6 @@ class Clarifai(VectorStore):
         if self._number_of_docs is not None:
             k = self._number_of_docs
 
-        # traceback.print_stack()
         post_annotations_searches_response = self._stub.PostAnnotationsSearches(
             service_pb2.PostAnnotationsSearchesRequest(
                 user_app_id=self._userDataObject,
@@ -135,7 +134,7 @@ class Clarifai(VectorStore):
                         )
                     )
                 ],
-                pagination=service_pb2.Pagination(page=1, per_page=self._number_of_docs),
+                pagination=service_pb2.Pagination(page=1, per_page=k),
             )
         )
 
