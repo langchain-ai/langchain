@@ -11,7 +11,8 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
     
     Args:
         dataset_name: name of the `FeedbackDataset` in Argilla. Note that it must exist in advance.
-            If you need help on how to create a `FeedbackDataset` in Argilla, please visit TODO.
+            If you need help on how to create a `FeedbackDataset` in Argilla, please visit
+            https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html.
         workspace_name: name of the workspace in Argilla where the specified `FeedbackDataset` lives in.
             Defaults to `None`, which means that the default workspace will be used.
         api_url: URL of the Argilla Server that we want to use, and where the `FeedbackDataset` lives in.
@@ -50,7 +51,8 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         
         Args:
             dataset_name: name of the `FeedbackDataset` in Argilla. Note that it must exist in advance.
-                If you need help on how to create a `FeedbackDataset` in Argilla, please visit TODO.
+                If you need help on how to create a `FeedbackDataset` in Argilla, please visit
+                https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html.
             workspace_name: name of the workspace in Argilla where the specified `FeedbackDataset` lives in.
                 Defaults to `None`, which means that the default workspace will be used.
             api_url: URL of the Argilla Server that we want to use, and where the `FeedbackDataset` lives in.
@@ -120,7 +122,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 f"Please check that the dataset with name={self.dataset_name} in the "
                 f"workspace={self.workspace_name} exists in advance. If you need help on "
                 "how to create a `langchain`-compatible `FeedbackDataset` in Argilla, please "
-                "visit TODO."
+                "visit https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html."
                 "If the problem persists please report it to https://github.com/argilla-io/argilla/issues "
                 f"with the label `langchain`."
             ) from e
@@ -132,7 +134,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 "had fields that are not supported yet for the `langchain` integration. Supported fields are: "
                 f"{supported_fields}, and the current `FeedbackDataset` fields are {[field.name for field in self.dataset.fields]}. "
                 "For more information on how to create a `langchain`-compatible `FeedbackDataset` in Argilla, "
-                "please visit TODO."
+                "please visit https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html."
             )
 
         self.prompts = {}
