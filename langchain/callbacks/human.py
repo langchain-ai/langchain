@@ -1,12 +1,10 @@
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 from uuid import UUID
-
-from pydantic import BaseModel
 
 from langchain.callbacks.base import BaseCallbackHandler
 
 
-def _default_approval_fn(_input: Any) -> bool:
+def _default_approve(_input: Any) -> bool:
     msg = (
         "Do you approve of the following input? "
         "Anything except 'Y'/'Yes' (case-insensitive) will be treated as a no."
@@ -16,44 +14,26 @@ def _default_approval_fn(_input: Any) -> bool:
     return resp.lower() in ("yes", "y")
 
 
-class InputRejectedException(Exception):
-    """"""
+def _default_true(_: Dict[str, Any]) -> bool:
+    return True
 
 
-class HumanApprovalCallbackHandler(BaseCallbackHandler, BaseModel):
+class HumanRejectedException(Exception):
+    """Exception to raise when a person manually review and rejects a value."""
+
+
+class HumanApprovalCallbackHandler(BaseCallbackHandler):
+    """Callback for manually validating values."""
+
     raise_error: bool = True
-    get_approval: Callable[[], bool] = _default_approval_fn
-    should_check: Callable[[Dict[str, Any]], bool] = lambda _: True
 
-    def on_llm_start(
+    def __init__(
         self,
-        serialized: Dict[str, Any],
-        prompts: List[str],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        if self.should_check(serialized) and not self.get_approval(prompts):
-            prompts_str = "\n".join(prompts)
-            raise InputRejectedException(
-                f"Prompts {prompts_str} to model {serialized} were rejected."
-            )
-
-    def on_chain_start(
-        self,
-        serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        if self.should_check(serialized) and not self.get_approval(inputs):
-            inputs_str = "\n".join(f"{k}: {v}" for k, v in inputs.items())
-            raise InputRejectedException(
-                f"Inputs {inputs_str} to chain {serialized} were rejected."
-            )
+        approve: Callable[[Any], bool] = _default_approve,
+        should_check: Callable[[Dict[str, Any]], bool] = _default_true,
+    ):
+        self._approve = approve
+        self._should_check = should_check
 
     def on_tool_start(
         self,
@@ -64,7 +44,7 @@ class HumanApprovalCallbackHandler(BaseCallbackHandler, BaseModel):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        if self.should_check(serialized) and not self.get_approval(input_str):
-            raise InputRejectedException(
+        if self._should_check(serialized) and not self._approve(input_str):
+            raise HumanRejectedException(
                 f"Inputs {input_str} to tool {serialized} were rejected."
             )
