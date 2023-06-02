@@ -166,9 +166,7 @@ class FeedbackBase(BaseModel):
     """Comment or explanation for the feedback."""
     correction: Union[str, dict, None] = None
     """Correction for the run."""
-    feedback_source: Optional[
-        Union[APIFeedbackSource, ModelFeedbackSource, Mapping[str, Any]]
-    ] = None
+    feedback_source: Optional[FeedbackSourceBase] = None
     """The source of the feedback."""
 
     class Config:
@@ -180,7 +178,7 @@ class FeedbackCreate(FeedbackBase):
 
     id: UUID = Field(default_factory=uuid4)
 
-    feedback_source: APIFeedbackSource
+    feedback_source: FeedbackSourceBase
     """The source of the feedback."""
 
 
