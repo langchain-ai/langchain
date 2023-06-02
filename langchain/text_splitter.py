@@ -617,7 +617,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # End of code block
                 "```\n\n",
                 # Horizontal lines
-                "\n\n***\n\n",
+                "\n\n\*\*\*\n\n",
                 "\n\n---\n\n",
                 "\n\n___\n\n",
                 # Note that this splitter doesn't handle horizontal lines defined
