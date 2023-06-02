@@ -15,7 +15,7 @@ from langchain.utils import get_from_dict_or_env
 
 class _AnthropicCommon(BaseModel):
     client: Any = None  #: :meta private:
-    model: str = "claude-v1"
+    model_name: str = "claude-v1"
     """Model name to use."""
 
     max_tokens_to_sample: int = 256
@@ -41,6 +41,15 @@ class _AnthropicCommon(BaseModel):
     HUMAN_PROMPT: Optional[str] = None
     AI_PROMPT: Optional[str] = None
     count_tokens: Optional[Callable[[str], int]] = None
+
+    # Backwards compatibility for change of model parameter to common model_name property.
+    @property
+    def model(self) -> str:
+        return self.model_name
+
+    @model.setter
+    def model(self, value: str) -> None:
+        self.model_name = value
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -70,14 +79,12 @@ class _AnthropicCommon(BaseModel):
         """Get the default parameters for calling Anthropic API."""
         d = {
             "max_tokens_to_sample": self.max_tokens_to_sample,
-            "model": self.model,
+            "model_name": self.model_name,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
         }
-        if self.temperature is not None:
-            d["temperature"] = self.temperature
-        if self.top_k is not None:
-            d["top_k"] = self.top_k
-        if self.top_p is not None:
-            d["top_p"] = self.top_p
         return d
 
     @property
@@ -110,7 +117,7 @@ class Anthropic(LLM, _AnthropicCommon):
 
             import anthropic
             from langchain.llms import Anthropic
-            model = Anthropic(model="<model_name>", anthropic_api_key="my-api-key")
+            model = Anthropic(model_name="<model_name>", anthropic_api_key="my-api-key")
 
             # Simplest invocation, automatically wrapped with HUMAN_PROMPT
             # and AI_PROMPT.

@@ -17,6 +17,15 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
+    chat = ChatAnthropic(model_name="test")
+    message = HumanMessage(content="Hello")
+    response = chat([message])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+
+
+def test_anthropic_call_using_model() -> None:
+    """Test valid call to anthropic."""
     chat = ChatAnthropic(model="test")
     message = HumanMessage(content="Hello")
     response = chat([message])
@@ -26,7 +35,7 @@ def test_anthropic_call() -> None:
 
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    chat = ChatAnthropic(model="test", streaming=True)
+    chat = ChatAnthropic(model_name="test", streaming=True)
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, AIMessage)
@@ -38,7 +47,7 @@ def test_anthropic_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatAnthropic(
-        model="test",
+        model_name="test",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
@@ -54,7 +63,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatAnthropic(
-        model="test",
+        model_name="test",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
