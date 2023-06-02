@@ -742,8 +742,8 @@ class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
 
     def __init__(self, **kwargs: Any):
         """Initialize a PythonCodeTextSplitter."""
-        seperators = self.get_separators_for_language(Language.PYTHON)
-        super().__init__(separators=seperators, **kwargs)
+        separators = self.get_separators_for_language(Language.PYTHON)
+        super().__init__(separators=separators, **kwargs)
 
 
 class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
@@ -751,8 +751,8 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
 
     def __init__(self, **kwargs: Any):
         """Initialize a MarkdownTextSplitter."""
-        seperators = self.get_separators_for_language(Language.MARKDOWN)
-        super().__init__(separators=seperators, **kwargs)
+        separators = self.get_separators_for_language(Language.MARKDOWN)
+        super().__init__(separators=separators, **kwargs)
 
 
 class LatexTextSplitter(RecursiveCharacterTextSplitter):
@@ -760,5 +760,5 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
 
     def __init__(self, **kwargs: Any):
         """Initialize a LatexTextSplitter."""
-        seperators = self.get_separators_for_language(Language.LATEX)
-        super().__init__(separators=seperators, **kwargs)
+        separators = self.get_separators_for_language(Language.LATEX)
+        super().__init__(separators=separators, **kwargs)

@@ -218,7 +218,7 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        results = self.similarity_search_with_score(query, k, filter)
+        results = self.similarity_search_with_score(query, k, filter=filter)
         return list(map(itemgetter(0), results))
 
     def similarity_search_with_score(
@@ -245,7 +245,6 @@ class Qdrant(VectorStore):
             qdrant_filter = self._qdrant_filter_from_dict(filter)
         else:
             qdrant_filter = filter
-
         results = self.client.search(
             collection_name=self.collection_name,
             query_vector=self._embed_query(query),
@@ -383,10 +382,10 @@ class Qdrant(VectorStore):
                 Additional arguments passed directly into REST client initialization
 
         This is a user-friendly interface that:
-            1. Creates embeddings, one for each text
-            2. Initializes the Qdrant database as an in-memory docstore by default
-               (and overridable to a remote docstore)
-            3. Adds the text embeddings to the Qdrant database
+        1. Creates embeddings, one for each text
+        2. Initializes the Qdrant database as an in-memory docstore by default
+           (and overridable to a remote docstore)
+        3. Adds the text embeddings to the Qdrant database
 
         This is intended to be a quick way to get started.
 
