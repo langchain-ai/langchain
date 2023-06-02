@@ -8,7 +8,7 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 class ArgillaCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs into Argilla.
-    
+
     Args:
         dataset_name: name of the `FeedbackDataset` in Argilla. Note that it must exist in advance.
             If you need help on how to create a `FeedbackDataset` in Argilla, please visit
@@ -20,7 +20,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             the default http://localhost:6900 will be used.
         api_key: API Key to connect to the Argilla Server. Defaults to `None`, which means that either
             `ARGILLA_API_KEY` environment variable or the default `argilla.apikey` will be used.
-        
+
     Raises:
         ImportError: if the `argilla` package is not installed.
         ConnectionError: if the connection to Argilla fails.
@@ -48,7 +48,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         api_key: Optional[str] = None,
     ) -> None:
         """Initializes the `ArgillaCallbackHandler`.
-        
+
         Args:
             dataset_name: name of the `FeedbackDataset` in Argilla. Note that it must exist in advance.
                 If you need help on how to create a `FeedbackDataset` in Argilla, please visit
@@ -56,7 +56,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             workspace_name: name of the workspace in Argilla where the specified `FeedbackDataset` lives in.
                 Defaults to `None`, which means that the default workspace will be used.
             api_url: URL of the Argilla Server that we want to use, and where the `FeedbackDataset` lives in.
-                Defaults to `None`, which means that either `ARGILLA_API_URL` environment variable or 
+                Defaults to `None`, which means that either `ARGILLA_API_URL` environment variable or
                 the default http://localhost:6900 will be used.
             api_key: API Key to connect to the Argilla Server. Defaults to `None`, which means that either
                 `ARGILLA_API_KEY` environment variable or the default `argilla.apikey` will be used.
@@ -68,7 +68,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         """
 
         super().__init__()
-        
+
         # Import Argilla (not done in the top of the file via `import_argilla` to keep hints in IDEs)
         try:
             import argilla as rg  # noqa: F401
@@ -89,7 +89,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 "Since `api_key` is None, and the env var `ARGILLA_API_KEY` is not set, "
                 "it will default to `argilla.apikey`.",
             )
-        
+
         # Connect to Argilla with the provided credentials, if applicable
         try:
             rg.init(
@@ -108,13 +108,13 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         # Set the Argilla variables
         self.dataset_name = dataset_name
         self.workspace_name = workspace_name or rg.get_workspace()
-        
+
         # Retrieve the `FeedbackDataset` from Argilla (without existing records as not needed)
         try:
             self.dataset = rg.FeedbackDataset.from_argilla(
                 name=self.dataset_name,
                 workspace=self.workspace_name,
-                with_records=False
+                with_records=False,
             )
         except Exception as e:
             raise FileNotFoundError(
@@ -126,7 +126,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 "If the problem persists please report it to https://github.com/argilla-io/argilla/issues "
                 "with the label `langchain`."
             ) from e
-        
+
         supported_fields = ["prompt", "response"]
         if supported_fields != [field.name for field in self.dataset.fields]:
             raise ValueError(
@@ -171,10 +171,11 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                             "prompt": prompt,
                             "response": generation.text.strip(),
                         },
-                    } for generation in generations
+                    }
+                    for generation in generations
                 ]
             )
-        
+
         # Push the records to Argilla
         self.dataset.push_to_argilla()
 
@@ -192,7 +193,13 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Do nothing when LLM chain starts."""
         if "input" in inputs:
-            self.prompts.update({str(kwargs["parent_run_id"] or kwargs["run_id"]): inputs["input"] if isinstance(inputs["input"], list) else [inputs["input"]]})
+            self.prompts.update(
+                {
+                    str(kwargs["parent_run_id"] or kwargs["run_id"]): inputs["input"]
+                    if isinstance(inputs["input"], list)
+                    else [inputs["input"]]
+                }
+            )
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Do nothing when LLM chain ends."""
