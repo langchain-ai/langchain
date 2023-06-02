@@ -20,6 +20,7 @@ from langchain.vectorstores.redis import Redis
 from langchain.vectorstores.sklearn import SKLearnVectorStore
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
+from langchain.vectorstores.tigris import Tigris
 from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
@@ -54,4 +55,5 @@ __all__ = [
     "Typesense",
     "Clickhouse",
     "ClickhouseSettings",
+    "Tigris",
 ]
