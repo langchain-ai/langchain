@@ -60,7 +60,6 @@ class DatasetCreate(DatasetBase):
     """Dataset create model."""
 
     id: Optional[UUID]
-    tenant_id: Optional[UUID] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 

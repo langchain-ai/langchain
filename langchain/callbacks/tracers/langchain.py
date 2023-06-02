@@ -30,10 +30,6 @@ from langchain.schema import BaseMessage, messages_to_dict
 
 logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
-
-logger = logging.getLogger(__name__)
-
 
 def get_headers() -> Dict[str, Any]:
     """Get the headers for the LangChain API."""
