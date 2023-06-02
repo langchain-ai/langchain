@@ -50,28 +50,27 @@ class Clarifai(LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
+        """Validate that we have all required info to access Clarifai platform and python package exists in environment."""
         clarifai_pat_key = values.get("clarifai_pat_key")
         user_id = values.get("user_id")
         app_id = values.get("app_id")
         model_id = values.get("model_id")
 
+        if clarifai_pat_key is None:
+            raise ValueError("Please provide a clarifai_pat_key.")
+        if user_id is None:
+            raise ValueError("Please provide a user_id.")
+        if app_id is None:
+            raise ValueError("Please provide a app_id.")
+        if model_id is None:
+            raise ValueError("Please provide a model_id.")
+
+        values["metadata"] = (("authorization", "Key " + clarifai_pat_key),)
+
         try:
             from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
             from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
             from clarifai_grpc.grpc.api.status import status_code_pb2
-
-            if clarifai_pat_key is None:
-                raise ValueError("Please provide a clarifai_pat_key.")
-            if user_id is None:
-                raise ValueError("Please provide a user_id.")
-            if app_id is None:
-                raise ValueError("Please provide a app_id.")
-            if model_id is None:
-                raise ValueError("Please provide a model_id.")
-
-            values["metadata"] = (("authorization", "Key " + clarifai_pat_key),)
-
         except ImportError:
             raise ImportError(
                 "Could not import cohere python package. " "Please install it with `pip install clarifai`."
