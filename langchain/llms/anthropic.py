@@ -18,11 +18,11 @@ class _AnthropicCommon(BaseModel):
     model_name: str = "claude-v1"
     """Model name to use."""
 
-    max_tokens_to_sample: int = 256
-    """Denotes the number of tokens to predict per generation."""
-
     temperature: Optional[float] = None
     """A non-negative float that tunes the degree of randomness in generation."""
+
+    max_tokens: int = 256
+    """Denotes the number of tokens to predict per generation."""
 
     top_k: Optional[int] = None
     """Number of most likely tokens to consider at each step."""
@@ -78,13 +78,15 @@ class _AnthropicCommon(BaseModel):
     def _default_params(self) -> Mapping[str, Any]:
         """Get the default parameters for calling Anthropic API."""
         d = {
-            "max_tokens_to_sample": self.max_tokens_to_sample,
-            "model_name": self.model_name,
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
-            "top_k": self.top_k,
-            "top_p": self.top_p,
+            "max_tokens_to_sample": self.max_tokens,
+            "model": self.model_name,
         }
+        if self.temperature is not None:
+            d["temperature"] = self.temperature
+        if self.top_k is not None:
+            d["top_k"] = self.top_k
+        if self.top_p is not None:
+            d["top_p"] = self.top_p
         return d
 
     @property
