@@ -26,8 +26,11 @@ class DocReadingChain(Chain):
     text_splitter: TextSplitter
     """The text splitter to use to split the document into smaller chunks."""
 
-    max_num_docs: int = -1
-    """The maximum number of documents to split the document into."""
+    max_num_docs: int
+    """The maximum number of documents to split the document into.
+    
+    Use -1 to denote no limit to the number of pages to read.
+    """
 
     @property
     def input_keys(self) -> List[str]:
@@ -77,7 +80,7 @@ class DocReadingChain(Chain):
             _sub_docs = sub_docs[: self.max_num_docs]
         else:
             _sub_docs = sub_docs
-            
+
         results = await self.chain.acall(
             {"input_documents": _sub_docs, "question": question},
             callbacks=run_manager.get_child(),
@@ -94,6 +97,8 @@ class ParallelApplyChain(Chain):
     """Utility chain to apply a given chain in parallel across input documents.
 
     This chain needs to handle a limit on concurrency.
+
+    WARNING: Parallelization only implemented on the async path.
     """
 
     chain: Chain
