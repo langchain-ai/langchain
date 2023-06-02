@@ -8,6 +8,7 @@ from langchain.tools.azure_cognitive_services import (
 )
 from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
 from langchain.tools.bing_search.tool import BingSearchResults, BingSearchRun
+from langchain.tools.brave_search.tool import BraveSearch
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchResults, DuckDuckGoSearchRun
 from langchain.tools.file_management.copy import CopyFileTool
 from langchain.tools.file_management.delete import DeleteFileTool
@@ -118,4 +119,5 @@ __all__ = [
     "ZapierNLARunAction",
     "tool",
     "YouTubeSearchTool",
+    "BraveSearch",
 ]

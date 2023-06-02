@@ -1,13 +1,14 @@
 # Tutorials
 
-This is a collection of `LangChain` tutorials mostly on `YouTube`.
+⛓ icon marks a new addition [last update 2023-05-15]
 
-⛓ icon marks a new video [last update 2023-05-15]
+### DeepLearning.AI course
+⛓[LangChain for LLM Application Development](https://learn.deeplearning.ai/langchain) by Harrison Chase presented by [Andrew Ng](https://en.wikipedia.org/wiki/Andrew_Ng)
 
-###
+### Handbook
 [LangChain AI Handbook](https://www.pinecone.io/learn/langchain/) By **James Briggs** and **Francisco Ingham**
 
-###
+### Tutorials
 [LangChain Tutorials](https://www.youtube.com/watch?v=FuqdVNB_8c0&list=PL9V0lbeJ69brU-ojMpU1Y7Ic58Tap0Cw6) by [Edrick](https://www.youtube.com/@edrickdch):
 - ⛓ [LangChain, Chroma DB, OpenAI Beginner Guide | ChatGPT with your PDF](https://youtu.be/FuqdVNB_8c0) 
 
@@ -108,4 +109,4 @@ LangChain by [Chat with data](https://www.youtube.com/@chatwithdata)
 - ⛓ [Build ChatGPT Chatbots with LangChain Memory: Understanding and Implementing Memory in Conversations](https://youtu.be/CyuUlf54wTs)
 
 ---------------------
-⛓ icon marks a new video [last update 2023-05-15]
+⛓ icon marks a new addition [last update 2023-05-15]

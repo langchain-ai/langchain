@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, List, Optional
 from langchain.utils import get_from_env
 
 if TYPE_CHECKING:
+    from elasticsearch import Elasticsearch
     from elasticsearch.client import MlClient
 
 from langchain.embeddings.base import Embeddings
@@ -65,30 +66,32 @@ class ElasticsearchEmbeddings(Embeddings):
             es_user: (str, optional): Elasticsearch username.
             es_password: (str, optional): Elasticsearch password.
 
-        Example Usage:
-            from langchain.embeddings import ElasticsearchEmbeddings
+        Example:
+            .. code-block:: python
 
-            # Define the model ID and input field name (if different from default)
-            model_id = "your_model_id"
-            # Optional, only if different from 'text_field'
-            input_field = "your_input_field"
+                from langchain.embeddings import ElasticsearchEmbeddings
 
-            # Credentials can be passed in two ways. Either set the env vars
-            # ES_CLOUD_ID, ES_USER, ES_PASSWORD and they will be automatically pulled
-            # in, or pass them in directly as kwargs.
-            embeddings = ElasticsearchEmbeddings.from_credentials(
-                model_id,
-                input_field=input_field,
-                # es_cloud_id="foo",
-                # es_user="bar",
-                # es_password="baz",
-            )
+                # Define the model ID and input field name (if different from default)
+                model_id = "your_model_id"
+                # Optional, only if different from 'text_field'
+                input_field = "your_input_field"
 
-            documents = [
-                "This is an example document.",
-                "Another example document to generate embeddings for.",
-            ]
-            embeddings_generator.embed_documents(documents)
+                # Credentials can be passed in two ways. Either set the env vars
+                # ES_CLOUD_ID, ES_USER, ES_PASSWORD and they will be automatically
+                # pulled in, or pass them in directly as kwargs.
+                embeddings = ElasticsearchEmbeddings.from_credentials(
+                    model_id,
+                    input_field=input_field,
+                    # es_cloud_id="foo",
+                    # es_user="bar",
+                    # es_password="baz",
+                )
+
+                documents = [
+                    "This is an example document.",
+                    "Another example document to generate embeddings for.",
+                ]
+                embeddings_generator.embed_documents(documents)
         """
         try:
             from elasticsearch import Elasticsearch
@@ -108,6 +111,71 @@ class ElasticsearchEmbeddings(Embeddings):
             cloud_id=es_cloud_id, basic_auth=(es_user, es_password)
         )
         client = MlClient(es_connection)
+        return cls(client, model_id, input_field=input_field)
+
+    @classmethod
+    def from_es_connection(
+        cls,
+        model_id: str,
+        es_connection: Elasticsearch,
+        input_field: str = "text_field",
+    ) -> ElasticsearchEmbeddings:
+        """
+        Instantiate embeddings from an existing Elasticsearch connection.
+
+        This method provides a way to create an instance of the ElasticsearchEmbeddings
+        class using an existing Elasticsearch connection. The connection object is used
+        to create an MlClient, which is then used to initialize the
+        ElasticsearchEmbeddings instance.
+
+        Args:
+        model_id (str): The model_id of the model deployed in the Elasticsearch cluster.
+        es_connection (elasticsearch.Elasticsearch): An existing Elasticsearch
+        connection object. input_field (str, optional): The name of the key for the
+        input text field in the document. Defaults to 'text_field'.
+
+        Returns:
+        ElasticsearchEmbeddings: An instance of the ElasticsearchEmbeddings class.
+
+        Example:
+            .. code-block:: python
+
+                from elasticsearch import Elasticsearch
+
+                from langchain.embeddings import ElasticsearchEmbeddings
+
+                # Define the model ID and input field name (if different from default)
+                model_id = "your_model_id"
+                # Optional, only if different from 'text_field'
+                input_field = "your_input_field"
+
+                # Create Elasticsearch connection
+                es_connection = Elasticsearch(
+                    hosts=["localhost:9200"], http_auth=("user", "password")
+                )
+
+                # Instantiate ElasticsearchEmbeddings using the existing connection
+                embeddings = ElasticsearchEmbeddings.from_es_connection(
+                    model_id,
+                    es_connection,
+                    input_field=input_field,
+                )
+
+                documents = [
+                    "This is an example document.",
+                    "Another example document to generate embeddings for.",
+                ]
+                embeddings_generator.embed_documents(documents)
+        """
+        # Importing MlClient from elasticsearch.client within the method to
+        # avoid unnecessary import if the method is not used
+        from elasticsearch.client import MlClient
+
+        # Create an MlClient from the given Elasticsearch connection
+        client = MlClient(es_connection)
+
+        # Return a new instance of the ElasticsearchEmbeddings class with
+        # the MlClient, model_id, and input_field
         return cls(client, model_id, input_field=input_field)
 
     def _embedding_func(self, texts: List[str]) -> List[List[float]]:

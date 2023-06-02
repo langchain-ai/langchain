@@ -298,8 +298,9 @@ class SupabaseVectorStore(VectorStore):
             List of Documents selected by maximal marginal relevance.
 
         `max_marginal_relevance_search` requires that `query_name` returns matched
-        embeddings alongside the match documents. The following function function
+        embeddings alongside the match documents. The following function
         demonstrates how to do this:
+
         ```sql
         CREATE FUNCTION match_documents_embeddings(query_embedding vector(1536),
                                                    match_count int)
@@ -326,7 +327,8 @@ class SupabaseVectorStore(VectorStore):
                 docstore.embedding <=> query_embedding
             LIMIT match_count;
         END;
-        $$;```
+        $$;
+        ```
         """
         embedding = self._embedding.embed_documents([query])
         docs = self.max_marginal_relevance_search_by_vector(
