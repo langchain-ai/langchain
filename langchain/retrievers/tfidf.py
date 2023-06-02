@@ -67,9 +67,7 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
         results = cosine_similarity(self.tfidf_array, query_vec).reshape(
             (-1,)
         )  # Op -- (n_docs,1) -- Cosine Sim with each doc
-        return_docs = []
-        for i in results.argsort()[-self.k :][::-1]:
-            return_docs.append(self.docs[i])
+        return_docs = [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
         return return_docs
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:

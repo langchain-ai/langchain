@@ -8,6 +8,7 @@ from aiohttp import ClientSession
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import tracing_enabled
 from langchain.callbacks.manager import tracing_v2_enabled
+from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 
 questions = [
@@ -140,10 +141,10 @@ async def test_tracing_v2_environment_variable() -> None:
 
 
 def test_tracing_v2_context_manager() -> None:
-    llm = OpenAI(temperature=0)
+    llm = ChatOpenAI(temperature=0)
     tools = load_tools(["llm-math", "serpapi"], llm=llm)
     agent = initialize_agent(
-        tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+        tools, llm, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
     if "LANGCHAIN_TRACING_V2" in os.environ:
         del os.environ["LANGCHAIN_TRACING_V2"]

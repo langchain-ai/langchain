@@ -28,6 +28,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
 
     Example:
         .. code-block:: python
+
             import anthropic
             from langchain.llms import Anthropic
             model = ChatAnthropic(model="<model_name>", anthropic_api_key="my-api-key")

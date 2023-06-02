@@ -6502,14 +6502,14 @@ test = ["enum34", "ipaddress", "mock", "pywin32", "wmi"]
 
 [[package]]
 name = "psychicapi"
-version = "0.2"
+version = "0.5"
 description = "Psychic.dev is an open-source universal data connector for knowledgebases."
 category = "main"
 optional = true
 python-versions = "*"
 files = [
-    {file = "psychicapi-0.2-py3-none-any.whl", hash = "sha256:712c6a1615dfad11d65241c179e96a5058ed1ada47463d1208e5a55a2bfdb4ff"},
-    {file = "psychicapi-0.2.tar.gz", hash = "sha256:3db62c2665c1485d0f68f3c1c57590691f20ee868d1f40fdeb59a6eeb15ed26a"},
+    {file = "psychicapi-0.5-py3-none-any.whl", hash = "sha256:30637abbecd6c9ebafbceb7c1230987f7ef3af2ca7054f3322ae80f9cbf46039"},
+    {file = "psychicapi-0.5.tar.gz", hash = "sha256:a2106ef8e3a286f85aa2c26c6d1a778e15009391b3b5e2dd864447c8e7f85942"},
 ]
 
 [package.dependencies]
@@ -10948,7 +10948,7 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "momento", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "redis", "requests-toolbelt", "sentence-transformers", "spacy", "steamship", "tensorflow-text", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "momento", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "redis", "requests-toolbelt", "sentence-transformers", "spacy", "steamship", "tensorflow-text", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
@@ -10962,4 +10962,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "937d2f0165f6aa381ea1e26002272a92b189ab18607bd05895e36d23f56978f4"
+content-hash = "379bfcf130acc24f2f8408e2bb7e3ae9d769070e6bf5f66868491bddb1b2fc53"
