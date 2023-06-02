@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import enum
 import logging
-import os
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
