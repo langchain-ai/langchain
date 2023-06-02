@@ -286,3 +286,50 @@ def test_qdrant_from_texts_stores_duplicated_texts() -> None:
 
         client = QdrantClient(path=str(tmpdir))
         assert 2 == client.count("test").count
+
+
+def test_qdrant_from_texts_stores_ids() -> None:
+    from qdrant_client import QdrantClient
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ids = [
+            "fa38d572-4c31-4579-aedc-1960d79df6df",
+            "cdc1aa36-d6ab-4fb2-8a94-56674fd27484",
+        ]
+        vec_store = Qdrant.from_texts(
+            ["abc", "def"],
+            ConsistentFakeEmbeddings(),
+            ids=ids,
+            collection_name="test",
+            path=str(tmpdir),
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        assert 2 == client.count("test").count
+        stored_ids = [point.id for point in client.scroll("test")[0]]
+        assert set(ids) == set(stored_ids)
+
+
+def test_qdrant_add_texts_stores_ids() -> None:
+    from qdrant_client import QdrantClient
+
+    ids = [
+        "fa38d572-4c31-4579-aedc-1960d79df6df",
+        "cdc1aa36-d6ab-4fb2-8a94-56674fd27484",
+    ]
+
+    client = QdrantClient(":memory:")
+    collection_name = "test"
+    client.recreate_collection(
+        collection_name,
+        vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE),
+    )
+
+    vec_store = Qdrant(client, "test", ConsistentFakeEmbeddings())
+    returned_ids = vec_store.add_texts(["abc", "def"], ids=ids)
+
+    assert all(first == second for first, second in zip(ids, returned_ids))
+    assert 2 == client.count("test").count
+    stored_ids = [point.id for point in client.scroll("test")[0]]
+    assert set(ids) == set(stored_ids)
