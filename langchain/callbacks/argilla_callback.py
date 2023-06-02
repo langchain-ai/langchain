@@ -143,7 +143,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 f" workspace={self.workspace_name} exists in advance. If you need help"
                 " on how to create a `langchain`-compatible `FeedbackDataset` in"
                 " Argilla, please visit"
-                " https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html."
+                " https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html."  # noqa: E501
                 " If the problem persists please report it to"
                 " https://github.com/argilla-io/argilla/issues with the label"
                 " `langchain`."
@@ -160,7 +160,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 f" {[field.name for field in self.dataset.fields]}. "
                 "For more information on how to create a `langchain`-compatible"
                 " `FeedbackDataset` in Argilla, please visit"
-                " https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html."
+                " https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html."  # noqa: E501
             )
 
         self.prompts: Dict[str, List[str]] = {}
