@@ -13,9 +13,8 @@ from typing import (
     Type,
 )
 
-from sqlalchemy.pool import QueuePool
-
 from pydantic import BaseModel, root_validator
+from sqlalchemy.pool import QueuePool
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -25,11 +24,11 @@ from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 class SingleStoreDB(VectorStore):
     """
-    This class serves as a Pythonic interface to the SingleStore DB database. 
+    This class serves as a Pythonic interface to the SingleStore DB database.
     The prerequisite for using this class is the installation of the ``singlestoredb`` Python package.
 
-    The SingleStoreDB vectorstore can be created by providing an embedding function and the relevant 
-    parameters for the database connection, connection pool, and optionally, the names of the table 
+    The SingleStoreDB vectorstore can be created by providing an embedding function and the relevant
+    parameters for the database connection, connection pool, and optionally, the names of the table
     and the fields to use.
 
     Args:
@@ -153,7 +152,12 @@ class SingleStoreDB(VectorStore):
         self.connection_kwargs = kwargs
 
         """Create connection pool."""
-        self.connection_pool = QueuePool(self._get_connection, max_overflow=max_overflow, pool_size=pool_size, timeout=timeout)
+        self.connection_pool = QueuePool(
+            self._get_connection,
+            max_overflow=max_overflow,
+            pool_size=pool_size,
+            timeout=timeout,
+        )
         self._create_table()
 
     def _create_table(self: SingleStoreDB) -> None:
@@ -307,7 +311,6 @@ class SingleStoreDB(VectorStore):
                     host="username:password@localhost:3306/database"
                 )
         """
-
 
         instance = cls(
             table_name=table_name,

@@ -16,6 +16,7 @@ TEST_RESULT = [Document(page_content="foo"), Document(page_content="foo")]
 
 def drop(table_name: str) -> None:
     import singlestoredb as s2
+
     with s2.connect(TEST_SINGLESTOREDB_URL) as conn:
         conn.autocommit(True)
         with conn.cursor() as cursor:
