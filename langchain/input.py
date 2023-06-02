@@ -32,10 +32,14 @@ def get_bolded_text(text: str) -> str:
     return f"\033[1m{text}\033[0m"
 
 
-def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
+def print_text(
+    text: str, color: Optional[str] = None, end: str = "", file=None
+) -> None:
     """Print text with highlighting and no end characters."""
     if color is None:
         text_to_print = text
     else:
         text_to_print = get_colored_text(text, color)
-    print(text_to_print, end=end)
+    print(text_to_print, end=end, file=file)
+    if file:
+        file.flush()  # ensure all printed content are written to file

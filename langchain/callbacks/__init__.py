@@ -3,6 +3,7 @@
 from langchain.callbacks.aim_callback import AimCallbackHandler
 from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
+from langchain.callbacks.file import FileCallbackHandler
 from langchain.callbacks.manager import (
     get_openai_callback,
     tracing_enabled,
@@ -18,6 +19,7 @@ from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
 __all__ = [
     "OpenAICallbackHandler",
     "StdOutCallbackHandler",
+    "FileCallbackHandler",
     "AimCallbackHandler",
     "WandbCallbackHandler",
     "MlflowCallbackHandler",
