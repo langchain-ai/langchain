@@ -137,7 +137,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 "please visit https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html."
             )
 
-        self.prompts = {}
+        self.prompts: Dict[str, List[str]] = {}
 
         warnings.warn(
             "The `ArgillaCallbackHandler` is currently in beta and is subject to change "
