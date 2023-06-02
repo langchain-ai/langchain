@@ -1,8 +1,17 @@
-import sys
-from io import StringIO
 from typing import Dict, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import Field
+from wasm_exec import WasmExecutor
+
+
+class BaseModel(PydanticBaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+
+
+def _get_wasm_executor() -> WasmExecutor:
+    return WasmExecutor()
 
 
 class PythonREPL(BaseModel):
@@ -10,16 +19,14 @@ class PythonREPL(BaseModel):
 
     globals: Optional[Dict] = Field(default_factory=dict, alias="_globals")
     locals: Optional[Dict] = Field(default_factory=dict, alias="_locals")
+    wasm: WasmExecutor = Field(default_factory=_get_wasm_executor)
 
     def run(self, command: str) -> str:
         """Run command with own globals/locals and returns anything printed."""
-        old_stdout = sys.stdout
-        sys.stdout = mystdout = StringIO()
         try:
-            exec(command, self.globals, self.locals)
-            sys.stdout = old_stdout
-            output = mystdout.getvalue()
+            print(self.globals)
+            result = self.wasm.exec(command, globals=self.globals, locals=self.locals)
+            output = result.text
         except Exception as e:
-            sys.stdout = old_stdout
             output = repr(e)
         return output
