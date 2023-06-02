@@ -1,7 +1,6 @@
 """Handle chained inputs."""
 from typing import Dict, List, Optional, TextIO
 
-
 _TEXT_COLOR_MAPPING = {
     "blue": "36;1",
     "yellow": "33;1",
