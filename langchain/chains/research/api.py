@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import asyncio
-import itertools
 from typing import Any, Dict, List, Literal, Mapping, Optional, Union
+
+import itertools
+from langchain.chains.research.download import AutoDownloadHandler, DownloadHandler
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -11,7 +12,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.chains.research.fetch import AutoDownloadHandler, DownloadHandler
 from langchain.chains.research.readers import DocReadingChain, ParallelApplyChain
 from langchain.chains.research.search import GenericSearcher
 from langchain.document_loaders.parsers.html.markdownify import MarkdownifyHTMLParser
@@ -109,7 +109,9 @@ class Research(Chain):
         urls = search_results["urls"]
         blobs = await self.downloader.adownload(urls)
         parser = MarkdownifyHTMLParser()
-        docs = itertools.chain.from_iterable(parser.lazy_parse(blob) for blob in blobs)
+        docs = itertools.chain.from_iterable(
+            parser.lazy_parse(blob) for blob in blobs if blob is not None
+        )
         inputs = [{"doc": doc, "question": question} for doc in docs]
         results = await self.reader.acall(
             inputs,
