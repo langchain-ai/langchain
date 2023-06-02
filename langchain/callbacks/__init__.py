@@ -3,9 +3,11 @@
 from langchain.callbacks.aim_callback import AimCallbackHandler
 from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
+from langchain.callbacks.human import HumanApprovalCallbackHandler
 from langchain.callbacks.manager import (
     get_openai_callback,
     tracing_enabled,
+    wandb_tracing_enabled,
 )
 from langchain.callbacks.mlflow_callback import MlflowCallbackHandler
 from langchain.callbacks.openai_info import OpenAICallbackHandler
@@ -26,4 +28,6 @@ __all__ = [
     "AsyncIteratorCallbackHandler",
     "get_openai_callback",
     "tracing_enabled",
+    "wandb_tracing_enabled",
+    "HumanApprovalCallbackHandler",
 ]

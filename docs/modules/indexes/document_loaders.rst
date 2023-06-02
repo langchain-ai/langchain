@@ -88,7 +88,7 @@ We don't need any access permissions to these datasets and services.
 
 
 Proprietary dataset or service loaders
-------------------------------
+--------------------------------------
 These datasets and services are not from the public domain.
 These loaders mostly transform data from specific formats of applications or cloud services,
 for example **Google Drive**.
@@ -130,6 +130,7 @@ We need access tokens and sometime other parameters to get access to these datas
    ./document_loaders/examples/notion.ipynb
    ./document_loaders/examples/obsidian.ipynb
    ./document_loaders/examples/psychic.ipynb
+   ./document_loaders/examples/pyspark_dataframe.ipynb
    ./document_loaders/examples/readthedocs_documentation.ipynb
    ./document_loaders/examples/reddit.ipynb
    ./document_loaders/examples/roam.ipynb
