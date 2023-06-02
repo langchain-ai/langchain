@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Any, Union, Literal, List, Dict
+from typing import Optional, Any, Union, Literal, List, Dict, Mapping
 import itertools
 
 
@@ -93,7 +93,7 @@ class Research(Chain):
         question = inputs["question"]
         search_results = await self.searcher.acall({"question": question})
         urls = search_results["urls"]
-        blobs = self.downloader.download(urls)
+        blobs = await self.downloader.adownload(urls)
         parser = MarkdownifyHTMLParser()
         docs = itertools.chain.from_iterable(parser.lazy_parse(blob) for blob in blobs)
         inputs = [{"doc": doc, "question": question} for doc in docs]
@@ -112,9 +112,10 @@ class Research(Chain):
         qa_chain: LLMChain,
         top_k_per_search: int = -1,
         max_concurrency: int = 1,
-        max_num_pages_per_doc: int = 100,
+        max_num_pages_per_doc: int = 5,
         text_splitter: Union[TextSplitter, Literal["recursive"]] = "recursive",
         download_handler: Union[DownloadHandler, Literal["auto"]] = "auto",
+        text_splitter_kwargs: Optional[Mapping[str, Any]] = None,
     ) -> Research:
         """Helper to create a research chain from standard llm related components.
 
@@ -130,13 +131,16 @@ class Research(Chain):
                               Provide either a download handler or the name of a
                               download handler.
                               - "auto" swaps between using requests and playwright
+            text_splitter_kwargs: The keyword arguments to pass to the text splitter.
+                                  Only use when providing a text splitter as string.
 
         Returns:
             A research chain.
         """
         if isinstance(text_splitter, str):
             if text_splitter == "recursive":
-                _text_splitter = RecursiveCharacterTextSplitter()
+                _text_splitter_kwargs = text_splitter_kwargs or {}
+                _text_splitter = RecursiveCharacterTextSplitter(**_text_splitter_kwargs)
             else:
                 raise ValueError(f"Invalid text splitter: {text_splitter}")
         elif isinstance(text_splitter, TextSplitter):

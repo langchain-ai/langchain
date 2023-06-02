@@ -14,8 +14,9 @@ Downloading is batched by default to allow efficient parallelization.
 import abc
 import asyncio
 import mimetypes
-from bs4 import BeautifulSoup
 from typing import Sequence, List, Any, Optional
+
+from bs4 import BeautifulSoup
 
 from langchain.document_loaders import WebBaseLoader
 from langchain.document_loaders.blob_loaders import Blob
@@ -61,8 +62,7 @@ class PlaywrightDownloadHandler(DownloadHandler):
 
     def download(self, urls: Sequence[str]) -> List[Blob]:
         """Download list of urls synchronously."""
-        # Implement using a threadpool or using playwright API if it supports it
-        raise NotImplementedError()
+        return asyncio.run(self.adownload(urls))
 
     async def _download(self, browser: Any, url: str) -> str:
         """Download a url asynchronously using playwright."""
@@ -92,14 +92,13 @@ class PlaywrightDownloadHandler(DownloadHandler):
 
 
 class RequestsDownloadHandler(DownloadHandler):
-    def __init__(self, web_downloader: WebBaseLoader) -> None:
+    def __init__(self, web_downloader: Optional[WebBaseLoader] = None) -> None:
         """Initialize the requests download handler."""
-        self.web_downloader = web_downloader
+        self.web_downloader = web_downloader or WebBaseLoader(web_path=[])
 
     def download(self, urls: Sequence[str]) -> str:
         """Download a batch of URLS synchronously."""
-        # Implement with threadpool.
-        raise NotImplementedError()
+        return asyncio.run(self.adownload(urls))
 
     async def adownload(self, urls: Sequence[str]) -> List[Blob]:
         """Download a batch of urls asynchronously using playwright."""
@@ -138,11 +137,16 @@ class AutoDownloadHandler(DownloadHandler):
         must_redownload = [
             (idx, url)
             for idx, (url, blob) in enumerate(zip(urls, blobs))
-            if _is_javascript_required(blob.data)
+            if _is_javascript_required(blob.as_string())
         ]
-        indexes, urls_to_redownload = zip(*must_redownload)
-        new_blobs = await self.playwright_downloader.adownload(urls_to_redownload)
+        if must_redownload:
+            indexes, urls_to_redownload = zip(*must_redownload)
+            new_blobs = await self.playwright_downloader.adownload(urls_to_redownload)
 
-        for idx, blob in zip(indexes, new_blobs):
-            blobs[idx] = blob
+            for idx, blob in zip(indexes, new_blobs):
+                blobs[idx] = blob
         return blobs
+
+    def download(self, urls: Sequence[str]) -> List[Blob]:
+        """Download a batch of URLs synchronously."""
+        return asyncio.run(self.adownload(urls))

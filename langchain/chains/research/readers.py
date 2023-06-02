@@ -77,6 +77,7 @@ class DocReadingChain(Chain):
             _sub_docs = sub_docs[: self.max_num_docs]
         else:
             _sub_docs = sub_docs
+            
         results = await self.chain.acall(
             {"input_documents": _sub_docs, "question": question},
             callbacks=run_manager.get_child(),

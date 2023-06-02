@@ -21,7 +21,10 @@ from typing import (
 
 from langchain import LLMChain, PromptTemplate
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.callbacks.manager import (
+    CallbackManagerForChainRun,
+    AsyncCallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 from langchain.schema import BaseOutputParser
 
@@ -179,6 +182,43 @@ class MultiSelectChain(Chain):
             indexes = cast(
                 List[int],
                 self.llm_chain.predict_and_parse(
+                    records=records_str,
+                    question=question,
+                    callbacks=run_manager.get_child(),
+                ),
+            )
+            valid_indexes = [idx for idx in indexes if 0 <= idx < len(choice_batch)]
+            selected.extend(choice_batch[i] for i in valid_indexes)
+
+        return {
+            "selected": selected,
+        }
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        choices = inputs["choices"]
+        question = inputs["question"]
+        columns = inputs.get("columns", None)
+
+        selected = []
+        # TODO(): Balance choices into equal batches with constraint dependent
+        # on context window and prompt
+        max_choices = 30
+
+        for choice_batch in batch(choices, max_choices):
+            records_with_ids = [
+                {**record, "id": idx} for idx, record in enumerate(choice_batch)
+            ]
+            records_str = _write_records_to_string(
+                records_with_ids, columns=columns, delimiter="|"
+            )
+
+            indexes = cast(
+                List[int],
+                await self.llm_chain.apredict_and_parse(
                     records=records_str,
                     question=question,
                     callbacks=run_manager.get_child(),
