@@ -130,7 +130,7 @@ def test_bad_action_line() -> None:
     assert e_info.value.observation is not None
 
 
-def test_valid_action_and_answer() -> None:
+def test_valid_action_and_answer_raises_exception() -> None:
     """Test handling when both an action and answer are found."""
     llm_output = (
         "Thought: I need to search for NBA\n"
