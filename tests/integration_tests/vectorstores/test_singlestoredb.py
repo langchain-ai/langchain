@@ -85,7 +85,7 @@ def test_singlestoredb_from_existing(texts: List[str]) -> None:
     )
     # Test creating from an existing
     docsearch2 = SingleStoreDB(
-        NormilizedFakeEmbeddings().embed_query,
+        NormilizedFakeEmbeddings(),
         table_name="test_singlestoredb_from_existing",
         host=TEST_SINGLESTOREDB_URL,
     )
@@ -122,7 +122,7 @@ def test_singlestoredb_add_texts_to_existing(texts: List[str]) -> None:
         host=TEST_SINGLESTOREDB_URL,
     )
     docsearch = SingleStoreDB(
-        NormilizedFakeEmbeddings().embed_query,
+        NormilizedFakeEmbeddings(),
         table_name=table_name,
         host=TEST_SINGLESTOREDB_URL,
     )
