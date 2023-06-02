@@ -24,11 +24,57 @@ from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 
 class SingleStoreDB(VectorStore):
-    """Wrapper around SingleStore DB database.
+    """
+    This class serves as a Pythonic interface to the SingleStore DB database. 
+    The prerequisite for using this class is the installation of the ``singlestoredb`` Python package.
 
-    To use, you should have the ``singlestoredb`` python package installed.
+    The SingleStoreDB vectorstore can be created by providing an embedding function and the relevant 
+    parameters for the database connection, connection pool, and optionally, the names of the table 
+    and the fields to use.
 
-    Example:
+    Args:
+        embedding_function (Callable): A function that accepts a string input and returns a corresponding vector (List[float]).
+
+        table_name (str, optional): Specifies the name of the table in use. Defaults to "embeddings".
+        content_field (str, optional): Specifies the field to store the content. Defaults to "content".
+        metadata_field (str, optional): Specifies the field to store metadata. Defaults to "metadata".
+        vector_field (str, optional): Specifies the field to store the vector. Defaults to "vector".
+
+        Following arguments pertain to the connection pool:
+
+        pool_size (int, optional): Determines the number of active connections in the pool. Defaults to 5.
+        max_overflow (int, optional): Determines the maximum number of connections allowed beyond the pool_size. Defaults to 10.
+        timeout (float, optional): Specifies the maximum wait time in seconds for establishing a connection. Defaults to 30.
+
+        Following arguments pertain to the database connection:
+
+        host (str, optional): Specifies the hostname, IP address, or URL for the database connection. The default scheme is "mysql".
+        user (str, optional): Database username.
+        password (str, optional): Database password.
+        port (int, optional): Database port. Defaults to 3306 for non-HTTP connections, 80 for HTTP connections, and 443 for HTTPS connections.
+        database (str, optional): Database name.
+
+        Additional optional arguments provide further customization over the database connection:
+
+        pure_python (bool, optional): Toggles the connector mode. If True, operates in pure Python mode.
+        local_infile (bool, optional): Allows local file uploads.
+        charset (str, optional): Specifies the character set for string values.
+        ssl_key (str, optional): Specifies the path of the file containing the SSL key.
+        ssl_cert (str, optional): Specifies the path of the file containing the SSL certificate.
+        ssl_ca (str, optional): Specifies the path of the file containing the SSL certificate authority.
+        ssl_cipher (str, optional): Sets the SSL cipher list.
+        ssl_disabled (bool, optional): Disables SSL usage.
+        ssl_verify_cert (bool, optional): Verifies the server's certificate. Automatically enabled if ``ssl_ca`` is specified.
+        ssl_verify_identity (bool, optional): Verifies the server's identity.
+        conv (dict[int, Callable], optional): A dictionary of data conversion functions.
+        credential_type (str, optional): Specifies the type of authentication to use: auth.PASSWORD, auth.JWT, or auth.BROWSER_SSO.
+        autocommit (bool, optional): Enables autocommits.
+        results_type (str, optional): Determines the structure of the query results: tuples, namedtuples, dicts.
+        results_format (str, optional): Deprecated. This option has been renamed to results_type.
+
+    Examples:
+        Basic Usage:
+
         .. code-block:: python
 
             from langchain.vectorstores import SingleStoreDB
@@ -38,6 +84,38 @@ class SingleStoreDB(VectorStore):
             vectorstore = SingleStoreDB(
                 embedding_function=embeddings.embed_query,
                 host="https://user:password@127.0.0.1:3306/database"
+            )
+
+        Advanced Usage:
+
+        .. code-block:: python
+
+            from langchain.vectorstores import SingleStoreDB
+            from langchain.embeddings import OpenAIEmbeddings
+
+            embeddings = OpenAIEmbeddings()
+            vectorstore = SingleStoreDB(
+                embedding_function=embeddings.embed_query,
+                host="127.0.0.1",
+                port=3306,
+                user="user",
+                password="password",
+                database="db",
+                table_name="my_custom_table",
+                pool_size=10,
+                timeout=60,
+            )
+
+        Using environment variables:
+        .. code-block:: python
+
+            from langchain.vectorstores import SingleStoreDB
+            from langchain.embeddings import OpenAIEmbeddings
+
+            embeddings = OpenAIEmbeddings()
+            os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
+            vectorstore = SingleStoreDB(
+                embedding_function=embeddings.embed_query,
             )
     """
 
@@ -70,11 +148,16 @@ class SingleStoreDB(VectorStore):
         self.content_field = content_field
         self.metadata_field = metadata_field
         self.vector_field = vector_field
+
+        """Pass the rest of the kwargs to the connection."""
         self.connection_kwargs = kwargs
+
+        """Create connection pool."""
         self.connection_pool = QueuePool(self._get_connection, max_overflow=max_overflow, pool_size=pool_size, timeout=timeout)
         self._create_table()
 
     def _create_table(self: SingleStoreDB) -> None:
+        """Create table if it doesn't exist."""
         conn = self.connection_pool.connect()
         try:
             with conn.cursor() as cur:
@@ -138,7 +221,7 @@ class SingleStoreDB(VectorStore):
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """
-        Returns the most similar indexed documents to the query text.
+        Returns the most similar indexed documents to the query text. Uses cosine similarity.
 
         Args:
             query (str): The query text for which to find similar documents.
@@ -153,7 +236,7 @@ class SingleStoreDB(VectorStore):
     def similarity_search_with_score(
         self, query: str, k: int = 4
     ) -> List[Tuple[Document, float]]:
-        """Return docs most similar to query.
+        """Return docs most similar to query. Uses cosine similarity.
 
         Args:
             query: Text to look up documents similar to.
