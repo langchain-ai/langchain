@@ -15,6 +15,7 @@ import abc
 import asyncio
 import mimetypes
 from typing import Any, List, Optional, Sequence
+from pydantic import ValidationError
 
 from bs4 import BeautifulSoup
 
@@ -109,10 +110,18 @@ class RequestsDownloadHandler(DownloadHandler):
 
 def _repackage_as_blobs(urls: Sequence[str], contents: Sequence[str]) -> List[Blob]:
     """Repackage the contents as blobs."""
-    return [
-        Blob(data=content, mimetype=mimetypes.guess_type(url)[0], path=url)
-        for url, content in zip(urls, contents)
-    ]
+    blobs = []
+    for url, content in zip(urls, contents):
+        mimetype = mimetypes.guess_type(url)[0]
+        try:
+            blobs.append(Blob(data=content, mimetype=mimetype, path=url))
+        except ValidationError:
+            raise ValueError(
+                f"Could not create a blob for content at {url}. "
+                f"Content type is {type(content)}"
+            )
+
+    return blobs
 
 
 class AutoDownloadHandler(DownloadHandler):
