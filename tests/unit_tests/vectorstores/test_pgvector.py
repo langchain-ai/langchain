@@ -1,22 +1,24 @@
-import os
+import pytest
 
-from langchain.vectorstores.pgvector import PGVECTOR_VECTOR_SIZE, EmbeddingStore
+from langchain.vectorstores.pgvector import PGVECTOR_VECTOR_SIZE, PGVector
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
+@pytest.mark.requires("pgvector")
 def test_embedding_store_init_defaults() -> None:
     expected = PGVECTOR_VECTOR_SIZE
-    actual = EmbeddingStore().embedding.type.dim
+    actual = PGVector(
+        "postgresql+psycopg2://admin:admin@localhost:5432/mydatabase", FakeEmbeddings()
+    ).EmbeddingStore.embedding.type.dim
     assert expected == actual
 
 
+@pytest.mark.requires("pgvector")
 def test_embedding_store_init_vector_size() -> None:
     expected = 2
-    actual = EmbeddingStore(vector_size=2).embedding.type.dim
-    assert expected == actual
-
-
-def test_embedding_store_init_env_vector_size() -> None:
-    os.environ["PGVECTOR_VECTOR_SIZE"] = "3"
-    expected = 3
-    actual = EmbeddingStore().embedding.type.dim
+    actual = PGVector(
+        "postgresql+psycopg2://admin:admin@localhost:5432/mydatabase",
+        FakeEmbeddings(),
+        vector_size=2,
+    ).EmbeddingStore.embedding.type.dim
     assert expected == actual
