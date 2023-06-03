@@ -144,12 +144,12 @@ class Chain(BaseModel, ABC):
             run_manager.on_chain_error(e)
             raise e
         run_manager.on_chain_end(outputs)
-        outputs: Dict[str, Any] = self.prep_outputs(
+        final_outputs: Dict[str, Any] = self.prep_outputs(
             inputs, outputs, return_only_outputs
         )
         if include_run_info:
-            outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
-        return outputs
+            final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
+        return final_outputs
 
     async def acall(
         self,
@@ -192,12 +192,12 @@ class Chain(BaseModel, ABC):
             await run_manager.on_chain_error(e)
             raise e
         await run_manager.on_chain_end(outputs)
-        outputs: Dict[str, Any] = self.prep_outputs(
+        final_outputs: Dict[str, Any] = self.prep_outputs(
             inputs, outputs, return_only_outputs
         )
         if include_run_info:
-            outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
-        return outputs
+            final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
+        return final_outputs
 
     def prep_outputs(
         self,
