@@ -11,7 +11,7 @@ from langchain.schema import (
 )
 
 if TYPE_CHECKING:
-    from zep_python import Memory, Message, NotFoundError, SearchResult
+    from zep_python import Memory, MemorySearchResult, Message, NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -130,11 +130,13 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
 
         self.zep_client.add_memory(self.session_id, zep_memory)
 
-    def search(self, query: str, limit: Optional[int] = None) -> List[SearchResult]:
+    def search(
+        self, query: str, limit: Optional[int] = None
+    ) -> List[MemorySearchResult]:
         """Search Zep memory for messages matching the query"""
-        from zep_python import SearchPayload
+        from zep_python import MemorySearchPayload
 
-        payload: SearchPayload = SearchPayload(text=query)
+        payload: MemorySearchPayload = MemorySearchPayload(text=query)
 
         return self.zep_client.search_memory(self.session_id, payload, limit=limit)
 
