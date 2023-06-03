@@ -2,6 +2,7 @@
 from langchain.requests import TextRequestsWrapper
 from langchain.utilities.apify import ApifyWrapper
 from langchain.utilities.arxiv import ArxivAPIWrapper
+from langchain.utilities.pupmed import PubMedAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
@@ -24,6 +25,7 @@ from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 __all__ = [
     "ApifyWrapper",
     "ArxivAPIWrapper",
+    "PubMedAPIWrapper",
     "BashProcess",
     "BingSearchAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",
