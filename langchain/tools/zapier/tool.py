@@ -27,7 +27,7 @@ This quick start will focus on the server-side use case for brevity.
 Review [full docs](https://nla.zapier.com/api/v1/docs) or reach out to
 nla@zapier.com for user-facing oauth developer support.
 
-Typically you'd use SequentialChain, here's a basic example:
+Typically, you'd use SequentialChain, here's a basic example:
 
     1. Use NLA to find an email in Gmail
     2. Use LLMChain to generate a draft reply to (1)
@@ -100,6 +100,7 @@ class ZapierNLARunAction(BaseTool):
         params: a dict, optional. Any params provided will *override* AI guesses
             from `instructions` (see "understanding the AI guessing flow" here:
             https://nla.zapier.com/api/v1/docs)
+
     """
 
     api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
@@ -160,6 +161,7 @@ class ZapierNLAListActions(BaseTool):
     """
     Args:
         None
+
     """
 
     name = "Zapier NLA: List Actions"
