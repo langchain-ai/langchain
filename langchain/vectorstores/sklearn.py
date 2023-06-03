@@ -237,9 +237,21 @@ class SKLearnVectorStoreBase(VectorStore):
     def similarity_search_with_score(
         self, query: str, *, k: int = DEFAULT_K, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
+        """Run similarity search with score.
+
+        Args:
+            query (str): Query text to search for.
+            k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, Union[str, Callable]]]): Filter by metadata.
+                Filter values are either a str (metadata[key] == value) or a
+                callable returning a bool (value(metadata[key])). Defaults to None.
+
+        Returns:
+            List[Document]: List of documents most similar to the query text.
+        """
         query_embedding = self._embedding_function.embed_query(query)
         indices_dists = self._similarity_index_search_with_score(
-            query_embedding, k=k, **kwargs
+            query_embedding, k=k, filter=filter, **kwargs
         )
         return [
             (
@@ -256,6 +268,18 @@ class SKLearnVectorStoreBase(VectorStore):
     def similarity_search(
         self, query: str, k: int = DEFAULT_K, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
+        """Run similarity search.
+
+        Args:
+            query (str): Query text to search for.
+            k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, Union[str, Callable]]]): Filter by metadata.
+                Filter values are either a str (metadata[key] == value) or a
+                callable returning a bool (value(metadata[key])). Defaults to None.
+
+        Returns:
+            List[Document]: List of documents most similar to the query text.
+        """
         docs_scores = self.similarity_search_with_score(query, k=k, filter=filter, **kwargs)
         return [doc for doc, _ in docs_scores]
 
@@ -287,6 +311,9 @@ class SKLearnVectorStoreBase(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter (Optional[Dict[str, Union[str, Callable]]]): Filter by metadata.
+                Filter values are either a str (metadata[key] == value) or a
+                callable returning a bool (value(metadata[key])). Defaults to None.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -330,6 +357,9 @@ class SKLearnVectorStoreBase(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter (Optional[Dict[str, Union[str, Callable]]]): Filter by metadata.
+                Filter values are either a str (metadata[key] == value) or a
+                callable returning a bool (value(metadata[key])). Defaults to None.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
