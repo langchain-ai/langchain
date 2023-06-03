@@ -71,6 +71,23 @@ def test_get_action_and_input_newline_after_keyword() -> None:
     assert action_input == "ls -l ~/.bashrc.d/\n"
 
 
+def test_get_action_and_input_sql_query() -> None:
+    """Test getting the action and action input from the text
+    when the LLM output is a well formed SQL query
+    """
+    llm_output = """
+    I should query for the largest single shift payment for every unique user.
+    Action: query_sql_db
+    Action Input: \
+    SELECT "UserName", MAX(totalpayment) FROM user_shifts GROUP BY "UserName" """
+    action, action_input = get_action_and_input(llm_output)
+    assert action == "query_sql_db"
+    assert (
+        action_input
+        == 'SELECT "UserName", MAX(totalpayment) FROM user_shifts GROUP BY "UserName"'
+    )
+
+
 def test_get_final_answer() -> None:
     """Test getting final answer."""
     llm_output = (

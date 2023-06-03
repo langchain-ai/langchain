@@ -172,7 +172,7 @@ class LlamaCpp(LLM):
 
     def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
         """
-        Performs sanity check, preparing paramaters in format needed by llama_cpp.
+        Performs sanity check, preparing parameters in format needed by llama_cpp.
 
         Args:
             stop (Optional[List[str]]): List of stop sequences for llama_cpp.
@@ -238,7 +238,7 @@ class LlamaCpp(LLM):
     ) -> Generator[Dict, None, None]:
         """Yields results objects as they are generated in real time.
 
-        BETA: this is a beta feature while we figure out the right abstraction:
+        BETA: this is a beta feature while we figure out the right abstraction.
         Once that happens, this interface could change.
 
         It also calls the callback manager's on_llm_new_token event with
