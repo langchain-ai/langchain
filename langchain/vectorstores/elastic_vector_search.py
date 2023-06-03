@@ -440,6 +440,7 @@ class ElasticKnnSearch(ElasticVectorSearch):
         fields: Optional[
             Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
         ] = None,
+        vector_query_field: Optional[str] = 'vector'
     ) -> Dict:
         """
         Performs a k-nearest neighbor (k-NN) search on the Elasticsearch index.
@@ -462,6 +463,7 @@ class ElasticKnnSearch(ElasticVectorSearch):
             source: Whether to include the source of each hit in the results.
             fields: The fields to include in the source of each hit. If None, all
                 fields are included.
+            vector_query_field: Field name to use in knn search if not default 'vector'
 
         Returns:
             The search results.
@@ -472,7 +474,7 @@ class ElasticKnnSearch(ElasticVectorSearch):
         """
 
         knn_query_body = self._default_knn_query(
-            query_vector=query_vector, query=query, model_id=model_id, k=k
+            query_vector=query_vector, query=query, model_id=model_id, k=k, field=vector_query_field
         )
 
         # Perform the kNN search on the Elasticsearch index and return the results.
@@ -498,6 +500,8 @@ class ElasticKnnSearch(ElasticVectorSearch):
         fields: Optional[
             Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
         ] = None,
+        vector_query_field: Optional[str] = 'vector',
+        query_field: Optional[str] = 'text'
     ) -> Dict[Any, Any]:
         """Performs a hybrid k-nearest neighbor (k-NN) and text-based search on the
             Elasticsearch index.
@@ -524,6 +528,8 @@ class ElasticKnnSearch(ElasticVectorSearch):
             fields
                 The fields to include in the source of each hit. If None, all fields are
                 included. Defaults to None.
+            vector_query_field: Field name to use in knn search if not default 'vector'
+            query_field: Field name to use in search if not default 'text'
 
         Returns:
             The search results.
@@ -534,14 +540,14 @@ class ElasticKnnSearch(ElasticVectorSearch):
         """
 
         knn_query_body = self._default_knn_query(
-            query_vector=query_vector, query=query, model_id=model_id, k=k
+            query_vector=query_vector, query=query, model_id=model_id, k=k, field=vector_query_field
         )
 
         # Modify the knn_query_body to add a "boost" parameter
         knn_query_body["boost"] = knn_boost
 
         # Generate the body of the standard Elasticsearch query
-        match_query_body = {"match": {"text": {"query": query, "boost": query_boost}}}
+        match_query_body = {"match": {query_field: {"query": query, "boost": query_boost}}}
 
         # Perform the hybrid search on the Elasticsearch index and return the results.
         res = self.client.search(
