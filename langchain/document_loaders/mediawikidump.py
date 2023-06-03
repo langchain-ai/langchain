@@ -40,7 +40,7 @@ class MWDumpLoader(BaseLoader):
     def __init__(
             self, file_path: str, 
             encoding: Optional[str] = "utf8",
-            namespaces: Optional[List[int]] = [0],
+            namespaces: Optional[List[int]] = [-1, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
             skip_redirects: Optional[bool]=False,
             stop_on_error: Optional[bool]=True):
         """Initialize with file path."""
@@ -60,7 +60,6 @@ class MWDumpLoader(BaseLoader):
         docs = []
 
         for page in dump.pages:
-            print(page)
             if self.skip_redirects and page.redirect and page.redirect != None:
                 continue
             if page.namespace in self.namespaces:
