@@ -13,5 +13,6 @@ API References
    ./reference/modules/memory.rst
    ./reference/modules/chains.rst
    ./reference/agents.rst
+   ./reference/callbacks.rst
    ./reference/modules/utilities.rst
    ./reference/modules/experimental.rst
