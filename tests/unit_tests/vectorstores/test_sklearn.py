@@ -120,6 +120,18 @@ def test_knn_sklearn_knn_with_filters() -> None:
     assert doc.metadata["page"] == "1"
     assert score < 1
 
+    # callable filters
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=1, filter={'page': lambda s: int(s) == 1})
+    assert len(output) == 1
+    doc, score = output[0]
+    assert doc.page_content == "bar"
+    assert doc.metadata["page"] == "1"
+    assert score < 1
+
+
+
+
+
 # SVM
 
 @pytest.mark.requires("numpy", "sklearn")
