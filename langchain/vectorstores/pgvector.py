@@ -515,7 +515,9 @@ class PGVector(VectorStore):
         **kwargs: Any,
     ) -> PGVector:
         """
-        Get intsance of an existing PGVector store.
+        Get intsance of an existing PGVector store.This method will
+        return the instance of the store without inserting any new
+        embeddings
         """
 
         connection_string = cls.get_connection_string(kwargs)
