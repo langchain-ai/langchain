@@ -33,10 +33,8 @@ For an introduction to the default text splitter and generic functionality see:
 Usage examples for the text splitters:
 
 - `Character <./text_splitters/examples/character_text_splitter.html>`_
-- `LaTeX <./text_splitters/examples/latex.html>`_
-- `Markdown <./text_splitters/examples/markdown.html>`_
+- `Code (including HTML, Markdown, Latex, Python, etc) <./text_splitters/examples/code_splitter.html>`_
 - `NLTK <./text_splitters/examples/nltk.html>`_
-- `Python code <./text_splitters/examples/python.html>`_
 - `Recursive Character <./text_splitters/examples/recursive_text_splitter.html>`_
 - `spaCy <./text_splitters/examples/spacy.html>`_
 - `tiktoken (OpenAI) <./text_splitters/examples/tiktoken_splitter.html>`_
@@ -49,10 +47,8 @@ Usage examples for the text splitters:
    :hidden:
 
    ./text_splitters/examples/character_text_splitter.ipynb
-   ./text_splitters/examples/latex.ipynb
-   ./text_splitters/examples/markdown.ipynb
+   ./text_splitters/examples/code_splitter.ipynb
    ./text_splitters/examples/nltk.ipynb
-   ./text_splitters/examples/python.ipynb
    ./text_splitters/examples/recursive_text_splitter.ipynb
    ./text_splitters/examples/spacy.ipynb
    ./text_splitters/examples/tiktoken_splitter.ipynb

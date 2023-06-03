@@ -41,7 +41,7 @@ class CohereRerank(BaseDocumentCompressor):
 
             values["client"] = cohere.Client(cohere_api_key)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import cohere python package. "
                 "Please install it with `pip install cohere`."
             )
@@ -50,6 +50,8 @@ class CohereRerank(BaseDocumentCompressor):
     def compress_documents(
         self, documents: Sequence[Document], query: str
     ) -> Sequence[Document]:
+        if len(documents) == 0:  # to avoid empty api call
+            return []
         doc_list = list(documents)
         _docs = [d.page_content for d in doc_list]
         results = self.client.rerank(

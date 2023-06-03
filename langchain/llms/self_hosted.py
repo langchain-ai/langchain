@@ -155,7 +155,7 @@ class SelfHostedPipeline(LLM):
             import runhouse as rh
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import runhouse python package. "
                 "Please install it with `pip install runhouse`."
             )

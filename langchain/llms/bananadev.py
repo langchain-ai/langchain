@@ -23,6 +23,7 @@ class Banana(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import Banana
             banana = Banana(model_key="")
     """
@@ -91,7 +92,7 @@ class Banana(LLM):
         try:
             import banana_dev as banana
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import banana-dev python package. "
                 "Please install it with `pip install banana-dev`."
             )

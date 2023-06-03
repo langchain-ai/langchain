@@ -51,8 +51,8 @@ class GooglePlacesAPIWrapper(BaseModel):
 
             values["google_map_client"] = googlemaps.Client(gplaces_api_key)
         except ImportError:
-            raise ValueError(
-                "Could not import googlemaps python packge. "
+            raise ImportError(
+                "Could not import googlemaps python package. "
                 "Please install it with `pip install googlemaps`."
             )
         return values

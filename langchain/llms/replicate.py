@@ -23,6 +23,7 @@ class Replicate(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import Replicate
             replicate = Replicate(model="stability-ai/stable-diffusion: \
                                          27b93a2413e7f36cd83da926f365628\
@@ -89,7 +90,7 @@ class Replicate(LLM):
         try:
             import replicate as replicate_python
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import replicate python package. "
                 "Please install it with `pip install replicate`."
             )
