@@ -122,7 +122,13 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         chat = self.client.start_chat(context=context, **self._default_params)
         for pair in history.history:
             chat._history.append((pair.question.content, pair.answer.content))
-        response = chat.send_message(question.content)
+        response = chat.send_message(
+            question.content,
+            max_output_tokens=chat._max_output_tokens,
+            temperature=chat._temperature,
+            top_k=chat._top_k,
+            top_p=chat._top_p,
+        )
         text = self._enforce_stop_words(response.text, stop)
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
 
