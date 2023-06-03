@@ -18,7 +18,7 @@ from langchain.utilities import PythonREPL
 
 
 def _get_default_python_repl() -> PythonREPL:
-    return PythonREPL(_globals=globals(), _locals=None)
+    return PythonREPL(_globals=None, _locals=None)
 
 
 def sanitize_input(query: str) -> str:
