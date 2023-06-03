@@ -120,6 +120,15 @@ def test_knn_sklearn_knn_with_filters() -> None:
     assert doc.metadata["page"] == "1"
     assert score < 1
 
+    # empty fitler result should raise an error
+    with pytest.raises(ValueError):
+        output = docsearch.similarity_search_with_relevance_scores("foo", k=1, filter={'unknown': '1'})
+
+    # filter should be either str or callable
+    with pytest.raises(ValueError):
+        output = docsearch.similarity_search_with_relevance_scores("foo", k=1, filter={'page': 1})
+
+
     # callable filters
     output = docsearch.similarity_search_with_relevance_scores("foo", k=1, filter={'page': lambda s: int(s) == 1})
     assert len(output) == 1
@@ -128,8 +137,13 @@ def test_knn_sklearn_knn_with_filters() -> None:
     assert doc.metadata["page"] == "1"
     assert score < 1
 
+    # more than 1 argument
+    with pytest.raises(ValueError):
+        output = docsearch.similarity_search_with_relevance_scores("foo", k=1, filter={'page': lambda s, _: int(s) == 1})
 
-
+    # not returning bool
+    with pytest.raises(ValueError):
+        output = docsearch.similarity_search_with_relevance_scores("foo", k=1, filter={'page': lambda s: 1})
 
 
 # SVM

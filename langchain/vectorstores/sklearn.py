@@ -210,20 +210,22 @@ class SKLearnVectorStoreBase(VectorStore):
         for key, value in filter.items():
             for i, metadata_ in enumerate(self._metadatas):
                 if isinstance(value, str):
-                    passed = metadata_[key] == value
+                    passed = metadata_.get(key, None) == value
                 elif callable(value):
                     try:
                         passed = value(metadata_[key])
                         if not isinstance(passed, bool):
                             raise TypeError("Callable filters have to return a bool")
                     except Exception as err:
-                        raise RuntimeError(
+                        raise ValueError(
                             f'Callable filter for {key} failed. It has to be a callable taking a single argument as input and returning a bool'
                         ) from err
-                    else:
-                        raise ValueError(f'Filters have to be either a callable or str. Got {type(value)} for {key}')
+                else:
+                    raise ValueError(f'Filters have to be either a callable or str. Got {type(value)} for "{key}" filter')
                         
                 mask[i] = mask[i] and passed
+        if not any(mask):
+            raise ValueError('Filtering led to empty data!')
         return mask
 
     @abstractmethod
