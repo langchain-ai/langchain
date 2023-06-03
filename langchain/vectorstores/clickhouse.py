@@ -167,7 +167,6 @@ class Clickhouse(VectorStore):
             ) ENGINE = MergeTree ORDER BY {self.config.column_map['id']} 
             SETTINGS index_granularity = 8192
         """
-        print(schema_)
         self.dim = dim
         self.BS = "\\"
         self.must_escape = ("\\", "'")
@@ -207,7 +206,6 @@ class Clickhouse(VectorStore):
 
     def _insert(self, transac: Iterable, column_names: Iterable[str]) -> None:
         _insert_query = self._build_insert_sql(transac, column_names)
-        print(_insert_query)
         self.client.command(_insert_query)
 
     def add_texts(
@@ -338,7 +336,6 @@ class Clickhouse(VectorStore):
                 AS dist {self.dist_order}
             LIMIT {topk} {' '.join(settings_strs)}
             """
-        print(q_str)
         return q_str
 
     def similarity_search(
