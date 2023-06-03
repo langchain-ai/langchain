@@ -52,7 +52,6 @@ class VectorStore(ABC):
         Args:
             documents (List[Document]: Documents to add to the vectorstore.
 
-
         Returns:
             List[str]: List of IDs of the added texts.
         """

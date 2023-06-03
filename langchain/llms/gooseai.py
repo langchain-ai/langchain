@@ -22,6 +22,7 @@ class GooseAI(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import GooseAI
             gooseai = GooseAI(model_name="gpt-neo-20b")
 

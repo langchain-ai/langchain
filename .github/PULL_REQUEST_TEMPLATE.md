@@ -1,5 +1,3 @@
-# Your PR Title (What it does)
-
 <!--
 Thank you for contributing to LangChain! Your PR will appear in our release under the title you set. Please make sure it highlights your valuable contribution.
 
@@ -14,7 +12,7 @@ Finally, we'd love to show appreciation for your contribution - if you'd like us
 
 Fixes # (issue)
 
-## Before submitting
+#### Before submitting
 
 <!-- If you're adding a new integration, please include:
 
@@ -28,9 +26,9 @@ etc:
 https://github.com/hwchase17/langchain/blob/master/.github/CONTRIBUTING.md
 -->
 
-## Who can review?
+#### Who can review?
 
-Community members can review the PR once tests pass. Tag maintainers/contributors who might be interested:
+Tag maintainers/contributors who might be interested:
 
 <!-- For a quicker response, figure out the right person to tag with @
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import uuid
 import warnings
-from hashlib import md5
 from itertools import islice
 from operator import itemgetter
 from typing import (
@@ -14,6 +13,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -27,10 +27,11 @@ from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
+    from qdrant_client.conversions import common_types
     from qdrant_client.http import models as rest
 
-
-MetadataFilter = Dict[str, Union[str, int, bool, dict, list]]
+    DictFilter = Dict[str, Union[str, int, bool, dict, list]]
+    MetadataFilter = Union[DictFilter, common_types.Filter]
 
 
 class Qdrant(VectorStore):
@@ -108,57 +109,11 @@ class Qdrant(VectorStore):
             self._embeddings_function = embeddings
             self.embeddings = None
 
-    def _embed_query(self, query: str) -> List[float]:
-        """Embed query text.
-
-        Used to provide backward compatibility with `embedding_function` argument.
-
-        Args:
-            query: Query text.
-
-        Returns:
-            List of floats representing the query embedding.
-        """
-        if self.embeddings is not None:
-            embedding = self.embeddings.embed_query(query)
-        else:
-            if self._embeddings_function is not None:
-                embedding = self._embeddings_function(query)
-            else:
-                raise ValueError("Neither of embeddings or embedding_function is set")
-        return embedding.tolist() if hasattr(embedding, "tolist") else embedding
-
-    def _embed_texts(self, texts: Iterable[str]) -> List[List[float]]:
-        """Embed search texts.
-
-        Used to provide backward compatibility with `embedding_function` argument.
-
-        Args:
-            texts: Iterable of texts to embed.
-
-        Returns:
-            List of floats representing the texts embedding.
-        """
-        if self.embeddings is not None:
-            embeddings = self.embeddings.embed_documents(list(texts))
-            if hasattr(embeddings, "tolist"):
-                embeddings = embeddings.tolist()
-        elif self._embeddings_function is not None:
-            embeddings = []
-            for text in texts:
-                embedding = self._embeddings_function(text)
-                if hasattr(embeddings, "tolist"):
-                    embedding = embedding.tolist()
-                embeddings.append(embedding)
-        else:
-            raise ValueError("Neither of embeddings or embedding_function is set")
-
-        return embeddings
-
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[Sequence[str]] = None,
         batch_size: int = 64,
         **kwargs: Any,
     ) -> List[str]:
@@ -167,20 +122,26 @@ class Qdrant(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            ids:
+                Optional list of ids to associate with the texts. Ids have to be
+                uuid-like strings.
+            batch_size:
+                How many vectors upload per-request.
+                Default: 64
 
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
         from qdrant_client.http import models as rest
 
-        ids = []
+        added_ids = []
         texts_iterator = iter(texts)
         metadatas_iterator = iter(metadatas or [])
+        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
         while batch_texts := list(islice(texts_iterator, batch_size)):
-            # Take the corresponding metadata for each text in a batch
+            # Take the corresponding metadata and id for each text in a batch
             batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
-
-            batch_ids = [md5(text.encode("utf-8")).hexdigest() for text in batch_texts]
+            batch_ids = list(islice(ids_iterator, batch_size))
 
             self.client.upsert(
                 collection_name=self.collection_name,
@@ -196,9 +157,9 @@ class Qdrant(VectorStore):
                 ),
             )
 
-            ids.extend(batch_ids)
+            added_ids.extend(batch_ids)
 
-        return ids
+        return added_ids
 
     def similarity_search(
         self,
@@ -217,7 +178,7 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        results = self.similarity_search_with_score(query, k, filter)
+        results = self.similarity_search_with_score(query, k, filter=filter)
         return list(map(itemgetter(0), results))
 
     def similarity_search_with_score(
@@ -234,10 +195,20 @@ class Qdrant(VectorStore):
             List of Documents most similar to the query and score for each.
         """
 
+        if filter is not None and isinstance(filter, dict):
+            warnings.warn(
+                "Using dict as a `filter` is deprecated. Please use qdrant-client "
+                "filters directly: "
+                "https://qdrant.tech/documentation/concepts/filtering/",
+                DeprecationWarning,
+            )
+            qdrant_filter = self._qdrant_filter_from_dict(filter)
+        else:
+            qdrant_filter = filter
         results = self.client.search(
             collection_name=self.collection_name,
             query_vector=self._embed_query(query),
-            query_filter=self._qdrant_filter_from_dict(filter),
+            query_filter=qdrant_filter,
             with_payload=True,
             limit=k,
         )
@@ -302,6 +273,7 @@ class Qdrant(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[Sequence[str]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
@@ -328,6 +300,9 @@ class Qdrant(VectorStore):
             metadatas:
                 An optional list of metadata. If provided it has to be of the same
                 length as a list of texts.
+            ids:
+                Optional list of ids to associate with the texts. Ids have to be
+                uuid-like strings.
             location:
                 If `:memory:` - use in-memory Qdrant instance.
                 If `str` - use it as a `url` parameter.
@@ -367,14 +342,17 @@ class Qdrant(VectorStore):
             metadata_payload_key:
                 A payload key used to store the metadata of the document.
                 Default: "metadata"
+            batch_size:
+                How many vectors upload per-request.
+                Default: 64
             **kwargs:
                 Additional arguments passed directly into REST client initialization
 
         This is a user-friendly interface that:
-            1. Creates embeddings, one for each text
-            2. Initializes the Qdrant database as an in-memory docstore by default
-               (and overridable to a remote docstore)
-            3. Adds the text embeddings to the Qdrant database
+        1. Creates embeddings, one for each text
+        2. Initializes the Qdrant database as an in-memory docstore by default
+           (and overridable to a remote docstore)
+        3. Adds the text embeddings to the Qdrant database
 
         This is intended to be a quick way to get started.
 
@@ -428,9 +406,11 @@ class Qdrant(VectorStore):
 
         texts_iterator = iter(texts)
         metadatas_iterator = iter(metadatas or [])
+        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
         while batch_texts := list(islice(texts_iterator, batch_size)):
-            # Take the corresponding metadata for each text in a batch
+            # Take the corresponding metadata and id for each text in a batch
             batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
+            batch_ids = list(islice(ids_iterator, batch_size))
 
             # Generate the embeddings for all the texts in a batch
             batch_embeddings = embedding.embed_documents(batch_texts)
@@ -438,7 +418,7 @@ class Qdrant(VectorStore):
             client.upsert(
                 collection_name=collection_name,
                 points=rest.Batch.construct(
-                    ids=[md5(text.encode("utf-8")).hexdigest() for text in batch_texts],
+                    ids=batch_ids,
                     vectors=batch_embeddings,
                     payloads=cls._build_payloads(
                         batch_texts,
@@ -519,7 +499,7 @@ class Qdrant(VectorStore):
         return out
 
     def _qdrant_filter_from_dict(
-        self, filter: Optional[MetadataFilter]
+        self, filter: Optional[DictFilter]
     ) -> Optional[rest.Filter]:
         from qdrant_client.http import models as rest
 
@@ -533,3 +513,50 @@ class Qdrant(VectorStore):
                 for condition in self._build_condition(key, value)
             ]
         )
+
+    def _embed_query(self, query: str) -> List[float]:
+        """Embed query text.
+
+        Used to provide backward compatibility with `embedding_function` argument.
+
+        Args:
+            query: Query text.
+
+        Returns:
+            List of floats representing the query embedding.
+        """
+        if self.embeddings is not None:
+            embedding = self.embeddings.embed_query(query)
+        else:
+            if self._embeddings_function is not None:
+                embedding = self._embeddings_function(query)
+            else:
+                raise ValueError("Neither of embeddings or embedding_function is set")
+        return embedding.tolist() if hasattr(embedding, "tolist") else embedding
+
+    def _embed_texts(self, texts: Iterable[str]) -> List[List[float]]:
+        """Embed search texts.
+
+        Used to provide backward compatibility with `embedding_function` argument.
+
+        Args:
+            texts: Iterable of texts to embed.
+
+        Returns:
+            List of floats representing the texts embedding.
+        """
+        if self.embeddings is not None:
+            embeddings = self.embeddings.embed_documents(list(texts))
+            if hasattr(embeddings, "tolist"):
+                embeddings = embeddings.tolist()
+        elif self._embeddings_function is not None:
+            embeddings = []
+            for text in texts:
+                embedding = self._embeddings_function(text)
+                if hasattr(embeddings, "tolist"):
+                    embedding = embedding.tolist()
+                embeddings.append(embedding)
+        else:
+            raise ValueError("Neither of embeddings or embedding_function is set")
+
+        return embeddings

@@ -23,6 +23,7 @@ class Replicate(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import Replicate
             replicate = Replicate(model="stability-ai/stable-diffusion: \
                                          27b93a2413e7f36cd83da926f365628\

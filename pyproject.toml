@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.186"
+version = "0.0.189"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -306,7 +306,7 @@ extended_testing = [
  "html2text",
  "py-trello",
  "scikit-learn",
- "pyspark",
+ "pyspark"
 ]
 
 [tool.ruff]
