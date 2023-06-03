@@ -14,12 +14,12 @@ Baseten integrates with LangChain through the LLM module, which provides a stand
 
 You can deploy foundation models like LLaMA and FLAN-T5 with one click from the [Baseten model library](https://app.baseten.co/explore/) or if you have your own model, [deploy it with this tutorial](https://docs.baseten.co/deploying-models/deploy).
 
-In this example, we'll work with LLaMA. [Deploy LLaMA here](https://app.baseten.co/explore/llama) and follow along with the deployed [model's ID](https://docs.baseten.co/managing-models/manage).
+In this example, we'll work with LLaMA. [Deploy LLaMA here](https://app.baseten.co/explore/llama) and follow along with the deployed [model's version ID](https://docs.baseten.co/managing-models/manage).
 
 ```python
 from langchain.llms import Baseten
 
-llama = Baseten(model="MODEL_ID", verbose=True)
+llama = Baseten(model="MODEL_VERSION_ID", verbose=True)
 
 llama("Answer this question: What animals grow wool for making sweaters?")
 ```
