@@ -20,8 +20,6 @@ from typing import (
     Union,
 )
 
-from transformers import AutoTokenizer
-
 from langchain.docstore.document import Document
 from langchain.schema import BaseDocumentTransformer
 
@@ -306,6 +304,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
     ):
         """Create a new TextSplitter."""
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
+        from transformers import AutoTokenizer
 
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
