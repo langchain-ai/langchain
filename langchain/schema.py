@@ -185,7 +185,9 @@ class LLMResult(BaseModel):
     run: Optional[RunInfo] = None
     """Run metadata."""
 
-    def __eq__(self, other: LLMResult) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, LLMResult):
+            return NotImplemented
         return (
             self.generations == other.generations
             and self.llm_output == other.llm_output
