@@ -147,6 +147,7 @@ def _handle_event(
             else:
                 logger.warning(f"Error in {event_name} callback: {e}")
         except Exception as e:
+            handler.cleanup()
             if handler.raise_error:
                 raise e
             logging.warning(f"Error in {event_name} callback: {e}")
@@ -183,6 +184,12 @@ async def _ahandle_event_for_handler(
         else:
             logger.warning(f"Error in {event_name} callback: {e}")
     except Exception as e:
+        if asyncio.iscoroutinefunction(handler.cleanup):
+            await handler.cleanup()
+        else:
+            await asyncio.get_event_loop().run_in_executor(None, handler.cleanup)
+        if handler.raise_error:
+            raise e
         logger.warning(f"Error in {event_name} callback: {e}")
 
 

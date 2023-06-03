@@ -210,6 +210,10 @@ class BaseCallbackHandler(
         """Whether to ignore chat model callbacks."""
         return False
 
+    def cleanup(self) -> None:
+        """Cleanup callback handler."""
+        pass
+
 
 class AsyncCallbackHandler(BaseCallbackHandler):
     """Async callback handler that can be used to handle callbacks from langchain."""
@@ -360,6 +364,10 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run on agent end."""
+
+    async def cleanup(self) -> None:
+        """Cleanup callback handler."""
+        pass
 
 
 class BaseCallbackManager(CallbackManagerMixin):
