@@ -30,6 +30,7 @@ class AzureChatOpenAI(ChatOpenAI):
     `35-turbo-dev`, the constructor should look like:
 
     .. code-block:: python
+
         AzureChatOpenAI(
             deployment_name="35-turbo-dev",
             openai_api_version="2023-03-15-preview",

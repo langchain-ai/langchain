@@ -33,6 +33,7 @@ from langchain.document_loaders.email import (
 from langchain.document_loaders.epub import UnstructuredEPubLoader
 from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
+from langchain.document_loaders.figma import FigmaFileLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
 from langchain.document_loaders.git import GitLoader
@@ -48,10 +49,12 @@ from langchain.document_loaders.ifixit import IFixitLoader
 from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.document_loaders.image_captions import ImageCaptionLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
+from langchain.document_loaders.iugu import IuguLoader
 from langchain.document_loaders.joplin import JoplinLoader
 from langchain.document_loaders.json_loader import JSONLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.mastodon import MastodonTootsLoader
+from langchain.document_loaders.max_compute import MaxComputeLoader
 from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
@@ -60,6 +63,7 @@ from langchain.document_loaders.notiondb import NotionDBLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.odt import UnstructuredODTLoader
 from langchain.document_loaders.onedrive import OneDriveLoader
+from langchain.document_loaders.onedrive_file import OneDriveFileLoader
 from langchain.document_loaders.pdf import (
     MathpixPDFLoader,
     OnlinePDFLoader,
@@ -152,10 +156,11 @@ __all__ = [
     "DuckDBLoader",
     "EverNoteLoader",
     "FacebookChatLoader",
+    "FigmaFileLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
-    "GitLoader",
     "GitHubIssuesLoader",
+    "GitLoader",
     "GitbookLoader",
     "GoogleApiClient",
     "GoogleApiYoutubeLoader",
@@ -167,17 +172,20 @@ __all__ = [
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",
-    "JoplinLoader",
+    "IuguLoader",
     "JSONLoader",
+    "JoplinLoader",
     "MWDumpLoader",
     "MastodonTootsLoader",
     "MathpixPDFLoader",
+    "MaxComputeLoader",
     "ModernTreasuryLoader",
     "NotebookLoader",
     "NotionDBLoader",
     "NotionDirectoryLoader",
     "ObsidianLoader",
     "OneDriveLoader",
+    "OneDriveFileLoader",
     "OnlinePDFLoader",
     "OutlookMessageLoader",
     "PDFMinerLoader",
@@ -185,6 +193,7 @@ __all__ = [
     "PDFPlumberLoader",
     "PagedPDFSplitter",
     "PlaywrightURLLoader",
+    "PsychicLoader",
     "PyMuPDFLoader",
     "PyPDFDirectoryLoader",
     "PyPDFLoader",
@@ -200,11 +209,13 @@ __all__ = [
     "SeleniumURLLoader",
     "SitemapLoader",
     "SlackDirectoryLoader",
-    "TelegramChatFileLoader",
-    "TelegramChatApiLoader",
     "SpreedlyLoader",
     "StripeLoader",
+    "TelegramChatApiLoader",
+    "TelegramChatFileLoader",
+    "TelegramChatLoader",
     "TextLoader",
+    "ToMarkdownLoader",
     "TomlLoader",
     "TrelloLoader",
     "TwitterTweetLoader",
@@ -228,7 +239,4 @@ __all__ = [
     "WhatsAppChatLoader",
     "WikipediaLoader",
     "YoutubeLoader",
-    "TelegramChatLoader",
-    "ToMarkdownLoader",
-    "PsychicLoader",
 ]
