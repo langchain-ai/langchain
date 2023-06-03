@@ -41,6 +41,7 @@ class ClickhouseSettings(BaseSettings):
         metric (str) : Metric to compute distance,
                        supported are ('angular', 'euclidean', 'manhattan', 'hamming', 'dot'). Defaults to 'angular'.
                        https://github.com/spotify/annoy/blob/main/src/annoymodule.cc#L149-L169
+
         column_map (Dict) : Column type map to project column name onto langchain
                             semantics. Must have keys: `text`, `id`, `vector`,
                             must be same size to number of columns. For example:
@@ -98,7 +99,7 @@ class Clickhouse(VectorStore):
     constraints and even sub-queries.
 
     For more information, please visit
-        [ClickHouse official site](https://docs.ClickHouse.com/en/overview/)
+        [ClickHouse official site](https://clickhouse.com/clickhouse)
     """
 
     def __init__(
