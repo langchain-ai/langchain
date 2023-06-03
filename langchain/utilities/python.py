@@ -24,7 +24,6 @@ class PythonREPL(BaseModel):
     def run(self, command: str) -> str:
         """Run command with own globals/locals and returns anything printed."""
         try:
-            print(self.globals)
             result = self.wasm.exec(command, globals=self.globals, locals=self.locals)
             output = result.text
         except Exception as e:
