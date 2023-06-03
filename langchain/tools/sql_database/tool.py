@@ -61,8 +61,7 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 
     name = "schema_sql_db"
     description = """
-    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
-    Be sure that the tables actually exist by calling list_tables_sql_db first!
+    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.    
 
     Example Input: "table1, table2, table3"
     """
