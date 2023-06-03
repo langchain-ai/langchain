@@ -1,13 +1,11 @@
 version: '3'
 services:
   langchain-frontend:
-    image: langchain/langchainplus-frontend:latest
+    image: langchain/${_LANGCHAINPLUS_IMAGE_PREFIX-}langchainplus-frontend:latest
     ports:
       - 80:80
     environment:
-      - BACKEND_URL=http://langchain-backend:8000
-      - PUBLIC_BASE_URL=http://localhost:8000
-      - PUBLIC_DEV_MODE=true
+      - REACT_APP_BACKEND_URL=http://localhost:1984
     depends_on:
       - langchain-backend
     volumes:
@@ -16,13 +14,14 @@ services:
       context: frontend-react/.
       dockerfile: Dockerfile
   langchain-backend:
-    image: langchain/langchainplus-backend:latest
+    image: langchain/${_LANGCHAINPLUS_IMAGE_PREFIX-}langchainplus-backend:latest
     environment:
-      - PORT=8000
+      - PORT=1984
       - LANGCHAIN_ENV=local_docker
       - LOG_LEVEL=warning
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     ports:
-      - 8000:8000
+      - 1984:1984
     depends_on:
       - langchain-db
     build:

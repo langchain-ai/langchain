@@ -124,7 +124,7 @@ class BaseOpenAI(BaseLLM):
     """Wrapper around OpenAI large language models."""
 
     client: Any  #: :meta private:
-    model_name: str = "text-davinci-003"
+    model_name: str = Field("text-davinci-003", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -147,6 +147,8 @@ class BaseOpenAI(BaseLLM):
     openai_api_key: Optional[str] = None
     openai_api_base: Optional[str] = None
     openai_organization: Optional[str] = None
+    # to support explicit proxy for OpenAI
+    openai_proxy: Optional[str] = None
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
@@ -178,12 +180,12 @@ class BaseOpenAI(BaseLLM):
         """Configuration for this pydantic object."""
 
         extra = Extra.ignore
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
-
+        all_required_field_names = cls.all_required_field_names()
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
@@ -196,8 +198,7 @@ class BaseOpenAI(BaseLLM):
                 )
                 extra[field_name] = values.pop(field_name)
 
-        disallowed_model_kwargs = all_required_field_names | {"model"}
-        invalid_model_kwargs = disallowed_model_kwargs.intersection(extra.keys())
+        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
         if invalid_model_kwargs:
             raise ValueError(
                 f"Parameters {invalid_model_kwargs} should be specified explicitly. "
@@ -219,6 +220,12 @@ class BaseOpenAI(BaseLLM):
             "OPENAI_API_BASE",
             default="",
         )
+        openai_proxy = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",
+        )
         openai_organization = get_from_dict_or_env(
             values,
             "openai_organization",
@@ -233,9 +240,11 @@ class BaseOpenAI(BaseLLM):
                 openai.api_base = openai_api_base
             if openai_organization:
                 openai.organization = openai_organization
+            if openai_proxy:
+                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
             values["client"] = openai.Completion
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
@@ -455,15 +464,15 @@ class BaseOpenAI(BaseLLM):
         """Return type of llm."""
         return "openai"
 
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate num tokens with tiktoken package."""
+    def get_token_ids(self, text: str) -> List[int]:
+        """Get the token IDs using the tiktoken package."""
         # tiktoken NOT supported for Python < 3.8
         if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
         try:
             import tiktoken
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
                 "Please install it with `pip install tiktoken`."
@@ -471,14 +480,11 @@ class BaseOpenAI(BaseLLM):
 
         enc = tiktoken.encoding_for_model(self.model_name)
 
-        tokenized_text = enc.encode(
+        return enc.encode(
             text,
             allowed_special=self.allowed_special,
             disallowed_special=self.disallowed_special,
         )
-
-        # calculate the number of tokens in the encoded text
-        return len(tokenized_text)
 
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
@@ -515,6 +521,10 @@ class BaseOpenAI(BaseLLM):
             "code-cushman-002": 2048,
             "code-cushman-001": 2048,
         }
+
+        # handling finetuned models
+        if "ft-" in modelname:
+            modelname = modelname.split(":")[0]
 
         context_size = model_token_mapping.get(modelname, None)
 
@@ -627,6 +637,8 @@ class OpenAIChat(BaseLLM):
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
     openai_api_base: Optional[str] = None
+    # to support explicit proxy for OpenAI
+    openai_proxy: Optional[str] = None
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     prefix_messages: List = Field(default_factory=list)
@@ -669,6 +681,12 @@ class OpenAIChat(BaseLLM):
             "OPENAI_API_BASE",
             default="",
         )
+        openai_proxy = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",
+        )
         openai_organization = get_from_dict_or_env(
             values, "openai_organization", "OPENAI_ORGANIZATION", default=""
         )
@@ -680,8 +698,10 @@ class OpenAIChat(BaseLLM):
                 openai.api_base = openai_api_base
             if openai_organization:
                 openai.organization = openai_organization
+            if openai_proxy:
+                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
@@ -803,28 +823,23 @@ class OpenAIChat(BaseLLM):
         """Return type of llm."""
         return "openai-chat"
 
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate num tokens with tiktoken package."""
+    def get_token_ids(self, text: str) -> List[int]:
+        """Get the token IDs using the tiktoken package."""
         # tiktoken NOT supported for Python < 3.8
         if sys.version_info[1] < 8:
-            return super().get_num_tokens(text)
+            return super().get_token_ids(text)
         try:
             import tiktoken
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
                 "Please install it with `pip install tiktoken`."
             )
-        # create a GPT-3.5-Turbo encoder instance
-        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
-        # encode the text using the GPT-3.5-Turbo encoder
-        tokenized_text = enc.encode(
+        enc = tiktoken.encoding_for_model(self.model_name)
+        return enc.encode(
             text,
             allowed_special=self.allowed_special,
             disallowed_special=self.disallowed_special,
         )
-
-        # calculate the number of tokens in the encoded text
-        return len(tokenized_text)

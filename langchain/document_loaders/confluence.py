@@ -1,5 +1,6 @@
 """Load Data from a Confluence Space"""
 import logging
+from io import BytesIO
 from typing import Any, Callable, List, Optional, Union
 
 from tenacity import (
@@ -18,7 +19,8 @@ logger = logging.getLogger(__name__)
 class ConfluenceLoader(BaseLoader):
     """
     Load Confluence pages. Port of https://llamahub.ai/l/confluence
-    This currently supports both username/api_key and Oauth2 login.
+    This currently supports username/api_key, Oauth2 login or personal access token
+    authentication.
 
     Specify a list page_ids and/or space_key to load in the corresponding pages into
     Document objects, if both are specified the union of both sets will be returned.
@@ -52,6 +54,8 @@ class ConfluenceLoader(BaseLoader):
     :type username: str, optional
     :param oauth2: _description_, defaults to {}
     :type oauth2: dict, optional
+    :param token: _description_, defaults to None
+    :type token: str, optional
     :param cloud: _description_, defaults to True
     :type cloud: bool, optional
     :param number_of_retries: How many times to retry, defaults to 3
@@ -72,6 +76,7 @@ class ConfluenceLoader(BaseLoader):
         api_key: Optional[str] = None,
         username: Optional[str] = None,
         oauth2: Optional[dict] = None,
+        token: Optional[str] = None,
         cloud: Optional[bool] = True,
         number_of_retries: Optional[int] = 3,
         min_retry_seconds: Optional[int] = 2,
@@ -79,7 +84,9 @@ class ConfluenceLoader(BaseLoader):
         confluence_kwargs: Optional[dict] = None,
     ):
         confluence_kwargs = confluence_kwargs or {}
-        errors = ConfluenceLoader.validate_init_args(url, api_key, username, oauth2)
+        errors = ConfluenceLoader.validate_init_args(
+            url, api_key, username, oauth2, token
+        )
         if errors:
             raise ValueError(f"Error(s) while validating input: {errors}")
 
@@ -100,6 +107,10 @@ class ConfluenceLoader(BaseLoader):
             self.confluence = Confluence(
                 url=url, oauth2=oauth2, cloud=cloud, **confluence_kwargs
             )
+        elif token:
+            self.confluence = Confluence(
+                url=url, token=token, cloud=cloud, **confluence_kwargs
+            )
         else:
             self.confluence = Confluence(
                 url=url,
@@ -115,6 +126,7 @@ class ConfluenceLoader(BaseLoader):
         api_key: Optional[str] = None,
         username: Optional[str] = None,
         oauth2: Optional[dict] = None,
+        token: Optional[str] = None,
     ) -> Union[List, None]:
         """Validates proper combinations of init arguments"""
 
@@ -144,6 +156,12 @@ class ConfluenceLoader(BaseLoader):
                 "You have either ommited require keys or added extra "
                 "keys to the oauth2 dictionary. key values should be "
                 "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']`"
+            )
+
+        if token and (api_key or username or oauth2):
+            errors.append(
+                "Cannot provide a value for `token` and a value for `api_key`, "
+                "`username` or `oauth2`"
             )
 
         if errors:
@@ -346,15 +364,17 @@ class ConfluenceLoader(BaseLoader):
             attachment_texts = self.process_attachment(page["id"])
         else:
             attachment_texts = []
-        text = BeautifulSoup(
-            page["body"]["storage"]["value"], "lxml"
-        ).get_text() + "".join(attachment_texts)
+        text = BeautifulSoup(page["body"]["storage"]["value"], "lxml").get_text(
+            " ", strip=True
+        ) + "".join(attachment_texts)
         if include_comments:
             comments = self.confluence.get_page_comments(
                 page["id"], expand="body.view.value", depth="all"
             )["results"]
             comment_texts = [
-                BeautifulSoup(comment["body"]["view"]["value"], "lxml").get_text()
+                BeautifulSoup(comment["body"]["view"]["value"], "lxml").get_text(
+                    " ", strip=True
+                )
                 for comment in comments
             ]
             text = text + "".join(comment_texts)
@@ -370,12 +390,10 @@ class ConfluenceLoader(BaseLoader):
 
     def process_attachment(self, page_id: str) -> List[str]:
         try:
-            import requests  # noqa: F401
             from PIL import Image  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `pdf2image` or `Pillow` package not found, "
-                "please run `pip install pytesseract pdf2image Pillow`"
+                "`Pillow` package not found, " "please run `pip install Pillow`"
             )
 
         # depending on setup you may also need to set the correct path for
@@ -419,9 +437,6 @@ class ConfluenceLoader(BaseLoader):
                 "please run `pip install pytesseract pdf2image`"
             )
 
-        import pytesseract  # noqa: F811
-        from pdf2image import convert_from_bytes  # noqa: F811
-
         response = self.confluence.request(path=link, absolute=True)
         text = ""
 
@@ -444,8 +459,6 @@ class ConfluenceLoader(BaseLoader):
 
     def process_image(self, link: str) -> str:
         try:
-            from io import BytesIO  # noqa: F401
-
             import pytesseract  # noqa: F401
             from PIL import Image  # noqa: F401
         except ImportError:
@@ -472,8 +485,6 @@ class ConfluenceLoader(BaseLoader):
 
     def process_doc(self, link: str) -> str:
         try:
-            from io import BytesIO  # noqa: F401
-
             import docx2txt  # noqa: F401
         except ImportError:
             raise ImportError(
@@ -522,17 +533,14 @@ class ConfluenceLoader(BaseLoader):
 
     def process_svg(self, link: str) -> str:
         try:
-            from io import BytesIO  # noqa: F401
-
             import pytesseract  # noqa: F401
             from PIL import Image  # noqa: F401
             from reportlab.graphics import renderPM  # noqa: F401
-            from reportlab.graphics.shapes import Drawing  # noqa: F401
             from svglib.svglib import svg2rlg  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`pytesseract`, `Pillow`, or `svglib` package not found, "
-                "please run `pip install pytesseract Pillow svglib`"
+                "`pytesseract`, `Pillow`, `reportlab` or `svglib` package not found, "
+                "please run `pip install pytesseract Pillow reportlab svglib`"
             )
 
         response = self.confluence.request(path=link, absolute=True)

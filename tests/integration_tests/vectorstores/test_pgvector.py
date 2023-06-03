@@ -49,6 +49,22 @@ def test_pgvector() -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_pgvector_embeddings() -> None:
+    """Test end to end construction with embeddings and search."""
+    texts = ["foo", "bar", "baz"]
+    text_embeddings = FakeEmbeddingsWithAdaDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    docsearch = PGVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+
 def test_pgvector_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -147,3 +163,24 @@ def test_pgvector_collection_with_metadata() -> None:
     else:
         assert collection.name == "test_collection"
         assert collection.cmetadata == {"foo": "bar"}
+
+
+def test_pgvector_with_filter_in_set() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection_filter",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        metadatas=metadatas,
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.similarity_search_with_score(
+        "foo", k=2, filter={"page": {"IN": ["0", "2"]}}
+    )
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), 0.0),
+        (Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406),
+    ]

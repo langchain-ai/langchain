@@ -29,7 +29,7 @@ DELETE /users/{{id}}/cart to delete a user's cart
 User query: tell me a joke
 Plan: Sorry, this API's domain is shopping, not comedy.
 
-Usery query: I want to buy a couch
+User query: I want to buy a couch
 Plan: 1. GET /products with a query param to search for couches
 2. GET /user to find the user's id
 3. POST /users/{{id}}/cart to add a couch to the user's cart
@@ -100,7 +100,7 @@ API_CONTROLLER_TOOL_DESCRIPTION = f"Can be used to execute a plan of API calls, 
 # The goal is to have an agent at the top-level (e.g. so it can recover from errors and re-plan) while
 # keeping planning (and specifically the planning prompt) simple.
 API_ORCHESTRATOR_PROMPT = """You are an agent that assists with user queries against API, things like querying information or creating resources.
-Some user queries can be resolved in a single API call, particularly if you can find appropriate params from the OpenAPI spec; though some require several API call.
+Some user queries can be resolved in a single API call, particularly if you can find appropriate params from the OpenAPI spec; though some require several API calls.
 You should always plan your API calls first, and then execute the plan second.
 If the plan includes a DELETE call, be sure to ask the User for authorization first unless the User has specifically asked to delete something.
 You should never return information without executing the api_controller tool.
@@ -117,7 +117,7 @@ Action: the action to take, should be one of the tools [{tool_names}]
 Action Input: the input to the action
 Observation: the result of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
-Thought: I am finished executing a plan and have the information the user asked for or the data the used asked to create
+Thought: I am finished executing a plan and have the information the user asked for or the data the user asked to create
 Final Answer: the final output from executing the plan
 
 

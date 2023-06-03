@@ -258,7 +258,8 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
             genai.configure(api_key=google_api_key)
         except ImportError:
             raise ChatGooglePalmError(
-                "Could not import google.generativeai python package."
+                "Could not import google.generativeai python package. "
+                "Please install it with `pip install google-generativeai`"
             )
 
         values["client"] = genai
