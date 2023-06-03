@@ -28,6 +28,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
 
     Example:
         .. code-block:: python
+
             import anthropic
             from langchain.llms import Anthropic
             model = ChatAnthropic(model="<model_name>", anthropic_api_key="my-api-key")
@@ -141,3 +142,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             completion = response["completion"]
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
+
+    def get_num_tokens(self, text: str) -> int:
+        """Calculate number of tokens."""
+        if not self.count_tokens:
+            raise NameError("Please ensure the anthropic package is loaded")
+        return self.count_tokens(text)

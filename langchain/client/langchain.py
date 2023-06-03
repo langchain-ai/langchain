@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-import functools
 import logging
 import socket
 from datetime import datetime
@@ -10,11 +8,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Coroutine,
     Dict,
-    Iterable,
-    List,
+    Iterator,
+    Mapping,
     Optional,
+    Sequence,
     Tuple,
     Union,
 )
@@ -24,15 +22,28 @@ from uuid import UUID
 import requests
 from pydantic import BaseSettings, Field, root_validator
 from requests import Response
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import tracing_v2_enabled
-from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain.callbacks.tracers.schemas import Run as TracerRun
+from langchain.callbacks.tracers.schemas import TracerSession
 from langchain.chains.base import Chain
-from langchain.chat_models.base import BaseChatModel
-from langchain.client.models import Dataset, DatasetCreate, Example, ExampleCreate
-from langchain.llms.base import BaseLLM
-from langchain.schema import ChatResult, LLMResult, messages_from_dict
+from langchain.client.models import (
+    APIFeedbackSource,
+    Dataset,
+    DatasetCreate,
+    Example,
+    ExampleCreate,
+    ExampleUpdate,
+    Feedback,
+    FeedbackCreate,
+    FeedbackSourceBase,
+    FeedbackSourceType,
+    ListFeedbackQueryParams,
+    ListRunsQueryParams,
+    ModelFeedbackSource,
+)
+from langchain.client.runner_utils import arun_on_examples, run_on_examples
 from langchain.utils import raise_for_status_with_text, xor_args
 
 if TYPE_CHECKING:
@@ -41,6 +52,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 MODEL_OR_CHAIN_FACTORY = Union[Callable[[], Chain], BaseLanguageModel]
+
+
+class Run(TracerRun):
+    id: UUID
 
 
 def _get_link_stem(url: str) -> str:
@@ -63,43 +78,19 @@ class LangChainPlusClient(BaseSettings):
     """Client for interacting with the LangChain+ API."""
 
     api_key: Optional[str] = Field(default=None, env="LANGCHAIN_API_KEY")
-    api_url: str = Field(..., env="LANGCHAIN_ENDPOINT")
-    tenant_id: str = Field(..., env="LANGCHAIN_TENANT_ID")
+    api_url: str = Field(default="http://localhost:1984", env="LANGCHAIN_ENDPOINT")
 
     @root_validator(pre=True)
     def validate_api_key_if_hosted(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Verify API key is provided if url not localhost."""
-        api_url: str = values.get("api_url", "http://localhost:8000")
+        api_url: str = values.get("api_url", "http://localhost:1984")
         api_key: Optional[str] = values.get("api_key")
         if not _is_localhost(api_url):
             if not api_key:
                 raise ValueError(
                     "API key must be provided when using hosted LangChain+ API"
                 )
-        else:
-            tenant_id = values.get("tenant_id")
-            if not tenant_id:
-                values["tenant_id"] = LangChainPlusClient._get_seeded_tenant_id(
-                    api_url, api_key
-                )
         return values
-
-    @staticmethod
-    def _get_seeded_tenant_id(api_url: str, api_key: Optional[str]) -> str:
-        """Get the tenant ID from the seeded tenant."""
-        url = f"{api_url}/tenants"
-        headers = {"authorization": f"Bearer {api_key}"} if api_key else {}
-        response = requests.get(url, headers=headers)
-        try:
-            raise_for_status_with_text(response)
-        except Exception as e:
-            raise ValueError(
-                "Unable to get seeded tenant ID. Please manually provide."
-            ) from e
-        results: List[dict] = response.json()
-        if len(results) == 0:
-            raise ValueError("No seeded tenant found")
-        return results[0]["id"]
 
     @staticmethod
     def _get_session_name(
@@ -118,7 +109,12 @@ class LangChainPlusClient(BaseSettings):
 
     def _repr_html_(self) -> str:
         """Return an HTML representation of the instance with a link to the URL."""
-        link = _get_link_stem(self.api_url)
+        if _is_localhost(self.api_url):
+            link = "http://localhost"
+        elif "dev" in self.api_url:
+            link = "https://dev.langchain.plus"
+        else:
+            link = "https://www.langchain.plus"
         return f'<a href="{link}", target="_blank" rel="noopener">LangChain+ Client</a>'
 
     def __repr__(self) -> str:
@@ -130,21 +126,13 @@ class LangChainPlusClient(BaseSettings):
         """Get the headers for the API request."""
         headers = {}
         if self.api_key:
-            headers["authorization"] = f"Bearer {self.api_key}"
+            headers["x-api-key"] = self.api_key
         return headers
-
-    @property
-    def query_params(self) -> Dict[str, str]:
-        """Get the headers for the API request."""
-        return {"tenant_id": self.tenant_id}
 
     def _get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Response:
         """Make a GET request."""
-        query_params = self.query_params
-        if params:
-            query_params.update(params)
         return requests.get(
-            f"{self.api_url}{path}", headers=self._headers, params=query_params
+            f"{self.api_url}{path}", headers=self._headers, params=params
         )
 
     def upload_dataframe(
@@ -152,8 +140,8 @@ class LangChainPlusClient(BaseSettings):
         df: pd.DataFrame,
         name: str,
         description: str,
-        input_keys: List[str],
-        output_keys: List[str],
+        input_keys: Sequence[str],
+        output_keys: Sequence[str],
     ) -> Dataset:
         """Upload a dataframe as individual examples to the LangChain+ API."""
         dataset = self.create_dataset(dataset_name=name, description=description)
@@ -167,8 +155,8 @@ class LangChainPlusClient(BaseSettings):
         self,
         csv_file: Union[str, Tuple[str, BytesIO]],
         description: str,
-        input_keys: List[str],
-        output_keys: List[str],
+        input_keys: Sequence[str],
+        output_keys: Sequence[str],
     ) -> Dataset:
         """Upload a CSV file to the LangChain+ API."""
         files = {"file": csv_file}
@@ -176,7 +164,6 @@ class LangChainPlusClient(BaseSettings):
             "input_keys": ",".join(input_keys),
             "output_keys": ",".join(output_keys),
             "description": description,
-            "tenant_id": self.tenant_id,
         }
         response = requests.post(
             self.api_url + "/datasets/upload",
@@ -193,10 +180,88 @@ class LangChainPlusClient(BaseSettings):
             raise ValueError(f"Dataset {file_name} already exists")
         return Dataset(**result)
 
-    def create_dataset(self, dataset_name: str, description: str) -> Dataset:
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    def read_run(self, run_id: Union[str, UUID]) -> Run:
+        """Read a run from the LangChain+ API."""
+        response = self._get(f"/runs/{run_id}")
+        raise_for_status_with_text(response)
+        return Run(**response.json())
+
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    def list_runs(
+        self,
+        *,
+        session_id: Optional[str] = None,
+        session_name: Optional[str] = None,
+        run_type: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Iterator[Run]:
+        """List runs from the LangChain+ API."""
+        if session_name is not None:
+            if session_id is not None:
+                raise ValueError("Only one of session_id or session_name may be given")
+            session_id = self.read_session(session_name=session_name).id
+        query_params = ListRunsQueryParams(
+            session_id=session_id, run_type=run_type, **kwargs
+        )
+        response = self._get("/runs", params=query_params.dict(exclude_none=True))
+        raise_for_status_with_text(response)
+        yield from [Run(**run) for run in response.json()]
+
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    @xor_args(("session_id", "session_name"))
+    def read_session(
+        self, *, session_id: Optional[str] = None, session_name: Optional[str] = None
+    ) -> TracerSession:
+        """Read a session from the LangChain+ API."""
+        path = "/sessions"
+        params: Dict[str, Any] = {"limit": 1}
+        if session_id is not None:
+            path += f"/{session_id}"
+        elif session_name is not None:
+            params["name"] = session_name
+        else:
+            raise ValueError("Must provide dataset_name or dataset_id")
+        response = self._get(
+            path,
+            params=params,
+        )
+        raise_for_status_with_text(response)
+        result = response.json()
+        if isinstance(result, list):
+            if len(result) == 0:
+                raise ValueError(f"Dataset {session_name} not found")
+            return TracerSession(**result[0])
+        return TracerSession(**response.json())
+
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    def list_sessions(self) -> Iterator[TracerSession]:
+        """List sessions from the LangChain+ API."""
+        response = self._get("/sessions")
+        raise_for_status_with_text(response)
+        yield from [TracerSession(**session) for session in response.json()]
+
+    @xor_args(("session_name", "session_id"))
+    def delete_session(
+        self, *, session_name: Optional[str] = None, session_id: Optional[str] = None
+    ) -> None:
+        """Delete a session from the LangChain+ API."""
+        if session_name is not None:
+            session_id = self.read_session(session_name=session_name).id
+        elif session_id is None:
+            raise ValueError("Must provide session_name or session_id")
+        response = requests.delete(
+            self.api_url + f"/sessions/{session_id}",
+            headers=self._headers,
+        )
+        raise_for_status_with_text(response)
+        return None
+
+    def create_dataset(
+        self, dataset_name: str, *, description: Optional[str] = None
+    ) -> Dataset:
         """Create a dataset in the LangChain+ API."""
         dataset = DatasetCreate(
-            tenant_id=self.tenant_id,
             name=dataset_name,
             description=description,
         )
@@ -208,12 +273,13 @@ class LangChainPlusClient(BaseSettings):
         raise_for_status_with_text(response)
         return Dataset(**response.json())
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     @xor_args(("dataset_name", "dataset_id"))
     def read_dataset(
         self, *, dataset_name: Optional[str] = None, dataset_id: Optional[str] = None
     ) -> Dataset:
         path = "/datasets"
-        params: Dict[str, Any] = {"limit": 1, "tenant_id": self.tenant_id}
+        params: Dict[str, Any] = {"limit": 1}
         if dataset_id is not None:
             path += f"/{dataset_id}"
         elif dataset_name is not None:
@@ -232,11 +298,12 @@ class LangChainPlusClient(BaseSettings):
             return Dataset(**result[0])
         return Dataset(**result)
 
-    def list_datasets(self, limit: int = 100) -> Iterable[Dataset]:
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    def list_datasets(self, limit: int = 100) -> Iterator[Dataset]:
         """List the datasets on the LangChain+ API."""
         response = self._get("/datasets", params={"limit": limit})
         raise_for_status_with_text(response)
-        return [Dataset(**dataset) for dataset in response.json()]
+        yield from [Dataset(**dataset) for dataset in response.json()]
 
     @xor_args(("dataset_id", "dataset_name"))
     def delete_dataset(
@@ -252,7 +319,7 @@ class LangChainPlusClient(BaseSettings):
             headers=self._headers,
         )
         raise_for_status_with_text(response)
-        return response.json()
+        return Dataset(**response.json())
 
     @xor_args(("dataset_id", "dataset_name"))
     def create_example(
@@ -265,7 +332,7 @@ class LangChainPlusClient(BaseSettings):
     ) -> Example:
         """Create a dataset example in the LangChain+ API."""
         if dataset_id is None:
-            dataset_id = self.read_dataset(dataset_name).id
+            dataset_id = self.read_dataset(dataset_name=dataset_name).id
 
         data = {
             "inputs": inputs,
@@ -282,15 +349,17 @@ class LangChainPlusClient(BaseSettings):
         result = response.json()
         return Example(**result)
 
-    def read_example(self, example_id: str) -> Example:
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    def read_example(self, example_id: Union[str, UUID]) -> Example:
         """Read an example from the LangChain+ API."""
         response = self._get(f"/examples/{example_id}")
         raise_for_status_with_text(response)
         return Example(**response.json())
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def list_examples(
         self, dataset_id: Optional[str] = None, dataset_name: Optional[str] = None
-    ) -> Iterable[Example]:
+    ) -> Iterator[Example]:
         """List the datasets on the LangChain+ API."""
         params = {}
         if dataset_id is not None:
@@ -302,106 +371,111 @@ class LangChainPlusClient(BaseSettings):
             pass
         response = self._get("/examples", params=params)
         raise_for_status_with_text(response)
-        return [Example(**dataset) for dataset in response.json()]
+        yield from [Example(**dataset) for dataset in response.json()]
 
-    @staticmethod
-    async def _arun_llm(
-        llm: BaseLanguageModel,
-        inputs: Dict[str, Any],
-        langchain_tracer: LangChainTracer,
-    ) -> Union[LLMResult, ChatResult]:
-        if isinstance(llm, BaseLLM):
-            if "prompt" not in inputs:
-                raise ValueError(f"LLM Run requires 'prompt' input. Got {inputs}")
-            llm_prompt: str = inputs["prompt"]
-            llm_output = await llm.agenerate([llm_prompt], callbacks=[langchain_tracer])
-        elif isinstance(llm, BaseChatModel):
-            if "messages" not in inputs:
-                raise ValueError(f"Chat Run requires 'messages' input. Got {inputs}")
-            raw_messages: List[dict] = inputs["messages"]
-            messages = messages_from_dict(raw_messages)
-            llm_output = await llm.agenerate([messages], callbacks=[langchain_tracer])
-        else:
-            raise ValueError(f"Unsupported LLM type {type(llm)}")
-        return llm_output
-
-    @staticmethod
-    async def _arun_llm_or_chain(
-        example: Example,
-        langchain_tracer: LangChainTracer,
-        llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
-        n_repetitions: int,
-    ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
-        """Run the chain asynchronously."""
-        previous_example_id = langchain_tracer.example_id
-        langchain_tracer.example_id = example.id
-        outputs = []
-        for _ in range(n_repetitions):
-            try:
-                if isinstance(llm_or_chain_factory, BaseLanguageModel):
-                    output: Any = await LangChainPlusClient._arun_llm(
-                        llm_or_chain_factory, example.inputs, langchain_tracer
-                    )
-                else:
-                    chain = llm_or_chain_factory()
-                    output = await chain.arun(
-                        example.inputs, callbacks=[langchain_tracer]
-                    )
-                outputs.append(output)
-            except Exception as e:
-                logger.warning(f"Chain failed for example {example.id}. Error: {e}")
-                outputs.append({"Error": str(e)})
-            finally:
-                langchain_tracer.example_id = previous_example_id
-        return outputs
-
-    @staticmethod
-    async def _gather_with_concurrency(
-        n: int,
-        initializer: Callable[[], Coroutine[Any, Any, Tuple[LangChainTracer, Dict]]],
-        *async_funcs: Callable[[LangChainTracer, Dict], Coroutine[Any, Any, Any]],
-    ) -> List[Any]:
-        """
-        Run coroutines with a concurrency limit.
-
-        Args:
-            n: The maximum number of concurrent tasks.
-            initializer: A coroutine that initializes shared resources for the tasks.
-            async_funcs: The async_funcs to be run concurrently.
-
-        Returns:
-            A list of results from the coroutines.
-        """
-        semaphore = asyncio.Semaphore(n)
-        tracer, job_state = await initializer()
-
-        async def run_coroutine_with_semaphore(
-            async_func: Callable[[LangChainTracer, Dict], Coroutine[Any, Any, Any]]
-        ) -> Any:
-            async with semaphore:
-                return await async_func(tracer, job_state)
-
-        return await asyncio.gather(
-            *(run_coroutine_with_semaphore(function) for function in async_funcs)
+    def update_example(
+        self,
+        example_id: str,
+        *,
+        inputs: Optional[Dict[str, Any]] = None,
+        outputs: Optional[Mapping[str, Any]] = None,
+        dataset_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Update a specific example."""
+        example = ExampleUpdate(
+            inputs=inputs,
+            outputs=outputs,
+            dataset_id=dataset_id,
         )
+        response = requests.patch(
+            f"{self.api_url}/examples/{example_id}",
+            headers=self._headers,
+            data=example.json(exclude_none=True),
+        )
+        raise_for_status_with_text(response)
+        return response.json()
 
-    async def _tracer_initializer(
-        self, session_name: str
-    ) -> Tuple[LangChainTracer, dict]:
-        """
-        Initialize a tracer to share across tasks.
+    def create_feedback(
+        self,
+        run_id: str,
+        key: str,
+        *,
+        score: Union[float, int, bool, None] = None,
+        value: Union[float, int, bool, str, dict, None] = None,
+        correction: Union[str, dict, None] = None,
+        comment: Union[str, None] = None,
+        source_info: Optional[Dict[str, Any]] = None,
+        feedback_source_type: FeedbackSourceType = FeedbackSourceType.API,
+    ) -> Feedback:
+        """Create a feedback in the LangChain+ API.
 
         Args:
-            session_name: The session name for the tracer.
-
-        Returns:
-            A LangChainTracer instance with an active session.
+            run_id: The ID of the run to provide feedback on.
+            key: The name of the metric, tag, or 'aspect' this
+                feedback is about.
+            score: The score to rate this run on the metric
+                or aspect.
+            value: The display value or non-numeric value for this feedback.
+            correction: The proper ground truth for this run.
+            comment: A comment about this feedback.
+            source_info: Information about the source of this feedback.
+            feedback_source_type: The type of feedback source.
         """
-        job_state = {"num_processed": 0}
-        with tracing_v2_enabled(session_name=session_name) as session:
-            tracer = LangChainTracer()
-            tracer.session = session
-            return tracer, job_state
+        if feedback_source_type == FeedbackSourceType.API:
+            feedback_source: FeedbackSourceBase = APIFeedbackSource(
+                metadata=source_info
+            )
+        elif feedback_source_type == FeedbackSourceType.MODEL:
+            feedback_source = ModelFeedbackSource(metadata=source_info)
+        else:
+            raise ValueError(f"Unknown feedback source type {feedback_source_type}")
+        feedback = FeedbackCreate(
+            run_id=run_id,
+            key=key,
+            score=score,
+            value=value,
+            correction=correction,
+            comment=comment,
+            feedback_source=feedback_source,
+        )
+        response = requests.post(
+            self.api_url + "/feedback",
+            headers=self._headers,
+            data=feedback.json(),
+        )
+        raise_for_status_with_text(response)
+        return Feedback(**feedback.dict())
+
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    def read_feedback(self, feedback_id: str) -> Feedback:
+        """Read a feedback from the LangChain+ API."""
+        response = self._get(f"/feedback/{feedback_id}")
+        raise_for_status_with_text(response)
+        return Feedback(**response.json())
+
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
+    def list_feedback(
+        self,
+        *,
+        run_ids: Optional[Sequence[Union[str, UUID]]] = None,
+        **kwargs: Any,
+    ) -> Iterator[Feedback]:
+        """List the feedback objects on the LangChain+ API."""
+        params = ListFeedbackQueryParams(
+            run=run_ids,
+            **kwargs,
+        )
+        response = self._get("/feedback", params=params.dict(exclude_none=True))
+        raise_for_status_with_text(response)
+        yield from [Feedback(**feedback) for feedback in response.json()]
+
+    def delete_feedback(self, feedback_id: str) -> None:
+        """Delete a feedback by ID."""
+        response = requests.delete(
+            f"{self.api_url}/feedback/{feedback_id}",
+            headers=self._headers,
+        )
+        raise_for_status_with_text(response)
 
     async def arun_on_dataset(
         self,
@@ -437,85 +511,15 @@ class LangChainPlusClient(BaseSettings):
         )
         dataset = self.read_dataset(dataset_name=dataset_name)
         examples = self.list_examples(dataset_id=str(dataset.id))
-        results: Dict[str, List[Any]] = {}
 
-        async def process_example(
-            example: Example, tracer: LangChainTracer, job_state: dict
-        ) -> None:
-            """Process a single example."""
-            result = await LangChainPlusClient._arun_llm_or_chain(
-                example,
-                tracer,
-                llm_or_chain_factory,
-                num_repetitions,
-            )
-            results[str(example.id)] = result
-            job_state["num_processed"] += 1
-            if verbose:
-                print(
-                    f"Processed examples: {job_state['num_processed']}",
-                    end="\r",
-                    flush=True,
-                )
-
-        await self._gather_with_concurrency(
-            concurrency_level,
-            functools.partial(self._tracer_initializer, session_name),
-            *(functools.partial(process_example, e) for e in examples),
+        return await arun_on_examples(
+            examples,
+            llm_or_chain_factory,
+            concurrency_level=concurrency_level,
+            num_repetitions=num_repetitions,
+            session_name=session_name,
+            verbose=verbose,
         )
-        return results
-
-    @staticmethod
-    def run_llm(
-        llm: BaseLanguageModel,
-        inputs: Dict[str, Any],
-        langchain_tracer: LangChainTracer,
-    ) -> Union[LLMResult, ChatResult]:
-        """Run the language model on the example."""
-        if isinstance(llm, BaseLLM):
-            if "prompt" not in inputs:
-                raise ValueError(f"LLM Run must contain 'prompt' key. Got {inputs}")
-            llm_prompt: str = inputs["prompt"]
-            llm_output = llm.generate([llm_prompt], callbacks=[langchain_tracer])
-        elif isinstance(llm, BaseChatModel):
-            if "messages" not in inputs:
-                raise ValueError(
-                    f"Chat Model Run must contain 'messages' key. Got {inputs}"
-                )
-            raw_messages: List[dict] = inputs["messages"]
-            messages = messages_from_dict(raw_messages)
-            llm_output = llm.generate([messages], callbacks=[langchain_tracer])
-        else:
-            raise ValueError(f"Unsupported LLM type {type(llm)}")
-        return llm_output
-
-    @staticmethod
-    def run_llm_or_chain(
-        example: Example,
-        langchain_tracer: LangChainTracer,
-        llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
-        n_repetitions: int,
-    ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
-        """Run the chain synchronously."""
-        previous_example_id = langchain_tracer.example_id
-        langchain_tracer.example_id = example.id
-        outputs = []
-        for _ in range(n_repetitions):
-            try:
-                if isinstance(llm_or_chain_factory, BaseLanguageModel):
-                    output: Any = LangChainPlusClient.run_llm(
-                        llm_or_chain_factory, example.inputs, langchain_tracer
-                    )
-                else:
-                    chain = llm_or_chain_factory()
-                    output = chain.run(example.inputs, callbacks=[langchain_tracer])
-                outputs.append(output)
-            except Exception as e:
-                logger.warning(f"Chain failed for example {example.id}. Error: {e}")
-                outputs.append({"Error": str(e)})
-            finally:
-                langchain_tracer.example_id = previous_example_id
-        return outputs
 
     def run_on_dataset(
         self,
@@ -548,20 +552,11 @@ class LangChainPlusClient(BaseSettings):
             session_name, llm_or_chain_factory, dataset_name
         )
         dataset = self.read_dataset(dataset_name=dataset_name)
-        examples = list(self.list_examples(dataset_id=str(dataset.id)))
-        results: Dict[str, Any] = {}
-        with tracing_v2_enabled(session_name=session_name) as session:
-            tracer = LangChainTracer()
-            tracer.session = session
-
-            for i, example in enumerate(examples):
-                result = self.run_llm_or_chain(
-                    example,
-                    tracer,
-                    llm_or_chain_factory,
-                    num_repetitions,
-                )
-                if verbose:
-                    print(f"{i+1} processed", flush=True, end="\r")
-            results[str(example.id)] = result
-        return results
+        examples = self.list_examples(dataset_id=str(dataset.id))
+        return run_on_examples(
+            examples,
+            llm_or_chain_factory,
+            num_repetitions=num_repetitions,
+            session_name=session_name,
+            verbose=verbose,
+        )

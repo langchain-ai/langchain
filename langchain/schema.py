@@ -234,18 +234,11 @@ class BaseChatMessageHistory(ABC):
                        messages = json.loads(f.read())
                     return messages_from_dict(messages)
 
-               def add_user_message(self, message: str):
-                   message_ = HumanMessage(content=message)
-                   messages = self.messages.append(_message_to_dict(_message))
+               def add_message(self, message: BaseMessage) -> None:
+                   messages = self.messages.append(_message_to_dict(message))
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        json.dump(f, messages)
-
-               def add_ai_message(self, message: str):
-                   message_ = AIMessage(content=message)
-                   messages = self.messages.append(_message_to_dict(_message))
-                   with open(os.path.join(storage_path, session_id), 'w') as f:
-                       json.dump(f, messages)
-
+               
                def clear(self):
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        f.write("[]")
@@ -253,13 +246,17 @@ class BaseChatMessageHistory(ABC):
 
     messages: List[BaseMessage]
 
-    @abstractmethod
     def add_user_message(self, message: str) -> None:
         """Add a user message to the store"""
+        self.add_message(HumanMessage(content=message))
 
-    @abstractmethod
     def add_ai_message(self, message: str) -> None:
         """Add an AI message to the store"""
+        self.add_message(AIMessage(content=message))
+
+    def add_message(self, message: BaseMessage) -> None:
+        """Add a self-created message to the store"""
+        raise NotImplementedError
 
     @abstractmethod
     def clear(self) -> None:
@@ -315,7 +312,7 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
     def parse(self, text: str) -> T:
         """Parse the output of an LLM call.
 
-        A method which takes in a string (assumed output of language model )
+        A method which takes in a string (assumed output of a language model )
         and parses it into some structure.
 
         Args:
@@ -360,7 +357,7 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
         return output_parser_dict
 
 
-class OutputParserException(Exception):
+class OutputParserException(ValueError):
     """Exception that output parsers should raise to signify a parsing error.
 
     This exists to differentiate parsing errors from other code or execution errors
@@ -369,7 +366,23 @@ class OutputParserException(Exception):
     errors will be raised.
     """
 
-    pass
+    def __init__(
+        self,
+        error: Any,
+        observation: str | None = None,
+        llm_output: str | None = None,
+        send_to_llm: bool = False,
+    ):
+        super(OutputParserException, self).__init__(error)
+        if send_to_llm:
+            if observation is None or llm_output is None:
+                raise ValueError(
+                    "Arguments 'observation' & 'llm_output'"
+                    " are required if 'send_to_llm' is True"
+                )
+        self.observation = observation
+        self.llm_output = llm_output
+        self.send_to_llm = send_to_llm
 
 
 class BaseDocumentTransformer(ABC):

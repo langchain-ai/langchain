@@ -17,7 +17,8 @@ if TYPE_CHECKING:
     import chromadb
     import chromadb.config
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
+DEFAULT_K = 4  # Number of Documents to return.
 
 
 def _results_to_docs(results: Any) -> List[Document]:
@@ -164,7 +165,7 @@ class Chroma(VectorStore):
     def similarity_search(
         self,
         query: str,
-        k: int = 4,
+        k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -184,7 +185,7 @@ class Chroma(VectorStore):
     def similarity_search_by_vector(
         self,
         embedding: List[float],
-        k: int = 4,
+        k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -204,7 +205,7 @@ class Chroma(VectorStore):
     def similarity_search_with_score(
         self,
         query: str,
-        k: int = 4,
+        k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -234,7 +235,7 @@ class Chroma(VectorStore):
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
-        k: int = 4,
+        k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
@@ -243,6 +244,7 @@ class Chroma(VectorStore):
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
+
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
@@ -252,6 +254,7 @@ class Chroma(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -277,7 +280,7 @@ class Chroma(VectorStore):
     def max_marginal_relevance_search(
         self,
         query: str,
-        k: int = 4,
+        k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
@@ -286,6 +289,7 @@ class Chroma(VectorStore):
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
+
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
@@ -295,6 +299,7 @@ class Chroma(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -313,9 +318,17 @@ class Chroma(VectorStore):
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
 
-    def get(self) -> Chroma:
-        """Gets the collection"""
-        return self._collection.get()
+    def get(self, include: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Gets the collection.
+
+        Args:
+            include (Optional[List[str]]): List of fields to include from db.
+                Defaults to None.
+        """
+        if include is not None:
+            return self._collection.get(include=include)
+        else:
+            return self._collection.get()
 
     def persist(self) -> None:
         """Persist the collection.
@@ -339,7 +352,18 @@ class Chroma(VectorStore):
         """
         text = document.page_content
         metadata = document.metadata
-        self._collection.update_document(document_id, text, metadata)
+        if self._embedding_function is None:
+            raise ValueError(
+                "For update, you must specify an embedding function on creation."
+            )
+        embeddings = self._embedding_function.embed_documents([text])
+
+        self._collection.update(
+            ids=[document_id],
+            embeddings=embeddings,
+            documents=[text],
+            metadatas=[metadata],
+        )
 
     @classmethod
     def from_texts(

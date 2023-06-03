@@ -4,6 +4,8 @@ on:
   push:
     branches: [master]
   pull_request:
+    paths:
+      - 'docs/**'
 
 env:
   POETRY_VERSION: "1.4.2"

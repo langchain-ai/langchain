@@ -23,6 +23,7 @@ class CerebriumAI(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import CerebriumAI
             cerebrium = CerebriumAI(endpoint_url="")
 

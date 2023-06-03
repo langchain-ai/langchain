@@ -27,7 +27,7 @@ This quick start will focus on the server-side use case for brevity.
 Review [full docs](https://nla.zapier.com/api/v1/docs) or reach out to
 nla@zapier.com for user-facing oauth developer support.
 
-Typically you'd use SequentialChain, here's a basic example:
+Typically, you'd use SequentialChain, here's a basic example:
 
     1. Use NLA to find an email in Gmail
     2. Use LLMChain to generate a draft reply to (1)
@@ -100,11 +100,13 @@ class ZapierNLARunAction(BaseTool):
         params: a dict, optional. Any params provided will *override* AI guesses
             from `instructions` (see "understanding the AI guessing flow" here:
             https://nla.zapier.com/api/v1/docs)
+
     """
 
     api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
     action_id: str
     params: Optional[dict] = None
+    base_prompt: str = BASE_ZAPIER_TOOL_PROMPT
     zapier_description: str
     params_schema: Dict[str, str] = Field(default_factory=dict)
     name = ""
@@ -116,8 +118,17 @@ class ZapierNLARunAction(BaseTool):
         params_schema = values["params_schema"]
         if "instructions" in params_schema:
             del params_schema["instructions"]
+
+        # Ensure base prompt (if overrided) contains necessary input fields
+        necessary_fields = {"{zapier_description}", "{params}"}
+        if not all(field in values["base_prompt"] for field in necessary_fields):
+            raise ValueError(
+                "Your custom base Zapier prompt must contain input fields for "
+                "{zapier_description} and {params}."
+            )
+
         values["name"] = zapier_description
-        values["description"] = BASE_ZAPIER_TOOL_PROMPT.format(
+        values["description"] = values["base_prompt"].format(
             zapier_description=zapier_description,
             params=str(list(params_schema.keys())),
         )
@@ -150,6 +161,7 @@ class ZapierNLAListActions(BaseTool):
     """
     Args:
         None
+
     """
 
     name = "Zapier NLA: List Actions"

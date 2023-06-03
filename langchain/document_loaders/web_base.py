@@ -2,7 +2,7 @@
 import asyncio
 import logging
 import warnings
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import aiohttp
 import requests
@@ -47,6 +47,9 @@ class WebBaseLoader(BaseLoader):
     default_parser: str = "html.parser"
     """Default parser to use for BeautifulSoup."""
 
+    requests_kwargs: Dict[str, Any] = {}
+    """kwargs for requests"""
+
     def __init__(
         self, web_path: Union[str, List[str]], header_template: Optional[dict] = None
     ):
@@ -68,17 +71,19 @@ class WebBaseLoader(BaseLoader):
                 "bs4 package not found, please install it with " "`pip install bs4`"
             )
 
-        try:
-            from fake_useragent import UserAgent
+        headers = header_template or default_header_template
+        if not headers.get("User-Agent"):
+            try:
+                from fake_useragent import UserAgent
 
-            headers = header_template or default_header_template
-            headers["User-Agent"] = UserAgent().random
-            self.session.headers = dict(headers)
-        except ImportError:
-            logger.info(
-                "fake_useragent not found, using default user agent. "
-                "To get a realistic header for requests, `pip install fake_useragent`."
-            )
+                headers["User-Agent"] = UserAgent().random
+            except ImportError:
+                logger.info(
+                    "fake_useragent not found, using default user agent."
+                    "To get a realistic header for requests, "
+                    "`pip install fake_useragent`."
+                )
+        self.session.headers = dict(headers)
 
     @property
     def web_path(self) -> str:
@@ -168,7 +173,7 @@ class WebBaseLoader(BaseLoader):
 
         self._check_parser(parser)
 
-        html_doc = self.session.get(url)
+        html_doc = self.session.get(url, **self.requests_kwargs)
         html_doc.encoding = html_doc.apparent_encoding
         return BeautifulSoup(html_doc.text, parser)
 

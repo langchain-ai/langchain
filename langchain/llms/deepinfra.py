@@ -94,7 +94,8 @@ class DeepInfra(LLM):
 
         if res.status_code != 200:
             raise ValueError("Error raised by inference API")
-        text = res.json()[0]["generated_text"]
+        t = res.json()
+        text = t["results"][0]["generated_text"]
 
         if stop is not None:
             # I believe this is required since the stop tokens

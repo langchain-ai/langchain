@@ -120,10 +120,12 @@ class DeepLake(VectorStore):
         self.dataset_path = dataset_path
         creds_args = {"creds": kwargs["creds"]} if "creds" in kwargs else {}
 
-        if (
-            deeplake.exists(dataset_path, token=token, **creds_args)
-            and "overwrite" not in kwargs
+        if deeplake.exists(dataset_path, token=token, **creds_args) and not kwargs.get(
+            "overwrite", False
         ):
+            if "overwrite" in kwargs:
+                del kwargs["overwrite"]
+
             self.ds = deeplake.load(
                 dataset_path,
                 token=token,
@@ -389,6 +391,7 @@ class DeepLake(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+
         Returns:
             List of Documents most similar to the query vector.
         """
@@ -410,6 +413,7 @@ class DeepLake(VectorStore):
                 Defaults to `L2`.
             k (int): Number of results to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
         Returns:
             List[Tuple[Document, float]]: List of documents most similar to the query
                 text with distance in float.
@@ -433,14 +437,16 @@ class DeepLake(VectorStore):
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
+
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -512,7 +518,7 @@ class DeepLake(VectorStore):
                 - AWS S3 path of the form ``s3://bucketname/path/to/dataset``.
                     Credentials are required in either the environment
                 - Google Cloud Storage path of the form
-                    ``gcs://bucketname/path/to/dataset``Credentials are required
+                    ``gcs://bucketname/path/to/dataset`` Credentials are required
                     in either the environment
                 - Local file system path of the form ``./path/to/dataset`` or
                     ``~/path/to/dataset`` or ``path/to/dataset``.

@@ -7,9 +7,14 @@ from langchain.llms.anthropic import Anthropic
 from langchain.llms.anyscale import Anyscale
 from langchain.llms.bananadev import Banana
 from langchain.llms.base import BaseLLM
+from langchain.llms.beam import Beam
+from langchain.llms.bedrock import Bedrock
 from langchain.llms.cerebriumai import CerebriumAI
 from langchain.llms.cohere import Cohere
+from langchain.llms.ctransformers import CTransformers
+from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
+from langchain.llms.fake import FakeListLLM
 from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.google_palm import GooglePalm
 from langchain.llms.gooseai import GooseAI
@@ -21,8 +26,10 @@ from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInfe
 from langchain.llms.human import HumanInputLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.modal import Modal
+from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
+from langchain.llms.openlm import OpenLM
 from langchain.llms.petals import Petals
 from langchain.llms.pipelineai import PipelineAI
 from langchain.llms.predictionguard import PredictionGuard
@@ -33,6 +40,7 @@ from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
+from langchain.llms.vertexai import VertexAI
 from langchain.llms.writer import Writer
 
 __all__ = [
@@ -40,8 +48,12 @@ __all__ = [
     "AlephAlpha",
     "Anyscale",
     "Banana",
+    "Beam",
+    "Bedrock",
     "CerebriumAI",
     "Cohere",
+    "CTransformers",
+    "Databricks",
     "DeepInfra",
     "ForefrontAI",
     "GooglePalm",
@@ -49,9 +61,11 @@ __all__ = [
     "GPT4All",
     "LlamaCpp",
     "Modal",
+    "MosaicML",
     "NLPCloud",
     "OpenAI",
     "OpenAIChat",
+    "OpenLM",
     "Petals",
     "PipelineAI",
     "HuggingFaceEndpoint",
@@ -71,6 +85,8 @@ __all__ = [
     "PredictionGuard",
     "HumanInputLLM",
     "HuggingFaceTextGenInference",
+    "FakeListLLM",
+    "VertexAI",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -79,8 +95,11 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "anthropic": Anthropic,
     "anyscale": Anyscale,
     "bananadev": Banana,
+    "beam": Beam,
     "cerebriumai": CerebriumAI,
     "cohere": Cohere,
+    "ctransformers": CTransformers,
+    "databricks": Databricks,
     "deepinfra": DeepInfra,
     "forefrontai": ForefrontAI,
     "google_palm": GooglePalm,
@@ -90,10 +109,12 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "huggingface_endpoint": HuggingFaceEndpoint,
     "llamacpp": LlamaCpp,
     "modal": Modal,
+    "mosaic": MosaicML,
     "sagemaker_endpoint": SagemakerEndpoint,
     "nlpcloud": NLPCloud,
     "human-input": HumanInputLLM,
     "openai": OpenAI,
+    "openlm": OpenLM,
     "petals": Petals,
     "pipelineai": PipelineAI,
     "huggingface_pipeline": HuggingFacePipeline,
@@ -105,4 +126,6 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "writer": Writer,
     "rwkv": RWKV,
     "huggingface_textgen_inference": HuggingFaceTextGenInference,
+    "fake-list": FakeListLLM,
+    "vertexai": VertexAI,
 }

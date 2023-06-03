@@ -75,6 +75,7 @@ class GitLoader(BaseLoader):
                         continue
 
                     metadata = {
+                        "source": rel_file_path,
                         "file_path": rel_file_path,
                         "file_name": item.name,
                         "file_type": file_type,

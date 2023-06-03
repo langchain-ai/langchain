@@ -3,13 +3,12 @@ import logging
 from typing import List
 
 from sqlalchemy import Column, Integer, Text, create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 from langchain.schema import (
-    AIMessage,
     BaseChatMessageHistory,
     BaseMessage,
-    HumanMessage,
     _message_to_dict,
     messages_from_dict,
 )
@@ -60,13 +59,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
             messages = messages_from_dict(items)
             return messages
 
-    def add_user_message(self, message: str) -> None:
-        self.append(HumanMessage(content=message))
-
-    def add_ai_message(self, message: str) -> None:
-        self.append(AIMessage(content=message))
-
-    def append(self, message: BaseMessage) -> None:
+    def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in db"""
         with self.Session() as session:
             jsonstr = json.dumps(_message_to_dict(message))
