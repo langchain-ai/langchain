@@ -118,7 +118,7 @@ def test_faiss_similarity_search_with_relevance_scores() -> None:
     docsearch = FAISS.from_texts(
         texts,
         FakeEmbeddings(),
-        normalize_score_fn=lambda score: 1.0 - score / math.sqrt(2),
+        relevance_score_fn=lambda score: 1.0 - score / math.sqrt(2),
     )
     outputs = docsearch.similarity_search_with_relevance_scores("foo", k=1)
     output, score = outputs[0]
@@ -130,7 +130,7 @@ def test_faiss_invalid_normalize_fn() -> None:
     """Test the similarity search with normalized similarities."""
     texts = ["foo", "bar", "baz"]
     docsearch = FAISS.from_texts(
-        texts, FakeEmbeddings(), normalize_score_fn=lambda _: 2.0
+        texts, FakeEmbeddings(), relevance_score_fn=lambda _: 2.0
     )
     with pytest.raises(
         ValueError, match="Normalized similarity scores must be between 0 and 1"
