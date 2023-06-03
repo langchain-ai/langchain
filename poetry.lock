@@ -766,6 +766,20 @@ html5lib = ["html5lib"]
 lxml = ["lxml"]
 
 [[package]]
+name = "bibtexparser"
+version = "1.4.0"
+description = "Bibtex parser for python 3"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "bibtexparser-1.4.0.tar.gz", hash = "sha256:ca7ce2bc34e7c48a678dd49416429bb567441f26dbb13b3609082d8cd109ace6"},
+]
+
+[package.dependencies]
+pyparsing = ">=2.0.3"
+
+[[package]]
 name = "black"
 version = "23.3.0"
 description = "The uncompromising code formatter."
@@ -2607,7 +2621,7 @@ name = "grpcio"
 version = "1.47.5"
 description = "HTTP/2-based RPC framework"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "grpcio-1.47.5-cp310-cp310-linux_armv7l.whl", hash = "sha256:acc73289d0c44650aa1f21eccfa967f5623b01c3b5e2b4596fe5f9c5bf10956d"},
@@ -4447,6 +4461,39 @@ files = [
     {file = "mmh3-3.1.0-cp39-cp39-win_amd64.whl", hash = "sha256:03e04b3480e71828f48d17653451a3286555f0534942cb6ba93065b10ad5f9dc"},
     {file = "mmh3-3.1.0.tar.gz", hash = "sha256:9b0f2b2ab4a915333c9d1089572e290a021ebb5b900bb7f7114dccc03995d732"},
 ]
+
+[[package]]
+name = "momento"
+version = "1.5.0"
+description = "SDK for Momento"
+category = "main"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "momento-1.5.0-py3-none-any.whl", hash = "sha256:7f633fb26ddf1bfcaf99a7add37b085f0e23c96f85972b655eaaf2de1c61d7f1"},
+    {file = "momento-1.5.0.tar.gz", hash = "sha256:68ca5d24b4cb08c5c0bd22d4edd3b8b0fcf087a85d30673cb2c55b11971c76ec"},
+]
+
+[package.dependencies]
+grpcio = ">=1.46.0,<2.0.0"
+momento-wire-types = ">=0.64,<0.65"
+pyjwt = ">=2.4.0,<3.0.0"
+
+[[package]]
+name = "momento-wire-types"
+version = "0.64.0"
+description = "Momento Client Proto Generated Files"
+category = "main"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "momento_wire_types-0.64.0-py3-none-any.whl", hash = "sha256:30a5d523cef9209c0863db25e6344044b0c7240fea183a41c1433ca83cefea5b"},
+    {file = "momento_wire_types-0.64.0.tar.gz", hash = "sha256:5d3647210d49d0c3032a74ae5f5cc012a9faf826786272e1436a3d84d70a8bd5"},
+]
+
+[package.dependencies]
+grpcio = "*"
+protobuf = ">=3,<5"
 
 [[package]]
 name = "monotonic"
@@ -6396,7 +6443,7 @@ name = "protobuf"
 version = "3.19.6"
 description = "Protocol Buffers"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.5"
 files = [
     {file = "protobuf-3.19.6-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:010be24d5a44be7b0613750ab40bc8b8cedc796db468eae6c779b395f50d1fa1"},
@@ -6455,14 +6502,14 @@ test = ["enum34", "ipaddress", "mock", "pywin32", "wmi"]
 
 [[package]]
 name = "psychicapi"
-version = "0.2"
+version = "0.5"
 description = "Psychic.dev is an open-source universal data connector for knowledgebases."
 category = "main"
 optional = true
 python-versions = "*"
 files = [
-    {file = "psychicapi-0.2-py3-none-any.whl", hash = "sha256:712c6a1615dfad11d65241c179e96a5058ed1ada47463d1208e5a55a2bfdb4ff"},
-    {file = "psychicapi-0.2.tar.gz", hash = "sha256:3db62c2665c1485d0f68f3c1c57590691f20ee868d1f40fdeb59a6eeb15ed26a"},
+    {file = "psychicapi-0.5-py3-none-any.whl", hash = "sha256:30637abbecd6c9ebafbceb7c1230987f7ef3af2ca7054f3322ae80f9cbf46039"},
+    {file = "psychicapi-0.5.tar.gz", hash = "sha256:a2106ef8e3a286f85aa2c26c6d1a778e15009391b3b5e2dd864447c8e7f85942"},
 ]
 
 [package.dependencies]
@@ -6577,6 +6624,35 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 files = [
     {file = "py-1.11.0-py2.py3-none-any.whl", hash = "sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378"},
     {file = "py-1.11.0.tar.gz", hash = "sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719"},
+]
+
+[[package]]
+name = "py-trello"
+version = "0.19.0"
+description = "Python wrapper around the Trello API"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "py-trello-0.19.0.tar.gz", hash = "sha256:f4a8c05db61fad0ef5fa35d62c29806c75d9d2b797358d9cf77275e2cbf23020"},
+]
+
+[package.dependencies]
+python-dateutil = "*"
+pytz = "*"
+requests = "*"
+requests-oauthlib = ">=0.4.1"
+
+[[package]]
+name = "py4j"
+version = "0.10.9.7"
+description = "Enables Python programs to dynamically access arbitrary Java objects"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "py4j-0.10.9.7-py2.py3-none-any.whl", hash = "sha256:85defdfd2b2376eb3abf5ca6474b51ab7e0de341c75a02f46dc9b5976f5a5c1b"},
+    {file = "py4j-0.10.9.7.tar.gz", hash = "sha256:0b6e5315bb3ada5cf62ac651d107bb2ebc02def3dee9d9548e3baac644ea8dbb"},
 ]
 
 [[package]]
@@ -6874,7 +6950,6 @@ files = [
     {file = "pylance-0.4.12-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:2b86fb8dccc03094c0db37bef0d91bda60e8eb0d1eddf245c6971450c8d8a53f"},
     {file = "pylance-0.4.12-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:0bc82914b13204187d673b5f3d45f93219c38a0e9d0542ba251074f639669789"},
     {file = "pylance-0.4.12-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5a4bcce77f99ecd4cbebbadb01e58d5d8138d40eb56bdcdbc3b20b0475e7a472"},
-    {file = "pylance-0.4.12-cp38-abi3-win_amd64.whl", hash = "sha256:9616931c5300030adb9626d22515710a127d1e46a46737a7a0f980b52f13627c"},
 ]
 
 [package.dependencies]
@@ -6890,7 +6965,7 @@ tests = ["duckdb", "polars[pandas,pyarrow]", "pytest"]
 name = "pymongo"
 version = "4.3.3"
 description = "Python driver for MongoDB <http://www.mongodb.org>"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -7165,6 +7240,27 @@ files = [
     {file = "PySocks-1.7.1-py3-none-any.whl", hash = "sha256:2725bd0a9925919b9b51739eea5f9e2bae91e83288108a9ad338b2e3a4435ee5"},
     {file = "PySocks-1.7.1.tar.gz", hash = "sha256:3f8804571ebe159c380ac6de37643bb4685970655d3bba243530d6558b799aa0"},
 ]
+
+[[package]]
+name = "pyspark"
+version = "3.4.0"
+description = "Apache Spark Python API"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "pyspark-3.4.0.tar.gz", hash = "sha256:167a23e11854adb37f8602de6fcc3a4f96fd5f1e323b9bb83325f38408c5aafd"},
+]
+
+[package.dependencies]
+py4j = "0.10.9.7"
+
+[package.extras]
+connect = ["googleapis-common-protos (>=1.56.4)", "grpcio (>=1.48.1)", "grpcio-status (>=1.48.1)", "numpy (>=1.15)", "pandas (>=1.0.5)", "pyarrow (>=1.0.0)"]
+ml = ["numpy (>=1.15)"]
+mllib = ["numpy (>=1.15)"]
+pandas-on-spark = ["numpy (>=1.15)", "pandas (>=1.0.5)", "pyarrow (>=1.0.0)"]
+sql = ["numpy (>=1.15)", "pandas (>=1.0.5)", "pyarrow (>=1.0.0)"]
 
 [[package]]
 name = "pytesseract"
@@ -10762,14 +10858,14 @@ multidict = ">=4.0"
 
 [[package]]
 name = "zep-python"
-version = "0.25"
+version = "0.30"
 description = "Zep stores, manages, enriches, indexes, and searches long-term memory for conversational AI applications. This is the Python client for the Zep service."
 category = "main"
 optional = true
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "zep_python-0.25-py3-none-any.whl", hash = "sha256:d486afc0d621c3211020d89408940bcad4a062bcbb6f5623bf5152fccad1f87e"},
-    {file = "zep_python-0.25.tar.gz", hash = "sha256:bc2937c0449a13f2abffee24351aa2e574c977773f453812613e81c5bc253916"},
+    {file = "zep_python-0.30-py3-none-any.whl", hash = "sha256:6020d2f3c6dc3c3bfb8de62db88d97a8c0cf4029b5def0c8a682c3ddc2c480d2"},
+    {file = "zep_python-0.30.tar.gz", hash = "sha256:902720af8ffdda861ae1ee1d88e374a095195f1dc3ef79a78ecc699062ace203"},
 ]
 
 [package.dependencies]
@@ -10852,12 +10948,12 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "redis", "requests-toolbelt", "sentence-transformers", "spacy", "steamship", "tensorflow-text", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "momento", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "redis", "requests-toolbelt", "sentence-transformers", "spacy", "steamship", "tensorflow-text", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "chardet", "gql", "html2text", "jq", "lxml", "pandas", "pdfminer-six", "psychicapi", "pymupdf", "pypdf", "pypdfium2", "requests-toolbelt", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "chardet", "gql", "html2text", "jq", "lxml", "pandas", "pdfminer-six", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "requests-toolbelt", "scikit-learn", "telethon", "tqdm", "zep-python"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
 qdrant = ["qdrant-client"]
@@ -10866,4 +10962,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "196588e10bb33939f5bae294a194ad01e803f40ed1087fe6a7a4b87e8d80712b"
+content-hash = "379bfcf130acc24f2f8408e2bb7e3ae9d769070e6bf5f66868491bddb1b2fc53"

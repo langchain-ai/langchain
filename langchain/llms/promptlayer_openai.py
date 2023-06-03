@@ -20,6 +20,7 @@ class PromptLayerOpenAI(OpenAI):
 
     All parameters that can be passed to the OpenAI LLM can also
     be passed here. The PromptLayerOpenAI LLM adds two optional
+
     parameters:
         ``pl_tags``: List of strings to tag the request with.
         ``return_pl_id``: If True, the PromptLayer request ID will be
@@ -124,6 +125,7 @@ class PromptLayerOpenAIChat(OpenAIChat):
 
     All parameters that can be passed to the OpenAIChat LLM can also
     be passed here. The PromptLayerOpenAIChat adds two optional
+
     parameters:
         ``pl_tags``: List of strings to tag the request with.
         ``return_pl_id``: If True, the PromptLayer request ID will be

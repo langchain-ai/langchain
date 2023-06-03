@@ -7,8 +7,12 @@ from langchain.llms.anthropic import Anthropic
 from langchain.llms.anyscale import Anyscale
 from langchain.llms.bananadev import Banana
 from langchain.llms.base import BaseLLM
+from langchain.llms.beam import Beam
+from langchain.llms.bedrock import Bedrock
 from langchain.llms.cerebriumai import CerebriumAI
 from langchain.llms.cohere import Cohere
+from langchain.llms.ctransformers import CTransformers
+from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.fake import FakeListLLM
 from langchain.llms.forefrontai import ForefrontAI
@@ -36,6 +40,7 @@ from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
+from langchain.llms.vertexai import VertexAI
 from langchain.llms.writer import Writer
 
 __all__ = [
@@ -43,8 +48,12 @@ __all__ = [
     "AlephAlpha",
     "Anyscale",
     "Banana",
+    "Beam",
+    "Bedrock",
     "CerebriumAI",
     "Cohere",
+    "CTransformers",
+    "Databricks",
     "DeepInfra",
     "ForefrontAI",
     "GooglePalm",
@@ -77,6 +86,7 @@ __all__ = [
     "HumanInputLLM",
     "HuggingFaceTextGenInference",
     "FakeListLLM",
+    "VertexAI",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -85,8 +95,11 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "anthropic": Anthropic,
     "anyscale": Anyscale,
     "bananadev": Banana,
+    "beam": Beam,
     "cerebriumai": CerebriumAI,
     "cohere": Cohere,
+    "ctransformers": CTransformers,
+    "databricks": Databricks,
     "deepinfra": DeepInfra,
     "forefrontai": ForefrontAI,
     "google_palm": GooglePalm,
@@ -114,4 +127,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "rwkv": RWKV,
     "huggingface_textgen_inference": HuggingFaceTextGenInference,
     "fake-list": FakeListLLM,
+    "vertexai": VertexAI,
 }
