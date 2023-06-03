@@ -23,6 +23,7 @@ from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
+from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
 
 __all__ = [
     "Redis",
@@ -51,4 +52,6 @@ __all__ = [
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "Typesense",
+    "Clickhouse",
+    "ClickhouseSettings"
 ]
