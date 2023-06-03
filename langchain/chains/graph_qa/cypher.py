@@ -47,20 +47,20 @@ class GraphCypherQAChain(Chain):
         *,
         qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
         cypher_prompt: BasePromptTemplate = CYPHER_GENERATION_PROMPT,
-        qa_chain: LLMChain = None,
-        cypher_generation_chain: LLMChain = None,
+        qa_chain: Optional[LLMChain] = None,
+        cypher_generation_chain: Optional[LLMChain] = None,
         **kwargs: Any,
     ) -> GraphCypherQAChain:
         """Initialize from LLM."""
-        if qa_chain is None:
-            qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
+        _qa_chain = qa_chain or LLMChain(llm=llm, prompt=qa_prompt)
 
-        if cypher_generation_chain is None:
-            cypher_generation_chain = LLMChain(llm=llm, prompt=cypher_prompt)
+        _cypher_generation_chain = cypher_generation_chain or LLMChain(
+            llm=llm, prompt=cypher_prompt
+        )
 
         return cls(
-            qa_chain=qa_chain,
-            cypher_generation_chain=cypher_generation_chain,
+            qa_chain=_qa_chain,
+            cypher_generation_chain=_cypher_generation_chain,
             **kwargs,
         )
 
