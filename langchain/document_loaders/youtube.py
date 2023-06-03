@@ -235,7 +235,9 @@ class YoutubeLoader(BaseLoader):
             "description": yt.description or "Unknown",
             "view_count": yt.views or 0,
             "thumbnail_url": yt.thumbnail_url or "Unknown",
-            "publish_date": yt.publish_date.strftime("%Y-%m-%d %H:%M:%S") if yt.publish_date else "Unknown",
+            "publish_date": yt.publish_date.strftime("%Y-%m-%d %H:%M:%S")
+            if yt.publish_date
+            else "Unknown",
             "length": yt.length or 0,
             "author": yt.author or "Unknown",
         }
