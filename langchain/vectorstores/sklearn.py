@@ -132,8 +132,7 @@ SERIALIZER_MAP: Dict[str, Type[BaseSerializer]] = {
 class SKLearnVectorStoreException(RuntimeError):
     pass
 
-
-class SKLearnVectorStore(VectorStore):
+class SKLearnVectorStoreBase(VectorStore):
     """A simple in-memory vector store based on the scikit-learn library
     NearestNeighbors implementation."""
 
@@ -143,16 +142,10 @@ class SKLearnVectorStore(VectorStore):
         *,
         persist_path: Optional[str] = None,
         serializer: Literal["json", "bson", "parquet"] = "json",
-        metric: str = "cosine",
-        **kwargs: Any,
     ) -> None:
         np = guard_import("numpy")
-        sklearn_neighbors = guard_import("sklearn.neighbors", pip_name="scikit-learn")
-
-        # non-persistent properties
         self._np = np
-        self._neighbors = sklearn_neighbors.NearestNeighbors(metric=metric, **kwargs)
-        self._neighbors_fitted = False
+        # non-persistent properties
         self._embedding_function = embedding
         self._persist_path = persist_path
         self._serializer: Optional[BaseSerializer] = None
@@ -196,7 +189,7 @@ class SKLearnVectorStore(VectorStore):
         self._texts = data["texts"]
         self._metadatas = data["metadatas"]
         self._ids = data["ids"]
-        self._update_neighbors()
+        self._update()
 
     def add_texts(
         self,
@@ -211,36 +204,30 @@ class SKLearnVectorStore(VectorStore):
         self._embeddings.extend(self._embedding_function.embed_documents(_texts))
         self._metadatas.extend(metadatas or ([{}] * len(_texts)))
         self._ids.extend(_ids)
-        self._update_neighbors()
+        self._update()
         return _ids
 
-    def _update_neighbors(self) -> None:
+    def _update(self) -> None:
         if len(self._embeddings) == 0:
             raise SKLearnVectorStoreException(
                 "No data was added to SKLearnVectorStore."
             )
         self._embeddings_np = self._np.asarray(self._embeddings)
-        self._neighbors.fit(self._embeddings_np)
-        self._neighbors_fitted = True
 
+    def _get_filtered_data(self, filter: Optional[Dict[str, str]]=None):
+        mask = self._np.ones(len(self._ids), dtype=bool)
+        if filter is None or len(filter) == 0:
+            return mask
+        for key, value in filter.items():
+            for i, metadata_ in enumerate(self._metadatas):
+                mask[i] = mask[i] and (metadata_[key] == value)
+        return mask
+
+    @abstractmethod
     def similarity_search_with_score(
         self, query: str, *, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        if not self._neighbors_fitted:
-            raise SKLearnVectorStoreException(
-                "No data was added to SKLearnVectorStore."
-            )
-        query_embedding = self._embedding_function.embed_query(query)
-        neigh_dists, neigh_idxs = self._neighbors.kneighbors(
-            [query_embedding], n_neighbors=k
-        )
-        res = []
-        for idx, dist in zip(neigh_idxs[0], neigh_dists[0]):
-            _idx = int(idx)
-            metadata = {"id": self._ids[_idx], **self._metadatas[_idx]}
-            doc = Document(page_content=self._texts[_idx], metadata=metadata)
-            res.append((doc, dist))
-        return res
+        ...
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -269,3 +256,107 @@ class SKLearnVectorStore(VectorStore):
         vs = SKLearnVectorStore(embedding, persist_path=persist_path, **kwargs)
         vs.add_texts(texts, metadatas=metadatas, ids=ids)
         return vs
+
+
+class SKLearnKNNVectorStore(SKLearnVectorStoreBase):
+    """A simple in-memory vector store based on the scikit-learn library
+    NearestNeighbors implementation."""
+
+    def __init__(
+        self,
+        embedding: Embeddings,
+        *,
+        persist_path: Optional[str] = None,
+        serializer: Literal["json", "bson", "parquet"] = "json",
+        metric: str = "cosine",
+        **kwargs: Any,
+    ) -> None:
+        sklearn_neighbors = guard_import("sklearn.neighbors", pip_name="scikit-learn")
+        self._neighbors = sklearn_neighbors.NearestNeighbors(metric=metric, **kwargs)
+        self._neighbors_fitted = False
+        super().__init__(
+            embedding=embedding,
+            persist_path=persist_path,
+            serializer=serializer
+        )
+
+        # algorithm specific properties
+
+    def _update(self) -> None:
+        super()._update()
+        self._neighbors.fit(self._embeddings_np)
+        self._neighbors_fitted = True
+
+    def similarity_search_with_score(
+        self, query: str, *, k: int = 4, filter: Optional[Dict[str, str]]=None, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        if filter is not None:
+            mask = self._get_filtered_data(filter)
+            clf = type(self._neighbors)(**self._neighbors.get_params()).fit(self._embeddings_np[mask])
+            ids = self._np.arange(len(self._embeddings_np))[mask]
+        else:
+            clf = self._neighbors
+            if not self._neighbors_fitted:
+                raise SKLearnVectorStoreException(
+                    "No data was added to SKLearnVectorStore."
+                )
+            ids = self._np.arange(len(self._embeddings_np))
+        query_embedding = self._embedding_function.embed_query(query)
+        neigh_dists, neigh_idxs = clf.kneighbors(
+            [query_embedding], n_neighbors=k
+        )
+        res = []
+        for idx, dist in zip(neigh_idxs[0], neigh_dists[0]):
+            _idx = int(ids[int(idx)])
+            metadata = {"id": self._ids[_idx], **self._metadatas[_idx]}
+            doc = Document(page_content=self._texts[_idx], metadata=metadata)
+            res.append((doc, dist))
+        return res
+
+
+SKLearnVectorStore = SKLearnKNNVectorStore # for backwards-compatibility
+
+
+class SKLearnSVMVectorStore(SKLearnVectorStore):
+    """A simple in-memory vector store based on the scikit-learn library
+    LinearSVC implementation."""
+
+    def __init__(
+        self,
+        embedding: Embeddings,
+        *,
+        persist_path: Optional[str] = None,
+        serializer: Literal["json", "bson", "parquet"] = "json",
+        svm_c: float = 0.1,
+        max_itr=10000,
+        tol=1e-6,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            embedding=embedding,
+            persist_path=persist_path,
+            serializer=serializer
+        )
+        # algorithm specific properties
+        sklearn_svm = guard_import("sklearn.svm", pip_name="scikit-learn")
+        self._svm = sklearn_svm.LinearSVC(class_weight='balanced', max_iter=max_itr, tol=tol, C=svm_c, **kwargs)
+
+    def similarity_search_with_score(
+        self, query: str, *, k: int = 4, filter: Optional[Dict[str, str]]=None, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        query_embedding = self._np.asarray(self._embedding_function.embed_query(query))
+        mask = self._get_filtered_data(filter)
+        ids = self._np.arange(len(self._embeddings_np))[mask]
+        x = self._np.concatenate([query_embedding[None,...], self._embeddings_np[mask]]) # x is (1001, 1536) array, with query now as the first row
+        y = self._np.zeros(len(x))
+        y[0] = 1
+        self._svm.fit(x, y) # train
+        similarities = self._svm.decision_function(x)[1:]
+        sorted_idx = self._np.argsort(-similarities)
+        res = []
+        for idx, dist in zip(sorted_idx[:k], similarities[:k]):
+            _idx = int(ids[int(idx)])
+            metadata = {"id": self._ids[_idx], **self._metadatas[_idx]}
+            doc = Document(page_content=self._texts[_idx], metadata=metadata)
+            res.append((doc, dist))
+        return res

@@ -15,7 +15,7 @@ from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSear
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.redis import Redis
-from langchain.vectorstores.sklearn import SKLearnVectorStore
+from langchain.vectorstores.sklearn import SKLearnVectorStore, SKLearnKNNVectorStore, SKLearnSVMVectorStore
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
 from langchain.vectorstores.typesense import Typesense
@@ -41,6 +41,8 @@ __all__ = [
     "MyScale",
     "MyScaleSettings",
     "SKLearnVectorStore",
+    "SKLearnKNNVectorStore",
+    "SKLearnSVMVectorStore",
     "SupabaseVectorStore",
     "AnalyticDB",
     "Vectara",
