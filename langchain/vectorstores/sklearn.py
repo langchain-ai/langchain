@@ -235,7 +235,7 @@ class SKLearnVectorStoreBase(VectorStore):
         ...
 
     def similarity_search_with_score(
-        self, query: str, *, k: int = DEFAULT_K, **kwargs: Any
+        self, query: str, *, k: int = DEFAULT_K, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         query_embedding = self._embedding_function.embed_query(query)
         indices_dists = self._similarity_index_search_with_score(
@@ -254,15 +254,15 @@ class SKLearnVectorStoreBase(VectorStore):
 
 
     def similarity_search(
-        self, query: str, k: int = DEFAULT_K, **kwargs: Any
+        self, query: str, k: int = DEFAULT_K, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
-        docs_scores = self.similarity_search_with_score(query, k=k, **kwargs)
+        docs_scores = self.similarity_search_with_score(query, k=k, filter=filter, **kwargs)
         return [doc for doc, _ in docs_scores]
 
     def _similarity_search_with_relevance_scores(
-        self, query: str, k: int = DEFAULT_K, **kwargs: Any, 
+        self, query: str, k: int = DEFAULT_K, filter: Optional[dict] = None, **kwargs: Any, 
     ) -> List[Tuple[Document, float]]:
-        docs_dists = self.similarity_search_with_score(query, k=k, **kwargs)
+        docs_dists = self.similarity_search_with_score(query, k=k, filter=filter, **kwargs)
         docs, dists = zip(*docs_dists)
         scores = [1 / math.exp(dist) for dist in dists]
         return list(zip(list(docs), scores))
@@ -273,6 +273,7 @@ class SKLearnVectorStoreBase(VectorStore):
         k: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
         lambda_mult: float = 0.5,
+        filter: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -290,7 +291,7 @@ class SKLearnVectorStoreBase(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         indices_dists = self._similarity_index_search_with_score(
-            embedding, k=fetch_k, **kwargs
+            embedding, k=fetch_k, filter=filter, **kwargs
         )
         indices, _ = zip(*indices_dists)
         result_embeddings = self._embeddings_np[indices,]
@@ -314,6 +315,7 @@ class SKLearnVectorStoreBase(VectorStore):
         query: str,
         k: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
+        filter: Optional[dict] = None,
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
@@ -338,7 +340,7 @@ class SKLearnVectorStoreBase(VectorStore):
 
         embedding = self._embedding_function.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mul=lambda_mult
+            embedding, k, fetch_k, lambda_mul=lambda_mult, filter=filter,
         )
         return docs
 
