@@ -20,7 +20,8 @@ class ChatOutputParser(AgentOutputParser):
             includes_action = "action" in response and "action_input" in response
             if includes_answer and includes_action:
                 raise OutputParserException(
-                    f"Parsing LLM output produced a final answer and a parse-able action: {text}"
+                    f"Parsing LLM output produced a final answer "
+                    "and a parse-able action: {text}"
                 )
             return AgentAction(response["action"], response["action_input"], text)
 

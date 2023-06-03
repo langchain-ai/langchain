@@ -140,7 +140,7 @@ def test_valid_action_and_answer_raises_exception() -> None:
         "Thought: I can now answer the question\n"
         "Final Answer: 1994"
     )
-    with pytest.raises(OutputParserException) as e_info:
+    with pytest.raises(OutputParserException):
         get_action_and_input(llm_output)
 
 

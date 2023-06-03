@@ -21,7 +21,8 @@ class MRKLOutputParser(AgentOutputParser):
         if action_match:
             if includes_answer:
                 raise OutputParserException(
-                    f"Parsing LLM output produced both a final answer and a parse-able action: {text}"
+                    f"Parsing LLM output produced both a final answer "
+                    "and a parse-able action: {text}"
                 )
             action = action_match.group(1).strip()
             action_input = action_match.group(2)
