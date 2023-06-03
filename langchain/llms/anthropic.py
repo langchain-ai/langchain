@@ -107,6 +107,7 @@ class Anthropic(LLM, _AnthropicCommon):
 
     Example:
         .. code-block:: python
+
             import anthropic
             from langchain.llms import Anthropic
             model = Anthropic(model="<model_name>", anthropic_api_key="my-api-key")

@@ -36,12 +36,6 @@ class TracerSessionBase(TracerSessionV1Base):
     tenant_id: UUID
 
 
-class TracerSessionCreate(TracerSessionBase):
-    """A creation class for TracerSession."""
-
-    id: Optional[UUID]
-
-
 class TracerSession(TracerSessionBase):
     """TracerSessionV1 schema for the V2 API."""
 
@@ -91,6 +85,9 @@ class ToolRun(BaseRun):
     child_tool_runs: List[ToolRun] = Field(default_factory=list)
 
 
+# Begin V2 API Schemas
+
+
 class RunTypeEnum(str, Enum):
     """Enum for run types."""
 
@@ -105,7 +102,7 @@ class RunBase(BaseModel):
     id: Optional[UUID]
     start_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     end_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
-    extra: dict
+    extra: Optional[Dict[str, Any]] = None
     error: Optional[str]
     execution_order: int
     child_execution_order: Optional[int]
@@ -133,7 +130,7 @@ class Run(RunBase):
 
 class RunCreate(RunBase):
     name: str
-    session_id: UUID
+    session_name: Optional[str] = None
 
     @root_validator(pre=True)
     def add_runtime_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -142,6 +139,14 @@ class RunCreate(RunBase):
         extra["runtime"] = get_runtime_environment()
         values["extra"] = extra
         return values
+
+
+class RunUpdate(BaseModel):
+    end_time: Optional[datetime.datetime]
+    error: Optional[str]
+    outputs: Optional[dict]
+    parent_run_id: Optional[UUID]
+    reference_example_id: Optional[UUID]
 
 
 ChainRun.update_forward_refs()
