@@ -92,6 +92,7 @@ class AIMessage(BaseMessage):
     """Type of message that is spoken by the AI."""
 
     example: bool = False
+    name: Optional[str] = None
 
     @property
     def type(self) -> str:
@@ -121,7 +122,9 @@ class ChatMessage(BaseMessage):
 
 def _message_to_dict(message: BaseMessage) -> dict:
     message_dict = {"type": message.type, "data": message.dict()}
-    if isinstance(message, HumanMessage) and message.name is not None:
+    if isinstance(message, AIMessage) and message.name is not None:
+        message_dict["data"]["name"] = message.name
+    elif isinstance(message, HumanMessage) and message.name is not None:
         message_dict["data"]["name"] = message.name
     return message_dict
 
