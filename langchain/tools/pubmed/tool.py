@@ -2,6 +2,8 @@
 
 from typing import Optional
 
+from pydantic import Field
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -22,7 +24,7 @@ class PubmedQueryRun(BaseTool):
         "from scientific articles on PubMed.org. "
         "Input should be a search query."
     )
-    api_wrapper: PubMedAPIWrapper
+    api_wrapper: PubMedAPIWrapper = Field(default_factory=PubMedAPIWrapper)
 
     def _run(
         self,

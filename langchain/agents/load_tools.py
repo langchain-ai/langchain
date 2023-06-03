@@ -199,6 +199,7 @@ def _get_wikipedia(**kwargs: Any) -> BaseTool:
 def _get_arxiv(**kwargs: Any) -> BaseTool:
     return ArxivQueryRun(api_wrapper=ArxivAPIWrapper(**kwargs))
 
+
 def _get_pupmed(**kwargs: Any) -> BaseTool:
     return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
 
@@ -307,9 +308,9 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_arxiv,
         ["top_k_results", "load_max_docs", "load_all_available_meta"],
     ),
-    "pupmed" : (
-        _get_pupmed , 
-        ["top_k_results", "load_max_docs", "load_all_available_meta"]
+    "pupmed": (
+        _get_pupmed,
+        ["top_k_results", "load_max_docs", "load_all_available_meta"],
     ),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
     "awslambda": (

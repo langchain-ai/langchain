@@ -1,10 +1,12 @@
 import json
+import logging
 import time
 import urllib.error
 import urllib.request
 from typing import List
+
 from pydantic import BaseModel, Extra
-import logging
+
 from langchain.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -57,13 +59,15 @@ class PubMedAPIWrapper(BaseModel):
             docs = [
                 f"Published: {result['pub_date']}\nTitle: {result['title']}\n"
                 f"Summary: {result['summary']}"
-                for result in self.load(query[:self.ARXIV_MAX_QUERY_LENGTH])
+                for result in self.load(query[: self.ARXIV_MAX_QUERY_LENGTH])
             ]
 
             # Join the results and limit the character count
-            return ("\n\n".join(docs)[:self.doc_content_chars_max]
-                    if docs
-                    else "No good PubMed Result was found")
+            return (
+                "\n\n".join(docs)[: self.doc_content_chars_max]
+                if docs
+                else "No good PubMed Result was found"
+            )
         except Exception as ex:
             return f"PubMed exception: {ex}"
 
@@ -92,8 +96,22 @@ class PubMedAPIWrapper(BaseModel):
         # Convert the list of articles to a JSON string
         return articles
 
-    def retrieve_article(self, uid, webenv):
-        url = self.base_url_efetch + "db=pubmed&retmode=xml&id=" + uid + "&webenv=" + webenv
+    def _transform_doc(self, doc: dict) -> Document:
+        summary = doc.pop("summary")
+        return Document(page_content=summary, metadata=doc)
+
+    def load_docs(self, query: str) -> List[Document]:
+        document_dicts = self.load(query=query)
+        return [self._transform_doc(d) for d in document_dicts]
+
+    def retrieve_article(self, uid: str, webenv: str) -> dict:
+        url = (
+            self.base_url_efetch
+            + "db=pubmed&retmode=xml&id="
+            + uid
+            + "&webenv="
+            + webenv
+        )
 
         retry = 0
         while True:
@@ -102,9 +120,12 @@ class PubMedAPIWrapper(BaseModel):
                 break
             except urllib.error.HTTPError as e:
                 if e.code == 429 and retry < self.max_retry:
-                    # Too Many Requests error, wait for an exponentially increasing amount of time
+                    # Too Many Requests error
+                    # wait for an exponentially increasing amount of time
                     print(
-                        f"Too Many Requests, waiting for {self.sleep_time:.2f} seconds...")
+                        f"Too Many Requests, "
+                        f"waiting for {self.sleep_time:.2f} seconds..."
+                    )
                     time.sleep(self.sleep_time)
                     self.sleep_time *= 2
                     retry += 1
@@ -114,30 +135,37 @@ class PubMedAPIWrapper(BaseModel):
         xml_text = result.read().decode("utf-8")
 
         # Get title
-        title = ''
-        if '<ArticleTitle>' in xml_text and '</ArticleTitle>' in xml_text:
-            start_tag = '<ArticleTitle>'
-            end_tag = '</ArticleTitle>'
-            title = xml_text[xml_text.index(
-                start_tag)+len(start_tag):xml_text.index(end_tag)]
+        title = ""
+        if "<ArticleTitle>" in xml_text and "</ArticleTitle>" in xml_text:
+            start_tag = "<ArticleTitle>"
+            end_tag = "</ArticleTitle>"
+            title = xml_text[
+                xml_text.index(start_tag) + len(start_tag) : xml_text.index(end_tag)
+            ]
 
         # Get abstract
-        abstract = ''
-        if '<AbstractText>' in xml_text and '</AbstractText>' in xml_text:
-            start_tag = '<AbstractText>'
-            end_tag = '</AbstractText>'
-            abstract = xml_text[xml_text.index(
-                start_tag)+len(start_tag):xml_text.index(end_tag)]
+        abstract = ""
+        if "<AbstractText>" in xml_text and "</AbstractText>" in xml_text:
+            start_tag = "<AbstractText>"
+            end_tag = "</AbstractText>"
+            abstract = xml_text[
+                xml_text.index(start_tag) + len(start_tag) : xml_text.index(end_tag)
+            ]
 
         # Get publication date
-        pub_date = ''
-        if '<PubDate>' in xml_text and '</PubDate>' in xml_text:
-            start_tag = '<PubDate>'
-            end_tag = '</PubDate>'
-            pub_date = xml_text[xml_text.index(
-                start_tag)+len(start_tag):xml_text.index(end_tag)]
+        pub_date = ""
+        if "<PubDate>" in xml_text and "</PubDate>" in xml_text:
+            start_tag = "<PubDate>"
+            end_tag = "</PubDate>"
+            pub_date = xml_text[
+                xml_text.index(start_tag) + len(start_tag) : xml_text.index(end_tag)
+            ]
 
         # Return article as dictionary
-        article = {'uid': uid, 'title': title,
-                   'summary': abstract, 'pub_date': pub_date}
+        article = {
+            "uid": uid,
+            "title": title,
+            "summary": abstract,
+            "pub_date": pub_date,
+        }
         return article

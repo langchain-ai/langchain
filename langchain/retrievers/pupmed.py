@@ -12,7 +12,7 @@ class PubMedRetriever(BaseRetriever, PubMedAPIWrapper):
     """
 
     def get_relevant_documents(self, query: str) -> List[Document]:
-        return self.load(query=query)
+        return self.load_docs(query=query)
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
         raise NotImplementedError

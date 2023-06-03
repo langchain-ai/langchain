@@ -45,7 +45,7 @@ def assert_docs(docs: List[Document]) -> None:
 def test_load_success(api_client: PubMedAPIWrapper) -> None:
     """Test that returns one document"""
 
-    docs = api_client.load("1605.08386")
+    docs = api_client.load_docs("1605.08386")
     assert len(docs) == 1
     assert_docs(docs)
 
@@ -61,7 +61,7 @@ def test_load_returns_limited_docs() -> None:
     """Test that returns several docs"""
     expected_docs = 2
     api_client = PubMedAPIWrapper(load_max_docs=expected_docs)
-    docs = api_client.load("ChatGPT")
+    docs = api_client.load_docs("ChatGPT")
     assert len(docs) == expected_docs
     assert_docs(docs)
 
@@ -69,7 +69,7 @@ def test_load_returns_limited_docs() -> None:
 def test_load_returns_full_set_of_metadata() -> None:
     """Test that returns several docs"""
     api_client = PubMedAPIWrapper(load_max_docs=1, load_all_available_meta=True)
-    docs = api_client.load("ChatGPT")
+    docs = api_client.load_docs("ChatGPT")
     assert len(docs) == 1
     for doc in docs:
         assert doc.page_content

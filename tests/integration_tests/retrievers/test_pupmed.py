@@ -2,7 +2,8 @@
 from typing import List
 
 import pytest
-from langchain.retrievers  import PubMedRetriever
+
+from langchain.retrievers import PubMedRetriever
 from langchain.schema import Document
 
 
