@@ -17,7 +17,7 @@ class Baseten(LLM):
     and run ``baseten.login()`` with your Baseten API key.
 
     The required ``model`` param can be either a model id or model
-    version id. Using a model ID (not a version ID) will result in
+    version id. Using a model version ID will result in
     slightly faster invocation.
     Any other model parameters can also
     be passed in with the format input={model_param: value, ...}
@@ -66,9 +66,9 @@ class Baseten(LLM):
 
         # get the model and version
         try:
-            model = baseten.deployed_model_id(self.model)
+            model = baseten.deployed_model_version_id(self.model)
             response = model.predict({"prompt": prompt})
         except baseten.common.core.ApiError:
-            model = baseten.deployed_model_version_id(self.model)
+            model = baseten.deployed_model_id(self.model)
             response = model.predict({"prompt": prompt})
         return "".join(response)
