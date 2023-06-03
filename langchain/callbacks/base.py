@@ -188,6 +188,8 @@ class BaseCallbackHandler(
 ):
     """Base callback handler that can be used to handle callbacks from langchain."""
 
+    raise_error: bool = False
+
     @property
     def ignore_llm(self) -> bool:
         """Whether to ignore LLM callbacks."""
