@@ -71,7 +71,7 @@ For each module LangChain provides standard, extendable interfaces. LangChain al
    ./modules/indexes.md
    ./modules/chains.md
    ./modules/agents.md
-   ./modules/callbacks/getting_started.ipynb
+   ./modules/callbacks.rst
 
 Use Cases
 ----------
