@@ -5,6 +5,7 @@ from langchain.docstore.document import Document
 from langchain.vectorstores import Clickhouse, ClickhouseSettings
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
+
 def test_clickhouse() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -14,6 +15,7 @@ def test_clickhouse() -> None:
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"_dummy": 0})]
     docsearch.drop()
+
 
 @pytest.mark.asyncio
 async def test_clickhouse_async() -> None:
@@ -27,6 +29,7 @@ async def test_clickhouse_async() -> None:
     output = await docsearch.asimilarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"_dummy": 0})]
     docsearch.drop()
+
 
 def test_clickhouse_with_metadatas() -> None:
     """Test end to end construction and search."""

@@ -8,7 +8,6 @@ from hashlib import sha1
 from threading import Thread
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
-import six
 from pydantic import BaseSettings
 
 from langchain.docstore.document import Document
@@ -65,7 +64,7 @@ class ClickhouseSettings(BaseSettings):
 
     index_type: str = "annoy"
     # Annoy supports L2Distance and cosineDistance.
-    index_param: Optional[List[str]] = [100, "'L2Distance'"]
+    index_param: Optional[Union[List, Dict]] = [100, "'L2Distance'"]
     index_query_params: Dict[str, str] = {}
 
     column_map: Dict[str, str] = {
@@ -151,10 +150,9 @@ class Clickhouse(VectorStore):
 
         index_params = (
             ",".join([f"'{k}={v}'" for k, v in self.config.index_param.items()])
-            if self.config.index_param
-            else ""
+            if self.config.index_param else ""
         ) if isinstance(self.config.index_param, Dict) else \
-            ",".join(self.config.index_param) if isinstance(self.config.index_param, List) \
+            ",".join([str(p) for p in self.config.index_param]) if isinstance(self.config.index_param, List) \
             else self.config.index_param
 
         schema_ = f"""
@@ -326,8 +324,8 @@ class Clickhouse(VectorStore):
 
         settings_strs = []
         if self.config.index_query_params:
-            for k,v in six.iteritems(self.config.index_query_params):
-                settings_strs.append(f"SETTING {k}={v}")
+            for k in self.config.index_query_params:
+                settings_strs.append(f"SETTING {k}={self.config.index_query_params[k]}")
         q_str = f"""
             SELECT {self.config.column_map['text']}, 
                 {self.config.column_map['metadata']}, dist
