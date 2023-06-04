@@ -11,7 +11,7 @@ from langchain.llms.utils import enforce_stop_tokens
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
-VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
+VALID_TASKS = ("text2text-generation", "text-generation", "summarization", "question-answering")
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class HuggingFacePipeline(LLM):
 
     To use, you should have the ``transformers`` python package installed.
 
-    Only supports `text-generation`, `text2text-generation` and `summarization` for now.
+    Only supports `text-generation`, `text2text-generation`, `summarization` and question-answering for now.
 
     Example using from_model_id:
         .. code-block:: python
@@ -32,6 +32,16 @@ class HuggingFacePipeline(LLM):
                 task="text-generation",
                 pipeline_kwargs={"max_new_tokens": 10},
             )
+
+    Example question-answering task:
+        .. code-block:: python
+
+            from langchain.llms import HuggingFacePipeline
+            QA_model = HuggingFacePipeline.from_model_id(
+                model_id="deepset/tinyroberta-squad2",
+                task="question-answering",
+            )
+            
     Example passing pipeline in directly:
         .. code-block:: python
 
@@ -76,6 +86,7 @@ class HuggingFacePipeline(LLM):
                 AutoModelForCausalLM,
                 AutoModelForSeq2SeqLM,
                 AutoTokenizer,
+                AutoModelForQuestionAnswering,
             )
             from transformers import pipeline as hf_pipeline
 
@@ -93,6 +104,8 @@ class HuggingFacePipeline(LLM):
                 model = AutoModelForCausalLM.from_pretrained(model_id, **_model_kwargs)
             elif task in ("text2text-generation", "summarization"):
                 model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **_model_kwargs)
+            elif task == "question-answering":
+                model = AutoModelForQuestionAnswering.from_pretrained(model_id, **_model_kwargs)
             else:
                 raise ValueError(
                     f"Got invalid task {task}, "
@@ -163,8 +176,14 @@ class HuggingFacePipeline(LLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
+        question: Optional[str] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
+        
+        # generation for question answering needs additional arguments
+        if self.pipeline.task == "question-answering":
+            return self.pipeline(question=question, context=prompt)
+        
         response = self.pipeline(prompt)
         if self.pipeline.task == "text-generation":
             # Text generation return includes the starter text.
