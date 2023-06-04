@@ -367,8 +367,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 if _good_splits:
                     merged_text = self._merge_splits(_good_splits, _separator)
                     final_chunks.extend(merged_text)
+                    _good_splits = []
                 final_chunks.append(s)
-                _good_splits = []
         if _good_splits:
             merged_text = self._merge_splits(_good_splits, _separator)
             final_chunks.extend(merged_text)
