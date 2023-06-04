@@ -157,18 +157,17 @@ class Clickhouse(VectorStore):
             ",".join([str(p) for p in self.config.index_param]) if isinstance(self.config.index_param, List) \
             else self.config.index_param
 
-        schema_ = f"""
-            CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
-                {self.config.column_map['id']} Nullable(String),
-                {self.config.column_map['document']} Nullable(String),
-                {self.config.column_map['embedding']} Array(Float32),
-                {self.config.column_map['metadata']} JSON,
-                {self.config.column_map['uuid']} UUID DEFAULT generateUUIDv4(),
-                CONSTRAINT cons_vec_len CHECK length({self.config.column_map['embedding']}) = {dim},
-                INDEX vec_idx {self.config.column_map['embedding']} TYPE {self.config.index_type}({index_params}) GRANULARITY 1000
-            ) ENGINE = MergeTree ORDER BY uuid
-            SETTINGS index_granularity = 8192
-        """
+        self.schema = f"""\
+CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
+    {self.config.column_map['id']} Nullable(String),
+    {self.config.column_map['document']} Nullable(String),
+    {self.config.column_map['embedding']} Array(Float32),
+    {self.config.column_map['metadata']} JSON,
+    {self.config.column_map['uuid']} UUID DEFAULT generateUUIDv4(),
+    CONSTRAINT cons_vec_len CHECK length({self.config.column_map['embedding']}) = {dim},
+    INDEX vec_idx {self.config.column_map['embedding']} TYPE {self.config.index_type}({index_params}) GRANULARITY 1000
+) ENGINE = MergeTree ORDER BY uuid SETTINGS index_granularity = 8192\
+"""
         self.dim = dim
         self.BS = "\\"
         self.must_escape = ("\\", "'")
@@ -187,7 +186,7 @@ class Clickhouse(VectorStore):
         self.client.command("SET allow_experimental_object_type=1")
         # Enable Annoy index
         self.client.command("SET allow_experimental_annoy_index=1")
-        self.client.command(schema_)
+        self.client.command(self.schema)
 
     def escape_str(self, value: str) -> str:
         return "".join(f"{self.BS}{c}" if c in self.must_escape else c for c in value)
