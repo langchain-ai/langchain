@@ -121,6 +121,7 @@ class AnalyticDB(VectorStore):
     - `pre_delete_collection` if True, will delete the collection if it exists.
         (default: False)
         - Useful for testing.
+
     """
 
     def __init__(

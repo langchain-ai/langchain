@@ -20,6 +20,7 @@ class PromptLayerChatOpenAI(ChatOpenAI):
 
     All parameters that can be passed to the OpenAI LLM can also
     be passed here. The PromptLayerChatOpenAI adds to optional
+
     parameters:
         ``pl_tags``: List of strings to tag the request with.
         ``return_pl_id``: If True, the PromptLayer request ID will be

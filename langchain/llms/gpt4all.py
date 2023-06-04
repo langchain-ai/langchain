@@ -92,6 +92,9 @@ class GPT4All(LLM):
     """Leave (n_ctx * context_erase) tokens
     starting from beginning if the context has run out."""
 
+    allow_download: bool = False
+    """If model does not exist in ~/.cache/gpt4all/, download it."""
+
     client: Any = None  #: :meta private:
 
     class Config:
@@ -145,12 +148,12 @@ class GPT4All(LLM):
             model_name,
             model_path=model_path or None,
             model_type=values["backend"],
-            allow_download=False,
+            allow_download=values["allow_download"],
         )
         if values["n_threads"] is not None:
             # set n_threads
             values["client"].model.set_thread_count(values["n_threads"])
-        values["backend"] = values["client"].model.model_type
+        values["backend"] = values["client"].model_type
 
         return values
 
