@@ -4,6 +4,7 @@ from langchain.vectorstores.annoy import Annoy
 from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
+from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
 from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
@@ -23,7 +24,6 @@ from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
-from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
 
 __all__ = [
     "Redis",
@@ -53,5 +53,5 @@ __all__ = [
     "DocArrayInMemorySearch",
     "Typesense",
     "Clickhouse",
-    "ClickhouseSettings"
+    "ClickhouseSettings",
 ]

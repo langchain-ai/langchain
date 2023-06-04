@@ -16,11 +16,13 @@ from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()
 
+
 def has_mul_sub_str(s: str, *args: Any) -> bool:
     for a in args:
         if a not in s:
             return False
     return True
+
 
 class ClickhouseSettings(BaseSettings):
     """ClickHouse Client Configuration
@@ -145,17 +147,28 @@ class Clickhouse(VectorStore):
         )
         for k in ["id", "embedding", "document", "metadata", "uuid"]:
             assert k in self.config.column_map
-        assert self.config.metric in ["angular", "euclidean", "manhattan", "hamming", "dot"]
+        assert self.config.metric in [
+            "angular",
+            "euclidean",
+            "manhattan",
+            "hamming",
+            "dot",
+        ]
 
         # initialize the schema
         dim = len(embedding.embed_query("test"))
 
         index_params = (
-            ",".join([f"'{k}={v}'" for k, v in self.config.index_param.items()])
-            if self.config.index_param else ""
-        ) if isinstance(self.config.index_param, Dict) else \
-            ",".join([str(p) for p in self.config.index_param]) if isinstance(self.config.index_param, List) \
+            (
+                ",".join([f"'{k}={v}'" for k, v in self.config.index_param.items()])
+                if self.config.index_param
+                else ""
+            )
+            if isinstance(self.config.index_param, Dict)
+            else ",".join([str(p) for p in self.config.index_param])
+            if isinstance(self.config.index_param, List)
             else self.config.index_param
+        )
 
         self.schema = f"""\
 CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
@@ -172,7 +185,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         self.BS = "\\"
         self.must_escape = ("\\", "'")
         self.embedding_function = embedding
-        self.dist_order = "ASC" # Only support ConsingDistance and L2Distance
+        self.dist_order = "ASC"  # Only support ConsingDistance and L2Distance
 
         # Create a connection to clickhouse
         self.client = get_client(
@@ -247,7 +260,9 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             for v in self.pgbar(
                 zip(*values), desc="Inserting data...", total=len(metadatas)
             ):
-                assert len(v[keys.index(self.config.column_map["embedding"])]) == self.dim
+                assert (
+                    len(v[keys.index(self.config.column_map["embedding"])]) == self.dim
+                )
                 transac.append(v)
                 if len(transac) == batch_size:
                     if t:
@@ -417,7 +432,9 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         Returns:
             List[Document]: List of documents
         """
-        q_str = self._build_query_sql(self.embedding_function.embed_query(query), k, where_str)
+        q_str = self._build_query_sql(
+            self.embedding_function.embed_query(query), k, where_str
+        )
         try:
             return [
                 (
