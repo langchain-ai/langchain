@@ -2,12 +2,11 @@
 import inspect
 import json
 import warnings
+import yaml
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
-
-import yaml
 from pydantic import BaseModel, Field, root_validator, validator
+from typing import Any, List, Optional, Union, Generic, TypeVar, Dict
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
@@ -25,7 +24,10 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class Chain(BaseModel, ABC):
+T = TypeVar("T", bound=Dict)
+
+
+class Chain(BaseModel, ABC, Generic[T]):
     """Base interface that all chains should implement."""
 
     memory: Optional[BaseMemory] = None
@@ -92,7 +94,7 @@ class Chain(BaseModel, ABC):
         self,
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> T:
         """Run the logic of this chain and return the output."""
 
     async def _acall(

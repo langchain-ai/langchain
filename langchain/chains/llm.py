@@ -1,7 +1,8 @@
 """Chain that just formats a prompt and calls an LLM."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, TypeVar, TypedDict
+from typing import Generic
 
 from pydantic import Extra
 
@@ -20,7 +21,14 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import LLMResult, PromptValue
 
 
-class LLMChain(Chain):
+T = TypeVar("T", bound=Dict[str, Any])
+
+
+class StandardChain(TypedDict):
+    text: str
+
+
+class LLMChain(Chain[T]):
     """Chain to run queries against LLMs.
 
     Example:
@@ -65,7 +73,7 @@ class LLMChain(Chain):
         self,
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> T:
         response = self.generate([inputs], run_manager=run_manager)
         return self.create_outputs(response)[0]
 

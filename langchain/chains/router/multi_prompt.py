@@ -11,6 +11,7 @@ from langchain.chains.router.llm_router import LLMRouterChain, RouterOutputParse
 from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMPLATE
 from langchain.prompts import PromptTemplate
 
+from langchain.chains.llm import StandardChain
 
 class MultiPromptChain(MultiRouteChain):
     """A multi-route chain that uses an LLM router chain to choose amongst prompts."""

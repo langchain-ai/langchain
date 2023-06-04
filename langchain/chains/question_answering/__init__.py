@@ -3,6 +3,7 @@ from typing import Any, Mapping, Optional, Protocol
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
@@ -204,7 +205,7 @@ def load_qa_chain(
     Returns:
         A chain to use for question answering.
     """
-    loader_mapping: Mapping[str, LoadingCallable] = {
+    loader_mapping: Mapping[str, Chain] = {
         "stuff": _load_stuff_chain,
         "map_reduce": _load_map_reduce_chain,
         "refine": _load_refine_chain,
@@ -215,6 +216,7 @@ def load_qa_chain(
             f"Got unsupported chain type: {chain_type}. "
             f"Should be one of {loader_mapping.keys()}"
         )
-    return loader_mapping[chain_type](
+    chain = load_qa_chain(chain_type)
+    return chain(
         llm, verbose=verbose, callback_manager=callback_manager, **kwargs
     )

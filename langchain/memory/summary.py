@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Type, TypedDict
 
 from pydantic import BaseModel, root_validator
 
 from langchain.base_language import BaseLanguageModel
-from langchain.chains.llm import LLMChain
+from langchain.chains.llm import LLMChain, StandardChain
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
 from langchain.prompts.base import BasePromptTemplate
@@ -33,7 +33,8 @@ class SummarizerMixin(BaseModel):
             ai_prefix=self.ai_prefix,
         )
 
-        chain = LLMChain(llm=self.llm, prompt=self.prompt)
+        chain = LLMChain[StandardChain](llm=self.llm, prompt=self.prompt)
+
         return chain.predict(summary=existing_summary, new_lines=new_lines)
 
 

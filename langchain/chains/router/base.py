@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional
-
 from pydantic import Extra
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -14,27 +13,38 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 
 
-class Route(NamedTuple):
+from typing import TypedDict
+
+
+class RoutingOutput(TypedDict):
+    """Output of a router chain."""
+
     destination: Optional[str]
     next_inputs: Dict[str, Any]
 
 
-class RouterChain(Chain, ABC):
+class RouterChain(Chain[RoutingOutput], ABC):
     """Chain that outputs the name of a destination chain and the inputs to it."""
 
     @property
     def output_keys(self) -> List[str]:
         return ["destination", "next_inputs"]
 
-    def route(self, inputs: Dict[str, Any], callbacks: Callbacks = None) -> Route:
+    def route(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> RoutingOutput:
         result = self(inputs, callbacks=callbacks)
-        return Route(result["destination"], result["next_inputs"])
+        return RoutingOutput(
+            destination=result["destination"], next_inputs=result["next_inputs"]
+        )
 
     async def aroute(
         self, inputs: Dict[str, Any], callbacks: Callbacks = None
-    ) -> Route:
+    ) -> RoutingOutput:
         result = await self.acall(inputs, callbacks=callbacks)
-        return Route(result["destination"], result["next_inputs"])
+        return RoutingOutput(
+            destination=result["destination"], next_inputs=result["next_inputs"]
+        )
 
 
 class MultiRouteChain(Chain):
@@ -86,7 +96,7 @@ class MultiRouteChain(Chain):
         )
         if not route.destination:
             return self.default_chain(route.next_inputs, callbacks=callbacks)
-        elif route.destination in self.destination_chains:
+        elif route.destination in self.destination_chainssummary:
             return self.destination_chains[route.destination](
                 route.next_inputs, callbacks=callbacks
             )
