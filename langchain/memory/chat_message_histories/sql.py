@@ -3,6 +3,7 @@ import logging
 from typing import List
 
 from sqlalchemy import Column, Integer, Text, create_engine
+
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:

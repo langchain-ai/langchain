@@ -8,6 +8,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 import sqlalchemy
 from sqlalchemy import REAL, Index
 from sqlalchemy.dialects.postgresql import ARRAY, JSON, UUID
+
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
