@@ -232,6 +232,14 @@ class Chroma(VectorStore):
 
         return _results_to_docs_and_scores(results)
 
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        return self.similarity_search_with_score(query, k)
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -244,6 +252,7 @@ class Chroma(VectorStore):
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
+
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
@@ -253,6 +262,7 @@ class Chroma(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -287,6 +297,7 @@ class Chroma(VectorStore):
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
+
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
@@ -296,6 +307,7 @@ class Chroma(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -352,11 +364,11 @@ class Chroma(VectorStore):
             raise ValueError(
                 "For update, you must specify an embedding function on creation."
             )
-        embeddings = self._embedding_function.embed_documents(list(text))
+        embeddings = self._embedding_function.embed_documents([text])
 
         self._collection.update(
             ids=[document_id],
-            embeddings=[embeddings[0]],
+            embeddings=embeddings,
             documents=[text],
             metadatas=[metadata],
         )

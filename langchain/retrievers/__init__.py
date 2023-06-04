@@ -7,6 +7,7 @@ from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
 from langchain.retrievers.knn import KNNRetriever
 from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetriever
+from langchain.retrievers.pupmed import PubMedRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.svm import SVMRetriever
@@ -21,6 +22,7 @@ from langchain.retrievers.zep import ZepRetriever
 
 __all__ = [
     "ArxivRetriever",
+    "PubMedRetriever",
     "AzureCognitiveSearchRetriever",
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",
