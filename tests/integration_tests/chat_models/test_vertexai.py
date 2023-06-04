@@ -104,8 +104,8 @@ def test_vertexai_args_passed() -> None:
     with patch(
         "vertexai.language_models._language_models.ChatSession.send_message"
     ) as send_message:
-        response = Mock(text=response_text)
-        send_message.return_value = response
+        mock_response = Mock(text=response_text)
+        send_message.return_value = mock_response
 
         model = ChatVertexAI(**prompt_params)
         message = HumanMessage(content=user_prompt)
