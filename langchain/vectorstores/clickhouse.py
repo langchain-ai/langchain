@@ -40,7 +40,8 @@ class ClickhouseSettings(BaseSettings):
         table (str) : Table name to operate on.
                       Defaults to 'vector_table'.
         metric (str) : Metric to compute distance,
-                       supported are ('angular', 'euclidean', 'manhattan', 'hamming', 'dot'). Defaults to 'angular'.
+                       supported are ('angular', 'euclidean', 'manhattan', 'hamming',
+                       'dot'). Defaults to 'angular'.
                        https://github.com/spotify/annoy/blob/main/src/annoymodule.cc#L149-L169
 
         column_map (Dict) : Column type map to project column name onto langchain
@@ -178,7 +179,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
     {self.config.column_map['metadata']} JSON,
     {self.config.column_map['uuid']} UUID DEFAULT generateUUIDv4(),
     CONSTRAINT cons_vec_len CHECK length({self.config.column_map['embedding']}) = {dim},
-    INDEX vec_idx {self.config.column_map['embedding']} TYPE {self.config.index_type}({index_params}) GRANULARITY 1000
+    INDEX vec_idx {self.config.column_map['embedding']} TYPE \
+{self.config.index_type}({index_params}) GRANULARITY 1000
 ) ENGINE = MergeTree ORDER BY uuid SETTINGS index_granularity = 8192\
 """
         self.dim = dim
@@ -311,8 +313,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         return ctx
 
     def __repr__(self) -> str:
-        """Text representation for ClickHouse Vector Store, prints backends, username and schemas.
-            Easy to use with `str(ClickHouse())`
+        """Text representation for ClickHouse Vector Store, prints backends, username
+            and schemas. Easy to use with `str(ClickHouse())`
 
         Returns:
             repr: string to show connection info and data schema
