@@ -126,7 +126,7 @@ class GenerativeAgentMemory(BaseMemory):
             return (float(match.group(1)) / 10) * self.importance_weight
         else:
             return 0.0
-        
+
     def _score_memories_importance(self, memory_content: str) -> List[float]:
         """Score the absolute importance of the given memory."""
         prompt = PromptTemplate.from_template(
@@ -144,12 +144,12 @@ class GenerativeAgentMemory(BaseMemory):
 
         if self.verbose:
             logger.info(f"Importance scores: {scores}")
-        
+
         # Split into list of strings and convert to floats
         scores_list = [float(x) for x in scores.split(";")]
 
         return scores_list
-    
+
     def add_memories(
         self, memory_content: str, now: Optional[datetime] = None
     ) -> List[str]:
@@ -161,10 +161,13 @@ class GenerativeAgentMemory(BaseMemory):
         documents = []
 
         for i in range(len(memory_list)):
-            documents.append(Document(
-                page_content=memory_list[i], metadata={"importance": importance_scores[i]}
-            ))
-        
+            documents.append(
+                Document(
+                    page_content=memory_list[i],
+                    metadata={"importance": importance_scores[i]},
+                )
+            )
+
         result = self.memory_retriever.add_documents(documents, current_time=now)
 
         # After an agent has processed a certain amount of memories (as measured by
