@@ -48,8 +48,9 @@ class ClickhouseSettings(BaseSettings):
 
                                 {
                                     'id': 'text_id',
-                                    'vector': 'text_embedding',
-                                    'text': 'text_plain',
+                                    'uuid': 'global_unique_id'
+                                    'embedding': 'text_embedding',
+                                    'document': 'text_plain',
                                     'metadata': 'metadata_dictionary_in_json',
                                 }
 
@@ -69,8 +70,9 @@ class ClickhouseSettings(BaseSettings):
 
     column_map: Dict[str, str] = {
         "id": "id",
-        "text": "text",
-        "vector": "vector",
+        "uuid": "uuid",
+        "document": "document",
+        "embedding": "embedding",
         "metadata": "metadata",
     }
 
@@ -141,7 +143,7 @@ class Clickhouse(VectorStore):
             and self.config.table
             and self.config.metric
         )
-        for k in ["id", "vector", "text", "metadata"]:
+        for k in ["id", "embedding", "document", "metadata", "uuid"]:
             assert k in self.config.column_map
         assert self.config.metric in ["angular", "euclidean", "manhattan", "hamming", "dot"]
 
@@ -157,13 +159,14 @@ class Clickhouse(VectorStore):
 
         schema_ = f"""
             CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
-                {self.config.column_map['id']} String,
-                {self.config.column_map['text']} String,
-                {self.config.column_map['vector']} Array(Float32),
+                {self.config.column_map['id']} Nullable(String),
+                {self.config.column_map['document']} Nullable(String),
+                {self.config.column_map['embedding']} Array(Float32),
                 {self.config.column_map['metadata']} JSON,
-                CONSTRAINT cons_vec_len CHECK length({self.config.column_map['vector']}) = {dim},
-                INDEX vec_idx {self.config.column_map['vector']} TYPE {self.config.index_type}({index_params}) GRANULARITY 1000
-            ) ENGINE = MergeTree ORDER BY {self.config.column_map['id']} 
+                {self.config.column_map['uuid']} UUID DEFAULT generateUUIDv4(),
+                CONSTRAINT cons_vec_len CHECK length({self.config.column_map['embedding']}) = {dim},
+                INDEX vec_idx {self.config.column_map['embedding']} TYPE {self.config.index_type}({index_params}) GRANULARITY 1000
+            ) ENGINE = MergeTree ORDER BY uuid
             SETTINGS index_granularity = 8192
         """
         self.dim = dim
@@ -233,8 +236,8 @@ class Clickhouse(VectorStore):
         transac = []
         column_names = {
             colmap_["id"]: ids,
-            colmap_["text"]: texts,
-            colmap_["vector"]: self.embedding_function.embed_documents(list(texts)),
+            colmap_["document"]: texts,
+            colmap_["embedding"]: self.embedding_function.embed_documents(list(texts)),
         }
         metadatas = metadatas or [{} for _ in texts]
         column_names[colmap_["metadata"]] = map(json.dumps, metadatas)
@@ -245,7 +248,7 @@ class Clickhouse(VectorStore):
             for v in self.pgbar(
                 zip(*values), desc="Inserting data...", total=len(metadatas)
             ):
-                assert len(v[keys.index(self.config.column_map["vector"])]) == self.dim
+                assert len(v[keys.index(self.config.column_map["embedding"])]) == self.dim
                 transac.append(v)
                 if len(transac) == batch_size:
                     if t:
@@ -327,11 +330,11 @@ class Clickhouse(VectorStore):
             for k in self.config.index_query_params:
                 settings_strs.append(f"SETTING {k}={self.config.index_query_params[k]}")
         q_str = f"""
-            SELECT {self.config.column_map['text']}, 
+            SELECT {self.config.column_map['document']}, 
                 {self.config.column_map['metadata']}, dist
             FROM {self.config.database}.{self.config.table}
             {where_str}
-            ORDER BY L2Distance({self.config.column_map['vector']}, [{q_emb_str}]) 
+            ORDER BY L2Distance({self.config.column_map['embedding']}, [{q_emb_str}]) 
                 AS dist {self.dist_order}
             LIMIT {topk} {' '.join(settings_strs)}
             """
@@ -387,7 +390,7 @@ class Clickhouse(VectorStore):
         try:
             return [
                 Document(
-                    page_content=r[self.config.column_map["text"]],
+                    page_content=r[self.config.column_map["document"]],
                     metadata=r[self.config.column_map["metadata"]],
                 )
                 for r in self.client.query(q_str).named_results()
@@ -420,7 +423,7 @@ class Clickhouse(VectorStore):
             return [
                 (
                     Document(
-                        page_content=r[self.config.column_map["text"]],
+                        page_content=r[self.config.column_map["document"]],
                         metadata=r[self.config.column_map["metadata"]],
                     ),
                     r["dist"],
