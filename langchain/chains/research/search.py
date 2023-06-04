@@ -143,10 +143,11 @@ def _run_searches(queries: Sequence[str], top_k: int = -1) -> List[Mapping[str, 
     results = []
     for query in queries:
         result = wrapper.results(query)
+        all_organic_results = result.get("organic_results", [])
         if top_k <= 0:
-            organic_results = result["organic_results"]
+            organic_results = all_organic_results
         else:
-            organic_results = result["organic_results"][:top_k]
+            organic_results = all_organic_results[:top_k]
         results.extend(organic_results)
     return results
 
@@ -173,10 +174,11 @@ async def _arun_searches(
     finalized_results = []
 
     for result in results:
+        all_organic_results = result.get("organic_results", [])
         if top_k <= 0:
-            organic_results = result["organic_results"]
+            organic_results = all_organic_results
         else:
-            organic_results = result["organic_results"][:top_k]
+            organic_results = all_organic_results[:top_k]
 
         finalized_results.extend(organic_results)
 
