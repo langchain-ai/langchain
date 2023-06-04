@@ -10,6 +10,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    Dict
 )
 
 import numpy as np
