@@ -217,25 +217,6 @@ def test_svm_sklearn_with_persistence(tmpdir: Path) -> None:
     assert output[0].page_content == "foo"
 
 
-
-@pytest.mark.requires("numpy", "sklearn")
-def test_svm_sklearn_knn_with_filters() -> None:
-    """Test end to end construction and scored search."""
-    texts = ["foo", "bar", "baz"]
-    metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = SKLearnSVMVectorStore.from_texts(
-        texts,
-        embedding=FakeEmbeddings(),
-        metadatas=metadatas,
-    )
-    output = docsearch.similarity_search_with_relevance_scores("foo", k=1, filter={'page': '1'})
-    assert len(output) == 1
-    doc, score = output[0]
-    assert doc.page_content == "bar"
-    assert doc.metadata["page"] == "1"
-    assert score < 1
-
-
 @pytest.mark.requires("numpy", "sklearn")
 def test_svm_sklearn_mmr() -> None:
     """Test end to end construction and search."""

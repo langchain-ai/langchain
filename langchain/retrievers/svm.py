@@ -19,6 +19,36 @@ def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
         return np.array(list(executor.map(embeddings.embed_query, contexts)))
 
 
+def retrieve(query_embeds: np.ndarray,
+             index: np.ndarray,
+             max_iter=10000,
+             tol=1e-6,
+             C=0.1):
+    """Function used by langchain.retrievers.svm.SVMRetriever and
+    langchain.vectorstores.sklearn.SKLearnSVMVectorStore."""
+    from sklearn import svm
+    x = np.concatenate([query_embeds[None, ...], index])
+    y = np.zeros(x.shape[0])
+    y[0] = 1
+    clf = svm.LinearSVC(
+        class_weight="balanced", verbose=False, max_iter=max_iter, tol=tol, C=C
+    )
+    clf.fit(x, y)
+    similarities = clf.decision_function(x)
+    sorted_ix = np.argsort(-similarities)
+    # svm.LinearSVC in scikit-learn is non-deterministic.
+    # if a text is the same as a query, there is no guarantee
+    # the query will be in the first index.
+    # this performs a simple swap, this works because anything
+    # left of the 0 should be equivalent.
+    zero_index = np.where(sorted_ix == 0)[0][0]
+    if zero_index != 0:
+        sorted_ix[0], sorted_ix[zero_index] = sorted_ix[zero_index], sorted_ix[0]
+    denominator = np.max(similarities) - np.min(similarities) + tol
+    normalized_similarities = (similarities - np.min(similarities)) / denominator
+    return sorted_ix, normalized_similarities
+
+
 class SVMRetriever(BaseRetriever, BaseModel):
     embeddings: Embeddings
     index: Any
@@ -40,33 +70,8 @@ class SVMRetriever(BaseRetriever, BaseModel):
         return cls(embeddings=embeddings, index=index, texts=texts, **kwargs)
 
     def get_relevant_documents(self, query: str) -> List[Document]:
-        from sklearn import svm
-
         query_embeds = np.array(self.embeddings.embed_query(query))
-        x = np.concatenate([query_embeds[None, ...], self.index])
-        y = np.zeros(x.shape[0])
-        y[0] = 1
-
-        clf = svm.LinearSVC(
-            class_weight="balanced", verbose=False, max_iter=10000, tol=1e-6, C=0.1
-        )
-        clf.fit(x, y)
-
-        similarities = clf.decision_function(x)
-        sorted_ix = np.argsort(-similarities)
-
-        # svm.LinearSVC in scikit-learn is non-deterministic.
-        # if a text is the same as a query, there is no guarantee
-        # the query will be in the first index.
-        # this performs a simple swap, this works because anything
-        # left of the 0 should be equivalent.
-        zero_index = np.where(sorted_ix == 0)[0][0]
-        if zero_index != 0:
-            sorted_ix[0], sorted_ix[zero_index] = sorted_ix[zero_index], sorted_ix[0]
-
-        denominator = np.max(similarities) - np.min(similarities) + 1e-6
-        normalized_similarities = (similarities - np.min(similarities)) / denominator
-
+        sorted_ix, normalized_similarities = retrieve(query_embeds, self.index)
         top_k_results = []
         for row in sorted_ix[1 : self.k + 1]:
             if (

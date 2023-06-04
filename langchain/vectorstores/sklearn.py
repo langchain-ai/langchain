@@ -9,13 +9,13 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Type
 from uuid import uuid4
+from functools import partial
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import guard_import
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
-
 DEFAULT_K = 4  # Number of Documents to return.
 DEFAULT_FETCH_K = 20  # Number of Documents to initially fetch during MMR search.
 
@@ -456,7 +456,7 @@ class SKLearnSVMVectorStore(SKLearnVectorStore):
         persist_path: Optional[str] = None,
         serializer: Literal["json", "bson", "parquet"] = "json",
         svm_c: float = 0.1,
-        max_itr=10000,
+        max_iter=10000,
         tol=1e-6,
         **kwargs: Any,
     ) -> None:
@@ -466,8 +466,8 @@ class SKLearnSVMVectorStore(SKLearnVectorStore):
             serializer=serializer
         )
         # algorithm specific properties
-        sklearn_svm = guard_import("sklearn.svm", pip_name="scikit-learn")
-        self._svm = sklearn_svm.LinearSVC(class_weight='balanced', max_iter=max_itr, tol=tol, C=svm_c, **kwargs)
+        from langchain.retrievers.svm import retrieve
+        self._retrieve = partial(retrieve, max_iter=max_iter, tol=tol, C=svm_c)
 
     def _similarity_index_search_with_score(
         self, query_embedding: List[float], *, k: int = DEFAULT_K, filter: Optional[dict] = None, **kwargs: Any
@@ -475,13 +475,9 @@ class SKLearnSVMVectorStore(SKLearnVectorStore):
         query_embedding = self._np.asarray(query_embedding)
         mask = self._get_filtered_data(filter)
         masked_indices = self._np.arange(len(self._embeddings_np))[mask]
-        x = self._np.concatenate([query_embedding[None,...], self._embeddings_np[mask]]) # x is (1001, 1536) array, with query now as the first row
-        y = self._np.zeros(len(x))
-        y[0] = 1
-        self._svm.fit(x, y) # train
-        similarities = self._svm.decision_function(x)[1:]
-        sorted_indices = self._np.argsort(-similarities)
-        dist = similarities[:k]
+        sorted_indices, normalized_similarities = self._retrieve(query_embedding, self._embeddings_np[mask])
+        sorted_indices = sorted_indices[1:k+1]-1
+        dist = 1 - normalized_similarities[1:k+1]
         indices = [masked_indices[idx] for idx in sorted_indices]
         return  list(zip(indices, dist))
 
