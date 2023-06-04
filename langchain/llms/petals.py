@@ -23,6 +23,7 @@ class Petals(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import petals
             petals = Petals()
 

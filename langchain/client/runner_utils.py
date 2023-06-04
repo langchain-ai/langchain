@@ -151,7 +151,7 @@ async def _arun_llm_or_chain(
                 )
             else:
                 chain = llm_or_chain_factory()
-                output = await chain.arun(example.inputs, callbacks=callbacks)
+                output = await chain.acall(example.inputs, callbacks=callbacks)
             outputs.append(output)
         except Exception as e:
             logger.warning(f"Chain failed for example {example.id}. Error: {e}")
@@ -214,7 +214,6 @@ async def _tracer_initializer(session_name: Optional[str]) -> Optional[LangChain
     """
     if session_name:
         tracer = LangChainTracer(session_name=session_name)
-        tracer.ensure_session()
         return tracer
     else:
         return None
@@ -326,7 +325,7 @@ def run_llm_or_chain(
                 output: Any = run_llm(llm_or_chain_factory, example.inputs, callbacks)
             else:
                 chain = llm_or_chain_factory()
-                output = chain.run(example.inputs, callbacks=callbacks)
+                output = chain(example.inputs, callbacks=callbacks)
             outputs.append(output)
         except Exception as e:
             logger.warning(f"Chain failed for example {example.id}. Error: {e}")
