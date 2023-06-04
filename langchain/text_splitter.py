@@ -5,6 +5,7 @@ import copy
 import logging
 import re
 from abc import ABC, abstractmethod
+from collections import deque
 from enum import Enum
 from typing import (
     AbstractSet,
@@ -102,13 +103,13 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
     def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
         text = separator.join(docs)
-        text = text.strip()
         if text == "":
             return None
         else:
             return text
 
     def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:
+        """Merge the splits greedily to maximize utilization of chunk space."""
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
         separator_len = self._length_function(separator)
@@ -343,30 +344,40 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 new_separators = separators[i + 1 :]
                 break
 
-        splits = _split_text(text, separator, self._keep_separator)
+        # Use a stack so we can iterate through the chunks and expand them as more elements as needed.
+        splits = deque(_split_text(text, separator, self._keep_separator))
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
         _separator = "" if self._keep_separator else separator
-        for s in splits:
+        while splits:
+            s = splits.popleft()
             if self._length_function(s) < self._chunk_size:
-                _good_splits.append(s)
+                if s.strip():
+                    _good_splits.append(s)
             else:
+                next_level_splits = []
+                if new_separators is not None:
+                    next_level_splits = self._split_text(s, new_separators)
+                    if len(next_level_splits) > 1:
+                        splits.extendleft(reversed(next_level_splits))
+                        continue
+
+                # Further splits are not possible for the next chunk. Just append it
+                # to the results, but first put in the _good_splits if any.
                 if _good_splits:
                     merged_text = self._merge_splits(_good_splits, _separator)
                     final_chunks.extend(merged_text)
-                    _good_splits = []
-                if new_separators is None:
-                    final_chunks.append(s)
-                else:
-                    other_info = self._split_text(s, new_separators)
-                    final_chunks.extend(other_info)
+                final_chunks.append(s)
+                _good_splits = []
         if _good_splits:
             merged_text = self._merge_splits(_good_splits, _separator)
             final_chunks.extend(merged_text)
         return final_chunks
 
     def split_text(self, text: str) -> List[str]:
-        return self._split_text(text, self._separators)
+        # Note: strip each chunk here because stripping in _join_docs can cause text to be
+        # concatenated without separator.
+        return [s.strip() for s in self._split_text(text, self._separators)]
 
     @classmethod
     def from_language(
