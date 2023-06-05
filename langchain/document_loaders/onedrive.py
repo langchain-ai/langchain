@@ -102,7 +102,9 @@ class OneDriveLoader(O365BaseLoader):
             for blob in self._load_from_folder(folder=folder):
                 yield from blob_parser.lazy_parse(blob)
         if self.object_ids:
-            for blob in self._load_from_object_ids(drive=drive, object_ids=self.object_ids):
+            for blob in self._load_from_object_ids(
+                drive=drive, object_ids=self.object_ids
+            ):
                 yield from blob_parser.lazy_parse(blob)
 
     def load(self) -> List[Document]:

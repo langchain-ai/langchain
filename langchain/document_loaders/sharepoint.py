@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from enum import Enum
 from typing import Dict, Iterator, List, Optional
+
 from pydantic import BaseModel, Field
+
 from langchain.docstore.document import Document
 from langchain.document_loaders.base_o365 import O365BaseLoader
 from langchain.document_loaders.parsers.registry import get_parser
 
-
 SCOPES = ["sharepoint", "basic"]
+
 
 class _FileType(str, Enum):
     DOC = "doc"
@@ -71,14 +73,11 @@ class SharePointLoader(O365BaseLoader):
             for blob in self._load_from_folder(folder=target_folder):
                 yield from blob_parser.lazy_parse(blob)
         if self.object_ids:
-            for blob in self._load_from_object_ids(drive=drive, object_ids=self.object_ids):
+            for blob in self._load_from_object_ids(
+                drive=drive, object_ids=self.object_ids
+            ):
                 yield from blob_parser.lazy_parse(blob)
-
 
     def load(self) -> List[Document]:
         """Load all documents."""
         return list(self.lazy_load())
-
-
-            
-

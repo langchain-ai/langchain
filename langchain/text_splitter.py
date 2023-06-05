@@ -5,6 +5,7 @@ import copy
 import logging
 import re
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import Enum
 from typing import (
     AbstractSet,
@@ -244,6 +245,31 @@ class CharacterTextSplitter(TextSplitter):
         return self._merge_splits(splits, _separator)
 
 
+# should be in newer Python versions (3.10+)
+# @dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True)
+class Tokenizer:
+    chunk_overlap: int
+    tokens_per_chunk: int
+    decode: Callable[[list[int]], str]
+    encode: Callable[[str], List[int]]
+
+
+def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
+    """Split incoming text and return chunks."""
+    splits = []
+    input_ids = tokenizer.encode(text)
+    start_idx = 0
+    cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
+    chunk_ids = input_ids[start_idx:cur_idx]
+    while start_idx < len(input_ids):
+        splits.append(tokenizer.decode(chunk_ids))
+        start_idx += tokenizer.tokens_per_chunk - tokenizer.chunk_overlap
+        cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
+        chunk_ids = input_ids[start_idx:cur_idx]
+    return splits
+
+
 class TokenTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at tokens."""
 
@@ -275,22 +301,84 @@ class TokenTextSplitter(TextSplitter):
         self._disallowed_special = disallowed_special
 
     def split_text(self, text: str) -> List[str]:
-        """Split incoming text and return chunks."""
-        splits = []
-        input_ids = self._tokenizer.encode(
-            text,
-            allowed_special=self._allowed_special,
-            disallowed_special=self._disallowed_special,
+        def _encode(_text: str) -> List[int]:
+            return self._tokenizer.encode(
+                _text,
+                allowed_special=self._allowed_special,
+                disallowed_special=self._disallowed_special,
+            )
+
+        tokenizer = Tokenizer(
+            chunk_overlap=self._chunk_overlap,
+            tokens_per_chunk=self._chunk_size,
+            decode=self._tokenizer.decode,
+            encode=_encode,
         )
-        start_idx = 0
-        cur_idx = min(start_idx + self._chunk_size, len(input_ids))
-        chunk_ids = input_ids[start_idx:cur_idx]
-        while start_idx < len(input_ids):
-            splits.append(self._tokenizer.decode(chunk_ids))
-            start_idx += self._chunk_size - self._chunk_overlap
-            cur_idx = min(start_idx + self._chunk_size, len(input_ids))
-            chunk_ids = input_ids[start_idx:cur_idx]
-        return splits
+
+        return split_text_on_tokens(text=text, tokenizer=tokenizer)
+
+
+class SentenceTransformersTokenTextSplitter(TextSplitter):
+    """Implementation of splitting text that looks at tokens."""
+
+    def __init__(
+        self,
+        chunk_overlap: int = 50,
+        model_name: str = "sentence-transformers/all-mpnet-base-v2",
+        tokens_per_chunk: Optional[int] = None,
+        **kwargs: Any,
+    ):
+        """Create a new TextSplitter."""
+        super().__init__(**kwargs, chunk_overlap=chunk_overlap)
+        from transformers import AutoTokenizer
+
+        self.model_name = model_name
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
+
+    def _initialize_chunk_configuration(
+        self, *, tokens_per_chunk: Optional[int]
+    ) -> None:
+        self.maximum_tokens_per_chunk = self.tokenizer.max_len_single_sentence
+
+        if tokens_per_chunk is None:
+            self.tokens_per_chunk = self.maximum_tokens_per_chunk
+        else:
+            self.tokens_per_chunk = tokens_per_chunk
+
+        if self.tokens_per_chunk > self.maximum_tokens_per_chunk:
+            raise ValueError(
+                f"The token limit of the models '{self.model_name}'"
+                f" is: {self.maximum_tokens_per_chunk}."
+                f" Argument tokens_per_chunk={self.tokens_per_chunk}"
+                f" > maximum token limit."
+            )
+
+    def split_text(self, text: str) -> List[str]:
+        def encode_strip_start_and_stop_token_ids(text: str) -> List[int]:
+            return self._encode(text)[1:-1]
+
+        tokenizer = Tokenizer(
+            chunk_overlap=self._chunk_overlap,
+            tokens_per_chunk=self.tokens_per_chunk,
+            decode=self.tokenizer.decode,
+            encode=encode_strip_start_and_stop_token_ids,
+        )
+
+        return split_text_on_tokens(text=text, tokenizer=tokenizer)
+
+    def count_tokens(self, *, text: str) -> int:
+        return len(self._encode(text))
+
+    _max_length_equal_32_bit_integer = 2**32
+
+    def _encode(self, text: str) -> List[int]:
+        token_ids_with_start_and_end_token_ids = self.tokenizer.encode(
+            text,
+            max_length=self._max_length_equal_32_bit_integer,
+            truncation="do_not_truncate",
+        )
+        return token_ids_with_start_and_end_token_ids
 
 
 class Language(str, Enum):

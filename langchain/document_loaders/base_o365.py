@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 CHUNK_SIZE = 1024 * 1024 * 5
 
+
 class _O365Settings(BaseSettings):
     client_id: str = Field(..., env="O365_CLIENT_ID")
     client_secret: SecretStr = Field(..., env="O365_CLIENT_SECRET")
@@ -48,13 +49,13 @@ class O365BaseLoader(BaseLoader, BaseModel):
 
     def _load_from_folder(self, folder: Folder) -> Iterable[Blob]:
         """
-        Load all files from a specified folder which have a MIME type present in the MIME types the loader is looking for. 
+        Load all files from a specified folder which have a MIME type present in the MIME types the loader is looking for.
         Then, load them into the system as binary large objects (Blobs).
 
         Parameters
         ----------
         folder : Folder
-            The Folder instance from which the files are to be loaded. This Folder instance should represent a directory 
+            The Folder instance from which the files are to be loaded. This Folder instance should represent a directory
             in a file system where the files are stored.
 
         Yields
@@ -82,7 +83,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
         Parameters
         ----------
         drive : Drive
-            The Drive instance from which the files are to be loaded. This Drive instance should represent a cloud storage 
+            The Drive instance from which the files are to be loaded. This Drive instance should represent a cloud storage
             service or similar storage system where the files are stored.
 
         object_ids : List[str]
@@ -91,7 +92,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
         Yields
         -------
         Iterable[Blob]
-            An iterator that yields Blob instances, which are binary representations of the files loaded from the drive using 
+            An iterator that yields Blob instances, which are binary representations of the files loaded from the drive using
             the specified object_ids.
         """
         file_mime_types = self._fetch_mime_types()

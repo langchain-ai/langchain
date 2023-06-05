@@ -12,8 +12,8 @@ def _get_default_parser() -> BaseBlobParser:
         handlers={
             "application/pdf": PyMuPDFParser(),
             "text/plain": TextParser(),
-            "application/msword" : MsWordParser(),
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : MsWordParser()
+            "application/msword": MsWordParser(),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": MsWordParser(),
         },
         fallback_parser=None,
     )

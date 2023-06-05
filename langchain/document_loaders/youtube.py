@@ -231,13 +231,15 @@ class YoutubeLoader(BaseLoader):
             )
         yt = YouTube(f"https://www.youtube.com/watch?v={self.video_id}")
         video_info = {
-            "title": yt.title,
-            "description": yt.description,
-            "view_count": yt.views,
-            "thumbnail_url": yt.thumbnail_url,
-            "publish_date": yt.publish_date,
-            "length": yt.length,
-            "author": yt.author,
+            "title": yt.title or "Unknown",
+            "description": yt.description or "Unknown",
+            "view_count": yt.views or 0,
+            "thumbnail_url": yt.thumbnail_url or "Unknown",
+            "publish_date": yt.publish_date.strftime("%Y-%m-%d %H:%M:%S")
+            if yt.publish_date
+            else "Unknown",
+            "length": yt.length or 0,
+            "author": yt.author or "Unknown",
         }
         return video_info
 
