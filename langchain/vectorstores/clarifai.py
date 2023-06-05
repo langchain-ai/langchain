@@ -35,7 +35,8 @@ class Clarifai(VectorStore):
     ) -> None:
         """Initialize with Clarifai client."""
         try:
-            pass
+            from clarifai.auth.helper import DEFAULT_BASE, ClarifaiAuthHelper
+            from clarifai.client import create_stub
         except ImportError:
             raise ValueError(
                 "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
@@ -49,9 +50,6 @@ class Clarifai(VectorStore):
                 )
             pat = os.environ["CLARIFAI_PAT_KEY"]
 
-        from clarifai.auth.helper import DEFAULT_BASE, ClarifaiAuthHelper
-        from clarifai.client import create_stub
-
         if api_base is None:
             api_base = DEFAULT_BASE
 
@@ -64,6 +62,36 @@ class Clarifai(VectorStore):
         self._userDataObject = userDataObject
         self._number_of_docs = number_of_docs
 
+    def _post_text_input(self, text: str, metadata: dict) -> str:
+        """Post text to Clarifai and return the ID of the input."""
+        from clarifai_grpc.grpc.api import resources_pb2, service_pb2
+        from clarifai_grpc.grpc.api.status import status_code_pb2
+        from google.protobuf.struct_pb2 import Struct
+
+        input_metadata = Struct()
+        input_metadata.update(metadata)
+
+        post_inputs_response = self._stub.PostInputs(
+            service_pb2.PostInputsRequest(
+                user_app_id=self._userDataObject,
+                inputs=[
+                    resources_pb2.Input(
+                        data=resources_pb2.Data(
+                            text=resources_pb2.Text(raw=text),
+                            metadata=input_metadata,
+                        )
+                    )
+                ],
+            )
+        )
+
+        if post_inputs_response.status.code != status_code_pb2.SUCCESS:
+            raise Exception("Post inputs failed, status: " + post_inputs_response.status.description)
+
+        input_id = post_inputs_response.inputs[0].id
+
+        return input_id
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -71,7 +99,9 @@ class Clarifai(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
+        """Add texts to the Clarifai vectorstore. This will push the text to a Clarifai application.
+        Application use base workflow that create and store embedding for each text.
+        Make sure you are using a base workflow that is compatible with text (such as Language Understanding).
 
         Args:
             texts (Iterable[str]): Texts to add to the vectorstore.
@@ -81,14 +111,22 @@ class Clarifai(VectorStore):
         Returns:
             List[str]: List of IDs of the added texts.
         """
-        # TODO: Handle the case where the user doesn't provide ids on the Collection
-        if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
-        embeddings = None
-        if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(list(texts))
-        self._collection.add(metadatas=metadatas, embeddings=embeddings, documents=texts, ids=ids)
-        return ids
+
+        assert len(texts) > 0, "No texts provided to add to the vectorstore."
+        assert len(texts) == len(metadatas), "Number of texts and metadatas should be the same."
+
+        input_ids = []
+        for idx, text in enumerate(texts):
+            try:
+                metadata = metadatas[i] if metadatas else {}
+                input_id = self._post_text_input(text, metadata)
+                input_ids.append(input_id)
+                print(f"Input {input_id} posted successfully.")
+            except Exception as error:
+                print(f"Post inputs failed: {error}" % error)
+                traceback.print_exc()
+
+        return input_ids
 
     def similarity_search_with_score(
         self,
@@ -191,67 +229,74 @@ class Clarifai(VectorStore):
     @classmethod
     def from_texts(
         cls,
+        user_id: str,
+        app_id: str,
         texts: List[str],
-        embedding: Optional[Embeddings] = None,
+        pat: Optional[str] = None,
+        number_of_docs: Optional[int] = None,
+        api_base: Optional[str] = None,
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Clarifai:
-        """Create a Clarifai vectorstore from a raw documents.
-
-        If a persist_directory is specified, the collection will be persisted there.
-        Otherwise, the data will be ephemeral in-memory.
+        """Create a Clarifai vectorstore from a list of texts.
 
         Args:
-            collection_name (str): Name of the collection to create.
-            persist_directory (Optional[str]): Directory to persist the collection.
-            documents (List[Document]): List of documents to add.
-            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
-            metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
+            user_id (str): User ID.
+            app_id (str): App ID.
+            texts (List[str]): List of texts to add.
+            pat (Optional[str]): Personal access token. Defaults to None.
+            number_of_docs (Optional[int]): Number of documents to return during vector search. Defaults to None.
+            api_base (Optional[str]): API base. Defaults to None.
+            metadatas (Optional[List[dict]]): Optional list of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
 
         Returns:
             Clarifai: Clarifai vectorstore.
         """
-        raise NotImplementedError("not yet ready")
-        chroma_collection = cls(
-            collection_name=collection_name,
-            embedding_function=embedding,
-            persist_directory=persist_directory,
+        clarifai_vector_db = cls(
+            user_id=user_id,
+            app_id=app_id,
+            pat=pat,
+            number_of_docs=number_of_docs,
+            api_base=api_base,
         )
-        chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
-        return chroma_collection
+        clarifai_vector_db.add_texts(texts=texts, metadatas=metadatas)
+        return clarifai_vector_db
 
     @classmethod
     def from_documents(
         cls,
+        user_id: str,
+        app_id: str,
         documents: List[Document],
-        embedding: Optional[Embeddings] = None,
+        pat: Optional[str] = None,
+        number_of_docs: Optional[int] = None,
+        api_base: Optional[str] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Clarifai:
         """Create a Clarifai vectorstore from a list of documents.
 
-        If a persist_directory is specified, the collection will be persisted there.
-        Otherwise, the data will be ephemeral in-memory.
-
         Args:
-            collection_name (str): Name of the collection to create.
-            persist_directory (Optional[str]): Directory to persist the collection.
-            documents (List[Document]): List of documents to add to the vectorstore.
-            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
+            user_id (str): User ID.
+            app_id (str): App ID.
+            documents (List[Document]): List of documents to add.
+            pat (Optional[str]): Personal access token. Defaults to None.
+            number_of_docs (Optional[int]): Number of documents to return during vector search. Defaults to None.
+            api_base (Optional[str]): API base. Defaults to None.
+            ids (Optional[List[str]]): List of document IDs. Defaults to None.
 
         Returns:
             Clarifai: Clarifai vectorstore.
         """
-        raise NotImplementedError("not yet ready")
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return cls.from_texts(
+            user_id=user_id,
+            app_id=app_id,
             texts=texts,
-            embedding=embedding,
+            pat=pat,
+            number_of_docs=number_of_docs,
+            api_base=api_base,
             metadatas=metadatas,
-            ids=ids,
-            collection_name=collection_name,
-            persist_directory=persist_directory,
         )
