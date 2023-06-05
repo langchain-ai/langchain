@@ -15,12 +15,13 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
+from langchain.load.serializable import Serializable
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import LLMResult, PromptValue
 
 
-class LLMChain(Chain):
+class LLMChain(Serializable, Chain):
     """Chain to run queries against LLMs.
 
     Example:

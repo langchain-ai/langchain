@@ -139,6 +139,7 @@ pytest-asyncio = "^0.20.3"
 lark = "^1.1.5"
 pytest-mock  = "^3.10.0"
 pytest-socket = "^0.6.0"
+syrupy = "^4.0.2"
 
 [tool.poetry.group.test_integration]
 optional = true

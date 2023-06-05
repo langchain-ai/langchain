@@ -123,6 +123,10 @@ async def acompletion_with_retry(
 class BaseOpenAI(BaseLLM):
     """Wrapper around OpenAI large language models."""
 
+    @property
+    def lc_secrets(self):
+        return {"openai_api_key": "OPENAI_API_KEY"}
+
     client: Any  #: :meta private:
     model_name: str = Field("text-davinci-003", alias="model")
     """Model name to use."""
@@ -656,6 +660,10 @@ class OpenAIChat(BaseLLM):
             from langchain.llms import OpenAIChat
             openaichat = OpenAIChat(model_name="gpt-3.5-turbo")
     """
+
+    @property
+    def lc_secrets(self) -> Mapping[str, Any]:
+        return {"openai_api_key": self.openai_api_key}
 
     client: Any  #: :meta private:
     model_name: str = "gpt-3.5-turbo"

@@ -1,0 +1,79 @@
+# serializer version: 1
+# name: test_serialize_llmchain
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain",
+      "chains",
+      "llm",
+      "LLMChain"
+    ],
+    "kwargs": {
+      "llm": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "llms",
+          "openai",
+          "OpenAI"
+        ],
+        "kwargs": {
+          "model": "davinci",
+          "temperature": 0.5,
+          "openai_api_key": {
+            "lc": 1,
+            "type": "secret",
+            "id": [
+              "OPENAI_API_KEY"
+            ]
+          }
+        }
+      },
+      "prompt": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "prompts",
+          "prompt",
+          "PromptTemplate"
+        ],
+        "kwargs": {
+          "input_variables": [
+            "name"
+          ],
+          "template": "hello {name}!"
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_openai_llm
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain",
+      "llms",
+      "openai",
+      "OpenAI"
+    ],
+    "kwargs": {
+      "model": "davinci",
+      "temperature": 0.5,
+      "openai_api_key": {
+        "lc": 1,
+        "type": "secret",
+        "id": [
+          "OPENAI_API_KEY"
+        ]
+      }
+    }
+  }
+  '''
+# ---

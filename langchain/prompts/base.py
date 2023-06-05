@@ -7,9 +7,10 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Union
 
 import yaml
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.formatting import formatter
+from langchain.load.serializable import Serializable
 from langchain.schema import BaseMessage, BaseOutputParser, HumanMessage, PromptValue
 
 
@@ -100,7 +101,7 @@ class StringPromptValue(PromptValue):
         return [HumanMessage(content=self.text)]
 
 
-class BasePromptTemplate(BaseModel, ABC):
+class BasePromptTemplate(Serializable, ABC):
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
