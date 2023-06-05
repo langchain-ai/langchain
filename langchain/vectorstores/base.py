@@ -5,7 +5,7 @@ import asyncio
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Sequence
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -14,6 +14,20 @@ from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever
 
 VST = TypeVar("VST", bound="VectorStore")
+
+from typing import TypedDict
+
+
+class UpsertResult(TypedDict):
+    # Number of documents updated
+    num_updated: int
+    # Number of documents newly added
+    num_added: int
+    # Documents can be skipped if hashes match
+    num_skipped: int
+    # All the ids in the original request either upserted or skipped
+    # Maybe there's a better place to put this in
+    ids_in_request: Sequence[str]
 
 
 class VectorStore(ABC):
@@ -59,6 +73,19 @@ class VectorStore(ABC):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return self.add_texts(texts, metadatas, **kwargs)
+
+    def upsert_by_id(self, documents: Iterable[Document], **kwargs) -> UpsertResult:
+        """Update or insert a document into the vectorstore."""
+        # Uperstion logic based on document ID, not document hash_!!
+        raise NotImplementedError
+
+    def delete_non_matching_ids(self, ids: Iterable[str], **kwargs) -> int:
+        """Delete all ids that are not in the given list, but are in the vector store"""
+        raise NotImplementedError
+
+    def delete_by_id(self, ids: Iterable[str], batch_size: int = 1, **kwargs):
+        """Delete a document from the vectorstore."""
+        raise NotImplementedError
 
     async def aadd_documents(
         self, documents: List[Document], **kwargs: Any

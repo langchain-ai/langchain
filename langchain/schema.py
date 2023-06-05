@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from uuid import UUID
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -266,8 +267,24 @@ class BaseChatMessageHistory(ABC):
 class Document(BaseModel):
     """Interface for interacting with a document."""
 
+    id: Optional[str]  # Use assigned document id, optional
+    hash_: UUID  # A hash of the content + metadata
     page_content: str
+    # Required field for provenance.
+    # Provenance ALWAYS refers to the original source of the document.
+    # No matter what transformations have been done on the context.
+    provenance: Sequence[str] = ()
+    # User created metadata
     metadata: dict = Field(default_factory=dict)
+    # Use to keep track of parent documents from which the document was generated
+    # We could keep this is a non sequence to get started for simplicity
+    parent_doc_hashes: Sequence[str] = ()
+
+    ## Initialization hook to calculate hash
+
+    # Not included here, but should be to generalize document to blob
+    # mimetype: str
+    # encoding
 
 
 class BaseRetriever(ABC):
