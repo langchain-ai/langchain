@@ -90,28 +90,14 @@ class BaseBlobParser(ABC):
 class BaseBlobTransformer(ABC):
     """Abstract interface for blob transformers.
 
-    A blob transformer provides a way to transform raw data stored in a blob into a
-    different data format.
+    A blob transformer provides a way to transform raw data stored in a blob.
 
     The transformer can be composed with blob loaders, making it easy to re-use
     a transformer independent of how the blob was originally loaded.
     """
 
-    @abstractmethod
-    def lazy_transform(self, blob: Blob) -> Blob:
-        """Lazy transformer interface.
-
-        Subclasses are required to implement this method.
-
-        Args:
-            blob: Blob instance
-
-        Returns:
-            Blob
-        """
-
     def transform(self, blob: Blob) -> Blob:
-        """Eagerly transform the blob into a different type.
+        """Eagerly transform the blob.
 
         This is a convenience method for interactive development environment.
 
@@ -131,8 +117,7 @@ class BaseBlobTransformer(ABC):
 class BaseBlobSplitter(ABC):
     """Abstract interface for blob splitters.
 
-    A blob splitter provides a way to transform raw data stored in a blob into a
-    different data format.
+    A blob splitter can splits into chunks (text splitter, audio splitter, video splitter, etc).
 
     The transformer can be composed with blob loaders, making it easy to re-use
     a transformer independent of how the blob was originally loaded.
@@ -151,7 +136,7 @@ class BaseBlobSplitter(ABC):
             Generator of blobs
         """
 
-    def split_blob(self, blob: Blob) -> List[Blob]:
+    def split(self, blob: Blob) -> List[Blob]:
         """Eagerly split the blob into a list of blobs.
 
         This is a convenience method for interactive development environment.
