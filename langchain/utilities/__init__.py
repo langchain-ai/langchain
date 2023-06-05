@@ -13,6 +13,7 @@ from langchain.utilities.graphql import GraphQLAPIWrapper
 from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain.utilities.powerbi import PowerBIDataset
+from langchain.utilities.pupmed import PubMedAPIWrapper
 from langchain.utilities.python import PythonREPL
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
@@ -24,6 +25,7 @@ from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 __all__ = [
     "ApifyWrapper",
     "ArxivAPIWrapper",
+    "PubMedAPIWrapper",
     "BashProcess",
     "BingSearchAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",

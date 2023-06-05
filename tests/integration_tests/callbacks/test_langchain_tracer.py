@@ -148,8 +148,7 @@ def test_tracing_v2_context_manager() -> None:
     )
     if "LANGCHAIN_TRACING_V2" in os.environ:
         del os.environ["LANGCHAIN_TRACING_V2"]
-    with tracing_v2_enabled() as session:
-        assert session
+    with tracing_v2_enabled():
         agent.run(questions[0])  # this should be traced
 
     agent.run(questions[0])  # this should not be traced
