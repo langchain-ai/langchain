@@ -15,14 +15,14 @@ from langchain.graphs.neo4j_graph import Neo4jGraph
 from langchain.prompts.base import BasePromptTemplate
 
 
-def extract_code_block(text: str) -> str:
+def extract_cypher(text: str) -> str:
     # The pattern to find Cypher code enclosed in triple backticks
     pattern = r"```(.*?)```"
 
     # Find all matches in the input text
     matches = re.findall(pattern, text, re.DOTALL)
 
-    return matches[0] if matches else None
+    return matches[0] if matches else text
 
 
 class GraphCypherQAChain(Chain):
@@ -84,10 +84,8 @@ class GraphCypherQAChain(Chain):
             {"question": question, "schema": self.graph.get_schema}, callbacks=callbacks
         )
 
-        # Check if Cypher code is wrapped in backticks
-        code_block = extract_code_block(generated_cypher)
-        if code_block:
-            generated_cypher = code_block
+        # Extract Cypher code if it is wrapped in backticks
+        generated_cypher = extract_cypher(generated_cypher)
 
         _run_manager.on_text("Generated Cypher:", end="\n", verbose=self.verbose)
         _run_manager.on_text(
