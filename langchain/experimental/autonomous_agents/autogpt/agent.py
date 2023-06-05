@@ -17,8 +17,6 @@ from langchain.experimental.autonomous_agents.autogpt.prompt_generator import (
 from langchain.memory import ChatMessageHistory, FileChatMessageHistory
 from langchain.schema import (
     AIMessage,
-    BaseChatMessageHistory,
-    BaseMessage,
     Document,
     HumanMessage,
     SystemMessage,
