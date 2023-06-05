@@ -23,7 +23,6 @@ from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.callbacks.tracers.langchain_v1 import LangChainTracerV1, TracerSessionV1
-from langchain.callbacks.tracers.schemas import TracerSession
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.callbacks.tracers.wandb import WandbTracer
 from langchain.schema import (
@@ -99,26 +98,21 @@ def tracing_v2_enabled(
     session_name: Optional[str] = None,
     *,
     example_id: Optional[Union[str, UUID]] = None,
-    tenant_id: Optional[str] = None,
-    session_extra: Optional[Dict[str, Any]] = None,
-) -> Generator[TracerSession, None, None]:
+) -> Generator[None, None, None]:
     """Get the experimental tracer handler in a context manager."""
     # Issue a warning that this is experimental
     warnings.warn(
-        "The experimental tracing v2 is in development. "
+        "The tracing v2 API is in development. "
         "This is not yet stable and may change in the future."
     )
     if isinstance(example_id, str):
         example_id = UUID(example_id)
     cb = LangChainTracer(
-        tenant_id=tenant_id,
-        session_name=session_name,
         example_id=example_id,
-        session_extra=session_extra,
+        session_name=session_name,
     )
-    session = cb.ensure_session()
     tracing_v2_callback_var.set(cb)
-    yield session
+    yield
     tracing_v2_callback_var.set(None)
 
 
@@ -153,6 +147,8 @@ def _handle_event(
             else:
                 logger.warning(f"Error in {event_name} callback: {e}")
         except Exception as e:
+            if handler.raise_error:
+                raise e
             logging.warning(f"Error in {event_name} callback: {e}")
 
 
@@ -917,7 +913,6 @@ def _configure(
             else:
                 try:
                     handler = LangChainTracer(session_name=tracer_session)
-                    handler.ensure_session()
                     callback_manager.add_handler(handler, True)
                 except Exception as e:
                     logger.warning(

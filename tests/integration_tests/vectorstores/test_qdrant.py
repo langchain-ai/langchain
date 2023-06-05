@@ -1,4 +1,5 @@
 """Test Qdrant functionality."""
+import tempfile
 from typing import Callable, Optional
 
 import pytest
@@ -247,3 +248,91 @@ def test_qdrant_embedding_interface_raises(
             embeddings=embeddings,
             embedding_function=embedding_function,
         )
+
+
+def test_qdrant_stores_duplicated_texts() -> None:
+    from qdrant_client import QdrantClient
+    from qdrant_client.http import models as rest
+
+    client = QdrantClient(":memory:")
+    collection_name = "test"
+    client.recreate_collection(
+        collection_name,
+        vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE),
+    )
+
+    vec_store = Qdrant(
+        client,
+        collection_name,
+        embeddings=ConsistentFakeEmbeddings(),
+    )
+    ids = vec_store.add_texts(["abc", "abc"], [{"a": 1}, {"a": 2}])
+
+    assert 2 == len(set(ids))
+    assert 2 == client.count(collection_name).count
+
+
+def test_qdrant_from_texts_stores_duplicated_texts() -> None:
+    from qdrant_client import QdrantClient
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["abc", "abc"],
+            ConsistentFakeEmbeddings(),
+            collection_name="test",
+            path=str(tmpdir),
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        assert 2 == client.count("test").count
+
+
+@pytest.mark.parametrize("batch_size", [1, 64])
+def test_qdrant_from_texts_stores_ids(batch_size: int) -> None:
+    from qdrant_client import QdrantClient
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ids = [
+            "fa38d572-4c31-4579-aedc-1960d79df6df",
+            "cdc1aa36-d6ab-4fb2-8a94-56674fd27484",
+        ]
+        vec_store = Qdrant.from_texts(
+            ["abc", "def"],
+            ConsistentFakeEmbeddings(),
+            ids=ids,
+            collection_name="test",
+            path=str(tmpdir),
+            batch_size=batch_size,
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        assert 2 == client.count("test").count
+        stored_ids = [point.id for point in client.scroll("test")[0]]
+        assert set(ids) == set(stored_ids)
+
+
+@pytest.mark.parametrize("batch_size", [1, 64])
+def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
+    from qdrant_client import QdrantClient
+
+    ids = [
+        "fa38d572-4c31-4579-aedc-1960d79df6df",
+        "cdc1aa36-d6ab-4fb2-8a94-56674fd27484",
+    ]
+
+    client = QdrantClient(":memory:")
+    collection_name = "test"
+    client.recreate_collection(
+        collection_name,
+        vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE),
+    )
+
+    vec_store = Qdrant(client, "test", ConsistentFakeEmbeddings())
+    returned_ids = vec_store.add_texts(["abc", "def"], ids=ids, batch_size=batch_size)
+
+    assert all(first == second for first, second in zip(ids, returned_ids))
+    assert 2 == client.count("test").count
+    stored_ids = [point.id for point in client.scroll("test")[0]]
+    assert set(ids) == set(stored_ids)

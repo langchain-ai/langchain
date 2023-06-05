@@ -101,7 +101,7 @@ class Bedrock(LLM):
         """Validate that AWS credentials to and python package exists in environment."""
 
         # Skip creating new client if passed in constructor
-        if "client" in values:
+        if values["client"] is not None:
             return values
 
         try:
