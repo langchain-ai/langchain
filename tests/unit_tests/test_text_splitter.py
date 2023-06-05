@@ -162,6 +162,7 @@ Bye!\n\n-H."""
     ]
     assert output == expected_output
 
+
 def test_iterative_text_splitter_large_chunks() -> None:
     """Test iterative text splitter."""
     text = """Hi.\n\nI'm Harrison.\n\nHow? Are? You?\nOkay then f f f f.
@@ -172,7 +173,9 @@ Bye!\n\n-H."""
     output = splitter.split_text(text)
     assert output == [
         "Hi.\n\nI'm Harrison.\nHow? Are? You?\nOkay then f f f f.",
-        'This is a weird text to write, but gotta test the splittingggg some how.\n\nBye!\n\n-H.']
+        "This is a weird text to write, but gotta test the splittingggg some how.\n\nBye!\n\n-H.",
+    ]
+
 
 def test_split_documents() -> None:
     """Test split_documents."""
@@ -325,7 +328,7 @@ message Person {
         "1;",
         "int32 age = 2;",
         "repeated string",
-        "hobbies = 3;\n}"
+        "hobbies = 3;\n}",
     ]
 
 
@@ -375,7 +378,7 @@ public class HelloWorld {
         "System.out.print",
         'ln("Hello,',
         'World!");\n    }',
-        '}',
+        "}",
     ]
 
 
@@ -501,7 +504,4 @@ fn main() {
 }
     """
     chunks = splitter.split_text(code)
-    assert chunks == [
-        'fn main() {',
-        'println!("Hello,',
-        'World!");\n}']
+    assert chunks == ["fn main() {", 'println!("Hello,', 'World!");\n}']
