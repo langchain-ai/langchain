@@ -113,7 +113,7 @@ class BaseConversationalRetrievalChain(Chain):
         answer = self.combine_docs_chain.run(
             input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
         )
-        output = {self.output_key: answer}
+        output: Dict[str, Any] = {self.output_key: answer}
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
@@ -147,7 +147,7 @@ class BaseConversationalRetrievalChain(Chain):
         answer = await self.combine_docs_chain.arun(
             input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
         )
-        output = {self.output_key: answer}
+        output: Dict[str, Any] = {self.output_key: answer}
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
