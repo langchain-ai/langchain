@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/sagemaker_endpoint",
+  "id": "integrations/sagemaker_endpoint",
+  "title": "SageMaker Endpoint",
+  "description": "Amazon SageMaker is a system that can build, train, and deploy machine learning (ML) models with fully managed infrastructure, tools, and workflows.",
+  "source": "@site/docs/integrations/sagemaker_endpoint.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/sagemaker_endpoint",
+  "permalink": "/docs/integrations/sagemaker_endpoint",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/sagemaker_endpoint.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

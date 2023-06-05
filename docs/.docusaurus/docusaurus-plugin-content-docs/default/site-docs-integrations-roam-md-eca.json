@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/roam",
+  "id": "integrations/roam",
+  "title": "Roam",
+  "description": "ROAM is a note-taking tool for networked thought, designed to create a personal knowledge base.",
+  "source": "@site/docs/integrations/roam.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/roam",
+  "permalink": "/docs/integrations/roam",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/roam.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/jina",
+  "id": "integrations/jina",
+  "title": "Jina",
+  "description": "This page covers how to use the Jina ecosystem within LangChain.",
+  "source": "@site/docs/integrations/jina.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/jina",
+  "permalink": "/docs/integrations/jina",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/jina.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

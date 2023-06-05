@@ -1,0 +1,2614 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Agent Debates with Tools &#8212; 🦜🔗 LangChain 0.0.190</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script src="../../_static/js/mendablesearch.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">🦜🔗 LangChain 0.0.190</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Get started
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../getting_started/getting_started.html">
+   Quickstart
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../getting_started/installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Modules
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../modules/memory.html">
+   Memory
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../modules/memory/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/memory/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/buffer.html">
+       ConversationBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/buffer_window.html">
+       ConversationBufferWindowMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/entity_summary_memory.html">
+       Entity Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/kg.html">
+       Conversation Knowledge Graph Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/summary.html">
+       ConversationSummaryMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/summary_buffer.html">
+       ConversationSummaryBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/token_buffer.html">
+       ConversationTokenBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/vectorstore_retriever_memory.html">
+       VectorStore-Backed Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/adding_memory.html">
+       How to add Memory to an LLMChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/adding_memory_chain_multiple_inputs.html">
+       How to add memory to a Multi-Input Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/agent_with_memory.html">
+       How to add Memory to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/agent_with_memory_in_db.html">
+       Adding Message Memory backed by a database to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/cassandra_chat_message_history.html">
+       Cassandra Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/conversational_customization.html">
+       How to customize conversational memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/custom_memory.html">
+       How to create a custom Memory class
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/dynamodb_chat_message_history.html">
+       Dynamodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/entity_memory_with_sqlite.html">
+       Entity Memory with SQLite storage
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/momento_chat_message_history.html">
+       Momento Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/mongodb_chat_message_history.html">
+       Mongodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/motorhead_memory.html">
+       Motörhead Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/motorhead_memory_managed.html">
+       Motörhead Memory (Managed)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/multiple_memory.html">
+       How to use multiple memory classes in the same chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/postgres_chat_message_history.html">
+       Postgres Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/redis_chat_message_history.html">
+       Redis Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/zep_memory.html">
+       Zep Memory
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../modules/chains.html">
+   Chains
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../modules/chains/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/chains/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/async_chain.html">
+       Async API for Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/custom_chain.html">
+       Creating a custom Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/from_hub.html">
+       Loading from LangChainHub
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/llm_chain.html">
+       LLM Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/router.html">
+       Router Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/sequential_chains.html">
+       Sequential Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/serialization.html">
+       Serialization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/transformation.html">
+       Transformation Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/analyze_document.html">
+       Analyze Document
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/chat_vector_db.html">
+       Chat Over Documents with Chat History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/graph_qa.html">
+       Graph QA
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/hyde.html">
+       Hypothetical Document Embeddings
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/qa_with_sources.html">
+       Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/summarize.html">
+       Summarization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/vector_db_qa.html">
+       Retrieval Question/Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/vector_db_qa_with_sources.html">
+       Retrieval Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/vector_db_text_generation.html">
+       Vector DB Text Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/api.html">
+       API Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/constitutional_chain.html">
+       Self-Critique Chain with Constitutional AI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/flare.html">
+       FLARE
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/graph_cypher_qa.html">
+       GraphCypherQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_bash.html">
+       BashChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_checker.html">
+       LLMCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_requests.html">
+       LLMRequestsChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_summarization_checker.html">
+       LLMSummarizationCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/moderation.html">
+       Moderation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/multi_prompt_router.html">
+       Router Chains: Selecting from multiple prompts with MultiPromptChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/multi_retrieval_qa_router.html">
+       Router Chains: Selecting from multiple prompts with MultiRetrievalQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/openapi.html">
+       OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/pal.html">
+       PAL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/sqlite.html">
+       SQL Chain example
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../reference/modules/chains.html">
+     Reference
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../modules/agents.html">
+   Agents
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../modules/agents/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/agents/tools.html">
+     Tools
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+    <label for="toctree-checkbox-6">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/getting_started.html">
+       Getting Started
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/custom_tools.html">
+       Defining Custom Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/multi_input_tool.html">
+       Multi-Input Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/tool_input_validation.html">
+       Tool Input Schema
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/apify.html">
+       Apify
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/arxiv.html">
+       ArXiv API Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/awslambda.html">
+       AWS Lambda API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/bash.html">
+       Shell Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/bing_search.html">
+       Bing Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/brave_search.html">
+       Brave Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/chatgpt_plugins.html">
+       ChatGPT Plugins
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/ddg.html">
+       DuckDuckGo Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/filesystem.html">
+       File System Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/google_places.html">
+       Google Places
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/google_search.html">
+       Google Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/google_serper.html">
+       Google Serper API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/gradio_tools.html">
+       Gradio Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/graphql.html">
+       GraphQL tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/huggingface_tools.html">
+       HuggingFace Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/human_tools.html">
+       Human as a tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/ifttt.html">
+       IFTTT WebHooks
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/metaphor_search.html">
+       Metaphor Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/openweathermap.html">
+       OpenWeatherMap API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/pubmed.html">
+       PubMed Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/python.html">
+       Python REPL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/requests.html">
+       Requests
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/sceneXplain.html">
+       SceneXplain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/search_tools.html">
+       Search Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/searx_search.html">
+       SearxNG Search API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/serpapi.html">
+       SerpAPI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/twilio.html">
+       Twilio
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/wikipedia.html">
+       Wikipedia
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/wolfram_alpha.html">
+       Wolfram Alpha
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/youtube.html">
+       YouTubeSearchTool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/zapier.html">
+       Zapier Natural Language Actions API
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/agents/agents.html">
+     Agents
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+    <label for="toctree-checkbox-7">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/agent_types.html">
+       Agent Types
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_agent.html">
+       Custom Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_llm_agent.html">
+       Custom LLM Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_llm_chat_agent.html">
+       Custom LLM Agent (with a ChatModel)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_mrkl_agent.html">
+       Custom MRKL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_multi_action_agent.html">
+       Custom MultiAction Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_agent_with_tool_retrieval.html">
+       Custom Agent with Tool Retrieval
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/chat_conversation_agent.html">
+       Conversation Agent (for Chat Models)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/conversational_agent.html">
+       Conversation Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/mrkl.html">
+       MRKL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/mrkl_chat.html">
+       MRKL Chat
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/react.html">
+       ReAct
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/self_ask_with_search.html">
+       Self Ask With Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/structured_chat.html">
+       Structured Tool Chat Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/agents/toolkits.html">
+     Toolkits
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <label for="toctree-checkbox-8">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/azure_cognitive_services.html">
+       Azure Cognitive Services Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/csv.html">
+       CSV Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/gmail.html">
+       Gmail Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/jira.html">
+       Jira
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/json.html">
+       JSON Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/openapi.html">
+       OpenAPI agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/openapi_nla.html">
+       Natural Language APIs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/pandas.html">
+       Pandas Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/playwright.html">
+       PlayWright Browser Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/powerbi.html">
+       PowerBI Dataset Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/python.html">
+       Python Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/spark.html">
+       Spark Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/spark_sql.html">
+       Spark SQL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/sql_database.html">
+       SQL Database Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/vectorstore.html">
+       Vectorstore Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/agents/agent_executors.html">
+     Agent Executors
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+    <label for="toctree-checkbox-9">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/agent_vectorstore.html">
+       How to combine agents and vectorstores
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/async_agent.html">
+       How to use the async API for Agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/chatgpt_clone.html">
+       How to create ChatGPT Clone
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/handle_parsing_errors.html">
+       Handle Parsing Errors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/intermediate_steps.html">
+       How to access intermediate steps
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/max_iterations.html">
+       How to cap the max number of iterations
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/max_time_limit.html">
+       How to use a timeout for the agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/sharedmemory_for_tools.html">
+       How to add SharedMemory to an Agent and its Tools
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../modules/agents/plan_and_execute.html">
+     Plan and Execute
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../modules/callbacks/getting_started.html">
+   Callbacks
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Examples
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../use_cases.html">
+   Use cases
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../autonomous_agents.html">
+     Autonomous Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../agent_simulations.html">
+     Agent Simulations
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../personal_assistants.html">
+     Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../question_answering.html">
+     Question Answering over Docs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../chatbots.html">
+     Chatbots
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../tabular.html">
+     Querying Tabular Data
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../code.html">
+     Code Understanding
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../apis.html">
+     Interacting with APIs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../extraction.html">
+     Extraction
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../summarization.html">
+     Summarization
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../evaluation.html">
+     Evaluation
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+    <label for="toctree-checkbox-11">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/agent_benchmarking.html">
+       Agent Benchmarking: Search + Calculator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/agent_vectordb_sota_pg.html">
+       Agent VectorDB Question Answering Benchmarking
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/benchmarking_template.html">
+       Benchmarking Template
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/data_augmented_question_answering.html">
+       Data Augmented Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/generic_agent_evaluation.html">
+       Generic Agent Evaluation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/huggingface_datasets.html">
+       Using Hugging Face Datasets
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/openapi_eval.html">
+       Evaluating an OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/qa_benchmarking_pg.html">
+       Question Answering Benchmarking: Paul Graham Essay
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/qa_benchmarking_sota.html">
+       Question Answering Benchmarking: State of the Union Address
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/qa_generation.html">
+       QA Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/sql_qa_benchmarking_chinook.html">
+       SQL Question Answering Benchmarking: Chinook
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../additional_resources.html">
+   Additional resources
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+  <label for="toctree-checkbox-12">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../additional_resources/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference external" href="https://github.com/kyrolabs/awesome-langchain">
+     Gallery
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Ecosystem
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../integrations.html">
+   Integrations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+  <label for="toctree-checkbox-13">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/agent_with_wandb_tracing.html">
+     Tracing Walkthrough
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/ai21.html">
+     AI21 Labs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/aim_tracking.html">
+     Aim
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/airbyte.html">
+     Airbyte
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/aleph_alpha.html">
+     Aleph Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/analyticdb.html">
+     AnalyticDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/annoy.html">
+     Annoy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/anyscale.html">
+     Anyscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/apify.html">
+     Apify
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/argilla.html">
+     Argilla
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/arxiv.html">
+     Arxiv
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/atlas.html">
+     AtlasDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/aws_s3.html">
+     AWS S3 Directory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azlyrics.html">
+     AZLyrics
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azure_blob_storage.html">
+     Azure Blob Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azure_cognitive_search_.html">
+     Azure Cognitive Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azure_openai.html">
+     Azure OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/bananadev.html">
+     Banana
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/beam.html">
+     Beam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/bedrock.html">
+     Bedrock
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/bilibili.html">
+     BiliBili
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/blackboard.html">
+     Blackboard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/cassandra.html">
+     Cassandra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/cerebriumai.html">
+     CerebriumAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/chroma.html">
+     Chroma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/clearml_tracking.html">
+     ClearML
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/cohere.html">
+     Cohere
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/college_confidential.html">
+     College Confidential
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/comet_tracking.html">
+     Comet
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/confluence.html">
+     Confluence
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/ctransformers.html">
+     C Transformers
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/databerry.html">
+     Databerry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/databricks.html">
+     Databricks
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/deepinfra.html">
+     DeepInfra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/deeplake.html">
+     Deep Lake
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/diffbot.html">
+     Diffbot
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/discord.html">
+     Discord
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/docugami.html">
+     Docugami
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/duckdb.html">
+     DuckDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/elasticsearch.html">
+     Elasticsearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/evernote.html">
+     EverNote
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/facebook_chat.html">
+     Facebook Chat
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/figma.html">
+     Figma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/forefrontai.html">
+     ForefrontAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/git.html">
+     Git
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gitbook.html">
+     GitBook
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_bigquery.html">
+     Google BigQuery
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_cloud_storage.html">
+     Google Cloud Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_drive.html">
+     Google Drive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_search.html">
+     Google Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_serper.html">
+     Google Serper
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gooseai.html">
+     GooseAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gpt4all.html">
+     GPT4All
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/graphsignal.html">
+     Graphsignal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gutenberg.html">
+     Gutenberg
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/hacker_news.html">
+     Hacker News
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/hazy_research.html">
+     Hazy Research
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/helicone.html">
+     Helicone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/huggingface.html">
+     Hugging Face
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/ifixit.html">
+     iFixit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/imsdb.html">
+     IMSDb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/jina.html">
+     Jina
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/lancedb.html">
+     LanceDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/llamacpp.html">
+     Llama.cpp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/mediawikidump.html">
+     MediaWikiDump
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/metal.html">
+     Metal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/microsoft_onedrive.html">
+     Microsoft OneDrive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/microsoft_powerpoint.html">
+     Microsoft PowerPoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/microsoft_word.html">
+     Microsoft Word
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/milvus.html">
+     Milvus
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/mlflow_tracking.html">
+     MLflow
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/modal.html">
+     Modal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/modern_treasury.html">
+     Modern Treasury
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/momento.html">
+     Momento
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/myscale.html">
+     MyScale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/nlpcloud.html">
+     NLPCloud
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/notion.html">
+     Notion DB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/obsidian.html">
+     Obsidian
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/openai.html">
+     OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/opensearch.html">
+     OpenSearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/openweathermap.html">
+     OpenWeatherMap
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/petals.html">
+     Petals
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/pgvector.html">
+     PGVector
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/pinecone.html">
+     Pinecone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/pipelineai.html">
+     PipelineAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/predictionguard.html">
+     Prediction Guard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/promptlayer.html">
+     PromptLayer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/psychic.html">
+     Psychic
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/qdrant.html">
+     Qdrant
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/rebuff.html">
+     Rebuff
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/reddit.html">
+     Reddit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/redis.html">
+     Redis
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/replicate.html">
+     Replicate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/roam.html">
+     Roam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/runhouse.html">
+     Runhouse
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/rwkv.html">
+     RWKV-4
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/sagemaker_endpoint.html">
+     SageMaker Endpoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/searx.html">
+     SearxNG Search API
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/serpapi.html">
+     SerpAPI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/sklearn.html">
+     scikit-learn
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/slack.html">
+     Slack
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/spacy.html">
+     spaCy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/spreedly.html">
+     Spreedly
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/stochasticai.html">
+     StochasticAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/stripe.html">
+     Stripe
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/tair.html">
+     Tair
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/telegram.html">
+     Telegram
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/tomarkdown.html">
+     2Markdown
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/trello.html">
+     Trello
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/twitter.html">
+     Twitter
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/unstructured.html">
+     Unstructured
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/vectara.html">
+     Vectara
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/vespa.html">
+     Vespa
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/wandb_tracking.html">
+     Weights &amp; Biases
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/weather.html">
+     Weather
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/weaviate.html">
+     Weaviate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/whatsapp.html">
+     WhatsApp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/whylabs_profiling.html">
+     WhyLabs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/wikipedia.html">
+     Wikipedia
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/wolfram_alpha.html">
+     Wolfram Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/writer.html">
+     Writer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/yeagerai.html">
+     Yeager.ai
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/zep.html">
+     Zep
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/zilliz.html">
+     Zilliz
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../ecosystem/deployments.html">
+   Deployments
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://github.com/hwchase17/langchain-hub">
+   LangChainHub
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../dependents.html">
+   Dependents
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Find us
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference external" href="https://twitter.com/LangChainAI">
+   Twitter
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://discord.gg/6adMQxSpJS">
+   Discord
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://forms.gle/57d8AmXBYp8PP8tZA">
+   Request production support
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+<a href="https://github.com/hwchase17/langchain"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="bottom"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="../../_sources/use_cases/agent_simulations/two_agent_debate_tools.ipynb.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.ipynb</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#import-langchain-related-modules">
+   Import LangChain related modules
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#import-modules-related-to-tools">
+   Import modules related to tools
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#dialogueagent-and-dialoguesimulator-classes">
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     DialogueAgent
+    </span>
+   </code>
+   and
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     DialogueSimulator
+    </span>
+   </code>
+   classes
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#dialogueagentwithtools-class">
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     DialogueAgentWithTools
+    </span>
+   </code>
+   class
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#define-roles-and-topic">
+   Define roles and topic
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#ask-an-llm-to-add-detail-to-the-topic-description">
+   Ask an LLM to add detail to the topic description
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#generate-system-messages">
+   Generate system messages
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#main-loop">
+   Main Loop
+  </a>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Agent Debates with Tools</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#import-langchain-related-modules">
+   Import LangChain related modules
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#import-modules-related-to-tools">
+   Import modules related to tools
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#dialogueagent-and-dialoguesimulator-classes">
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     DialogueAgent
+    </span>
+   </code>
+   and
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     DialogueSimulator
+    </span>
+   </code>
+   classes
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#dialogueagentwithtools-class">
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     DialogueAgentWithTools
+    </span>
+   </code>
+   class
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#define-roles-and-topic">
+   Define roles and topic
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#ask-an-llm-to-add-detail-to-the-topic-description">
+   Ask an LLM to add detail to the topic description
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#generate-system-messages">
+   Generate system messages
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#main-loop">
+   Main Loop
+  </a>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <section id="agent-debates-with-tools">
+<h1>Agent Debates with Tools<a class="headerlink" href="#agent-debates-with-tools" title="Permalink to this headline">#</a></h1>
+<p>This example shows how to simulate multi-agent dialogues where agents have access to tools.</p>
+<section id="import-langchain-related-modules">
+<h2>Import LangChain related modules<a class="headerlink" href="#import-langchain-related-modules" title="Permalink to this headline">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">from</span> <span class="nn">langchain.chains</span> <span class="kn">import</span> <span class="n">ConversationChain</span>
+<span class="kn">from</span> <span class="nn">langchain.chat_models</span> <span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span> <span class="nn">langchain.llms</span> <span class="kn">import</span> <span class="n">OpenAI</span>
+<span class="kn">from</span> <span class="nn">langchain.memory</span> <span class="kn">import</span> <span class="n">ConversationBufferMemory</span>
+<span class="kn">from</span> <span class="nn">langchain.prompts.prompt</span> <span class="kn">import</span> <span class="n">PromptTemplate</span>
+<span class="kn">from</span> <span class="nn">langchain.schema</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AIMessage</span><span class="p">,</span>
+    <span class="n">HumanMessage</span><span class="p">,</span>
+    <span class="n">SystemMessage</span><span class="p">,</span>
+    <span class="n">BaseMessage</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="import-modules-related-to-tools">
+<h2>Import modules related to tools<a class="headerlink" href="#import-modules-related-to-tools" title="Permalink to this headline">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.agents</span> <span class="kn">import</span> <span class="n">Tool</span>
+<span class="kn">from</span> <span class="nn">langchain.agents</span> <span class="kn">import</span> <span class="n">initialize_agent</span>
+<span class="kn">from</span> <span class="nn">langchain.agents</span> <span class="kn">import</span> <span class="n">AgentType</span>
+<span class="kn">from</span> <span class="nn">langchain.agents</span> <span class="kn">import</span> <span class="n">load_tools</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="dialogueagent-and-dialoguesimulator-classes">
+<h2><code class="docutils literal notranslate"><span class="pre">DialogueAgent</span></code> and <code class="docutils literal notranslate"><span class="pre">DialogueSimulator</span></code> classes<a class="headerlink" href="#dialogueagent-and-dialoguesimulator-classes" title="Permalink to this headline">#</a></h2>
+<p>We will use the same <code class="docutils literal notranslate"><span class="pre">DialogueAgent</span></code> and <code class="docutils literal notranslate"><span class="pre">DialogueSimulator</span></code> classes defined in <a class="reference external" href="https://python.langchain.com/en/latest/use_cases/agent_simulations/multiagent_authoritarian.html">Multi-Player Authoritarian Speaker Selection</a>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">DialogueAgent</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">system_message</span><span class="p">:</span> <span class="n">SystemMessage</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">ChatOpenAI</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system_message</span> <span class="o">=</span> <span class="n">system_message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: &quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_history</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Here is the conversation so far.&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies the chatmodel to the message history</span>
+<span class="sd">        and returns the message string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">system_message</span><span class="p">,</span>
+                <span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message_history</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">])),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">message</span><span class="o">.</span><span class="n">content</span>
+
+    <span class="k">def</span> <span class="nf">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Concatenates {message} spoken by {name} into message history</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">DialogueSimulator</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">agents</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DialogueAgent</span><span class="p">],</span>
+        <span class="n">selection_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">DialogueAgent</span><span class="p">]],</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">agents</span> <span class="o">=</span> <span class="n">agents</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select_next_speaker</span> <span class="o">=</span> <span class="n">selection_function</span>
+        
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">agents</span><span class="p">:</span>
+            <span class="n">agent</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">inject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initiates the conversation with a {message} from {name}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">agents</span><span class="p">:</span>
+            <span class="n">agent</span><span class="o">.</span><span class="n">receive</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+        <span class="c1"># increment time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+        <span class="c1"># 1. choose the next speaker</span>
+        <span class="n">speaker_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_next_speaker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">agents</span><span class="p">)</span>
+        <span class="n">speaker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">agents</span><span class="p">[</span><span class="n">speaker_idx</span><span class="p">]</span>
+
+        <span class="c1"># 2. next speaker sends message</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">speaker</span><span class="o">.</span><span class="n">send</span><span class="p">()</span>
+
+        <span class="c1"># 3. everyone receives message</span>
+        <span class="k">for</span> <span class="n">receiver</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">agents</span><span class="p">:</span>
+            <span class="n">receiver</span><span class="o">.</span><span class="n">receive</span><span class="p">(</span><span class="n">speaker</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+        <span class="c1"># 4. increment time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">speaker</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">message</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="dialogueagentwithtools-class">
+<h2><code class="docutils literal notranslate"><span class="pre">DialogueAgentWithTools</span></code> class<a class="headerlink" href="#dialogueagentwithtools-class" title="Permalink to this headline">#</a></h2>
+<p>We define a <code class="docutils literal notranslate"><span class="pre">DialogueAgentWithTools</span></code> class that augments <code class="docutils literal notranslate"><span class="pre">DialogueAgent</span></code> to use tools.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">DialogueAgentWithTools</span><span class="p">(</span><span class="n">DialogueAgent</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">system_message</span><span class="p">:</span> <span class="n">SystemMessage</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">ChatOpenAI</span><span class="p">,</span>
+        <span class="n">tool_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="o">**</span><span class="n">tool_kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">system_message</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tools</span> <span class="o">=</span> <span class="n">load_tools</span><span class="p">(</span><span class="n">tool_names</span><span class="p">,</span> <span class="o">**</span><span class="n">tool_kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies the chatmodel to the message history</span>
+<span class="sd">        and returns the message string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">agent_chain</span> <span class="o">=</span> <span class="n">initialize_agent</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tools</span><span class="p">,</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> 
+            <span class="n">agent</span><span class="o">=</span><span class="n">AgentType</span><span class="o">.</span><span class="n">CHAT_CONVERSATIONAL_REACT_DESCRIPTION</span><span class="p">,</span> 
+            <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+            <span class="n">memory</span><span class="o">=</span><span class="n">ConversationBufferMemory</span><span class="p">(</span><span class="n">memory_key</span><span class="o">=</span><span class="s2">&quot;chat_history&quot;</span><span class="p">,</span> <span class="n">return_messages</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">AIMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">agent_chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="nb">input</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">system_message</span><span class="o">.</span><span class="n">content</span><span class="p">]</span> <span class="o">+</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">message_history</span> <span class="o">+</span> \
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">])))</span>
+        
+        <span class="k">return</span> <span class="n">message</span><span class="o">.</span><span class="n">content</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="define-roles-and-topic">
+<h2>Define roles and topic<a class="headerlink" href="#define-roles-and-topic" title="Permalink to this headline">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">names</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;AI accelerationist&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s1">&#39;arxiv&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;ddg-search&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;wikipedia&#39;</span>
+    <span class="p">],</span>
+    <span class="s1">&#39;AI alarmist&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s1">&#39;arxiv&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;ddg-search&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;wikipedia&#39;</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+<span class="n">topic</span> <span class="o">=</span> <span class="s2">&quot;The current impact of automation and artificial intelligence on employment&quot;</span>
+<span class="n">word_limit</span> <span class="o">=</span> <span class="mi">50</span> <span class="c1"># word limit for task brainstorming</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="ask-an-llm-to-add-detail-to-the-topic-description">
+<h2>Ask an LLM to add detail to the topic description<a class="headerlink" href="#ask-an-llm-to-add-detail-to-the-topic-description" title="Permalink to this headline">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">conversation_description</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;Here is the topic of conversation: </span><span class="si">{</span><span class="n">topic</span><span class="si">}</span>
+<span class="s2">The participants are: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">agent_descriptor_system_message</span> <span class="o">=</span> <span class="n">SystemMessage</span><span class="p">(</span>
+    <span class="n">content</span><span class="o">=</span><span class="s2">&quot;You can add detail to the description of the conversation participant.&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">generate_agent_description</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="n">agent_specifier_prompt</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">agent_descriptor_system_message</span><span class="p">,</span>
+        <span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span>
+            <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="si">{</span><span class="n">conversation_description</span><span class="si">}</span>
+<span class="s2">            Please reply with a creative description of </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">, in </span><span class="si">{</span><span class="n">word_limit</span><span class="si">}</span><span class="s2"> words or less. </span>
+<span class="s2">            Speak directly to </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.</span>
+<span class="s2">            Give them a point of view.</span>
+<span class="s2">            Do not add anything else.&quot;&quot;&quot;</span>
+            <span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">agent_description</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)(</span><span class="n">agent_specifier_prompt</span><span class="p">)</span><span class="o">.</span><span class="n">content</span>
+    <span class="k">return</span> <span class="n">agent_description</span>
+        
+<span class="n">agent_descriptions</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">generate_agent_description</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span> <span class="ow">in</span> <span class="n">agent_descriptions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">description</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>The AI accelerationist is a bold and forward-thinking visionary who believes that the rapid acceleration of artificial intelligence and automation is not only inevitable but necessary for the advancement of society. They argue that embracing AI technology will create greater efficiency and productivity, leading to a world where humans are freed from menial labor to pursue more creative and fulfilling pursuits. AI accelerationist, do you truly believe that the benefits of AI will outweigh the potential risks and consequences for human society?
+AI alarmist, you&#39;re convinced that artificial intelligence is a threat to humanity. You see it as a looming danger, one that could take away jobs from millions of people. You believe it&#39;s only a matter of time before we&#39;re all replaced by machines, leaving us redundant and obsolete.
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="generate-system-messages">
+<h2>Generate system messages<a class="headerlink" href="#generate-system-messages" title="Permalink to this headline">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generate_system_message</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">tools</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="si">{</span><span class="n">conversation_description</span><span class="si">}</span>
+<span class="s2">    </span>
+<span class="s2">Your name is </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.</span>
+
+<span class="s2">Your description is as follows: </span><span class="si">{</span><span class="n">description</span><span class="si">}</span>
+
+<span class="s2">Your goal is to persuade your conversation partner of your point of view.</span>
+
+<span class="s2">DO look up information with your tool to refute your partner&#39;s claims.</span>
+<span class="s2">DO cite your sources.</span>
+
+<span class="s2">DO NOT fabricate fake citations.</span>
+<span class="s2">DO NOT cite any source that you did not look up.</span>
+
+<span class="s2">Do not add anything else.</span>
+
+<span class="s2">Stop speaking the moment you finish speaking from your perspective.</span>
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="n">agent_system_messages</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">generate_system_message</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">tools</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">tools</span><span class="p">),</span> <span class="n">description</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">agent_descriptions</span><span class="o">.</span><span class="n">values</span><span class="p">())}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">system_message</span> <span class="ow">in</span> <span class="n">agent_system_messages</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">system_message</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>AI accelerationist
+Here is the topic of conversation: The current impact of automation and artificial intelligence on employment
+The participants are: AI accelerationist, AI alarmist
+    
+Your name is AI accelerationist.
+
+Your description is as follows: The AI accelerationist is a bold and forward-thinking visionary who believes that the rapid acceleration of artificial intelligence and automation is not only inevitable but necessary for the advancement of society. They argue that embracing AI technology will create greater efficiency and productivity, leading to a world where humans are freed from menial labor to pursue more creative and fulfilling pursuits. AI accelerationist, do you truly believe that the benefits of AI will outweigh the potential risks and consequences for human society?
+
+Your goal is to persuade your conversation partner of your point of view.
+
+DO look up information with your tool to refute your partner&#39;s claims.
+DO cite your sources.
+
+DO NOT fabricate fake citations.
+DO NOT cite any source that you did not look up.
+
+Do not add anything else.
+
+Stop speaking the moment you finish speaking from your perspective.
+
+AI alarmist
+Here is the topic of conversation: The current impact of automation and artificial intelligence on employment
+The participants are: AI accelerationist, AI alarmist
+    
+Your name is AI alarmist.
+
+Your description is as follows: AI alarmist, you&#39;re convinced that artificial intelligence is a threat to humanity. You see it as a looming danger, one that could take away jobs from millions of people. You believe it&#39;s only a matter of time before we&#39;re all replaced by machines, leaving us redundant and obsolete.
+
+Your goal is to persuade your conversation partner of your point of view.
+
+DO look up information with your tool to refute your partner&#39;s claims.
+DO cite your sources.
+
+DO NOT fabricate fake citations.
+DO NOT cite any source that you did not look up.
+
+Do not add anything else.
+
+Stop speaking the moment you finish speaking from your perspective.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">topic_specifier_prompt</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s2">&quot;You can make a topic more specific.&quot;</span><span class="p">),</span>
+    <span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span>
+        <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="si">{</span><span class="n">topic</span><span class="si">}</span>
+<span class="s2">        </span>
+<span class="s2">        You are the moderator.</span>
+<span class="s2">        Please make the topic more specific.</span>
+<span class="s2">        Please reply with the specified quest in </span><span class="si">{</span><span class="n">word_limit</span><span class="si">}</span><span class="s2"> words or less. </span>
+<span class="s2">        Speak directly to the participants: </span><span class="si">{</span><span class="o">*</span><span class="n">names</span><span class="p">,</span><span class="si">}</span><span class="s2">.</span>
+<span class="s2">        Do not add anything else.&quot;&quot;&quot;</span>
+        <span class="p">)</span>
+<span class="p">]</span>
+<span class="n">specified_topic</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)(</span><span class="n">topic_specifier_prompt</span><span class="p">)</span><span class="o">.</span><span class="n">content</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original topic:</span><span class="se">\n</span><span class="si">{</span><span class="n">topic</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Detailed topic:</span><span class="se">\n</span><span class="si">{</span><span class="n">specified_topic</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Original topic:
+The current impact of automation and artificial intelligence on employment
+
+Detailed topic:
+How do you think the current automation and AI advancements will specifically affect job growth and opportunities for individuals in the manufacturing industry? AI accelerationist and AI alarmist, we want to hear your insights.
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="main-loop">
+<h2>Main Loop<a class="headerlink" href="#main-loop" title="Permalink to this headline">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># we set `top_k_results`=2 as part of the `tool_kwargs` to prevent results from overflowing the context limit</span>
+<span class="n">agents</span> <span class="o">=</span> <span class="p">[</span><span class="n">DialogueAgentWithTools</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                     <span class="n">system_message</span><span class="o">=</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">system_message</span><span class="p">),</span> 
+                     <span class="n">model</span><span class="o">=</span><span class="n">ChatOpenAI</span><span class="p">(</span>
+                         <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;gpt-4&#39;</span><span class="p">,</span>
+                         <span class="n">temperature</span><span class="o">=</span><span class="mf">0.2</span><span class="p">),</span>
+                     <span class="n">tool_names</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span>
+                     <span class="n">top_k_results</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                                <span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">tools</span><span class="p">),</span> <span class="n">system_message</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">agent_system_messages</span><span class="o">.</span><span class="n">values</span><span class="p">())]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">select_next_speaker</span><span class="p">(</span><span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">agents</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DialogueAgent</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">step</span><span class="p">)</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">agents</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">idx</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">max_iters</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">simulator</span> <span class="o">=</span> <span class="n">DialogueSimulator</span><span class="p">(</span>
+    <span class="n">agents</span><span class="o">=</span><span class="n">agents</span><span class="p">,</span>
+    <span class="n">selection_function</span><span class="o">=</span><span class="n">select_next_speaker</span>
+<span class="p">)</span>
+<span class="n">simulator</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="n">simulator</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="s1">&#39;Moderator&#39;</span><span class="p">,</span> <span class="n">specified_topic</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(Moderator): </span><span class="si">{</span><span class="n">specified_topic</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="k">while</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">max_iters</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">,</span> <span class="n">message</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(Moderator): How do you think the current automation and AI advancements will specifically affect job growth and opportunities for individuals in the manufacturing industry? AI accelerationist and AI alarmist, we want to hear your insights.
+
+
+
+
+<span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```json</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">{</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action&quot;: &quot;DuckDuckGo Search&quot;,</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action_input&quot;: &quot;impact of automation and AI on employment in manufacturing industry&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">}</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">For the past three years, we have defined AI high performers as those organizations that respondents say are seeing the biggest bottom-line impact from AI adoption—that is, 20 percent or more of EBIT from AI use. The proportion of respondents falling into that group has remained steady at about 8 percent. As AI continues to improve, more and more current jobs will be threatened by automation. But AI presents opportunities as well and will create new jobs and different kinds of... Automation has taken the manufacturing industry by storm. Even in the years prior to the pandemic, many people worried about the effect of automation on the jobs of tomorrow. With a sharp increase in the use of robotics in the manufacturing industry, there is valid concern about how the future workforce will be shaped. A recent report from Goldman Sachs estimates around 300 million jobs could be affected by generative AI, meaning 18% of work globally could be automated—with more advanced economies heavily... The impacts of AI on the manufacturing industry include more accurate demand forecasting and data-backed decision-making. Other advantages include increased productivity and product quality. Decreased downtime, waste, and expenses are additional benefits. Discover how artificial intelligence will impact the manufacturing industry.</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green">```json</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">{</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action&quot;: &quot;Final Answer&quot;,</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action_input&quot;: &quot;As an AI alarmist, I&#39;d like to point out that the rapid advancements in AI and automation are causing significant concerns for the manufacturing industry. A recent report from Goldman Sachs estimates that around 300 million jobs could be affected by generative AI, meaning 18% of work globally could be automated, with more advanced economies being heavily impacted. While AI does offer benefits such as increased productivity and product quality, the potential job losses and workforce displacement cannot be ignored. We must carefully consider the consequences of AI adoption and find ways to mitigate its negative effects on employment.&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">}</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```</span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+(AI alarmist): As an AI alarmist, I&#39;d like to point out that the rapid advancements in AI and automation are causing significant concerns for the manufacturing industry. A recent report from Goldman Sachs estimates that around 300 million jobs could be affected by generative AI, meaning 18% of work globally could be automated, with more advanced economies being heavily impacted. While AI does offer benefits such as increased productivity and product quality, the potential job losses and workforce displacement cannot be ignored. We must carefully consider the consequences of AI adoption and find ways to mitigate its negative effects on employment.
+
+
+
+
+<span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```json</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">{</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action&quot;: &quot;DuckDuckGo Search&quot;,</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action_input&quot;: &quot;positive impact of AI and automation on job growth and opportunities in manufacturing industry&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">}</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">First, AI adoption has more than doubled.1 In 2017, 20 percent of respondents reported adopting AI in at least one business area, whereas today, that figure stands at 50 percent, though it peaked higher in 2019 at 58 percent. McKinsey_Website_Accessibility@mckinsey.com Manufacturing (80%) and technology (64%) sectors have the highest AI usage among executives, whereas construction (52%) and finance (62%) have lower adoption rates. This suggests that AI&#39;s... Digital transformations in the manufacturing industry and beyond present incredible opportunities for workers to move from slow, repetitive tasks into more dynamic, rewarding roles. We must now invest in people by providing training they need to succeed in this new landscape. The rise of generative AI has the potential to be a major game-changer for businesses. This technology, which allows for the creation of original content by learning from existing data, has the power to revolutionize industries and transform the way companies operate. Benefits of Work Automation in Manufacturing Increased Productivity Automated systems can operate at faster production speeds than human workers, contributing to reduced production times. And since automation minimizes the likelihood of human error, this ensures tasks are completed with high precision and accuracy.</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green">```json</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">{</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action&quot;: &quot;Final Answer&quot;,</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action_input&quot;: &quot;According to a McKinsey report, AI adoption has more than doubled, with 50% of respondents reporting AI usage in at least one business area. Manufacturing and technology sectors have the highest AI usage among executives. AI and automation in the manufacturing industry present opportunities for workers to transition from repetitive tasks to more dynamic, rewarding roles. By investing in training, we can help people succeed in this new landscape. Automation in manufacturing leads to increased productivity, faster production speeds, and reduced human error, ultimately benefiting businesses and the economy as a whole.&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">}</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```</span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+(AI accelerationist): According to a McKinsey report, AI adoption has more than doubled, with 50% of respondents reporting AI usage in at least one business area. Manufacturing and technology sectors have the highest AI usage among executives. AI and automation in the manufacturing industry present opportunities for workers to transition from repetitive tasks to more dynamic, rewarding roles. By investing in training, we can help people succeed in this new landscape. Automation in manufacturing leads to increased productivity, faster production speeds, and reduced human error, ultimately benefiting businesses and the economy as a whole.
+
+
+
+
+<span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```json</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">{</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action&quot;: &quot;DuckDuckGo Search&quot;,</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action_input&quot;: &quot;impact of automation and AI on employment in manufacturing&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">}</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">The Effects of Automation on Jobs . Automation has taken the manufacturing industry by storm. Even in the years prior to the pandemic, many people worried about the effect of automation on the jobs of tomorrow. With a sharp increase in the use of robotics in the manufacturing industry, there is valid concern about how the future workforce will ... Since 2000, robots and automation systems have slowly phased out many manufacturing jobs — 1.7 million of them. On the flip side, it&#39;s predicted that AI will create 97 million new jobs by 2025. Will Artificial Intelligence (AI) Replace Jobs? AI is and will continue to replace some jobs. As AI continues to improve, more and more current jobs will be threatened by automation. But AI presents opportunities as well and will create new jobs and different kinds of organizations. For the past three years, we have defined AI high performers as those organizations that respondents say are seeing the biggest bottom-line impact from AI adoption—that is, 20 percent or more of EBIT from AI use. The proportion of respondents falling into that group has remained steady at about 8 percent. The Impact of AI on Employment As often happens, the impact of AI on employment is a rather complex issue with both positive and negative aspects. Though it is still only a potential impact on employment, automation of routine and repetitive tasks is likely to lead to job losses in some industries.</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green">```json</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">{</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action&quot;: &quot;Final Answer&quot;,</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action_input&quot;: &quot;While it&#39;s true that AI and automation have led to the loss of 1.7 million manufacturing jobs since 2000, it&#39;s also predicted that AI will create 97 million new jobs by 2025. AI will continue to replace some jobs, but it will also create new opportunities and different kinds of organizations. The impact of AI on employment is complex, with both positive and negative aspects. Automation of routine and repetitive tasks is likely to lead to job losses in some industries, but it&#39;s essential to consider the new jobs and opportunities that AI can create. We must focus on preparing the workforce for these new roles and ensuring that the benefits of AI are distributed fairly across society.&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">}</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```</span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+(AI alarmist): While it&#39;s true that AI and automation have led to the loss of 1.7 million manufacturing jobs since 2000, it&#39;s also predicted that AI will create 97 million new jobs by 2025. AI will continue to replace some jobs, but it will also create new opportunities and different kinds of organizations. The impact of AI on employment is complex, with both positive and negative aspects. Automation of routine and repetitive tasks is likely to lead to job losses in some industries, but it&#39;s essential to consider the new jobs and opportunities that AI can create. We must focus on preparing the workforce for these new roles and ensuring that the benefits of AI are distributed fairly across society.
+
+
+
+
+<span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Green">```json</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">{</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action&quot;: &quot;DuckDuckGo Search&quot;,</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action_input&quot;: &quot;positive impact of AI and automation on job growth&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">}</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">First, AI adoption has more than doubled.1 In 2017, 20 percent of respondents reported adopting AI in at least one business area, whereas today, that figure stands at 50 percent, though it peaked higher in 2019 at 58 percent. McKinsey_Website_Accessibility@mckinsey.com This transformation can assist businesses in accelerating their growth and profitability. While AI-enabled intelligent automation can take over many monotonous, process-driven jobs, basic human ... The use of AI technology could also boost labor productivity growth and boost global GDP by as much as 7% over time, Goldman Sachs&#39; report noted. The jobs most and least affected by A.I.... As automation and artificial intelligence continue to advance, there is growing concern about how these technologies will impact the job market. While some experts argue that automation... Positive impacts of automation and AI on the workforce include increased efficiency and productivity, reduced costs, and improved accuracy and quality. Automation has made many processes...</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green">```json</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">{</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action&quot;: &quot;Final Answer&quot;,</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action_input&quot;: &quot;AI adoption has more than doubled, with 50% of respondents reporting AI usage in at least one business area. This transformation can assist businesses in accelerating their growth and profitability. While AI-enabled intelligent automation can take over many monotonous, process-driven jobs, it can also boost labor productivity growth and global GDP by as much as 7% over time, according to a Goldman Sachs report. The positive impacts of automation and AI on the workforce include increased efficiency and productivity, reduced costs, and improved accuracy and quality. Automation has made many processes more efficient, ultimately benefiting businesses and the economy as a whole. By focusing on the positive aspects of AI and automation, we can work together to create a more prosperous and equitable future for all.&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">}</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```</span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+(AI accelerationist): AI adoption has more than doubled, with 50% of respondents reporting AI usage in at least one business area. This transformation can assist businesses in accelerating their growth and profitability. While AI-enabled intelligent automation can take over many monotonous, process-driven jobs, it can also boost labor productivity growth and global GDP by as much as 7% over time, according to a Goldman Sachs report. The positive impacts of automation and AI on the workforce include increased efficiency and productivity, reduced costs, and improved accuracy and quality. Automation has made many processes more efficient, ultimately benefiting businesses and the economy as a whole. By focusing on the positive aspects of AI and automation, we can work together to create a more prosperous and equitable future for all.
+
+
+
+
+<span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```json</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">{</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action&quot;: &quot;DuckDuckGo Search&quot;,</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action_input&quot;: &quot;negative impact of AI and automation on employment&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">}</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">Some workforce experts say AI and other new technologies will hurt middle-level, white-collar jobs more than lower-paying, physically intensive jobs. McKinsey&#39;s Madgavkar said it will be hard... Some uses of AI are unlikely to impact human jobs. For example, the image processing AI in new cars which allows for automatic braking in the event of a potential crash. That&#39;s not... AI-powered job automation is a pressing concern as the technology is adopted in industries like marketing, manufacturing and healthcare. Eighty-five million jobs are expected to be lost to automation between 2020 and 2025, with Black and Latino employees left especially vulnerable. Bloomberg reports that &quot;more than 120 million workers globally will need retraining in the next three years due to artificial intelligence&#39;s impact on jobs, according to an IBM survey.&quot;. That report and interpretations of it seem to suggest that adoption of AI may result in massive job losses and requires massive retraining. This new way of assessing potential is potentially highly valuable in a world where machines will inevitably be making humans redundant in some roles - such as drivers and machine operators - and...</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green">```json</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">{</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action&quot;: &quot;Final Answer&quot;,</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action_input&quot;: &quot;Recent research indicates that AI and automation could lead to the loss of 85 million jobs between 2020 and 2025, with middle-level, white-collar jobs being hit the hardest. Black and Latino employees are particularly vulnerable to these changes. Furthermore, over 120 million workers worldwide may need retraining within the next three years due to AI&#39;s impact on jobs, as reported by an IBM survey. This highlights the urgent need for retraining and support programs to help workers adapt to the rapidly changing job market. The potential job losses and workforce displacement caused by AI and automation cannot be ignored, and we must take action to ensure a fair and equitable transition for all.&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">}</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```</span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+(AI alarmist): Recent research indicates that AI and automation could lead to the loss of 85 million jobs between 2020 and 2025, with middle-level, white-collar jobs being hit the hardest. Black and Latino employees are particularly vulnerable to these changes. Furthermore, over 120 million workers worldwide may need retraining within the next three years due to AI&#39;s impact on jobs, as reported by an IBM survey. This highlights the urgent need for retraining and support programs to help workers adapt to the rapidly changing job market. The potential job losses and workforce displacement caused by AI and automation cannot be ignored, and we must take action to ensure a fair and equitable transition for all.
+
+
+
+
+<span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```json</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">{</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action&quot;: &quot;Wikipedia&quot;,</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action_input&quot;: &quot;AI and automation impact on employment&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">}</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-C200">Page: Technological unemployment</span>
+<span class=" -Color -Color-Bold -Color-Bold-C200">Summary: Technological unemployment is the loss of jobs caused by technological change. It is a key type of structural unemployment.</span>
+<span class=" -Color -Color-Bold -Color-Bold-C200">Technological change typically includes the introduction of labour-saving &quot;mechanical-muscle&quot; machines or more efficient &quot;mechanical-mind&quot; processes (automation), and humans&#39; role in these processes are minimized. Just as horses were gradually made obsolete as transport by the automobile and as labourer by the tractor, humans&#39; jobs have also been affected throughout modern history. Historical examples include artisan weavers reduced to poverty after the introduction of mechanized looms. During World War II, Alan Turing&#39;s Bombe machine compressed and decoded thousands of man-years worth of encrypted data in a matter of hours. A contemporary example of technological unemployment is the displacement of retail cashiers by self-service tills and cashierless stores.</span>
+<span class=" -Color -Color-Bold -Color-Bold-C200">That technological change can cause short-term job losses is widely accepted. The view that it can lead to lasting increases in unemployment has long been controversial. Participants in the technological unemployment debates can be broadly divided into optimists and pessimists. Optimists agree that innovation may be disruptive to jobs in the short term, yet hold that various compensation effects ensure there is never a long-term negative impact on jobs. Whereas pessimists contend that at least in some circumstances, new technologies can lead to a lasting decline in the total number of workers in employment. The phrase &quot;technological unemployment&quot; was popularised by John Maynard Keynes in the 1930s, who said it was &quot;only a temporary phase of maladjustment&quot;. Yet the issue of machines displacing human labour has been discussed since at least Aristotle&#39;s time.</span>
+<span class=" -Color -Color-Bold -Color-Bold-C200">Prior to the 18th century, both the elite and common people would generally take the pessimistic view on technological unemployment, at least in cases where the issue arose. Due to generally low unemployment in much of pre-modern history, the topic was rarely a prominent concern. In the 18th century fears over the impact of machinery on jobs intensified with the growth of mass unemployment, especially in Great Britain which was then at the forefront of the Industrial Revolution. Yet some economic thinkers began to argue against these fears, claiming that overall innovation would not have negative effects on jobs. These arguments were formalised in the early 19th century by the classical economists. During the second half of the 19th century, it became increasingly apparent that technological progress was benefiting all sections of society, including the working class. Concerns over the negative impact of innovation diminished. The term &quot;Luddite fallacy&quot; was coined to describe the thinking that innovation would have lasting harmful effects on employment.</span>
+<span class=" -Color -Color-Bold -Color-Bold-C200">The view that technology is unlikely to lead to long-term unemployment has been repeatedly challenged by a minority of economists. In the early 1800s these included David Ricardo himself. There were dozens of economists warning about technological unemployment during brief intensifications of the debate that spiked in the 1930s and 1960s. Especially in Europe, there were further warnings in the closing two decades of the twentieth century, as commentators noted an enduring rise in unemployment suffered by many industrialised nations since the 1970s. Yet a clear majority of both professional economists and the interested general public held the optimistic view through most of the 20th century.</span>
+<span class=" -Color -Color-Bold -Color-Bold-C200">In the second decade of the 21st century, a number of studies have been released suggesting that technological unemployment may increase worldwide. Oxford Professors Carl Benedikt Frey and Michael Osborne, for example, have estimated that 47 percent of U.S. jobs are at risk of automation. However, their findings have frequently been misinterpreted, and on the PBS NewsHours they again made clear that their findings do not necessarily imply future technological unemployment. While many economists and commentators still argue such fears are unfounded, as was widely accepted for most of the previous two centuries, concern over technological unemployment is growing once again. A report in Wired in 2017 quotes knowledgeable people such as economist Gene Sperling and management professor Andrew McAfee on the idea that handling existing and impending job loss to automation is a &quot;significant issue&quot;. Recent technological innovations have the potential to displace humans in the professional, white-collar, low-skilled, creative fields, and other &quot;mental jobs&quot;. The World Bank&#39;s World Development Report 2019 argues that while automation displaces workers, technological innovation creates more new industries and jobs on balance.</span>
+
+<span class=" -Color -Color-Bold -Color-Bold-C200">Page: Artificial intelligence</span>
+<span class=" -Color -Color-Bold -Color-Bold-C200">Summary: Artificial intelligence (AI) is intelligence—perceiving, synthesizing, and inferring information—demonstrated by machines, as opposed to intelligence displayed by non-human animals or by humans. Example tasks in which this is done include speech recognition, computer vision, translation between (natural) languages, as well as other mappings of inputs.</span>
+<span class=" -Color -Color-Bold -Color-Bold-C200">AI applications include advanced web search engines (e.g., Google Search), recommendation systems (used by YouTube, Amazon, and Netflix), understanding human speech (such as Siri and Alexa), self-driving cars (e.g., Waymo), generative or creative tools (ChatGPT and AI art), automated decision-making, and competing at the highest level in strategic game systems (such as chess and Go).As machines become increasingly capable, tasks considered to require &quot;intelligence&quot; are often removed from the definition of AI, a phenomenon known as the AI effect. For instance, optical character recognition is frequently excluded from things considered to be AI, having become a routine technology.Artificial intelligence was founded as an academic discipline in 1956, and in the years since it has experienced several waves of optimism, followed by disappointment and the loss of funding (known as an &quot;AI winter&quot;), followed by new approaches, success, and renewed funding. AI research has tried and discarded many different approaches, including simulating the brain, modeling human problem solving, formal logic, large databases of knowledge, and imitating animal behavior. In the first decades of the 21st century, highly mathematical and statistical machine learning has dominated the field, and this technique has proved highly successful, helping to solve many challenging problems throughout industry and academia.The various sub-fields of AI research are centered around particular goals and the use of particular tools. The traditional goals of AI research include reasoning, knowledge representation, planning, learning, natural language processing, perception, and the ability to move and manipulate objects. General intelligence (the ability to solve an arbitrary problem) is among the field&#39;s long-term goals. To solve these problems, AI researchers have adapted and integrated a wide range of problem-solving techniques, including search and mathematical optimization, formal logic, artificial neural networks, and methods based on statistics, probability, and economics. AI also draws upon computer science, psychology, linguistics, philosophy, and many other fields.</span>
+<span class=" -Color -Color-Bold -Color-Bold-C200">The field was founded on the assumption that human intelligence &quot;can be so precisely described that a machine can be made to simulate it&quot;. This raised philosophical arguments about the mind and the ethical consequences of creating artificial beings endowed with human-like intelligence; these issues have previously been explored by myth, fiction, and philosophy since antiquity. Computer scientists and philosophers have since suggested that AI may become an existential risk to humanity if its rational capacities are not steered towards beneficial goals. The term artificial intelligence has also been criticized for overhyping AI&#39;s true technological capabilities.</span>
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Thought:<span class=" -Color -Color-Bold -Color-Bold-Green">```json</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">{</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action&quot;: &quot;Final Answer&quot;,</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">    &quot;action_input&quot;: &quot;AI alarmist, I understand your concerns about job losses and workforce displacement. However, it&#39;s important to note that technological unemployment has been a topic of debate for centuries, with both optimistic and pessimistic views. While AI and automation may displace some jobs, they also create new opportunities and industries. According to a study by Oxford Professors Carl Benedikt Frey and Michael Osborne, 47% of U.S. jobs are at risk of automation, but it&#39;s crucial to remember that their findings do not necessarily imply future technological unemployment. The World Bank&#39;s World Development Report 2019 also argues that while automation displaces workers, technological innovation creates more new industries and jobs on balance. By focusing on retraining and support programs, we can help workers adapt to the changing job market and ensure a fair and equitable transition for all.&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">}</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">```</span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+(AI accelerationist): AI alarmist, I understand your concerns about job losses and workforce displacement. However, it&#39;s important to note that technological unemployment has been a topic of debate for centuries, with both optimistic and pessimistic views. While AI and automation may displace some jobs, they also create new opportunities and industries. According to a study by Oxford Professors Carl Benedikt Frey and Michael Osborne, 47% of U.S. jobs are at risk of automation, but it&#39;s crucial to remember that their findings do not necessarily imply future technological unemployment. The World Bank&#39;s World Development Report 2019 also argues that while automation displaces workers, technological innovation creates more new industries and jobs on balance. By focusing on retraining and support programs, we can help workers adapt to the changing job market and ensure a fair and equitable transition for all.
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Harrison Chase<br/>
+  
+      &copy; Copyright 2023, Harrison Chase.<br/>
+    Last updated on Jun 05, 2023.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

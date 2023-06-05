@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/replicate",
+  "id": "integrations/replicate",
+  "title": "Replicate",
+  "description": "This page covers how to run models on Replicate within LangChain.",
+  "source": "@site/docs/integrations/replicate.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/replicate",
+  "permalink": "/docs/integrations/replicate",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/replicate.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

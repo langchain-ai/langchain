@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/imsdb",
+  "id": "integrations/imsdb",
+  "title": "IMSDb",
+  "description": "IMSDb is the Internet Movie Script Database.",
+  "source": "@site/docs/integrations/imsdb.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/imsdb",
+  "permalink": "/docs/integrations/imsdb",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/imsdb.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

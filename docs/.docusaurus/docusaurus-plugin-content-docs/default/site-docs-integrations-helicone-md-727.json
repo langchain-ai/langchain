@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/helicone",
+  "id": "integrations/helicone",
+  "title": "Helicone",
+  "description": "This page covers how to use the Helicone ecosystem within LangChain.",
+  "source": "@site/docs/integrations/helicone.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/helicone",
+  "permalink": "/docs/integrations/helicone",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/helicone.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/aws_s3",
+  "id": "integrations/aws_s3",
+  "title": "AWS S3 Directory",
+  "description": "Amazon Simple Storage Service (Amazon S3) is an object storage service.",
+  "source": "@site/docs/integrations/aws_s3.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/aws_s3",
+  "permalink": "/docs/integrations/aws_s3",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/aws_s3.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

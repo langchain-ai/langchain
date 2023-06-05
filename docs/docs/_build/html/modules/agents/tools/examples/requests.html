@@ -1,0 +1,2054 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Requests &#8212; 🦜🔗 LangChain 0.0.190</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../../../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/clipboard.min.js"></script>
+    <script src="../../../../_static/copybutton.js"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script src="../../../../_static/js/mendablesearch.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="SceneXplain" href="sceneXplain.html" />
+    <link rel="prev" title="Python REPL" href="python.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../../../index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">🦜🔗 LangChain 0.0.190</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Get started
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../getting_started/getting_started.html">
+   Quickstart
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../getting_started/installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Modules
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../memory.html">
+   Memory
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../memory/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../../memory/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/types/buffer.html">
+       ConversationBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/types/buffer_window.html">
+       ConversationBufferWindowMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/types/entity_summary_memory.html">
+       Entity Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/types/kg.html">
+       Conversation Knowledge Graph Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/types/summary.html">
+       ConversationSummaryMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/types/summary_buffer.html">
+       ConversationSummaryBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/types/token_buffer.html">
+       ConversationTokenBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/types/vectorstore_retriever_memory.html">
+       VectorStore-Backed Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/adding_memory.html">
+       How to add Memory to an LLMChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/adding_memory_chain_multiple_inputs.html">
+       How to add memory to a Multi-Input Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/agent_with_memory.html">
+       How to add Memory to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/agent_with_memory_in_db.html">
+       Adding Message Memory backed by a database to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/cassandra_chat_message_history.html">
+       Cassandra Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/conversational_customization.html">
+       How to customize conversational memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/custom_memory.html">
+       How to create a custom Memory class
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/dynamodb_chat_message_history.html">
+       Dynamodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/entity_memory_with_sqlite.html">
+       Entity Memory with SQLite storage
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/momento_chat_message_history.html">
+       Momento Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/mongodb_chat_message_history.html">
+       Mongodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/motorhead_memory.html">
+       Motörhead Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/motorhead_memory_managed.html">
+       Motörhead Memory (Managed)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/multiple_memory.html">
+       How to use multiple memory classes in the same chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/postgres_chat_message_history.html">
+       Postgres Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/redis_chat_message_history.html">
+       Redis Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../memory/examples/zep_memory.html">
+       Zep Memory
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../chains.html">
+   Chains
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../chains/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../../chains/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/generic/async_chain.html">
+       Async API for Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/generic/custom_chain.html">
+       Creating a custom Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/generic/from_hub.html">
+       Loading from LangChainHub
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/generic/llm_chain.html">
+       LLM Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/generic/router.html">
+       Router Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/generic/sequential_chains.html">
+       Sequential Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/generic/serialization.html">
+       Serialization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/generic/transformation.html">
+       Transformation Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/index_examples/analyze_document.html">
+       Analyze Document
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/index_examples/chat_vector_db.html">
+       Chat Over Documents with Chat History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/index_examples/graph_qa.html">
+       Graph QA
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/index_examples/hyde.html">
+       Hypothetical Document Embeddings
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/index_examples/qa_with_sources.html">
+       Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/index_examples/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/index_examples/summarize.html">
+       Summarization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/index_examples/vector_db_qa.html">
+       Retrieval Question/Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/index_examples/vector_db_qa_with_sources.html">
+       Retrieval Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/index_examples/vector_db_text_generation.html">
+       Vector DB Text Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/api.html">
+       API Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/constitutional_chain.html">
+       Self-Critique Chain with Constitutional AI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/flare.html">
+       FLARE
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/graph_cypher_qa.html">
+       GraphCypherQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/llm_bash.html">
+       BashChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/llm_checker.html">
+       LLMCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/llm_requests.html">
+       LLMRequestsChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/llm_summarization_checker.html">
+       LLMSummarizationCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/moderation.html">
+       Moderation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/multi_prompt_router.html">
+       Router Chains: Selecting from multiple prompts with MultiPromptChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/multi_retrieval_qa_router.html">
+       Router Chains: Selecting from multiple prompts with MultiRetrievalQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/openapi.html">
+       OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/pal.html">
+       PAL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../chains/examples/sqlite.html">
+       SQL Chain example
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../reference/modules/chains.html">
+     Reference
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="../../../agents.html">
+   Agents
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 current active has-children">
+    <a class="reference internal" href="../../tools.html">
+     Tools
+    </a>
+    <input checked="" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+    <label for="toctree-checkbox-6">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul class="current">
+     <li class="toctree-l3">
+      <a class="reference internal" href="../getting_started.html">
+       Getting Started
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../custom_tools.html">
+       Defining Custom Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../multi_input_tool.html">
+       Multi-Input Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../tool_input_validation.html">
+       Tool Input Schema
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="apify.html">
+       Apify
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="arxiv.html">
+       ArXiv API Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="awslambda.html">
+       AWS Lambda API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="bash.html">
+       Shell Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="bing_search.html">
+       Bing Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="brave_search.html">
+       Brave Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="chatgpt_plugins.html">
+       ChatGPT Plugins
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="ddg.html">
+       DuckDuckGo Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="filesystem.html">
+       File System Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="google_places.html">
+       Google Places
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="google_search.html">
+       Google Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="google_serper.html">
+       Google Serper API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="gradio_tools.html">
+       Gradio Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="graphql.html">
+       GraphQL tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="huggingface_tools.html">
+       HuggingFace Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="human_tools.html">
+       Human as a tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="ifttt.html">
+       IFTTT WebHooks
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="metaphor_search.html">
+       Metaphor Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="openweathermap.html">
+       OpenWeatherMap API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="pubmed.html">
+       PubMed Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="python.html">
+       Python REPL
+      </a>
+     </li>
+     <li class="toctree-l3 current active">
+      <a class="current reference internal" href="#">
+       Requests
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="sceneXplain.html">
+       SceneXplain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="search_tools.html">
+       Search Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="searx_search.html">
+       SearxNG Search API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="serpapi.html">
+       SerpAPI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="twilio.html">
+       Twilio
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="wikipedia.html">
+       Wikipedia
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="wolfram_alpha.html">
+       Wolfram Alpha
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="youtube.html">
+       YouTubeSearchTool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="zapier.html">
+       Zapier Natural Language Actions API
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../agents.html">
+     Agents
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+    <label for="toctree-checkbox-7">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agent_types.html">
+       Agent Types
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/custom_agent.html">
+       Custom Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/custom_llm_agent.html">
+       Custom LLM Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/custom_llm_chat_agent.html">
+       Custom LLM Agent (with a ChatModel)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/custom_mrkl_agent.html">
+       Custom MRKL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/custom_multi_action_agent.html">
+       Custom MultiAction Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/custom_agent_with_tool_retrieval.html">
+       Custom Agent with Tool Retrieval
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/examples/chat_conversation_agent.html">
+       Conversation Agent (for Chat Models)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/examples/conversational_agent.html">
+       Conversation Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/examples/mrkl.html">
+       MRKL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/examples/mrkl_chat.html">
+       MRKL Chat
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/examples/react.html">
+       ReAct
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/examples/self_ask_with_search.html">
+       Self Ask With Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/examples/structured_chat.html">
+       Structured Tool Chat Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../toolkits.html">
+     Toolkits
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <label for="toctree-checkbox-8">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/azure_cognitive_services.html">
+       Azure Cognitive Services Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/csv.html">
+       CSV Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/gmail.html">
+       Gmail Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/jira.html">
+       Jira
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/json.html">
+       JSON Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/openapi.html">
+       OpenAPI agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/openapi_nla.html">
+       Natural Language APIs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/pandas.html">
+       Pandas Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/playwright.html">
+       PlayWright Browser Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/powerbi.html">
+       PowerBI Dataset Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/python.html">
+       Python Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/spark.html">
+       Spark Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/spark_sql.html">
+       Spark SQL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/sql_database.html">
+       SQL Database Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../toolkits/examples/vectorstore.html">
+       Vectorstore Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../agent_executors.html">
+     Agent Executors
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+    <label for="toctree-checkbox-9">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agent_executors/examples/agent_vectorstore.html">
+       How to combine agents and vectorstores
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agent_executors/examples/async_agent.html">
+       How to use the async API for Agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agent_executors/examples/chatgpt_clone.html">
+       How to create ChatGPT Clone
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agent_executors/examples/handle_parsing_errors.html">
+       Handle Parsing Errors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agent_executors/examples/intermediate_steps.html">
+       How to access intermediate steps
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agent_executors/examples/max_iterations.html">
+       How to cap the max number of iterations
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agent_executors/examples/max_time_limit.html">
+       How to use a timeout for the agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agent_executors/examples/sharedmemory_for_tools.html">
+       How to add SharedMemory to an Agent and its Tools
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../plan_and_execute.html">
+     Plan and Execute
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../callbacks/getting_started.html">
+   Callbacks
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Examples
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../../use_cases.html">
+   Use cases
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../use_cases/autonomous_agents.html">
+     Autonomous Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../use_cases/agent_simulations.html">
+     Agent Simulations
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../use_cases/personal_assistants.html">
+     Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../use_cases/question_answering.html">
+     Question Answering over Docs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../use_cases/chatbots.html">
+     Chatbots
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../use_cases/tabular.html">
+     Querying Tabular Data
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../use_cases/code.html">
+     Code Understanding
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../use_cases/apis.html">
+     Interacting with APIs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../use_cases/extraction.html">
+     Extraction
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../use_cases/summarization.html">
+     Summarization
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../../../use_cases/evaluation.html">
+     Evaluation
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+    <label for="toctree-checkbox-11">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/agent_benchmarking.html">
+       Agent Benchmarking: Search + Calculator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/agent_vectordb_sota_pg.html">
+       Agent VectorDB Question Answering Benchmarking
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/benchmarking_template.html">
+       Benchmarking Template
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/data_augmented_question_answering.html">
+       Data Augmented Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/generic_agent_evaluation.html">
+       Generic Agent Evaluation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/huggingface_datasets.html">
+       Using Hugging Face Datasets
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/openapi_eval.html">
+       Evaluating an OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/qa_benchmarking_pg.html">
+       Question Answering Benchmarking: Paul Graham Essay
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/qa_benchmarking_sota.html">
+       Question Answering Benchmarking: State of the Union Address
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/qa_generation.html">
+       QA Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../use_cases/evaluation/sql_qa_benchmarking_chinook.html">
+       SQL Question Answering Benchmarking: Chinook
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../../additional_resources.html">
+   Additional resources
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+  <label for="toctree-checkbox-12">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../additional_resources/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference external" href="https://github.com/kyrolabs/awesome-langchain">
+     Gallery
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Ecosystem
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../../integrations.html">
+   Integrations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+  <label for="toctree-checkbox-13">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/agent_with_wandb_tracing.html">
+     Tracing Walkthrough
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/ai21.html">
+     AI21 Labs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/aim_tracking.html">
+     Aim
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/airbyte.html">
+     Airbyte
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/aleph_alpha.html">
+     Aleph Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/analyticdb.html">
+     AnalyticDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/annoy.html">
+     Annoy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/anyscale.html">
+     Anyscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/apify.html">
+     Apify
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/argilla.html">
+     Argilla
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/arxiv.html">
+     Arxiv
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/atlas.html">
+     AtlasDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/aws_s3.html">
+     AWS S3 Directory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/azlyrics.html">
+     AZLyrics
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/azure_blob_storage.html">
+     Azure Blob Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/azure_cognitive_search_.html">
+     Azure Cognitive Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/azure_openai.html">
+     Azure OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/bananadev.html">
+     Banana
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/beam.html">
+     Beam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/bedrock.html">
+     Bedrock
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/bilibili.html">
+     BiliBili
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/blackboard.html">
+     Blackboard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/cassandra.html">
+     Cassandra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/cerebriumai.html">
+     CerebriumAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/chroma.html">
+     Chroma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/clearml_tracking.html">
+     ClearML
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/cohere.html">
+     Cohere
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/college_confidential.html">
+     College Confidential
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/comet_tracking.html">
+     Comet
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/confluence.html">
+     Confluence
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/ctransformers.html">
+     C Transformers
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/databerry.html">
+     Databerry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/databricks.html">
+     Databricks
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/deepinfra.html">
+     DeepInfra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/deeplake.html">
+     Deep Lake
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/diffbot.html">
+     Diffbot
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/discord.html">
+     Discord
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/docugami.html">
+     Docugami
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/duckdb.html">
+     DuckDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/elasticsearch.html">
+     Elasticsearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/evernote.html">
+     EverNote
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/facebook_chat.html">
+     Facebook Chat
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/figma.html">
+     Figma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/forefrontai.html">
+     ForefrontAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/git.html">
+     Git
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/gitbook.html">
+     GitBook
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/google_bigquery.html">
+     Google BigQuery
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/google_cloud_storage.html">
+     Google Cloud Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/google_drive.html">
+     Google Drive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/google_search.html">
+     Google Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/google_serper.html">
+     Google Serper
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/gooseai.html">
+     GooseAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/gpt4all.html">
+     GPT4All
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/graphsignal.html">
+     Graphsignal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/gutenberg.html">
+     Gutenberg
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/hacker_news.html">
+     Hacker News
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/hazy_research.html">
+     Hazy Research
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/helicone.html">
+     Helicone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/huggingface.html">
+     Hugging Face
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/ifixit.html">
+     iFixit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/imsdb.html">
+     IMSDb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/jina.html">
+     Jina
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/lancedb.html">
+     LanceDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/llamacpp.html">
+     Llama.cpp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/mediawikidump.html">
+     MediaWikiDump
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/metal.html">
+     Metal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/microsoft_onedrive.html">
+     Microsoft OneDrive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/microsoft_powerpoint.html">
+     Microsoft PowerPoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/microsoft_word.html">
+     Microsoft Word
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/milvus.html">
+     Milvus
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/mlflow_tracking.html">
+     MLflow
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/modal.html">
+     Modal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/modern_treasury.html">
+     Modern Treasury
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/momento.html">
+     Momento
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/myscale.html">
+     MyScale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/nlpcloud.html">
+     NLPCloud
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/notion.html">
+     Notion DB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/obsidian.html">
+     Obsidian
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/openai.html">
+     OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/opensearch.html">
+     OpenSearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/openweathermap.html">
+     OpenWeatherMap
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/petals.html">
+     Petals
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/pgvector.html">
+     PGVector
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/pinecone.html">
+     Pinecone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/pipelineai.html">
+     PipelineAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/predictionguard.html">
+     Prediction Guard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/promptlayer.html">
+     PromptLayer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/psychic.html">
+     Psychic
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/qdrant.html">
+     Qdrant
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/rebuff.html">
+     Rebuff
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/reddit.html">
+     Reddit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/redis.html">
+     Redis
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/replicate.html">
+     Replicate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/roam.html">
+     Roam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/runhouse.html">
+     Runhouse
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/rwkv.html">
+     RWKV-4
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/sagemaker_endpoint.html">
+     SageMaker Endpoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/searx.html">
+     SearxNG Search API
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/serpapi.html">
+     SerpAPI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/sklearn.html">
+     scikit-learn
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/slack.html">
+     Slack
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/spacy.html">
+     spaCy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/spreedly.html">
+     Spreedly
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/stochasticai.html">
+     StochasticAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/stripe.html">
+     Stripe
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/tair.html">
+     Tair
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/telegram.html">
+     Telegram
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/tomarkdown.html">
+     2Markdown
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/trello.html">
+     Trello
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/twitter.html">
+     Twitter
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/unstructured.html">
+     Unstructured
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/vectara.html">
+     Vectara
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/vespa.html">
+     Vespa
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/wandb_tracking.html">
+     Weights &amp; Biases
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/weather.html">
+     Weather
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/weaviate.html">
+     Weaviate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/whatsapp.html">
+     WhatsApp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/whylabs_profiling.html">
+     WhyLabs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/wikipedia.html">
+     Wikipedia
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/wolfram_alpha.html">
+     Wolfram Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/writer.html">
+     Writer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/yeagerai.html">
+     Yeager.ai
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/zep.html">
+     Zep
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../integrations/zilliz.html">
+     Zilliz
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../ecosystem/deployments.html">
+   Deployments
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://github.com/hwchase17/langchain-hub">
+   LangChainHub
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../dependents.html">
+   Dependents
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Find us
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference external" href="https://twitter.com/LangChainAI">
+   Twitter
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://discord.gg/6adMQxSpJS">
+   Discord
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://forms.gle/57d8AmXBYp8PP8tZA">
+   Request production support
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+<a href="https://github.com/hwchase17/langchain"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="bottom"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="../../../../_sources/modules/agents/tools/examples/requests.ipynb.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.ipynb</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#inside-the-tool">
+   Inside the tool
+  </a>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Requests</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#inside-the-tool">
+   Inside the tool
+  </a>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <section id="requests">
+<h1>Requests<a class="headerlink" href="#requests" title="Permalink to this headline">#</a></h1>
+<p>The web contains a lot of information that LLMs do not have access to. In order to easily let LLMs interact with that information, we provide a wrapper around the Python Requests module that takes in a URL and fetches data from that URL.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.agents</span> <span class="kn">import</span> <span class="n">load_tools</span>
+
+<span class="n">requests_tools</span> <span class="o">=</span> <span class="n">load_tools</span><span class="p">([</span><span class="s2">&quot;requests_all&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">requests_tools</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[RequestsGetTool(name=&#39;requests_get&#39;, description=&#39;A portal to the internet. Use this when you need to get specific content from a website. Input should be a  url (i.e. https://www.google.com). The output will be the text response of the GET request.&#39;, args_schema=None, return_direct=False, verbose=False, callbacks=None, callback_manager=None, requests_wrapper=TextRequestsWrapper(headers=None, aiosession=None)),
+ RequestsPostTool(name=&#39;requests_post&#39;, description=&#39;Use this when you want to POST to a website.\n    Input should be a json string with two keys: &quot;url&quot; and &quot;data&quot;.\n    The value of &quot;url&quot; should be a string, and the value of &quot;data&quot; should be a dictionary of \n    key-value pairs you want to POST to the url.\n    Be careful to always use double quotes for strings in the json string\n    The output will be the text response of the POST request.\n    &#39;, args_schema=None, return_direct=False, verbose=False, callbacks=None, callback_manager=None, requests_wrapper=TextRequestsWrapper(headers=None, aiosession=None)),
+ RequestsPatchTool(name=&#39;requests_patch&#39;, description=&#39;Use this when you want to PATCH to a website.\n    Input should be a json string with two keys: &quot;url&quot; and &quot;data&quot;.\n    The value of &quot;url&quot; should be a string, and the value of &quot;data&quot; should be a dictionary of \n    key-value pairs you want to PATCH to the url.\n    Be careful to always use double quotes for strings in the json string\n    The output will be the text response of the PATCH request.\n    &#39;, args_schema=None, return_direct=False, verbose=False, callbacks=None, callback_manager=None, requests_wrapper=TextRequestsWrapper(headers=None, aiosession=None)),
+ RequestsPutTool(name=&#39;requests_put&#39;, description=&#39;Use this when you want to PUT to a website.\n    Input should be a json string with two keys: &quot;url&quot; and &quot;data&quot;.\n    The value of &quot;url&quot; should be a string, and the value of &quot;data&quot; should be a dictionary of \n    key-value pairs you want to PUT to the url.\n    Be careful to always use double quotes for strings in the json string.\n    The output will be the text response of the PUT request.\n    &#39;, args_schema=None, return_direct=False, verbose=False, callbacks=None, callback_manager=None, requests_wrapper=TextRequestsWrapper(headers=None, aiosession=None)),
+ RequestsDeleteTool(name=&#39;requests_delete&#39;, description=&#39;A portal to the internet. Use this when you need to make a DELETE request to a URL. Input should be a specific url, and the output will be the text response of the DELETE request.&#39;, args_schema=None, return_direct=False, verbose=False, callbacks=None, callback_manager=None, requests_wrapper=TextRequestsWrapper(headers=None, aiosession=None))]
+</pre></div>
+</div>
+</div>
+</div>
+<section id="inside-the-tool">
+<h2>Inside the tool<a class="headerlink" href="#inside-the-tool" title="Permalink to this headline">#</a></h2>
+<p>Each requests tool contains a <code class="docutils literal notranslate"><span class="pre">requests</span></code> wrapper. You can work with these wrappers directly below</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Each tool wrapps a requests wrapper</span>
+<span class="n">requests_tools</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">requests_wrapper</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>TextRequestsWrapper(headers=None, aiosession=None)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.utilities</span> <span class="kn">import</span> <span class="n">TextRequestsWrapper</span>
+<span class="n">requests</span> <span class="o">=</span> <span class="n">TextRequestsWrapper</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;https://www.google.com&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&#39;&lt;!doctype html&gt;&lt;html itemscope=&quot;&quot; itemtype=&quot;http://schema.org/WebPage&quot; lang=&quot;en&quot;&gt;&lt;head&gt;&lt;meta content=&quot;Search the world\&#39;s information, including webpages, images, videos and more. Google has many special features to help you find exactly what you\&#39;re looking for.&quot; name=&quot;description&quot;&gt;&lt;meta content=&quot;noodp&quot; name=&quot;robots&quot;&gt;&lt;meta content=&quot;text/html; charset=UTF-8&quot; http-equiv=&quot;Content-Type&quot;&gt;&lt;meta content=&quot;/images/branding/googleg/1x/googleg_standard_color_128dp.png&quot; itemprop=&quot;image&quot;&gt;&lt;title&gt;Google&lt;/title&gt;&lt;script nonce=&quot;MXrF0nnIBPkxBza4okrgPA&quot;&gt;(function(){window.google={kEI:\&#39;TA9QZOa5EdTakPIPuIad-Ac\&#39;,kEXPI:\&#39;0,1359409,6059,206,4804,2316,383,246,5,1129120,1197768,626,380097,16111,28687,22431,1361,12319,17581,4997,13228,37471,7692,2891,3926,213,7615,606,50058,8228,17728,432,3,346,1244,1,16920,2648,4,1528,2304,29062,9871,3194,13658,2980,1457,16786,5803,2554,4094,7596,1,42154,2,14022,2373,342,23024,6699,31123,4568,6258,23418,1252,5835,14967,4333,4239,3245,445,2,2,1,26632,239,7916,7321,60,2,3,15965,872,7830,1796,10008,7,1922,9779,36154,6305,2007,17765,427,20136,14,82,2730,184,13600,3692,109,2412,1548,4308,3785,15175,3888,1515,3030,5628,478,4,9706,1804,7734,2738,1853,1032,9480,2995,576,1041,5648,3722,2058,3048,2130,2365,662,476,958,87,111,5807,2,975,1167,891,3580,1439,1128,7343,426,249,517,95,1102,14,696,1270,750,400,2208,274,2776,164,89,119,204,139,129,1710,2505,320,3,631,439,2,300,1645,172,1783,784,169,642,329,401,50,479,614,238,757,535,717,102,2,739,738,44,232,22,442,961,45,214,383,567,500,487,151,120,256,253,179,673,2,102,2,10,535,123,135,1685,5206695,190,2,20,50,198,5994221,2804424,3311,141,795,19735,1,1,346,5008,7,13,10,24,31,2,39,1,5,1,16,7,2,41,247,4,9,7,9,15,4,4,121,24,23944834,4042142,1964,16672,2894,6250,15739,1726,647,409,837,1411438,146986,23612960,7,84,93,33,101,816,57,532,163,1,441,86,1,951,73,31,2,345,178,243,472,2,148,962,455,167,178,29,702,1856,288,292,805,93,137,68,416,177,292,399,55,95,2566\&#39;,kBL:\&#39;hw1A\&#39;,kOPI:89978449};google.sn=\&#39;webhp\&#39;;google.kHL=\&#39;en\&#39;;})();(function(){\nvar h=this||self;function l(){return void 0!==window.google&amp;&amp;void 0!==window.google.kOPI&amp;&amp;0!==window.google.kOPI?window.google.kOPI:null};var m,n=[];function p(a){for(var b;a&amp;&amp;(!a.getAttribute||!(b=a.getAttribute(&quot;eid&quot;)));)a=a.parentNode;return b||m}function q(a){for(var b=null;a&amp;&amp;(!a.getAttribute||!(b=a.getAttribute(&quot;leid&quot;)));)a=a.parentNode;return b}function r(a){/^http:/i.test(a)&amp;&amp;&quot;https:&quot;===window.location.protocol&amp;&amp;(google.ml&amp;&amp;google.ml(Error(&quot;a&quot;),!1,{src:a,glmm:1}),a=&quot;&quot;);return a}\nfunction t(a,b,c,d,k){var e=&quot;&quot;;-1===b.search(&quot;&amp;ei=&quot;)&amp;&amp;(e=&quot;&amp;ei=&quot;+p(d),-1===b.search(&quot;&amp;lei=&quot;)&amp;&amp;(d=q(d))&amp;&amp;(e+=&quot;&amp;lei=&quot;+d));d=&quot;&quot;;var g=-1===b.search(&quot;&amp;cshid=&quot;)&amp;&amp;&quot;slh&quot;!==a,f=[];f.push([&quot;zx&quot;,Date.now().toString()]);h._cshid&amp;&amp;g&amp;&amp;f.push([&quot;cshid&quot;,h._cshid]);c=c();null!=c&amp;&amp;f.push([&quot;opi&quot;,c.toString()]);for(c=0;c&lt;f.length;c++){if(0===c||0&lt;c)d+=&quot;&amp;&quot;;d+=f[c][0]+&quot;=&quot;+f[c][1]}return&quot;/&quot;+(k||&quot;gen_204&quot;)+&quot;?atyp=i&amp;ct=&quot;+String(a)+&quot;&amp;cad=&quot;+(b+e+d)};m=google.kEI;google.getEI=p;google.getLEI=q;google.ml=function(){return null};google.log=function(a,b,c,d,k,e){e=void 0===e?l:e;c||(c=t(a,b,e,d,k));if(c=r(c)){a=new Image;var g=n.length;n[g]=a;a.onerror=a.onload=a.onabort=function(){delete n[g]};a.src=c}};google.logUrl=function(a,b){b=void 0===b?l:b;return t(&quot;&quot;,a,b)};}).call(this);(function(){google.y={};google.sy=[];google.x=function(a,b){if(a)var c=a.id;else{do c=Math.random();while(google.y[c])}google.y[c]=[a,b];return!1};google.sx=function(a){google.sy.push(a)};google.lm=[];google.plm=function(a){google.lm.push.apply(google.lm,a)};google.lq=[];google.load=function(a,b,c){google.lq.push([[a],b,c])};google.loadAll=function(a,b){google.lq.push([a,b])};google.bx=!1;google.lx=function(){};}).call(this);google.f={};(function(){\ndocument.documentElement.addEventListener(&quot;submit&quot;,function(b){var a;if(a=b.target){var c=a.getAttribute(&quot;data-submitfalse&quot;);a=&quot;1&quot;===c||&quot;q&quot;===c&amp;&amp;!a.elements.q.value?!0:!1}else a=!1;a&amp;&amp;(b.preventDefault(),b.stopPropagation())},!0);document.documentElement.addEventListener(&quot;click&quot;,function(b){var a;a:{for(a=b.target;a&amp;&amp;a!==document.documentElement;a=a.parentElement)if(&quot;A&quot;===a.tagName){a=&quot;1&quot;===a.getAttribute(&quot;data-nohref&quot;);break a}a=!1}a&amp;&amp;b.preventDefault()},!0);}).call(this);&lt;/script&gt;&lt;style&gt;#gbar,#guser{font-size:13px;padding-top:1px !important;}#gbar{height:22px}#guser{padding-bottom:7px !important;text-align:right}.gbh,.gbd{border-top:1px solid #c9d7f1;font-size:1px}.gbh{height:0;position:absolute;top:24px;width:100%}@media all{.gb1{height:22px;margin-right:.5em;vertical-align:top}#gbar{float:left}}a.gb1,a.gb4{text-decoration:underline !important}a.gb1,a.gb4{color:#00c !important}.gbi .gb4{color:#dd8e27 !important}.gbf .gb4{color:#900 !important}\n&lt;/style&gt;&lt;style&gt;body,td,a,p,.h{font-family:arial,sans-serif}body{margin:0;overflow-y:scroll}#gog{padding:3px 8px 0}td{line-height:.8em}.gac_m td{line-height:17px}form{margin-bottom:20px}.h{color:#1558d6}em{font-weight:bold;font-style:normal}.lst{height:25px;width:496px}.gsfi,.lst{font:18px arial,sans-serif}.gsfs{font:17px arial,sans-serif}.ds{display:inline-box;display:inline-block;margin:3px 0 4px;margin-left:4px}input{font-family:inherit}body{background:#fff;color:#000}a{color:#4b11a8;text-decoration:none}a:hover,a:active{text-decoration:underline}.fl a{color:#1558d6}a:visited{color:#4b11a8}.sblc{padding-top:5px}.sblc a{display:block;margin:2px 0;margin-left:13px;font-size:11px}.lsbb{background:#f8f9fa;border:solid 1px;border-color:#dadce0 #70757a #70757a #dadce0;height:30px}.lsbb{display:block}#WqQANb a{display:inline-block;margin:0 12px}.lsb{background:url(/images/nav_logo229.png) 0 -261px repeat-x;border:none;color:#000;cursor:pointer;height:30px;margin:0;outline:0;font:15px arial,sans-serif;vertical-align:top}.lsb:active{background:#dadce0}.lst:focus{outline:none}&lt;/style&gt;&lt;script nonce=&quot;MXrF0nnIBPkxBza4okrgPA&quot;&gt;(function(){window.google.erd={jsr:1,bv:1785,de:true};\nvar h=this||self;var k,l=null!=(k=h.mei)?k:1,n,p=null!=(n=h.sdo)?n:!0,q=0,r,t=google.erd,v=t.jsr;google.ml=function(a,b,d,m,e){e=void 0===e?2:e;b&amp;&amp;(r=a&amp;&amp;a.message);if(google.dl)return google.dl(a,e,d),null;if(0&gt;v){window.console&amp;&amp;console.error(a,d);if(-2===v)throw a;b=!1}else b=!a||!a.message||&quot;Error loading script&quot;===a.message||q&gt;=l&amp;&amp;!m?!1:!0;if(!b)return null;q++;d=d||{};b=encodeURIComponent;var c=&quot;/gen_204?atyp=i&amp;ei=&quot;+b(google.kEI);google.kEXPI&amp;&amp;(c+=&quot;&amp;jexpid=&quot;+b(google.kEXPI));c+=&quot;&amp;srcpg=&quot;+b(google.sn)+&quot;&amp;jsr=&quot;+b(t.jsr)+&quot;&amp;bver=&quot;+b(t.bv);var f=a.lineNumber;void 0!==f&amp;&amp;(c+=&quot;&amp;line=&quot;+f);var g=\na.fileName;g&amp;&amp;(0&lt;g.indexOf(&quot;-extension:/&quot;)&amp;&amp;(e=3),c+=&quot;&amp;script=&quot;+b(g),f&amp;&amp;g===window.location.href&amp;&amp;(f=document.documentElement.outerHTML.split(&quot;\\n&quot;)[f],c+=&quot;&amp;cad=&quot;+b(f?f.substring(0,300):&quot;No script found.&quot;)));c+=&quot;&amp;jsel=&quot;+e;for(var u in d)c+=&quot;&amp;&quot;,c+=b(u),c+=&quot;=&quot;,c+=b(d[u]);c=c+&quot;&amp;emsg=&quot;+b(a.name+&quot;: &quot;+a.message);c=c+&quot;&amp;jsst=&quot;+b(a.stack||&quot;N/A&quot;);12288&lt;=c.length&amp;&amp;(c=c.substr(0,12288));a=c;m||google.log(0,&quot;&quot;,a);return a};window.onerror=function(a,b,d,m,e){r!==a&amp;&amp;(a=e instanceof Error?e:Error(a),void 0===d||&quot;lineNumber&quot;in a||(a.lineNumber=d),void 0===b||&quot;fileName&quot;in a||(a.fileName=b),google.ml(a,!1,void 0,!1,&quot;SyntaxError&quot;===a.name||&quot;SyntaxError&quot;===a.message.substring(0,11)||-1!==a.message.indexOf(&quot;Script error&quot;)?3:0));r=null;p&amp;&amp;q&gt;=l&amp;&amp;(window.onerror=null)};})();&lt;/script&gt;&lt;/head&gt;&lt;body bgcolor=&quot;#fff&quot;&gt;&lt;script nonce=&quot;MXrF0nnIBPkxBza4okrgPA&quot;&gt;(function(){var src=\&#39;/images/nav_logo229.png\&#39;;var iesg=false;document.body.onload = function(){window.n &amp;&amp; window.n();if (document.images){new Image().src=src;}\nif (!iesg){document.f&amp;&amp;document.f.q.focus();document.gbqf&amp;&amp;document.gbqf.q.focus();}\n}\n})();&lt;/script&gt;&lt;div id=&quot;mngb&quot;&gt;&lt;div id=gbar&gt;&lt;nobr&gt;&lt;b class=gb1&gt;Search&lt;/b&gt; &lt;a class=gb1 href=&quot;https://www.google.com/imghp?hl=en&amp;tab=wi&quot;&gt;Images&lt;/a&gt; &lt;a class=gb1 href=&quot;https://maps.google.com/maps?hl=en&amp;tab=wl&quot;&gt;Maps&lt;/a&gt; &lt;a class=gb1 href=&quot;https://play.google.com/?hl=en&amp;tab=w8&quot;&gt;Play&lt;/a&gt; &lt;a class=gb1 href=&quot;https://www.youtube.com/?tab=w1&quot;&gt;YouTube&lt;/a&gt; &lt;a class=gb1 href=&quot;https://news.google.com/?tab=wn&quot;&gt;News&lt;/a&gt; &lt;a class=gb1 href=&quot;https://mail.google.com/mail/?tab=wm&quot;&gt;Gmail&lt;/a&gt; &lt;a class=gb1 href=&quot;https://drive.google.com/?tab=wo&quot;&gt;Drive&lt;/a&gt; &lt;a class=gb1 style=&quot;text-decoration:none&quot; href=&quot;https://www.google.com/intl/en/about/products?tab=wh&quot;&gt;&lt;u&gt;More&lt;/u&gt; &amp;raquo;&lt;/a&gt;&lt;/nobr&gt;&lt;/div&gt;&lt;div id=guser width=100%&gt;&lt;nobr&gt;&lt;span id=gbn class=gbi&gt;&lt;/span&gt;&lt;span id=gbf class=gbf&gt;&lt;/span&gt;&lt;span id=gbe&gt;&lt;/span&gt;&lt;a href=&quot;http://www.google.com/history/optout?hl=en&quot; class=gb4&gt;Web History&lt;/a&gt; | &lt;a  href=&quot;/preferences?hl=en&quot; class=gb4&gt;Settings&lt;/a&gt; | &lt;a target=_top id=gb_70 href=&quot;https://accounts.google.com/ServiceLogin?hl=en&amp;passive=true&amp;continue=https://www.google.com/&amp;ec=GAZAAQ&quot; class=gb4&gt;Sign in&lt;/a&gt;&lt;/nobr&gt;&lt;/div&gt;&lt;div class=gbh style=left:0&gt;&lt;/div&gt;&lt;div class=gbh style=right:0&gt;&lt;/div&gt;&lt;/div&gt;&lt;center&gt;&lt;br clear=&quot;all&quot; id=&quot;lgpd&quot;&gt;&lt;div id=&quot;lga&quot;&gt;&lt;img alt=&quot;Google&quot; height=&quot;92&quot; src=&quot;/images/branding/googlelogo/1x/googlelogo_white_background_color_272x92dp.png&quot; style=&quot;padding:28px 0 14px&quot; width=&quot;272&quot; id=&quot;hplogo&quot;&gt;&lt;br&gt;&lt;br&gt;&lt;/div&gt;&lt;form action=&quot;/search&quot; name=&quot;f&quot;&gt;&lt;table cellpadding=&quot;0&quot; cellspacing=&quot;0&quot;&gt;&lt;tr valign=&quot;top&quot;&gt;&lt;td width=&quot;25%&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;td align=&quot;center&quot; nowrap=&quot;&quot;&gt;&lt;input name=&quot;ie&quot; value=&quot;ISO-8859-1&quot; type=&quot;hidden&quot;&gt;&lt;input value=&quot;en&quot; name=&quot;hl&quot; type=&quot;hidden&quot;&gt;&lt;input name=&quot;source&quot; type=&quot;hidden&quot; value=&quot;hp&quot;&gt;&lt;input name=&quot;biw&quot; type=&quot;hidden&quot;&gt;&lt;input name=&quot;bih&quot; type=&quot;hidden&quot;&gt;&lt;div class=&quot;ds&quot; style=&quot;height:32px;margin:4px 0&quot;&gt;&lt;input class=&quot;lst&quot; style=&quot;margin:0;padding:5px 8px 0 6px;vertical-align:top;color:#000&quot; autocomplete=&quot;off&quot; value=&quot;&quot; title=&quot;Google Search&quot; maxlength=&quot;2048&quot; name=&quot;q&quot; size=&quot;57&quot;&gt;&lt;/div&gt;&lt;br style=&quot;line-height:0&quot;&gt;&lt;span class=&quot;ds&quot;&gt;&lt;span class=&quot;lsbb&quot;&gt;&lt;input class=&quot;lsb&quot; value=&quot;Google Search&quot; name=&quot;btnG&quot; type=&quot;submit&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;ds&quot;&gt;&lt;span class=&quot;lsbb&quot;&gt;&lt;input class=&quot;lsb&quot; id=&quot;tsuid_1&quot; value=&quot;I\&#39;m Feeling Lucky&quot; name=&quot;btnI&quot; type=&quot;submit&quot;&gt;&lt;script nonce=&quot;MXrF0nnIBPkxBza4okrgPA&quot;&gt;(function(){var id=\&#39;tsuid_1\&#39;;document.getElementById(id).onclick = function(){if (this.form.q.value){this.checked = 1;if (this.form.iflsig)this.form.iflsig.disabled = false;}\nelse top.location=\&#39;/doodles/\&#39;;};})();&lt;/script&gt;&lt;input value=&quot;AOEireoAAAAAZFAdXGKCXWBK5dlWxPhh8hNPQz1s9YT6&quot; name=&quot;iflsig&quot; type=&quot;hidden&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/td&gt;&lt;td class=&quot;fl sblc&quot; align=&quot;left&quot; nowrap=&quot;&quot; width=&quot;25%&quot;&gt;&lt;a href=&quot;/advanced_search?hl=en&amp;amp;authuser=0&quot;&gt;Advanced search&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;input id=&quot;gbv&quot; name=&quot;gbv&quot; type=&quot;hidden&quot; value=&quot;1&quot;&gt;&lt;script nonce=&quot;MXrF0nnIBPkxBza4okrgPA&quot;&gt;(function(){var a,b=&quot;1&quot;;if(document&amp;&amp;document.getElementById)if(&quot;undefined&quot;!=typeof XMLHttpRequest)b=&quot;2&quot;;else if(&quot;undefined&quot;!=typeof ActiveXObject){var c,d,e=[&quot;MSXML2.XMLHTTP.6.0&quot;,&quot;MSXML2.XMLHTTP.3.0&quot;,&quot;MSXML2.XMLHTTP&quot;,&quot;Microsoft.XMLHTTP&quot;];for(c=0;d=e[c++];)try{new ActiveXObject(d),b=&quot;2&quot;}catch(h){}}a=b;if(&quot;2&quot;==a&amp;&amp;-1==location.search.indexOf(&quot;&amp;gbv=2&quot;)){var f=google.gbvu,g=document.getElementById(&quot;gbv&quot;);g&amp;&amp;(g.value=a);f&amp;&amp;window.setTimeout(function(){location.href=f},0)};}).call(this);&lt;/script&gt;&lt;/form&gt;&lt;div id=&quot;gac_scont&quot;&gt;&lt;/div&gt;&lt;div style=&quot;font-size:83%;min-height:3.5em&quot;&gt;&lt;br&gt;&lt;div id=&quot;prm&quot;&gt;&lt;style&gt;.szppmdbYutt__middle-slot-promo{font-size:small;margin-bottom:32px}.szppmdbYutt__middle-slot-promo a.ZIeIlb{display:inline-block;text-decoration:none}.szppmdbYutt__middle-slot-promo img{border:none;margin-right:5px;vertical-align:middle}&lt;/style&gt;&lt;div class=&quot;szppmdbYutt__middle-slot-promo&quot; data-ved=&quot;0ahUKEwjmj7fr6dT-AhVULUQIHThDB38QnIcBCAQ&quot;&gt;&lt;a class=&quot;NKcBbd&quot; href=&quot;https://www.google.com/url?q=https://blog.google/outreach-initiatives/diversity/asian-pacific-american-heritage-month-2023/%3Futm_source%3Dhpp%26utm_medium%3Downed%26utm_campaign%3Dapahm&amp;amp;source=hpp&amp;amp;id=19035152&amp;amp;ct=3&amp;amp;usg=AOvVaw1zrN82vzhoWl4hz1zZ4gLp&amp;amp;sa=X&amp;amp;ved=0ahUKEwjmj7fr6dT-AhVULUQIHThDB38Q8IcBCAU&quot; rel=&quot;nofollow&quot;&gt;Celebrate Asian Pacific American Heritage Month with Google&lt;/a&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;span id=&quot;footer&quot;&gt;&lt;div style=&quot;font-size:10pt&quot;&gt;&lt;div style=&quot;margin:19px auto;text-align:center&quot; id=&quot;WqQANb&quot;&gt;&lt;a href=&quot;/intl/en/ads/&quot;&gt;Advertising&lt;/a&gt;&lt;a href=&quot;/services/&quot;&gt;Business Solutions&lt;/a&gt;&lt;a href=&quot;/intl/en/about.html&quot;&gt;About Google&lt;/a&gt;&lt;/div&gt;&lt;/div&gt;&lt;p style=&quot;font-size:8pt;color:#70757a&quot;&gt;&amp;copy; 2023 - &lt;a href=&quot;/intl/en/policies/privacy/&quot;&gt;Privacy&lt;/a&gt; - &lt;a href=&quot;/intl/en/policies/terms/&quot;&gt;Terms&lt;/a&gt;&lt;/p&gt;&lt;/span&gt;&lt;/center&gt;&lt;script nonce=&quot;MXrF0nnIBPkxBza4okrgPA&quot;&gt;(function(){window.google.cdo={height:757,width:1440};(function(){var a=window.innerWidth,b=window.innerHeight;if(!a||!b){var c=window.document,d=&quot;CSS1Compat&quot;==c.compatMode?c.documentElement:c.body;a=d.clientWidth;b=d.clientHeight}a&amp;&amp;b&amp;&amp;(a!=google.cdo.width||b!=google.cdo.height)&amp;&amp;google.log(&quot;&quot;,&quot;&quot;,&quot;/client_204?&amp;atyp=i&amp;biw=&quot;+a+&quot;&amp;bih=&quot;+b+&quot;&amp;ei=&quot;+google.kEI);}).call(this);})();&lt;/script&gt; &lt;script nonce=&quot;MXrF0nnIBPkxBza4okrgPA&quot;&gt;(function(){google.xjs={ck:\&#39;xjs.hp.vUsZk7fd8do.L.X.O\&#39;,cs:\&#39;ACT90oF8ktm8JGoaZ23megDhHoJku7YaGw\&#39;,excm:[]};})();&lt;/script&gt;  &lt;script nonce=&quot;MXrF0nnIBPkxBza4okrgPA&quot;&gt;(function(){var u=\&#39;/xjs/_/js/k\\x3dxjs.hp.en.q0lHXBfs9JY.O/am\\x3dAAAA6AQAUABgAQ/d\\x3d1/ed\\x3d1/rs\\x3dACT90oE3ek6-fjkab6CsTH0wUEUUPhnExg/m\\x3dsb_he,d\&#39;;var amd=0;\nvar e=this||self,f=function(c){return c};var h;var n=function(c,g){this.g=g===l?c:&quot;&quot;};n.prototype.toString=function(){return this.g+&quot;&quot;};var l={};\nfunction p(){var c=u,g=function(){};google.lx=google.stvsc?g:function(){google.timers&amp;&amp;google.timers.load&amp;&amp;google.tick&amp;&amp;google.tick(&quot;load&quot;,&quot;xjsls&quot;);var a=document;var b=&quot;SCRIPT&quot;;&quot;application/xhtml+xml&quot;===a.contentType&amp;&amp;(b=b.toLowerCase());b=a.createElement(b);a=null===c?&quot;null&quot;:void 0===c?&quot;undefined&quot;:c;if(void 0===h){var d=null;var m=e.trustedTypes;if(m&amp;&amp;m.createPolicy){try{d=m.createPolicy(&quot;goog#html&quot;,{createHTML:f,createScript:f,createScriptURL:f})}catch(r){e.console&amp;&amp;e.console.error(r.message)}h=\nd}else h=d}a=(d=h)?d.createScriptURL(a):a;a=new n(a,l);b.src=a instanceof n&amp;&amp;a.constructor===n?a.g:&quot;type_error:TrustedResourceUrl&quot;;var k,q;(k=(a=null==(q=(k=(b.ownerDocument&amp;&amp;b.ownerDocument.defaultView||window).document).querySelector)?void 0:q.call(k,&quot;script[nonce]&quot;))?a.nonce||a.getAttribute(&quot;nonce&quot;)||&quot;&quot;:&quot;&quot;)&amp;&amp;b.setAttribute(&quot;nonce&quot;,k);document.body.appendChild(b);google.psa=!0;google.lx=g};google.bx||google.lx()};google.xjsu=u;e._F_jsUrl=u;setTimeout(function(){0&lt;amd?google.caft(function(){return p()},amd):p()},0);})();window._ = window._ || {};window._DumpException = _._DumpException = function(e){throw e;};window._s = window._s || {};_s._DumpException = _._DumpException;window._qs = window._qs || {};_qs._DumpException = _._DumpException;function _F_installCss(c){}\n(function(){google.jl={blt:\&#39;none\&#39;,chnk:0,dw:false,dwu:true,emtn:0,end:0,ico:false,ikb:0,ine:false,injs:\&#39;none\&#39;,injt:0,injth:0,injv2:false,lls:\&#39;default\&#39;,pdt:0,rep:0,snet:true,strt:0,ubm:false,uwp:true};})();(function(){var pmc=\&#39;{\\x22d\\x22:{},\\x22sb_he\\x22:{\\x22agen\\x22:true,\\x22cgen\\x22:true,\\x22client\\x22:\\x22heirloom-hp\\x22,\\x22dh\\x22:true,\\x22ds\\x22:\\x22\\x22,\\x22fl\\x22:true,\\x22host\\x22:\\x22google.com\\x22,\\x22jsonp\\x22:true,\\x22msgs\\x22:{\\x22cibl\\x22:\\x22Clear Search\\x22,\\x22dym\\x22:\\x22Did you mean:\\x22,\\x22lcky\\x22:\\x22I\\\\u0026#39;m Feeling Lucky\\x22,\\x22lml\\x22:\\x22Learn more\\x22,\\x22psrc\\x22:\\x22This search was removed from your \\\\u003Ca href\\x3d\\\\\\x22/history\\\\\\x22\\\\u003EWeb History\\\\u003C/a\\\\u003E\\x22,\\x22psrl\\x22:\\x22Remove\\x22,\\x22sbit\\x22:\\x22Search by image\\x22,\\x22srch\\x22:\\x22Google Search\\x22},\\x22ovr\\x22:{},\\x22pq\\x22:\\x22\\x22,\\x22rfs\\x22:[],\\x22sbas\\x22:\\x220 3px 8px 0 rgba(0,0,0,0.2),0 0 0 1px rgba(0,0,0,0.08)\\x22,\\x22stok\\x22:\\x22C3TIBpTor6RHJfEIn2nbidnhv50\\x22}}\&#39;;google.pmc=JSON.parse(pmc);})();&lt;/script&gt;       &lt;/body&gt;&lt;/html&gt;&#39;
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="python.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Python REPL</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="sceneXplain.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">SceneXplain</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Harrison Chase<br/>
+  
+      &copy; Copyright 2023, Harrison Chase.<br/>
+    Last updated on Jun 05, 2023.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

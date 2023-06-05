@@ -1,0 +1,24 @@
+{
+  "unversionedId": "use_cases/summarization",
+  "id": "use_cases/summarization",
+  "title": "Summarization",
+  "description": "Conceptual Guide",
+  "source": "@site/docs/use_cases/summarization.md",
+  "sourceDirName": "use_cases",
+  "slug": "/use_cases/summarization",
+  "permalink": "/docs/use_cases/summarization",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/use_cases/summarization.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "sidebar",
+  "previous": {
+    "title": "Question Answering over Docs",
+    "permalink": "/docs/use_cases/question_answering"
+  },
+  "next": {
+    "title": "Querying Tabular Data",
+    "permalink": "/docs/use_cases/tabular"
+  }
+}

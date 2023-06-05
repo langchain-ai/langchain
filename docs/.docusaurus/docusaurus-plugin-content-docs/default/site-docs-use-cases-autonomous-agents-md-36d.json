@@ -1,0 +1,24 @@
+{
+  "unversionedId": "use_cases/autonomous_agents",
+  "id": "use_cases/autonomous_agents",
+  "title": "Autonomous Agents",
+  "description": "Autonomous Agents are agents that designed to be more long running.",
+  "source": "@site/docs/use_cases/autonomous_agents.md",
+  "sourceDirName": "use_cases",
+  "slug": "/use_cases/autonomous_agents",
+  "permalink": "/docs/use_cases/autonomous_agents",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/use_cases/autonomous_agents.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "sidebar",
+  "previous": {
+    "title": "Interacting with APIs",
+    "permalink": "/docs/use_cases/apis"
+  },
+  "next": {
+    "title": "Chatbots",
+    "permalink": "/docs/use_cases/chatbots"
+  }
+}

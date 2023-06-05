@@ -1,0 +1,2234 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Analysis of Twitter the-algorithm source code with LangChain, GPT4 and Deep Lake &#8212; 🦜🔗 LangChain 0.0.190</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script src="../../_static/js/mendablesearch.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">🦜🔗 LangChain 0.0.190</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Get started
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../getting_started/getting_started.html">
+   Quickstart
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../getting_started/installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Modules
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../modules/memory.html">
+   Memory
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../modules/memory/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/memory/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/buffer.html">
+       ConversationBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/buffer_window.html">
+       ConversationBufferWindowMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/entity_summary_memory.html">
+       Entity Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/kg.html">
+       Conversation Knowledge Graph Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/summary.html">
+       ConversationSummaryMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/summary_buffer.html">
+       ConversationSummaryBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/token_buffer.html">
+       ConversationTokenBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/vectorstore_retriever_memory.html">
+       VectorStore-Backed Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/adding_memory.html">
+       How to add Memory to an LLMChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/adding_memory_chain_multiple_inputs.html">
+       How to add memory to a Multi-Input Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/agent_with_memory.html">
+       How to add Memory to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/agent_with_memory_in_db.html">
+       Adding Message Memory backed by a database to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/cassandra_chat_message_history.html">
+       Cassandra Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/conversational_customization.html">
+       How to customize conversational memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/custom_memory.html">
+       How to create a custom Memory class
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/dynamodb_chat_message_history.html">
+       Dynamodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/entity_memory_with_sqlite.html">
+       Entity Memory with SQLite storage
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/momento_chat_message_history.html">
+       Momento Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/mongodb_chat_message_history.html">
+       Mongodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/motorhead_memory.html">
+       Motörhead Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/motorhead_memory_managed.html">
+       Motörhead Memory (Managed)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/multiple_memory.html">
+       How to use multiple memory classes in the same chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/postgres_chat_message_history.html">
+       Postgres Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/redis_chat_message_history.html">
+       Redis Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/zep_memory.html">
+       Zep Memory
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../modules/chains.html">
+   Chains
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../modules/chains/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/chains/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/async_chain.html">
+       Async API for Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/custom_chain.html">
+       Creating a custom Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/from_hub.html">
+       Loading from LangChainHub
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/llm_chain.html">
+       LLM Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/router.html">
+       Router Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/sequential_chains.html">
+       Sequential Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/serialization.html">
+       Serialization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/transformation.html">
+       Transformation Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/analyze_document.html">
+       Analyze Document
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/chat_vector_db.html">
+       Chat Over Documents with Chat History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/graph_qa.html">
+       Graph QA
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/hyde.html">
+       Hypothetical Document Embeddings
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/qa_with_sources.html">
+       Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/summarize.html">
+       Summarization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/vector_db_qa.html">
+       Retrieval Question/Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/vector_db_qa_with_sources.html">
+       Retrieval Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/vector_db_text_generation.html">
+       Vector DB Text Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/api.html">
+       API Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/constitutional_chain.html">
+       Self-Critique Chain with Constitutional AI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/flare.html">
+       FLARE
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/graph_cypher_qa.html">
+       GraphCypherQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_bash.html">
+       BashChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_checker.html">
+       LLMCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_requests.html">
+       LLMRequestsChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_summarization_checker.html">
+       LLMSummarizationCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/moderation.html">
+       Moderation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/multi_prompt_router.html">
+       Router Chains: Selecting from multiple prompts with MultiPromptChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/multi_retrieval_qa_router.html">
+       Router Chains: Selecting from multiple prompts with MultiRetrievalQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/openapi.html">
+       OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/pal.html">
+       PAL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/sqlite.html">
+       SQL Chain example
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../reference/modules/chains.html">
+     Reference
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../modules/agents.html">
+   Agents
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../modules/agents/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/agents/tools.html">
+     Tools
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+    <label for="toctree-checkbox-6">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/getting_started.html">
+       Getting Started
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/custom_tools.html">
+       Defining Custom Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/multi_input_tool.html">
+       Multi-Input Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/tool_input_validation.html">
+       Tool Input Schema
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/apify.html">
+       Apify
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/arxiv.html">
+       ArXiv API Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/awslambda.html">
+       AWS Lambda API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/bash.html">
+       Shell Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/bing_search.html">
+       Bing Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/brave_search.html">
+       Brave Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/chatgpt_plugins.html">
+       ChatGPT Plugins
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/ddg.html">
+       DuckDuckGo Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/filesystem.html">
+       File System Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/google_places.html">
+       Google Places
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/google_search.html">
+       Google Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/google_serper.html">
+       Google Serper API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/gradio_tools.html">
+       Gradio Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/graphql.html">
+       GraphQL tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/huggingface_tools.html">
+       HuggingFace Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/human_tools.html">
+       Human as a tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/ifttt.html">
+       IFTTT WebHooks
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/metaphor_search.html">
+       Metaphor Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/openweathermap.html">
+       OpenWeatherMap API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/pubmed.html">
+       PubMed Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/python.html">
+       Python REPL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/requests.html">
+       Requests
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/sceneXplain.html">
+       SceneXplain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/search_tools.html">
+       Search Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/searx_search.html">
+       SearxNG Search API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/serpapi.html">
+       SerpAPI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/twilio.html">
+       Twilio
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/wikipedia.html">
+       Wikipedia
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/wolfram_alpha.html">
+       Wolfram Alpha
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/youtube.html">
+       YouTubeSearchTool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/zapier.html">
+       Zapier Natural Language Actions API
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/agents/agents.html">
+     Agents
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+    <label for="toctree-checkbox-7">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/agent_types.html">
+       Agent Types
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_agent.html">
+       Custom Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_llm_agent.html">
+       Custom LLM Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_llm_chat_agent.html">
+       Custom LLM Agent (with a ChatModel)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_mrkl_agent.html">
+       Custom MRKL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_multi_action_agent.html">
+       Custom MultiAction Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_agent_with_tool_retrieval.html">
+       Custom Agent with Tool Retrieval
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/chat_conversation_agent.html">
+       Conversation Agent (for Chat Models)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/conversational_agent.html">
+       Conversation Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/mrkl.html">
+       MRKL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/mrkl_chat.html">
+       MRKL Chat
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/react.html">
+       ReAct
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/self_ask_with_search.html">
+       Self Ask With Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/structured_chat.html">
+       Structured Tool Chat Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/agents/toolkits.html">
+     Toolkits
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <label for="toctree-checkbox-8">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/azure_cognitive_services.html">
+       Azure Cognitive Services Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/csv.html">
+       CSV Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/gmail.html">
+       Gmail Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/jira.html">
+       Jira
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/json.html">
+       JSON Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/openapi.html">
+       OpenAPI agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/openapi_nla.html">
+       Natural Language APIs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/pandas.html">
+       Pandas Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/playwright.html">
+       PlayWright Browser Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/powerbi.html">
+       PowerBI Dataset Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/python.html">
+       Python Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/spark.html">
+       Spark Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/spark_sql.html">
+       Spark SQL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/sql_database.html">
+       SQL Database Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/vectorstore.html">
+       Vectorstore Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/agents/agent_executors.html">
+     Agent Executors
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+    <label for="toctree-checkbox-9">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/agent_vectorstore.html">
+       How to combine agents and vectorstores
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/async_agent.html">
+       How to use the async API for Agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/chatgpt_clone.html">
+       How to create ChatGPT Clone
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/handle_parsing_errors.html">
+       Handle Parsing Errors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/intermediate_steps.html">
+       How to access intermediate steps
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/max_iterations.html">
+       How to cap the max number of iterations
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/max_time_limit.html">
+       How to use a timeout for the agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/sharedmemory_for_tools.html">
+       How to add SharedMemory to an Agent and its Tools
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../modules/agents/plan_and_execute.html">
+     Plan and Execute
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../modules/callbacks/getting_started.html">
+   Callbacks
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Examples
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../use_cases.html">
+   Use cases
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../autonomous_agents.html">
+     Autonomous Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../agent_simulations.html">
+     Agent Simulations
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../personal_assistants.html">
+     Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../question_answering.html">
+     Question Answering over Docs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../chatbots.html">
+     Chatbots
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../tabular.html">
+     Querying Tabular Data
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../code.html">
+     Code Understanding
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../apis.html">
+     Interacting with APIs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../extraction.html">
+     Extraction
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../summarization.html">
+     Summarization
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../evaluation.html">
+     Evaluation
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+    <label for="toctree-checkbox-11">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/agent_benchmarking.html">
+       Agent Benchmarking: Search + Calculator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/agent_vectordb_sota_pg.html">
+       Agent VectorDB Question Answering Benchmarking
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/benchmarking_template.html">
+       Benchmarking Template
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/data_augmented_question_answering.html">
+       Data Augmented Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/generic_agent_evaluation.html">
+       Generic Agent Evaluation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/huggingface_datasets.html">
+       Using Hugging Face Datasets
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/openapi_eval.html">
+       Evaluating an OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/qa_benchmarking_pg.html">
+       Question Answering Benchmarking: Paul Graham Essay
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/qa_benchmarking_sota.html">
+       Question Answering Benchmarking: State of the Union Address
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/qa_generation.html">
+       QA Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../evaluation/sql_qa_benchmarking_chinook.html">
+       SQL Question Answering Benchmarking: Chinook
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../additional_resources.html">
+   Additional resources
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+  <label for="toctree-checkbox-12">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../additional_resources/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference external" href="https://github.com/kyrolabs/awesome-langchain">
+     Gallery
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Ecosystem
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../integrations.html">
+   Integrations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+  <label for="toctree-checkbox-13">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/agent_with_wandb_tracing.html">
+     Tracing Walkthrough
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/ai21.html">
+     AI21 Labs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/aim_tracking.html">
+     Aim
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/airbyte.html">
+     Airbyte
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/aleph_alpha.html">
+     Aleph Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/analyticdb.html">
+     AnalyticDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/annoy.html">
+     Annoy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/anyscale.html">
+     Anyscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/apify.html">
+     Apify
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/argilla.html">
+     Argilla
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/arxiv.html">
+     Arxiv
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/atlas.html">
+     AtlasDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/aws_s3.html">
+     AWS S3 Directory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azlyrics.html">
+     AZLyrics
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azure_blob_storage.html">
+     Azure Blob Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azure_cognitive_search_.html">
+     Azure Cognitive Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azure_openai.html">
+     Azure OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/bananadev.html">
+     Banana
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/beam.html">
+     Beam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/bedrock.html">
+     Bedrock
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/bilibili.html">
+     BiliBili
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/blackboard.html">
+     Blackboard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/cassandra.html">
+     Cassandra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/cerebriumai.html">
+     CerebriumAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/chroma.html">
+     Chroma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/clearml_tracking.html">
+     ClearML
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/cohere.html">
+     Cohere
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/college_confidential.html">
+     College Confidential
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/comet_tracking.html">
+     Comet
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/confluence.html">
+     Confluence
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/ctransformers.html">
+     C Transformers
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/databerry.html">
+     Databerry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/databricks.html">
+     Databricks
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/deepinfra.html">
+     DeepInfra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/deeplake.html">
+     Deep Lake
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/diffbot.html">
+     Diffbot
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/discord.html">
+     Discord
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/docugami.html">
+     Docugami
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/duckdb.html">
+     DuckDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/elasticsearch.html">
+     Elasticsearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/evernote.html">
+     EverNote
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/facebook_chat.html">
+     Facebook Chat
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/figma.html">
+     Figma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/forefrontai.html">
+     ForefrontAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/git.html">
+     Git
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gitbook.html">
+     GitBook
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_bigquery.html">
+     Google BigQuery
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_cloud_storage.html">
+     Google Cloud Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_drive.html">
+     Google Drive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_search.html">
+     Google Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_serper.html">
+     Google Serper
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gooseai.html">
+     GooseAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gpt4all.html">
+     GPT4All
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/graphsignal.html">
+     Graphsignal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gutenberg.html">
+     Gutenberg
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/hacker_news.html">
+     Hacker News
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/hazy_research.html">
+     Hazy Research
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/helicone.html">
+     Helicone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/huggingface.html">
+     Hugging Face
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/ifixit.html">
+     iFixit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/imsdb.html">
+     IMSDb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/jina.html">
+     Jina
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/lancedb.html">
+     LanceDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/llamacpp.html">
+     Llama.cpp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/mediawikidump.html">
+     MediaWikiDump
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/metal.html">
+     Metal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/microsoft_onedrive.html">
+     Microsoft OneDrive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/microsoft_powerpoint.html">
+     Microsoft PowerPoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/microsoft_word.html">
+     Microsoft Word
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/milvus.html">
+     Milvus
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/mlflow_tracking.html">
+     MLflow
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/modal.html">
+     Modal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/modern_treasury.html">
+     Modern Treasury
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/momento.html">
+     Momento
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/myscale.html">
+     MyScale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/nlpcloud.html">
+     NLPCloud
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/notion.html">
+     Notion DB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/obsidian.html">
+     Obsidian
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/openai.html">
+     OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/opensearch.html">
+     OpenSearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/openweathermap.html">
+     OpenWeatherMap
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/petals.html">
+     Petals
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/pgvector.html">
+     PGVector
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/pinecone.html">
+     Pinecone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/pipelineai.html">
+     PipelineAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/predictionguard.html">
+     Prediction Guard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/promptlayer.html">
+     PromptLayer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/psychic.html">
+     Psychic
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/qdrant.html">
+     Qdrant
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/rebuff.html">
+     Rebuff
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/reddit.html">
+     Reddit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/redis.html">
+     Redis
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/replicate.html">
+     Replicate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/roam.html">
+     Roam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/runhouse.html">
+     Runhouse
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/rwkv.html">
+     RWKV-4
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/sagemaker_endpoint.html">
+     SageMaker Endpoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/searx.html">
+     SearxNG Search API
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/serpapi.html">
+     SerpAPI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/sklearn.html">
+     scikit-learn
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/slack.html">
+     Slack
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/spacy.html">
+     spaCy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/spreedly.html">
+     Spreedly
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/stochasticai.html">
+     StochasticAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/stripe.html">
+     Stripe
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/tair.html">
+     Tair
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/telegram.html">
+     Telegram
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/tomarkdown.html">
+     2Markdown
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/trello.html">
+     Trello
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/twitter.html">
+     Twitter
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/unstructured.html">
+     Unstructured
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/vectara.html">
+     Vectara
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/vespa.html">
+     Vespa
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/wandb_tracking.html">
+     Weights &amp; Biases
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/weather.html">
+     Weather
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/weaviate.html">
+     Weaviate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/whatsapp.html">
+     WhatsApp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/whylabs_profiling.html">
+     WhyLabs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/wikipedia.html">
+     Wikipedia
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/wolfram_alpha.html">
+     Wolfram Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/writer.html">
+     Writer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/yeagerai.html">
+     Yeager.ai
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/zep.html">
+     Zep
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/zilliz.html">
+     Zilliz
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../ecosystem/deployments.html">
+   Deployments
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://github.com/hwchase17/langchain-hub">
+   LangChainHub
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../dependents.html">
+   Dependents
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Find us
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference external" href="https://twitter.com/LangChainAI">
+   Twitter
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://discord.gg/6adMQxSpJS">
+   Discord
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://forms.gle/57d8AmXBYp8PP8tZA">
+   Request production support
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+<a href="https://github.com/hwchase17/langchain"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="bottom"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="../../_sources/use_cases/code/twitter-the-algorithm-analysis-deeplake.ipynb.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.ipynb</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#index-the-code-base-optional">
+   1. Index the code base (optional)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#question-answering-on-twitter-algorithm-codebase">
+   2. Question Answering on Twitter algorithm codebase
+  </a>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Analysis of Twitter the-algorithm source code with LangChain, GPT4 and Deep Lake</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#index-the-code-base-optional">
+   1. Index the code base (optional)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#question-answering-on-twitter-algorithm-codebase">
+   2. Question Answering on Twitter algorithm codebase
+  </a>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <section id="analysis-of-twitter-the-algorithm-source-code-with-langchain-gpt4-and-deep-lake">
+<h1>Analysis of Twitter the-algorithm source code with LangChain, GPT4 and Deep Lake<a class="headerlink" href="#analysis-of-twitter-the-algorithm-source-code-with-langchain-gpt4-and-deep-lake" title="Permalink to this headline">#</a></h1>
+<p>In this tutorial, we are going to use Langchain + Deep Lake with GPT4 to analyze the code base of the twitter algorithm.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>langchain<span class="w"> </span>deeplake<span class="w"> </span>openai<span class="w"> </span>tiktoken
+</pre></div>
+</div>
+</div>
+</div>
+<p>Define OpenAI embeddings, Deep Lake multi-modal vector store api and authenticate. For full documentation of Deep Lake please follow <a class="reference external" href="https://docs.activeloop.ai/">docs</a> and <a class="reference external" href="https://docs.deeplake.ai/en/latest/">API reference</a>.</p>
+<p>Authenticate into Deep Lake if you want to create your own dataset and publish it. You can get an API key from the <a class="reference external" href="https://app.activeloop.ai">platform</a></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">getpass</span>
+
+<span class="kn">from</span> <span class="nn">langchain.embeddings.openai</span> <span class="kn">import</span> <span class="n">OpenAIEmbeddings</span>
+<span class="kn">from</span> <span class="nn">langchain.vectorstores</span> <span class="kn">import</span> <span class="n">DeepLake</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OPENAI_API_KEY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">getpass</span><span class="o">.</span><span class="n">getpass</span><span class="p">(</span><span class="s1">&#39;OpenAI API Key:&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;ACTIVELOOP_TOKEN&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">getpass</span><span class="o">.</span><span class="n">getpass</span><span class="p">(</span><span class="s1">&#39;Activeloop Token:&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">OpenAIEmbeddings</span><span class="p">(</span><span class="n">disallowed_special</span><span class="o">=</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>disallowed_special=() is required to avoid <code class="docutils literal notranslate"><span class="pre">Exception:</span> <span class="pre">'utf-8'</span> <span class="pre">codec</span> <span class="pre">can't</span> <span class="pre">decode</span> <span class="pre">byte</span> <span class="pre">0xff</span> <span class="pre">in</span> <span class="pre">position</span> <span class="pre">0:</span> <span class="pre">invalid</span> <span class="pre">start</span> <span class="pre">byte</span></code> from tiktoken for some repositories</p>
+<section id="index-the-code-base-optional">
+<h2>1. Index the code base (optional)<a class="headerlink" href="#index-the-code-base-optional" title="Permalink to this headline">#</a></h2>
+<p>You can directly skip this part and directly jump into using already indexed dataset. To begin with, first we will clone the repository, then parse and chunk the code base and use OpenAI indexing.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/twitter/the-algorithm<span class="w"> </span>#<span class="w"> </span>replace<span class="w"> </span>any<span class="w"> </span>repository<span class="w"> </span>of<span class="w"> </span>your<span class="w"> </span>choice<span class="w"> </span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Load all files inside the repository</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">langchain.document_loaders</span> <span class="kn">import</span> <span class="n">TextLoader</span>
+
+<span class="n">root_dir</span> <span class="o">=</span> <span class="s1">&#39;./the-algorithm&#39;</span>
+<span class="n">docs</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">dirpath</span><span class="p">,</span> <span class="n">dirnames</span><span class="p">,</span> <span class="n">filenames</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">root_dir</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span> 
+            <span class="n">loader</span> <span class="o">=</span> <span class="n">TextLoader</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirpath</span><span class="p">,</span> <span class="n">file</span><span class="p">),</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="n">docs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">loader</span><span class="o">.</span><span class="n">load_and_split</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span> 
+            <span class="k">pass</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Then, chunk the files</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.text_splitter</span> <span class="kn">import</span> <span class="n">CharacterTextSplitter</span>
+
+<span class="n">text_splitter</span> <span class="o">=</span> <span class="n">CharacterTextSplitter</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">chunk_overlap</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">texts</span> <span class="o">=</span> <span class="n">text_splitter</span><span class="o">.</span><span class="n">split_documents</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Execute the indexing. This will take about ~4 mins to compute embeddings and upload to Activeloop. You can then publish the dataset to be public.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">username</span> <span class="o">=</span> <span class="s2">&quot;davitbun&quot;</span> <span class="c1"># replace with your username from app.activeloop.ai</span>
+<span class="n">db</span> <span class="o">=</span> <span class="n">DeepLake</span><span class="p">(</span><span class="n">dataset_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;hub://</span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">/twitter-algorithm&quot;</span><span class="p">,</span> <span class="n">embedding_function</span><span class="o">=</span><span class="n">embeddings</span><span class="p">,</span> <span class="n">public</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1">#dataset would be publicly available</span>
+<span class="n">db</span><span class="o">.</span><span class="n">add_documents</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="question-answering-on-twitter-algorithm-codebase">
+<h2>2. Question Answering on Twitter algorithm codebase<a class="headerlink" href="#question-answering-on-twitter-algorithm-codebase" title="Permalink to this headline">#</a></h2>
+<p>First load the dataset, construct the retriever, then construct the Conversational Chain</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db</span> <span class="o">=</span> <span class="n">DeepLake</span><span class="p">(</span><span class="n">dataset_path</span><span class="o">=</span><span class="s2">&quot;hub://davitbun/twitter-algorithm&quot;</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">embedding_function</span><span class="o">=</span><span class="n">embeddings</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">retriever</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">as_retriever</span><span class="p">()</span>
+<span class="n">retriever</span><span class="o">.</span><span class="n">search_kwargs</span><span class="p">[</span><span class="s1">&#39;distance_metric&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;cos&#39;</span>
+<span class="n">retriever</span><span class="o">.</span><span class="n">search_kwargs</span><span class="p">[</span><span class="s1">&#39;fetch_k&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">retriever</span><span class="o">.</span><span class="n">search_kwargs</span><span class="p">[</span><span class="s1">&#39;maximal_marginal_relevance&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">retriever</span><span class="o">.</span><span class="n">search_kwargs</span><span class="p">[</span><span class="s1">&#39;k&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>You can also specify user defined functions using <a class="reference external" href="https://docs.deeplake.ai/en/latest/deeplake.core.dataset.html#deeplake.core.dataset.Dataset.filter">Deep Lake filters</a></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="c1"># filter based on source code</span>
+    <span class="k">if</span> <span class="s1">&#39;com.google&#39;</span> <span class="ow">in</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">()[</span><span class="s1">&#39;value&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="c1"># filter based on path e.g. extension</span>
+    <span class="n">metadata</span> <span class="o">=</span>  <span class="n">x</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">()[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="s1">&#39;scala&#39;</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="s1">&#39;py&#39;</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span>
+
+<span class="c1">### turn on below for custom filtering</span>
+<span class="c1"># retriever.search_kwargs[&#39;filter&#39;] = filter</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.chat_models</span> <span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span> <span class="nn">langchain.chains</span> <span class="kn">import</span> <span class="n">ConversationalRetrievalChain</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;gpt-3.5-turbo&#39;</span><span class="p">)</span> <span class="c1"># switch to &#39;gpt-4&#39;</span>
+<span class="n">qa</span> <span class="o">=</span> <span class="n">ConversationalRetrievalChain</span><span class="o">.</span><span class="n">from_llm</span><span class="p">(</span><span class="n">model</span><span class="p">,</span><span class="n">retriever</span><span class="o">=</span><span class="n">retriever</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">questions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;What does favCountParams do?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;is it Likes + Bookmarks, or not clear from the code?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;What are the major negative modifiers that lower your linear ranking parameters?&quot;</span><span class="p">,</span>   
+    <span class="s2">&quot;How do you get assigned to SimClusters?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;What is needed to migrate from one SimClusters to another SimClusters?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;How much do I get boosted within my cluster?&quot;</span><span class="p">,</span>   
+    <span class="s2">&quot;How does Heavy ranker work. what are it’s main inputs?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;How can one influence Heavy ranker?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;why threads and long tweets do so well on the platform?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Are thread and long tweet creators building a following that reacts to only threads?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Do you need to follow different strategies to get most followers vs to get most likes and bookmarks per tweet?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Content meta data and how it impacts virality (e.g. ALT in images).&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;What are some unexpected fingerprints for spam factors?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Is there any difference between company verified checkmarks and blue verified individual checkmarks?&quot;</span><span class="p">,</span>
+<span class="p">]</span> 
+<span class="n">chat_history</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">:</span>  
+    <span class="n">result</span> <span class="o">=</span> <span class="n">qa</span><span class="p">({</span><span class="s2">&quot;question&quot;</span><span class="p">:</span> <span class="n">question</span><span class="p">,</span> <span class="s2">&quot;chat_history&quot;</span><span class="p">:</span> <span class="n">chat_history</span><span class="p">})</span>
+    <span class="n">chat_history</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">question</span><span class="p">,</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;answer&#39;</span><span class="p">]))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-&gt; **Question**: </span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**Answer**: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;answer&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>-&gt; <strong>Question</strong>: What does favCountParams do?</p>
+<p><strong>Answer</strong>: <code class="docutils literal notranslate"><span class="pre">favCountParams</span></code> is an optional ThriftLinearFeatureRankingParams instance that represents the parameters related to the “favorite count” feature in the ranking process. It is used to control the weight of the favorite count feature while ranking tweets. The favorite count is the number of times a tweet has been marked as a favorite by users, and it is considered an important signal in the ranking of tweets. By using <code class="docutils literal notranslate"><span class="pre">favCountParams</span></code>, the system can adjust the importance of the favorite count while calculating the final ranking score of a tweet.</p>
+<p>-&gt; <strong>Question</strong>: is it Likes + Bookmarks, or not clear from the code?</p>
+<p><strong>Answer</strong>: From the provided code, it is not clear if the favorite count metric is determined by the sum of likes and bookmarks. The favorite count is mentioned in the code, but there is no explicit reference to how it is calculated in terms of likes and bookmarks.</p>
+<p>-&gt; <strong>Question</strong>: What are the major negative modifiers that lower your linear ranking parameters?</p>
+<p><strong>Answer</strong>: In the given code, major negative modifiers that lower the linear ranking parameters are:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">scoringData.querySpecificScore</span></code>: This score adjustment is based on the query-specific information. If its value is negative, it will lower the linear ranking parameters.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">scoringData.authorSpecificScore</span></code>: This score adjustment is based on the author-specific information. If its value is negative, it will also lower the linear ranking parameters.</p></li>
+</ol>
+<p>Please note that I cannot provide more information on the exact calculations of these negative modifiers, as the code for their determination is not provided.</p>
+<p>-&gt; <strong>Question</strong>: How do you get assigned to SimClusters?</p>
+<p><strong>Answer</strong>: The assignment to SimClusters occurs through a Metropolis-Hastings sampling-based community detection algorithm that is run on the Producer-Producer similarity graph. This graph is created by computing the cosine similarity scores between the users who follow each producer. The algorithm identifies communities or clusters of Producers with similar followers, and takes a parameter <em>k</em> for specifying the number of communities to be detected.</p>
+<p>After the community detection, different users and content are represented as sparse, interpretable vectors within these identified communities (SimClusters). The resulting SimClusters embeddings can be used for various recommendation tasks.</p>
+<p>-&gt; <strong>Question</strong>: What is needed to migrate from one SimClusters to another SimClusters?</p>
+<p><strong>Answer</strong>: To migrate from one SimClusters representation to another, you can follow these general steps:</p>
+<ol class="arabic simple">
+<li><p><strong>Prepare the new representation</strong>: Create the new SimClusters representation using any necessary updates or changes in the clustering algorithm, similarity measures, or other model parameters. Ensure that this new representation is properly stored and indexed as needed.</p></li>
+<li><p><strong>Update the relevant code and configurations</strong>: Modify the relevant code and configuration files to reference the new SimClusters representation. This may involve updating paths or dataset names to point to the new representation, as well as changing code to use the new clustering method or similarity functions if applicable.</p></li>
+<li><p><strong>Test the new representation</strong>: Before deploying the changes to production, thoroughly test the new SimClusters representation to ensure its effectiveness and stability. This may involve running offline jobs like candidate generation and label candidates, validating the output, as well as testing the new representation in the evaluation environment using evaluation tools like TweetSimilarityEvaluationAdhocApp.</p></li>
+<li><p><strong>Deploy the changes</strong>: Once the new representation has been tested and validated, deploy the changes to production. This may involve creating a zip file, uploading it to the packer, and then scheduling it with Aurora. Be sure to monitor the system to ensure a smooth transition between representations and verify that the new representation is being used in recommendations as expected.</p></li>
+<li><p><strong>Monitor and assess the new representation</strong>: After the new representation has been deployed, continue to monitor its performance and impact on recommendations. Take note of any improvements or issues that arise and be prepared to iterate on the new representation if needed. Always ensure that the results and performance metrics align with the system’s goals and objectives.</p></li>
+</ol>
+<p>-&gt; <strong>Question</strong>: How much do I get boosted within my cluster?</p>
+<p><strong>Answer</strong>: It’s not possible to determine the exact amount your content is boosted within your cluster in the SimClusters representation without specific data about your content and its engagement metrics. However, a combination of factors, such as the favorite score and follow score, alongside other engagement signals and SimCluster calculations, influence the boosting of content.</p>
+<p>-&gt; <strong>Question</strong>: How does Heavy ranker work. what are it’s main inputs?</p>
+<p><strong>Answer</strong>: The Heavy Ranker is a machine learning model that plays a crucial role in ranking and scoring candidates within the recommendation algorithm. Its primary purpose is to predict the likelihood of a user engaging with a tweet or connecting with another user on the platform.</p>
+<p>Main inputs to the Heavy Ranker consist of:</p>
+<ol class="arabic simple">
+<li><p>Static Features: These are features that can be computed directly from a tweet at the time it’s created, such as whether it has a URL, has cards, has quotes, etc. These features are produced by the Index Ingester as the tweets are generated and stored in the index.</p></li>
+<li><p>Real-time Features: These per-tweet features can change after the tweet has been indexed. They mostly consist of social engagements like retweet count, favorite count, reply count, and some spam signals that are computed with later activities. The Signal Ingester, which is part of a Heron topology, processes multiple event streams to collect and compute these real-time features.</p></li>
+<li><p>User Table Features: These per-user features are obtained from the User Table Updater that processes a stream written by the user service. This input is used to store sparse real-time user information, which is later propagated to the tweet being scored by looking up the author of the tweet.</p></li>
+<li><p>Search Context Features: These features represent the context of the current searcher, like their UI language, their content consumption, and the current time (implied). They are combined with Tweet Data to compute some of the features used in scoring.</p></li>
+</ol>
+<p>These inputs are then processed by the Heavy Ranker to score and rank candidates based on their relevance and likelihood of engagement by the user.</p>
+<p>-&gt; <strong>Question</strong>: How can one influence Heavy ranker?</p>
+<p><strong>Answer</strong>: To influence the Heavy Ranker’s output or ranking of content, consider the following actions:</p>
+<ol class="arabic simple">
+<li><p>Improve content quality: Create high-quality and engaging content that is relevant, informative, and valuable to users. High-quality content is more likely to receive positive user engagement, which the Heavy Ranker considers when ranking content.</p></li>
+<li><p>Increase user engagement: Encourage users to interact with content through likes, retweets, replies, and comments. Higher engagement levels can lead to better ranking in the Heavy Ranker’s output.</p></li>
+<li><p>Optimize your user profile: A user’s reputation, based on factors such as their follower count and follower-to-following ratio, may impact the ranking of their content. Maintain a good reputation by following relevant users, keeping a reasonable follower-to-following ratio and engaging with your followers.</p></li>
+<li><p>Enhance content discoverability: Use relevant keywords, hashtags, and mentions in your tweets, making it easier for users to find and engage with your content. This increased discoverability may help improve the ranking of your content by the Heavy Ranker.</p></li>
+<li><p>Leverage multimedia content: Experiment with different content formats, such as videos, images, and GIFs, which may capture users’ attention and increase engagement, resulting in better ranking by the Heavy Ranker.</p></li>
+<li><p>User feedback: Monitor and respond to feedback for your content. Positive feedback may improve your ranking, while negative feedback provides an opportunity to learn and improve.</p></li>
+</ol>
+<p>Note that the Heavy Ranker uses a combination of machine learning models and various features to rank the content. While the above actions may help influence the ranking, there are no guarantees as the ranking process is determined by a complex algorithm, which evolves over time.</p>
+<p>-&gt; <strong>Question</strong>: why threads and long tweets do so well on the platform?</p>
+<p><strong>Answer</strong>: Threads and long tweets perform well on the platform for several reasons:</p>
+<ol class="arabic simple">
+<li><p><strong>More content and context</strong>: Threads and long tweets provide more information and context about a topic, which can make the content more engaging and informative for users. People tend to appreciate a well-structured and detailed explanation of a subject or a story, and threads and long tweets can do that effectively.</p></li>
+<li><p><strong>Increased user engagement</strong>: As threads and long tweets provide more content, they also encourage users to engage with the tweets through replies, retweets, and likes. This increased engagement can lead to better visibility of the content, as the Twitter algorithm considers user engagement when ranking and surfacing tweets.</p></li>
+<li><p><strong>Narrative structure</strong>: Threads enable users to tell stories or present arguments in a step-by-step manner, making the information more accessible and easier to follow. This narrative structure can capture users’ attention and encourage them to read through the entire thread and interact with the content.</p></li>
+<li><p><strong>Expanded reach</strong>: When users engage with a thread, their interactions can bring the content to the attention of their followers, helping to expand the reach of the thread. This increased visibility can lead to more interactions and higher performance for the threaded tweets.</p></li>
+<li><p><strong>Higher content quality</strong>: Generally, threads and long tweets require more thought and effort to create, which may lead to higher quality content. Users are more likely to appreciate and interact with high-quality, well-reasoned content, further improving the performance of these tweets within the platform.</p></li>
+</ol>
+<p>Overall, threads and long tweets perform well on Twitter because they encourage user engagement and provide a richer, more informative experience that users find valuable.</p>
+<p>-&gt; <strong>Question</strong>: Are thread and long tweet creators building a following that reacts to only threads?</p>
+<p><strong>Answer</strong>: Based on the provided code and context, there isn’t enough information to conclude if the creators of threads and long tweets primarily build a following that engages with only thread-based content. The code provided is focused on Twitter’s recommendation and ranking algorithms, as well as infrastructure components like Kafka, partitions, and the Follow Recommendations Service (FRS). To answer your question, data analysis of user engagement and results of specific edge cases would be required.</p>
+<p>-&gt; <strong>Question</strong>: Do you need to follow different strategies to get most followers vs to get most likes and bookmarks per tweet?</p>
+<p><strong>Answer</strong>: Yes, different strategies need to be followed to maximize the number of followers compared to maximizing likes and bookmarks per tweet. While there may be some overlap in the approaches, they target different aspects of user engagement.</p>
+<p>Maximizing followers: The primary focus is on growing your audience on the platform. Strategies include:</p>
+<ol class="arabic simple">
+<li><p>Consistently sharing high-quality content related to your niche or industry.</p></li>
+<li><p>Engaging with others on the platform by replying, retweeting, and mentioning other users.</p></li>
+<li><p>Using relevant hashtags and participating in trending conversations.</p></li>
+<li><p>Collaborating with influencers and other users with a large following.</p></li>
+<li><p>Posting at optimal times when your target audience is most active.</p></li>
+<li><p>Optimizing your profile by using a clear profile picture, catchy bio, and relevant links.</p></li>
+</ol>
+<p>Maximizing likes and bookmarks per tweet: The focus is on creating content that resonates with your existing audience and encourages engagement. Strategies include:</p>
+<ol class="arabic simple">
+<li><p>Crafting engaging and well-written tweets that encourage users to like or save them.</p></li>
+<li><p>Incorporating visually appealing elements, such as images, GIFs, or videos, that capture attention.</p></li>
+<li><p>Asking questions, sharing opinions, or sparking conversations that encourage users to engage with your tweets.</p></li>
+<li><p>Using analytics to understand the type of content that resonates with your audience and tailoring your tweets accordingly.</p></li>
+<li><p>Posting a mix of educational, entertaining, and promotional content to maintain variety and interest.</p></li>
+<li><p>Timing your tweets strategically to maximize engagement, likes, and bookmarks per tweet.</p></li>
+</ol>
+<p>Both strategies can overlap, and you may need to adapt your approach by understanding your target audience’s preferences and analyzing your account’s performance. However, it’s essential to recognize that maximizing followers and maximizing likes and bookmarks per tweet have different focuses and require specific strategies.</p>
+<p>-&gt; <strong>Question</strong>: Content meta data and how it impacts virality (e.g. ALT in images).</p>
+<p><strong>Answer</strong>: There is no direct information in the provided context about how content metadata, such as ALT text in images, impacts the virality of a tweet or post. However, it’s worth noting that including ALT text can improve the accessibility of your content for users who rely on screen readers, which may lead to increased engagement for a broader audience. Additionally, metadata can be used in search engine optimization, which might improve the visibility of the content, but the context provided does not mention any specific correlation with virality.</p>
+<p>-&gt; <strong>Question</strong>: What are some unexpected fingerprints for spam factors?</p>
+<p><strong>Answer</strong>: In the provided context, an unusual indicator of spam factors is when a tweet contains a non-media, non-news link. If the tweet has a link but does not have an image URL, video URL, or news URL, it is considered a potential spam vector, and a threshold for user reputation (tweepCredThreshold) is set to MIN_TWEEPCRED_WITH_LINK.</p>
+<p>While this rule may not cover all possible unusual spam indicators, it is derived from the specific codebase and logic shared in the context.</p>
+<p>-&gt; <strong>Question</strong>: Is there any difference between company verified checkmarks and blue verified individual checkmarks?</p>
+<p><strong>Answer</strong>: Yes, there is a distinction between the verified checkmarks for companies and blue verified checkmarks for individuals. The code snippet provided mentions “Blue-verified account boost” which indicates that there is a separate category for blue verified accounts. Typically, blue verified checkmarks are used to indicate notable individuals, while verified checkmarks are for companies or organizations.</p>
+</section>
+</section>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Harrison Chase<br/>
+  
+      &copy; Copyright 2023, Harrison Chase.<br/>
+    Last updated on Jun 05, 2023.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

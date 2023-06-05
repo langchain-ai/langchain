@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/pgvector",
+  "id": "integrations/pgvector",
+  "title": "PGVector",
+  "description": "This page covers how to use the Postgres PGVector ecosystem within LangChain",
+  "source": "@site/docs/integrations/pgvector.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/pgvector",
+  "permalink": "/docs/integrations/pgvector",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/pgvector.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

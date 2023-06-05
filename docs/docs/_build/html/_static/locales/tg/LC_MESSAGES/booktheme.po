@@ -1,0 +1,81 @@
+
+msgid ""
+msgstr ""
+"Project-Id-Version: Sphinx-Book-Theme\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: tg\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "repository"
+msgstr "анбор"
+
+msgid "open issue"
+msgstr "барориши кушод"
+
+msgid "Contents"
+msgstr "Мундариҷа"
+
+msgid "Fullscreen mode"
+msgstr "Ҳолати экрани пурра"
+
+msgid "Download this page"
+msgstr "Ин саҳифаро зеркашӣ кунед"
+
+msgid "Download source file"
+msgstr "Файли манбаъро зеркашӣ кунед"
+
+msgid "Launch"
+msgstr "Оғоз"
+
+msgid "Edit this page"
+msgstr "Ин саҳифаро таҳрир кунед"
+
+msgid "Toggle navigation"
+msgstr "Гузаришро иваз кунед"
+
+msgid "Theme by the"
+msgstr "Мавзӯъи аз"
+
+msgid "Source repository"
+msgstr "Анбори манбаъ"
+
+msgid "Last updated on"
+msgstr "Last навсозӣ дар"
+
+msgid "By the"
+msgstr "Бо"
+
+msgid "Sphinx Book Theme"
+msgstr "Сфинкс Мавзӯи китоб"
+
+msgid "Open an issue"
+msgstr "Масъаларо кушоед"
+
+msgid "next page"
+msgstr "саҳифаи оянда"
+
+msgid "Copyright"
+msgstr "Ҳуқуқи муаллиф"
+
+msgid "Search this book..."
+msgstr "Ин китобро ҷустуҷӯ кунед ..."
+
+msgid "Print to PDF"
+msgstr "Чоп ба PDF"
+
+msgid "By"
+msgstr "Бо"
+
+msgid "previous page"
+msgstr "саҳифаи қаблӣ"
+
+msgid "Search the docs ..."
+msgstr "Ҷустуҷӯи ҳуҷҷатҳо ..."
+
+msgid "Download notebook file"
+msgstr "Файли дафтарро зеркашӣ кунед"
+
+msgid "suggest edit"
+msgstr "пешниҳод вироиш"

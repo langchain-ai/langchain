@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/hacker_news",
+  "id": "integrations/hacker_news",
+  "title": "Hacker News",
+  "description": "Hacker News (sometimes abbreviated as HN) is a social news",
+  "source": "@site/docs/integrations/hacker_news.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/hacker_news",
+  "permalink": "/docs/integrations/hacker_news",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/hacker_news.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/gitbook",
+  "id": "integrations/gitbook",
+  "title": "GitBook",
+  "description": "GitBook is a modern documentation platform where teams can document everything from products to internal knowledge bases and APIs.",
+  "source": "@site/docs/integrations/gitbook.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/gitbook",
+  "permalink": "/docs/integrations/gitbook",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/gitbook.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

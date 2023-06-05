@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/ctransformers",
+  "id": "integrations/ctransformers",
+  "title": "C Transformers",
+  "description": "This page covers how to use the C Transformers library within LangChain.",
+  "source": "@site/docs/integrations/ctransformers.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/ctransformers",
+  "permalink": "/docs/integrations/ctransformers",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/ctransformers.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

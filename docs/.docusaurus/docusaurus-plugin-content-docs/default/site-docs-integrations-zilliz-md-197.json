@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/zilliz",
+  "id": "integrations/zilliz",
+  "title": "Zilliz",
+  "description": "Zilliz Cloud is a fully managed service on cloud for LF AI Milvus®,",
+  "source": "@site/docs/integrations/zilliz.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/zilliz",
+  "permalink": "/docs/integrations/zilliz",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/zilliz.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

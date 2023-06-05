@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/mediawikidump",
+  "id": "integrations/mediawikidump",
+  "title": "MediaWikiDump",
+  "description": "MediaWiki XML Dumps contain the content of a wiki",
+  "source": "@site/docs/integrations/mediawikidump.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/mediawikidump",
+  "permalink": "/docs/integrations/mediawikidump",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/mediawikidump.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

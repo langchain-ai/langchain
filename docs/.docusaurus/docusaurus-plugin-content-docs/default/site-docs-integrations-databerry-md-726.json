@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/databerry",
+  "id": "integrations/databerry",
+  "title": "Databerry",
+  "description": "Databerry is an open source document retrieval platform that helps to connect your personal data with Large Language Models.",
+  "source": "@site/docs/integrations/databerry.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/databerry",
+  "permalink": "/docs/integrations/databerry",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/databerry.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

@@ -1,0 +1,2757 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Callbacks &#8212; 🦜🔗 LangChain 0.0.190</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script src="../../_static/js/mendablesearch.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Use cases" href="../../use_cases.html" />
+    <link rel="prev" title="Plan and Execute" href="../agents/plan_and_execute.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">🦜🔗 LangChain 0.0.190</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Get started
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../getting_started/getting_started.html">
+   Quickstart
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../getting_started/installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Modules
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../memory.html">
+   Memory
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../memory/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../memory/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/types/buffer.html">
+       ConversationBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/types/buffer_window.html">
+       ConversationBufferWindowMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/types/entity_summary_memory.html">
+       Entity Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/types/kg.html">
+       Conversation Knowledge Graph Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/types/summary.html">
+       ConversationSummaryMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/types/summary_buffer.html">
+       ConversationSummaryBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/types/token_buffer.html">
+       ConversationTokenBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/types/vectorstore_retriever_memory.html">
+       VectorStore-Backed Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/adding_memory.html">
+       How to add Memory to an LLMChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/adding_memory_chain_multiple_inputs.html">
+       How to add memory to a Multi-Input Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/agent_with_memory.html">
+       How to add Memory to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/agent_with_memory_in_db.html">
+       Adding Message Memory backed by a database to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/cassandra_chat_message_history.html">
+       Cassandra Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/conversational_customization.html">
+       How to customize conversational memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/custom_memory.html">
+       How to create a custom Memory class
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/dynamodb_chat_message_history.html">
+       Dynamodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/entity_memory_with_sqlite.html">
+       Entity Memory with SQLite storage
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/momento_chat_message_history.html">
+       Momento Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/mongodb_chat_message_history.html">
+       Mongodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/motorhead_memory.html">
+       Motörhead Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/motorhead_memory_managed.html">
+       Motörhead Memory (Managed)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/multiple_memory.html">
+       How to use multiple memory classes in the same chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/postgres_chat_message_history.html">
+       Postgres Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/redis_chat_message_history.html">
+       Redis Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../memory/examples/zep_memory.html">
+       Zep Memory
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../chains.html">
+   Chains
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../chains/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../chains/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/generic/async_chain.html">
+       Async API for Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/generic/custom_chain.html">
+       Creating a custom Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/generic/from_hub.html">
+       Loading from LangChainHub
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/generic/llm_chain.html">
+       LLM Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/generic/router.html">
+       Router Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/generic/sequential_chains.html">
+       Sequential Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/generic/serialization.html">
+       Serialization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/generic/transformation.html">
+       Transformation Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/index_examples/analyze_document.html">
+       Analyze Document
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/index_examples/chat_vector_db.html">
+       Chat Over Documents with Chat History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/index_examples/graph_qa.html">
+       Graph QA
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/index_examples/hyde.html">
+       Hypothetical Document Embeddings
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/index_examples/qa_with_sources.html">
+       Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/index_examples/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/index_examples/summarize.html">
+       Summarization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/index_examples/vector_db_qa.html">
+       Retrieval Question/Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/index_examples/vector_db_qa_with_sources.html">
+       Retrieval Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/index_examples/vector_db_text_generation.html">
+       Vector DB Text Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/api.html">
+       API Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/constitutional_chain.html">
+       Self-Critique Chain with Constitutional AI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/flare.html">
+       FLARE
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/graph_cypher_qa.html">
+       GraphCypherQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/llm_bash.html">
+       BashChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/llm_checker.html">
+       LLMCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/llm_requests.html">
+       LLMRequestsChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/llm_summarization_checker.html">
+       LLMSummarizationCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/moderation.html">
+       Moderation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/multi_prompt_router.html">
+       Router Chains: Selecting from multiple prompts with MultiPromptChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/multi_retrieval_qa_router.html">
+       Router Chains: Selecting from multiple prompts with MultiRetrievalQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/openapi.html">
+       OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/pal.html">
+       PAL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../chains/examples/sqlite.html">
+       SQL Chain example
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../reference/modules/chains.html">
+     Reference
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../agents.html">
+   Agents
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../agents/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../agents/tools.html">
+     Tools
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+    <label for="toctree-checkbox-6">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/getting_started.html">
+       Getting Started
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/custom_tools.html">
+       Defining Custom Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/multi_input_tool.html">
+       Multi-Input Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/tool_input_validation.html">
+       Tool Input Schema
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/apify.html">
+       Apify
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/arxiv.html">
+       ArXiv API Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/awslambda.html">
+       AWS Lambda API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/bash.html">
+       Shell Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/bing_search.html">
+       Bing Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/brave_search.html">
+       Brave Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/chatgpt_plugins.html">
+       ChatGPT Plugins
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/ddg.html">
+       DuckDuckGo Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/filesystem.html">
+       File System Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/google_places.html">
+       Google Places
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/google_search.html">
+       Google Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/google_serper.html">
+       Google Serper API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/gradio_tools.html">
+       Gradio Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/graphql.html">
+       GraphQL tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/huggingface_tools.html">
+       HuggingFace Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/human_tools.html">
+       Human as a tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/ifttt.html">
+       IFTTT WebHooks
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/metaphor_search.html">
+       Metaphor Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/openweathermap.html">
+       OpenWeatherMap API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/pubmed.html">
+       PubMed Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/python.html">
+       Python REPL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/requests.html">
+       Requests
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/sceneXplain.html">
+       SceneXplain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/search_tools.html">
+       Search Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/searx_search.html">
+       SearxNG Search API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/serpapi.html">
+       SerpAPI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/twilio.html">
+       Twilio
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/wikipedia.html">
+       Wikipedia
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/wolfram_alpha.html">
+       Wolfram Alpha
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/youtube.html">
+       YouTubeSearchTool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/tools/examples/zapier.html">
+       Zapier Natural Language Actions API
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../agents/agents.html">
+     Agents
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+    <label for="toctree-checkbox-7">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/agent_types.html">
+       Agent Types
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/custom_agent.html">
+       Custom Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/custom_llm_agent.html">
+       Custom LLM Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/custom_llm_chat_agent.html">
+       Custom LLM Agent (with a ChatModel)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/custom_mrkl_agent.html">
+       Custom MRKL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/custom_multi_action_agent.html">
+       Custom MultiAction Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/custom_agent_with_tool_retrieval.html">
+       Custom Agent with Tool Retrieval
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/examples/chat_conversation_agent.html">
+       Conversation Agent (for Chat Models)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/examples/conversational_agent.html">
+       Conversation Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/examples/mrkl.html">
+       MRKL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/examples/mrkl_chat.html">
+       MRKL Chat
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/examples/react.html">
+       ReAct
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/examples/self_ask_with_search.html">
+       Self Ask With Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agents/examples/structured_chat.html">
+       Structured Tool Chat Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../agents/toolkits.html">
+     Toolkits
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <label for="toctree-checkbox-8">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/azure_cognitive_services.html">
+       Azure Cognitive Services Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/csv.html">
+       CSV Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/gmail.html">
+       Gmail Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/jira.html">
+       Jira
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/json.html">
+       JSON Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/openapi.html">
+       OpenAPI agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/openapi_nla.html">
+       Natural Language APIs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/pandas.html">
+       Pandas Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/playwright.html">
+       PlayWright Browser Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/powerbi.html">
+       PowerBI Dataset Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/python.html">
+       Python Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/spark.html">
+       Spark Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/spark_sql.html">
+       Spark SQL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/sql_database.html">
+       SQL Database Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/toolkits/examples/vectorstore.html">
+       Vectorstore Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../agents/agent_executors.html">
+     Agent Executors
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+    <label for="toctree-checkbox-9">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agent_executors/examples/agent_vectorstore.html">
+       How to combine agents and vectorstores
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agent_executors/examples/async_agent.html">
+       How to use the async API for Agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agent_executors/examples/chatgpt_clone.html">
+       How to create ChatGPT Clone
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agent_executors/examples/handle_parsing_errors.html">
+       Handle Parsing Errors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agent_executors/examples/intermediate_steps.html">
+       How to access intermediate steps
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agent_executors/examples/max_iterations.html">
+       How to cap the max number of iterations
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agent_executors/examples/max_time_limit.html">
+       How to use a timeout for the agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../agents/agent_executors/examples/sharedmemory_for_tools.html">
+       How to add SharedMemory to an Agent and its Tools
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../agents/plan_and_execute.html">
+     Plan and Execute
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Callbacks
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Examples
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../use_cases.html">
+   Use cases
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../use_cases/autonomous_agents.html">
+     Autonomous Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../use_cases/agent_simulations.html">
+     Agent Simulations
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../use_cases/personal_assistants.html">
+     Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../use_cases/question_answering.html">
+     Question Answering over Docs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../use_cases/chatbots.html">
+     Chatbots
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../use_cases/tabular.html">
+     Querying Tabular Data
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../use_cases/code.html">
+     Code Understanding
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../use_cases/apis.html">
+     Interacting with APIs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../use_cases/extraction.html">
+     Extraction
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../use_cases/summarization.html">
+     Summarization
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../use_cases/evaluation.html">
+     Evaluation
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+    <label for="toctree-checkbox-11">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/agent_benchmarking.html">
+       Agent Benchmarking: Search + Calculator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/agent_vectordb_sota_pg.html">
+       Agent VectorDB Question Answering Benchmarking
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/benchmarking_template.html">
+       Benchmarking Template
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/data_augmented_question_answering.html">
+       Data Augmented Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/generic_agent_evaluation.html">
+       Generic Agent Evaluation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/huggingface_datasets.html">
+       Using Hugging Face Datasets
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/openapi_eval.html">
+       Evaluating an OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/qa_benchmarking_pg.html">
+       Question Answering Benchmarking: Paul Graham Essay
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/qa_benchmarking_sota.html">
+       Question Answering Benchmarking: State of the Union Address
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/qa_generation.html">
+       QA Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../use_cases/evaluation/sql_qa_benchmarking_chinook.html">
+       SQL Question Answering Benchmarking: Chinook
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../additional_resources.html">
+   Additional resources
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+  <label for="toctree-checkbox-12">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../additional_resources/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference external" href="https://github.com/kyrolabs/awesome-langchain">
+     Gallery
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Ecosystem
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../integrations.html">
+   Integrations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+  <label for="toctree-checkbox-13">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/agent_with_wandb_tracing.html">
+     Tracing Walkthrough
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/ai21.html">
+     AI21 Labs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/aim_tracking.html">
+     Aim
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/airbyte.html">
+     Airbyte
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/aleph_alpha.html">
+     Aleph Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/analyticdb.html">
+     AnalyticDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/annoy.html">
+     Annoy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/anyscale.html">
+     Anyscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/apify.html">
+     Apify
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/argilla.html">
+     Argilla
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/arxiv.html">
+     Arxiv
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/atlas.html">
+     AtlasDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/aws_s3.html">
+     AWS S3 Directory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azlyrics.html">
+     AZLyrics
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azure_blob_storage.html">
+     Azure Blob Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azure_cognitive_search_.html">
+     Azure Cognitive Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azure_openai.html">
+     Azure OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/bananadev.html">
+     Banana
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/beam.html">
+     Beam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/bedrock.html">
+     Bedrock
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/bilibili.html">
+     BiliBili
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/blackboard.html">
+     Blackboard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/cassandra.html">
+     Cassandra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/cerebriumai.html">
+     CerebriumAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/chroma.html">
+     Chroma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/clearml_tracking.html">
+     ClearML
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/cohere.html">
+     Cohere
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/college_confidential.html">
+     College Confidential
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/comet_tracking.html">
+     Comet
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/confluence.html">
+     Confluence
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/ctransformers.html">
+     C Transformers
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/databerry.html">
+     Databerry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/databricks.html">
+     Databricks
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/deepinfra.html">
+     DeepInfra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/deeplake.html">
+     Deep Lake
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/diffbot.html">
+     Diffbot
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/discord.html">
+     Discord
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/docugami.html">
+     Docugami
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/duckdb.html">
+     DuckDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/elasticsearch.html">
+     Elasticsearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/evernote.html">
+     EverNote
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/facebook_chat.html">
+     Facebook Chat
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/figma.html">
+     Figma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/forefrontai.html">
+     ForefrontAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/git.html">
+     Git
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gitbook.html">
+     GitBook
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_bigquery.html">
+     Google BigQuery
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_cloud_storage.html">
+     Google Cloud Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_drive.html">
+     Google Drive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_search.html">
+     Google Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_serper.html">
+     Google Serper
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gooseai.html">
+     GooseAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gpt4all.html">
+     GPT4All
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/graphsignal.html">
+     Graphsignal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gutenberg.html">
+     Gutenberg
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/hacker_news.html">
+     Hacker News
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/hazy_research.html">
+     Hazy Research
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/helicone.html">
+     Helicone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/huggingface.html">
+     Hugging Face
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/ifixit.html">
+     iFixit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/imsdb.html">
+     IMSDb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/jina.html">
+     Jina
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/lancedb.html">
+     LanceDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/llamacpp.html">
+     Llama.cpp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/mediawikidump.html">
+     MediaWikiDump
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/metal.html">
+     Metal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/microsoft_onedrive.html">
+     Microsoft OneDrive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/microsoft_powerpoint.html">
+     Microsoft PowerPoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/microsoft_word.html">
+     Microsoft Word
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/milvus.html">
+     Milvus
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/mlflow_tracking.html">
+     MLflow
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/modal.html">
+     Modal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/modern_treasury.html">
+     Modern Treasury
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/momento.html">
+     Momento
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/myscale.html">
+     MyScale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/nlpcloud.html">
+     NLPCloud
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/notion.html">
+     Notion DB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/obsidian.html">
+     Obsidian
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/openai.html">
+     OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/opensearch.html">
+     OpenSearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/openweathermap.html">
+     OpenWeatherMap
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/petals.html">
+     Petals
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/pgvector.html">
+     PGVector
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/pinecone.html">
+     Pinecone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/pipelineai.html">
+     PipelineAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/predictionguard.html">
+     Prediction Guard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/promptlayer.html">
+     PromptLayer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/psychic.html">
+     Psychic
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/qdrant.html">
+     Qdrant
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/rebuff.html">
+     Rebuff
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/reddit.html">
+     Reddit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/redis.html">
+     Redis
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/replicate.html">
+     Replicate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/roam.html">
+     Roam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/runhouse.html">
+     Runhouse
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/rwkv.html">
+     RWKV-4
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/sagemaker_endpoint.html">
+     SageMaker Endpoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/searx.html">
+     SearxNG Search API
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/serpapi.html">
+     SerpAPI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/sklearn.html">
+     scikit-learn
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/slack.html">
+     Slack
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/spacy.html">
+     spaCy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/spreedly.html">
+     Spreedly
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/stochasticai.html">
+     StochasticAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/stripe.html">
+     Stripe
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/tair.html">
+     Tair
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/telegram.html">
+     Telegram
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/tomarkdown.html">
+     2Markdown
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/trello.html">
+     Trello
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/twitter.html">
+     Twitter
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/unstructured.html">
+     Unstructured
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/vectara.html">
+     Vectara
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/vespa.html">
+     Vespa
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/wandb_tracking.html">
+     Weights &amp; Biases
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/weather.html">
+     Weather
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/weaviate.html">
+     Weaviate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/whatsapp.html">
+     WhatsApp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/whylabs_profiling.html">
+     WhyLabs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/wikipedia.html">
+     Wikipedia
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/wolfram_alpha.html">
+     Wolfram Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/writer.html">
+     Writer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/yeagerai.html">
+     Yeager.ai
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/zep.html">
+     Zep
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/zilliz.html">
+     Zilliz
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../ecosystem/deployments.html">
+   Deployments
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://github.com/hwchase17/langchain-hub">
+   LangChainHub
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../dependents.html">
+   Dependents
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Find us
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference external" href="https://twitter.com/LangChainAI">
+   Twitter
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://discord.gg/6adMQxSpJS">
+   Discord
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://forms.gle/57d8AmXBYp8PP8tZA">
+   Request production support
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+<a href="https://github.com/hwchase17/langchain"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="bottom"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="../../_sources/modules/callbacks/getting_started.ipynb.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.ipynb</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h1 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#">
+   Callbacks
+  </a>
+  <ul class="visible nav section-nav flex-column">
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-to-use-callbacks">
+     How to use callbacks
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h3 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#when-do-you-want-to-use-each-of-these">
+       When do you want to use each of these?
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#using-an-existing-handler">
+     Using an existing handler
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#creating-a-custom-handler">
+     Creating a custom handler
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#async-callbacks">
+     Async Callbacks
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#using-multiple-handlers-passing-in-handlers">
+     Using multiple handlers, passing in handlers
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h1 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#tracing-and-token-counting">
+   Tracing and Token Counting
+  </a>
+  <ul class="visible nav section-nav flex-column">
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#tracing">
+     Tracing
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#token-counting">
+     Token Counting
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Callbacks</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h1 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#">
+   Callbacks
+  </a>
+  <ul class="visible nav section-nav flex-column">
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-to-use-callbacks">
+     How to use callbacks
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h3 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#when-do-you-want-to-use-each-of-these">
+       When do you want to use each of these?
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#using-an-existing-handler">
+     Using an existing handler
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#creating-a-custom-handler">
+     Creating a custom handler
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#async-callbacks">
+     Async Callbacks
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#using-multiple-handlers-passing-in-handlers">
+     Using multiple handlers, passing in handlers
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h1 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#tracing-and-token-counting">
+   Tracing and Token Counting
+  </a>
+  <ul class="visible nav section-nav flex-column">
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#tracing">
+     Tracing
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#token-counting">
+     Token Counting
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <section id="callbacks">
+<h1>Callbacks<a class="headerlink" href="#callbacks" title="Permalink to this headline">#</a></h1>
+<p>LangChain provides a callbacks system that allows you to hook into the various stages of your LLM application. This is useful for logging, <a class="reference external" href="https://python.langchain.com/en/latest/tracing.html">monitoring</a>, <a class="reference external" href="https://python.langchain.com/en/latest/modules/models/llms/examples/streaming_llm.html">streaming</a>, and other tasks.</p>
+<p>You can subscribe to these events by using the <code class="docutils literal notranslate"><span class="pre">callbacks</span></code> argument available throughout the API. This argument is list of handler objects, which are expected to implement one or more of the methods described below in more detail. There are two main callbacks mechanisms:</p>
+<ul class="simple">
+<li><p><em>Constructor callbacks</em> will be used for all calls made on that object, and will be scoped to that object only, i.e. if you pass a handler to the <code class="docutils literal notranslate"><span class="pre">LLMChain</span></code> constructor, it will not be used by the model attached to that chain.</p></li>
+<li><p><em>Request callbacks</em> will be used for that specific request only, and all sub-requests that it contains (eg. a call to an <code class="docutils literal notranslate"><span class="pre">LLMChain</span></code> triggers a call to a Model, which uses the same handler passed through). These are explicitly passed through.</p></li>
+</ul>
+<p><strong>Advanced:</strong> When you create a custom chain you can easily set it up to use the same callback system as all the built-in chains.
+<code class="docutils literal notranslate"><span class="pre">_call</span></code>, <code class="docutils literal notranslate"><span class="pre">_generate</span></code>, <code class="docutils literal notranslate"><span class="pre">_run</span></code>, and equivalent async methods on Chains / LLMs / Chat Models / Agents / Tools now receive a 2nd argument called <code class="docutils literal notranslate"><span class="pre">run_manager</span></code> which is bound to that run, and contains the logging methods that can be used by that object (i.e. <code class="docutils literal notranslate"><span class="pre">on_llm_new_token</span></code>). This is useful when constructing a custom chain. See this guide for more information on how to <a class="reference external" href="https://python.langchain.com/en/latest/modules/chains/generic/custom_chain.html">create custom chains and use callbacks inside them.</a></p>
+<p><code class="docutils literal notranslate"><span class="pre">CallbackHandlers</span></code> are objects that implement the <code class="docutils literal notranslate"><span class="pre">CallbackHandler</span></code> interface, which has a method for each event that can be subscribed to. The <code class="docutils literal notranslate"><span class="pre">CallbackManager</span></code> will call the appropriate method on each handler when the event is triggered.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">BaseCallbackHandler</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base callback handler that can be used to handle callbacks from langchain.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_llm_start</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">serialized</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prompts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when LLM starts running.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_llm_new_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run on new LLM token. Only available when streaming is enabled.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_llm_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">LLMResult</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when LLM ends running.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_llm_error</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="ne">Exception</span><span class="p">,</span> <span class="ne">KeyboardInterrupt</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when LLM errors.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_chain_start</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">serialized</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when chain starts running.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_chain_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when chain ends running.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_chain_error</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="ne">Exception</span><span class="p">,</span> <span class="ne">KeyboardInterrupt</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when chain errors.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_tool_start</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">serialized</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">input_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when tool starts running.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_tool_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when tool ends running.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_tool_error</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="ne">Exception</span><span class="p">,</span> <span class="ne">KeyboardInterrupt</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when tool errors.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run on arbitrary text.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_agent_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">AgentAction</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run on agent action.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_agent_finish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finish</span><span class="p">:</span> <span class="n">AgentFinish</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run on agent end.&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+<section id="how-to-use-callbacks">
+<h2>How to use callbacks<a class="headerlink" href="#how-to-use-callbacks" title="Permalink to this headline">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">callbacks</span></code> argument is available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) in two different places:</p>
+<ul class="simple">
+<li><p><strong>Constructor callbacks</strong>: defined in the constructor, eg. <code class="docutils literal notranslate"><span class="pre">LLMChain(callbacks=[handler])</span></code>, which will be used for all calls made on that object, and will be scoped to that object only, eg. if you pass a handler to the <code class="docutils literal notranslate"><span class="pre">LLMChain</span></code> constructor, it will not be used by the Model attached to that chain.</p></li>
+<li><p><strong>Request callbacks</strong>: defined in the <code class="docutils literal notranslate"><span class="pre">call()</span></code>/<code class="docutils literal notranslate"><span class="pre">run()</span></code>/<code class="docutils literal notranslate"><span class="pre">apply()</span></code> methods used for issuing a request, eg. <code class="docutils literal notranslate"><span class="pre">chain.call(inputs,</span> <span class="pre">callbacks=[handler])</span></code>, which will be used for that specific request only, and all sub-requests that it contains (eg. a call to an LLMChain triggers a call to a Model, which uses the same handler passed in the <code class="docutils literal notranslate"><span class="pre">call()</span></code> method).</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">verbose</span></code> argument is available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) as a constructor argument, eg. <code class="docutils literal notranslate"><span class="pre">LLMChain(verbose=True)</span></code>, and it is equivalent to passing a <code class="docutils literal notranslate"><span class="pre">ConsoleCallbackHandler</span></code> to the <code class="docutils literal notranslate"><span class="pre">callbacks</span></code> argument of that object and all child objects. This is useful for debugging, as it will log all events to the console.</p>
+<section id="when-do-you-want-to-use-each-of-these">
+<h3>When do you want to use each of these?<a class="headerlink" href="#when-do-you-want-to-use-each-of-these" title="Permalink to this headline">#</a></h3>
+<ul class="simple">
+<li><p>Constructor callbacks are most useful for use cases such as logging, monitoring, etc., which are <em>not specific to a single request</em>, but rather to the entire chain. For example, if you want to log all the requests made to an LLMChain, you would pass a handler to the constructor.</p></li>
+<li><p>Request callbacks are most useful for use cases such as streaming, where you want to stream the output of a single request to a specific websocket connection, or other similar use cases. For example, if you want to stream the output of a single request to a websocket, you would pass a handler to the <code class="docutils literal notranslate"><span class="pre">call()</span></code> method</p></li>
+</ul>
+</section>
+</section>
+<section id="using-an-existing-handler">
+<h2>Using an existing handler<a class="headerlink" href="#using-an-existing-handler" title="Permalink to this headline">#</a></h2>
+<p>LangChain provides a few built-in handlers that you can use to get started. These are available in the <code class="docutils literal notranslate"><span class="pre">langchain/callbacks</span></code> module. The most basic handler is the <code class="docutils literal notranslate"><span class="pre">StdOutCallbackHandler</span></code>, which simply logs all events to <code class="docutils literal notranslate"><span class="pre">stdout</span></code>. In the future we will add more default handlers to the library.</p>
+<p><strong>Note</strong> when the <code class="docutils literal notranslate"><span class="pre">verbose</span></code> flag on the object is set to true, the <code class="docutils literal notranslate"><span class="pre">StdOutCallbackHandler</span></code> will be invoked even without being explicitly passed in.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.callbacks</span> <span class="kn">import</span> <span class="n">StdOutCallbackHandler</span>
+<span class="kn">from</span> <span class="nn">langchain.chains</span> <span class="kn">import</span> <span class="n">LLMChain</span>
+<span class="kn">from</span> <span class="nn">langchain.llms</span> <span class="kn">import</span> <span class="n">OpenAI</span>
+<span class="kn">from</span> <span class="nn">langchain.prompts</span> <span class="kn">import</span> <span class="n">PromptTemplate</span>
+
+<span class="n">handler</span> <span class="o">=</span> <span class="n">StdOutCallbackHandler</span><span class="p">()</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">()</span>
+<span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span><span class="s2">&quot;1 + </span><span class="si">{number}</span><span class="s2"> = &quot;</span><span class="p">)</span>
+
+<span class="c1"># First, let&#39;s explicitly set the StdOutCallbackHandler in `callbacks`</span>
+<span class="n">chain</span> <span class="o">=</span> <span class="n">LLMChain</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">handler</span><span class="p">])</span>
+<span class="n">chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># Then, let&#39;s use the `verbose` flag to achieve the same result</span>
+<span class="n">chain</span> <span class="o">=</span> <span class="n">LLMChain</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># Finally, let&#39;s use the request `callbacks` to achieve the same result</span>
+<span class="n">chain</span> <span class="o">=</span> <span class="n">LLMChain</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">)</span>
+<span class="n">chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">handler</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new LLMChain chain...</span>
+Prompt after formatting:
+<span class=" -Color -Color-Bold -Color-Bold-Green">1 + 2 = </span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+
+
+<span class=" -Color -Color-Bold">&gt; Entering new LLMChain chain...</span>
+Prompt after formatting:
+<span class=" -Color -Color-Bold -Color-Bold-Green">1 + 2 = </span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+
+
+<span class=" -Color -Color-Bold">&gt; Entering new LLMChain chain...</span>
+Prompt after formatting:
+<span class=" -Color -Color-Bold -Color-Bold-Green">1 + 2 = </span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&#39;\n\n3&#39;
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="creating-a-custom-handler">
+<h2>Creating a custom handler<a class="headerlink" href="#creating-a-custom-handler" title="Permalink to this headline">#</a></h2>
+<p>You can create a custom handler to set on the object as well. In the example below, we’ll implement streaming with a custom handler.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.callbacks.base</span> <span class="kn">import</span> <span class="n">BaseCallbackHandler</span>
+<span class="kn">from</span> <span class="nn">langchain.chat_models</span> <span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span> <span class="nn">langchain.schema</span> <span class="kn">import</span> <span class="n">HumanMessage</span>
+
+<span class="k">class</span> <span class="nc">MyCustomHandler</span><span class="p">(</span><span class="n">BaseCallbackHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_llm_new_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;My custom handler, token: </span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># To enable streaming, we pass in `streaming=True` to the ChatModel constructor</span>
+<span class="c1"># Additionally, we pass in a list with our custom handler</span>
+<span class="n">chat</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">max_tokens</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">streaming</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">MyCustomHandler</span><span class="p">()])</span>
+
+<span class="n">chat</span><span class="p">([</span><span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s2">&quot;Tell me a joke&quot;</span><span class="p">)])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>My custom handler, token: 
+My custom handler, token: Why
+My custom handler, token:  did
+My custom handler, token:  the
+My custom handler, token:  tomato
+My custom handler, token:  turn
+My custom handler, token:  red
+My custom handler, token: ?
+My custom handler, token:  Because
+My custom handler, token:  it
+My custom handler, token:  saw
+My custom handler, token:  the
+My custom handler, token:  salad
+My custom handler, token:  dressing
+My custom handler, token: !
+My custom handler, token: 
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>AIMessage(content=&#39;Why did the tomato turn red? Because it saw the salad dressing!&#39;, additional_kwargs={})
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="async-callbacks">
+<h2>Async Callbacks<a class="headerlink" href="#async-callbacks" title="Permalink to this headline">#</a></h2>
+<p>If you are planning to use the async API, it is recommended to use <code class="docutils literal notranslate"><span class="pre">AsyncCallbackHandler</span></code> to avoid blocking the runloop.</p>
+<p><strong>Advanced</strong> if you use a sync <code class="docutils literal notranslate"><span class="pre">CallbackHandler</span></code> while using an async method to run your llm/chain/tool/agent, it will still work. However, under the hood, it will be called with <a class="reference external" href="https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor"><code class="docutils literal notranslate"><span class="pre">run_in_executor</span></code></a> which can cause issues if your <code class="docutils literal notranslate"><span class="pre">CallbackHandler</span></code> is not thread-safe.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span> <span class="nn">langchain.schema</span> <span class="kn">import</span> <span class="n">LLMResult</span>
+<span class="kn">from</span> <span class="nn">langchain.callbacks.base</span> <span class="kn">import</span> <span class="n">AsyncCallbackHandler</span>
+
+<span class="k">class</span> <span class="nc">MyCustomSyncHandler</span><span class="p">(</span><span class="n">BaseCallbackHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_llm_new_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sync handler being called in a `thread_pool_executor`: token: </span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">MyCustomAsyncHandler</span><span class="p">(</span><span class="n">AsyncCallbackHandler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Async callback handler that can be used to handle callbacks from langchain.&quot;&quot;&quot;</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">on_llm_start</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">serialized</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prompts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when chain starts running.&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;zzzz....&quot;</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="n">serialized</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hi! I just woke up. Your llm is starting&quot;</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">on_llm_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">LLMResult</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when chain ends running.&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;zzzz....&quot;</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hi! I just woke up. Your llm is ending&quot;</span><span class="p">)</span>
+
+<span class="c1"># To enable streaming, we pass in `streaming=True` to the ChatModel constructor</span>
+<span class="c1"># Additionally, we pass in a list with our custom handler</span>
+<span class="n">chat</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">max_tokens</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">streaming</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">MyCustomSyncHandler</span><span class="p">(),</span> <span class="n">MyCustomAsyncHandler</span><span class="p">()])</span>
+
+<span class="k">await</span> <span class="n">chat</span><span class="o">.</span><span class="n">agenerate</span><span class="p">([[</span><span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s2">&quot;Tell me a joke&quot;</span><span class="p">)]])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>zzzz....
+Hi! I just woke up. Your llm is starting
+Sync handler being called in a `thread_pool_executor`: token: 
+Sync handler being called in a `thread_pool_executor`: token: Why
+Sync handler being called in a `thread_pool_executor`: token:  don
+Sync handler being called in a `thread_pool_executor`: token: &#39;t
+Sync handler being called in a `thread_pool_executor`: token:  scientists
+Sync handler being called in a `thread_pool_executor`: token:  trust
+Sync handler being called in a `thread_pool_executor`: token:  atoms
+Sync handler being called in a `thread_pool_executor`: token: ?
+
+
+Sync handler being called in a `thread_pool_executor`: token: Because
+Sync handler being called in a `thread_pool_executor`: token:  they
+Sync handler being called in a `thread_pool_executor`: token:  make
+Sync handler being called in a `thread_pool_executor`: token:  up
+Sync handler being called in a `thread_pool_executor`: token:  everything
+Sync handler being called in a `thread_pool_executor`: token: !
+Sync handler being called in a `thread_pool_executor`: token: 
+zzzz....
+Hi! I just woke up. Your llm is ending
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>LLMResult(generations=[[ChatGeneration(text=&quot;Why don&#39;t scientists trust atoms?\n\nBecause they make up everything!&quot;, generation_info=None, message=AIMessage(content=&quot;Why don&#39;t scientists trust atoms?\n\nBecause they make up everything!&quot;, additional_kwargs={}))]], llm_output={&#39;token_usage&#39;: {}, &#39;model_name&#39;: &#39;gpt-3.5-turbo&#39;})
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="using-multiple-handlers-passing-in-handlers">
+<h2>Using multiple handlers, passing in handlers<a class="headerlink" href="#using-multiple-handlers-passing-in-handlers" title="Permalink to this headline">#</a></h2>
+<p>In the previous examples, we passed in callback handlers upon creation of an object by using <code class="docutils literal notranslate"><span class="pre">callbacks=</span></code>. In this case, the callbacks will be scoped to that particular object.</p>
+<p>However, in many cases, it is advantageous to pass in handlers instead when running the object. When we pass through <code class="docutils literal notranslate"><span class="pre">CallbackHandlers</span></code> using the <code class="docutils literal notranslate"><span class="pre">callbacks</span></code> keyword arg when executing an run, those callbacks will be issued by all nested objects involved in the execution. For example, when a handler is passed through to an <code class="docutils literal notranslate"><span class="pre">Agent</span></code>, it will be used for all callbacks related to the agent and all the objects involved in the agent’s execution, in this case, the <code class="docutils literal notranslate"><span class="pre">Tools</span></code>, <code class="docutils literal notranslate"><span class="pre">LLMChain</span></code>, and <code class="docutils literal notranslate"><span class="pre">LLM</span></code>.</p>
+<p>This prevents us from having to manually attach the handlers to each individual nested object.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">langchain.callbacks.base</span> <span class="kn">import</span> <span class="n">BaseCallbackHandler</span>
+<span class="kn">from</span> <span class="nn">langchain.schema</span> <span class="kn">import</span> <span class="n">AgentAction</span>
+<span class="kn">from</span> <span class="nn">langchain.agents</span> <span class="kn">import</span> <span class="n">AgentType</span><span class="p">,</span> <span class="n">initialize_agent</span><span class="p">,</span> <span class="n">load_tools</span>
+<span class="kn">from</span> <span class="nn">langchain.callbacks</span> <span class="kn">import</span> <span class="n">tracing_enabled</span>
+<span class="kn">from</span> <span class="nn">langchain.llms</span> <span class="kn">import</span> <span class="n">OpenAI</span>
+
+<span class="c1"># First, define custom callback handler implementations</span>
+<span class="k">class</span> <span class="nc">MyCustomHandlerOne</span><span class="p">(</span><span class="n">BaseCallbackHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_llm_start</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">serialized</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prompts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;on_llm_start </span><span class="si">{</span><span class="n">serialized</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_llm_new_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;on_new_token </span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_llm_error</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="ne">Exception</span><span class="p">,</span> <span class="ne">KeyboardInterrupt</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when LLM errors.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">on_chain_start</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">serialized</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;on_chain_start </span><span class="si">{</span><span class="n">serialized</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_tool_start</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">serialized</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">input_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;on_tool_start </span><span class="si">{</span><span class="n">serialized</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_agent_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">AgentAction</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;on_agent_action </span><span class="si">{</span><span class="n">action</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">MyCustomHandlerTwo</span><span class="p">(</span><span class="n">BaseCallbackHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_llm_start</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">serialized</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prompts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;on_llm_start (I&#39;m the second handler!!) </span><span class="si">{</span><span class="n">serialized</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Instantiate the handlers</span>
+<span class="n">handler1</span> <span class="o">=</span> <span class="n">MyCustomHandlerOne</span><span class="p">()</span>
+<span class="n">handler2</span> <span class="o">=</span> <span class="n">MyCustomHandlerTwo</span><span class="p">()</span>
+
+<span class="c1"># Setup the agent. Only the `llm` will issue callbacks for handler2</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">streaming</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">handler2</span><span class="p">])</span>
+<span class="n">tools</span> <span class="o">=</span> <span class="n">load_tools</span><span class="p">([</span><span class="s2">&quot;llm-math&quot;</span><span class="p">],</span> <span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">)</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="n">initialize_agent</span><span class="p">(</span>
+    <span class="n">tools</span><span class="p">,</span> <span class="n">llm</span><span class="p">,</span> <span class="n">agent</span><span class="o">=</span><span class="n">AgentType</span><span class="o">.</span><span class="n">ZERO_SHOT_REACT_DESCRIPTION</span>
+<span class="p">)</span>
+
+<span class="c1"># Callbacks for handler1 will be issued by every object involved in the </span>
+<span class="c1"># Agent execution (llm, llmchain, tool, agent executor)</span>
+<span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;What is 2 raised to the 0.235 power?&quot;</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">handler1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>on_chain_start AgentExecutor
+on_chain_start LLMChain
+on_llm_start OpenAI
+on_llm_start (I&#39;m the second handler!!) OpenAI
+on_new_token  I
+on_new_token  need
+on_new_token  to
+on_new_token  use
+on_new_token  a
+on_new_token  calculator
+on_new_token  to
+on_new_token  solve
+on_new_token  this
+on_new_token .
+on_new_token 
+Action
+on_new_token :
+on_new_token  Calculator
+on_new_token 
+Action
+on_new_token  Input
+on_new_token :
+on_new_token  2
+on_new_token ^
+on_new_token 0
+on_new_token .
+on_new_token 235
+on_new_token 
+on_agent_action AgentAction(tool=&#39;Calculator&#39;, tool_input=&#39;2^0.235&#39;, log=&#39; I need to use a calculator to solve this.\nAction: Calculator\nAction Input: 2^0.235&#39;)
+on_tool_start Calculator
+on_chain_start LLMMathChain
+on_chain_start LLMChain
+on_llm_start OpenAI
+on_llm_start (I&#39;m the second handler!!) OpenAI
+on_new_token 
+
+on_new_token ```text
+on_new_token 
+
+on_new_token 2
+on_new_token **
+on_new_token 0
+on_new_token .
+on_new_token 235
+on_new_token 
+
+on_new_token ```
+
+on_new_token ...
+on_new_token num
+on_new_token expr
+on_new_token .
+on_new_token evaluate
+on_new_token (&quot;
+on_new_token 2
+on_new_token **
+on_new_token 0
+on_new_token .
+on_new_token 235
+on_new_token &quot;)
+on_new_token ...
+on_new_token 
+
+on_new_token 
+on_chain_start LLMChain
+on_llm_start OpenAI
+on_llm_start (I&#39;m the second handler!!) OpenAI
+on_new_token  I
+on_new_token  now
+on_new_token  know
+on_new_token  the
+on_new_token  final
+on_new_token  answer
+on_new_token .
+on_new_token 
+Final
+on_new_token  Answer
+on_new_token :
+on_new_token  1
+on_new_token .
+on_new_token 17
+on_new_token 690
+on_new_token 67
+on_new_token 372
+on_new_token 187
+on_new_token 674
+on_new_token 
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&#39;1.1769067372187674&#39;
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="tracing-and-token-counting">
+<h1>Tracing and Token Counting<a class="headerlink" href="#tracing-and-token-counting" title="Permalink to this headline">#</a></h1>
+<p>Tracing and token counting are two capabilities we provide which are built on our callbacks mechanism.</p>
+<section id="tracing">
+<h2>Tracing<a class="headerlink" href="#tracing" title="Permalink to this headline">#</a></h2>
+<p>There are two recommended ways to trace your LangChains:</p>
+<ol class="arabic simple">
+<li><p>Setting the <code class="docutils literal notranslate"><span class="pre">LANGCHAIN_TRACING</span></code> environment variable to <code class="docutils literal notranslate"><span class="pre">&quot;true&quot;</span></code>.</p></li>
+<li><p>Using a context manager <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">tracing_enabled()</span></code> to trace a particular block of code.</p></li>
+</ol>
+<p><strong>Note</strong> if the environment variable is set, all code will be traced, regardless of whether or not it’s within the context manager.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">langchain.agents</span> <span class="kn">import</span> <span class="n">AgentType</span><span class="p">,</span> <span class="n">initialize_agent</span><span class="p">,</span> <span class="n">load_tools</span>
+<span class="kn">from</span> <span class="nn">langchain.callbacks</span> <span class="kn">import</span> <span class="n">tracing_enabled</span>
+<span class="kn">from</span> <span class="nn">langchain.llms</span> <span class="kn">import</span> <span class="n">OpenAI</span>
+
+<span class="c1"># To run the code, make sure to set OPENAI_API_KEY and SERPAPI_API_KEY</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">tools</span> <span class="o">=</span> <span class="n">load_tools</span><span class="p">([</span><span class="s2">&quot;llm-math&quot;</span><span class="p">,</span> <span class="s2">&quot;serpapi&quot;</span><span class="p">],</span> <span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">)</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="n">initialize_agent</span><span class="p">(</span>
+    <span class="n">tools</span><span class="p">,</span> <span class="n">llm</span><span class="p">,</span> <span class="n">agent</span><span class="o">=</span><span class="n">AgentType</span><span class="o">.</span><span class="n">ZERO_SHOT_REACT_DESCRIPTION</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="n">questions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Who won the US Open men&#39;s final in 2019? What is his age raised to the 0.334 power?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Who is Olivia Wilde&#39;s boyfriend? What is his current age raised to the 0.23 power?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Who won the most recent formula 1 grand prix? What is their age raised to the 0.23 power?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Who won the US Open women&#39;s final in 2019? What is her age raised to the 0.34 power?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Who is Beyonce&#39;s husband? What is his age raised to the 0.19 power?&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;LANGCHAIN_TRACING&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;true&quot;</span>
+
+<span class="c1"># Both of the agent runs will be traced because the environment variable is set</span>
+<span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">questions</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="k">with</span> <span class="n">tracing_enabled</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">session</span>
+    <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">questions</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to find out who won the US Open men&#39;s final in 2019 and then calculate his age raised to the 0.334 power.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;US Open men&#39;s final 2019 winner&quot;</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">Rafael Nadal defeated Daniil Medvedev in the final, 7–5, 6–3, 5–7, 4–6, 6–4 to win the men&#39;s singles tennis title at the 2019 US Open. It was his fourth US ...</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to find out the age of the winner</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;Rafael Nadal age&quot;</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">36 years</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to calculate the age raised to the 0.334 power</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Calculator</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: 36^0.334</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Cyan">Answer: 3.3098250249682484</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green"> I now know the final answer</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Final Answer: Rafael Nadal, aged 36, won the US Open men&#39;s final in 2019 and his age raised to the 0.334 power is 3.3098250249682484.</span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+
+
+<span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to find out who Olivia Wilde&#39;s boyfriend is and then calculate his age raised to the 0.23 power.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;Olivia Wilde boyfriend&quot;</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">Sudeikis and Wilde&#39;s relationship ended in November 2020. Wilde was publicly served with court documents regarding child custody while she was presenting Don&#39;t Worry Darling at CinemaCon 2022. In January 2021, Wilde began dating singer Harry Styles after meeting during the filming of Don&#39;t Worry Darling.</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to find out Harry Styles&#39; age.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;Harry Styles age&quot;</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">29 years</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to calculate 29 raised to the 0.23 power.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Calculator</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: 29^0.23</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Cyan">Answer: 2.169459462491557</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green"> I now know the final answer.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Final Answer: Harry Styles is Olivia Wilde&#39;s boyfriend and his current age raised to the 0.23 power is 2.169459462491557.</span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Now, we unset the environment variable and use a context manager.</span>
+
+<span class="k">if</span> <span class="s2">&quot;LANGCHAIN_TRACING&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+    <span class="k">del</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;LANGCHAIN_TRACING&quot;</span><span class="p">]</span>
+
+<span class="c1"># here, we are writing traces to &quot;my_test_session&quot;</span>
+<span class="k">with</span> <span class="n">tracing_enabled</span><span class="p">(</span><span class="s2">&quot;my_test_session&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">session</span>
+    <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">questions</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># this should be traced</span>
+
+<span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">questions</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># this should not be traced</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to find out who won the US Open men&#39;s final in 2019 and then calculate his age raised to the 0.334 power.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;US Open men&#39;s final 2019 winner&quot;</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">Rafael Nadal defeated Daniil Medvedev in the final, 7–5, 6–3, 5–7, 4–6, 6–4 to win the men&#39;s singles tennis title at the 2019 US Open. It was his fourth US ...</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to find out the age of the winner</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;Rafael Nadal age&quot;</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">36 years</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to calculate the age raised to the 0.334 power</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Calculator</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: 36^0.334</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Cyan">Answer: 3.3098250249682484</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green"> I now know the final answer</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Final Answer: Rafael Nadal, aged 36, won the US Open men&#39;s final in 2019 and his age raised to the 0.334 power is 3.3098250249682484.</span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+
+
+<span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to find out who Olivia Wilde&#39;s boyfriend is and then calculate his age raised to the 0.23 power.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;Olivia Wilde boyfriend&quot;</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">Sudeikis and Wilde&#39;s relationship ended in November 2020. Wilde was publicly served with court documents regarding child custody while she was presenting Don&#39;t Worry Darling at CinemaCon 2022. In January 2021, Wilde began dating singer Harry Styles after meeting during the filming of Don&#39;t Worry Darling.</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to find out Harry Styles&#39; age.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;Harry Styles age&quot;</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Yellow">29 years</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to calculate 29 raised to the 0.23 power.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Calculator</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: 29^0.23</span>
+Observation: <span class=" -Color -Color-Bold -Color-Bold-Cyan">Answer: 2.169459462491557</span>
+Thought:<span class=" -Color -Color-Bold -Color-Bold-Green"> I now know the final answer.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Final Answer: Harry Styles is Olivia Wilde&#39;s boyfriend and his current age raised to the 0.23 power is 2.169459462491557.</span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&quot;Harry Styles is Olivia Wilde&#39;s boyfriend and his current age raised to the 0.23 power is 2.169459462491557.&quot;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The context manager is concurrency safe:</span>
+<span class="k">if</span> <span class="s2">&quot;LANGCHAIN_TRACING&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+    <span class="k">del</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;LANGCHAIN_TRACING&quot;</span><span class="p">]</span>
+
+<span class="c1"># start a background task</span>
+<span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">arun</span><span class="p">(</span><span class="n">questions</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>  <span class="c1"># this should not be traced</span>
+<span class="k">with</span> <span class="n">tracing_enabled</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">session</span>
+    <span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span><span class="n">agent</span><span class="o">.</span><span class="n">arun</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]]</span>  <span class="c1"># these should be traced</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span>
+
+<span class="k">await</span> <span class="n">task</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+
+<span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+
+
+<span class=" -Color -Color-Bold">&gt; Entering new AgentExecutor chain...</span>
+
+<span class=" -Color -Color-Bold -Color-Bold-Green"> I need to find out who won the grand prix and then calculate their age raised to the 0.23 power.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;Formula 1 Grand Prix Winner&quot; I need to find out who won the US Open men&#39;s final in 2019 and then calculate his age raised to the 0.334 power.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;US Open men&#39;s final 2019 winner&quot;</span><span class=" -Color -Color-Bold -Color-Bold-Yellow">Rafael Nadal defeated Daniil Medvedev in the final, 7–5, 6–3, 5–7, 4–6, 6–4 to win the men&#39;s singles tennis title at the 2019 US Open. It was his fourth US ...</span><span class=" -Color -Color-Bold -Color-Bold-Green"> I need to find out who Olivia Wilde&#39;s boyfriend is and then calculate his age raised to the 0.23 power.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;Olivia Wilde boyfriend&quot;</span><span class=" -Color -Color-Bold -Color-Bold-Yellow">Sudeikis and Wilde&#39;s relationship ended in November 2020. Wilde was publicly served with court documents regarding child custody while she was presenting Don&#39;t Worry Darling at CinemaCon 2022. In January 2021, Wilde began dating singer Harry Styles after meeting during the filming of Don&#39;t Worry Darling.Lewis Hamilton has won 103 Grands Prix during his career. He won 21 races with McLaren and has won 82 with Mercedes. Lewis Hamilton holds the record for the ...</span><span class=" -Color -Color-Bold -Color-Bold-Green"> I need to find out the age of the winner</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;Rafael Nadal age&quot;</span><span class=" -Color -Color-Bold -Color-Bold-Yellow">36 years</span><span class=" -Color -Color-Bold -Color-Bold-Green"> I need to find out Harry Styles&#39; age.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;Harry Styles age&quot; I need to find out Lewis Hamilton&#39;s age</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Search</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: &quot;Lewis Hamilton Age&quot;</span><span class=" -Color -Color-Bold -Color-Bold-Yellow">29 years</span><span class=" -Color -Color-Bold -Color-Bold-Green"> I need to calculate the age raised to the 0.334 power</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Calculator</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: 36^0.334 I need to calculate 29 raised to the 0.23 power.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Calculator</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: 29^0.23</span><span class=" -Color -Color-Bold -Color-Bold-Cyan">Answer: 3.3098250249682484Answer: 2.169459462491557</span><span class=" -Color -Color-Bold -Color-Bold-Yellow">38 years</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green"> I now need to calculate 38 raised to the 0.23 power</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action: Calculator</span>
+<span class=" -Color -Color-Bold -Color-Bold-Green">Action Input: 38^0.23</span><span class=" -Color -Color-Bold -Color-Bold-Cyan">Answer: 2.3086081644669734</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&quot;Rafael Nadal, aged 36, won the US Open men&#39;s final in 2019 and his age raised to the 0.334 power is 3.3098250249682484.&quot;
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="token-counting">
+<h2>Token Counting<a class="headerlink" href="#token-counting" title="Permalink to this headline">#</a></h2>
+<p>LangChain offers a context manager that allows you to count tokens.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.callbacks</span> <span class="kn">import</span> <span class="n">get_openai_callback</span>
+
+<span class="n">llm</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">get_openai_callback</span><span class="p">()</span> <span class="k">as</span> <span class="n">cb</span><span class="p">:</span>
+    <span class="n">llm</span><span class="p">(</span><span class="s2">&quot;What is the square root of 4?&quot;</span><span class="p">)</span>
+
+<span class="n">total_tokens</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">total_tokens</span>
+<span class="k">assert</span> <span class="n">total_tokens</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+<span class="k">with</span> <span class="n">get_openai_callback</span><span class="p">()</span> <span class="k">as</span> <span class="n">cb</span><span class="p">:</span>
+    <span class="n">llm</span><span class="p">(</span><span class="s2">&quot;What is the square root of 4?&quot;</span><span class="p">)</span>
+    <span class="n">llm</span><span class="p">(</span><span class="s2">&quot;What is the square root of 4?&quot;</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">cb</span><span class="o">.</span><span class="n">total_tokens</span> <span class="o">==</span> <span class="n">total_tokens</span> <span class="o">*</span> <span class="mi">2</span>
+
+<span class="c1"># You can kick off concurrent runs from within the context manager</span>
+<span class="k">with</span> <span class="n">get_openai_callback</span><span class="p">()</span> <span class="k">as</span> <span class="n">cb</span><span class="p">:</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+        <span class="o">*</span><span class="p">[</span><span class="n">llm</span><span class="o">.</span><span class="n">agenerate</span><span class="p">([</span><span class="s2">&quot;What is the square root of 4?&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+    <span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">cb</span><span class="o">.</span><span class="n">total_tokens</span> <span class="o">==</span> <span class="n">total_tokens</span> <span class="o">*</span> <span class="mi">3</span>
+
+<span class="c1"># The context manager is concurrency safe</span>
+<span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">llm</span><span class="o">.</span><span class="n">agenerate</span><span class="p">([</span><span class="s2">&quot;What is the square root of 4?&quot;</span><span class="p">]))</span>
+<span class="k">with</span> <span class="n">get_openai_callback</span><span class="p">()</span> <span class="k">as</span> <span class="n">cb</span><span class="p">:</span>
+    <span class="k">await</span> <span class="n">llm</span><span class="o">.</span><span class="n">agenerate</span><span class="p">([</span><span class="s2">&quot;What is the square root of 4?&quot;</span><span class="p">])</span>
+
+<span class="k">await</span> <span class="n">task</span>
+<span class="k">assert</span> <span class="n">cb</span><span class="o">.</span><span class="n">total_tokens</span> <span class="o">==</span> <span class="n">total_tokens</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="../agents/plan_and_execute.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Plan and Execute</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="../../use_cases.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Use cases</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Harrison Chase<br/>
+  
+      &copy; Copyright 2023, Harrison Chase.<br/>
+    Last updated on Jun 05, 2023.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/facebook_chat",
+  "id": "integrations/facebook_chat",
+  "title": "Facebook Chat",
+  "description": "Messenger) is an American proprietary instant messaging app and",
+  "source": "@site/docs/integrations/facebook_chat.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/facebook_chat",
+  "permalink": "/docs/integrations/facebook_chat",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/facebook_chat.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

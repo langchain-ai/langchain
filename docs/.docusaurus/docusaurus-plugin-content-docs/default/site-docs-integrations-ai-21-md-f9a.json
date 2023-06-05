@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/ai21",
+  "id": "integrations/ai21",
+  "title": "AI21 Labs",
+  "description": "This page covers how to use the AI21 ecosystem within LangChain.",
+  "source": "@site/docs/integrations/ai21.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/ai21",
+  "permalink": "/docs/integrations/ai21",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/ai21.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

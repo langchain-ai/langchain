@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/wikipedia",
+  "id": "integrations/wikipedia",
+  "title": "Wikipedia",
+  "description": "Wikipedia is a multilingual free online encyclopedia written and maintained by a community of volunteers, known as Wikipedians, through open collaboration and using a wiki-based editing system called MediaWiki. Wikipedia is the largest and most-read reference work in history.",
+  "source": "@site/docs/integrations/wikipedia.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/wikipedia",
+  "permalink": "/docs/integrations/wikipedia",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/wikipedia.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

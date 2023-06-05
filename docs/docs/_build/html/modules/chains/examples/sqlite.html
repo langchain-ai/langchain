@@ -1,0 +1,2988 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>SQL Chain example &#8212; 🦜🔗 LangChain 0.0.190</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/clipboard.min.js"></script>
+    <script src="../../../_static/copybutton.js"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script src="../../../_static/js/mendablesearch.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Chains" href="../../../reference/modules/chains.html" />
+    <link rel="prev" title="PAL" href="pal.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../../index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">🦜🔗 LangChain 0.0.190</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Get started
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../getting_started/getting_started.html">
+   Quickstart
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../getting_started/installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Modules
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../memory.html">
+   Memory
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../memory/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../memory/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/types/buffer.html">
+       ConversationBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/types/buffer_window.html">
+       ConversationBufferWindowMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/types/entity_summary_memory.html">
+       Entity Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/types/kg.html">
+       Conversation Knowledge Graph Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/types/summary.html">
+       ConversationSummaryMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/types/summary_buffer.html">
+       ConversationSummaryBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/types/token_buffer.html">
+       ConversationTokenBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/types/vectorstore_retriever_memory.html">
+       VectorStore-Backed Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/adding_memory.html">
+       How to add Memory to an LLMChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/adding_memory_chain_multiple_inputs.html">
+       How to add memory to a Multi-Input Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/agent_with_memory.html">
+       How to add Memory to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/agent_with_memory_in_db.html">
+       Adding Message Memory backed by a database to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/cassandra_chat_message_history.html">
+       Cassandra Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/conversational_customization.html">
+       How to customize conversational memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/custom_memory.html">
+       How to create a custom Memory class
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/dynamodb_chat_message_history.html">
+       Dynamodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/entity_memory_with_sqlite.html">
+       Entity Memory with SQLite storage
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/momento_chat_message_history.html">
+       Momento Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/mongodb_chat_message_history.html">
+       Mongodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/motorhead_memory.html">
+       Motörhead Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/motorhead_memory_managed.html">
+       Motörhead Memory (Managed)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/multiple_memory.html">
+       How to use multiple memory classes in the same chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/postgres_chat_message_history.html">
+       Postgres Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/redis_chat_message_history.html">
+       Redis Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../memory/examples/zep_memory.html">
+       Zep Memory
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="../../chains.html">
+   Chains
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2">
+    <a class="reference internal" href="../getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 current active has-children">
+    <a class="reference internal" href="../how_to_guides.html">
+     How-To Guides
+    </a>
+    <input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul class="current">
+     <li class="toctree-l3">
+      <a class="reference internal" href="../generic/async_chain.html">
+       Async API for Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../generic/custom_chain.html">
+       Creating a custom Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../generic/from_hub.html">
+       Loading from LangChainHub
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../generic/llm_chain.html">
+       LLM Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../generic/router.html">
+       Router Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../generic/sequential_chains.html">
+       Sequential Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../generic/serialization.html">
+       Serialization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../generic/transformation.html">
+       Transformation Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../index_examples/analyze_document.html">
+       Analyze Document
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../index_examples/chat_vector_db.html">
+       Chat Over Documents with Chat History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../index_examples/graph_qa.html">
+       Graph QA
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../index_examples/hyde.html">
+       Hypothetical Document Embeddings
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../index_examples/qa_with_sources.html">
+       Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../index_examples/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../index_examples/summarize.html">
+       Summarization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../index_examples/vector_db_qa.html">
+       Retrieval Question/Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../index_examples/vector_db_qa_with_sources.html">
+       Retrieval Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../index_examples/vector_db_text_generation.html">
+       Vector DB Text Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="api.html">
+       API Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="constitutional_chain.html">
+       Self-Critique Chain with Constitutional AI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="flare.html">
+       FLARE
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="graph_cypher_qa.html">
+       GraphCypherQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="llm_bash.html">
+       BashChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="llm_checker.html">
+       LLMCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="llm_requests.html">
+       LLMRequestsChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="llm_summarization_checker.html">
+       LLMSummarizationCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="moderation.html">
+       Moderation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="multi_prompt_router.html">
+       Router Chains: Selecting from multiple prompts with MultiPromptChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="multi_retrieval_qa_router.html">
+       Router Chains: Selecting from multiple prompts with MultiRetrievalQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="openapi.html">
+       OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="pal.html">
+       PAL
+      </a>
+     </li>
+     <li class="toctree-l3 current active">
+      <a class="current reference internal" href="#">
+       SQL Chain example
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../reference/modules/chains.html">
+     Reference
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../agents.html">
+   Agents
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../agents/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../agents/tools.html">
+     Tools
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+    <label for="toctree-checkbox-6">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/getting_started.html">
+       Getting Started
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/custom_tools.html">
+       Defining Custom Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/multi_input_tool.html">
+       Multi-Input Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/tool_input_validation.html">
+       Tool Input Schema
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/apify.html">
+       Apify
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/arxiv.html">
+       ArXiv API Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/awslambda.html">
+       AWS Lambda API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/bash.html">
+       Shell Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/bing_search.html">
+       Bing Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/brave_search.html">
+       Brave Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/chatgpt_plugins.html">
+       ChatGPT Plugins
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/ddg.html">
+       DuckDuckGo Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/filesystem.html">
+       File System Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/google_places.html">
+       Google Places
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/google_search.html">
+       Google Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/google_serper.html">
+       Google Serper API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/gradio_tools.html">
+       Gradio Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/graphql.html">
+       GraphQL tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/huggingface_tools.html">
+       HuggingFace Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/human_tools.html">
+       Human as a tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/ifttt.html">
+       IFTTT WebHooks
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/metaphor_search.html">
+       Metaphor Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/openweathermap.html">
+       OpenWeatherMap API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/pubmed.html">
+       PubMed Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/python.html">
+       Python REPL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/requests.html">
+       Requests
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/sceneXplain.html">
+       SceneXplain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/search_tools.html">
+       Search Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/searx_search.html">
+       SearxNG Search API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/serpapi.html">
+       SerpAPI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/twilio.html">
+       Twilio
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/wikipedia.html">
+       Wikipedia
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/wolfram_alpha.html">
+       Wolfram Alpha
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/youtube.html">
+       YouTubeSearchTool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/tools/examples/zapier.html">
+       Zapier Natural Language Actions API
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../agents/agents.html">
+     Agents
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+    <label for="toctree-checkbox-7">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/agent_types.html">
+       Agent Types
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/custom_agent.html">
+       Custom Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/custom_llm_agent.html">
+       Custom LLM Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/custom_llm_chat_agent.html">
+       Custom LLM Agent (with a ChatModel)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/custom_mrkl_agent.html">
+       Custom MRKL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/custom_multi_action_agent.html">
+       Custom MultiAction Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/custom_agent_with_tool_retrieval.html">
+       Custom Agent with Tool Retrieval
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/examples/chat_conversation_agent.html">
+       Conversation Agent (for Chat Models)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/examples/conversational_agent.html">
+       Conversation Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/examples/mrkl.html">
+       MRKL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/examples/mrkl_chat.html">
+       MRKL Chat
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/examples/react.html">
+       ReAct
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/examples/self_ask_with_search.html">
+       Self Ask With Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agents/examples/structured_chat.html">
+       Structured Tool Chat Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../agents/toolkits.html">
+     Toolkits
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <label for="toctree-checkbox-8">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/azure_cognitive_services.html">
+       Azure Cognitive Services Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/csv.html">
+       CSV Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/gmail.html">
+       Gmail Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/jira.html">
+       Jira
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/json.html">
+       JSON Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/openapi.html">
+       OpenAPI agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/openapi_nla.html">
+       Natural Language APIs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/pandas.html">
+       Pandas Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/playwright.html">
+       PlayWright Browser Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/powerbi.html">
+       PowerBI Dataset Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/python.html">
+       Python Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/spark.html">
+       Spark Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/spark_sql.html">
+       Spark SQL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/sql_database.html">
+       SQL Database Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/toolkits/examples/vectorstore.html">
+       Vectorstore Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../agents/agent_executors.html">
+     Agent Executors
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+    <label for="toctree-checkbox-9">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agent_executors/examples/agent_vectorstore.html">
+       How to combine agents and vectorstores
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agent_executors/examples/async_agent.html">
+       How to use the async API for Agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agent_executors/examples/chatgpt_clone.html">
+       How to create ChatGPT Clone
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agent_executors/examples/handle_parsing_errors.html">
+       Handle Parsing Errors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agent_executors/examples/intermediate_steps.html">
+       How to access intermediate steps
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agent_executors/examples/max_iterations.html">
+       How to cap the max number of iterations
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agent_executors/examples/max_time_limit.html">
+       How to use a timeout for the agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../agents/agent_executors/examples/sharedmemory_for_tools.html">
+       How to add SharedMemory to an Agent and its Tools
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../agents/plan_and_execute.html">
+     Plan and Execute
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../callbacks/getting_started.html">
+   Callbacks
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Examples
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../use_cases.html">
+   Use cases
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../use_cases/autonomous_agents.html">
+     Autonomous Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../use_cases/agent_simulations.html">
+     Agent Simulations
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../use_cases/personal_assistants.html">
+     Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../use_cases/question_answering.html">
+     Question Answering over Docs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../use_cases/chatbots.html">
+     Chatbots
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../use_cases/tabular.html">
+     Querying Tabular Data
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../use_cases/code.html">
+     Code Understanding
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../use_cases/apis.html">
+     Interacting with APIs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../use_cases/extraction.html">
+     Extraction
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../use_cases/summarization.html">
+     Summarization
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../../use_cases/evaluation.html">
+     Evaluation
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+    <label for="toctree-checkbox-11">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/agent_benchmarking.html">
+       Agent Benchmarking: Search + Calculator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/agent_vectordb_sota_pg.html">
+       Agent VectorDB Question Answering Benchmarking
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/benchmarking_template.html">
+       Benchmarking Template
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/data_augmented_question_answering.html">
+       Data Augmented Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/generic_agent_evaluation.html">
+       Generic Agent Evaluation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/huggingface_datasets.html">
+       Using Hugging Face Datasets
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/openapi_eval.html">
+       Evaluating an OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/qa_benchmarking_pg.html">
+       Question Answering Benchmarking: Paul Graham Essay
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/qa_benchmarking_sota.html">
+       Question Answering Benchmarking: State of the Union Address
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/qa_generation.html">
+       QA Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../use_cases/evaluation/sql_qa_benchmarking_chinook.html">
+       SQL Question Answering Benchmarking: Chinook
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../additional_resources.html">
+   Additional resources
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+  <label for="toctree-checkbox-12">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../additional_resources/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference external" href="https://github.com/kyrolabs/awesome-langchain">
+     Gallery
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Ecosystem
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../integrations.html">
+   Integrations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+  <label for="toctree-checkbox-13">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/agent_with_wandb_tracing.html">
+     Tracing Walkthrough
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/ai21.html">
+     AI21 Labs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/aim_tracking.html">
+     Aim
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/airbyte.html">
+     Airbyte
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/aleph_alpha.html">
+     Aleph Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/analyticdb.html">
+     AnalyticDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/annoy.html">
+     Annoy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/anyscale.html">
+     Anyscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/apify.html">
+     Apify
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/argilla.html">
+     Argilla
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/arxiv.html">
+     Arxiv
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/atlas.html">
+     AtlasDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/aws_s3.html">
+     AWS S3 Directory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/azlyrics.html">
+     AZLyrics
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/azure_blob_storage.html">
+     Azure Blob Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/azure_cognitive_search_.html">
+     Azure Cognitive Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/azure_openai.html">
+     Azure OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/bananadev.html">
+     Banana
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/beam.html">
+     Beam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/bedrock.html">
+     Bedrock
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/bilibili.html">
+     BiliBili
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/blackboard.html">
+     Blackboard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/cassandra.html">
+     Cassandra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/cerebriumai.html">
+     CerebriumAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/chroma.html">
+     Chroma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/clearml_tracking.html">
+     ClearML
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/cohere.html">
+     Cohere
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/college_confidential.html">
+     College Confidential
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/comet_tracking.html">
+     Comet
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/confluence.html">
+     Confluence
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/ctransformers.html">
+     C Transformers
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/databerry.html">
+     Databerry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/databricks.html">
+     Databricks
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/deepinfra.html">
+     DeepInfra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/deeplake.html">
+     Deep Lake
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/diffbot.html">
+     Diffbot
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/discord.html">
+     Discord
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/docugami.html">
+     Docugami
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/duckdb.html">
+     DuckDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/elasticsearch.html">
+     Elasticsearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/evernote.html">
+     EverNote
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/facebook_chat.html">
+     Facebook Chat
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/figma.html">
+     Figma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/forefrontai.html">
+     ForefrontAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/git.html">
+     Git
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/gitbook.html">
+     GitBook
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/google_bigquery.html">
+     Google BigQuery
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/google_cloud_storage.html">
+     Google Cloud Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/google_drive.html">
+     Google Drive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/google_search.html">
+     Google Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/google_serper.html">
+     Google Serper
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/gooseai.html">
+     GooseAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/gpt4all.html">
+     GPT4All
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/graphsignal.html">
+     Graphsignal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/gutenberg.html">
+     Gutenberg
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/hacker_news.html">
+     Hacker News
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/hazy_research.html">
+     Hazy Research
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/helicone.html">
+     Helicone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/huggingface.html">
+     Hugging Face
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/ifixit.html">
+     iFixit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/imsdb.html">
+     IMSDb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/jina.html">
+     Jina
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/lancedb.html">
+     LanceDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/llamacpp.html">
+     Llama.cpp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/mediawikidump.html">
+     MediaWikiDump
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/metal.html">
+     Metal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/microsoft_onedrive.html">
+     Microsoft OneDrive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/microsoft_powerpoint.html">
+     Microsoft PowerPoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/microsoft_word.html">
+     Microsoft Word
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/milvus.html">
+     Milvus
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/mlflow_tracking.html">
+     MLflow
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/modal.html">
+     Modal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/modern_treasury.html">
+     Modern Treasury
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/momento.html">
+     Momento
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/myscale.html">
+     MyScale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/nlpcloud.html">
+     NLPCloud
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/notion.html">
+     Notion DB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/obsidian.html">
+     Obsidian
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/openai.html">
+     OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/opensearch.html">
+     OpenSearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/openweathermap.html">
+     OpenWeatherMap
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/petals.html">
+     Petals
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/pgvector.html">
+     PGVector
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/pinecone.html">
+     Pinecone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/pipelineai.html">
+     PipelineAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/predictionguard.html">
+     Prediction Guard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/promptlayer.html">
+     PromptLayer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/psychic.html">
+     Psychic
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/qdrant.html">
+     Qdrant
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/rebuff.html">
+     Rebuff
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/reddit.html">
+     Reddit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/redis.html">
+     Redis
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/replicate.html">
+     Replicate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/roam.html">
+     Roam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/runhouse.html">
+     Runhouse
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/rwkv.html">
+     RWKV-4
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/sagemaker_endpoint.html">
+     SageMaker Endpoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/searx.html">
+     SearxNG Search API
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/serpapi.html">
+     SerpAPI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/sklearn.html">
+     scikit-learn
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/slack.html">
+     Slack
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/spacy.html">
+     spaCy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/spreedly.html">
+     Spreedly
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/stochasticai.html">
+     StochasticAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/stripe.html">
+     Stripe
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/tair.html">
+     Tair
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/telegram.html">
+     Telegram
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/tomarkdown.html">
+     2Markdown
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/trello.html">
+     Trello
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/twitter.html">
+     Twitter
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/unstructured.html">
+     Unstructured
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/vectara.html">
+     Vectara
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/vespa.html">
+     Vespa
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/wandb_tracking.html">
+     Weights &amp; Biases
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/weather.html">
+     Weather
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/weaviate.html">
+     Weaviate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/whatsapp.html">
+     WhatsApp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/whylabs_profiling.html">
+     WhyLabs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/wikipedia.html">
+     Wikipedia
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/wolfram_alpha.html">
+     Wolfram Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/writer.html">
+     Writer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/yeagerai.html">
+     Yeager.ai
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/zep.html">
+     Zep
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../integrations/zilliz.html">
+     Zilliz
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../ecosystem/deployments.html">
+   Deployments
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://github.com/hwchase17/langchain-hub">
+   LangChainHub
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../dependents.html">
+   Dependents
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Find us
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference external" href="https://twitter.com/LangChainAI">
+   Twitter
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://discord.gg/6adMQxSpJS">
+   Discord
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://forms.gle/57d8AmXBYp8PP8tZA">
+   Request production support
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+<a href="https://github.com/hwchase17/langchain"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="bottom"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="../../../_sources/modules/chains/examples/sqlite.ipynb.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.ipynb</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#use-query-checker">
+   Use Query Checker
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#customize-prompt">
+   Customize Prompt
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#return-intermediate-steps">
+   Return Intermediate Steps
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#choosing-how-to-limit-the-number-of-rows-returned">
+   Choosing how to limit the number of rows returned
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#adding-example-rows-from-each-table">
+   Adding example rows from each table
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#custom-table-info">
+     Custom Table Info
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#sqldatabasesequentialchain">
+   SQLDatabaseSequentialChain
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#using-local-language-models">
+   Using Local Language Models
+  </a>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>SQL Chain example</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#use-query-checker">
+   Use Query Checker
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#customize-prompt">
+   Customize Prompt
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#return-intermediate-steps">
+   Return Intermediate Steps
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#choosing-how-to-limit-the-number-of-rows-returned">
+   Choosing how to limit the number of rows returned
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#adding-example-rows-from-each-table">
+   Adding example rows from each table
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#custom-table-info">
+     Custom Table Info
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#sqldatabasesequentialchain">
+   SQLDatabaseSequentialChain
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#using-local-language-models">
+   Using Local Language Models
+  </a>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <section id="sql-chain-example">
+<h1>SQL Chain example<a class="headerlink" href="#sql-chain-example" title="Permalink to this headline">#</a></h1>
+<p>This example demonstrates the use of the <code class="docutils literal notranslate"><span class="pre">SQLDatabaseChain</span></code> for answering questions over a database.</p>
+<p>Under the hood, LangChain uses SQLAlchemy to connect to SQL databases. The <code class="docutils literal notranslate"><span class="pre">SQLDatabaseChain</span></code> can therefore be used with any SQL dialect supported by SQLAlchemy, such as MS SQL, MySQL, MariaDB, PostgreSQL, Oracle SQL, <a class="reference internal" href="../../../integrations/databricks.html"><span class="doc std std-doc">Databricks</span></a> and SQLite. Please refer to the SQLAlchemy documentation for more information about requirements for connecting to your database. For example, a connection to MySQL requires an appropriate connector such as PyMySQL. A URI for a MySQL connection might look like: <code class="docutils literal notranslate"><span class="pre">mysql+pymysql://user:pass&#64;some_mysql_db_address/db_name</span></code>.</p>
+<p>This demonstration uses SQLite and the example Chinook database.
+To set it up, follow the instructions on https://database.guide/2-sample-databases-sqlite/, placing the <code class="docutils literal notranslate"><span class="pre">.db</span></code> file in a notebooks folder at the root of this repository.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain</span> <span class="kn">import</span> <span class="n">OpenAI</span><span class="p">,</span> <span class="n">SQLDatabase</span><span class="p">,</span> <span class="n">SQLDatabaseChain</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db</span> <span class="o">=</span> <span class="n">SQLDatabase</span><span class="o">.</span><span class="n">from_uri</span><span class="p">(</span><span class="s2">&quot;sqlite:///../../../../notebooks/Chinook.db&quot;</span><span class="p">)</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p><strong>NOTE:</strong> For data-sensitive projects, you can specify <code class="docutils literal notranslate"><span class="pre">return_direct=True</span></code> in the <code class="docutils literal notranslate"><span class="pre">SQLDatabaseChain</span></code> initialization to directly return the output of the SQL query without any additional formatting. This prevents the LLM from seeing any contents within the database. Note, however, the LLM still has access to the database scheme (i.e. dialect, table and key names) by default.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_chain</span> <span class="o">=</span> <span class="n">SQLDatabaseChain</span><span class="o">.</span><span class="n">from_llm</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;How many employees are there?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+How many employees are there?
+SQLQuery:
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/workspace/langchain/langchain/sql_database.py:191: SAWarning: Dialect sqlite+pysqlite does *not* support Decimal objects natively, and SQLAlchemy must convert from floating point - rounding errors and other issues may occur. Please consider storing Decimal numbers as strings or integers on this platform for lossless storage.
+  sample_rows = connection.execute(command)
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Green">SELECT COUNT(*) FROM &quot;Employee&quot;;</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(8,)]</span>
+Answer:<span class=" -Color -Color-Bold -Color-Bold-Green">There are 8 employees.</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&#39;There are 8 employees.&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<section id="use-query-checker">
+<h2>Use Query Checker<a class="headerlink" href="#use-query-checker" title="Permalink to this headline">#</a></h2>
+<p>Sometimes the Language Model generates invalid SQL with small mistakes that can be self-corrected using the same technique used by the SQL Database Agent to try and fix the SQL using the LLM. You can simply specify this option when creating the chain:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_chain</span> <span class="o">=</span> <span class="n">SQLDatabaseChain</span><span class="o">.</span><span class="n">from_llm</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_query_checker</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;How many albums by Aerosmith?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+How many albums by Aerosmith?
+SQLQuery:<span class=" -Color -Color-Bold -Color-Bold-Green">SELECT COUNT(*) FROM Album WHERE ArtistId = 3;</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(1,)]</span>
+Answer:<span class=" -Color -Color-Bold -Color-Bold-Green">There is 1 album by Aerosmith.</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&#39;There is 1 album by Aerosmith.&#39;
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="customize-prompt">
+<h2>Customize Prompt<a class="headerlink" href="#customize-prompt" title="Permalink to this headline">#</a></h2>
+<p>You can also customize the prompt that is used. Here is an example prompting it to understand that foobar is the same as the Employee table</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.prompts.prompt</span> <span class="kn">import</span> <span class="n">PromptTemplate</span>
+
+<span class="n">_DEFAULT_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Given an input question, first create a syntactically correct </span><span class="si">{dialect}</span><span class="s2"> query to run, then look at the results of the query and return the answer.</span>
+<span class="s2">Use the following format:</span>
+
+<span class="s2">Question: &quot;Question here&quot;</span>
+<span class="s2">SQLQuery: &quot;SQL Query to run&quot;</span>
+<span class="s2">SQLResult: &quot;Result of the SQLQuery&quot;</span>
+<span class="s2">Answer: &quot;Final answer here&quot;</span>
+
+<span class="s2">Only use the following tables:</span>
+
+<span class="si">{table_info}</span>
+
+<span class="s2">If someone asks for the table foobar, they really mean the employee table.</span>
+
+<span class="s2">Question: </span><span class="si">{input}</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="n">PROMPT</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="p">(</span>
+    <span class="n">input_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="s2">&quot;table_info&quot;</span><span class="p">,</span> <span class="s2">&quot;dialect&quot;</span><span class="p">],</span> <span class="n">template</span><span class="o">=</span><span class="n">_DEFAULT_TEMPLATE</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_chain</span> <span class="o">=</span> <span class="n">SQLDatabaseChain</span><span class="o">.</span><span class="n">from_llm</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">PROMPT</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;How many employees are there in the foobar table?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+How many employees are there in the foobar table?
+SQLQuery:<span class=" -Color -Color-Bold -Color-Bold-Green">SELECT COUNT(*) FROM Employee;</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(8,)]</span>
+Answer:<span class=" -Color -Color-Bold -Color-Bold-Green">There are 8 employees in the foobar table.</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&#39;There are 8 employees in the foobar table.&#39;
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="return-intermediate-steps">
+<h2>Return Intermediate Steps<a class="headerlink" href="#return-intermediate-steps" title="Permalink to this headline">#</a></h2>
+<p>You can also return the intermediate steps of the SQLDatabaseChain. This allows you to access the SQL statement that was generated, as well as the result of running that against the SQL Database.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_chain</span> <span class="o">=</span> <span class="n">SQLDatabaseChain</span><span class="o">.</span><span class="n">from_llm</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">PROMPT</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_query_checker</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_intermediate_steps</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">db_chain</span><span class="p">(</span><span class="s2">&quot;How many employees are there in the foobar table?&quot;</span><span class="p">)</span>
+<span class="n">result</span><span class="p">[</span><span class="s2">&quot;intermediate_steps&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+How many employees are there in the foobar table?
+SQLQuery:<span class=" -Color -Color-Bold -Color-Bold-Green">SELECT COUNT(*) FROM Employee;</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(8,)]</span>
+Answer:<span class=" -Color -Color-Bold -Color-Bold-Green">There are 8 employees in the foobar table.</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[{&#39;input&#39;: &#39;How many employees are there in the foobar table?\nSQLQuery:SELECT COUNT(*) FROM Employee;\nSQLResult: [(8,)]\nAnswer:&#39;,
+  &#39;top_k&#39;: &#39;5&#39;,
+  &#39;dialect&#39;: &#39;sqlite&#39;,
+  &#39;table_info&#39;: &#39;\nCREATE TABLE &quot;Artist&quot; (\n\t&quot;ArtistId&quot; INTEGER NOT NULL, \n\t&quot;Name&quot; NVARCHAR(120), \n\tPRIMARY KEY (&quot;ArtistId&quot;)\n)\n\n/*\n3 rows from Artist table:\nArtistId\tName\n1\tAC/DC\n2\tAccept\n3\tAerosmith\n*/\n\n\nCREATE TABLE &quot;Employee&quot; (\n\t&quot;EmployeeId&quot; INTEGER NOT NULL, \n\t&quot;LastName&quot; NVARCHAR(20) NOT NULL, \n\t&quot;FirstName&quot; NVARCHAR(20) NOT NULL, \n\t&quot;Title&quot; NVARCHAR(30), \n\t&quot;ReportsTo&quot; INTEGER, \n\t&quot;BirthDate&quot; DATETIME, \n\t&quot;HireDate&quot; DATETIME, \n\t&quot;Address&quot; NVARCHAR(70), \n\t&quot;City&quot; NVARCHAR(40), \n\t&quot;State&quot; NVARCHAR(40), \n\t&quot;Country&quot; NVARCHAR(40), \n\t&quot;PostalCode&quot; NVARCHAR(10), \n\t&quot;Phone&quot; NVARCHAR(24), \n\t&quot;Fax&quot; NVARCHAR(24), \n\t&quot;Email&quot; NVARCHAR(60), \n\tPRIMARY KEY (&quot;EmployeeId&quot;), \n\tFOREIGN KEY(&quot;ReportsTo&quot;) REFERENCES &quot;Employee&quot; (&quot;EmployeeId&quot;)\n)\n\n/*\n3 rows from Employee table:\nEmployeeId\tLastName\tFirstName\tTitle\tReportsTo\tBirthDate\tHireDate\tAddress\tCity\tState\tCountry\tPostalCode\tPhone\tFax\tEmail\n1\tAdams\tAndrew\tGeneral Manager\tNone\t1962-02-18 00:00:00\t2002-08-14 00:00:00\t11120 Jasper Ave NW\tEdmonton\tAB\tCanada\tT5K 2N1\t+1 (780) 428-9482\t+1 (780) 428-3457\tandrew@chinookcorp.com\n2\tEdwards\tNancy\tSales Manager\t1\t1958-12-08 00:00:00\t2002-05-01 00:00:00\t825 8 Ave SW\tCalgary\tAB\tCanada\tT2P 2T3\t+1 (403) 262-3443\t+1 (403) 262-3322\tnancy@chinookcorp.com\n3\tPeacock\tJane\tSales Support Agent\t2\t1973-08-29 00:00:00\t2002-04-01 00:00:00\t1111 6 Ave SW\tCalgary\tAB\tCanada\tT2P 5M5\t+1 (403) 262-3443\t+1 (403) 262-6712\tjane@chinookcorp.com\n*/\n\n\nCREATE TABLE &quot;Genre&quot; (\n\t&quot;GenreId&quot; INTEGER NOT NULL, \n\t&quot;Name&quot; NVARCHAR(120), \n\tPRIMARY KEY (&quot;GenreId&quot;)\n)\n\n/*\n3 rows from Genre table:\nGenreId\tName\n1\tRock\n2\tJazz\n3\tMetal\n*/\n\n\nCREATE TABLE &quot;MediaType&quot; (\n\t&quot;MediaTypeId&quot; INTEGER NOT NULL, \n\t&quot;Name&quot; NVARCHAR(120), \n\tPRIMARY KEY (&quot;MediaTypeId&quot;)\n)\n\n/*\n3 rows from MediaType table:\nMediaTypeId\tName\n1\tMPEG audio file\n2\tProtected AAC audio file\n3\tProtected MPEG-4 video file\n*/\n\n\nCREATE TABLE &quot;Playlist&quot; (\n\t&quot;PlaylistId&quot; INTEGER NOT NULL, \n\t&quot;Name&quot; NVARCHAR(120), \n\tPRIMARY KEY (&quot;PlaylistId&quot;)\n)\n\n/*\n3 rows from Playlist table:\nPlaylistId\tName\n1\tMusic\n2\tMovies\n3\tTV Shows\n*/\n\n\nCREATE TABLE &quot;Album&quot; (\n\t&quot;AlbumId&quot; INTEGER NOT NULL, \n\t&quot;Title&quot; NVARCHAR(160) NOT NULL, \n\t&quot;ArtistId&quot; INTEGER NOT NULL, \n\tPRIMARY KEY (&quot;AlbumId&quot;), \n\tFOREIGN KEY(&quot;ArtistId&quot;) REFERENCES &quot;Artist&quot; (&quot;ArtistId&quot;)\n)\n\n/*\n3 rows from Album table:\nAlbumId\tTitle\tArtistId\n1\tFor Those About To Rock We Salute You\t1\n2\tBalls to the Wall\t2\n3\tRestless and Wild\t2\n*/\n\n\nCREATE TABLE &quot;Customer&quot; (\n\t&quot;CustomerId&quot; INTEGER NOT NULL, \n\t&quot;FirstName&quot; NVARCHAR(40) NOT NULL, \n\t&quot;LastName&quot; NVARCHAR(20) NOT NULL, \n\t&quot;Company&quot; NVARCHAR(80), \n\t&quot;Address&quot; NVARCHAR(70), \n\t&quot;City&quot; NVARCHAR(40), \n\t&quot;State&quot; NVARCHAR(40), \n\t&quot;Country&quot; NVARCHAR(40), \n\t&quot;PostalCode&quot; NVARCHAR(10), \n\t&quot;Phone&quot; NVARCHAR(24), \n\t&quot;Fax&quot; NVARCHAR(24), \n\t&quot;Email&quot; NVARCHAR(60) NOT NULL, \n\t&quot;SupportRepId&quot; INTEGER, \n\tPRIMARY KEY (&quot;CustomerId&quot;), \n\tFOREIGN KEY(&quot;SupportRepId&quot;) REFERENCES &quot;Employee&quot; (&quot;EmployeeId&quot;)\n)\n\n/*\n3 rows from Customer table:\nCustomerId\tFirstName\tLastName\tCompany\tAddress\tCity\tState\tCountry\tPostalCode\tPhone\tFax\tEmail\tSupportRepId\n1\tLuís\tGonçalves\tEmbraer - Empresa Brasileira de Aeronáutica S.A.\tAv. Brigadeiro Faria Lima, 2170\tSão José dos Campos\tSP\tBrazil\t12227-000\t+55 (12) 3923-5555\t+55 (12) 3923-5566\tluisg@embraer.com.br\t3\n2\tLeonie\tKöhler\tNone\tTheodor-Heuss-Straße 34\tStuttgart\tNone\tGermany\t70174\t+49 0711 2842222\tNone\tleonekohler@surfeu.de\t5\n3\tFrançois\tTremblay\tNone\t1498 rue Bélanger\tMontréal\tQC\tCanada\tH2G 1A7\t+1 (514) 721-4711\tNone\tftremblay@gmail.com\t3\n*/\n\n\nCREATE TABLE &quot;Invoice&quot; (\n\t&quot;InvoiceId&quot; INTEGER NOT NULL, \n\t&quot;CustomerId&quot; INTEGER NOT NULL, \n\t&quot;InvoiceDate&quot; DATETIME NOT NULL, \n\t&quot;BillingAddress&quot; NVARCHAR(70), \n\t&quot;BillingCity&quot; NVARCHAR(40), \n\t&quot;BillingState&quot; NVARCHAR(40), \n\t&quot;BillingCountry&quot; NVARCHAR(40), \n\t&quot;BillingPostalCode&quot; NVARCHAR(10), \n\t&quot;Total&quot; NUMERIC(10, 2) NOT NULL, \n\tPRIMARY KEY (&quot;InvoiceId&quot;), \n\tFOREIGN KEY(&quot;CustomerId&quot;) REFERENCES &quot;Customer&quot; (&quot;CustomerId&quot;)\n)\n\n/*\n3 rows from Invoice table:\nInvoiceId\tCustomerId\tInvoiceDate\tBillingAddress\tBillingCity\tBillingState\tBillingCountry\tBillingPostalCode\tTotal\n1\t2\t2009-01-01 00:00:00\tTheodor-Heuss-Straße 34\tStuttgart\tNone\tGermany\t70174\t1.98\n2\t4\t2009-01-02 00:00:00\tUllevålsveien 14\tOslo\tNone\tNorway\t0171\t3.96\n3\t8\t2009-01-03 00:00:00\tGrétrystraat 63\tBrussels\tNone\tBelgium\t1000\t5.94\n*/\n\n\nCREATE TABLE &quot;Track&quot; (\n\t&quot;TrackId&quot; INTEGER NOT NULL, \n\t&quot;Name&quot; NVARCHAR(200) NOT NULL, \n\t&quot;AlbumId&quot; INTEGER, \n\t&quot;MediaTypeId&quot; INTEGER NOT NULL, \n\t&quot;GenreId&quot; INTEGER, \n\t&quot;Composer&quot; NVARCHAR(220), \n\t&quot;Milliseconds&quot; INTEGER NOT NULL, \n\t&quot;Bytes&quot; INTEGER, \n\t&quot;UnitPrice&quot; NUMERIC(10, 2) NOT NULL, \n\tPRIMARY KEY (&quot;TrackId&quot;), \n\tFOREIGN KEY(&quot;MediaTypeId&quot;) REFERENCES &quot;MediaType&quot; (&quot;MediaTypeId&quot;), \n\tFOREIGN KEY(&quot;GenreId&quot;) REFERENCES &quot;Genre&quot; (&quot;GenreId&quot;), \n\tFOREIGN KEY(&quot;AlbumId&quot;) REFERENCES &quot;Album&quot; (&quot;AlbumId&quot;)\n)\n\n/*\n3 rows from Track table:\nTrackId\tName\tAlbumId\tMediaTypeId\tGenreId\tComposer\tMilliseconds\tBytes\tUnitPrice\n1\tFor Those About To Rock (We Salute You)\t1\t1\t1\tAngus Young, Malcolm Young, Brian Johnson\t343719\t11170334\t0.99\n2\tBalls to the Wall\t2\t2\t1\tNone\t342562\t5510424\t0.99\n3\tFast As a Shark\t3\t2\t1\tF. Baltes, S. Kaufman, U. Dirkscneider &amp; W. Hoffman\t230619\t3990994\t0.99\n*/\n\n\nCREATE TABLE &quot;InvoiceLine&quot; (\n\t&quot;InvoiceLineId&quot; INTEGER NOT NULL, \n\t&quot;InvoiceId&quot; INTEGER NOT NULL, \n\t&quot;TrackId&quot; INTEGER NOT NULL, \n\t&quot;UnitPrice&quot; NUMERIC(10, 2) NOT NULL, \n\t&quot;Quantity&quot; INTEGER NOT NULL, \n\tPRIMARY KEY (&quot;InvoiceLineId&quot;), \n\tFOREIGN KEY(&quot;TrackId&quot;) REFERENCES &quot;Track&quot; (&quot;TrackId&quot;), \n\tFOREIGN KEY(&quot;InvoiceId&quot;) REFERENCES &quot;Invoice&quot; (&quot;InvoiceId&quot;)\n)\n\n/*\n3 rows from InvoiceLine table:\nInvoiceLineId\tInvoiceId\tTrackId\tUnitPrice\tQuantity\n1\t1\t2\t0.99\t1\n2\t1\t4\t0.99\t1\n3\t2\t6\t0.99\t1\n*/\n\n\nCREATE TABLE &quot;PlaylistTrack&quot; (\n\t&quot;PlaylistId&quot; INTEGER NOT NULL, \n\t&quot;TrackId&quot; INTEGER NOT NULL, \n\tPRIMARY KEY (&quot;PlaylistId&quot;, &quot;TrackId&quot;), \n\tFOREIGN KEY(&quot;TrackId&quot;) REFERENCES &quot;Track&quot; (&quot;TrackId&quot;), \n\tFOREIGN KEY(&quot;PlaylistId&quot;) REFERENCES &quot;Playlist&quot; (&quot;PlaylistId&quot;)\n)\n\n/*\n3 rows from PlaylistTrack table:\nPlaylistId\tTrackId\n1\t3402\n1\t3389\n1\t3390\n*/&#39;,
+  &#39;stop&#39;: [&#39;\nSQLResult:&#39;]},
+ &#39;SELECT COUNT(*) FROM Employee;&#39;,
+ {&#39;query&#39;: &#39;SELECT COUNT(*) FROM Employee;&#39;, &#39;dialect&#39;: &#39;sqlite&#39;},
+ &#39;SELECT COUNT(*) FROM Employee;&#39;,
+ &#39;[(8,)]&#39;]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="choosing-how-to-limit-the-number-of-rows-returned">
+<h2>Choosing how to limit the number of rows returned<a class="headerlink" href="#choosing-how-to-limit-the-number-of-rows-returned" title="Permalink to this headline">#</a></h2>
+<p>If you are querying for several rows of a table you can select the maximum number of results you want to get by using the ‘top_k’ parameter (default is 10). This is useful for avoiding query results that exceed the prompt max length or consume tokens unnecessarily.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_chain</span> <span class="o">=</span> <span class="n">SQLDatabaseChain</span><span class="o">.</span><span class="n">from_llm</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_query_checker</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">top_k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;What are some example tracks by composer Johann Sebastian Bach?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+What are some example tracks by composer Johann Sebastian Bach?
+SQLQuery:<span class=" -Color -Color-Bold -Color-Bold-Green">SELECT Name FROM Track WHERE Composer = &#39;Johann Sebastian Bach&#39; LIMIT 3</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(&#39;Concerto for 2 Violins in D Minor, BWV 1043: I. Vivace&#39;,), (&#39;Aria Mit 30 Veränderungen, BWV 988 &quot;Goldberg Variations&quot;: Aria&#39;,), (&#39;Suite for Solo Cello No. 1 in G Major, BWV 1007: I. Prélude&#39;,)]</span>
+Answer:<span class=" -Color -Color-Bold -Color-Bold-Green">Examples of tracks by Johann Sebastian Bach are Concerto for 2 Violins in D Minor, BWV 1043: I. Vivace, Aria Mit 30 Veränderungen, BWV 988 &quot;Goldberg Variations&quot;: Aria, and Suite for Solo Cello No. 1 in G Major, BWV 1007: I. Prélude.</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&#39;Examples of tracks by Johann Sebastian Bach are Concerto for 2 Violins in D Minor, BWV 1043: I. Vivace, Aria Mit 30 Veränderungen, BWV 988 &quot;Goldberg Variations&quot;: Aria, and Suite for Solo Cello No. 1 in G Major, BWV 1007: I. Prélude.&#39;
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="adding-example-rows-from-each-table">
+<h2>Adding example rows from each table<a class="headerlink" href="#adding-example-rows-from-each-table" title="Permalink to this headline">#</a></h2>
+<p>Sometimes, the format of the data is not obvious and it is optimal to include a sample of rows from the tables in the prompt to allow the LLM to understand the data before providing a final query. Here we will use this feature to let the LLM know that artists are saved with their full names by providing two rows from the <code class="docutils literal notranslate"><span class="pre">Track</span></code> table.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db</span> <span class="o">=</span> <span class="n">SQLDatabase</span><span class="o">.</span><span class="n">from_uri</span><span class="p">(</span>
+    <span class="s2">&quot;sqlite:///../../../../notebooks/Chinook.db&quot;</span><span class="p">,</span>
+    <span class="n">include_tables</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Track&#39;</span><span class="p">],</span> <span class="c1"># we include only one table to save tokens in the prompt :)</span>
+    <span class="n">sample_rows_in_table_info</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The sample rows are added to the prompt after each corresponding table’s column information:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">table_info</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CREATE TABLE &quot;Track&quot; (
+	&quot;TrackId&quot; INTEGER NOT NULL, 
+	&quot;Name&quot; NVARCHAR(200) NOT NULL, 
+	&quot;AlbumId&quot; INTEGER, 
+	&quot;MediaTypeId&quot; INTEGER NOT NULL, 
+	&quot;GenreId&quot; INTEGER, 
+	&quot;Composer&quot; NVARCHAR(220), 
+	&quot;Milliseconds&quot; INTEGER NOT NULL, 
+	&quot;Bytes&quot; INTEGER, 
+	&quot;UnitPrice&quot; NUMERIC(10, 2) NOT NULL, 
+	PRIMARY KEY (&quot;TrackId&quot;), 
+	FOREIGN KEY(&quot;MediaTypeId&quot;) REFERENCES &quot;MediaType&quot; (&quot;MediaTypeId&quot;), 
+	FOREIGN KEY(&quot;GenreId&quot;) REFERENCES &quot;Genre&quot; (&quot;GenreId&quot;), 
+	FOREIGN KEY(&quot;AlbumId&quot;) REFERENCES &quot;Album&quot; (&quot;AlbumId&quot;)
+)
+
+/*
+2 rows from Track table:
+TrackId	Name	AlbumId	MediaTypeId	GenreId	Composer	Milliseconds	Bytes	UnitPrice
+1	For Those About To Rock (We Salute You)	1	1	1	Angus Young, Malcolm Young, Brian Johnson	343719	11170334	0.99
+2	Balls to the Wall	2	2	1	None	342562	5510424	0.99
+*/
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_chain</span> <span class="o">=</span> <span class="n">SQLDatabaseChain</span><span class="o">.</span><span class="n">from_llm</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">use_query_checker</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;What are some example tracks by Bach?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+What are some example tracks by Bach?
+SQLQuery:<span class=" -Color -Color-Bold -Color-Bold-Green">SELECT &quot;Name&quot;, &quot;Composer&quot; FROM &quot;Track&quot; WHERE &quot;Composer&quot; LIKE &#39;%Bach%&#39; LIMIT 5</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(&#39;American Woman&#39;, &#39;B. Cummings/G. Peterson/M.J. Kale/R. Bachman&#39;), (&#39;Concerto for 2 Violins in D Minor, BWV 1043: I. Vivace&#39;, &#39;Johann Sebastian Bach&#39;), (&#39;Aria Mit 30 Veränderungen, BWV 988 &quot;Goldberg Variations&quot;: Aria&#39;, &#39;Johann Sebastian Bach&#39;), (&#39;Suite for Solo Cello No. 1 in G Major, BWV 1007: I. Prélude&#39;, &#39;Johann Sebastian Bach&#39;), (&#39;Toccata and Fugue in D Minor, BWV 565: I. Toccata&#39;, &#39;Johann Sebastian Bach&#39;)]</span>
+Answer:<span class=" -Color -Color-Bold -Color-Bold-Green">Tracks by Bach include &#39;American Woman&#39;, &#39;Concerto for 2 Violins in D Minor, BWV 1043: I. Vivace&#39;, &#39;Aria Mit 30 Veränderungen, BWV 988 &quot;Goldberg Variations&quot;: Aria&#39;, &#39;Suite for Solo Cello No. 1 in G Major, BWV 1007: I. Prélude&#39;, and &#39;Toccata and Fugue in D Minor, BWV 565: I. Toccata&#39;.</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&#39;Tracks by Bach include \&#39;American Woman\&#39;, \&#39;Concerto for 2 Violins in D Minor, BWV 1043: I. Vivace\&#39;, \&#39;Aria Mit 30 Veränderungen, BWV 988 &quot;Goldberg Variations&quot;: Aria\&#39;, \&#39;Suite for Solo Cello No. 1 in G Major, BWV 1007: I. Prélude\&#39;, and \&#39;Toccata and Fugue in D Minor, BWV 565: I. Toccata\&#39;.&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<section id="custom-table-info">
+<h3>Custom Table Info<a class="headerlink" href="#custom-table-info" title="Permalink to this headline">#</a></h3>
+<p>In some cases, it can be useful to provide custom table information instead of using the automatically generated table definitions and the first <code class="docutils literal notranslate"><span class="pre">sample_rows_in_table_info</span></code> sample rows. For example, if you know that the first few rows of a table are uninformative, it could help to manually provide example rows that are more diverse or provide more information to the model. It is also possible to limit the columns that will be visible to the model if there are unnecessary columns.</p>
+<p>This information can be provided as a dictionary with table names as the keys and table information as the values. For example, let’s provide a custom definition and sample rows for the Track table with only a few columns:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">custom_table_info</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;Track&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;CREATE TABLE Track (</span>
+<span class="s2">	&quot;TrackId&quot; INTEGER NOT NULL, </span>
+<span class="s2">	&quot;Name&quot; NVARCHAR(200) NOT NULL,</span>
+<span class="s2">	&quot;Composer&quot; NVARCHAR(220),</span>
+<span class="s2">	PRIMARY KEY (&quot;TrackId&quot;)</span>
+<span class="s2">)</span>
+<span class="s2">/*</span>
+<span class="s2">3 rows from Track table:</span>
+<span class="s2">TrackId	Name	Composer</span>
+<span class="s2">1	For Those About To Rock (We Salute You)	Angus Young, Malcolm Young, Brian Johnson</span>
+<span class="s2">2	Balls to the Wall	None</span>
+<span class="s2">3	My favorite song ever	The coolest composer of all time</span>
+<span class="s2">*/&quot;&quot;&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db</span> <span class="o">=</span> <span class="n">SQLDatabase</span><span class="o">.</span><span class="n">from_uri</span><span class="p">(</span>
+    <span class="s2">&quot;sqlite:///../../../../notebooks/Chinook.db&quot;</span><span class="p">,</span>
+    <span class="n">include_tables</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Track&#39;</span><span class="p">,</span> <span class="s1">&#39;Playlist&#39;</span><span class="p">],</span>
+    <span class="n">sample_rows_in_table_info</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">custom_table_info</span><span class="o">=</span><span class="n">custom_table_info</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">table_info</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CREATE TABLE &quot;Playlist&quot; (
+	&quot;PlaylistId&quot; INTEGER NOT NULL, 
+	&quot;Name&quot; NVARCHAR(120), 
+	PRIMARY KEY (&quot;PlaylistId&quot;)
+)
+
+/*
+2 rows from Playlist table:
+PlaylistId	Name
+1	Music
+2	Movies
+*/
+
+CREATE TABLE Track (
+	&quot;TrackId&quot; INTEGER NOT NULL, 
+	&quot;Name&quot; NVARCHAR(200) NOT NULL,
+	&quot;Composer&quot; NVARCHAR(220),
+	PRIMARY KEY (&quot;TrackId&quot;)
+)
+/*
+3 rows from Track table:
+TrackId	Name	Composer
+1	For Those About To Rock (We Salute You)	Angus Young, Malcolm Young, Brian Johnson
+2	Balls to the Wall	None
+3	My favorite song ever	The coolest composer of all time
+*/
+</pre></div>
+</div>
+</div>
+</div>
+<p>Note how our custom table definition and sample rows for <code class="docutils literal notranslate"><span class="pre">Track</span></code> overrides the <code class="docutils literal notranslate"><span class="pre">sample_rows_in_table_info</span></code> parameter. Tables that are not overridden by <code class="docutils literal notranslate"><span class="pre">custom_table_info</span></code>, in this example <code class="docutils literal notranslate"><span class="pre">Playlist</span></code>, will have their table info gathered automatically as usual.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_chain</span> <span class="o">=</span> <span class="n">SQLDatabaseChain</span><span class="o">.</span><span class="n">from_llm</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">db_chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;What are some example tracks by Bach?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+What are some example tracks by Bach?
+SQLQuery:<span class=" -Color -Color-Bold -Color-Bold-Green">SELECT &quot;Name&quot; FROM Track WHERE &quot;Composer&quot; LIKE &#39;%Bach%&#39; LIMIT 5;</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(&#39;American Woman&#39;,), (&#39;Concerto for 2 Violins in D Minor, BWV 1043: I. Vivace&#39;,), (&#39;Aria Mit 30 Veränderungen, BWV 988 &quot;Goldberg Variations&quot;: Aria&#39;,), (&#39;Suite for Solo Cello No. 1 in G Major, BWV 1007: I. Prélude&#39;,), (&#39;Toccata and Fugue in D Minor, BWV 565: I. Toccata&#39;,)]</span>
+Answer:text=&#39;You are a SQLite expert. Given an input question, first create a syntactically correct SQLite query to run, then look at the results of the query and return the answer to the input question.\nUnless the user specifies in the question a specific number of examples to obtain, query for at most 5 results using the LIMIT clause as per SQLite. You can order the results to return the most informative data in the database.\nNever query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (&quot;) to denote them as delimited identifiers.\nPay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.\n\nUse the following format:\n\nQuestion: &quot;Question here&quot;\nSQLQuery: &quot;SQL Query to run&quot;\nSQLResult: &quot;Result of the SQLQuery&quot;\nAnswer: &quot;Final answer here&quot;\n\nOnly use the following tables:\n\nCREATE TABLE &quot;Playlist&quot; (\n\t&quot;PlaylistId&quot; INTEGER NOT NULL, \n\t&quot;Name&quot; NVARCHAR(120), \n\tPRIMARY KEY (&quot;PlaylistId&quot;)\n)\n\n/*\n2 rows from Playlist table:\nPlaylistId\tName\n1\tMusic\n2\tMovies\n*/\n\nCREATE TABLE Track (\n\t&quot;TrackId&quot; INTEGER NOT NULL, \n\t&quot;Name&quot; NVARCHAR(200) NOT NULL,\n\t&quot;Composer&quot; NVARCHAR(220),\n\tPRIMARY KEY (&quot;TrackId&quot;)\n)\n/*\n3 rows from Track table:\nTrackId\tName\tComposer\n1\tFor Those About To Rock (We Salute You)\tAngus Young, Malcolm Young, Brian Johnson\n2\tBalls to the Wall\tNone\n3\tMy favorite song ever\tThe coolest composer of all time\n*/\n\nQuestion: What are some example tracks by Bach?\nSQLQuery:SELECT &quot;Name&quot; FROM Track WHERE &quot;Composer&quot; LIKE \&#39;%Bach%\&#39; LIMIT 5;\nSQLResult: [(\&#39;American Woman\&#39;,), (\&#39;Concerto for 2 Violins in D Minor, BWV 1043: I. Vivace\&#39;,), (\&#39;Aria Mit 30 Veränderungen, BWV 988 &quot;Goldberg Variations&quot;: Aria\&#39;,), (\&#39;Suite for Solo Cello No. 1 in G Major, BWV 1007: I. Prélude\&#39;,), (\&#39;Toccata and Fugue in D Minor, BWV 565: I. Toccata\&#39;,)]\nAnswer:&#39;
+You are a SQLite expert. Given an input question, first create a syntactically correct SQLite query to run, then look at the results of the query and return the answer to the input question.
+Unless the user specifies in the question a specific number of examples to obtain, query for at most 5 results using the LIMIT clause as per SQLite. You can order the results to return the most informative data in the database.
+Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (&quot;) to denote them as delimited identifiers.
+Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
+
+Use the following format:
+
+Question: &quot;Question here&quot;
+SQLQuery: &quot;SQL Query to run&quot;
+SQLResult: &quot;Result of the SQLQuery&quot;
+Answer: &quot;Final answer here&quot;
+
+Only use the following tables:
+
+CREATE TABLE &quot;Playlist&quot; (
+	&quot;PlaylistId&quot; INTEGER NOT NULL, 
+	&quot;Name&quot; NVARCHAR(120), 
+	PRIMARY KEY (&quot;PlaylistId&quot;)
+)
+
+/*
+2 rows from Playlist table:
+PlaylistId	Name
+1	Music
+2	Movies
+*/
+
+CREATE TABLE Track (
+	&quot;TrackId&quot; INTEGER NOT NULL, 
+	&quot;Name&quot; NVARCHAR(200) NOT NULL,
+	&quot;Composer&quot; NVARCHAR(220),
+	PRIMARY KEY (&quot;TrackId&quot;)
+)
+/*
+3 rows from Track table:
+TrackId	Name	Composer
+1	For Those About To Rock (We Salute You)	Angus Young, Malcolm Young, Brian Johnson
+2	Balls to the Wall	None
+3	My favorite song ever	The coolest composer of all time
+*/
+
+Question: What are some example tracks by Bach?
+SQLQuery:SELECT &quot;Name&quot; FROM Track WHERE &quot;Composer&quot; LIKE &#39;%Bach%&#39; LIMIT 5;
+SQLResult: [(&#39;American Woman&#39;,), (&#39;Concerto for 2 Violins in D Minor, BWV 1043: I. Vivace&#39;,), (&#39;Aria Mit 30 Veränderungen, BWV 988 &quot;Goldberg Variations&quot;: Aria&#39;,), (&#39;Suite for Solo Cello No. 1 in G Major, BWV 1007: I. Prélude&#39;,), (&#39;Toccata and Fugue in D Minor, BWV 565: I. Toccata&#39;,)]
+Answer:
+{&#39;input&#39;: &#39;What are some example tracks by Bach?\nSQLQuery:SELECT &quot;Name&quot; FROM Track WHERE &quot;Composer&quot; LIKE \&#39;%Bach%\&#39; LIMIT 5;\nSQLResult: [(\&#39;American Woman\&#39;,), (\&#39;Concerto for 2 Violins in D Minor, BWV 1043: I. Vivace\&#39;,), (\&#39;Aria Mit 30 Veränderungen, BWV 988 &quot;Goldberg Variations&quot;: Aria\&#39;,), (\&#39;Suite for Solo Cello No. 1 in G Major, BWV 1007: I. Prélude\&#39;,), (\&#39;Toccata and Fugue in D Minor, BWV 565: I. Toccata\&#39;,)]\nAnswer:&#39;, &#39;top_k&#39;: &#39;5&#39;, &#39;dialect&#39;: &#39;sqlite&#39;, &#39;table_info&#39;: &#39;\nCREATE TABLE &quot;Playlist&quot; (\n\t&quot;PlaylistId&quot; INTEGER NOT NULL, \n\t&quot;Name&quot; NVARCHAR(120), \n\tPRIMARY KEY (&quot;PlaylistId&quot;)\n)\n\n/*\n2 rows from Playlist table:\nPlaylistId\tName\n1\tMusic\n2\tMovies\n*/\n\nCREATE TABLE Track (\n\t&quot;TrackId&quot; INTEGER NOT NULL, \n\t&quot;Name&quot; NVARCHAR(200) NOT NULL,\n\t&quot;Composer&quot; NVARCHAR(220),\n\tPRIMARY KEY (&quot;TrackId&quot;)\n)\n/*\n3 rows from Track table:\nTrackId\tName\tComposer\n1\tFor Those About To Rock (We Salute You)\tAngus Young, Malcolm Young, Brian Johnson\n2\tBalls to the Wall\tNone\n3\tMy favorite song ever\tThe coolest composer of all time\n*/&#39;, &#39;stop&#39;: [&#39;\nSQLResult:&#39;]}
+<span class=" -Color -Color-Bold -Color-Bold-Green">Examples of tracks by Bach include &quot;American Woman&quot;, &quot;Concerto for 2 Violins in D Minor, BWV 1043: I. Vivace&quot;, &quot;Aria Mit 30 Veränderungen, BWV 988 &#39;Goldberg Variations&#39;: Aria&quot;, &quot;Suite for Solo Cello No. 1 in G Major, BWV 1007: I. Prélude&quot;, and &quot;Toccata and Fugue in D Minor, BWV 565: I. Toccata&quot;.</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&#39;Examples of tracks by Bach include &quot;American Woman&quot;, &quot;Concerto for 2 Violins in D Minor, BWV 1043: I. Vivace&quot;, &quot;Aria Mit 30 Veränderungen, BWV 988 \&#39;Goldberg Variations\&#39;: Aria&quot;, &quot;Suite for Solo Cello No. 1 in G Major, BWV 1007: I. Prélude&quot;, and &quot;Toccata and Fugue in D Minor, BWV 565: I. Toccata&quot;.&#39;
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="sqldatabasesequentialchain">
+<h2>SQLDatabaseSequentialChain<a class="headerlink" href="#sqldatabasesequentialchain" title="Permalink to this headline">#</a></h2>
+<p>Chain for querying SQL database that is a sequential chain.</p>
+<p>The chain is as follows:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>1. Based on the query, determine which tables to use.
+2. Based on those tables, call the normal SQL database chain.
+</pre></div>
+</div>
+<p>This is useful in cases where the number of tables in the database is large.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.chains</span> <span class="kn">import</span> <span class="n">SQLDatabaseSequentialChain</span>
+<span class="n">db</span> <span class="o">=</span> <span class="n">SQLDatabase</span><span class="o">.</span><span class="n">from_uri</span><span class="p">(</span><span class="s2">&quot;sqlite:///../../../../notebooks/Chinook.db&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">chain</span> <span class="o">=</span> <span class="n">SQLDatabaseSequentialChain</span><span class="o">.</span><span class="n">from_llm</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;How many employees are also customers?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseSequentialChain chain...</span>
+Table names to use:
+<span class=" -Color -Color-Bold -Color-Bold-Yellow">[&#39;Employee&#39;, &#39;Customer&#39;]</span>
+
+<span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+How many employees are also customers?
+SQLQuery:<span class=" -Color -Color-Bold -Color-Bold-Green">SELECT COUNT(*) FROM Employee e INNER JOIN Customer c ON e.EmployeeId = c.SupportRepId;</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(59,)]</span>
+Answer:<span class=" -Color -Color-Bold -Color-Bold-Green">59 employees are also customers.</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&#39;59 employees are also customers.&#39;
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="using-local-language-models">
+<h2>Using Local Language Models<a class="headerlink" href="#using-local-language-models" title="Permalink to this headline">#</a></h2>
+<p>Sometimes you may not have the luxury of using OpenAI or other service-hosted large language model. You can, ofcourse, try to use the <code class="docutils literal notranslate"><span class="pre">SQLDatabaseChain</span></code> with a local model, but will quickly realize that most models you can run locally even with a large GPU struggle to generate the right output.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">transformers</span> <span class="kn">import</span> <span class="n">AutoTokenizer</span><span class="p">,</span> <span class="n">GPT2TokenizerFast</span><span class="p">,</span> <span class="n">pipeline</span><span class="p">,</span> <span class="n">AutoModelForSeq2SeqLM</span><span class="p">,</span> <span class="n">AutoModelForCausalLM</span>
+<span class="kn">from</span> <span class="nn">langchain</span> <span class="kn">import</span> <span class="n">HuggingFacePipeline</span>
+
+<span class="c1"># Note: This model requires a large GPU, e.g. an 80GB A100. See documentation for other ways to run private non-OpenAI models.</span>
+<span class="n">model_id</span> <span class="o">=</span> <span class="s2">&quot;google/flan-ul2&quot;</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForSeq2SeqLM</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">device_id</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>  <span class="c1"># default to no-GPU, but use GPU and half precision mode if available</span>
+<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="n">device_id</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">half</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not run model in half precision mode: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">tokenizer</span> <span class="o">=</span> <span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_id</span><span class="p">)</span>
+<span class="n">pipe</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">&quot;text2text-generation&quot;</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device_id</span><span class="p">)</span>
+
+<span class="n">local_llm</span> <span class="o">=</span> <span class="n">HuggingFacePipeline</span><span class="p">(</span><span class="n">pipeline</span><span class="o">=</span><span class="n">pipe</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/workspace/langchain/.venv/lib/python3.9/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
+  from .autonotebook import tqdm as notebook_tqdm
+Loading checkpoint shards: 100%|██████████| 8/8 [00:32&lt;00:00,  4.11s/it]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain</span> <span class="kn">import</span> <span class="n">SQLDatabase</span><span class="p">,</span> <span class="n">SQLDatabaseChain</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="n">SQLDatabase</span><span class="o">.</span><span class="n">from_uri</span><span class="p">(</span><span class="s2">&quot;sqlite:///../../../../notebooks/Chinook.db&quot;</span><span class="p">,</span> <span class="n">include_tables</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Customer&#39;</span><span class="p">])</span>
+<span class="n">local_chain</span> <span class="o">=</span> <span class="n">SQLDatabaseChain</span><span class="o">.</span><span class="n">from_llm</span><span class="p">(</span><span class="n">local_llm</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_intermediate_steps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_query_checker</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>This model should work for very simple SQL queries, as long as you use the query checker as specified above, e.g.:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">local_chain</span><span class="p">(</span><span class="s2">&quot;How many customers are there?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+How many customers are there?
+SQLQuery:
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/workspace/langchain/.venv/lib/python3.9/site-packages/transformers/pipelines/base.py:1070: UserWarning: You seem to be using the pipelines sequentially on GPU. In order to maximize efficiency please use a dataset
+  warnings.warn(
+/workspace/langchain/.venv/lib/python3.9/site-packages/transformers/pipelines/base.py:1070: UserWarning: You seem to be using the pipelines sequentially on GPU. In order to maximize efficiency please use a dataset
+  warnings.warn(
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Green">SELECT count(*) FROM Customer</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(59,)]</span>
+Answer:
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/workspace/langchain/.venv/lib/python3.9/site-packages/transformers/pipelines/base.py:1070: UserWarning: You seem to be using the pipelines sequentially on GPU. In order to maximize efficiency please use a dataset
+  warnings.warn(
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Green">[59]</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;query&#39;: &#39;How many customers are there?&#39;,
+ &#39;result&#39;: &#39;[59]&#39;,
+ &#39;intermediate_steps&#39;: [{&#39;input&#39;: &#39;How many customers are there?\nSQLQuery:SELECT count(*) FROM Customer\nSQLResult: [(59,)]\nAnswer:&#39;,
+   &#39;top_k&#39;: &#39;5&#39;,
+   &#39;dialect&#39;: &#39;sqlite&#39;,
+   &#39;table_info&#39;: &#39;\nCREATE TABLE &quot;Customer&quot; (\n\t&quot;CustomerId&quot; INTEGER NOT NULL, \n\t&quot;FirstName&quot; NVARCHAR(40) NOT NULL, \n\t&quot;LastName&quot; NVARCHAR(20) NOT NULL, \n\t&quot;Company&quot; NVARCHAR(80), \n\t&quot;Address&quot; NVARCHAR(70), \n\t&quot;City&quot; NVARCHAR(40), \n\t&quot;State&quot; NVARCHAR(40), \n\t&quot;Country&quot; NVARCHAR(40), \n\t&quot;PostalCode&quot; NVARCHAR(10), \n\t&quot;Phone&quot; NVARCHAR(24), \n\t&quot;Fax&quot; NVARCHAR(24), \n\t&quot;Email&quot; NVARCHAR(60) NOT NULL, \n\t&quot;SupportRepId&quot; INTEGER, \n\tPRIMARY KEY (&quot;CustomerId&quot;), \n\tFOREIGN KEY(&quot;SupportRepId&quot;) REFERENCES &quot;Employee&quot; (&quot;EmployeeId&quot;)\n)\n\n/*\n3 rows from Customer table:\nCustomerId\tFirstName\tLastName\tCompany\tAddress\tCity\tState\tCountry\tPostalCode\tPhone\tFax\tEmail\tSupportRepId\n1\tLuís\tGonçalves\tEmbraer - Empresa Brasileira de Aeronáutica S.A.\tAv. Brigadeiro Faria Lima, 2170\tSão José dos Campos\tSP\tBrazil\t12227-000\t+55 (12) 3923-5555\t+55 (12) 3923-5566\tluisg@embraer.com.br\t3\n2\tLeonie\tKöhler\tNone\tTheodor-Heuss-Straße 34\tStuttgart\tNone\tGermany\t70174\t+49 0711 2842222\tNone\tleonekohler@surfeu.de\t5\n3\tFrançois\tTremblay\tNone\t1498 rue Bélanger\tMontréal\tQC\tCanada\tH2G 1A7\t+1 (514) 721-4711\tNone\tftremblay@gmail.com\t3\n*/&#39;,
+   &#39;stop&#39;: [&#39;\nSQLResult:&#39;]},
+  &#39;SELECT count(*) FROM Customer&#39;,
+  {&#39;query&#39;: &#39;SELECT count(*) FROM Customer&#39;, &#39;dialect&#39;: &#39;sqlite&#39;},
+  &#39;SELECT count(*) FROM Customer&#39;,
+  &#39;[(59,)]&#39;]}
+</pre></div>
+</div>
+</div>
+</div>
+<p>Even this relatively large model will most likely fail to generate more complicated SQL by itself. However, you can log its inputs and outputs so that you can hand-correct them and use the corrected examples for few shot prompt examples later. In practice, you could log any executions of your chain that raise exceptions (as shown in the example below) or get direct user feedback in cases where the results are incorrect (but did not raise an exception).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>poetry<span class="w"> </span>run<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyyaml<span class="w"> </span>chromadb
+<span class="kn">import</span> <span class="nn">yaml</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>11842.36s - pydevd: Sending message related to process being replaced timed-out after 5 seconds
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Requirement already satisfied: pyyaml in /workspace/langchain/.venv/lib/python3.9/site-packages (6.0)
+Requirement already satisfied: chromadb in /workspace/langchain/.venv/lib/python3.9/site-packages (0.3.21)
+Requirement already satisfied: pandas&gt;=1.3 in /workspace/langchain/.venv/lib/python3.9/site-packages (from chromadb) (2.0.1)
+Requirement already satisfied: requests&gt;=2.28 in /workspace/langchain/.venv/lib/python3.9/site-packages (from chromadb) (2.28.2)
+Requirement already satisfied: pydantic&gt;=1.9 in /workspace/langchain/.venv/lib/python3.9/site-packages (from chromadb) (1.10.7)
+Requirement already satisfied: hnswlib&gt;=0.7 in /workspace/langchain/.venv/lib/python3.9/site-packages (from chromadb) (0.7.0)
+Requirement already satisfied: clickhouse-connect&gt;=0.5.7 in /workspace/langchain/.venv/lib/python3.9/site-packages (from chromadb) (0.5.20)
+Requirement already satisfied: sentence-transformers&gt;=2.2.2 in /workspace/langchain/.venv/lib/python3.9/site-packages (from chromadb) (2.2.2)
+Requirement already satisfied: duckdb&gt;=0.7.1 in /workspace/langchain/.venv/lib/python3.9/site-packages (from chromadb) (0.7.1)
+Requirement already satisfied: fastapi&gt;=0.85.1 in /workspace/langchain/.venv/lib/python3.9/site-packages (from chromadb) (0.95.1)
+Requirement already satisfied: uvicorn[standard]&gt;=0.18.3 in /workspace/langchain/.venv/lib/python3.9/site-packages (from chromadb) (0.21.1)
+Requirement already satisfied: numpy&gt;=1.21.6 in /workspace/langchain/.venv/lib/python3.9/site-packages (from chromadb) (1.24.3)
+Requirement already satisfied: posthog&gt;=2.4.0 in /workspace/langchain/.venv/lib/python3.9/site-packages (from chromadb) (3.0.1)
+Requirement already satisfied: certifi in /workspace/langchain/.venv/lib/python3.9/site-packages (from clickhouse-connect&gt;=0.5.7-&gt;chromadb) (2022.12.7)
+Requirement already satisfied: urllib3&gt;=1.26 in /workspace/langchain/.venv/lib/python3.9/site-packages (from clickhouse-connect&gt;=0.5.7-&gt;chromadb) (1.26.15)
+Requirement already satisfied: pytz in /workspace/langchain/.venv/lib/python3.9/site-packages (from clickhouse-connect&gt;=0.5.7-&gt;chromadb) (2023.3)
+Requirement already satisfied: zstandard in /workspace/langchain/.venv/lib/python3.9/site-packages (from clickhouse-connect&gt;=0.5.7-&gt;chromadb) (0.21.0)
+Requirement already satisfied: lz4 in /workspace/langchain/.venv/lib/python3.9/site-packages (from clickhouse-connect&gt;=0.5.7-&gt;chromadb) (4.3.2)
+Requirement already satisfied: starlette&lt;0.27.0,&gt;=0.26.1 in /workspace/langchain/.venv/lib/python3.9/site-packages (from fastapi&gt;=0.85.1-&gt;chromadb) (0.26.1)
+Requirement already satisfied: python-dateutil&gt;=2.8.2 in /workspace/langchain/.venv/lib/python3.9/site-packages (from pandas&gt;=1.3-&gt;chromadb) (2.8.2)
+Requirement already satisfied: tzdata&gt;=2022.1 in /workspace/langchain/.venv/lib/python3.9/site-packages (from pandas&gt;=1.3-&gt;chromadb) (2023.3)
+Requirement already satisfied: six&gt;=1.5 in /workspace/langchain/.venv/lib/python3.9/site-packages (from posthog&gt;=2.4.0-&gt;chromadb) (1.16.0)
+Requirement already satisfied: monotonic&gt;=1.5 in /workspace/langchain/.venv/lib/python3.9/site-packages (from posthog&gt;=2.4.0-&gt;chromadb) (1.6)
+Requirement already satisfied: backoff&gt;=1.10.0 in /workspace/langchain/.venv/lib/python3.9/site-packages (from posthog&gt;=2.4.0-&gt;chromadb) (2.2.1)
+Requirement already satisfied: typing-extensions&gt;=4.2.0 in /workspace/langchain/.venv/lib/python3.9/site-packages (from pydantic&gt;=1.9-&gt;chromadb) (4.5.0)
+Requirement already satisfied: charset-normalizer&lt;4,&gt;=2 in /workspace/langchain/.venv/lib/python3.9/site-packages (from requests&gt;=2.28-&gt;chromadb) (3.1.0)
+Requirement already satisfied: idna&lt;4,&gt;=2.5 in /workspace/langchain/.venv/lib/python3.9/site-packages (from requests&gt;=2.28-&gt;chromadb) (3.4)
+Requirement already satisfied: transformers&lt;5.0.0,&gt;=4.6.0 in /workspace/langchain/.venv/lib/python3.9/site-packages (from sentence-transformers&gt;=2.2.2-&gt;chromadb) (4.28.1)
+Requirement already satisfied: tqdm in /workspace/langchain/.venv/lib/python3.9/site-packages (from sentence-transformers&gt;=2.2.2-&gt;chromadb) (4.65.0)
+Requirement already satisfied: torch&gt;=1.6.0 in /workspace/langchain/.venv/lib/python3.9/site-packages (from sentence-transformers&gt;=2.2.2-&gt;chromadb) (1.13.1)
+Requirement already satisfied: torchvision in /workspace/langchain/.venv/lib/python3.9/site-packages (from sentence-transformers&gt;=2.2.2-&gt;chromadb) (0.14.1)
+Requirement already satisfied: scikit-learn in /workspace/langchain/.venv/lib/python3.9/site-packages (from sentence-transformers&gt;=2.2.2-&gt;chromadb) (1.2.2)
+Requirement already satisfied: scipy in /workspace/langchain/.venv/lib/python3.9/site-packages (from sentence-transformers&gt;=2.2.2-&gt;chromadb) (1.9.3)
+Requirement already satisfied: nltk in /workspace/langchain/.venv/lib/python3.9/site-packages (from sentence-transformers&gt;=2.2.2-&gt;chromadb) (3.8.1)
+Requirement already satisfied: sentencepiece in /workspace/langchain/.venv/lib/python3.9/site-packages (from sentence-transformers&gt;=2.2.2-&gt;chromadb) (0.1.98)
+Requirement already satisfied: huggingface-hub&gt;=0.4.0 in /workspace/langchain/.venv/lib/python3.9/site-packages (from sentence-transformers&gt;=2.2.2-&gt;chromadb) (0.13.4)
+Requirement already satisfied: click&gt;=7.0 in /workspace/langchain/.venv/lib/python3.9/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (8.1.3)
+Requirement already satisfied: h11&gt;=0.8 in /workspace/langchain/.venv/lib/python3.9/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (0.14.0)
+Requirement already satisfied: httptools&gt;=0.5.0 in /workspace/langchain/.venv/lib/python3.9/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (0.5.0)
+Requirement already satisfied: python-dotenv&gt;=0.13 in /workspace/langchain/.venv/lib/python3.9/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (1.0.0)
+Requirement already satisfied: uvloop!=0.15.0,!=0.15.1,&gt;=0.14.0 in /workspace/langchain/.venv/lib/python3.9/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (0.17.0)
+Requirement already satisfied: watchfiles&gt;=0.13 in /workspace/langchain/.venv/lib/python3.9/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (0.19.0)
+Requirement already satisfied: websockets&gt;=10.4 in /workspace/langchain/.venv/lib/python3.9/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (11.0.2)
+Requirement already satisfied: filelock in /workspace/langchain/.venv/lib/python3.9/site-packages (from huggingface-hub&gt;=0.4.0-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (3.12.0)
+Requirement already satisfied: packaging&gt;=20.9 in /workspace/langchain/.venv/lib/python3.9/site-packages (from huggingface-hub&gt;=0.4.0-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (23.1)
+Requirement already satisfied: anyio&lt;5,&gt;=3.4.0 in /workspace/langchain/.venv/lib/python3.9/site-packages (from starlette&lt;0.27.0,&gt;=0.26.1-&gt;fastapi&gt;=0.85.1-&gt;chromadb) (3.6.2)
+Requirement already satisfied: nvidia-cuda-runtime-cu11==11.7.99 in /workspace/langchain/.venv/lib/python3.9/site-packages (from torch&gt;=1.6.0-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (11.7.99)
+Requirement already satisfied: nvidia-cudnn-cu11==8.5.0.96 in /workspace/langchain/.venv/lib/python3.9/site-packages (from torch&gt;=1.6.0-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (8.5.0.96)
+Requirement already satisfied: nvidia-cublas-cu11==11.10.3.66 in /workspace/langchain/.venv/lib/python3.9/site-packages (from torch&gt;=1.6.0-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (11.10.3.66)
+Requirement already satisfied: nvidia-cuda-nvrtc-cu11==11.7.99 in /workspace/langchain/.venv/lib/python3.9/site-packages (from torch&gt;=1.6.0-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (11.7.99)
+Requirement already satisfied: setuptools in /workspace/langchain/.venv/lib/python3.9/site-packages (from nvidia-cublas-cu11==11.10.3.66-&gt;torch&gt;=1.6.0-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (67.7.1)
+Requirement already satisfied: wheel in /workspace/langchain/.venv/lib/python3.9/site-packages (from nvidia-cublas-cu11==11.10.3.66-&gt;torch&gt;=1.6.0-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (0.40.0)
+Requirement already satisfied: regex!=2019.12.17 in /workspace/langchain/.venv/lib/python3.9/site-packages (from transformers&lt;5.0.0,&gt;=4.6.0-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (2023.3.23)
+Requirement already satisfied: tokenizers!=0.11.3,&lt;0.14,&gt;=0.11.1 in /workspace/langchain/.venv/lib/python3.9/site-packages (from transformers&lt;5.0.0,&gt;=4.6.0-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (0.13.3)
+Requirement already satisfied: joblib in /workspace/langchain/.venv/lib/python3.9/site-packages (from nltk-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (1.2.0)
+Requirement already satisfied: threadpoolctl&gt;=2.0.0 in /workspace/langchain/.venv/lib/python3.9/site-packages (from scikit-learn-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (3.1.0)
+Requirement already satisfied: pillow!=8.3.*,&gt;=5.3.0 in /workspace/langchain/.venv/lib/python3.9/site-packages (from torchvision-&gt;sentence-transformers&gt;=2.2.2-&gt;chromadb) (9.5.0)
+Requirement already satisfied: sniffio&gt;=1.1 in /workspace/langchain/.venv/lib/python3.9/site-packages (from anyio&lt;5,&gt;=3.4.0-&gt;starlette&lt;0.27.0,&gt;=0.26.1-&gt;fastapi&gt;=0.85.1-&gt;chromadb) (1.3.0)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
+
+<span class="n">QUERY</span> <span class="o">=</span> <span class="s2">&quot;List all the customer first names that start with &#39;a&#39;&quot;</span>
+
+<span class="k">def</span> <span class="nf">_parse_example</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="n">sql_cmd_key</span> <span class="o">=</span> <span class="s2">&quot;sql_cmd&quot;</span>
+    <span class="n">sql_result_key</span> <span class="o">=</span> <span class="s2">&quot;sql_result&quot;</span>
+    <span class="n">table_info_key</span> <span class="o">=</span> <span class="s2">&quot;table_info&quot;</span>
+    <span class="n">input_key</span> <span class="o">=</span> <span class="s2">&quot;input&quot;</span>
+    <span class="n">final_answer_key</span> <span class="o">=</span> <span class="s2">&quot;answer&quot;</span>
+
+    <span class="n">_example</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;query&quot;</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="n">steps</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;intermediate_steps&quot;</span><span class="p">)</span>
+    <span class="n">answer_key</span> <span class="o">=</span> <span class="n">sql_cmd_key</span> <span class="c1"># the first one</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">steps</span><span class="p">:</span>
+        <span class="c1"># The steps are in pairs, a dict (input) followed by a string (output).</span>
+        <span class="c1"># Unfortunately there is no schema but you can look at the input key of the</span>
+        <span class="c1"># dict to see what the output is supposed to be</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="c1"># Grab the table info from input dicts in the intermediate steps once</span>
+            <span class="k">if</span> <span class="n">table_info_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_example</span><span class="p">:</span>
+                <span class="n">_example</span><span class="p">[</span><span class="n">table_info_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">table_info_key</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">input_key</span> <span class="ow">in</span> <span class="n">step</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="n">input_key</span><span class="p">]</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;SQLQuery:&quot;</span><span class="p">):</span>
+                    <span class="n">answer_key</span> <span class="o">=</span> <span class="n">sql_cmd_key</span> <span class="c1"># this is the SQL generation input</span>
+                <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="n">input_key</span><span class="p">]</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Answer:&quot;</span><span class="p">):</span>
+                    <span class="n">answer_key</span> <span class="o">=</span> <span class="n">final_answer_key</span> <span class="c1"># this is the final answer input</span>
+            <span class="k">elif</span> <span class="n">sql_cmd_key</span> <span class="ow">in</span> <span class="n">step</span><span class="p">:</span>
+                <span class="n">_example</span><span class="p">[</span><span class="n">sql_cmd_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span><span class="p">[</span><span class="n">sql_cmd_key</span><span class="p">]</span>
+                <span class="n">answer_key</span> <span class="o">=</span> <span class="n">sql_result_key</span> <span class="c1"># this is SQL execution input</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="c1"># The preceding element should have set the answer_key</span>
+            <span class="n">_example</span><span class="p">[</span><span class="n">answer_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
+    <span class="k">return</span> <span class="n">_example</span>
+
+<span class="n">example</span><span class="p">:</span> <span class="nb">any</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">local_chain</span><span class="p">(</span><span class="n">QUERY</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;*** Query succeeded&quot;</span><span class="p">)</span>
+    <span class="n">example</span> <span class="o">=</span> <span class="n">_parse_example</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;*** Query failed&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">QUERY</span><span class="p">,</span>
+        <span class="s2">&quot;intermediate_steps&quot;</span><span class="p">:</span> <span class="n">exc</span><span class="o">.</span><span class="n">intermediate_steps</span>
+    <span class="p">}</span>
+    <span class="n">example</span> <span class="o">=</span> <span class="n">_parse_example</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+
+<span class="c1"># print for now, in reality you may want to write this out to a YAML file or database for manual fix-ups offline</span>
+<span class="n">yaml_example</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">allow_unicode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">yaml_example</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+List all the customer first names that start with &#39;a&#39;
+SQLQuery:
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/workspace/langchain/.venv/lib/python3.9/site-packages/transformers/pipelines/base.py:1070: UserWarning: You seem to be using the pipelines sequentially on GPU. In order to maximize efficiency please use a dataset
+  warnings.warn(
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Green">SELECT firstname FROM customer WHERE firstname LIKE &#39;%a%&#39;</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(&#39;François&#39;,), (&#39;František&#39;,), (&#39;Helena&#39;,), (&#39;Astrid&#39;,), (&#39;Daan&#39;,), (&#39;Kara&#39;,), (&#39;Eduardo&#39;,), (&#39;Alexandre&#39;,), (&#39;Fernanda&#39;,), (&#39;Mark&#39;,), (&#39;Frank&#39;,), (&#39;Jack&#39;,), (&#39;Dan&#39;,), (&#39;Kathy&#39;,), (&#39;Heather&#39;,), (&#39;Frank&#39;,), (&#39;Richard&#39;,), (&#39;Patrick&#39;,), (&#39;Julia&#39;,), (&#39;Edward&#39;,), (&#39;Martha&#39;,), (&#39;Aaron&#39;,), (&#39;Madalena&#39;,), (&#39;Hannah&#39;,), (&#39;Niklas&#39;,), (&#39;Camille&#39;,), (&#39;Marc&#39;,), (&#39;Wyatt&#39;,), (&#39;Isabelle&#39;,), (&#39;Ladislav&#39;,), (&#39;Lucas&#39;,), (&#39;Johannes&#39;,), (&#39;Stanisław&#39;,), (&#39;Joakim&#39;,), (&#39;Emma&#39;,), (&#39;Mark&#39;,), (&#39;Manoj&#39;,), (&#39;Puja&#39;,)]</span>
+Answer:
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/workspace/langchain/.venv/lib/python3.9/site-packages/transformers/pipelines/base.py:1070: UserWarning: You seem to be using the pipelines sequentially on GPU. In order to maximize efficiency please use a dataset
+  warnings.warn(
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Green">[(&#39;François&#39;, &#39;Frantiek&#39;, &#39;Helena&#39;, &#39;Astrid&#39;, &#39;Daan&#39;, &#39;Kara&#39;, &#39;Eduardo&#39;, &#39;Alexandre&#39;, &#39;Fernanda&#39;, &#39;Mark&#39;, &#39;Frank&#39;, &#39;Jack&#39;, &#39;Dan&#39;, &#39;Kathy&#39;, &#39;Heather&#39;, &#39;Frank&#39;, &#39;Richard&#39;, &#39;Patrick&#39;, &#39;Julia&#39;, &#39;Edward&#39;, &#39;Martha&#39;, &#39;Aaron&#39;, &#39;Madalena&#39;, &#39;Hannah&#39;, &#39;Niklas&#39;, &#39;Camille&#39;, &#39;Marc&#39;, &#39;Wyatt&#39;, &#39;Isabelle&#39;, &#39;Ladislav&#39;, &#39;Lucas&#39;, &#39;Johannes&#39;, &#39;Stanisaw&#39;, &#39;Joakim&#39;, &#39;Emma&#39;, &#39;Mark&#39;, &#39;Manoj&#39;, &#39;Puja&#39;]</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+*** Query succeeded
+
+answer: &#39;[(&#39;&#39;François&#39;&#39;, &#39;&#39;Frantiek&#39;&#39;, &#39;&#39;Helena&#39;&#39;, &#39;&#39;Astrid&#39;&#39;, &#39;&#39;Daan&#39;&#39;, &#39;&#39;Kara&#39;&#39;,
+  &#39;&#39;Eduardo&#39;&#39;, &#39;&#39;Alexandre&#39;&#39;, &#39;&#39;Fernanda&#39;&#39;, &#39;&#39;Mark&#39;&#39;, &#39;&#39;Frank&#39;&#39;, &#39;&#39;Jack&#39;&#39;, &#39;&#39;Dan&#39;&#39;,
+  &#39;&#39;Kathy&#39;&#39;, &#39;&#39;Heather&#39;&#39;, &#39;&#39;Frank&#39;&#39;, &#39;&#39;Richard&#39;&#39;, &#39;&#39;Patrick&#39;&#39;, &#39;&#39;Julia&#39;&#39;, &#39;&#39;Edward&#39;&#39;,
+  &#39;&#39;Martha&#39;&#39;, &#39;&#39;Aaron&#39;&#39;, &#39;&#39;Madalena&#39;&#39;, &#39;&#39;Hannah&#39;&#39;, &#39;&#39;Niklas&#39;&#39;, &#39;&#39;Camille&#39;&#39;, &#39;&#39;Marc&#39;&#39;,
+  &#39;&#39;Wyatt&#39;&#39;, &#39;&#39;Isabelle&#39;&#39;, &#39;&#39;Ladislav&#39;&#39;, &#39;&#39;Lucas&#39;&#39;, &#39;&#39;Johannes&#39;&#39;, &#39;&#39;Stanisaw&#39;&#39;, &#39;&#39;Joakim&#39;&#39;,
+  &#39;&#39;Emma&#39;&#39;, &#39;&#39;Mark&#39;&#39;, &#39;&#39;Manoj&#39;&#39;, &#39;&#39;Puja&#39;&#39;]&#39;
+input: List all the customer first names that start with &#39;a&#39;
+sql_cmd: SELECT firstname FROM customer WHERE firstname LIKE &#39;%a%&#39;
+sql_result: &#39;[(&#39;&#39;François&#39;&#39;,), (&#39;&#39;František&#39;&#39;,), (&#39;&#39;Helena&#39;&#39;,), (&#39;&#39;Astrid&#39;&#39;,), (&#39;&#39;Daan&#39;&#39;,),
+  (&#39;&#39;Kara&#39;&#39;,), (&#39;&#39;Eduardo&#39;&#39;,), (&#39;&#39;Alexandre&#39;&#39;,), (&#39;&#39;Fernanda&#39;&#39;,), (&#39;&#39;Mark&#39;&#39;,), (&#39;&#39;Frank&#39;&#39;,),
+  (&#39;&#39;Jack&#39;&#39;,), (&#39;&#39;Dan&#39;&#39;,), (&#39;&#39;Kathy&#39;&#39;,), (&#39;&#39;Heather&#39;&#39;,), (&#39;&#39;Frank&#39;&#39;,), (&#39;&#39;Richard&#39;&#39;,),
+  (&#39;&#39;Patrick&#39;&#39;,), (&#39;&#39;Julia&#39;&#39;,), (&#39;&#39;Edward&#39;&#39;,), (&#39;&#39;Martha&#39;&#39;,), (&#39;&#39;Aaron&#39;&#39;,), (&#39;&#39;Madalena&#39;&#39;,),
+  (&#39;&#39;Hannah&#39;&#39;,), (&#39;&#39;Niklas&#39;&#39;,), (&#39;&#39;Camille&#39;&#39;,), (&#39;&#39;Marc&#39;&#39;,), (&#39;&#39;Wyatt&#39;&#39;,), (&#39;&#39;Isabelle&#39;&#39;,),
+  (&#39;&#39;Ladislav&#39;&#39;,), (&#39;&#39;Lucas&#39;&#39;,), (&#39;&#39;Johannes&#39;&#39;,), (&#39;&#39;Stanisław&#39;&#39;,), (&#39;&#39;Joakim&#39;&#39;,),
+  (&#39;&#39;Emma&#39;&#39;,), (&#39;&#39;Mark&#39;&#39;,), (&#39;&#39;Manoj&#39;&#39;,), (&#39;&#39;Puja&#39;&#39;,)]&#39;
+table_info: &quot;\nCREATE TABLE \&quot;Customer\&quot; (\n\t\&quot;CustomerId\&quot; INTEGER NOT NULL, \n\t\
+  \&quot;FirstName\&quot; NVARCHAR(40) NOT NULL, \n\t\&quot;LastName\&quot; NVARCHAR(20) NOT NULL, \n\t\
+  \&quot;Company\&quot; NVARCHAR(80), \n\t\&quot;Address\&quot; NVARCHAR(70), \n\t\&quot;City\&quot; NVARCHAR(40),\
+  \ \n\t\&quot;State\&quot; NVARCHAR(40), \n\t\&quot;Country\&quot; NVARCHAR(40), \n\t\&quot;PostalCode\&quot; NVARCHAR(10),\
+  \ \n\t\&quot;Phone\&quot; NVARCHAR(24), \n\t\&quot;Fax\&quot; NVARCHAR(24), \n\t\&quot;Email\&quot; NVARCHAR(60)\
+  \ NOT NULL, \n\t\&quot;SupportRepId\&quot; INTEGER, \n\tPRIMARY KEY (\&quot;CustomerId\&quot;), \n\t\
+  FOREIGN KEY(\&quot;SupportRepId\&quot;) REFERENCES \&quot;Employee\&quot; (\&quot;EmployeeId\&quot;)\n)\n\n/*\n\
+  3 rows from Customer table:\nCustomerId\tFirstName\tLastName\tCompany\tAddress\t\
+  City\tState\tCountry\tPostalCode\tPhone\tFax\tEmail\tSupportRepId\n1\tLuís\tGonçalves\t\
+  Embraer - Empresa Brasileira de Aeronáutica S.A.\tAv. Brigadeiro Faria Lima, 2170\t\
+  São José dos Campos\tSP\tBrazil\t12227-000\t+55 (12) 3923-5555\t+55 (12) 3923-5566\t\
+  luisg@embraer.com.br\t3\n2\tLeonie\tKöhler\tNone\tTheodor-Heuss-Straße 34\tStuttgart\t\
+  None\tGermany\t70174\t+49 0711 2842222\tNone\tleonekohler@surfeu.de\t5\n3\tFrançois\t\
+  Tremblay\tNone\t1498 rue Bélanger\tMontréal\tQC\tCanada\tH2G 1A7\t+1 (514) 721-4711\t\
+  None\tftremblay@gmail.com\t3\n*/&quot;
+</pre></div>
+</div>
+</div>
+</div>
+<p>Run the snippet above a few times, or log exceptions in your deployed environment, to collect lots of examples of inputs, table_info and sql_cmd generated by your language model. The sql_cmd values will be incorrect and you can manually fix them up to build a collection of examples, e.g. here we are using YAML to keep a neat record of our inputs and corrected SQL output that we can build up over time.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">YAML_EXAMPLES</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">- input: How many customers are not from Brazil?</span>
+<span class="s2">  table_info: |</span>
+<span class="s2">    CREATE TABLE &quot;Customer&quot; (</span>
+<span class="s2">      &quot;CustomerId&quot; INTEGER NOT NULL, </span>
+<span class="s2">      &quot;FirstName&quot; NVARCHAR(40) NOT NULL, </span>
+<span class="s2">      &quot;LastName&quot; NVARCHAR(20) NOT NULL, </span>
+<span class="s2">      &quot;Company&quot; NVARCHAR(80), </span>
+<span class="s2">      &quot;Address&quot; NVARCHAR(70), </span>
+<span class="s2">      &quot;City&quot; NVARCHAR(40), </span>
+<span class="s2">      &quot;State&quot; NVARCHAR(40), </span>
+<span class="s2">      &quot;Country&quot; NVARCHAR(40), </span>
+<span class="s2">      &quot;PostalCode&quot; NVARCHAR(10), </span>
+<span class="s2">      &quot;Phone&quot; NVARCHAR(24), </span>
+<span class="s2">      &quot;Fax&quot; NVARCHAR(24), </span>
+<span class="s2">      &quot;Email&quot; NVARCHAR(60) NOT NULL, </span>
+<span class="s2">      &quot;SupportRepId&quot; INTEGER, </span>
+<span class="s2">      PRIMARY KEY (&quot;CustomerId&quot;), </span>
+<span class="s2">      FOREIGN KEY(&quot;SupportRepId&quot;) REFERENCES &quot;Employee&quot; (&quot;EmployeeId&quot;)</span>
+<span class="s2">    )</span>
+<span class="s2">  sql_cmd: SELECT COUNT(*) FROM &quot;Customer&quot; WHERE NOT &quot;Country&quot; = &quot;Brazil&quot;;</span>
+<span class="s2">  sql_result: &quot;[(54,)]&quot;</span>
+<span class="s2">  answer: 54 customers are not from Brazil.</span>
+<span class="s2">- input: list all the genres that start with &#39;r&#39;</span>
+<span class="s2">  table_info: |</span>
+<span class="s2">    CREATE TABLE &quot;Genre&quot; (</span>
+<span class="s2">      &quot;GenreId&quot; INTEGER NOT NULL, </span>
+<span class="s2">      &quot;Name&quot; NVARCHAR(120), </span>
+<span class="s2">      PRIMARY KEY (&quot;GenreId&quot;)</span>
+<span class="s2">    )</span>
+
+<span class="s2">    /*</span>
+<span class="s2">    3 rows from Genre table:</span>
+<span class="s2">    GenreId	Name</span>
+<span class="s2">    1	Rock</span>
+<span class="s2">    2	Jazz</span>
+<span class="s2">    3	Metal</span>
+<span class="s2">    */</span>
+<span class="s2">  sql_cmd: SELECT &quot;Name&quot; FROM &quot;Genre&quot; WHERE &quot;Name&quot; LIKE &#39;r%&#39;;</span>
+<span class="s2">  sql_result: &quot;[(&#39;Rock&#39;,), (&#39;Rock and Roll&#39;,), (&#39;Reggae&#39;,), (&#39;R&amp;B/Soul&#39;,)]&quot;</span>
+<span class="s2">  answer: The genres that start with &#39;r&#39; are Rock, Rock and Roll, Reggae and R&amp;B/Soul. </span>
+<span class="s2">&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Now that you have some examples (with manually corrected output SQL), you can do few shot prompt seeding the usual way:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain</span> <span class="kn">import</span> <span class="n">FewShotPromptTemplate</span><span class="p">,</span> <span class="n">PromptTemplate</span>
+<span class="kn">from</span> <span class="nn">langchain.chains.sql_database.prompt</span> <span class="kn">import</span> <span class="n">_sqlite_prompt</span><span class="p">,</span> <span class="n">PROMPT_SUFFIX</span>
+<span class="kn">from</span> <span class="nn">langchain.embeddings.huggingface</span> <span class="kn">import</span> <span class="n">HuggingFaceEmbeddings</span>
+<span class="kn">from</span> <span class="nn">langchain.prompts.example_selector.semantic_similarity</span> <span class="kn">import</span> <span class="n">SemanticSimilarityExampleSelector</span>
+<span class="kn">from</span> <span class="nn">langchain.vectorstores</span> <span class="kn">import</span> <span class="n">Chroma</span>
+
+<span class="n">example_prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="p">(</span>
+    <span class="n">input_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;table_info&quot;</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="s2">&quot;sql_cmd&quot;</span><span class="p">,</span> <span class="s2">&quot;sql_result&quot;</span><span class="p">,</span> <span class="s2">&quot;answer&quot;</span><span class="p">],</span>
+    <span class="n">template</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{table_info}</span><span class="se">\n\n</span><span class="s2">Question: </span><span class="si">{input}</span><span class="se">\n</span><span class="s2">SQLQuery: </span><span class="si">{sql_cmd}</span><span class="se">\n</span><span class="s2">SQLResult: </span><span class="si">{sql_result}</span><span class="se">\n</span><span class="s2">Answer: </span><span class="si">{answer}</span><span class="s2">&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">examples_dict</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">YAML_EXAMPLES</span><span class="p">)</span>
+
+<span class="n">local_embeddings</span> <span class="o">=</span> <span class="n">HuggingFaceEmbeddings</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;sentence-transformers/all-MiniLM-L6-v2&quot;</span><span class="p">)</span>
+
+<span class="n">example_selector</span> <span class="o">=</span> <span class="n">SemanticSimilarityExampleSelector</span><span class="o">.</span><span class="n">from_examples</span><span class="p">(</span>
+                        <span class="c1"># This is the list of examples available to select from.</span>
+                        <span class="n">examples_dict</span><span class="p">,</span>
+                        <span class="c1"># This is the embedding class used to produce embeddings which are used to measure semantic similarity.</span>
+                        <span class="n">local_embeddings</span><span class="p">,</span>
+                        <span class="c1"># This is the VectorStore class that is used to store the embeddings and do a similarity search over.</span>
+                        <span class="n">Chroma</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+                        <span class="c1"># This is the number of examples to produce and include per prompt</span>
+                        <span class="n">k</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">examples_dict</span><span class="p">)),</span>
+                    <span class="p">)</span>
+
+<span class="n">few_shot_prompt</span> <span class="o">=</span> <span class="n">FewShotPromptTemplate</span><span class="p">(</span>
+    <span class="n">example_selector</span><span class="o">=</span><span class="n">example_selector</span><span class="p">,</span>
+    <span class="n">example_prompt</span><span class="o">=</span><span class="n">example_prompt</span><span class="p">,</span>
+    <span class="n">prefix</span><span class="o">=</span><span class="n">_sqlite_prompt</span> <span class="o">+</span> <span class="s2">&quot;Here are some examples:&quot;</span><span class="p">,</span>
+    <span class="n">suffix</span><span class="o">=</span><span class="n">PROMPT_SUFFIX</span><span class="p">,</span>
+    <span class="n">input_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;table_info&quot;</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="s2">&quot;top_k&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Using embedded DuckDB without persistence: data will be transient
+</pre></div>
+</div>
+</div>
+</div>
+<p>The model should do better now with this few shot prompt, especially for inputs similar to the examples you have seeded it with.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">local_chain</span> <span class="o">=</span> <span class="n">SQLDatabaseChain</span><span class="o">.</span><span class="n">from_llm</span><span class="p">(</span><span class="n">local_llm</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">few_shot_prompt</span><span class="p">,</span> <span class="n">use_query_checker</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_intermediate_steps</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">local_chain</span><span class="p">(</span><span class="s2">&quot;How many customers are from Brazil?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+How many customers are from Brazil?
+SQLQuery:<span class=" -Color -Color-Bold -Color-Bold-Green">SELECT count(*) FROM Customer WHERE Country = &quot;Brazil&quot;;</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(5,)]</span>
+Answer:<span class=" -Color -Color-Bold -Color-Bold-Green">[5]</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">local_chain</span><span class="p">(</span><span class="s2">&quot;How many customers are not from Brazil?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+How many customers are not from Brazil?
+SQLQuery:<span class=" -Color -Color-Bold -Color-Bold-Green">SELECT count(*) FROM customer WHERE country NOT IN (SELECT country FROM customer WHERE country = &#39;Brazil&#39;)</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(54,)]</span>
+Answer:<span class=" -Color -Color-Bold -Color-Bold-Green">54 customers are not from Brazil.</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">local_chain</span><span class="p">(</span><span class="s2">&quot;How many customers are there in total?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold">&gt; Entering new SQLDatabaseChain chain...</span>
+How many customers are there in total?
+SQLQuery:<span class=" -Color -Color-Bold -Color-Bold-Green">SELECT count(*) FROM Customer;</span>
+SQLResult: <span class=" -Color -Color-Bold -Color-Bold-Yellow">[(59,)]</span>
+Answer:<span class=" -Color -Color-Bold -Color-Bold-Green">There are 59 customers in total.</span>
+<span class=" -Color -Color-Bold">&gt; Finished chain.</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="pal.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">PAL</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="../../../reference/modules/chains.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Chains</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Harrison Chase<br/>
+  
+      &copy; Copyright 2023, Harrison Chase.<br/>
+    Last updated on Jun 05, 2023.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "unversionedId": "api/API",
+  "id": "api/API",
+  "title": "docs",
+  "description": "Packages",
+  "source": "@site/docs/api/01-API.md",
+  "sourceDirName": "api",
+  "slug": "/api/API",
+  "permalink": "/docs/api/API",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/api/01-API.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {},
+  "sidebar": "sidebar",
+  "previous": {
+    "title": "Website",
+    "permalink": "/docs/api/"
+  }
+}

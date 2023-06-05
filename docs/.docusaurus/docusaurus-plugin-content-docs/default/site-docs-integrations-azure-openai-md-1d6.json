@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/azure_openai",
+  "id": "integrations/azure_openai",
+  "title": "Azure OpenAI",
+  "description": "Microsoft Azure, often referred to as Azure is a cloud computing platform run by Microsoft, which offers access, management, and development of applications and services through global data centers. It provides a range of capabilities, including software as a service (SaaS), platform as a service (PaaS), and infrastructure as a service (IaaS). Microsoft Azure supports many programming languages, tools, and frameworks, including Microsoft-specific and third-party software and systems.",
+  "source": "@site/docs/integrations/azure_openai.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/azure_openai",
+  "permalink": "/docs/integrations/azure_openai",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/azure_openai.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

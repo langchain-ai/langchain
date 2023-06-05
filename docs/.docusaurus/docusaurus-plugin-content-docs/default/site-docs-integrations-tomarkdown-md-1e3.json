@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/tomarkdown",
+  "id": "integrations/tomarkdown",
+  "title": "2Markdown",
+  "description": "2markdown service transforms website content into structured markdown files.",
+  "source": "@site/docs/integrations/tomarkdown.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/tomarkdown",
+  "permalink": "/docs/integrations/tomarkdown",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/tomarkdown.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/openai",
+  "id": "integrations/openai",
+  "title": "OpenAI",
+  "description": "OpenAI is American artificial intelligence (AI) research laboratory",
+  "source": "@site/docs/integrations/openai.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/openai",
+  "permalink": "/docs/integrations/openai",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/openai.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

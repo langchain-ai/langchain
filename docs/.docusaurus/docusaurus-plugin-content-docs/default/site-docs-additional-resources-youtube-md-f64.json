@@ -1,0 +1,15 @@
+{
+  "unversionedId": "additional_resources/youtube",
+  "id": "additional_resources/youtube",
+  "title": "YouTube",
+  "description": "This is a collection of LangChain videos on YouTube.",
+  "source": "@site/docs/additional_resources/youtube.md",
+  "sourceDirName": "additional_resources",
+  "slug": "/additional_resources/youtube",
+  "permalink": "/docs/additional_resources/youtube",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/additional_resources/youtube.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

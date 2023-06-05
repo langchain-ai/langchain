@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/qdrant",
+  "id": "integrations/qdrant",
+  "title": "Qdrant",
+  "description": "This page covers how to use the Qdrant ecosystem within LangChain.",
+  "source": "@site/docs/integrations/qdrant.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/qdrant",
+  "permalink": "/docs/integrations/qdrant",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/qdrant.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

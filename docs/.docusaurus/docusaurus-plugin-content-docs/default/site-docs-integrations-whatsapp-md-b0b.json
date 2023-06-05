@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/whatsapp",
+  "id": "integrations/whatsapp",
+  "title": "WhatsApp",
+  "description": "WhatsApp (also called WhatsApp Messenger) is a freeware, cross-platform, centralized instant messaging (IM) and voice-over-IP (VoIP) service. It allows users to send text and voice messages, make voice and video calls, and share images, documents, user locations, and other content.",
+  "source": "@site/docs/integrations/whatsapp.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/whatsapp",
+  "permalink": "/docs/integrations/whatsapp",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/whatsapp.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

@@ -1,0 +1,81 @@
+
+msgid ""
+msgstr ""
+"Project-Id-Version: Sphinx-Book-Theme\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: sl\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "repository"
+msgstr "odlagališče"
+
+msgid "open issue"
+msgstr "odprto vprašanje"
+
+msgid "Contents"
+msgstr "Vsebina"
+
+msgid "Fullscreen mode"
+msgstr "Celozaslonski način"
+
+msgid "Download this page"
+msgstr "Prenesite to stran"
+
+msgid "Download source file"
+msgstr "Prenesite izvorno datoteko"
+
+msgid "Launch"
+msgstr "Kosilo"
+
+msgid "Edit this page"
+msgstr "Uredite to stran"
+
+msgid "Toggle navigation"
+msgstr "Preklopi navigacijo"
+
+msgid "Theme by the"
+msgstr "Tema avtorja"
+
+msgid "Source repository"
+msgstr "Izvorno skladišče"
+
+msgid "Last updated on"
+msgstr "Nazadnje posodobljeno dne"
+
+msgid "By the"
+msgstr "Avtor"
+
+msgid "Sphinx Book Theme"
+msgstr "Tema knjige Sphinx"
+
+msgid "Open an issue"
+msgstr "Odprite številko"
+
+msgid "next page"
+msgstr "Naslednja stran"
+
+msgid "Copyright"
+msgstr "avtorske pravice"
+
+msgid "Search this book..."
+msgstr "Poiščite to knjigo ..."
+
+msgid "Print to PDF"
+msgstr "Natisni v PDF"
+
+msgid "By"
+msgstr "Avtor"
+
+msgid "previous page"
+msgstr "Prejšnja stran"
+
+msgid "Search the docs ..."
+msgstr "Poiščite dokumente ..."
+
+msgid "Download notebook file"
+msgstr "Prenesite datoteko zvezka"
+
+msgid "suggest edit"
+msgstr "predlagajte urejanje"

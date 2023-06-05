@@ -1,0 +1,81 @@
+
+msgid ""
+msgstr ""
+"Project-Id-Version: Sphinx-Book-Theme\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: bg\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "repository"
+msgstr "хранилище"
+
+msgid "open issue"
+msgstr "отворен брой"
+
+msgid "Contents"
+msgstr "Съдържание"
+
+msgid "Fullscreen mode"
+msgstr "Режим на цял екран"
+
+msgid "Download this page"
+msgstr "Изтеглете тази страница"
+
+msgid "Download source file"
+msgstr "Изтеглете изходния файл"
+
+msgid "Launch"
+msgstr "Стартиране"
+
+msgid "Edit this page"
+msgstr "Редактирайте тази страница"
+
+msgid "Toggle navigation"
+msgstr "Превключване на навигацията"
+
+msgid "Theme by the"
+msgstr "Тема от"
+
+msgid "Source repository"
+msgstr "Хранилище на източника"
+
+msgid "Last updated on"
+msgstr "Последна актуализация на"
+
+msgid "By the"
+msgstr "По"
+
+msgid "Sphinx Book Theme"
+msgstr "Тема на книгата Sphinx"
+
+msgid "Open an issue"
+msgstr "Отворете проблем"
+
+msgid "next page"
+msgstr "Следваща страница"
+
+msgid "Copyright"
+msgstr "Авторско право"
+
+msgid "Search this book..."
+msgstr "Търсене в тази книга ..."
+
+msgid "Print to PDF"
+msgstr "Печат в PDF"
+
+msgid "By"
+msgstr "От"
+
+msgid "previous page"
+msgstr "предишна страница"
+
+msgid "Search the docs ..."
+msgstr "Търсене в документите ..."
+
+msgid "Download notebook file"
+msgstr "Изтеглете файла на бележника"
+
+msgid "suggest edit"
+msgstr "предложи редактиране"

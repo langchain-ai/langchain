@@ -1,0 +1,158 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "9597802c",
+   "metadata": {},
+   "source": [
+    "# Cohere\n",
+    "\n",
+    ">[Cohere](https://cohere.ai/about) is a Canadian startup that provides natural language processing models that help companies improve human-machine interactions.\n",
+    "\n",
+    "This example goes over how to use LangChain to interact with `Cohere` [models](https://docs.cohere.ai/docs/generation-card)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "91ea14ce-831d-409a-a88f-30353acdabd1",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Install the package\n",
+    "!pip install cohere"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "3f5dc9d7-65e3-4b5b-9086-3327d016cfe0",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdin",
+     "output_type": "stream",
+     "text": [
+      " ········\n"
+     ]
+    }
+   ],
+   "source": [
+    "# get a new token: https://dashboard.cohere.ai/\n",
+    "\n",
+    "from getpass import getpass\n",
+    "\n",
+    "COHERE_API_KEY = getpass()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "6fb585dd",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from langchain.llms import Cohere\n",
+    "from langchain import PromptTemplate, LLMChain"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "035dea0f",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "template = \"\"\"Question: {question}\n",
+    "\n",
+    "Answer: Let's think step by step.\"\"\"\n",
+    "\n",
+    "prompt = PromptTemplate(template=template, input_variables=[\"question\"])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "3f3458d9",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "llm = Cohere(cohere_api_key=COHERE_API_KEY)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "a641dbd9",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "llm_chain = LLMChain(prompt=prompt, llm=llm)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "9f844993",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "\" Let's start with the year that Justin Beiber was born. You know that he was born in 1994. We have to go back one year. 1993.\\n\\n1993 was the year that the Dallas Cowboys won the Super Bowl. They won over the Buffalo Bills in Super Bowl 26.\\n\\nNow, let's do it backwards. According to our information, the Green Bay Packers last won the Super Bowl in the 2010-2011 season. Now, we can't go back in time, so let's go from 2011 when the Packers won the Super Bowl, back to 1984. That is the year that the Packers won the Super Bowl over the Raiders.\\n\\nSo, we have the year that Justin Beiber was born, 1994, and the year that the Packers last won the Super Bowl, 2011, and now we have to go in the middle, 1986. That is the year that the New York Giants won the Super Bowl over the Denver Broncos. The Giants won Super Bowl 21.\\n\\nThe New York Giants won the Super Bowl in 1986. This means that the Green Bay Packers won the Super Bowl in 2011.\\n\\nDid you get it right? If you are still a bit confused, just try to go back to the question again and review the answer\""
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "question = \"What NFL team won the Super Bowl in the year Justin Beiber was born?\"\n",
+    "\n",
+    "llm_chain.run(question)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "4797d719",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.6"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

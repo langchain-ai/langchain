@@ -1,0 +1,81 @@
+
+msgid ""
+msgstr ""
+"Project-Id-Version: Sphinx-Book-Theme\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: tr\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "repository"
+msgstr "depo"
+
+msgid "open issue"
+msgstr "Açık konu"
+
+msgid "Contents"
+msgstr "İçindekiler"
+
+msgid "Fullscreen mode"
+msgstr "Tam ekran modu"
+
+msgid "Download this page"
+msgstr "Bu sayfayı indirin"
+
+msgid "Download source file"
+msgstr "Kaynak dosyayı indirin"
+
+msgid "Launch"
+msgstr "Başlatmak"
+
+msgid "Edit this page"
+msgstr "Bu sayfayı düzenle"
+
+msgid "Toggle navigation"
+msgstr "Gezinmeyi değiştir"
+
+msgid "Theme by the"
+msgstr "Tarafından tema"
+
+msgid "Source repository"
+msgstr "Kaynak kod deposu"
+
+msgid "Last updated on"
+msgstr "Son güncelleme tarihi"
+
+msgid "By the"
+msgstr "Tarafından"
+
+msgid "Sphinx Book Theme"
+msgstr "Sfenks Kitap Teması"
+
+msgid "Open an issue"
+msgstr "Bir sorunu açın"
+
+msgid "next page"
+msgstr "sonraki Sayfa"
+
+msgid "Copyright"
+msgstr "Telif hakkı"
+
+msgid "Search this book..."
+msgstr "Bu kitabı ara ..."
+
+msgid "Print to PDF"
+msgstr "PDF olarak yazdır"
+
+msgid "By"
+msgstr "Tarafından"
+
+msgid "previous page"
+msgstr "önceki sayfa"
+
+msgid "Search the docs ..."
+msgstr "Belgelerde ara ..."
+
+msgid "Download notebook file"
+msgstr "Defter dosyasını indirin"
+
+msgid "suggest edit"
+msgstr "düzenleme öner"

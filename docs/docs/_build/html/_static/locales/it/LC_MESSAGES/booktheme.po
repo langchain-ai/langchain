@@ -1,0 +1,81 @@
+
+msgid ""
+msgstr ""
+"Project-Id-Version: Sphinx-Book-Theme\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: it\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "repository"
+msgstr "repository"
+
+msgid "open issue"
+msgstr "questione aperta"
+
+msgid "Contents"
+msgstr "Contenuti"
+
+msgid "Fullscreen mode"
+msgstr "Modalità schermo intero"
+
+msgid "Download this page"
+msgstr "Scarica questa pagina"
+
+msgid "Download source file"
+msgstr "Scarica il file sorgente"
+
+msgid "Launch"
+msgstr "Lanciare"
+
+msgid "Edit this page"
+msgstr "Modifica questa pagina"
+
+msgid "Toggle navigation"
+msgstr "Attiva / disattiva la navigazione"
+
+msgid "Theme by the"
+msgstr "Tema di"
+
+msgid "Source repository"
+msgstr "Repository di origine"
+
+msgid "Last updated on"
+msgstr "Ultimo aggiornamento il"
+
+msgid "By the"
+msgstr "Dal"
+
+msgid "Sphinx Book Theme"
+msgstr "Tema del libro della Sfinge"
+
+msgid "Open an issue"
+msgstr "Apri un problema"
+
+msgid "next page"
+msgstr "pagina successiva"
+
+msgid "Copyright"
+msgstr "Diritto d'autore"
+
+msgid "Search this book..."
+msgstr "Cerca in questo libro ..."
+
+msgid "Print to PDF"
+msgstr "Stampa in PDF"
+
+msgid "By"
+msgstr "Di"
+
+msgid "previous page"
+msgstr "pagina precedente"
+
+msgid "Search the docs ..."
+msgstr "Cerca nei documenti ..."
+
+msgid "Download notebook file"
+msgstr "Scarica il file del taccuino"
+
+msgid "suggest edit"
+msgstr "suggerisci modifica"

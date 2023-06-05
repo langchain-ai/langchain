@@ -1,0 +1,13 @@
+# Data I/O
+
+Many LLM applications require user-specific data that is not part of the model's training set. LangChain gives you the building blocks to connect, manage, and interface with your data.
+
+- [Quickstart](./data_io/getting_started.html)
+
+- [Document loaders](./data_io/document_loaders.html): Load documents from many different sources.
+
+- [Document transformers](./data_io/text_splitters.html): Split documents, drop redundant documents, and more.
+
+- [Vector stores](./data_io/vectorstores.html): Store and search over embedded data
+
+- [Retrievers](./data_io/retrievers.html): Query your data

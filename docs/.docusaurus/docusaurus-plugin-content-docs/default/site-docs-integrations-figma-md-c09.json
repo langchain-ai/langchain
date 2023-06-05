@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/figma",
+  "id": "integrations/figma",
+  "title": "Figma",
+  "description": "Figma is a collaborative web application for interface design.",
+  "source": "@site/docs/integrations/figma.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/figma",
+  "permalink": "/docs/integrations/figma",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/figma.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

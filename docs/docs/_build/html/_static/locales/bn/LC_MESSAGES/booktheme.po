@@ -1,0 +1,66 @@
+
+msgid ""
+msgstr ""
+"Project-Id-Version: Sphinx-Book-Theme\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: bn\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "open issue"
+msgstr "খোলা সমস্যা"
+
+msgid "Download this page"
+msgstr "এই পৃষ্ঠাটি ডাউনলোড করুন"
+
+msgid "Download source file"
+msgstr "উত্স ফাইল ডাউনলোড করুন"
+
+msgid "Launch"
+msgstr "শুরু করা"
+
+msgid "Edit this page"
+msgstr "এই পৃষ্ঠাটি সম্পাদনা করুন"
+
+msgid "Toggle navigation"
+msgstr "নেভিগেশন টগল করুন"
+
+msgid "Theme by the"
+msgstr "থিম দ্বারা"
+
+msgid "Source repository"
+msgstr "উত্স সংগ্রহস্থল"
+
+msgid "Last updated on"
+msgstr "সর্বশেষ আপডেট"
+
+msgid "By the"
+msgstr "দ্বারা"
+
+msgid "Sphinx Book Theme"
+msgstr "স্পিনিক্স বুক থিম"
+
+msgid "Open an issue"
+msgstr "একটি সমস্যা খুলুন"
+
+msgid "next page"
+msgstr "পরবর্তী পৃষ্ঠা"
+
+msgid "Copyright"
+msgstr "কপিরাইট"
+
+msgid "Search this book..."
+msgstr "এই বইটি অনুসন্ধান করুন ..."
+
+msgid "Print to PDF"
+msgstr "পিডিএফ প্রিন্ট করুন"
+
+msgid "By"
+msgstr "দ্বারা"
+
+msgid "previous page"
+msgstr "আগের পৃষ্ঠা"
+
+msgid "Download notebook file"
+msgstr "নোটবুক ফাইল ডাউনলোড করুন"

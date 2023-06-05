@@ -1,0 +1,24 @@
+{
+  "unversionedId": "getting_started/installation",
+  "id": "getting_started/installation",
+  "title": "Installation",
+  "description": "Official release",
+  "source": "@site/docs/getting_started/installation.md",
+  "sourceDirName": "getting_started",
+  "slug": "/getting_started/installation",
+  "permalink": "/docs/getting_started/installation",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/getting_started/installation.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "sidebar",
+  "previous": {
+    "title": "Welcome to LangChain",
+    "permalink": "/docs/"
+  },
+  "next": {
+    "title": "Agent Types",
+    "permalink": "/docs/modules/agents/agents/agent_types"
+  }
+}

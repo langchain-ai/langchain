@@ -1,0 +1,24 @@
+{
+  "unversionedId": "modules/data_io",
+  "id": "modules/data_io",
+  "title": "Data I/O",
+  "description": "Many LLM applications require user-specific data that is not part of the model's training set. LangChain gives you the",
+  "source": "@site/docs/modules/data_io.md",
+  "sourceDirName": "modules",
+  "slug": "/modules/data_io",
+  "permalink": "/docs/modules/data_io",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/modules/data_io.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "sidebar",
+  "previous": {
+    "title": "Getting Started",
+    "permalink": "/docs/modules/agents/tools/getting_started"
+  },
+  "next": {
+    "title": "How to create a custom example selector",
+    "permalink": "/docs/modules/model_io/prompts/example_selectors/examples/custom_example_selector"
+  }
+}

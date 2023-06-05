@@ -1,0 +1,2726 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Evaluating an OpenAPI Chain &#8212; 🦜🔗 LangChain 0.0.190</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script src="../../_static/js/mendablesearch.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Question Answering Benchmarking: Paul Graham Essay" href="qa_benchmarking_pg.html" />
+    <link rel="prev" title="LLM Math" href="llm_math.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">🦜🔗 LangChain 0.0.190</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Get started
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../getting_started/getting_started.html">
+   Quickstart
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../getting_started/installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Modules
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../modules/memory.html">
+   Memory
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../modules/memory/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/memory/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/buffer.html">
+       ConversationBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/buffer_window.html">
+       ConversationBufferWindowMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/entity_summary_memory.html">
+       Entity Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/kg.html">
+       Conversation Knowledge Graph Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/summary.html">
+       ConversationSummaryMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/summary_buffer.html">
+       ConversationSummaryBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/token_buffer.html">
+       ConversationTokenBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/types/vectorstore_retriever_memory.html">
+       VectorStore-Backed Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/adding_memory.html">
+       How to add Memory to an LLMChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/adding_memory_chain_multiple_inputs.html">
+       How to add memory to a Multi-Input Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/agent_with_memory.html">
+       How to add Memory to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/agent_with_memory_in_db.html">
+       Adding Message Memory backed by a database to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/cassandra_chat_message_history.html">
+       Cassandra Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/conversational_customization.html">
+       How to customize conversational memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/custom_memory.html">
+       How to create a custom Memory class
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/dynamodb_chat_message_history.html">
+       Dynamodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/entity_memory_with_sqlite.html">
+       Entity Memory with SQLite storage
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/momento_chat_message_history.html">
+       Momento Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/mongodb_chat_message_history.html">
+       Mongodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/motorhead_memory.html">
+       Motörhead Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/motorhead_memory_managed.html">
+       Motörhead Memory (Managed)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/multiple_memory.html">
+       How to use multiple memory classes in the same chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/postgres_chat_message_history.html">
+       Postgres Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/redis_chat_message_history.html">
+       Redis Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/memory/examples/zep_memory.html">
+       Zep Memory
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../modules/chains.html">
+   Chains
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../modules/chains/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/chains/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/async_chain.html">
+       Async API for Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/custom_chain.html">
+       Creating a custom Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/from_hub.html">
+       Loading from LangChainHub
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/llm_chain.html">
+       LLM Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/router.html">
+       Router Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/sequential_chains.html">
+       Sequential Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/serialization.html">
+       Serialization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/generic/transformation.html">
+       Transformation Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/analyze_document.html">
+       Analyze Document
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/chat_vector_db.html">
+       Chat Over Documents with Chat History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/graph_qa.html">
+       Graph QA
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/hyde.html">
+       Hypothetical Document Embeddings
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/qa_with_sources.html">
+       Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/summarize.html">
+       Summarization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/vector_db_qa.html">
+       Retrieval Question/Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/vector_db_qa_with_sources.html">
+       Retrieval Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/index_examples/vector_db_text_generation.html">
+       Vector DB Text Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/api.html">
+       API Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/constitutional_chain.html">
+       Self-Critique Chain with Constitutional AI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/flare.html">
+       FLARE
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/graph_cypher_qa.html">
+       GraphCypherQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_bash.html">
+       BashChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_checker.html">
+       LLMCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_requests.html">
+       LLMRequestsChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/llm_summarization_checker.html">
+       LLMSummarizationCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/moderation.html">
+       Moderation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/multi_prompt_router.html">
+       Router Chains: Selecting from multiple prompts with MultiPromptChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/multi_retrieval_qa_router.html">
+       Router Chains: Selecting from multiple prompts with MultiRetrievalQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/openapi.html">
+       OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/pal.html">
+       PAL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/chains/examples/sqlite.html">
+       SQL Chain example
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../reference/modules/chains.html">
+     Reference
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../modules/agents.html">
+   Agents
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../modules/agents/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/agents/tools.html">
+     Tools
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+    <label for="toctree-checkbox-6">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/getting_started.html">
+       Getting Started
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/custom_tools.html">
+       Defining Custom Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/multi_input_tool.html">
+       Multi-Input Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/tool_input_validation.html">
+       Tool Input Schema
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/apify.html">
+       Apify
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/arxiv.html">
+       ArXiv API Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/awslambda.html">
+       AWS Lambda API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/bash.html">
+       Shell Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/bing_search.html">
+       Bing Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/brave_search.html">
+       Brave Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/chatgpt_plugins.html">
+       ChatGPT Plugins
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/ddg.html">
+       DuckDuckGo Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/filesystem.html">
+       File System Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/google_places.html">
+       Google Places
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/google_search.html">
+       Google Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/google_serper.html">
+       Google Serper API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/gradio_tools.html">
+       Gradio Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/graphql.html">
+       GraphQL tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/huggingface_tools.html">
+       HuggingFace Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/human_tools.html">
+       Human as a tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/ifttt.html">
+       IFTTT WebHooks
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/metaphor_search.html">
+       Metaphor Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/openweathermap.html">
+       OpenWeatherMap API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/pubmed.html">
+       PubMed Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/python.html">
+       Python REPL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/requests.html">
+       Requests
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/sceneXplain.html">
+       SceneXplain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/search_tools.html">
+       Search Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/searx_search.html">
+       SearxNG Search API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/serpapi.html">
+       SerpAPI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/twilio.html">
+       Twilio
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/wikipedia.html">
+       Wikipedia
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/wolfram_alpha.html">
+       Wolfram Alpha
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/youtube.html">
+       YouTubeSearchTool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/tools/examples/zapier.html">
+       Zapier Natural Language Actions API
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/agents/agents.html">
+     Agents
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+    <label for="toctree-checkbox-7">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/agent_types.html">
+       Agent Types
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_agent.html">
+       Custom Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_llm_agent.html">
+       Custom LLM Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_llm_chat_agent.html">
+       Custom LLM Agent (with a ChatModel)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_mrkl_agent.html">
+       Custom MRKL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_multi_action_agent.html">
+       Custom MultiAction Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/custom_agent_with_tool_retrieval.html">
+       Custom Agent with Tool Retrieval
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/chat_conversation_agent.html">
+       Conversation Agent (for Chat Models)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/conversational_agent.html">
+       Conversation Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/mrkl.html">
+       MRKL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/mrkl_chat.html">
+       MRKL Chat
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/react.html">
+       ReAct
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/self_ask_with_search.html">
+       Self Ask With Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agents/examples/structured_chat.html">
+       Structured Tool Chat Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/agents/toolkits.html">
+     Toolkits
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <label for="toctree-checkbox-8">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/azure_cognitive_services.html">
+       Azure Cognitive Services Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/csv.html">
+       CSV Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/gmail.html">
+       Gmail Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/jira.html">
+       Jira
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/json.html">
+       JSON Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/openapi.html">
+       OpenAPI agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/openapi_nla.html">
+       Natural Language APIs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/pandas.html">
+       Pandas Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/playwright.html">
+       PlayWright Browser Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/powerbi.html">
+       PowerBI Dataset Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/python.html">
+       Python Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/spark.html">
+       Spark Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/spark_sql.html">
+       Spark SQL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/sql_database.html">
+       SQL Database Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/toolkits/examples/vectorstore.html">
+       Vectorstore Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../modules/agents/agent_executors.html">
+     Agent Executors
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+    <label for="toctree-checkbox-9">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/agent_vectorstore.html">
+       How to combine agents and vectorstores
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/async_agent.html">
+       How to use the async API for Agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/chatgpt_clone.html">
+       How to create ChatGPT Clone
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/handle_parsing_errors.html">
+       Handle Parsing Errors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/intermediate_steps.html">
+       How to access intermediate steps
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/max_iterations.html">
+       How to cap the max number of iterations
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/max_time_limit.html">
+       How to use a timeout for the agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../modules/agents/agent_executors/examples/sharedmemory_for_tools.html">
+       How to add SharedMemory to an Agent and its Tools
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../modules/agents/plan_and_execute.html">
+     Plan and Execute
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../modules/callbacks/getting_started.html">
+   Callbacks
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Examples
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="../../use_cases.html">
+   Use cases
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2">
+    <a class="reference internal" href="../autonomous_agents.html">
+     Autonomous Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../agent_simulations.html">
+     Agent Simulations
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../personal_assistants.html">
+     Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../question_answering.html">
+     Question Answering over Docs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../chatbots.html">
+     Chatbots
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../tabular.html">
+     Querying Tabular Data
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../code.html">
+     Code Understanding
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../apis.html">
+     Interacting with APIs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../extraction.html">
+     Extraction
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../summarization.html">
+     Summarization
+    </a>
+   </li>
+   <li class="toctree-l2 current active has-children">
+    <a class="reference internal" href="../evaluation.html">
+     Evaluation
+    </a>
+    <input checked="" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+    <label for="toctree-checkbox-11">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul class="current">
+     <li class="toctree-l3">
+      <a class="reference internal" href="agent_benchmarking.html">
+       Agent Benchmarking: Search + Calculator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="agent_vectordb_sota_pg.html">
+       Agent VectorDB Question Answering Benchmarking
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="benchmarking_template.html">
+       Benchmarking Template
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="data_augmented_question_answering.html">
+       Data Augmented Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="generic_agent_evaluation.html">
+       Generic Agent Evaluation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="huggingface_datasets.html">
+       Using Hugging Face Datasets
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3 current active">
+      <a class="current reference internal" href="#">
+       Evaluating an OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="qa_benchmarking_pg.html">
+       Question Answering Benchmarking: Paul Graham Essay
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="qa_benchmarking_sota.html">
+       Question Answering Benchmarking: State of the Union Address
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="qa_generation.html">
+       QA Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="sql_qa_benchmarking_chinook.html">
+       SQL Question Answering Benchmarking: Chinook
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../additional_resources.html">
+   Additional resources
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+  <label for="toctree-checkbox-12">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../additional_resources/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference external" href="https://github.com/kyrolabs/awesome-langchain">
+     Gallery
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Ecosystem
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../integrations.html">
+   Integrations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+  <label for="toctree-checkbox-13">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/agent_with_wandb_tracing.html">
+     Tracing Walkthrough
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/ai21.html">
+     AI21 Labs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/aim_tracking.html">
+     Aim
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/airbyte.html">
+     Airbyte
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/aleph_alpha.html">
+     Aleph Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/analyticdb.html">
+     AnalyticDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/annoy.html">
+     Annoy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/anyscale.html">
+     Anyscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/apify.html">
+     Apify
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/argilla.html">
+     Argilla
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/arxiv.html">
+     Arxiv
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/atlas.html">
+     AtlasDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/aws_s3.html">
+     AWS S3 Directory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azlyrics.html">
+     AZLyrics
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azure_blob_storage.html">
+     Azure Blob Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azure_cognitive_search_.html">
+     Azure Cognitive Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/azure_openai.html">
+     Azure OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/bananadev.html">
+     Banana
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/beam.html">
+     Beam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/bedrock.html">
+     Bedrock
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/bilibili.html">
+     BiliBili
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/blackboard.html">
+     Blackboard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/cassandra.html">
+     Cassandra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/cerebriumai.html">
+     CerebriumAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/chroma.html">
+     Chroma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/clearml_tracking.html">
+     ClearML
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/cohere.html">
+     Cohere
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/college_confidential.html">
+     College Confidential
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/comet_tracking.html">
+     Comet
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/confluence.html">
+     Confluence
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/ctransformers.html">
+     C Transformers
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/databerry.html">
+     Databerry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/databricks.html">
+     Databricks
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/deepinfra.html">
+     DeepInfra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/deeplake.html">
+     Deep Lake
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/diffbot.html">
+     Diffbot
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/discord.html">
+     Discord
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/docugami.html">
+     Docugami
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/duckdb.html">
+     DuckDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/elasticsearch.html">
+     Elasticsearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/evernote.html">
+     EverNote
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/facebook_chat.html">
+     Facebook Chat
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/figma.html">
+     Figma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/forefrontai.html">
+     ForefrontAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/git.html">
+     Git
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gitbook.html">
+     GitBook
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_bigquery.html">
+     Google BigQuery
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_cloud_storage.html">
+     Google Cloud Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_drive.html">
+     Google Drive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_search.html">
+     Google Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/google_serper.html">
+     Google Serper
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gooseai.html">
+     GooseAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gpt4all.html">
+     GPT4All
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/graphsignal.html">
+     Graphsignal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/gutenberg.html">
+     Gutenberg
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/hacker_news.html">
+     Hacker News
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/hazy_research.html">
+     Hazy Research
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/helicone.html">
+     Helicone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/huggingface.html">
+     Hugging Face
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/ifixit.html">
+     iFixit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/imsdb.html">
+     IMSDb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/jina.html">
+     Jina
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/lancedb.html">
+     LanceDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/llamacpp.html">
+     Llama.cpp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/mediawikidump.html">
+     MediaWikiDump
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/metal.html">
+     Metal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/microsoft_onedrive.html">
+     Microsoft OneDrive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/microsoft_powerpoint.html">
+     Microsoft PowerPoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/microsoft_word.html">
+     Microsoft Word
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/milvus.html">
+     Milvus
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/mlflow_tracking.html">
+     MLflow
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/modal.html">
+     Modal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/modern_treasury.html">
+     Modern Treasury
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/momento.html">
+     Momento
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/myscale.html">
+     MyScale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/nlpcloud.html">
+     NLPCloud
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/notion.html">
+     Notion DB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/obsidian.html">
+     Obsidian
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/openai.html">
+     OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/opensearch.html">
+     OpenSearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/openweathermap.html">
+     OpenWeatherMap
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/petals.html">
+     Petals
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/pgvector.html">
+     PGVector
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/pinecone.html">
+     Pinecone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/pipelineai.html">
+     PipelineAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/predictionguard.html">
+     Prediction Guard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/promptlayer.html">
+     PromptLayer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/psychic.html">
+     Psychic
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/qdrant.html">
+     Qdrant
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/rebuff.html">
+     Rebuff
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/reddit.html">
+     Reddit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/redis.html">
+     Redis
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/replicate.html">
+     Replicate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/roam.html">
+     Roam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/runhouse.html">
+     Runhouse
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/rwkv.html">
+     RWKV-4
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/sagemaker_endpoint.html">
+     SageMaker Endpoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/searx.html">
+     SearxNG Search API
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/serpapi.html">
+     SerpAPI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/sklearn.html">
+     scikit-learn
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/slack.html">
+     Slack
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/spacy.html">
+     spaCy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/spreedly.html">
+     Spreedly
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/stochasticai.html">
+     StochasticAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/stripe.html">
+     Stripe
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/tair.html">
+     Tair
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/telegram.html">
+     Telegram
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/tomarkdown.html">
+     2Markdown
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/trello.html">
+     Trello
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/twitter.html">
+     Twitter
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/unstructured.html">
+     Unstructured
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/vectara.html">
+     Vectara
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/vespa.html">
+     Vespa
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/wandb_tracking.html">
+     Weights &amp; Biases
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/weather.html">
+     Weather
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/weaviate.html">
+     Weaviate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/whatsapp.html">
+     WhatsApp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/whylabs_profiling.html">
+     WhyLabs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/wikipedia.html">
+     Wikipedia
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/wolfram_alpha.html">
+     Wolfram Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/writer.html">
+     Writer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/yeagerai.html">
+     Yeager.ai
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/zep.html">
+     Zep
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../integrations/zilliz.html">
+     Zilliz
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../ecosystem/deployments.html">
+   Deployments
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://github.com/hwchase17/langchain-hub">
+   LangChainHub
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../dependents.html">
+   Dependents
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Find us
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference external" href="https://twitter.com/LangChainAI">
+   Twitter
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://discord.gg/6adMQxSpJS">
+   Discord
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://forms.gle/57d8AmXBYp8PP8tZA">
+   Request production support
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+<a href="https://github.com/hwchase17/langchain"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="bottom"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="../../_sources/use_cases/evaluation/openapi_eval.ipynb.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.ipynb</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#load-the-api-chain">
+   Load the API Chain
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#optional-generate-input-questions-and-request-ground-truth-queries">
+     <em>
+      Optional
+     </em>
+     : Generate Input Questions and Request Ground Truth Queries
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#run-the-api-chain">
+   Run the API Chain
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#evaluate-the-requests-chain">
+   Evaluate the requests chain
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#evaluate-the-response-chain">
+   Evaluate the Response Chain
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#generating-test-datasets">
+   Generating Test Datasets
+  </a>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Evaluating an OpenAPI Chain</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#load-the-api-chain">
+   Load the API Chain
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#optional-generate-input-questions-and-request-ground-truth-queries">
+     <em>
+      Optional
+     </em>
+     : Generate Input Questions and Request Ground Truth Queries
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#run-the-api-chain">
+   Run the API Chain
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#evaluate-the-requests-chain">
+   Evaluate the requests chain
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#evaluate-the-response-chain">
+   Evaluate the Response Chain
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#generating-test-datasets">
+   Generating Test Datasets
+  </a>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <section id="evaluating-an-openapi-chain">
+<h1>Evaluating an OpenAPI Chain<a class="headerlink" href="#evaluating-an-openapi-chain" title="Permalink to this headline">#</a></h1>
+<p>This notebook goes over ways to semantically evaluate an <span class="xref myst">OpenAPI Chain</span>, which calls an endpoint defined by the OpenAPI specification using purely natural language.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.tools</span> <span class="kn">import</span> <span class="n">OpenAPISpec</span><span class="p">,</span> <span class="n">APIOperation</span>
+<span class="kn">from</span> <span class="nn">langchain.chains</span> <span class="kn">import</span> <span class="n">OpenAPIEndpointChain</span><span class="p">,</span> <span class="n">LLMChain</span>
+<span class="kn">from</span> <span class="nn">langchain.requests</span> <span class="kn">import</span> <span class="n">Requests</span>
+<span class="kn">from</span> <span class="nn">langchain.llms</span> <span class="kn">import</span> <span class="n">OpenAI</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="load-the-api-chain">
+<h2>Load the API Chain<a class="headerlink" href="#load-the-api-chain" title="Permalink to this headline">#</a></h2>
+<p>Load a wrapper of the spec (so we can work with it more easily). You can load from a url or from a local file.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load and parse the OpenAPI Spec</span>
+<span class="n">spec</span> <span class="o">=</span> <span class="n">OpenAPISpec</span><span class="o">.</span><span class="n">from_url</span><span class="p">(</span><span class="s2">&quot;https://www.klarna.com/us/shopping/public/openai/v0/api-docs/&quot;</span><span class="p">)</span>
+<span class="c1"># Load a single endpoint operation</span>
+<span class="n">operation</span> <span class="o">=</span> <span class="n">APIOperation</span><span class="o">.</span><span class="n">from_openapi_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s1">&#39;/public/openai/v0/products&#39;</span><span class="p">,</span> <span class="s2">&quot;get&quot;</span><span class="p">)</span>
+<span class="n">verbose</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="c1"># Select any LangChain LLM</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="c1"># Create the endpoint chain</span>
+<span class="n">api_chain</span> <span class="o">=</span> <span class="n">OpenAPIEndpointChain</span><span class="o">.</span><span class="n">from_api_operation</span><span class="p">(</span>
+    <span class="n">operation</span><span class="p">,</span> 
+    <span class="n">llm</span><span class="p">,</span> 
+    <span class="n">requests</span><span class="o">=</span><span class="n">Requests</span><span class="p">(),</span> 
+    <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+    <span class="n">return_intermediate_steps</span><span class="o">=</span><span class="kc">True</span> <span class="c1"># Return request and response text</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Attempting to load an OpenAPI 3.0.1 spec.  This may result in degraded performance. Convert your OpenAPI spec to 3.1.* spec for better support.
+</pre></div>
+</div>
+</div>
+</div>
+<section id="optional-generate-input-questions-and-request-ground-truth-queries">
+<h3><em>Optional</em>: Generate Input Questions and Request Ground Truth Queries<a class="headerlink" href="#optional-generate-input-questions-and-request-ground-truth-queries" title="Permalink to this headline">#</a></h3>
+<p>See <span class="xref myst">Generating Test Datasets</span> at the end of this notebook for more details.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># import re</span>
+<span class="c1"># from langchain.prompts import PromptTemplate</span>
+
+<span class="c1"># template = &quot;&quot;&quot;Below is a service description:</span>
+
+<span class="c1"># {spec}</span>
+
+<span class="c1"># Imagine you&#39;re a new user trying to use {operation} through a search bar. What are 10 different things you want to request?</span>
+<span class="c1"># Wants/Questions:</span>
+<span class="c1"># 1. &quot;&quot;&quot;</span>
+
+<span class="c1"># prompt = PromptTemplate.from_template(template)</span>
+
+<span class="c1"># generation_chain = LLMChain(llm=llm, prompt=prompt)</span>
+
+<span class="c1"># questions_ = generation_chain.run(spec=operation.to_typescript(), operation=operation.operation_id).split(&#39;\n&#39;)</span>
+<span class="c1"># # Strip preceding numeric bullets</span>
+<span class="c1"># questions = [re.sub(r&#39;^\d+\. &#39;, &#39;&#39;, q).strip() for q in questions_]</span>
+<span class="c1"># questions</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ground_truths = [</span>
+<span class="c1"># {&quot;q&quot;: ...} # What are the best queries for each input?</span>
+<span class="c1"># ]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="run-the-api-chain">
+<h2>Run the API Chain<a class="headerlink" href="#run-the-api-chain" title="Permalink to this headline">#</a></h2>
+<p>The two simplest questions a user of the API Chain are:</p>
+<ul class="simple">
+<li><p>Did the chain succesfully access the endpoint?</p></li>
+<li><p>Did the action accomplish the correct result?</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="c1"># Collect metrics to report at completion</span>
+<span class="n">scores</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.evaluation.loading</span> <span class="kn">import</span> <span class="n">load_dataset</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">&quot;openapi-chain-klarna-products-get&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Found cached dataset json (/Users/harrisonchase/.cache/huggingface/datasets/LangChainDatasets___json/LangChainDatasets--openapi-chain-klarna-products-get-5d03362007667626/0.0.0/0f7e3662623656454fcd2b650f34e886a7db4b9104504885bd462096cc7a9f51)
+</pre></div>
+</div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "10932c9c139941d1a8be1a798f29e923", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[{&#39;question&#39;: &#39;What iPhone models are available?&#39;,
+  &#39;expected_query&#39;: {&#39;max_price&#39;: None, &#39;q&#39;: &#39;iPhone&#39;}},
+ {&#39;question&#39;: &#39;Are there any budget laptops?&#39;,
+  &#39;expected_query&#39;: {&#39;max_price&#39;: 300, &#39;q&#39;: &#39;laptop&#39;}},
+ {&#39;question&#39;: &#39;Show me the cheapest gaming PC.&#39;,
+  &#39;expected_query&#39;: {&#39;max_price&#39;: 500, &#39;q&#39;: &#39;gaming pc&#39;}},
+ {&#39;question&#39;: &#39;Are there any tablets under $400?&#39;,
+  &#39;expected_query&#39;: {&#39;max_price&#39;: 400, &#39;q&#39;: &#39;tablet&#39;}},
+ {&#39;question&#39;: &#39;What are the best headphones?&#39;,
+  &#39;expected_query&#39;: {&#39;max_price&#39;: None, &#39;q&#39;: &#39;headphones&#39;}},
+ {&#39;question&#39;: &#39;What are the top rated laptops?&#39;,
+  &#39;expected_query&#39;: {&#39;max_price&#39;: None, &#39;q&#39;: &#39;laptop&#39;}},
+ {&#39;question&#39;: &#39;I want to buy some shoes. I like Adidas and Nike.&#39;,
+  &#39;expected_query&#39;: {&#39;max_price&#39;: None, &#39;q&#39;: &#39;shoe&#39;}},
+ {&#39;question&#39;: &#39;I want to buy a new skirt&#39;,
+  &#39;expected_query&#39;: {&#39;max_price&#39;: None, &#39;q&#39;: &#39;skirt&#39;}},
+ {&#39;question&#39;: &#39;My company is asking me to get a professional Deskopt PC - money is no object.&#39;,
+  &#39;expected_query&#39;: {&#39;max_price&#39;: 10000, &#39;q&#39;: &#39;professional desktop PC&#39;}},
+ {&#39;question&#39;: &#39;What are the best budget cameras?&#39;,
+  &#39;expected_query&#39;: {&#39;max_price&#39;: 300, &#39;q&#39;: &#39;camera&#39;}}]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">questions</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;question&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">## Run the the API chain itself</span>
+<span class="n">raise_error</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># Stop on first failed example - useful for development</span>
+<span class="n">chain_outputs</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">failed_examples</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">chain_outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">api_chain</span><span class="p">(</span><span class="n">question</span><span class="p">))</span>
+        <span class="n">scores</span><span class="p">[</span><span class="s2">&quot;completed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">raise_error</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="n">failed_examples</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">question</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">e</span><span class="p">})</span>
+        <span class="n">scores</span><span class="p">[</span><span class="s2">&quot;completed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># If the chain failed to run, show the failing examples</span>
+<span class="n">failed_examples</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">answers</span> <span class="o">=</span> <span class="p">[</span><span class="n">res</span><span class="p">[</span><span class="s1">&#39;output&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">chain_outputs</span><span class="p">]</span>
+<span class="n">answers</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&#39;There are currently 10 Apple iPhone models available: Apple iPhone 14 Pro Max 256GB, Apple iPhone 12 128GB, Apple iPhone 13 128GB, Apple iPhone 14 Pro 128GB, Apple iPhone 14 Pro 256GB, Apple iPhone 14 Pro Max 128GB, Apple iPhone 13 Pro Max 128GB, Apple iPhone 14 128GB, Apple iPhone 12 Pro 512GB, and Apple iPhone 12 mini 64GB.&#39;,
+ &#39;Yes, there are several budget laptops in the API response. For example, the HP 14-dq0055dx and HP 15-dw0083wm are both priced at $199.99 and $244.99 respectively.&#39;,
+ &#39;The cheapest gaming PC available is the Alarco Gaming PC (X_BLACK_GTX750) for $499.99. You can find more information about it here: https://www.klarna.com/us/shopping/pl/cl223/3203154750/Desktop-Computers/Alarco-Gaming-PC-%28X_BLACK_GTX750%29/?utm_source=openai&amp;ref-site=openai_plugin&#39;,
+ &#39;Yes, there are several tablets under $400. These include the Apple iPad 10.2&quot; 32GB (2019), Samsung Galaxy Tab A8 10.5 SM-X200 32GB, Samsung Galaxy Tab A7 Lite 8.7 SM-T220 32GB, Amazon Fire HD 8&quot; 32GB (10th Generation), and Amazon Fire HD 10 32GB.&#39;,
+ &#39;It looks like you are looking for the best headphones. Based on the API response, it looks like the Apple AirPods Pro (2nd generation) 2022, Apple AirPods Max, and Bose Noise Cancelling Headphones 700 are the best options.&#39;,
+ &#39;The top rated laptops based on the API response are the Apple MacBook Pro (2021) M1 Pro 8C CPU 14C GPU 16GB 512GB SSD 14&quot;, Apple MacBook Pro (2022) M2 OC 10C GPU 8GB 256GB SSD 13.3&quot;, Apple MacBook Air (2022) M2 OC 8C GPU 8GB 256GB SSD 13.6&quot;, and Apple MacBook Pro (2023) M2 Pro OC 16C GPU 16GB 512GB SSD 14.2&quot;.&#39;,
+ &quot;I found several Nike and Adidas shoes in the API response. Here are the links to the products: Nike Dunk Low M - Black/White: https://www.klarna.com/us/shopping/pl/cl337/3200177969/Shoes/Nike-Dunk-Low-M-Black-White/?utm_source=openai&amp;ref-site=openai_plugin, Nike Air Jordan 4 Retro M - Midnight Navy: https://www.klarna.com/us/shopping/pl/cl337/3202929835/Shoes/Nike-Air-Jordan-4-Retro-M-Midnight-Navy/?utm_source=openai&amp;ref-site=openai_plugin, Nike Air Force 1 &#39;07 M - White: https://www.klarna.com/us/shopping/pl/cl337/3979297/Shoes/Nike-Air-Force-1-07-M-White/?utm_source=openai&amp;ref-site=openai_plugin, Nike Dunk Low W - White/Black: https://www.klarna.com/us/shopping/pl/cl337/3200134705/Shoes/Nike-Dunk-Low-W-White-Black/?utm_source=openai&amp;ref-site=openai_plugin, Nike Air Jordan 1 Retro High M - White/University Blue/Black: https://www.klarna.com/us/shopping/pl/cl337/3200383658/Shoes/Nike-Air-Jordan-1-Retro-High-M-White-University-Blue-Black/?utm_source=openai&amp;ref-site=openai_plugin, Nike Air Jordan 1 Retro High OG M - True Blue/Cement Grey/White: https://www.klarna.com/us/shopping/pl/cl337/3204655673/Shoes/Nike-Air-Jordan-1-Retro-High-OG-M-True-Blue-Cement-Grey-White/?utm_source=openai&amp;ref-site=openai_plugin, Nike Air Jordan 11 Retro Cherry - White/Varsity Red/Black: https://www.klarna.com/us/shopping/pl/cl337/3202929696/Shoes/Nike-Air-Jordan-11-Retro-Cherry-White-Varsity-Red-Black/?utm_source=openai&amp;ref-site=openai_plugin, Nike Dunk High W - White/Black: https://www.klarna.com/us/shopping/pl/cl337/3201956448/Shoes/Nike-Dunk-High-W-White-Black/?utm_source=openai&amp;ref-site=openai_plugin, Nike Air Jordan 5 Retro M - Black/Taxi/Aquatone: https://www.klarna.com/us/shopping/pl/cl337/3204923084/Shoes/Nike-Air-Jordan-5-Retro-M-Black-Taxi-Aquatone/?utm_source=openai&amp;ref-site=openai_plugin, Nike Court Legacy Lift W: https://www.klarna.com/us/shopping/pl/cl337/3202103728/Shoes/Nike-Court-Legacy-Lift-W/?utm_source=openai&amp;ref-site=openai_plugin&quot;,
+ &quot;I found several skirts that may interest you. Please take a look at the following products: Avenue Plus Size Denim Stretch Skirt, LoveShackFancy Ruffled Mini Skirt - Antique White, Nike Dri-Fit Club Golf Skirt - Active Pink, Skims Soft Lounge Ruched Long Skirt, French Toast Girl&#39;s Front Pleated Skirt with Tabs, Alexia Admor Women&#39;s Harmonie Mini Skirt Pink Pink, Vero Moda Long Skirt, Nike Court Dri-FIT Victory Flouncy Tennis Skirt Women - White/Black, Haoyuan Mini Pleated Skirts W, and Zimmermann Lyre Midi Skirt.&quot;,
+ &#39;Based on the API response, you may want to consider the Skytech Archangel Gaming Computer PC Desktop, the CyberPowerPC Gamer Master Gaming Desktop, or the ASUS ROG Strix G10DK-RS756, as they all offer powerful processors and plenty of RAM.&#39;,
+ &#39;Based on the API response, the best budget cameras are the DJI Mini 2 Dog Camera ($448.50), Insta360 Sphere with Landing Pad ($429.99), DJI FPV Gimbal Camera ($121.06), Parrot Camera &amp; Body ($36.19), and DJI FPV Air Unit ($179.00).&#39;]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="evaluate-the-requests-chain">
+<h2>Evaluate the requests chain<a class="headerlink" href="#evaluate-the-requests-chain" title="Permalink to this headline">#</a></h2>
+<p>The API Chain has two main components:</p>
+<ol class="arabic simple">
+<li><p>Translate the user query to an API request (request synthesizer)</p></li>
+<li><p>Translate the API response to a natural language response</p></li>
+</ol>
+<p>Here, we construct an evaluation chain to grade the request synthesizer against selected human queries</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="n">truth_queries</span> <span class="o">=</span> <span class="p">[</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;expected_query&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Collect the API queries generated by the chain</span>
+<span class="n">predicted_queries</span> <span class="o">=</span> <span class="p">[</span><span class="n">output</span><span class="p">[</span><span class="s2">&quot;intermediate_steps&quot;</span><span class="p">][</span><span class="s2">&quot;request_args&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">chain_outputs</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.prompts</span> <span class="kn">import</span> <span class="n">PromptTemplate</span>
+
+<span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;You are trying to answer the following question by querying an API:</span>
+
+<span class="s2">&gt; Question: </span><span class="si">{question}</span>
+
+<span class="s2">The query you know you should be executing against the API is:</span>
+
+<span class="s2">&gt; Query: </span><span class="si">{truth_query}</span>
+
+<span class="s2">Is the following predicted query semantically the same (eg likely to produce the same answer)?</span>
+
+<span class="s2">&gt; Predicted Query: </span><span class="si">{predict_query}</span>
+
+<span class="s2">Please give the Predicted Query a grade of either an A, B, C, D, or F, along with an explanation of why. End the evaluation with &#39;Final Grade: &lt;the letter&gt;&#39;</span>
+
+<span class="s2">&gt; Explanation: Let&#39;s think step by step.&quot;&quot;&quot;</span>
+
+<span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+
+<span class="n">eval_chain</span> <span class="o">=</span> <span class="n">LLMChain</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">request_eval_results</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">question</span><span class="p">,</span> <span class="n">predict_query</span><span class="p">,</span> <span class="n">truth_query</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">questions</span><span class="p">,</span> <span class="n">predicted_queries</span><span class="p">,</span> <span class="n">truth_queries</span><span class="p">)):</span>
+    <span class="n">eval_output</span> <span class="o">=</span> <span class="n">eval_chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+        <span class="n">question</span><span class="o">=</span><span class="n">question</span><span class="p">,</span>
+        <span class="n">truth_query</span><span class="o">=</span><span class="n">truth_query</span><span class="p">,</span>
+        <span class="n">predict_query</span><span class="o">=</span><span class="n">predict_query</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">request_eval_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eval_output</span><span class="p">)</span>
+<span class="n">request_eval_results</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&#39; The original query is asking for all iPhone models, so the &quot;q&quot; parameter is correct. The &quot;max_price&quot; parameter is also correct, as it is set to null, meaning that no maximum price is set. The predicted query adds two additional parameters, &quot;size&quot; and &quot;min_price&quot;. The &quot;size&quot; parameter is not necessary, as it is not relevant to the question being asked. The &quot;min_price&quot; parameter is also not necessary, as it is not relevant to the question being asked and it is set to 0, which is the default value. Therefore, the predicted query is not semantically the same as the original query and is not likely to produce the same answer. Final Grade: D&#39;,
+ &#39; The original query is asking for laptops with a maximum price of 300. The predicted query is asking for laptops with a minimum price of 0 and a maximum price of 500. This means that the predicted query is likely to return more results than the original query, as it is asking for a wider range of prices. Therefore, the predicted query is not semantically the same as the original query, and it is not likely to produce the same answer. Final Grade: F&#39;,
+ &quot; The first two parameters are the same, so that&#39;s good. The third parameter is different, but it&#39;s not necessary for the query, so that&#39;s not a problem. The fourth parameter is the problem. The original query specifies a maximum price of 500, while the predicted query specifies a maximum price of null. This means that the predicted query will not limit the results to the cheapest gaming PCs, so it is not semantically the same as the original query. Final Grade: F&quot;,
+ &#39; The original query is asking for tablets under $400, so the first two parameters are correct. The predicted query also includes the parameters &quot;size&quot; and &quot;min_price&quot;, which are not necessary for the original query. The &quot;size&quot; parameter is not relevant to the question, and the &quot;min_price&quot; parameter is redundant since the original query already specifies a maximum price. Therefore, the predicted query is not semantically the same as the original query and is not likely to produce the same answer. Final Grade: D&#39;,
+ &#39; The original query is asking for headphones with no maximum price, so the predicted query is not semantically the same because it has a maximum price of 500. The predicted query also has a size of 10, which is not specified in the original query. Therefore, the predicted query is not semantically the same as the original query. Final Grade: F&#39;,
+ &quot; The original query is asking for the top rated laptops, so the &#39;size&#39; parameter should be set to 10 to get the top 10 results. The &#39;min_price&#39; parameter should be set to 0 to get results from all price ranges. The &#39;max_price&#39; parameter should be set to null to get results from all price ranges. The &#39;q&#39; parameter should be set to &#39;laptop&#39; to get results related to laptops. All of these parameters are present in the predicted query, so it is semantically the same as the original query. Final Grade: A&quot;,
+ &#39; The original query is asking for shoes, so the predicted query is asking for the same thing. The original query does not specify a size, so the predicted query is not adding any additional information. The original query does not specify a price range, so the predicted query is adding additional information that is not necessary. Therefore, the predicted query is not semantically the same as the original query and is likely to produce different results. Final Grade: D&#39;,
+ &#39; The original query is asking for a skirt, so the predicted query is asking for the same thing. The predicted query also adds additional parameters such as size and price range, which could help narrow down the results. However, the size parameter is not necessary for the query to be successful, and the price range is too narrow. Therefore, the predicted query is not as effective as the original query. Final Grade: C&#39;,
+ &#39; The first part of the query is asking for a Desktop PC, which is the same as the original query. The second part of the query is asking for a size of 10, which is not relevant to the original query. The third part of the query is asking for a minimum price of 0, which is not relevant to the original query. The fourth part of the query is asking for a maximum price of null, which is not relevant to the original query. Therefore, the Predicted Query does not semantically match the original query and is not likely to produce the same answer. Final Grade: F&#39;,
+ &#39; The original query is asking for cameras with a maximum price of 300. The predicted query is asking for cameras with a maximum price of 500. This means that the predicted query is likely to return more results than the original query, which may include cameras that are not within the budget range. Therefore, the predicted query is not semantically the same as the original query and does not answer the original question. Final Grade: F&#39;]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="c1"># Parse the evaluation chain responses into a rubric</span>
+<span class="k">def</span> <span class="nf">parse_eval_results</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+    <span class="n">rubric</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">,</span>
+        <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="s2">&quot;D&quot;</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
+        <span class="s2">&quot;F&quot;</span><span class="p">:</span> <span class="mi">0</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">rubric</span><span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Final Grade: (\w+)&#39;</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
+
+
+<span class="n">parsed_results</span> <span class="o">=</span> <span class="n">parse_eval_results</span><span class="p">(</span><span class="n">request_eval_results</span><span class="p">)</span>
+<span class="c1"># Collect the scores for a final evaluation table</span>
+<span class="n">scores</span><span class="p">[</span><span class="s1">&#39;request_synthesizer&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parsed_results</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="evaluate-the-response-chain">
+<h2>Evaluate the Response Chain<a class="headerlink" href="#evaluate-the-response-chain" title="Permalink to this headline">#</a></h2>
+<p>The second component translated the structured API response to a natural language response.
+Evaluate this against the user’s original question.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">langchain.prompts</span> <span class="kn">import</span> <span class="n">PromptTemplate</span>
+
+<span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;You are trying to answer the following question by querying an API:</span>
+
+<span class="s2">&gt; Question: </span><span class="si">{question}</span>
+
+<span class="s2">The API returned a response of:</span>
+
+<span class="s2">&gt; API result: </span><span class="si">{api_response}</span>
+
+<span class="s2">Your response to the user: </span><span class="si">{answer}</span>
+
+<span class="s2">Please evaluate the accuracy and utility of your response to the user&#39;s original question, conditioned on the information available.</span>
+<span class="s2">Give a letter grade of either an A, B, C, D, or F, along with an explanation of why. End the evaluation with &#39;Final Grade: &lt;the letter&gt;&#39;</span>
+
+<span class="s2">&gt; Explanation: Let&#39;s think step by step.&quot;&quot;&quot;</span>
+
+<span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+
+<span class="n">eval_chain</span> <span class="o">=</span> <span class="n">LLMChain</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Extract the API responses from the chain</span>
+<span class="n">api_responses</span> <span class="o">=</span> <span class="p">[</span><span class="n">output</span><span class="p">[</span><span class="s2">&quot;intermediate_steps&quot;</span><span class="p">][</span><span class="s2">&quot;response_text&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">chain_outputs</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run the grader chain</span>
+<span class="n">response_eval_results</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">question</span><span class="p">,</span> <span class="n">api_response</span><span class="p">,</span> <span class="n">answer</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">questions</span><span class="p">,</span> <span class="n">api_responses</span><span class="p">,</span> <span class="n">answers</span><span class="p">)):</span>
+    <span class="n">request_eval_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eval_chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">question</span><span class="o">=</span><span class="n">question</span><span class="p">,</span> <span class="n">api_response</span><span class="o">=</span><span class="n">api_response</span><span class="p">,</span> <span class="n">answer</span><span class="o">=</span><span class="n">answer</span><span class="p">))</span>
+<span class="n">request_eval_results</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&#39; The original query is asking for all iPhone models, so the &quot;q&quot; parameter is correct. The &quot;max_price&quot; parameter is also correct, as it is set to null, meaning that no maximum price is set. The predicted query adds two additional parameters, &quot;size&quot; and &quot;min_price&quot;. The &quot;size&quot; parameter is not necessary, as it is not relevant to the question being asked. The &quot;min_price&quot; parameter is also not necessary, as it is not relevant to the question being asked and it is set to 0, which is the default value. Therefore, the predicted query is not semantically the same as the original query and is not likely to produce the same answer. Final Grade: D&#39;,
+ &#39; The original query is asking for laptops with a maximum price of 300. The predicted query is asking for laptops with a minimum price of 0 and a maximum price of 500. This means that the predicted query is likely to return more results than the original query, as it is asking for a wider range of prices. Therefore, the predicted query is not semantically the same as the original query, and it is not likely to produce the same answer. Final Grade: F&#39;,
+ &quot; The first two parameters are the same, so that&#39;s good. The third parameter is different, but it&#39;s not necessary for the query, so that&#39;s not a problem. The fourth parameter is the problem. The original query specifies a maximum price of 500, while the predicted query specifies a maximum price of null. This means that the predicted query will not limit the results to the cheapest gaming PCs, so it is not semantically the same as the original query. Final Grade: F&quot;,
+ &#39; The original query is asking for tablets under $400, so the first two parameters are correct. The predicted query also includes the parameters &quot;size&quot; and &quot;min_price&quot;, which are not necessary for the original query. The &quot;size&quot; parameter is not relevant to the question, and the &quot;min_price&quot; parameter is redundant since the original query already specifies a maximum price. Therefore, the predicted query is not semantically the same as the original query and is not likely to produce the same answer. Final Grade: D&#39;,
+ &#39; The original query is asking for headphones with no maximum price, so the predicted query is not semantically the same because it has a maximum price of 500. The predicted query also has a size of 10, which is not specified in the original query. Therefore, the predicted query is not semantically the same as the original query. Final Grade: F&#39;,
+ &quot; The original query is asking for the top rated laptops, so the &#39;size&#39; parameter should be set to 10 to get the top 10 results. The &#39;min_price&#39; parameter should be set to 0 to get results from all price ranges. The &#39;max_price&#39; parameter should be set to null to get results from all price ranges. The &#39;q&#39; parameter should be set to &#39;laptop&#39; to get results related to laptops. All of these parameters are present in the predicted query, so it is semantically the same as the original query. Final Grade: A&quot;,
+ &#39; The original query is asking for shoes, so the predicted query is asking for the same thing. The original query does not specify a size, so the predicted query is not adding any additional information. The original query does not specify a price range, so the predicted query is adding additional information that is not necessary. Therefore, the predicted query is not semantically the same as the original query and is likely to produce different results. Final Grade: D&#39;,
+ &#39; The original query is asking for a skirt, so the predicted query is asking for the same thing. The predicted query also adds additional parameters such as size and price range, which could help narrow down the results. However, the size parameter is not necessary for the query to be successful, and the price range is too narrow. Therefore, the predicted query is not as effective as the original query. Final Grade: C&#39;,
+ &#39; The first part of the query is asking for a Desktop PC, which is the same as the original query. The second part of the query is asking for a size of 10, which is not relevant to the original query. The third part of the query is asking for a minimum price of 0, which is not relevant to the original query. The fourth part of the query is asking for a maximum price of null, which is not relevant to the original query. Therefore, the Predicted Query does not semantically match the original query and is not likely to produce the same answer. Final Grade: F&#39;,
+ &#39; The original query is asking for cameras with a maximum price of 300. The predicted query is asking for cameras with a maximum price of 500. This means that the predicted query is likely to return more results than the original query, which may include cameras that are not within the budget range. Therefore, the predicted query is not semantically the same as the original query and does not answer the original question. Final Grade: F&#39;,
+ &#39; The user asked a question about what iPhone models are available, and the API returned a response with 10 different models. The response provided by the user accurately listed all 10 models, so the accuracy of the response is A+. The utility of the response is also A+ since the user was able to get the exact information they were looking for. Final Grade: A+&#39;,
+ &quot; The API response provided a list of laptops with their prices and attributes. The user asked if there were any budget laptops, and the response provided a list of laptops that are all priced under $500. Therefore, the response was accurate and useful in answering the user&#39;s question. Final Grade: A&quot;,
+ &quot; The API response provided the name, price, and URL of the product, which is exactly what the user asked for. The response also provided additional information about the product&#39;s attributes, which is useful for the user to make an informed decision. Therefore, the response is accurate and useful. Final Grade: A&quot;,
+ &quot; The API response provided a list of tablets that are under $400. The response accurately answered the user&#39;s question. Additionally, the response provided useful information such as the product name, price, and attributes. Therefore, the response was accurate and useful. Final Grade: A&quot;,
+ &quot; The API response provided a list of headphones with their respective prices and attributes. The user asked for the best headphones, so the response should include the best headphones based on the criteria provided. The response provided a list of headphones that are all from the same brand (Apple) and all have the same type of headphone (True Wireless, In-Ear). This does not provide the user with enough information to make an informed decision about which headphones are the best. Therefore, the response does not accurately answer the user&#39;s question. Final Grade: F&quot;,
+ &#39; The API response provided a list of laptops with their attributes, which is exactly what the user asked for. The response provided a comprehensive list of the top rated laptops, which is what the user was looking for. The response was accurate and useful, providing the user with the information they needed. Final Grade: A&#39;,
+ &#39; The API response provided a list of shoes from both Adidas and Nike, which is exactly what the user asked for. The response also included the product name, price, and attributes for each shoe, which is useful information for the user to make an informed decision. The response also included links to the products, which is helpful for the user to purchase the shoes. Therefore, the response was accurate and useful. Final Grade: A&#39;,
+ &quot; The API response provided a list of skirts that could potentially meet the user&#39;s needs. The response also included the name, price, and attributes of each skirt. This is a great start, as it provides the user with a variety of options to choose from. However, the response does not provide any images of the skirts, which would have been helpful for the user to make a decision. Additionally, the response does not provide any information about the availability of the skirts, which could be important for the user. \n\nFinal Grade: B&quot;,
+ &#39; The user asked for a professional desktop PC with no budget constraints. The API response provided a list of products that fit the criteria, including the Skytech Archangel Gaming Computer PC Desktop, the CyberPowerPC Gamer Master Gaming Desktop, and the ASUS ROG Strix G10DK-RS756. The response accurately suggested these three products as they all offer powerful processors and plenty of RAM. Therefore, the response is accurate and useful. Final Grade: A&#39;,
+ &quot; The API response provided a list of cameras with their prices, which is exactly what the user asked for. The response also included additional information such as features and memory cards, which is not necessary for the user&#39;s question but could be useful for further research. The response was accurate and provided the user with the information they needed. Final Grade: A&quot;]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Reusing the rubric from above, parse the evaluation chain responses</span>
+<span class="n">parsed_response_results</span> <span class="o">=</span> <span class="n">parse_eval_results</span><span class="p">(</span><span class="n">request_eval_results</span><span class="p">)</span>
+<span class="c1"># Collect the scores for a final evaluation table</span>
+<span class="n">scores</span><span class="p">[</span><span class="s1">&#39;result_synthesizer&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parsed_response_results</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Print out Score statistics for the evaluation session</span>
+<span class="n">header</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{:&lt;20}</span><span class="se">\t</span><span class="si">{:&lt;10}</span><span class="se">\t</span><span class="si">{:&lt;10}</span><span class="se">\t</span><span class="si">{:&lt;10}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Metric&quot;</span><span class="p">,</span> <span class="s2">&quot;Min&quot;</span><span class="p">,</span> <span class="s2">&quot;Mean&quot;</span><span class="p">,</span> <span class="s2">&quot;Max&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">metric</span><span class="p">,</span> <span class="n">metric_scores</span> <span class="ow">in</span> <span class="n">scores</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">mean_scores</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">metric_scores</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric_scores</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric_scores</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{:&lt;20}</span><span class="se">\t</span><span class="si">{:&lt;10.2f}</span><span class="se">\t</span><span class="si">{:&lt;10.2f}</span><span class="se">\t</span><span class="si">{:&lt;10.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">metric_scores</span><span class="p">),</span> <span class="n">mean_scores</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">metric_scores</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Metric              	Min       	Mean      	Max       
+completed           	1.00      	1.00      	1.00      
+request_synthesizer 	0.00      	0.23      	1.00      
+result_synthesizer  	0.00      	0.55      	1.00      
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Re-show the examples for which the chain failed to complete</span>
+<span class="n">failed_examples</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="generating-test-datasets">
+<h2>Generating Test Datasets<a class="headerlink" href="#generating-test-datasets" title="Permalink to this headline">#</a></h2>
+<p>To evaluate a chain against your own endpoint, you’ll want to generate a test dataset that’s conforms to the API.</p>
+<p>This section provides an overview of how to bootstrap the process.</p>
+<p>First, we’ll parse the OpenAPI Spec. For this example, we’ll <a class="reference external" href="https://www.speak.com/">Speak</a>’s OpenAPI specification.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load and parse the OpenAPI Spec</span>
+<span class="n">spec</span> <span class="o">=</span> <span class="n">OpenAPISpec</span><span class="o">.</span><span class="n">from_url</span><span class="p">(</span><span class="s2">&quot;https://api.speak.com/openapi.yaml&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Attempting to load an OpenAPI 3.0.1 spec.  This may result in degraded performance. Convert your OpenAPI spec to 3.1.* spec for better support.
+Attempting to load an OpenAPI 3.0.1 spec.  This may result in degraded performance. Convert your OpenAPI spec to 3.1.* spec for better support.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># List the paths in the OpenAPI Spec</span>
+<span class="n">paths</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">paths</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="n">paths</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&#39;/v1/public/openai/explain-phrase&#39;,
+ &#39;/v1/public/openai/explain-task&#39;,
+ &#39;/v1/public/openai/translate&#39;]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># See which HTTP Methods are available for a given path</span>
+<span class="n">methods</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get_methods_for_path</span><span class="p">(</span><span class="s1">&#39;/v1/public/openai/explain-task&#39;</span><span class="p">)</span>
+<span class="n">methods</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&#39;post&#39;]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load a single endpoint operation</span>
+<span class="n">operation</span> <span class="o">=</span> <span class="n">APIOperation</span><span class="o">.</span><span class="n">from_openapi_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s1">&#39;/v1/public/openai/explain-task&#39;</span><span class="p">,</span> <span class="s1">&#39;post&#39;</span><span class="p">)</span>
+
+<span class="c1"># The operation can be serialized as typescript</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">to_typescript</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>type explainTask = (_: {
+/* Description of the task that the user wants to accomplish or do. For example, &quot;tell the waiter they messed up my order&quot; or &quot;compliment someone on their shirt&quot; */
+  task_description?: string,
+/* The foreign language that the user is learning and asking about. The value can be inferred from question - for example, if the user asks &quot;how do i ask a girl out in mexico city&quot;, the value should be &quot;Spanish&quot; because of Mexico City. Always use the full name of the language (e.g. Spanish, French). */
+  learning_language?: string,
+/* The user&#39;s native language. Infer this value from the language the user asked their question in. Always use the full name of the language (e.g. Spanish, French). */
+  native_language?: string,
+/* A description of any additional context in the user&#39;s question that could affect the explanation - e.g. setting, scenario, situation, tone, speaking style and formality, usage notes, or any other qualifiers. */
+  additional_context?: string,
+/* Full text of the user&#39;s question. */
+  full_query?: string,
+}) =&gt; any;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compress the service definition to avoid leaking too much input structure to the sample data</span>
+<span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;In 20 words or less, what does this service accomplish?</span>
+<span class="si">{spec}</span>
+
+<span class="s2">Function: It&#39;s designed to &quot;&quot;&quot;</span>
+<span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+<span class="n">generation_chain</span> <span class="o">=</span> <span class="n">LLMChain</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">)</span>
+<span class="n">purpose</span> <span class="o">=</span> <span class="n">generation_chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">operation</span><span class="o">.</span><span class="n">to_typescript</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Write a list of </span><span class="si">{num_to_generate}</span><span class="s2"> unique messages users might send to a service designed to</span><span class="si">{purpose}</span><span class="s2"> They must each be completely unique.</span>
+
+<span class="s2">1.&quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">parse_list</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="c1"># Match lines starting with a number then period</span>
+    <span class="c1"># Strip leading and trailing whitespace</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^\d+\. &#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^\d+\. &#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)]</span>
+
+<span class="n">num_to_generate</span> <span class="o">=</span> <span class="mi">10</span> <span class="c1"># How many examples to use for this test set.</span>
+<span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+<span class="n">generation_chain</span> <span class="o">=</span> <span class="n">LLMChain</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">)</span>
+<span class="n">text</span> <span class="o">=</span> <span class="n">generation_chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">purpose</span><span class="o">=</span><span class="n">purpose</span><span class="p">,</span>
+                            <span class="n">num_to_generate</span><span class="o">=</span><span class="n">num_to_generate</span><span class="p">)</span>
+<span class="c1"># Strip preceding numeric bullets</span>
+<span class="n">queries</span> <span class="o">=</span> <span class="n">parse_list</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="n">queries</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&quot;Can you explain how to say &#39;hello&#39; in Spanish?&quot;,
+ &quot;I need help understanding the French word for &#39;goodbye&#39;.&quot;,
+ &quot;Can you tell me how to say &#39;thank you&#39; in German?&quot;,
+ &quot;I&#39;m trying to learn the Italian word for &#39;please&#39;.&quot;,
+ &quot;Can you help me with the pronunciation of &#39;yes&#39; in Portuguese?&quot;,
+ &quot;I&#39;m looking for the Dutch word for &#39;no&#39;.&quot;,
+ &quot;Can you explain the meaning of &#39;hello&#39; in Japanese?&quot;,
+ &quot;I need help understanding the Russian word for &#39;thank you&#39;.&quot;,
+ &quot;Can you tell me how to say &#39;goodbye&#39; in Chinese?&quot;,
+ &quot;I&#39;m trying to learn the Arabic word for &#39;please&#39;.&quot;]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the generation chain to get hypotheses</span>
+<span class="n">api_chain</span> <span class="o">=</span> <span class="n">OpenAPIEndpointChain</span><span class="o">.</span><span class="n">from_api_operation</span><span class="p">(</span>
+    <span class="n">operation</span><span class="p">,</span> 
+    <span class="n">llm</span><span class="p">,</span> 
+    <span class="n">requests</span><span class="o">=</span><span class="n">Requests</span><span class="p">(),</span> 
+    <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+    <span class="n">return_intermediate_steps</span><span class="o">=</span><span class="kc">True</span> <span class="c1"># Return request and response text</span>
+<span class="p">)</span>
+
+<span class="n">predicted_outputs</span> <span class="o">=</span><span class="p">[</span><span class="n">api_chain</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="k">for</span> <span class="n">query</span> <span class="ow">in</span> <span class="n">queries</span><span class="p">]</span>
+<span class="n">request_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">output</span><span class="p">[</span><span class="s2">&quot;intermediate_steps&quot;</span><span class="p">][</span><span class="s2">&quot;request_args&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">predicted_outputs</span><span class="p">]</span>
+
+<span class="c1"># Show the generated request</span>
+<span class="n">request_args</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&#39;{&quot;task_description&quot;: &quot;say \&#39;hello\&#39;&quot;, &quot;learning_language&quot;: &quot;Spanish&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you explain how to say \&#39;hello\&#39; in Spanish?&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;understanding the French word for \&#39;goodbye\&#39;&quot;, &quot;learning_language&quot;: &quot;French&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I need help understanding the French word for \&#39;goodbye\&#39;.&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;say \&#39;thank you\&#39;&quot;, &quot;learning_language&quot;: &quot;German&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you tell me how to say \&#39;thank you\&#39; in German?&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;Learn the Italian word for \&#39;please\&#39;&quot;, &quot;learning_language&quot;: &quot;Italian&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I\&#39;m trying to learn the Italian word for \&#39;please\&#39;.&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;Help with pronunciation of \&#39;yes\&#39; in Portuguese&quot;, &quot;learning_language&quot;: &quot;Portuguese&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you help me with the pronunciation of \&#39;yes\&#39; in Portuguese?&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;Find the Dutch word for \&#39;no\&#39;&quot;, &quot;learning_language&quot;: &quot;Dutch&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I\&#39;m looking for the Dutch word for \&#39;no\&#39;.&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;Explain the meaning of \&#39;hello\&#39; in Japanese&quot;, &quot;learning_language&quot;: &quot;Japanese&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you explain the meaning of \&#39;hello\&#39; in Japanese?&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;understanding the Russian word for \&#39;thank you\&#39;&quot;, &quot;learning_language&quot;: &quot;Russian&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I need help understanding the Russian word for \&#39;thank you\&#39;.&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;say goodbye&quot;, &quot;learning_language&quot;: &quot;Chinese&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you tell me how to say \&#39;goodbye\&#39; in Chinese?&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;Learn the Arabic word for \&#39;please\&#39;&quot;, &quot;learning_language&quot;: &quot;Arabic&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I\&#39;m trying to learn the Arabic word for \&#39;please\&#39;.&quot;}&#39;]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">## AI Assisted Correction</span>
+<span class="n">correction_template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Correct the following API request based on the user&#39;s feedback. If the user indicates no changes are needed, output the original without making any changes.</span>
+
+<span class="s2">REQUEST: </span><span class="si">{request}</span>
+
+<span class="s2">User Feedback / requested changes: </span><span class="si">{user_feedback}</span>
+
+<span class="s2">Finalized Request: &quot;&quot;&quot;</span>
+
+<span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span><span class="n">correction_template</span><span class="p">)</span>
+<span class="n">correction_chain</span> <span class="o">=</span> <span class="n">LLMChain</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ground_truth</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">query</span><span class="p">,</span> <span class="n">request_arg</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">queries</span><span class="p">,</span> <span class="n">request_args</span><span class="p">)):</span>
+    <span class="n">feedback</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Query: </span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="se">\n</span><span class="s2">Request: </span><span class="si">{</span><span class="n">request_arg</span><span class="si">}</span><span class="se">\n</span><span class="s2">Requested changes: &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">feedback</span> <span class="o">==</span> <span class="s1">&#39;n&#39;</span> <span class="ow">or</span> <span class="n">feedback</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">feedback</span><span class="p">:</span>
+        <span class="n">ground_truth</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">request_arg</span><span class="p">)</span>
+        <span class="k">continue</span>
+    <span class="n">resolved</span> <span class="o">=</span> <span class="n">correction_chain</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">request</span><span class="o">=</span><span class="n">request_arg</span><span class="p">,</span>
+                            <span class="n">user_feedback</span><span class="o">=</span><span class="n">feedback</span><span class="p">)</span>
+    <span class="n">ground_truth</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">resolved</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Updated request:&quot;</span><span class="p">,</span> <span class="n">resolved</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Query: Can you explain how to say &#39;hello&#39; in Spanish?
+Request: {&quot;task_description&quot;: &quot;say &#39;hello&#39;&quot;, &quot;learning_language&quot;: &quot;Spanish&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you explain how to say &#39;hello&#39; in Spanish?&quot;}
+Requested changes: 
+Query: I need help understanding the French word for &#39;goodbye&#39;.
+Request: {&quot;task_description&quot;: &quot;understanding the French word for &#39;goodbye&#39;&quot;, &quot;learning_language&quot;: &quot;French&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I need help understanding the French word for &#39;goodbye&#39;.&quot;}
+Requested changes: 
+Query: Can you tell me how to say &#39;thank you&#39; in German?
+Request: {&quot;task_description&quot;: &quot;say &#39;thank you&#39;&quot;, &quot;learning_language&quot;: &quot;German&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you tell me how to say &#39;thank you&#39; in German?&quot;}
+Requested changes: 
+Query: I&#39;m trying to learn the Italian word for &#39;please&#39;.
+Request: {&quot;task_description&quot;: &quot;Learn the Italian word for &#39;please&#39;&quot;, &quot;learning_language&quot;: &quot;Italian&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I&#39;m trying to learn the Italian word for &#39;please&#39;.&quot;}
+Requested changes: 
+Query: Can you help me with the pronunciation of &#39;yes&#39; in Portuguese?
+Request: {&quot;task_description&quot;: &quot;Help with pronunciation of &#39;yes&#39; in Portuguese&quot;, &quot;learning_language&quot;: &quot;Portuguese&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you help me with the pronunciation of &#39;yes&#39; in Portuguese?&quot;}
+Requested changes: 
+Query: I&#39;m looking for the Dutch word for &#39;no&#39;.
+Request: {&quot;task_description&quot;: &quot;Find the Dutch word for &#39;no&#39;&quot;, &quot;learning_language&quot;: &quot;Dutch&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I&#39;m looking for the Dutch word for &#39;no&#39;.&quot;}
+Requested changes: 
+Query: Can you explain the meaning of &#39;hello&#39; in Japanese?
+Request: {&quot;task_description&quot;: &quot;Explain the meaning of &#39;hello&#39; in Japanese&quot;, &quot;learning_language&quot;: &quot;Japanese&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you explain the meaning of &#39;hello&#39; in Japanese?&quot;}
+Requested changes: 
+Query: I need help understanding the Russian word for &#39;thank you&#39;.
+Request: {&quot;task_description&quot;: &quot;understanding the Russian word for &#39;thank you&#39;&quot;, &quot;learning_language&quot;: &quot;Russian&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I need help understanding the Russian word for &#39;thank you&#39;.&quot;}
+Requested changes: 
+Query: Can you tell me how to say &#39;goodbye&#39; in Chinese?
+Request: {&quot;task_description&quot;: &quot;say goodbye&quot;, &quot;learning_language&quot;: &quot;Chinese&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you tell me how to say &#39;goodbye&#39; in Chinese?&quot;}
+Requested changes: 
+Query: I&#39;m trying to learn the Arabic word for &#39;please&#39;.
+Request: {&quot;task_description&quot;: &quot;Learn the Arabic word for &#39;please&#39;&quot;, &quot;learning_language&quot;: &quot;Arabic&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I&#39;m trying to learn the Arabic word for &#39;please&#39;.&quot;}
+Requested changes: 
+</pre></div>
+</div>
+</div>
+</div>
+<p><strong>Now you can use the <code class="docutils literal notranslate"><span class="pre">ground_truth</span></code> as shown above in <span class="xref myst">Evaluate the Requests Chain</span>!</strong></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Now you have a new ground truth set to use as shown above!</span>
+<span class="n">ground_truth</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&#39;{&quot;task_description&quot;: &quot;say \&#39;hello\&#39;&quot;, &quot;learning_language&quot;: &quot;Spanish&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you explain how to say \&#39;hello\&#39; in Spanish?&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;understanding the French word for \&#39;goodbye\&#39;&quot;, &quot;learning_language&quot;: &quot;French&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I need help understanding the French word for \&#39;goodbye\&#39;.&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;say \&#39;thank you\&#39;&quot;, &quot;learning_language&quot;: &quot;German&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you tell me how to say \&#39;thank you\&#39; in German?&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;Learn the Italian word for \&#39;please\&#39;&quot;, &quot;learning_language&quot;: &quot;Italian&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I\&#39;m trying to learn the Italian word for \&#39;please\&#39;.&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;Help with pronunciation of \&#39;yes\&#39; in Portuguese&quot;, &quot;learning_language&quot;: &quot;Portuguese&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you help me with the pronunciation of \&#39;yes\&#39; in Portuguese?&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;Find the Dutch word for \&#39;no\&#39;&quot;, &quot;learning_language&quot;: &quot;Dutch&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I\&#39;m looking for the Dutch word for \&#39;no\&#39;.&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;Explain the meaning of \&#39;hello\&#39; in Japanese&quot;, &quot;learning_language&quot;: &quot;Japanese&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you explain the meaning of \&#39;hello\&#39; in Japanese?&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;understanding the Russian word for \&#39;thank you\&#39;&quot;, &quot;learning_language&quot;: &quot;Russian&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I need help understanding the Russian word for \&#39;thank you\&#39;.&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;say goodbye&quot;, &quot;learning_language&quot;: &quot;Chinese&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;Can you tell me how to say \&#39;goodbye\&#39; in Chinese?&quot;}&#39;,
+ &#39;{&quot;task_description&quot;: &quot;Learn the Arabic word for \&#39;please\&#39;&quot;, &quot;learning_language&quot;: &quot;Arabic&quot;, &quot;native_language&quot;: &quot;English&quot;, &quot;full_query&quot;: &quot;I\&#39;m trying to learn the Arabic word for \&#39;please\&#39;.&quot;}&#39;]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="llm_math.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">LLM Math</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="qa_benchmarking_pg.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Question Answering Benchmarking: Paul Graham Essay</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Harrison Chase<br/>
+  
+      &copy; Copyright 2023, Harrison Chase.<br/>
+    Last updated on Jun 05, 2023.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

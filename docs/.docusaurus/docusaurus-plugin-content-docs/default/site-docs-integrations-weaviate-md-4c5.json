@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/weaviate",
+  "id": "integrations/weaviate",
+  "title": "Weaviate",
+  "description": "This page covers how to use the Weaviate ecosystem within LangChain.",
+  "source": "@site/docs/integrations/weaviate.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/weaviate",
+  "permalink": "/docs/integrations/weaviate",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/weaviate.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

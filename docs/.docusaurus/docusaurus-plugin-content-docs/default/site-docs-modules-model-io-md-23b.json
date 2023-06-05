@@ -1,0 +1,24 @@
+{
+  "unversionedId": "modules/model_io",
+  "id": "modules/model_io",
+  "title": "Model I/O",
+  "description": "The core element of any language model application is...the model. LangChain gives you the building blocks to interface with any language model.",
+  "source": "@site/docs/modules/model_io.md",
+  "sourceDirName": "modules",
+  "slug": "/modules/model_io",
+  "permalink": "/docs/modules/model_io",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/modules/model_io.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "sidebar",
+  "previous": {
+    "title": "Getting Started",
+    "permalink": "/docs/modules/model_io/prompts/prompt_templates/getting_started"
+  },
+  "next": {
+    "title": "Agent Simulations",
+    "permalink": "/docs/use_cases/agent_simulations"
+  }
+}

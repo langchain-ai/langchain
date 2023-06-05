@@ -1,0 +1,69 @@
+
+msgid ""
+msgstr ""
+"Project-Id-Version: Sphinx-Book-Theme\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ta\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "open issue"
+msgstr "திறந்த பிரச்சினை"
+
+msgid "Download this page"
+msgstr "இந்தப் பக்கத்தைப் பதிவிறக்கவும்"
+
+msgid "Download source file"
+msgstr "மூல கோப்பைப் பதிவிறக்குக"
+
+msgid "Launch"
+msgstr "தொடங்க"
+
+msgid "Edit this page"
+msgstr "இந்தப் பக்கத்தைத் திருத்தவும்"
+
+msgid "Toggle navigation"
+msgstr "வழிசெலுத்தலை நிலைமாற்று"
+
+msgid "Theme by the"
+msgstr "வழங்கிய தீம்"
+
+msgid "Source repository"
+msgstr "மூல களஞ்சியம்"
+
+msgid "Last updated on"
+msgstr "கடைசியாக புதுப்பிக்கப்பட்டது"
+
+msgid "By the"
+msgstr "மூலம்"
+
+msgid "Sphinx Book Theme"
+msgstr "ஸ்பிங்க்ஸ் புத்தக தீம்"
+
+msgid "Open an issue"
+msgstr "சிக்கலைத் திறக்கவும்"
+
+msgid "next page"
+msgstr "அடுத்த பக்கம்"
+
+msgid "Copyright"
+msgstr "பதிப்புரிமை"
+
+msgid "Search this book..."
+msgstr "இந்த புத்தகத்தைத் தேடுங்கள் ..."
+
+msgid "Print to PDF"
+msgstr "PDF இல் அச்சிடுக"
+
+msgid "By"
+msgstr "வழங்கியவர்"
+
+msgid "previous page"
+msgstr "முந்தைய பக்கம்"
+
+msgid "Download notebook file"
+msgstr "நோட்புக் கோப்பைப் பதிவிறக்கவும்"
+
+msgid "suggest edit"
+msgstr "திருத்த பரிந்துரைக்கவும்"

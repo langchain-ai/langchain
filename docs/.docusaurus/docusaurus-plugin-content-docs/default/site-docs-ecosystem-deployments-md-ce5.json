@@ -1,0 +1,24 @@
+{
+  "unversionedId": "ecosystem/deployments",
+  "id": "ecosystem/deployments",
+  "title": "Deployments",
+  "description": "So, you've created a really cool chain - now what? How do you deploy it and make it easily shareable with the world?",
+  "source": "@site/docs/ecosystem/deployments.md",
+  "sourceDirName": "ecosystem",
+  "slug": "/ecosystem/deployments",
+  "permalink": "/docs/ecosystem/deployments",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/ecosystem/deployments.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "sidebar",
+  "previous": {
+    "title": "Querying Tabular Data",
+    "permalink": "/docs/use_cases/tabular"
+  },
+  "next": {
+    "title": "ModelScope",
+    "permalink": "/docs/ecosystem/modelscope"
+  }
+}

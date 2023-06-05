@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/wolfram_alpha",
+  "id": "integrations/wolfram_alpha",
+  "title": "Wolfram Alpha",
+  "description": "WolframAlpha is an answer engine developed by Wolfram Research.",
+  "source": "@site/docs/integrations/wolfram_alpha.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/wolfram_alpha",
+  "permalink": "/docs/integrations/wolfram_alpha",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/wolfram_alpha.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

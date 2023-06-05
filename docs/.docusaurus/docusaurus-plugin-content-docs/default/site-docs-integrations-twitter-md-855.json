@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/twitter",
+  "id": "integrations/twitter",
+  "title": "Twitter",
+  "description": "Twitter is an online social media and social networking service.",
+  "source": "@site/docs/integrations/twitter.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/twitter",
+  "permalink": "/docs/integrations/twitter",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/twitter.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

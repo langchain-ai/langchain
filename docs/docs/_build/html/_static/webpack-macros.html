@@ -1,0 +1,29 @@
+<!--
+  AUTO-GENERATED from webpack.config.js, do **NOT** edit by hand.
+  These are re-used in layout.html
+-->
+{# Load FontAwesome icons #}
+{% macro head_pre_icons() %}
+  <link rel="stylesheet"
+    href="{{ pathto('_static/vendor/fontawesome/5.13.0/css/all.min.css', 1) }}">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="{{ pathto('_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2', 1) }}">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="{{ pathto('_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2', 1) }}">
+{% endmacro %}
+
+{% macro head_pre_assets() %}
+  <!-- Loaded before other Sphinx assets -->
+  <link href="{{ pathto('_static/styles/theme.css', 1) }}?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="{{ pathto('_static/styles/pydata-sphinx-theme.css', 1) }}?digest=1999514e3f237ded88cf" rel="stylesheet">
+{% endmacro %}
+
+{% macro head_js_preload() %}
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="{{ pathto('_static/scripts/pydata-sphinx-theme.js', 1) }}?digest=1999514e3f237ded88cf">
+{% endmacro %}
+
+{% macro body_post() %}
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="{{ pathto('_static/scripts/pydata-sphinx-theme.js', 1) }}?digest=1999514e3f237ded88cf"></script>
+{% endmacro %}

@@ -1,0 +1,15 @@
+{
+  "unversionedId": "dependents",
+  "id": "dependents",
+  "title": "Dependents",
+  "description": "Dependents stats for hwchase17/langchain",
+  "source": "@site/docs/dependents.md",
+  "sourceDirName": ".",
+  "slug": "/dependents",
+  "permalink": "/docs/dependents",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/dependents.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

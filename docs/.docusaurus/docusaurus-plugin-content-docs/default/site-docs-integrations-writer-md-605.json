@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/writer",
+  "id": "integrations/writer",
+  "title": "Writer",
+  "description": "This page covers how to use the Writer ecosystem within LangChain.",
+  "source": "@site/docs/integrations/writer.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/writer",
+  "permalink": "/docs/integrations/writer",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/writer.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

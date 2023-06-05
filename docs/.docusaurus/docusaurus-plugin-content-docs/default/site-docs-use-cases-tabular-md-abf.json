@@ -1,0 +1,24 @@
+{
+  "unversionedId": "use_cases/tabular",
+  "id": "use_cases/tabular",
+  "title": "Querying Tabular Data",
+  "description": "Conceptual Guide",
+  "source": "@site/docs/use_cases/tabular.md",
+  "sourceDirName": "use_cases",
+  "slug": "/use_cases/tabular",
+  "permalink": "/docs/use_cases/tabular",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/use_cases/tabular.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "sidebar",
+  "previous": {
+    "title": "Summarization",
+    "permalink": "/docs/use_cases/summarization"
+  },
+  "next": {
+    "title": "Deployments",
+    "permalink": "/docs/ecosystem/deployments"
+  }
+}

@@ -1,0 +1,81 @@
+
+msgid ""
+msgstr ""
+"Project-Id-Version: Sphinx-Book-Theme\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: th\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "repository"
+msgstr "ที่เก็บ"
+
+msgid "open issue"
+msgstr "เปิดปัญหา"
+
+msgid "Contents"
+msgstr "สารบัญ"
+
+msgid "Fullscreen mode"
+msgstr "โหมดเต็มหน้าจอ"
+
+msgid "Download this page"
+msgstr "ดาวน์โหลดหน้านี้"
+
+msgid "Download source file"
+msgstr "ดาวน์โหลดไฟล์ต้นฉบับ"
+
+msgid "Launch"
+msgstr "เปิด"
+
+msgid "Edit this page"
+msgstr "แก้ไขหน้านี้"
+
+msgid "Toggle navigation"
+msgstr "ไม่ต้องสลับช่องทาง"
+
+msgid "Theme by the"
+msgstr "ธีมโดย"
+
+msgid "Source repository"
+msgstr "ที่เก็บซอร์ส"
+
+msgid "Last updated on"
+msgstr "ปรับปรุงล่าสุดเมื่อ"
+
+msgid "By the"
+msgstr "โดย"
+
+msgid "Sphinx Book Theme"
+msgstr "ธีมหนังสือสฟิงซ์"
+
+msgid "Open an issue"
+msgstr "เปิดปัญหา"
+
+msgid "next page"
+msgstr "หน้าต่อไป"
+
+msgid "Copyright"
+msgstr "ลิขสิทธิ์"
+
+msgid "Search this book..."
+msgstr "ค้นหาหนังสือเล่มนี้ ..."
+
+msgid "Print to PDF"
+msgstr "พิมพ์เป็น PDF"
+
+msgid "By"
+msgstr "โดย"
+
+msgid "previous page"
+msgstr "หน้าที่แล้ว"
+
+msgid "Search the docs ..."
+msgstr "ค้นหาเอกสาร ..."
+
+msgid "Download notebook file"
+msgstr "ดาวน์โหลดไฟล์สมุดบันทึก"
+
+msgid "suggest edit"
+msgstr "แนะนำแก้ไข"

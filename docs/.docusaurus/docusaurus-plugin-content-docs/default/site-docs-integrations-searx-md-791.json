@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/searx",
+  "id": "integrations/searx",
+  "title": "SearxNG Search API",
+  "description": "This page covers how to use the SearxNG search API within LangChain.",
+  "source": "@site/docs/integrations/searx.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/searx",
+  "permalink": "/docs/integrations/searx",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/searx.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/petals",
+  "id": "integrations/petals",
+  "title": "Petals",
+  "description": "This page covers how to use the Petals ecosystem within LangChain.",
+  "source": "@site/docs/integrations/petals.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/petals",
+  "permalink": "/docs/integrations/petals",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/petals.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

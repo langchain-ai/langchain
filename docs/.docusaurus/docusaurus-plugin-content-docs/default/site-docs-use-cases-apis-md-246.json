@@ -1,0 +1,24 @@
+{
+  "unversionedId": "use_cases/apis",
+  "id": "use_cases/apis",
+  "title": "Interacting with APIs",
+  "description": "Conceptual Guide",
+  "source": "@site/docs/use_cases/apis.md",
+  "sourceDirName": "use_cases",
+  "slug": "/use_cases/apis",
+  "permalink": "/docs/use_cases/apis",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/use_cases/apis.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "sidebar",
+  "previous": {
+    "title": "Agent Simulations",
+    "permalink": "/docs/use_cases/agent_simulations"
+  },
+  "next": {
+    "title": "Autonomous Agents",
+    "permalink": "/docs/use_cases/autonomous_agents"
+  }
+}

@@ -1,0 +1,69 @@
+
+msgid ""
+msgstr ""
+"Project-Id-Version: Sphinx-Book-Theme\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ml\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "open issue"
+msgstr "തുറന്ന പ്രശ്നം"
+
+msgid "Download this page"
+msgstr "ഈ പേജ് ഡൗൺലോഡുചെയ്യുക"
+
+msgid "Download source file"
+msgstr "ഉറവിട ഫയൽ ഡൗൺലോഡുചെയ്യുക"
+
+msgid "Launch"
+msgstr "സമാരംഭിക്കുക"
+
+msgid "Edit this page"
+msgstr "ഈ പേജ് എഡിറ്റുചെയ്യുക"
+
+msgid "Toggle navigation"
+msgstr "നാവിഗേഷൻ ടോഗിൾ ചെയ്യുക"
+
+msgid "Theme by the"
+msgstr "പ്രമേയം"
+
+msgid "Source repository"
+msgstr "ഉറവിട ശേഖരം"
+
+msgid "Last updated on"
+msgstr "അവസാനം അപ്‌ഡേറ്റുചെയ്‌തത്"
+
+msgid "By the"
+msgstr "എഴുതിയത്"
+
+msgid "Sphinx Book Theme"
+msgstr "സ്ഫിങ്ക്സ് പുസ്തക തീം"
+
+msgid "Open an issue"
+msgstr "ഒരു പ്രശ്നം തുറക്കുക"
+
+msgid "next page"
+msgstr "അടുത്ത പേജ്"
+
+msgid "Copyright"
+msgstr "പകർപ്പവകാശം"
+
+msgid "Search this book..."
+msgstr "ഈ പുസ്തകം തിരയുക ..."
+
+msgid "Print to PDF"
+msgstr "PDF- ലേക്ക് പ്രിന്റുചെയ്യുക"
+
+msgid "By"
+msgstr "എഴുതിയത്"
+
+msgid "previous page"
+msgstr "മുൻപത്തെ താൾ"
+
+msgid "Download notebook file"
+msgstr "നോട്ട്ബുക്ക് ഫയൽ ഡൺലോഡ് ചെയ്യുക"
+
+msgid "suggest edit"
+msgstr "എഡിറ്റുചെയ്യാൻ നിർദ്ദേശിക്കുക"

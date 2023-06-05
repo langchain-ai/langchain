@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/google_serper",
+  "id": "integrations/google_serper",
+  "title": "Google Serper",
+  "description": "This page covers how to use the Serper Google Search API within LangChain. Serper is a low-cost Google Search API that can be used to add answer box, knowledge graph, and organic results data from Google Search.",
+  "source": "@site/docs/integrations/google_serper.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/google_serper",
+  "permalink": "/docs/integrations/google_serper",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/google_serper.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

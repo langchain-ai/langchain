@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/serpapi",
+  "id": "integrations/serpapi",
+  "title": "SerpAPI",
+  "description": "This page covers how to use the SerpAPI search APIs within LangChain.",
+  "source": "@site/docs/integrations/serpapi.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/serpapi",
+  "permalink": "/docs/integrations/serpapi",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/serpapi.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

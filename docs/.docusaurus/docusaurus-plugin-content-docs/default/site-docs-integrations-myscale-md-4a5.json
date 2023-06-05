@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/myscale",
+  "id": "integrations/myscale",
+  "title": "MyScale",
+  "description": "This page covers how to use MyScale vector database within LangChain.",
+  "source": "@site/docs/integrations/myscale.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/myscale",
+  "permalink": "/docs/integrations/myscale",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/myscale.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

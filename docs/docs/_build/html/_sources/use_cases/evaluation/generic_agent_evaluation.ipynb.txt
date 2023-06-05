@@ -1,0 +1,342 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Generic Agent Evaluation\n",
+    "\n",
+    "Good evaluation is key for quickly iterating on your agent's prompts and tools. Here we provide an example of how to use the TrajectoryEvalChain to evaluate your agent."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Setup\n",
+    "\n",
+    "Let's start by defining our agent."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from langchain import Wikipedia\n",
+    "from langchain.chat_models import ChatOpenAI\n",
+    "from langchain.agents import initialize_agent, Tool\n",
+    "from langchain.agents import AgentType\n",
+    "from langchain.agents.react.base import DocstoreExplorer\n",
+    "from langchain.memory import ConversationBufferMemory\n",
+    "from langchain import LLMMathChain\n",
+    "from langchain.llms import OpenAI\n",
+    "\n",
+    "from langchain import SerpAPIWrapper\n",
+    "\n",
+    "docstore = DocstoreExplorer(Wikipedia())\n",
+    "\n",
+    "math_llm = OpenAI(temperature=0)\n",
+    "\n",
+    "llm_math_chain = LLMMathChain(llm=math_llm, verbose=True)\n",
+    "\n",
+    "search = SerpAPIWrapper()\n",
+    "\n",
+    "tools = [\n",
+    "    Tool(\n",
+    "        name=\"Search\",\n",
+    "        func=docstore.search,\n",
+    "        description=\"useful for when you need to ask with search\",\n",
+    "    ),\n",
+    "    Tool(\n",
+    "        name=\"Lookup\",\n",
+    "        func=docstore.lookup,\n",
+    "        description=\"useful for when you need to ask with lookup\",\n",
+    "    ),\n",
+    "    Tool(\n",
+    "        name=\"Calculator\",\n",
+    "        func=llm_math_chain.run,\n",
+    "        description=\"useful for doing calculations\",\n",
+    "    ),\n",
+    "    Tool(\n",
+    "        name=\"Search the Web (SerpAPI)\",\n",
+    "        func=search.run,\n",
+    "        description=\"useful for when you need to answer questions about current events\",\n",
+    "    ),\n",
+    "]\n",
+    "\n",
+    "memory = ConversationBufferMemory(\n",
+    "    memory_key=\"chat_history\", return_messages=True, output_key=\"output\"\n",
+    ")\n",
+    "\n",
+    "llm = ChatOpenAI(temperature=0, model_name=\"gpt-3.5-turbo\")\n",
+    "\n",
+    "agent = initialize_agent(\n",
+    "    tools,\n",
+    "    llm,\n",
+    "    agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,\n",
+    "    verbose=True,\n",
+    "    memory=memory,\n",
+    "    return_intermediate_steps=True, # This is needed for the evaluation later\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Testing the Agent\n",
+    "\n",
+    "Now let's try our agent out on some example queries."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "\n",
+      "\u001b[1m> Entering new AgentExecutor chain...\u001b[0m\n",
+      "\u001b[32;1m\u001b[1;3m{\n",
+      "    \"action\": \"Search the Web (SerpAPI)\",\n",
+      "    \"action_input\": \"How many ping pong balls would it take to fill the entire Empire State Building?\"\n",
+      "}\u001b[0m\n",
+      "Observation: \u001b[31;1m\u001b[1;3m12.8 billion. The volume of the Empire State Building Googles in at around 37 million ft³. A golf ball comes in at about 2.5 in³.\u001b[0m\n",
+      "Thought:\u001b[32;1m\u001b[1;3m{\n",
+      "    \"action\": \"Final Answer\",\n",
+      "    \"action_input\": \"It would take approximately 12.8 billion ping pong balls to fill the entire Empire State Building.\"\n",
+      "}\u001b[0m\n",
+      "\n",
+      "\u001b[1m> Finished chain.\u001b[0m\n"
+     ]
+    }
+   ],
+   "source": [
+    "query_one = \"How many ping pong balls would it take to fill the entire Empire State Building?\"\n",
+    "\n",
+    "test_outputs_one = agent({\"input\": query_one}, return_only_outputs=False)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This looks good! Let's try it out on another query."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "\n",
+      "\u001b[1m> Entering new AgentExecutor chain...\u001b[0m\n",
+      "\u001b[32;1m\u001b[1;3m{\n",
+      "    \"action\": \"Calculator\",\n",
+      "    \"action_input\": \"The length of the Eiffel Tower is 324 meters. The distance from coast to coast in the US is approximately 4,828 kilometers. First, we need to convert 4,828 kilometers to meters, which gives us 4,828,000 meters. To find out how many Eiffel Towers we need, we can divide 4,828,000 by 324. This gives us approximately 14,876 Eiffel Towers.\"\n",
+      "}\u001b[0m\n",
+      "\n",
+      "\u001b[1m> Entering new LLMMathChain chain...\u001b[0m\n",
+      "The length of the Eiffel Tower is 324 meters. The distance from coast to coast in the US is approximately 4,828 kilometers. First, we need to convert 4,828 kilometers to meters, which gives us 4,828,000 meters. To find out how many Eiffel Towers we need, we can divide 4,828,000 by 324. This gives us approximately 14,876 Eiffel Towers.\u001b[32;1m\u001b[1;3m\n",
+      "```text\n",
+      "4828000 / 324\n",
+      "```\n",
+      "...numexpr.evaluate(\"4828000 / 324\")...\n",
+      "\u001b[0m\n",
+      "Answer: \u001b[33;1m\u001b[1;3m14901.234567901234\u001b[0m\n",
+      "\u001b[1m> Finished chain.\u001b[0m\n",
+      "\n",
+      "Observation: \u001b[38;5;200m\u001b[1;3mAnswer: 14901.234567901234\u001b[0m\n",
+      "Thought:\u001b[32;1m\u001b[1;3m{\n",
+      "    \"action\": \"Calculator\",\n",
+      "    \"action_input\": \"The length of the Eiffel Tower is 324 meters. The distance from coast to coast in the US is approximately 4,828 kilometers. First, we need to convert 4,828 kilometers to meters, which gives us 4,828,000 meters. To find out how many Eiffel Towers we need, we can divide 4,828,000 by 324. This gives us approximately 14,901 Eiffel Towers.\"\n",
+      "}\u001b[0m\n",
+      "\n",
+      "\u001b[1m> Entering new LLMMathChain chain...\u001b[0m\n",
+      "The length of the Eiffel Tower is 324 meters. The distance from coast to coast in the US is approximately 4,828 kilometers. First, we need to convert 4,828 kilometers to meters, which gives us 4,828,000 meters. To find out how many Eiffel Towers we need, we can divide 4,828,000 by 324. This gives us approximately 14,901 Eiffel Towers.\u001b[32;1m\u001b[1;3m\n",
+      "```text\n",
+      "4828000 / 324\n",
+      "```\n",
+      "...numexpr.evaluate(\"4828000 / 324\")...\n",
+      "\u001b[0m\n",
+      "Answer: \u001b[33;1m\u001b[1;3m14901.234567901234\u001b[0m\n",
+      "\u001b[1m> Finished chain.\u001b[0m\n",
+      "\n",
+      "Observation: \u001b[38;5;200m\u001b[1;3mAnswer: 14901.234567901234\u001b[0m\n",
+      "Thought:\u001b[32;1m\u001b[1;3m{\n",
+      "    \"action\": \"Final Answer\",\n",
+      "    \"action_input\": \"If you laid the Eiffel Tower end to end, you would need approximately 14,901 Eiffel Towers to cover the US from coast to coast.\"\n",
+      "}\u001b[0m\n",
+      "\n",
+      "\u001b[1m> Finished chain.\u001b[0m\n"
+     ]
+    }
+   ],
+   "source": [
+    "query_two = \"If you laid the Eiffel Tower end to end, how many would you need cover the US from coast to coast?\"\n",
+    "\n",
+    "test_outputs_two = agent({\"input\": query_two}, return_only_outputs=False)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This doesn't look so good. Let's try running some evaluation.\n",
+    "\n",
+    "## Evaluating the Agent\n",
+    "\n",
+    "Let's start by defining the TrajectoryEvalChain."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from langchain.evaluation.agents import TrajectoryEvalChain\n",
+    "\n",
+    "# Define chain\n",
+    "eval_chain = TrajectoryEvalChain.from_llm(\n",
+    "    llm=ChatOpenAI(temperature=0, model_name=\"gpt-4\"), # Note: This must be a ChatOpenAI model\n",
+    "    agent_tools=agent.tools,\n",
+    "    return_reasoning=True,\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's try evaluating the first query."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Score from 1 to 5:  1\n",
+      "Reasoning:  First, let's evaluate the final answer. The final answer is incorrect because it uses the volume of golf balls instead of ping pong balls. The answer is not helpful.\n",
+      "\n",
+      "Second, does the model use a logical sequence of tools to answer the question? The model only used one tool, which was the Search the Web (SerpAPI). It did not use the Calculator tool to calculate the correct volume of ping pong balls.\n",
+      "\n",
+      "Third, does the AI language model use the tools in a helpful way? The model used the Search the Web (SerpAPI) tool, but the output was not helpful because it provided information about golf balls instead of ping pong balls.\n",
+      "\n",
+      "Fourth, does the AI language model use too many steps to answer the question? The model used only one step, which is not too many. However, it should have used more steps to provide a correct answer.\n",
+      "\n",
+      "Fifth, are the appropriate tools used to answer the question? The model should have used the Search tool to find the volume of the Empire State Building and the volume of a ping pong ball. Then, it should have used the Calculator tool to calculate the number of ping pong balls needed to fill the building.\n",
+      "\n",
+      "Judgment: Given the incorrect final answer and the inappropriate use of tools, we give the model a score of 1.\n"
+     ]
+    }
+   ],
+   "source": [
+    "question, steps, answer = test_outputs_one[\"input\"], test_outputs_one[\"intermediate_steps\"], test_outputs_one[\"output\"]\n",
+    "\n",
+    "evaluation = eval_chain(\n",
+    "    inputs={\"question\": question, \"answer\": answer, \"agent_trajectory\": eval_chain.get_agent_trajectory(steps)},\n",
+    ")\n",
+    "\n",
+    "print(\"Score from 1 to 5: \", evaluation[\"score\"])\n",
+    "print(\"Reasoning: \", evaluation[\"reasoning\"])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "That seems about right. Let's try the second query."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Score from 1 to 5:  3\n",
+      "Reasoning:  i. Is the final answer helpful?\n",
+      "Yes, the final answer is helpful as it provides an approximate number of Eiffel Towers needed to cover the US from coast to coast.\n",
+      "\n",
+      "ii. Does the AI language use a logical sequence of tools to answer the question?\n",
+      "No, the AI language model does not use a logical sequence of tools. It directly uses the Calculator tool without first using the Search or Lookup tools to find the necessary information (length of the Eiffel Tower and distance from coast to coast in the US).\n",
+      "\n",
+      "iii. Does the AI language model use the tools in a helpful way?\n",
+      "The AI language model uses the Calculator tool in a helpful way to perform the calculation, but it should have used the Search or Lookup tools first to find the required information.\n",
+      "\n",
+      "iv. Does the AI language model use too many steps to answer the question?\n",
+      "No, the AI language model does not use too many steps. However, it repeats the same step twice, which is unnecessary.\n",
+      "\n",
+      "v. Are the appropriate tools used to answer the question?\n",
+      "Not entirely. The AI language model should have used the Search or Lookup tools to find the required information before using the Calculator tool.\n",
+      "\n",
+      "Given the above evaluation, the AI language model's performance can be scored as follows:\n"
+     ]
+    }
+   ],
+   "source": [
+    "question, steps, answer = test_outputs_two[\"input\"], test_outputs_two[\"intermediate_steps\"], test_outputs_two[\"output\"]\n",
+    "\n",
+    "evaluation = eval_chain(\n",
+    "    inputs={\"question\": question, \"answer\": answer, \"agent_trajectory\": eval_chain.get_agent_trajectory(steps)},\n",
+    ")\n",
+    "\n",
+    "print(\"Score from 1 to 5: \", evaluation[\"score\"])\n",
+    "print(\"Reasoning: \", evaluation[\"reasoning\"])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "That also sounds about right. In conclusion, the TrajectoryEvalChain allows us to use GPT-4 to score both our agent's outputs and tool use in addition to giving us the reasoning behind the evaluation."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.1"
+  },
+  "vscode": {
+   "interpreter": {
+    "hash": "06ba49dd587e86cdcfee66b9ffe769e1e94f0e368e54c2d6c866e38e33c0d9b1"
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}

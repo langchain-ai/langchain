@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/lancedb",
+  "id": "integrations/lancedb",
+  "title": "LanceDB",
+  "description": "This page covers how to use LanceDB within LangChain.",
+  "source": "@site/docs/integrations/lancedb.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/lancedb",
+  "permalink": "/docs/integrations/lancedb",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/lancedb.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

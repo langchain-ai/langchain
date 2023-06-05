@@ -1,0 +1,630 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/docs",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/docs",
+          "mainDocId": "index",
+          "docs": [
+            {
+              "id": "additional_resources/tracing",
+              "path": "/docs/additional_resources/tracing"
+            },
+            {
+              "id": "additional_resources/youtube",
+              "path": "/docs/additional_resources/youtube"
+            },
+            {
+              "id": "api/API",
+              "path": "/docs/api/API",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "api/index",
+              "path": "/docs/api/",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "dependents",
+              "path": "/docs/dependents"
+            },
+            {
+              "id": "ecosystem/deployments",
+              "path": "/docs/ecosystem/deployments",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "ecosystem/modelscope",
+              "path": "/docs/ecosystem/modelscope",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "get_started/quickstart",
+              "path": "/docs/get_started/quickstart"
+            },
+            {
+              "id": "getting_started/installation",
+              "path": "/docs/getting_started/installation",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "index",
+              "path": "/docs/",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "integrations/ai21",
+              "path": "/docs/integrations/ai21"
+            },
+            {
+              "id": "integrations/airbyte",
+              "path": "/docs/integrations/airbyte"
+            },
+            {
+              "id": "integrations/aleph_alpha",
+              "path": "/docs/integrations/aleph_alpha"
+            },
+            {
+              "id": "integrations/analyticdb",
+              "path": "/docs/integrations/analyticdb"
+            },
+            {
+              "id": "integrations/annoy",
+              "path": "/docs/integrations/annoy"
+            },
+            {
+              "id": "integrations/anyscale",
+              "path": "/docs/integrations/anyscale"
+            },
+            {
+              "id": "integrations/apify",
+              "path": "/docs/integrations/apify"
+            },
+            {
+              "id": "integrations/argilla",
+              "path": "/docs/integrations/argilla"
+            },
+            {
+              "id": "integrations/arxiv",
+              "path": "/docs/integrations/arxiv"
+            },
+            {
+              "id": "integrations/atlas",
+              "path": "/docs/integrations/atlas"
+            },
+            {
+              "id": "integrations/aws_s3",
+              "path": "/docs/integrations/aws_s3"
+            },
+            {
+              "id": "integrations/azlyrics",
+              "path": "/docs/integrations/azlyrics"
+            },
+            {
+              "id": "integrations/azure_blob_storage",
+              "path": "/docs/integrations/azure_blob_storage"
+            },
+            {
+              "id": "integrations/azure_cognitive_search_",
+              "path": "/docs/integrations/azure_cognitive_search_"
+            },
+            {
+              "id": "integrations/azure_openai",
+              "path": "/docs/integrations/azure_openai"
+            },
+            {
+              "id": "integrations/bananadev",
+              "path": "/docs/integrations/bananadev"
+            },
+            {
+              "id": "integrations/beam",
+              "path": "/docs/integrations/beam"
+            },
+            {
+              "id": "integrations/bedrock",
+              "path": "/docs/integrations/bedrock"
+            },
+            {
+              "id": "integrations/bilibili",
+              "path": "/docs/integrations/bilibili"
+            },
+            {
+              "id": "integrations/blackboard",
+              "path": "/docs/integrations/blackboard"
+            },
+            {
+              "id": "integrations/cassandra",
+              "path": "/docs/integrations/cassandra"
+            },
+            {
+              "id": "integrations/cerebriumai",
+              "path": "/docs/integrations/cerebriumai"
+            },
+            {
+              "id": "integrations/chroma",
+              "path": "/docs/integrations/chroma"
+            },
+            {
+              "id": "integrations/cohere",
+              "path": "/docs/integrations/cohere"
+            },
+            {
+              "id": "integrations/college_confidential",
+              "path": "/docs/integrations/college_confidential"
+            },
+            {
+              "id": "integrations/confluence",
+              "path": "/docs/integrations/confluence"
+            },
+            {
+              "id": "integrations/ctransformers",
+              "path": "/docs/integrations/ctransformers"
+            },
+            {
+              "id": "integrations/databerry",
+              "path": "/docs/integrations/databerry"
+            },
+            {
+              "id": "integrations/deepinfra",
+              "path": "/docs/integrations/deepinfra"
+            },
+            {
+              "id": "integrations/deeplake",
+              "path": "/docs/integrations/deeplake"
+            },
+            {
+              "id": "integrations/diffbot",
+              "path": "/docs/integrations/diffbot"
+            },
+            {
+              "id": "integrations/discord",
+              "path": "/docs/integrations/discord"
+            },
+            {
+              "id": "integrations/docugami",
+              "path": "/docs/integrations/docugami"
+            },
+            {
+              "id": "integrations/duckdb",
+              "path": "/docs/integrations/duckdb"
+            },
+            {
+              "id": "integrations/elasticsearch",
+              "path": "/docs/integrations/elasticsearch"
+            },
+            {
+              "id": "integrations/evernote",
+              "path": "/docs/integrations/evernote"
+            },
+            {
+              "id": "integrations/facebook_chat",
+              "path": "/docs/integrations/facebook_chat"
+            },
+            {
+              "id": "integrations/figma",
+              "path": "/docs/integrations/figma"
+            },
+            {
+              "id": "integrations/forefrontai",
+              "path": "/docs/integrations/forefrontai"
+            },
+            {
+              "id": "integrations/git",
+              "path": "/docs/integrations/git"
+            },
+            {
+              "id": "integrations/gitbook",
+              "path": "/docs/integrations/gitbook"
+            },
+            {
+              "id": "integrations/google_bigquery",
+              "path": "/docs/integrations/google_bigquery"
+            },
+            {
+              "id": "integrations/google_cloud_storage",
+              "path": "/docs/integrations/google_cloud_storage"
+            },
+            {
+              "id": "integrations/google_drive",
+              "path": "/docs/integrations/google_drive"
+            },
+            {
+              "id": "integrations/google_search",
+              "path": "/docs/integrations/google_search"
+            },
+            {
+              "id": "integrations/google_serper",
+              "path": "/docs/integrations/google_serper"
+            },
+            {
+              "id": "integrations/gooseai",
+              "path": "/docs/integrations/gooseai"
+            },
+            {
+              "id": "integrations/gpt4all",
+              "path": "/docs/integrations/gpt4all"
+            },
+            {
+              "id": "integrations/graphsignal",
+              "path": "/docs/integrations/graphsignal"
+            },
+            {
+              "id": "integrations/gutenberg",
+              "path": "/docs/integrations/gutenberg"
+            },
+            {
+              "id": "integrations/hacker_news",
+              "path": "/docs/integrations/hacker_news"
+            },
+            {
+              "id": "integrations/hazy_research",
+              "path": "/docs/integrations/hazy_research"
+            },
+            {
+              "id": "integrations/helicone",
+              "path": "/docs/integrations/helicone"
+            },
+            {
+              "id": "integrations/huggingface",
+              "path": "/docs/integrations/huggingface"
+            },
+            {
+              "id": "integrations/ifixit",
+              "path": "/docs/integrations/ifixit"
+            },
+            {
+              "id": "integrations/imsdb",
+              "path": "/docs/integrations/imsdb"
+            },
+            {
+              "id": "integrations/jina",
+              "path": "/docs/integrations/jina"
+            },
+            {
+              "id": "integrations/lancedb",
+              "path": "/docs/integrations/lancedb"
+            },
+            {
+              "id": "integrations/llamacpp",
+              "path": "/docs/integrations/llamacpp"
+            },
+            {
+              "id": "integrations/mediawikidump",
+              "path": "/docs/integrations/mediawikidump"
+            },
+            {
+              "id": "integrations/metal",
+              "path": "/docs/integrations/metal"
+            },
+            {
+              "id": "integrations/microsoft_onedrive",
+              "path": "/docs/integrations/microsoft_onedrive"
+            },
+            {
+              "id": "integrations/microsoft_powerpoint",
+              "path": "/docs/integrations/microsoft_powerpoint"
+            },
+            {
+              "id": "integrations/microsoft_word",
+              "path": "/docs/integrations/microsoft_word"
+            },
+            {
+              "id": "integrations/milvus",
+              "path": "/docs/integrations/milvus"
+            },
+            {
+              "id": "integrations/modal",
+              "path": "/docs/integrations/modal"
+            },
+            {
+              "id": "integrations/modern_treasury",
+              "path": "/docs/integrations/modern_treasury"
+            },
+            {
+              "id": "integrations/momento",
+              "path": "/docs/integrations/momento"
+            },
+            {
+              "id": "integrations/myscale",
+              "path": "/docs/integrations/myscale"
+            },
+            {
+              "id": "integrations/nlpcloud",
+              "path": "/docs/integrations/nlpcloud"
+            },
+            {
+              "id": "integrations/notion",
+              "path": "/docs/integrations/notion"
+            },
+            {
+              "id": "integrations/obsidian",
+              "path": "/docs/integrations/obsidian"
+            },
+            {
+              "id": "integrations/openai",
+              "path": "/docs/integrations/openai"
+            },
+            {
+              "id": "integrations/opensearch",
+              "path": "/docs/integrations/opensearch"
+            },
+            {
+              "id": "integrations/openweathermap",
+              "path": "/docs/integrations/openweathermap"
+            },
+            {
+              "id": "integrations/petals",
+              "path": "/docs/integrations/petals"
+            },
+            {
+              "id": "integrations/pgvector",
+              "path": "/docs/integrations/pgvector"
+            },
+            {
+              "id": "integrations/pinecone",
+              "path": "/docs/integrations/pinecone"
+            },
+            {
+              "id": "integrations/pipelineai",
+              "path": "/docs/integrations/pipelineai"
+            },
+            {
+              "id": "integrations/predictionguard",
+              "path": "/docs/integrations/predictionguard"
+            },
+            {
+              "id": "integrations/promptlayer",
+              "path": "/docs/integrations/promptlayer"
+            },
+            {
+              "id": "integrations/psychic",
+              "path": "/docs/integrations/psychic"
+            },
+            {
+              "id": "integrations/qdrant",
+              "path": "/docs/integrations/qdrant"
+            },
+            {
+              "id": "integrations/reddit",
+              "path": "/docs/integrations/reddit"
+            },
+            {
+              "id": "integrations/redis",
+              "path": "/docs/integrations/redis"
+            },
+            {
+              "id": "integrations/replicate",
+              "path": "/docs/integrations/replicate"
+            },
+            {
+              "id": "integrations/roam",
+              "path": "/docs/integrations/roam"
+            },
+            {
+              "id": "integrations/runhouse",
+              "path": "/docs/integrations/runhouse"
+            },
+            {
+              "id": "integrations/rwkv",
+              "path": "/docs/integrations/rwkv"
+            },
+            {
+              "id": "integrations/sagemaker_endpoint",
+              "path": "/docs/integrations/sagemaker_endpoint"
+            },
+            {
+              "id": "integrations/searx",
+              "path": "/docs/integrations/searx"
+            },
+            {
+              "id": "integrations/serpapi",
+              "path": "/docs/integrations/serpapi"
+            },
+            {
+              "id": "integrations/sklearn",
+              "path": "/docs/integrations/sklearn"
+            },
+            {
+              "id": "integrations/slack",
+              "path": "/docs/integrations/slack"
+            },
+            {
+              "id": "integrations/spacy",
+              "path": "/docs/integrations/spacy"
+            },
+            {
+              "id": "integrations/spreedly",
+              "path": "/docs/integrations/spreedly"
+            },
+            {
+              "id": "integrations/stochasticai",
+              "path": "/docs/integrations/stochasticai"
+            },
+            {
+              "id": "integrations/stripe",
+              "path": "/docs/integrations/stripe"
+            },
+            {
+              "id": "integrations/tair",
+              "path": "/docs/integrations/tair"
+            },
+            {
+              "id": "integrations/telegram",
+              "path": "/docs/integrations/telegram"
+            },
+            {
+              "id": "integrations/tomarkdown",
+              "path": "/docs/integrations/tomarkdown"
+            },
+            {
+              "id": "integrations/trello",
+              "path": "/docs/integrations/trello"
+            },
+            {
+              "id": "integrations/twitter",
+              "path": "/docs/integrations/twitter"
+            },
+            {
+              "id": "integrations/unstructured",
+              "path": "/docs/integrations/unstructured"
+            },
+            {
+              "id": "integrations/vectara",
+              "path": "/docs/integrations/vectara"
+            },
+            {
+              "id": "integrations/vespa",
+              "path": "/docs/integrations/vespa"
+            },
+            {
+              "id": "integrations/weather",
+              "path": "/docs/integrations/weather"
+            },
+            {
+              "id": "integrations/weaviate",
+              "path": "/docs/integrations/weaviate"
+            },
+            {
+              "id": "integrations/whatsapp",
+              "path": "/docs/integrations/whatsapp"
+            },
+            {
+              "id": "integrations/wikipedia",
+              "path": "/docs/integrations/wikipedia"
+            },
+            {
+              "id": "integrations/wolfram_alpha",
+              "path": "/docs/integrations/wolfram_alpha"
+            },
+            {
+              "id": "integrations/writer",
+              "path": "/docs/integrations/writer"
+            },
+            {
+              "id": "integrations/yeagerai",
+              "path": "/docs/integrations/yeagerai"
+            },
+            {
+              "id": "integrations/youtube",
+              "path": "/docs/integrations/youtube"
+            },
+            {
+              "id": "integrations/zep",
+              "path": "/docs/integrations/zep"
+            },
+            {
+              "id": "integrations/zilliz",
+              "path": "/docs/integrations/zilliz"
+            },
+            {
+              "id": "modules/agents/agents/agent_types",
+              "path": "/docs/modules/agents/agents/agent_types",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "modules/agents/tools/getting_started",
+              "path": "/docs/modules/agents/tools/getting_started",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "modules/data_io",
+              "path": "/docs/modules/data_io",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "modules/model_io",
+              "path": "/docs/modules/model_io",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "modules/model_io/prompts/example_selectors/examples/custom_example_selector",
+              "path": "/docs/modules/model_io/prompts/example_selectors/examples/custom_example_selector",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "modules/model_io/prompts/prompt_templates/getting_started",
+              "path": "/docs/modules/model_io/prompts/prompt_templates/getting_started",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "templates/integration",
+              "path": "/docs/templates/integration"
+            },
+            {
+              "id": "tracing/hosted_installation",
+              "path": "/docs/tracing/hosted_installation"
+            },
+            {
+              "id": "tracing/local_installation",
+              "path": "/docs/tracing/local_installation"
+            },
+            {
+              "id": "use_cases/agent_simulations",
+              "path": "/docs/use_cases/agent_simulations",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "use_cases/apis",
+              "path": "/docs/use_cases/apis",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "use_cases/autonomous_agents",
+              "path": "/docs/use_cases/autonomous_agents",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "use_cases/chatbots",
+              "path": "/docs/use_cases/chatbots",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "use_cases/code",
+              "path": "/docs/use_cases/code",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "use_cases/extraction",
+              "path": "/docs/use_cases/extraction",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "use_cases/personal_assistants",
+              "path": "/docs/use_cases/personal_assistants",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "use_cases/question_answering",
+              "path": "/docs/use_cases/question_answering",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "use_cases/summarization",
+              "path": "/docs/use_cases/summarization",
+              "sidebar": "sidebar"
+            },
+            {
+              "id": "use_cases/tabular",
+              "path": "/docs/use_cases/tabular",
+              "sidebar": "sidebar"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "sidebar": {
+              "link": {
+                "path": "/docs/",
+                "label": "index"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

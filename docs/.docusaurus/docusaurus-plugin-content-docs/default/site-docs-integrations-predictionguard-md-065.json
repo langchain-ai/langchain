@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/predictionguard",
+  "id": "integrations/predictionguard",
+  "title": "Prediction Guard",
+  "description": "This page covers how to use the Prediction Guard ecosystem within LangChain.",
+  "source": "@site/docs/integrations/predictionguard.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/predictionguard",
+  "permalink": "/docs/integrations/predictionguard",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/predictionguard.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

@@ -1,0 +1,160 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "a175c650",
+   "metadata": {},
+   "source": [
+    "# Benchmarking Template\n",
+    "\n",
+    "This is an example notebook that can be used to create a benchmarking notebook for a task of your choice. Evaluation is really hard, and so we greatly welcome any contributions that can make it easier for people to experiment"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "984169ca",
+   "metadata": {},
+   "source": [
+    "It is highly reccomended that you do any evaluation/benchmarking with tracing enabled. See [here](https://langchain.readthedocs.io/en/latest/tracing.html) for an explanation of what tracing is and how to set it up."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "id": "9fe4d1b4",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Comment this out if you are NOT using tracing\n",
+    "import os\n",
+    "os.environ[\"LANGCHAIN_HANDLER\"] = \"langchain\""
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0f66405e",
+   "metadata": {},
+   "source": [
+    "## Loading the data\n",
+    "\n",
+    "First, let's load the data."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "79402a8f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# This notebook should so how to load the dataset from LangChainDatasets on Hugging Face\n",
+    "\n",
+    "# Please upload your dataset to https://huggingface.co/LangChainDatasets\n",
+    "\n",
+    "# The value passed into `load_dataset` should NOT have the `LangChainDatasets/` prefix\n",
+    "from langchain.evaluation.loading import load_dataset\n",
+    "dataset = load_dataset(\"TODO\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8a16b75d",
+   "metadata": {},
+   "source": [
+    "## Setting up a chain\n",
+    "\n",
+    "This next section should have an example of setting up a chain that can be run on this dataset."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "a2661ce0",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6c0062e7",
+   "metadata": {},
+   "source": [
+    "## Make a prediction\n",
+    "\n",
+    "First, we can make predictions one datapoint at a time. Doing it at this level of granularity allows use to explore the outputs in detail, and also is a lot cheaper than running over multiple datapoints"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "d28c5e7d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Example of running the chain on a single datapoint (`dataset[0]`) goes here"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d0c16cd7",
+   "metadata": {},
+   "source": [
+    "## Make many predictions\n",
+    "Now we can make predictions."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "24b4c66e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Example of running the chain on many predictions goes here\n",
+    "\n",
+    "# Sometimes its as simple as `chain.apply(dataset)`\n",
+    "\n",
+    "# Othertimes you may want to write a for loop to catch errors"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4783344b",
+   "metadata": {},
+   "source": [
+    "## Evaluate performance\n",
+    "\n",
+    "Any guide to evaluating performance in a more systematic manner goes here."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "7710401a",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

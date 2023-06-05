@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/psychic",
+  "id": "integrations/psychic",
+  "title": "Psychic",
+  "description": "Psychic is a platform for integrating with SaaS tools like Notion, Zendesk,",
+  "source": "@site/docs/integrations/psychic.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/psychic",
+  "permalink": "/docs/integrations/psychic",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/psychic.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

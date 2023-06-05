@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/modern_treasury",
+  "id": "integrations/modern_treasury",
+  "title": "Modern Treasury",
+  "description": "Modern Treasury simplifies complex payment operations. It is a unified platform to power products and processes that move money.",
+  "source": "@site/docs/integrations/modern_treasury.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/modern_treasury",
+  "permalink": "/docs/integrations/modern_treasury",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/modern_treasury.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

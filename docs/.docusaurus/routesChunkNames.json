@@ -1,0 +1,639 @@
+{
+  "/__docusaurus/debug-7d3": {
+    "__comp": "__comp---theme-debug-config-23-a-2ff",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-8-e-5-30e"
+    }
+  },
+  "/__docusaurus/debug/config-7b4": {
+    "__comp": "__comp---theme-debug-config-23-a-2ff",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-8-e-5-30e"
+    }
+  },
+  "/__docusaurus/debug/content-f92": {
+    "__comp": "__comp---theme-debug-contentba-8-ce7",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-8-e-5-30e"
+    },
+    "allContent": "allContent---docusaurus-debug-content-246-9aa"
+  },
+  "/__docusaurus/debug/globalData-1b0": {
+    "__comp": "__comp---theme-debug-global-dataede-0fa",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-8-e-5-30e"
+    }
+  },
+  "/__docusaurus/debug/metadata-33d": {
+    "__comp": "__comp---theme-debug-site-metadata-68-e-3d4",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-8-e-5-30e"
+    }
+  },
+  "/__docusaurus/debug/registry-79d": {
+    "__comp": "__comp---theme-debug-registry-679-501",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-8-e-5-30e"
+    }
+  },
+  "/__docusaurus/debug/routes-d7b": {
+    "__comp": "__comp---theme-debug-routes-946-699",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-8-e-5-30e"
+    }
+  },
+  "/docs-f47": {
+    "__comp": "__comp---theme-doc-page-1-be-9be",
+    "__context": {
+      "plugin": "plugin---docs-5-df-aee"
+    },
+    "versionMetadata": "versionMetadata---docs-935-398"
+  },
+  "/docs/-890": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-c-37-4d0"
+  },
+  "/docs/additional_resources/tracing-84a": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-additional-resources-tracing-61-a-081"
+  },
+  "/docs/additional_resources/youtube-56a": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-additional-resources-youtubef-64-b1e"
+  },
+  "/docs/api/-733": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-api-5-e-8-853"
+  },
+  "/docs/api/API-6c1": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-api-api-197-8b5"
+  },
+  "/docs/dependents-f7c": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-dependents-931-377"
+  },
+  "/docs/ecosystem/deployments-722": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-ecosystem-deploymentsce-5-bb5"
+  },
+  "/docs/ecosystem/modelscope-22b": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-ecosystem-modelscope-722-3b9"
+  },
+  "/docs/get_started/quickstart-7c1": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-get-started-quickstart-650-592"
+  },
+  "/docs/getting_started/installation-714": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-getting-started-installationf-27-211"
+  },
+  "/docs/integrations/ai21-d0d": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-ai-21-f-9-a-b10"
+  },
+  "/docs/integrations/airbyte-e40": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-airbyte-06-f-203"
+  },
+  "/docs/integrations/aleph_alpha-3bb": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-aleph-alpha-6-f-2-f38"
+  },
+  "/docs/integrations/analyticdb-a5f": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-analyticdba-7-b-ffe"
+  },
+  "/docs/integrations/annoy-195": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-annoye-3-a-c9e"
+  },
+  "/docs/integrations/anyscale-ccf": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-anyscale-75-f-afc"
+  },
+  "/docs/integrations/apify-fb7": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-apifyf-18-c0d"
+  },
+  "/docs/integrations/argilla-e6e": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-argillabcf-8e3"
+  },
+  "/docs/integrations/arxiv-45a": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-arxiv-8-c-3-756"
+  },
+  "/docs/integrations/atlas-6e6": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-atlas-1-de-2bd"
+  },
+  "/docs/integrations/aws_s3-7b1": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-aws-s-3-a-98-60f"
+  },
+  "/docs/integrations/azlyrics-aa8": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-azlyrics-7-fc-309"
+  },
+  "/docs/integrations/azure_blob_storage-42d": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-azure-blob-storaged-1-b-8a4"
+  },
+  "/docs/integrations/azure_cognitive_search_-739": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-azure-cognitive-search-92-d-33b"
+  },
+  "/docs/integrations/azure_openai-8ed": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-azure-openai-1-d-6-8f4"
+  },
+  "/docs/integrations/bananadev-810": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-bananadevccd-0bd"
+  },
+  "/docs/integrations/beam-469": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-beamc-55-6ee"
+  },
+  "/docs/integrations/bedrock-d5b": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-bedrock-1-a-5-606"
+  },
+  "/docs/integrations/bilibili-957": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-bilibili-9-ae-911"
+  },
+  "/docs/integrations/blackboard-ce2": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-blackboarde-72-ae0"
+  },
+  "/docs/integrations/cassandra-6f2": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-cassandrab-1-f-9f0"
+  },
+  "/docs/integrations/cerebriumai-e9b": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-cerebriumai-910-4cc"
+  },
+  "/docs/integrations/chroma-827": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-chroma-73-b-114"
+  },
+  "/docs/integrations/cohere-889": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-cohere-5-e-6-373"
+  },
+  "/docs/integrations/college_confidential-849": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-college-confidential-270-e4f"
+  },
+  "/docs/integrations/confluence-948": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-confluencea-88-7ca"
+  },
+  "/docs/integrations/ctransformers-693": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-ctransformers-6-fc-493"
+  },
+  "/docs/integrations/databerry-974": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-databerry-726-8ab"
+  },
+  "/docs/integrations/deepinfra-f13": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-deepinfra-0-c-0-2c3"
+  },
+  "/docs/integrations/deeplake-ee4": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-deeplake-5-a-2-176"
+  },
+  "/docs/integrations/diffbot-e03": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-diffbot-485-3d1"
+  },
+  "/docs/integrations/discord-783": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-discordb-1-f-3af"
+  },
+  "/docs/integrations/docugami-6e5": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-docugami-272-e3d"
+  },
+  "/docs/integrations/duckdb-537": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-duckdb-546-1ed"
+  },
+  "/docs/integrations/elasticsearch-4c0": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-elasticsearchbb-0-6c6"
+  },
+  "/docs/integrations/evernote-aa5": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-evernote-74-d-397"
+  },
+  "/docs/integrations/facebook_chat-dd4": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-facebook-chataf-2-27b"
+  },
+  "/docs/integrations/figma-1b0": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-figmac-09-d45"
+  },
+  "/docs/integrations/forefrontai-b87": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-forefrontai-420-d34"
+  },
+  "/docs/integrations/git-355": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-gitef-1-c23"
+  },
+  "/docs/integrations/gitbook-8bb": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-gitbook-51-d-ed0"
+  },
+  "/docs/integrations/google_bigquery-9f1": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-google-bigquery-116-bb9"
+  },
+  "/docs/integrations/google_cloud_storage-9fe": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-google-cloud-storage-9-a-4-8b4"
+  },
+  "/docs/integrations/google_drive-7fe": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-google-drivece-0-3c1"
+  },
+  "/docs/integrations/google_search-961": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-google-searchcc-6-af1"
+  },
+  "/docs/integrations/google_serper-33c": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-google-serperccf-af7"
+  },
+  "/docs/integrations/gooseai-1e8": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-gooseaif-14-154"
+  },
+  "/docs/integrations/gpt4all-006": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-gpt-4-allb-97-904"
+  },
+  "/docs/integrations/graphsignal-77c": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-graphsignalab-9-b2a"
+  },
+  "/docs/integrations/gutenberg-5ab": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-gutenbergb-82-a7c"
+  },
+  "/docs/integrations/hacker_news-1cb": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-hacker-newse-25-74c"
+  },
+  "/docs/integrations/hazy_research-884": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-hazy-research-96-d-96d"
+  },
+  "/docs/integrations/helicone-0ba": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-helicone-727-f08"
+  },
+  "/docs/integrations/huggingface-0f0": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-huggingface-5-a-3-c7b"
+  },
+  "/docs/integrations/ifixit-932": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-ifixit-887-c8f"
+  },
+  "/docs/integrations/imsdb-a79": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-imsdb-8-e-5-ec2"
+  },
+  "/docs/integrations/jina-012": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-jina-76-a-04b"
+  },
+  "/docs/integrations/lancedb-41f": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-lancedb-355-e67"
+  },
+  "/docs/integrations/llamacpp-f0e": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-llamacppe-6-e-ce2"
+  },
+  "/docs/integrations/mediawikidump-8f9": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-mediawikidump-803-ba1"
+  },
+  "/docs/integrations/metal-74b": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-metalc-7-d-723"
+  },
+  "/docs/integrations/microsoft_onedrive-feb": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-microsoft-onedrive-167-229"
+  },
+  "/docs/integrations/microsoft_powerpoint-6d8": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-microsoft-powerpoint-917-b2f"
+  },
+  "/docs/integrations/microsoft_word-fc5": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-microsoft-wordb-9-f-617"
+  },
+  "/docs/integrations/milvus-71e": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-milvus-135-0c9"
+  },
+  "/docs/integrations/modal-bbf": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-modald-9-f-267"
+  },
+  "/docs/integrations/modern_treasury-3d5": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-modern-treasuryab-5-d87"
+  },
+  "/docs/integrations/momento-fc1": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-momento-839-fa9"
+  },
+  "/docs/integrations/myscale-98f": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-myscale-4-a-5-d18"
+  },
+  "/docs/integrations/nlpcloud-e28": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-nlpcloud-5-c-6-57a"
+  },
+  "/docs/integrations/notion-1e7": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-notione-88-470"
+  },
+  "/docs/integrations/obsidian-43d": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-obsidian-465-b48"
+  },
+  "/docs/integrations/openai-236": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-openai-2-a-0-540"
+  },
+  "/docs/integrations/opensearch-b15": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-opensearch-336-475"
+  },
+  "/docs/integrations/openweathermap-c4f": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-openweathermapf-00-466"
+  },
+  "/docs/integrations/petals-2d1": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-petals-41-c-552"
+  },
+  "/docs/integrations/pgvector-bac": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-pgvector-5-ac-a98"
+  },
+  "/docs/integrations/pinecone-dfc": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-pinecone-718-86e"
+  },
+  "/docs/integrations/pipelineai-ed7": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-pipelineai-261-7cf"
+  },
+  "/docs/integrations/predictionguard-a04": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-predictionguard-065-63b"
+  },
+  "/docs/integrations/promptlayer-04b": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-promptlayercab-b57"
+  },
+  "/docs/integrations/psychic-267": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-psychic-325-0fc"
+  },
+  "/docs/integrations/qdrant-606": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-qdrantd-65-5f5"
+  },
+  "/docs/integrations/reddit-d8b": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-reddit-8-b-6-943"
+  },
+  "/docs/integrations/redis-bcb": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-redisc-84-7b6"
+  },
+  "/docs/integrations/replicate-6e3": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-replicate-6-bf-307"
+  },
+  "/docs/integrations/roam-97c": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-roameca-0af"
+  },
+  "/docs/integrations/runhouse-373": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-runhousea-04-11c"
+  },
+  "/docs/integrations/rwkv-e8a": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-rwkv-628-bc3"
+  },
+  "/docs/integrations/sagemaker_endpoint-60f": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-sagemaker-endpointbbf-583"
+  },
+  "/docs/integrations/searx-4f1": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-searx-791-400"
+  },
+  "/docs/integrations/serpapi-5b8": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-serpapi-326-425"
+  },
+  "/docs/integrations/sklearn-c0c": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-sklearnf-0-c-d64"
+  },
+  "/docs/integrations/slack-0d4": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-slackbc-4-c06"
+  },
+  "/docs/integrations/spacy-416": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-spacyd-4-f-fd3"
+  },
+  "/docs/integrations/spreedly-fd2": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-spreedly-0-b-6-120"
+  },
+  "/docs/integrations/stochasticai-5bc": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-stochasticaia-93-5ad"
+  },
+  "/docs/integrations/stripe-7d0": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-stripe-5-fa-5eb"
+  },
+  "/docs/integrations/tair-69c": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-tair-623-683"
+  },
+  "/docs/integrations/telegram-31b": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-telegramb-7-c-9b2"
+  },
+  "/docs/integrations/tomarkdown-f42": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-tomarkdown-1-e-3-d07"
+  },
+  "/docs/integrations/trello-532": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-trello-53-c-963"
+  },
+  "/docs/integrations/twitter-a8d": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-twitter-855-e54"
+  },
+  "/docs/integrations/unstructured-311": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-unstructured-64-a-ea6"
+  },
+  "/docs/integrations/vectara-151": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-vectarabc-2-bfa"
+  },
+  "/docs/integrations/vespa-033": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-vespa-835-7de"
+  },
+  "/docs/integrations/weather-b38": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-weather-7-c-0-c59"
+  },
+  "/docs/integrations/weaviate-31d": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-weaviate-4-c-5-029"
+  },
+  "/docs/integrations/whatsapp-6dd": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-whatsappb-0-b-b13"
+  },
+  "/docs/integrations/wikipedia-ce8": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-wikipedia-33-d-5f8"
+  },
+  "/docs/integrations/wolfram_alpha-b76": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-wolfram-alpha-37-e-0a3"
+  },
+  "/docs/integrations/writer-435": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-writer-605-f79"
+  },
+  "/docs/integrations/yeagerai-9f2": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-yeagerai-95-f-bd0"
+  },
+  "/docs/integrations/youtube-415": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-youtube-90-d-876"
+  },
+  "/docs/integrations/zep-965": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-zep-2-bc-b3f"
+  },
+  "/docs/integrations/zilliz-42e": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-integrations-zilliz-197-79b"
+  },
+  "/docs/modules/agents/agents/agent_types-eb3": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-modules-agents-agents-agent-typesbe-9-33e"
+  },
+  "/docs/modules/agents/tools/getting_started-ac3": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-modules-agents-tools-getting-startedcf-3-083"
+  },
+  "/docs/modules/data_io-651": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-modules-data-io-36-b-d3c"
+  },
+  "/docs/modules/model_io-2f9": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-modules-model-io-23-b-e93"
+  },
+  "/docs/modules/model_io/prompts/example_selectors/examples/custom_example_selector-be6": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-modules-model-io-prompts-example-selectors-examples-custom-example-selectorf-60-244"
+  },
+  "/docs/modules/model_io/prompts/prompt_templates/getting_started-66b": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-modules-model-io-prompts-prompt-templates-getting-startedc-80-a29"
+  },
+  "/docs/templates/integration-601": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-templates-integrationdf-5-14c"
+  },
+  "/docs/tracing/hosted_installation-af8": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-tracing-hosted-installation-82-c-659"
+  },
+  "/docs/tracing/local_installation-1bc": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-tracing-local-installation-136-405"
+  },
+  "/docs/use_cases/agent_simulations-01c": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-use-cases-agent-simulations-93-b-6ee"
+  },
+  "/docs/use_cases/apis-559": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-use-cases-apis-246-d3a"
+  },
+  "/docs/use_cases/autonomous_agents-9c6": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-use-cases-autonomous-agents-36-d-df8"
+  },
+  "/docs/use_cases/chatbots-275": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-use-cases-chatbots-648-1b9"
+  },
+  "/docs/use_cases/code-bc9": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-use-cases-coded-3-c-13a"
+  },
+  "/docs/use_cases/extraction-447": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-use-cases-extraction-25-f-d66"
+  },
+  "/docs/use_cases/personal_assistants-639": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-use-cases-personal-assistantsf-3-f-861"
+  },
+  "/docs/use_cases/question_answering-083": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-use-cases-question-answering-99-b-2b6"
+  },
+  "/docs/use_cases/summarization-1cb": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-use-cases-summarization-571-327"
+  },
+  "/docs/use_cases/tabular-9ed": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-use-cases-tabularabf-eec"
+  },
+  "/-534": {
+    "__comp": "__comp---site-src-pages-index-jsc-4-f-f99",
+    "__context": {
+      "plugin": "plugin---e-5-b-0a1"
+    },
+    "config": "config---5-e-9-4f3"
+  }
+}

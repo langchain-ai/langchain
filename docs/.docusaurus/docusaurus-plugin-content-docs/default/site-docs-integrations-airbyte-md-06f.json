@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/airbyte",
+  "id": "integrations/airbyte",
+  "title": "Airbyte",
+  "description": "Airbyte is a data integration platform for ELT pipelines from APIs,",
+  "source": "@site/docs/integrations/airbyte.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/airbyte",
+  "permalink": "/docs/integrations/airbyte",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/airbyte.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

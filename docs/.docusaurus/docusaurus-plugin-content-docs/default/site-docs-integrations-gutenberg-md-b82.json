@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/gutenberg",
+  "id": "integrations/gutenberg",
+  "title": "Gutenberg",
+  "description": "Project Gutenberg is an online library of free eBooks.",
+  "source": "@site/docs/integrations/gutenberg.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/gutenberg",
+  "permalink": "/docs/integrations/gutenberg",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/gutenberg.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

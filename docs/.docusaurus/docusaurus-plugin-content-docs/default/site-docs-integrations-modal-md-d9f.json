@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/modal",
+  "id": "integrations/modal",
+  "title": "Modal",
+  "description": "This page covers how to use the Modal ecosystem within LangChain.",
+  "source": "@site/docs/integrations/modal.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/modal",
+  "permalink": "/docs/integrations/modal",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/modal.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

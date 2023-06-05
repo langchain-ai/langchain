@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/google_search",
+  "id": "integrations/google_search",
+  "title": "Google Search",
+  "description": "This page covers how to use the Google Search API within LangChain.",
+  "source": "@site/docs/integrations/google_search.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/google_search",
+  "permalink": "/docs/integrations/google_search",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/google_search.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

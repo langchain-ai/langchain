@@ -1,0 +1,24 @@
+{
+  "unversionedId": "ecosystem/modelscope",
+  "id": "ecosystem/modelscope",
+  "title": "ModelScope",
+  "description": "This page covers how to use the modelscope ecosystem within LangChain.",
+  "source": "@site/docs/ecosystem/modelscope.md",
+  "sourceDirName": "ecosystem",
+  "slug": "/ecosystem/modelscope",
+  "permalink": "/docs/ecosystem/modelscope",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/ecosystem/modelscope.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "sidebar",
+  "previous": {
+    "title": "Deployments",
+    "permalink": "/docs/ecosystem/deployments"
+  },
+  "next": {
+    "title": "Website",
+    "permalink": "/docs/api/"
+  }
+}

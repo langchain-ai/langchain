@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/annoy",
+  "id": "integrations/annoy",
+  "title": "Annoy",
+  "description": "Annoy (Approximate Nearest Neighbors Oh Yeah) is a C++ library with Python bindings to search for points in space that are close to a given query point. It also creates large read-only file-based data structures that are mmapped into memory so that many processes may share the same data.",
+  "source": "@site/docs/integrations/annoy.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/annoy",
+  "permalink": "/docs/integrations/annoy",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/annoy.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

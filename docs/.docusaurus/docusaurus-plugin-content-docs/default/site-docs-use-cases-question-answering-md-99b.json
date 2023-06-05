@@ -1,0 +1,24 @@
+{
+  "unversionedId": "use_cases/question_answering",
+  "id": "use_cases/question_answering",
+  "title": "Question Answering over Docs",
+  "description": "Conceptual Guide",
+  "source": "@site/docs/use_cases/question_answering.md",
+  "sourceDirName": "use_cases",
+  "slug": "/use_cases/question_answering",
+  "permalink": "/docs/use_cases/question_answering",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/use_cases/question_answering.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "sidebar",
+  "previous": {
+    "title": "Agents",
+    "permalink": "/docs/use_cases/personal_assistants"
+  },
+  "next": {
+    "title": "Summarization",
+    "permalink": "/docs/use_cases/summarization"
+  }
+}

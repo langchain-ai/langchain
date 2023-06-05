@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/chroma",
+  "id": "integrations/chroma",
+  "title": "Chroma",
+  "description": "Chroma is a database for building AI applications with embeddings.",
+  "source": "@site/docs/integrations/chroma.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/chroma",
+  "permalink": "/docs/integrations/chroma",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/chroma.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

@@ -1,0 +1,2479 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Dependents &#8212; 🦜🔗 LangChain 0.0.190</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" href="_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" />
+    <link rel="stylesheet" type="text/css" href="_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/clipboard.min.js"></script>
+    <script src="_static/copybutton.js"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script src="_static/js/mendablesearch.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Deployments" href="ecosystem/deployments.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">🦜🔗 LangChain 0.0.190</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Get started
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="getting_started/getting_started.html">
+   Quickstart
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="getting_started/installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Modules
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="modules/memory.html">
+   Memory
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="modules/memory/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="modules/memory/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/types/buffer.html">
+       ConversationBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/types/buffer_window.html">
+       ConversationBufferWindowMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/types/entity_summary_memory.html">
+       Entity Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/types/kg.html">
+       Conversation Knowledge Graph Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/types/summary.html">
+       ConversationSummaryMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/types/summary_buffer.html">
+       ConversationSummaryBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/types/token_buffer.html">
+       ConversationTokenBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/types/vectorstore_retriever_memory.html">
+       VectorStore-Backed Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/adding_memory.html">
+       How to add Memory to an LLMChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/adding_memory_chain_multiple_inputs.html">
+       How to add memory to a Multi-Input Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/agent_with_memory.html">
+       How to add Memory to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/agent_with_memory_in_db.html">
+       Adding Message Memory backed by a database to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/cassandra_chat_message_history.html">
+       Cassandra Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/conversational_customization.html">
+       How to customize conversational memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/custom_memory.html">
+       How to create a custom Memory class
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/dynamodb_chat_message_history.html">
+       Dynamodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/entity_memory_with_sqlite.html">
+       Entity Memory with SQLite storage
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/momento_chat_message_history.html">
+       Momento Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/mongodb_chat_message_history.html">
+       Mongodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/motorhead_memory.html">
+       Motörhead Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/motorhead_memory_managed.html">
+       Motörhead Memory (Managed)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/multiple_memory.html">
+       How to use multiple memory classes in the same chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/postgres_chat_message_history.html">
+       Postgres Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/redis_chat_message_history.html">
+       Redis Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/memory/examples/zep_memory.html">
+       Zep Memory
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="modules/chains.html">
+   Chains
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="modules/chains/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="modules/chains/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/generic/async_chain.html">
+       Async API for Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/generic/custom_chain.html">
+       Creating a custom Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/generic/from_hub.html">
+       Loading from LangChainHub
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/generic/llm_chain.html">
+       LLM Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/generic/router.html">
+       Router Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/generic/sequential_chains.html">
+       Sequential Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/generic/serialization.html">
+       Serialization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/generic/transformation.html">
+       Transformation Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/index_examples/analyze_document.html">
+       Analyze Document
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/index_examples/chat_vector_db.html">
+       Chat Over Documents with Chat History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/index_examples/graph_qa.html">
+       Graph QA
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/index_examples/hyde.html">
+       Hypothetical Document Embeddings
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/index_examples/qa_with_sources.html">
+       Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/index_examples/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/index_examples/summarize.html">
+       Summarization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/index_examples/vector_db_qa.html">
+       Retrieval Question/Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/index_examples/vector_db_qa_with_sources.html">
+       Retrieval Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/index_examples/vector_db_text_generation.html">
+       Vector DB Text Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/api.html">
+       API Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/constitutional_chain.html">
+       Self-Critique Chain with Constitutional AI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/flare.html">
+       FLARE
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/graph_cypher_qa.html">
+       GraphCypherQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/llm_bash.html">
+       BashChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/llm_checker.html">
+       LLMCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/llm_requests.html">
+       LLMRequestsChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/llm_summarization_checker.html">
+       LLMSummarizationCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/moderation.html">
+       Moderation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/multi_prompt_router.html">
+       Router Chains: Selecting from multiple prompts with MultiPromptChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/multi_retrieval_qa_router.html">
+       Router Chains: Selecting from multiple prompts with MultiRetrievalQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/openapi.html">
+       OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/pal.html">
+       PAL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/chains/examples/sqlite.html">
+       SQL Chain example
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="reference/modules/chains.html">
+     Reference
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="modules/agents.html">
+   Agents
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="modules/agents/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="modules/agents/tools.html">
+     Tools
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+    <label for="toctree-checkbox-6">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/getting_started.html">
+       Getting Started
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/custom_tools.html">
+       Defining Custom Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/multi_input_tool.html">
+       Multi-Input Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/tool_input_validation.html">
+       Tool Input Schema
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/apify.html">
+       Apify
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/arxiv.html">
+       ArXiv API Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/awslambda.html">
+       AWS Lambda API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/bash.html">
+       Shell Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/bing_search.html">
+       Bing Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/brave_search.html">
+       Brave Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/chatgpt_plugins.html">
+       ChatGPT Plugins
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/ddg.html">
+       DuckDuckGo Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/filesystem.html">
+       File System Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/google_places.html">
+       Google Places
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/google_search.html">
+       Google Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/google_serper.html">
+       Google Serper API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/gradio_tools.html">
+       Gradio Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/graphql.html">
+       GraphQL tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/huggingface_tools.html">
+       HuggingFace Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/human_tools.html">
+       Human as a tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/ifttt.html">
+       IFTTT WebHooks
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/metaphor_search.html">
+       Metaphor Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/openweathermap.html">
+       OpenWeatherMap API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/pubmed.html">
+       PubMed Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/python.html">
+       Python REPL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/requests.html">
+       Requests
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/sceneXplain.html">
+       SceneXplain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/search_tools.html">
+       Search Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/searx_search.html">
+       SearxNG Search API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/serpapi.html">
+       SerpAPI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/twilio.html">
+       Twilio
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/wikipedia.html">
+       Wikipedia
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/wolfram_alpha.html">
+       Wolfram Alpha
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/youtube.html">
+       YouTubeSearchTool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/tools/examples/zapier.html">
+       Zapier Natural Language Actions API
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="modules/agents/agents.html">
+     Agents
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+    <label for="toctree-checkbox-7">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/agent_types.html">
+       Agent Types
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/custom_agent.html">
+       Custom Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/custom_llm_agent.html">
+       Custom LLM Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/custom_llm_chat_agent.html">
+       Custom LLM Agent (with a ChatModel)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/custom_mrkl_agent.html">
+       Custom MRKL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/custom_multi_action_agent.html">
+       Custom MultiAction Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/custom_agent_with_tool_retrieval.html">
+       Custom Agent with Tool Retrieval
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/examples/chat_conversation_agent.html">
+       Conversation Agent (for Chat Models)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/examples/conversational_agent.html">
+       Conversation Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/examples/mrkl.html">
+       MRKL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/examples/mrkl_chat.html">
+       MRKL Chat
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/examples/react.html">
+       ReAct
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/examples/self_ask_with_search.html">
+       Self Ask With Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agents/examples/structured_chat.html">
+       Structured Tool Chat Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="modules/agents/toolkits.html">
+     Toolkits
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <label for="toctree-checkbox-8">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/azure_cognitive_services.html">
+       Azure Cognitive Services Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/csv.html">
+       CSV Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/gmail.html">
+       Gmail Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/jira.html">
+       Jira
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/json.html">
+       JSON Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/openapi.html">
+       OpenAPI agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/openapi_nla.html">
+       Natural Language APIs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/pandas.html">
+       Pandas Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/playwright.html">
+       PlayWright Browser Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/powerbi.html">
+       PowerBI Dataset Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/python.html">
+       Python Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/spark.html">
+       Spark Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/spark_sql.html">
+       Spark SQL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/sql_database.html">
+       SQL Database Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/toolkits/examples/vectorstore.html">
+       Vectorstore Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="modules/agents/agent_executors.html">
+     Agent Executors
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+    <label for="toctree-checkbox-9">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agent_executors/examples/agent_vectorstore.html">
+       How to combine agents and vectorstores
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agent_executors/examples/async_agent.html">
+       How to use the async API for Agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agent_executors/examples/chatgpt_clone.html">
+       How to create ChatGPT Clone
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agent_executors/examples/handle_parsing_errors.html">
+       Handle Parsing Errors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agent_executors/examples/intermediate_steps.html">
+       How to access intermediate steps
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agent_executors/examples/max_iterations.html">
+       How to cap the max number of iterations
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agent_executors/examples/max_time_limit.html">
+       How to use a timeout for the agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="modules/agents/agent_executors/examples/sharedmemory_for_tools.html">
+       How to add SharedMemory to an Agent and its Tools
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="modules/agents/plan_and_execute.html">
+     Plan and Execute
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="modules/callbacks/getting_started.html">
+   Callbacks
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Examples
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="use_cases.html">
+   Use cases
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="use_cases/autonomous_agents.html">
+     Autonomous Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="use_cases/agent_simulations.html">
+     Agent Simulations
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="use_cases/personal_assistants.html">
+     Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="use_cases/question_answering.html">
+     Question Answering over Docs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="use_cases/chatbots.html">
+     Chatbots
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="use_cases/tabular.html">
+     Querying Tabular Data
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="use_cases/code.html">
+     Code Understanding
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="use_cases/apis.html">
+     Interacting with APIs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="use_cases/extraction.html">
+     Extraction
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="use_cases/summarization.html">
+     Summarization
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="use_cases/evaluation.html">
+     Evaluation
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+    <label for="toctree-checkbox-11">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/agent_benchmarking.html">
+       Agent Benchmarking: Search + Calculator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/agent_vectordb_sota_pg.html">
+       Agent VectorDB Question Answering Benchmarking
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/benchmarking_template.html">
+       Benchmarking Template
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/data_augmented_question_answering.html">
+       Data Augmented Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/generic_agent_evaluation.html">
+       Generic Agent Evaluation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/huggingface_datasets.html">
+       Using Hugging Face Datasets
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/openapi_eval.html">
+       Evaluating an OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/qa_benchmarking_pg.html">
+       Question Answering Benchmarking: Paul Graham Essay
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/qa_benchmarking_sota.html">
+       Question Answering Benchmarking: State of the Union Address
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/qa_generation.html">
+       QA Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="use_cases/evaluation/sql_qa_benchmarking_chinook.html">
+       SQL Question Answering Benchmarking: Chinook
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="additional_resources.html">
+   Additional resources
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+  <label for="toctree-checkbox-12">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="additional_resources/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference external" href="https://github.com/kyrolabs/awesome-langchain">
+     Gallery
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Ecosystem
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="integrations.html">
+   Integrations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+  <label for="toctree-checkbox-13">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/agent_with_wandb_tracing.html">
+     Tracing Walkthrough
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/ai21.html">
+     AI21 Labs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/aim_tracking.html">
+     Aim
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/airbyte.html">
+     Airbyte
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/aleph_alpha.html">
+     Aleph Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/analyticdb.html">
+     AnalyticDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/annoy.html">
+     Annoy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/anyscale.html">
+     Anyscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/apify.html">
+     Apify
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/argilla.html">
+     Argilla
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/arxiv.html">
+     Arxiv
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/atlas.html">
+     AtlasDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/aws_s3.html">
+     AWS S3 Directory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/azlyrics.html">
+     AZLyrics
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/azure_blob_storage.html">
+     Azure Blob Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/azure_cognitive_search_.html">
+     Azure Cognitive Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/azure_openai.html">
+     Azure OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/bananadev.html">
+     Banana
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/beam.html">
+     Beam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/bedrock.html">
+     Bedrock
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/bilibili.html">
+     BiliBili
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/blackboard.html">
+     Blackboard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/cassandra.html">
+     Cassandra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/cerebriumai.html">
+     CerebriumAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/chroma.html">
+     Chroma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/clearml_tracking.html">
+     ClearML
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/cohere.html">
+     Cohere
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/college_confidential.html">
+     College Confidential
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/comet_tracking.html">
+     Comet
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/confluence.html">
+     Confluence
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/ctransformers.html">
+     C Transformers
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/databerry.html">
+     Databerry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/databricks.html">
+     Databricks
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/deepinfra.html">
+     DeepInfra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/deeplake.html">
+     Deep Lake
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/diffbot.html">
+     Diffbot
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/discord.html">
+     Discord
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/docugami.html">
+     Docugami
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/duckdb.html">
+     DuckDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/elasticsearch.html">
+     Elasticsearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/evernote.html">
+     EverNote
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/facebook_chat.html">
+     Facebook Chat
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/figma.html">
+     Figma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/forefrontai.html">
+     ForefrontAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/git.html">
+     Git
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/gitbook.html">
+     GitBook
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/google_bigquery.html">
+     Google BigQuery
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/google_cloud_storage.html">
+     Google Cloud Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/google_drive.html">
+     Google Drive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/google_search.html">
+     Google Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/google_serper.html">
+     Google Serper
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/gooseai.html">
+     GooseAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/gpt4all.html">
+     GPT4All
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/graphsignal.html">
+     Graphsignal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/gutenberg.html">
+     Gutenberg
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/hacker_news.html">
+     Hacker News
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/hazy_research.html">
+     Hazy Research
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/helicone.html">
+     Helicone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/huggingface.html">
+     Hugging Face
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/ifixit.html">
+     iFixit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/imsdb.html">
+     IMSDb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/jina.html">
+     Jina
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/lancedb.html">
+     LanceDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/llamacpp.html">
+     Llama.cpp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/mediawikidump.html">
+     MediaWikiDump
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/metal.html">
+     Metal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/microsoft_onedrive.html">
+     Microsoft OneDrive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/microsoft_powerpoint.html">
+     Microsoft PowerPoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/microsoft_word.html">
+     Microsoft Word
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/milvus.html">
+     Milvus
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/mlflow_tracking.html">
+     MLflow
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/modal.html">
+     Modal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/modern_treasury.html">
+     Modern Treasury
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/momento.html">
+     Momento
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/myscale.html">
+     MyScale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/nlpcloud.html">
+     NLPCloud
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/notion.html">
+     Notion DB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/obsidian.html">
+     Obsidian
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/openai.html">
+     OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/opensearch.html">
+     OpenSearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/openweathermap.html">
+     OpenWeatherMap
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/petals.html">
+     Petals
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/pgvector.html">
+     PGVector
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/pinecone.html">
+     Pinecone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/pipelineai.html">
+     PipelineAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/predictionguard.html">
+     Prediction Guard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/promptlayer.html">
+     PromptLayer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/psychic.html">
+     Psychic
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/qdrant.html">
+     Qdrant
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/rebuff.html">
+     Rebuff
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/reddit.html">
+     Reddit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/redis.html">
+     Redis
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/replicate.html">
+     Replicate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/roam.html">
+     Roam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/runhouse.html">
+     Runhouse
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/rwkv.html">
+     RWKV-4
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/sagemaker_endpoint.html">
+     SageMaker Endpoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/searx.html">
+     SearxNG Search API
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/serpapi.html">
+     SerpAPI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/sklearn.html">
+     scikit-learn
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/slack.html">
+     Slack
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/spacy.html">
+     spaCy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/spreedly.html">
+     Spreedly
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/stochasticai.html">
+     StochasticAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/stripe.html">
+     Stripe
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/tair.html">
+     Tair
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/telegram.html">
+     Telegram
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/tomarkdown.html">
+     2Markdown
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/trello.html">
+     Trello
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/twitter.html">
+     Twitter
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/unstructured.html">
+     Unstructured
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/vectara.html">
+     Vectara
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/vespa.html">
+     Vespa
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/wandb_tracking.html">
+     Weights &amp; Biases
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/weather.html">
+     Weather
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/weaviate.html">
+     Weaviate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/whatsapp.html">
+     WhatsApp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/whylabs_profiling.html">
+     WhyLabs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/wikipedia.html">
+     Wikipedia
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/wolfram_alpha.html">
+     Wolfram Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/writer.html">
+     Writer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/yeagerai.html">
+     Yeager.ai
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/zep.html">
+     Zep
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="integrations/zilliz.html">
+     Zilliz
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="ecosystem/deployments.html">
+   Deployments
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://github.com/hwchase17/langchain-hub">
+   LangChainHub
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Dependents
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Find us
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference external" href="https://twitter.com/LangChainAI">
+   Twitter
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://discord.gg/6adMQxSpJS">
+   Discord
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://forms.gle/57d8AmXBYp8PP8tZA">
+   Request production support
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+<a href="https://github.com/hwchase17/langchain"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="bottom"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="_sources/dependents.md.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.md</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Dependents</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <section id="dependents">
+<h1>Dependents<a class="headerlink" href="#dependents" title="Permalink to this headline">#</a></h1>
+<p>Dependents stats for <code class="docutils literal notranslate"><span class="pre">hwchase17/langchain</span></code></p>
+<p><a class="reference external" href="https://github.com/hwchase17/langchain/network/dependents"><img alt="" src="https://img.shields.io/static/v1?label=Used%20by&amp;message=5152&amp;color=informational&amp;logo=slickpic" /></a>
+<a class="reference external" href="https://github.com/hwchase17/langchain/network/dependents"><img alt="" src="https://img.shields.io/static/v1?label=Used%20by%20(public)&amp;message=172&amp;color=informational&amp;logo=slickpic" /></a>
+<a class="reference external" href="https://github.com/hwchase17/langchain/network/dependents"><img alt="" src="https://img.shields.io/static/v1?label=Used%20by%20(private)&amp;message=4980&amp;color=informational&amp;logo=slickpic" /></a>
+<a class="reference external" href="https://github.com/hwchase17/langchain/network/dependents"><img alt="" src="https://img.shields.io/static/v1?label=Used%20by%20(stars)&amp;message=17239&amp;color=informational&amp;logo=slickpic" /></a></p>
+<p>[update: 2023-05-17; only dependent repositories with Stars &gt; 100]</p>
+<table class="colwidths-auto table">
+<thead>
+<tr class="row-odd"><th class="text-left head"><p>Repository</p></th>
+<th class="text-right head"><p>Stars</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/openai/openai-cookbook">openai/openai-cookbook</a></p></td>
+<td class="text-right"><p>35401</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/LAION-AI/Open-Assistant">LAION-AI/Open-Assistant</a></p></td>
+<td class="text-right"><p>32861</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/microsoft/TaskMatrix">microsoft/TaskMatrix</a></p></td>
+<td class="text-right"><p>32766</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/hpcaitech/ColossalAI">hpcaitech/ColossalAI</a></p></td>
+<td class="text-right"><p>29560</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/reworkd/AgentGPT">reworkd/AgentGPT</a></p></td>
+<td class="text-right"><p>22315</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/imartinez/privateGPT">imartinez/privateGPT</a></p></td>
+<td class="text-right"><p>17474</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/openai/chatgpt-retrieval-plugin">openai/chatgpt-retrieval-plugin</a></p></td>
+<td class="text-right"><p>16923</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/mindsdb/mindsdb">mindsdb/mindsdb</a></p></td>
+<td class="text-right"><p>16112</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/jerryjliu/llama_index">jerryjliu/llama_index</a></p></td>
+<td class="text-right"><p>15407</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/mlflow/mlflow">mlflow/mlflow</a></p></td>
+<td class="text-right"><p>14345</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/GaiZhenbiao/ChuanhuChatGPT">GaiZhenbiao/ChuanhuChatGPT</a></p></td>
+<td class="text-right"><p>10372</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/databrickslabs/dolly">databrickslabs/dolly</a></p></td>
+<td class="text-right"><p>9919</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/AIGC-Audio/AudioGPT">AIGC-Audio/AudioGPT</a></p></td>
+<td class="text-right"><p>8177</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/logspace-ai/langflow">logspace-ai/langflow</a></p></td>
+<td class="text-right"><p>6807</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/imClumsyPanda/langchain-ChatGLM">imClumsyPanda/langchain-ChatGLM</a></p></td>
+<td class="text-right"><p>6087</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/arc53/DocsGPT">arc53/DocsGPT</a></p></td>
+<td class="text-right"><p>5292</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/e2b-dev/e2b">e2b-dev/e2b</a></p></td>
+<td class="text-right"><p>4622</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/nsarrazin/serge">nsarrazin/serge</a></p></td>
+<td class="text-right"><p>4076</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/madawei2699/myGPTReader">madawei2699/myGPTReader</a></p></td>
+<td class="text-right"><p>3952</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/zauberzeug/nicegui">zauberzeug/nicegui</a></p></td>
+<td class="text-right"><p>3952</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/go-skynet/LocalAI">go-skynet/LocalAI</a></p></td>
+<td class="text-right"><p>3762</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/GreyDGL/PentestGPT">GreyDGL/PentestGPT</a></p></td>
+<td class="text-right"><p>3388</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/mmabrouk/chatgpt-wrapper">mmabrouk/chatgpt-wrapper</a></p></td>
+<td class="text-right"><p>3243</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/zilliztech/GPTCache">zilliztech/GPTCache</a></p></td>
+<td class="text-right"><p>3189</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/wenda-LLM/wenda">wenda-LLM/wenda</a></p></td>
+<td class="text-right"><p>3050</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/marqo-ai/marqo">marqo-ai/marqo</a></p></td>
+<td class="text-right"><p>2930</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/gkamradt/langchain-tutorials">gkamradt/langchain-tutorials</a></p></td>
+<td class="text-right"><p>2710</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/PrefectHQ/marvin">PrefectHQ/marvin</a></p></td>
+<td class="text-right"><p>2545</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/project-baize/baize-chatbot">project-baize/baize-chatbot</a></p></td>
+<td class="text-right"><p>2479</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/whitead/paper-qa">whitead/paper-qa</a></p></td>
+<td class="text-right"><p>2399</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/langgenius/dify">langgenius/dify</a></p></td>
+<td class="text-right"><p>2344</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/GerevAI/gerev">GerevAI/gerev</a></p></td>
+<td class="text-right"><p>2283</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/hwchase17/chat-langchain">hwchase17/chat-langchain</a></p></td>
+<td class="text-right"><p>2266</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/guangzhengli/ChatFiles">guangzhengli/ChatFiles</a></p></td>
+<td class="text-right"><p>1903</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/Azure-Samples/azure-search-openai-demo">Azure-Samples/azure-search-openai-demo</a></p></td>
+<td class="text-right"><p>1884</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/OpenBMB/BMTools">OpenBMB/BMTools</a></p></td>
+<td class="text-right"><p>1860</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/Farama-Foundation/PettingZoo">Farama-Foundation/PettingZoo</a></p></td>
+<td class="text-right"><p>1813</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/OpenGVLab/Ask-Anything">OpenGVLab/Ask-Anything</a></p></td>
+<td class="text-right"><p>1571</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/IntelligenzaArtificiale/Free-Auto-GPT">IntelligenzaArtificiale/Free-Auto-GPT</a></p></td>
+<td class="text-right"><p>1480</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/hwchase17/notion-qa">hwchase17/notion-qa</a></p></td>
+<td class="text-right"><p>1464</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/NVIDIA/NeMo-Guardrails">NVIDIA/NeMo-Guardrails</a></p></td>
+<td class="text-right"><p>1419</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/Unstructured-IO/unstructured">Unstructured-IO/unstructured</a></p></td>
+<td class="text-right"><p>1410</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/Kav-K/GPTDiscord">Kav-K/GPTDiscord</a></p></td>
+<td class="text-right"><p>1363</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/paulpierre/RasaGPT">paulpierre/RasaGPT</a></p></td>
+<td class="text-right"><p>1344</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/StanGirard/quivr">StanGirard/quivr</a></p></td>
+<td class="text-right"><p>1330</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/lunasec-io/lunasec">lunasec-io/lunasec</a></p></td>
+<td class="text-right"><p>1318</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/vocodedev/vocode-python">vocodedev/vocode-python</a></p></td>
+<td class="text-right"><p>1286</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/agiresearch/OpenAGI">agiresearch/OpenAGI</a></p></td>
+<td class="text-right"><p>1156</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/h2oai/h2ogpt">h2oai/h2ogpt</a></p></td>
+<td class="text-right"><p>1141</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/jina-ai/thinkgpt">jina-ai/thinkgpt</a></p></td>
+<td class="text-right"><p>1106</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/yanqiangmiffy/Chinese-LangChain">yanqiangmiffy/Chinese-LangChain</a></p></td>
+<td class="text-right"><p>1072</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/ttengwang/Caption-Anything">ttengwang/Caption-Anything</a></p></td>
+<td class="text-right"><p>1064</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/jina-ai/dev-gpt">jina-ai/dev-gpt</a></p></td>
+<td class="text-right"><p>1057</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/juncongmoo/chatllama">juncongmoo/chatllama</a></p></td>
+<td class="text-right"><p>1003</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/greshake/llm-security">greshake/llm-security</a></p></td>
+<td class="text-right"><p>1002</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/visual-openllm/visual-openllm">visual-openllm/visual-openllm</a></p></td>
+<td class="text-right"><p>957</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/richardyc/Chrome-GPT">richardyc/Chrome-GPT</a></p></td>
+<td class="text-right"><p>918</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/irgolic/AutoPR">irgolic/AutoPR</a></p></td>
+<td class="text-right"><p>886</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/mmz-001/knowledge_gpt">mmz-001/knowledge_gpt</a></p></td>
+<td class="text-right"><p>867</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/thomas-yanxin/LangChain-ChatGLM-Webui">thomas-yanxin/LangChain-ChatGLM-Webui</a></p></td>
+<td class="text-right"><p>850</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/microsoft/X-Decoder">microsoft/X-Decoder</a></p></td>
+<td class="text-right"><p>837</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/peterw/Chat-with-Github-Repo">peterw/Chat-with-Github-Repo</a></p></td>
+<td class="text-right"><p>826</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/cirediatpl/FigmaChain">cirediatpl/FigmaChain</a></p></td>
+<td class="text-right"><p>782</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/hashintel/hash">hashintel/hash</a></p></td>
+<td class="text-right"><p>778</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/seanpixel/Teenage-AGI">seanpixel/Teenage-AGI</a></p></td>
+<td class="text-right"><p>773</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/jina-ai/langchain-serve">jina-ai/langchain-serve</a></p></td>
+<td class="text-right"><p>738</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/corca-ai/EVAL">corca-ai/EVAL</a></p></td>
+<td class="text-right"><p>737</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/ai-sidekick/sidekick">ai-sidekick/sidekick</a></p></td>
+<td class="text-right"><p>717</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/rlancemartin/auto-evaluator">rlancemartin/auto-evaluator</a></p></td>
+<td class="text-right"><p>703</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/poe-platform/api-bot-tutorial">poe-platform/api-bot-tutorial</a></p></td>
+<td class="text-right"><p>689</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/SamurAIGPT/Camel-AutoGPT">SamurAIGPT/Camel-AutoGPT</a></p></td>
+<td class="text-right"><p>666</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/eyurtsev/kor">eyurtsev/kor</a></p></td>
+<td class="text-right"><p>608</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/run-llama/llama-lab">run-llama/llama-lab</a></p></td>
+<td class="text-right"><p>559</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/namuan/dr-doc-search">namuan/dr-doc-search</a></p></td>
+<td class="text-right"><p>544</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/pieroit/cheshire-cat">pieroit/cheshire-cat</a></p></td>
+<td class="text-right"><p>520</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/griptape-ai/griptape">griptape-ai/griptape</a></p></td>
+<td class="text-right"><p>514</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/getmetal/motorhead">getmetal/motorhead</a></p></td>
+<td class="text-right"><p>481</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/hwchase17/chat-your-data">hwchase17/chat-your-data</a></p></td>
+<td class="text-right"><p>462</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/langchain-ai/langchain-aiplugin">langchain-ai/langchain-aiplugin</a></p></td>
+<td class="text-right"><p>452</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/jina-ai/agentchain">jina-ai/agentchain</a></p></td>
+<td class="text-right"><p>439</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/SamurAIGPT/ChatGPT-Developer-Plugins">SamurAIGPT/ChatGPT-Developer-Plugins</a></p></td>
+<td class="text-right"><p>437</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/alexanderatallah/window.ai">alexanderatallah/window.ai</a></p></td>
+<td class="text-right"><p>433</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/michaelthwan/searchGPT">michaelthwan/searchGPT</a></p></td>
+<td class="text-right"><p>427</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/mpaepper/content-chatbot">mpaepper/content-chatbot</a></p></td>
+<td class="text-right"><p>425</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/mckaywrigley/repo-chat">mckaywrigley/repo-chat</a></p></td>
+<td class="text-right"><p>422</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/whyiyhw/chatgpt-wechat">whyiyhw/chatgpt-wechat</a></p></td>
+<td class="text-right"><p>421</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/freddyaboulton/gradio-tools">freddyaboulton/gradio-tools</a></p></td>
+<td class="text-right"><p>407</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/jonra1993/fastapi-alembic-sqlmodel-async">jonra1993/fastapi-alembic-sqlmodel-async</a></p></td>
+<td class="text-right"><p>395</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/yeagerai/yeagerai-agent">yeagerai/yeagerai-agent</a></p></td>
+<td class="text-right"><p>383</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/akshata29/chatpdf">akshata29/chatpdf</a></p></td>
+<td class="text-right"><p>374</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/OpenGVLab/InternGPT">OpenGVLab/InternGPT</a></p></td>
+<td class="text-right"><p>368</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/ruoccofabrizio/azure-open-ai-embeddings-qna">ruoccofabrizio/azure-open-ai-embeddings-qna</a></p></td>
+<td class="text-right"><p>358</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/101dotxyz/GPTeam">101dotxyz/GPTeam</a></p></td>
+<td class="text-right"><p>357</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/mtenenholtz/chat-twitter">mtenenholtz/chat-twitter</a></p></td>
+<td class="text-right"><p>354</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/amosjyng/langchain-visualizer">amosjyng/langchain-visualizer</a></p></td>
+<td class="text-right"><p>343</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/msoedov/langcorn">msoedov/langcorn</a></p></td>
+<td class="text-right"><p>334</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/showlab/VLog">showlab/VLog</a></p></td>
+<td class="text-right"><p>330</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/continuum-llms/chatgpt-memory">continuum-llms/chatgpt-memory</a></p></td>
+<td class="text-right"><p>324</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/steamship-core/steamship-langchain">steamship-core/steamship-langchain</a></p></td>
+<td class="text-right"><p>323</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/daodao97/chatdoc">daodao97/chatdoc</a></p></td>
+<td class="text-right"><p>320</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/xuwenhao/geektime-ai-course">xuwenhao/geektime-ai-course</a></p></td>
+<td class="text-right"><p>308</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/StevenGrove/GPT4Tools">StevenGrove/GPT4Tools</a></p></td>
+<td class="text-right"><p>301</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/logan-markewich/llama_index_starter_pack">logan-markewich/llama_index_starter_pack</a></p></td>
+<td class="text-right"><p>300</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/andylokandy/gpt-4-search">andylokandy/gpt-4-search</a></p></td>
+<td class="text-right"><p>299</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/Anil-matcha/ChatPDF">Anil-matcha/ChatPDF</a></p></td>
+<td class="text-right"><p>287</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/itamargol/openai">itamargol/openai</a></p></td>
+<td class="text-right"><p>273</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/BlackHC/llm-strategy">BlackHC/llm-strategy</a></p></td>
+<td class="text-right"><p>267</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/momegas/megabots">momegas/megabots</a></p></td>
+<td class="text-right"><p>259</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/bborn/howdoi.ai">bborn/howdoi.ai</a></p></td>
+<td class="text-right"><p>238</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/Cheems-Seminar/grounded-segment-any-parts">Cheems-Seminar/grounded-segment-any-parts</a></p></td>
+<td class="text-right"><p>232</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/ur-whitelab/exmol">ur-whitelab/exmol</a></p></td>
+<td class="text-right"><p>227</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/sullivan-sean/chat-langchainjs">sullivan-sean/chat-langchainjs</a></p></td>
+<td class="text-right"><p>227</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/explosion/spacy-llm">explosion/spacy-llm</a></p></td>
+<td class="text-right"><p>226</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/recalign/RecAlign">recalign/RecAlign</a></p></td>
+<td class="text-right"><p>218</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/jupyterlab/jupyter-ai">jupyterlab/jupyter-ai</a></p></td>
+<td class="text-right"><p>218</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/alvarosevilla95/autolang">alvarosevilla95/autolang</a></p></td>
+<td class="text-right"><p>215</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/conceptofmind/toolformer">conceptofmind/toolformer</a></p></td>
+<td class="text-right"><p>213</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/MagnivOrg/prompt-layer-library">MagnivOrg/prompt-layer-library</a></p></td>
+<td class="text-right"><p>209</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/JohnSnowLabs/nlptest">JohnSnowLabs/nlptest</a></p></td>
+<td class="text-right"><p>208</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/airobotlab/KoChatGPT">airobotlab/KoChatGPT</a></p></td>
+<td class="text-right"><p>197</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/langchain-ai/auto-evaluator">langchain-ai/auto-evaluator</a></p></td>
+<td class="text-right"><p>195</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/yvann-hub/Robby-chatbot">yvann-hub/Robby-chatbot</a></p></td>
+<td class="text-right"><p>195</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/alejandro-ao/langchain-ask-pdf">alejandro-ao/langchain-ask-pdf</a></p></td>
+<td class="text-right"><p>192</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/daveebbelaar/langchain-experiments">daveebbelaar/langchain-experiments</a></p></td>
+<td class="text-right"><p>189</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/NimbleBoxAI/ChainFury">NimbleBoxAI/ChainFury</a></p></td>
+<td class="text-right"><p>187</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/kaleido-lab/dolphin">kaleido-lab/dolphin</a></p></td>
+<td class="text-right"><p>184</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/Anil-matcha/Website-to-Chatbot">Anil-matcha/Website-to-Chatbot</a></p></td>
+<td class="text-right"><p>183</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/plchld/InsightFlow">plchld/InsightFlow</a></p></td>
+<td class="text-right"><p>180</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/OpenBMB/AgentVerse">OpenBMB/AgentVerse</a></p></td>
+<td class="text-right"><p>166</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/benthecoder/ClassGPT">benthecoder/ClassGPT</a></p></td>
+<td class="text-right"><p>166</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/jbrukh/gpt-jargon">jbrukh/gpt-jargon</a></p></td>
+<td class="text-right"><p>161</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/hardbyte/qabot">hardbyte/qabot</a></p></td>
+<td class="text-right"><p>160</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/shaman-ai/agent-actors">shaman-ai/agent-actors</a></p></td>
+<td class="text-right"><p>153</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/radi-cho/datasetGPT">radi-cho/datasetGPT</a></p></td>
+<td class="text-right"><p>153</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/poe-platform/poe-protocol">poe-platform/poe-protocol</a></p></td>
+<td class="text-right"><p>152</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/paolorechia/learn-langchain">paolorechia/learn-langchain</a></p></td>
+<td class="text-right"><p>149</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/ajndkr/lanarky">ajndkr/lanarky</a></p></td>
+<td class="text-right"><p>149</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/fengyuli-dev/multimedia-gpt">fengyuli-dev/multimedia-gpt</a></p></td>
+<td class="text-right"><p>147</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/yasyf/compress-gpt">yasyf/compress-gpt</a></p></td>
+<td class="text-right"><p>144</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/homanp/superagent">homanp/superagent</a></p></td>
+<td class="text-right"><p>143</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/realminchoi/babyagi-ui">realminchoi/babyagi-ui</a></p></td>
+<td class="text-right"><p>141</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/ethanyanjiali/minChatGPT">ethanyanjiali/minChatGPT</a></p></td>
+<td class="text-right"><p>141</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/ccurme/yolopandas">ccurme/yolopandas</a></p></td>
+<td class="text-right"><p>139</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/hwchase17/langchain-streamlit-template">hwchase17/langchain-streamlit-template</a></p></td>
+<td class="text-right"><p>138</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/Jaseci-Labs/jaseci">Jaseci-Labs/jaseci</a></p></td>
+<td class="text-right"><p>136</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/hirokidaichi/wanna">hirokidaichi/wanna</a></p></td>
+<td class="text-right"><p>135</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/Haste171/langchain-chatbot">Haste171/langchain-chatbot</a></p></td>
+<td class="text-right"><p>134</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/jmpaz/promptlib">jmpaz/promptlib</a></p></td>
+<td class="text-right"><p>130</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/Klingefjord/chatgpt-telegram">Klingefjord/chatgpt-telegram</a></p></td>
+<td class="text-right"><p>130</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/filip-michalsky/SalesGPT">filip-michalsky/SalesGPT</a></p></td>
+<td class="text-right"><p>128</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/handrew/browserpilot">handrew/browserpilot</a></p></td>
+<td class="text-right"><p>128</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/shauryr/S2QA">shauryr/S2QA</a></p></td>
+<td class="text-right"><p>127</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/steamship-core/vercel-examples">steamship-core/vercel-examples</a></p></td>
+<td class="text-right"><p>127</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/yasyf/summ">yasyf/summ</a></p></td>
+<td class="text-right"><p>127</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/gia-guar/JARVIS-ChatGPT">gia-guar/JARVIS-ChatGPT</a></p></td>
+<td class="text-right"><p>126</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/jerlendds/osintbuddy">jerlendds/osintbuddy</a></p></td>
+<td class="text-right"><p>125</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/ibiscp/LLM-IMDB">ibiscp/LLM-IMDB</a></p></td>
+<td class="text-right"><p>124</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/Teahouse-Studios/akari-bot">Teahouse-Studios/akari-bot</a></p></td>
+<td class="text-right"><p>124</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/hwchase17/chroma-langchain">hwchase17/chroma-langchain</a></p></td>
+<td class="text-right"><p>124</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/menloparklab/langchain-cohere-qdrant-doc-retrieval">menloparklab/langchain-cohere-qdrant-doc-retrieval</a></p></td>
+<td class="text-right"><p>123</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/peterw/StoryStorm">peterw/StoryStorm</a></p></td>
+<td class="text-right"><p>123</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/chakkaradeep/pyCodeAGI">chakkaradeep/pyCodeAGI</a></p></td>
+<td class="text-right"><p>123</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/petehunt/langchain-github-bot">petehunt/langchain-github-bot</a></p></td>
+<td class="text-right"><p>115</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/su77ungr/CASALIOY">su77ungr/CASALIOY</a></p></td>
+<td class="text-right"><p>113</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/eunomia-bpf/GPTtrace">eunomia-bpf/GPTtrace</a></p></td>
+<td class="text-right"><p>113</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/zenml-io/zenml-projects">zenml-io/zenml-projects</a></p></td>
+<td class="text-right"><p>112</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/pablomarin/GPT-Azure-Search-Engine">pablomarin/GPT-Azure-Search-Engine</a></p></td>
+<td class="text-right"><p>111</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/shamspias/customizable-gpt-chatbot">shamspias/customizable-gpt-chatbot</a></p></td>
+<td class="text-right"><p>109</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/WongSaang/chatgpt-ui-server">WongSaang/chatgpt-ui-server</a></p></td>
+<td class="text-right"><p>108</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/davila7/file-gpt">davila7/file-gpt</a></p></td>
+<td class="text-right"><p>104</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><a class="reference external" href="https://github.com/enhancedocs/enhancedocs">enhancedocs/enhancedocs</a></p></td>
+<td class="text-right"><p>102</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><a class="reference external" href="https://github.com/aurelio-labs/arxiv-bot">aurelio-labs/arxiv-bot</a></p></td>
+<td class="text-right"><p>101</p></td>
+</tr>
+</tbody>
+</table>
+<p><em>Generated by <a class="reference external" href="https://github.com/nvuillam/github-dependents-info">github-dependents-info</a></em></p>
+<p>[github-dependents-info –repo hwchase17/langchain –markdownfile dependents.md –minstars 100 –sort stars]</p>
+</section>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="ecosystem/deployments.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Deployments</p>
+        </div>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Harrison Chase<br/>
+  
+      &copy; Copyright 2023, Harrison Chase.<br/>
+    Last updated on Jun 05, 2023.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

@@ -1,0 +1,2279 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>YouTube &#8212; 🦜🔗 LangChain 0.0.190</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" href="../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/clipboard.min.js"></script>
+    <script src="../_static/copybutton.js"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script src="../_static/js/mendablesearch.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Integrations" href="../integrations.html" />
+    <link rel="prev" title="Additional resources" href="../additional_resources.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">🦜🔗 LangChain 0.0.190</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Get started
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../getting_started/getting_started.html">
+   Quickstart
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../getting_started/installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Modules
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../modules/memory.html">
+   Memory
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../modules/memory/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../modules/memory/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/types/buffer.html">
+       ConversationBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/types/buffer_window.html">
+       ConversationBufferWindowMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/types/entity_summary_memory.html">
+       Entity Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/types/kg.html">
+       Conversation Knowledge Graph Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/types/summary.html">
+       ConversationSummaryMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/types/summary_buffer.html">
+       ConversationSummaryBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/types/token_buffer.html">
+       ConversationTokenBufferMemory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/types/vectorstore_retriever_memory.html">
+       VectorStore-Backed Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/adding_memory.html">
+       How to add Memory to an LLMChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/adding_memory_chain_multiple_inputs.html">
+       How to add memory to a Multi-Input Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/agent_with_memory.html">
+       How to add Memory to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/agent_with_memory_in_db.html">
+       Adding Message Memory backed by a database to an Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/cassandra_chat_message_history.html">
+       Cassandra Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/conversational_customization.html">
+       How to customize conversational memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/custom_memory.html">
+       How to create a custom Memory class
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/dynamodb_chat_message_history.html">
+       Dynamodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/entity_memory_with_sqlite.html">
+       Entity Memory with SQLite storage
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/momento_chat_message_history.html">
+       Momento Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/mongodb_chat_message_history.html">
+       Mongodb Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/motorhead_memory.html">
+       Motörhead Memory
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/motorhead_memory_managed.html">
+       Motörhead Memory (Managed)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/multiple_memory.html">
+       How to use multiple memory classes in the same chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/postgres_chat_message_history.html">
+       Postgres Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/redis_chat_message_history.html">
+       Redis Chat Message History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/memory/examples/zep_memory.html">
+       Zep Memory
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../modules/chains.html">
+   Chains
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../modules/chains/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../modules/chains/how_to_guides.html">
+     How-To Guides
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/generic/async_chain.html">
+       Async API for Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/generic/custom_chain.html">
+       Creating a custom Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/generic/from_hub.html">
+       Loading from LangChainHub
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/generic/llm_chain.html">
+       LLM Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/generic/router.html">
+       Router Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/generic/sequential_chains.html">
+       Sequential Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/generic/serialization.html">
+       Serialization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/generic/transformation.html">
+       Transformation Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/index_examples/analyze_document.html">
+       Analyze Document
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/index_examples/chat_vector_db.html">
+       Chat Over Documents with Chat History
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/index_examples/graph_qa.html">
+       Graph QA
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/index_examples/hyde.html">
+       Hypothetical Document Embeddings
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/index_examples/qa_with_sources.html">
+       Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/index_examples/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/index_examples/summarize.html">
+       Summarization
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/index_examples/vector_db_qa.html">
+       Retrieval Question/Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/index_examples/vector_db_qa_with_sources.html">
+       Retrieval Question Answering with Sources
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/index_examples/vector_db_text_generation.html">
+       Vector DB Text Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/api.html">
+       API Chains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/constitutional_chain.html">
+       Self-Critique Chain with Constitutional AI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/flare.html">
+       FLARE
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/graph_cypher_qa.html">
+       GraphCypherQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/llm_bash.html">
+       BashChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/llm_checker.html">
+       LLMCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/llm_requests.html">
+       LLMRequestsChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/llm_summarization_checker.html">
+       LLMSummarizationCheckerChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/moderation.html">
+       Moderation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/multi_prompt_router.html">
+       Router Chains: Selecting from multiple prompts with MultiPromptChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/multi_retrieval_qa_router.html">
+       Router Chains: Selecting from multiple prompts with MultiRetrievalQAChain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/openapi.html">
+       OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/pal.html">
+       PAL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/chains/examples/sqlite.html">
+       SQL Chain example
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../reference/modules/chains.html">
+     Reference
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../modules/agents.html">
+   Agents
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../modules/agents/getting_started.html">
+     Getting Started
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../modules/agents/tools.html">
+     Tools
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+    <label for="toctree-checkbox-6">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/getting_started.html">
+       Getting Started
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/custom_tools.html">
+       Defining Custom Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/multi_input_tool.html">
+       Multi-Input Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/tool_input_validation.html">
+       Tool Input Schema
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/apify.html">
+       Apify
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/arxiv.html">
+       ArXiv API Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/awslambda.html">
+       AWS Lambda API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/bash.html">
+       Shell Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/bing_search.html">
+       Bing Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/brave_search.html">
+       Brave Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/chatgpt_plugins.html">
+       ChatGPT Plugins
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/ddg.html">
+       DuckDuckGo Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/filesystem.html">
+       File System Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/google_places.html">
+       Google Places
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/google_search.html">
+       Google Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/google_serper.html">
+       Google Serper API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/gradio_tools.html">
+       Gradio Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/graphql.html">
+       GraphQL tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/huggingface_tools.html">
+       HuggingFace Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/human_tools.html">
+       Human as a tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/ifttt.html">
+       IFTTT WebHooks
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/metaphor_search.html">
+       Metaphor Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/openweathermap.html">
+       OpenWeatherMap API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/pubmed.html">
+       PubMed Tool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/python.html">
+       Python REPL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/requests.html">
+       Requests
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/sceneXplain.html">
+       SceneXplain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/search_tools.html">
+       Search Tools
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/searx_search.html">
+       SearxNG Search API
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/serpapi.html">
+       SerpAPI
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/twilio.html">
+       Twilio
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/wikipedia.html">
+       Wikipedia
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/wolfram_alpha.html">
+       Wolfram Alpha
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/youtube.html">
+       YouTubeSearchTool
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/tools/examples/zapier.html">
+       Zapier Natural Language Actions API
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../modules/agents/agents.html">
+     Agents
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+    <label for="toctree-checkbox-7">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/agent_types.html">
+       Agent Types
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/custom_agent.html">
+       Custom Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/custom_llm_agent.html">
+       Custom LLM Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/custom_llm_chat_agent.html">
+       Custom LLM Agent (with a ChatModel)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/custom_mrkl_agent.html">
+       Custom MRKL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/custom_multi_action_agent.html">
+       Custom MultiAction Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/custom_agent_with_tool_retrieval.html">
+       Custom Agent with Tool Retrieval
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/examples/chat_conversation_agent.html">
+       Conversation Agent (for Chat Models)
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/examples/conversational_agent.html">
+       Conversation Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/examples/mrkl.html">
+       MRKL
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/examples/mrkl_chat.html">
+       MRKL Chat
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/examples/react.html">
+       ReAct
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/examples/self_ask_with_search.html">
+       Self Ask With Search
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agents/examples/structured_chat.html">
+       Structured Tool Chat Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../modules/agents/toolkits.html">
+     Toolkits
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <label for="toctree-checkbox-8">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/azure_cognitive_services.html">
+       Azure Cognitive Services Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/csv.html">
+       CSV Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/gmail.html">
+       Gmail Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/jira.html">
+       Jira
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/json.html">
+       JSON Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/openapi.html">
+       OpenAPI agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/openapi_nla.html">
+       Natural Language APIs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/pandas.html">
+       Pandas Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/playwright.html">
+       PlayWright Browser Toolkit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/powerbi.html">
+       PowerBI Dataset Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/python.html">
+       Python Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/spark.html">
+       Spark Dataframe Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/spark_sql.html">
+       Spark SQL Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/sql_database.html">
+       SQL Database Agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/toolkits/examples/vectorstore.html">
+       Vectorstore Agent
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../modules/agents/agent_executors.html">
+     Agent Executors
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+    <label for="toctree-checkbox-9">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agent_executors/examples/agent_vectorstore.html">
+       How to combine agents and vectorstores
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agent_executors/examples/async_agent.html">
+       How to use the async API for Agents
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agent_executors/examples/chatgpt_clone.html">
+       How to create ChatGPT Clone
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agent_executors/examples/handle_parsing_errors.html">
+       Handle Parsing Errors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agent_executors/examples/intermediate_steps.html">
+       How to access intermediate steps
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agent_executors/examples/max_iterations.html">
+       How to cap the max number of iterations
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agent_executors/examples/max_time_limit.html">
+       How to use a timeout for the agent
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../modules/agents/agent_executors/examples/sharedmemory_for_tools.html">
+       How to add SharedMemory to an Agent and its Tools
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../modules/agents/plan_and_execute.html">
+     Plan and Execute
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../modules/callbacks/getting_started.html">
+   Callbacks
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Examples
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../use_cases.html">
+   Use cases
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../use_cases/autonomous_agents.html">
+     Autonomous Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../use_cases/agent_simulations.html">
+     Agent Simulations
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../use_cases/personal_assistants.html">
+     Agents
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../use_cases/question_answering.html">
+     Question Answering over Docs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../use_cases/chatbots.html">
+     Chatbots
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../use_cases/tabular.html">
+     Querying Tabular Data
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../use_cases/code.html">
+     Code Understanding
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../use_cases/apis.html">
+     Interacting with APIs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../use_cases/extraction.html">
+     Extraction
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../use_cases/summarization.html">
+     Summarization
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../use_cases/evaluation.html">
+     Evaluation
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+    <label for="toctree-checkbox-11">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/agent_benchmarking.html">
+       Agent Benchmarking: Search + Calculator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/agent_vectordb_sota_pg.html">
+       Agent VectorDB Question Answering Benchmarking
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/benchmarking_template.html">
+       Benchmarking Template
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/data_augmented_question_answering.html">
+       Data Augmented Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/generic_agent_evaluation.html">
+       Generic Agent Evaluation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/huggingface_datasets.html">
+       Using Hugging Face Datasets
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/llm_math.html">
+       LLM Math
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/openapi_eval.html">
+       Evaluating an OpenAPI Chain
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/qa_benchmarking_pg.html">
+       Question Answering Benchmarking: Paul Graham Essay
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/qa_benchmarking_sota.html">
+       Question Answering Benchmarking: State of the Union Address
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/qa_generation.html">
+       QA Generation
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/question_answering.html">
+       Question Answering
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../use_cases/evaluation/sql_qa_benchmarking_chinook.html">
+       SQL Question Answering Benchmarking: Chinook
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="../additional_resources.html">
+   Additional resources
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+  <label for="toctree-checkbox-12">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference external" href="https://github.com/kyrolabs/awesome-langchain">
+     Gallery
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Ecosystem
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../integrations.html">
+   Integrations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+  <label for="toctree-checkbox-13">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/agent_with_wandb_tracing.html">
+     Tracing Walkthrough
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/ai21.html">
+     AI21 Labs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/aim_tracking.html">
+     Aim
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/airbyte.html">
+     Airbyte
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/aleph_alpha.html">
+     Aleph Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/analyticdb.html">
+     AnalyticDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/annoy.html">
+     Annoy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/anyscale.html">
+     Anyscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/apify.html">
+     Apify
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/argilla.html">
+     Argilla
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/arxiv.html">
+     Arxiv
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/atlas.html">
+     AtlasDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/aws_s3.html">
+     AWS S3 Directory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/azlyrics.html">
+     AZLyrics
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/azure_blob_storage.html">
+     Azure Blob Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/azure_cognitive_search_.html">
+     Azure Cognitive Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/azure_openai.html">
+     Azure OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/bananadev.html">
+     Banana
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/beam.html">
+     Beam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/bedrock.html">
+     Bedrock
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/bilibili.html">
+     BiliBili
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/blackboard.html">
+     Blackboard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/cassandra.html">
+     Cassandra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/cerebriumai.html">
+     CerebriumAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/chroma.html">
+     Chroma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/clearml_tracking.html">
+     ClearML
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/cohere.html">
+     Cohere
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/college_confidential.html">
+     College Confidential
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/comet_tracking.html">
+     Comet
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/confluence.html">
+     Confluence
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/ctransformers.html">
+     C Transformers
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/databerry.html">
+     Databerry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/databricks.html">
+     Databricks
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/deepinfra.html">
+     DeepInfra
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/deeplake.html">
+     Deep Lake
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/diffbot.html">
+     Diffbot
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/discord.html">
+     Discord
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/docugami.html">
+     Docugami
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/duckdb.html">
+     DuckDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/elasticsearch.html">
+     Elasticsearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/evernote.html">
+     EverNote
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/facebook_chat.html">
+     Facebook Chat
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/figma.html">
+     Figma
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/forefrontai.html">
+     ForefrontAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/git.html">
+     Git
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/gitbook.html">
+     GitBook
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/google_bigquery.html">
+     Google BigQuery
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/google_cloud_storage.html">
+     Google Cloud Storage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/google_drive.html">
+     Google Drive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/google_search.html">
+     Google Search
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/google_serper.html">
+     Google Serper
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/gooseai.html">
+     GooseAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/gpt4all.html">
+     GPT4All
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/graphsignal.html">
+     Graphsignal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/gutenberg.html">
+     Gutenberg
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/hacker_news.html">
+     Hacker News
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/hazy_research.html">
+     Hazy Research
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/helicone.html">
+     Helicone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/huggingface.html">
+     Hugging Face
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/ifixit.html">
+     iFixit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/imsdb.html">
+     IMSDb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/jina.html">
+     Jina
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/lancedb.html">
+     LanceDB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/llamacpp.html">
+     Llama.cpp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/mediawikidump.html">
+     MediaWikiDump
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/metal.html">
+     Metal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/microsoft_onedrive.html">
+     Microsoft OneDrive
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/microsoft_powerpoint.html">
+     Microsoft PowerPoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/microsoft_word.html">
+     Microsoft Word
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/milvus.html">
+     Milvus
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/mlflow_tracking.html">
+     MLflow
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/modal.html">
+     Modal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/modern_treasury.html">
+     Modern Treasury
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/momento.html">
+     Momento
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/myscale.html">
+     MyScale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/nlpcloud.html">
+     NLPCloud
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/notion.html">
+     Notion DB
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/obsidian.html">
+     Obsidian
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/openai.html">
+     OpenAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/opensearch.html">
+     OpenSearch
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/openweathermap.html">
+     OpenWeatherMap
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/petals.html">
+     Petals
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/pgvector.html">
+     PGVector
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/pinecone.html">
+     Pinecone
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/pipelineai.html">
+     PipelineAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/predictionguard.html">
+     Prediction Guard
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/promptlayer.html">
+     PromptLayer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/psychic.html">
+     Psychic
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/qdrant.html">
+     Qdrant
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/rebuff.html">
+     Rebuff
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/reddit.html">
+     Reddit
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/redis.html">
+     Redis
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/replicate.html">
+     Replicate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/roam.html">
+     Roam
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/runhouse.html">
+     Runhouse
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/rwkv.html">
+     RWKV-4
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/sagemaker_endpoint.html">
+     SageMaker Endpoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/searx.html">
+     SearxNG Search API
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/serpapi.html">
+     SerpAPI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/sklearn.html">
+     scikit-learn
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/slack.html">
+     Slack
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/spacy.html">
+     spaCy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/spreedly.html">
+     Spreedly
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/stochasticai.html">
+     StochasticAI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/stripe.html">
+     Stripe
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/tair.html">
+     Tair
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/telegram.html">
+     Telegram
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/tomarkdown.html">
+     2Markdown
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/trello.html">
+     Trello
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/twitter.html">
+     Twitter
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/unstructured.html">
+     Unstructured
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/vectara.html">
+     Vectara
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/vespa.html">
+     Vespa
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/wandb_tracking.html">
+     Weights &amp; Biases
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/weather.html">
+     Weather
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/weaviate.html">
+     Weaviate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/whatsapp.html">
+     WhatsApp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/whylabs_profiling.html">
+     WhyLabs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/wikipedia.html">
+     Wikipedia
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/wolfram_alpha.html">
+     Wolfram Alpha
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/writer.html">
+     Writer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/yeagerai.html">
+     Yeager.ai
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/youtube.html">
+     YouTube
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/zep.html">
+     Zep
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../integrations/zilliz.html">
+     Zilliz
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ecosystem/deployments.html">
+   Deployments
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://github.com/hwchase17/langchain-hub">
+   LangChainHub
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../dependents.html">
+   Dependents
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Find us
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference external" href="https://twitter.com/LangChainAI">
+   Twitter
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://discord.gg/6adMQxSpJS">
+   Discord
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://forms.gle/57d8AmXBYp8PP8tZA">
+   Request production support
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+<a href="https://github.com/hwchase17/langchain"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="bottom"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="../_sources/additional_resources/youtube.md.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.md</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#official-langchain-youtube-channel">
+   Official LangChain YouTube channel
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#introduction-to-langchain-with-harrison-chase-creator-of-langchain">
+   Introduction to LangChain with Harrison Chase, creator of LangChain
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#videos-sorted-by-views">
+   Videos (sorted by views)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#tutorial-series">
+   Tutorial Series
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#langchain-for-gen-ai-and-llms-by-james-briggs">
+     LangChain for Gen AI and LLMs by James Briggs:
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#langchain-101-by-data-independent">
+     LangChain 101 by Data Independent:
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#langchain-how-to-and-guides-by-sam-witteveen">
+     LangChain How to and guides by Sam Witteveen:
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#langchain-by-prompt-engineering">
+     LangChain by Prompt Engineering:
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#langchain-by-chat-with-data">
+     LangChain by Chat with data
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#get-sh-t-done-with-prompt-engineering-and-langchain-by-venelin-valkov">
+     Get SH*T Done with Prompt Engineering and LangChain by Venelin Valkov
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>YouTube</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#official-langchain-youtube-channel">
+   Official LangChain YouTube channel
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#introduction-to-langchain-with-harrison-chase-creator-of-langchain">
+   Introduction to LangChain with Harrison Chase, creator of LangChain
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#videos-sorted-by-views">
+   Videos (sorted by views)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#tutorial-series">
+   Tutorial Series
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#langchain-for-gen-ai-and-llms-by-james-briggs">
+     LangChain for Gen AI and LLMs by James Briggs:
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#langchain-101-by-data-independent">
+     LangChain 101 by Data Independent:
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#langchain-how-to-and-guides-by-sam-witteveen">
+     LangChain How to and guides by Sam Witteveen:
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#langchain-by-prompt-engineering">
+     LangChain by Prompt Engineering:
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#langchain-by-chat-with-data">
+     LangChain by Chat with data
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#get-sh-t-done-with-prompt-engineering-and-langchain-by-venelin-valkov">
+     Get SH*T Done with Prompt Engineering and LangChain by Venelin Valkov
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <section id="youtube">
+<h1>YouTube<a class="headerlink" href="#youtube" title="Permalink to this headline">#</a></h1>
+<p>This is a collection of <code class="docutils literal notranslate"><span class="pre">LangChain</span></code> videos on <code class="docutils literal notranslate"><span class="pre">YouTube</span></code>.</p>
+<section id="official-langchain-youtube-channel">
+<h2><a class="reference external" href="https://www.youtube.com/&#64;LangChain">Official LangChain YouTube channel</a><a class="headerlink" href="#official-langchain-youtube-channel" title="Permalink to this headline">#</a></h2>
+</section>
+<section id="introduction-to-langchain-with-harrison-chase-creator-of-langchain">
+<h2>Introduction to LangChain with Harrison Chase, creator of LangChain<a class="headerlink" href="#introduction-to-langchain-with-harrison-chase-creator-of-langchain" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://youtu.be/nMniwlGyX-c">Building the Future with LLMs, <code class="docutils literal notranslate"><span class="pre">LangChain</span></code>, &amp; <code class="docutils literal notranslate"><span class="pre">Pinecone</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;pinecone-io">Pinecone</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/lhby7Ql7hbk">LangChain and Weaviate with Harrison Chase and Bob van Luijt - Weaviate Podcast #36</a> by <a class="reference external" href="https://www.youtube.com/&#64;Weaviate">Weaviate • Vector Database</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/zaYTXQFR0_s?t=788">LangChain Demo + Q&amp;A with Harrison Chase</a> by <a class="reference external" href="https://www.youtube.com/&#64;FullStackDeepLearning">Full Stack Deep Learning</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/gVkF8cwfBLI">LangChain Agents: Build Personal Assistants For Your Data (Q&amp;A with Harrison Chase and Mayo Oshin)</a> by <a class="reference external" href="https://www.youtube.com/&#64;chatwithdata">Chat with data</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/k8GNCCs16F4">LangChain “Agents in Production” Webinar</a> by <a class="reference external" href="https://www.youtube.com/&#64;LangChain">LangChain</a></p></li>
+</ul>
+</section>
+<section id="videos-sorted-by-views">
+<h2>Videos (sorted by views)<a class="headerlink" href="#videos-sorted-by-views" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.youtube.com/live/M-2Cj_2fzWI?feature=share">Building AI LLM Apps with LangChain (and more?) - LIVE STREAM</a> by <a class="reference external" href="https://www.youtube.com/&#64;NicholasRenotte">Nicholas Renotte</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/wYGbY811oMo">First look - <code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code> + <code class="docutils literal notranslate"><span class="pre">WolframAlpha</span></code> (<code class="docutils literal notranslate"><span class="pre">GPT-3.5</span></code> and Wolfram|Alpha via LangChain by James Weaver)</a> by <a class="reference external" href="https://www.youtube.com/&#64;DrAlanDThompson">Dr Alan D. Thompson</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/RoR4XJw8wIc">LangChain explained - The hottest new Python framework</a> by <a class="reference external" href="https://www.youtube.com/&#64;AssemblyAI">AssemblyAI</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/2xNzB7xq8nk">Chatbot with INFINITE MEMORY using <code class="docutils literal notranslate"><span class="pre">OpenAI</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">Pinecone</span></code> - <code class="docutils literal notranslate"><span class="pre">GPT-3</span></code>, <code class="docutils literal notranslate"><span class="pre">Embeddings</span></code>, <code class="docutils literal notranslate"><span class="pre">ADA</span></code>, <code class="docutils literal notranslate"><span class="pre">Vector</span> <span class="pre">DB</span></code>, <code class="docutils literal notranslate"><span class="pre">Semantic</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;DavidShapiroAutomator">David Shapiro ~ AI</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/X51N9C-OhlE">LangChain for LLMs is… basically just an Ansible playbook</a> by <a class="reference external" href="https://www.youtube.com/&#64;DavidShapiroAutomator">David Shapiro ~ AI</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/-75p09zFUJY">Build your own LLM Apps with LangChain &amp; <code class="docutils literal notranslate"><span class="pre">GPT-Index</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;1littlecoder">1littlecoder</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/lg3kJvf1kXo"><code class="docutils literal notranslate"><span class="pre">BabyAGI</span></code> - New System of Autonomous AI Agents with LangChain</a> by <a class="reference external" href="https://www.youtube.com/&#64;1littlecoder">1littlecoder</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/WosPGHPObx8">Run <code class="docutils literal notranslate"><span class="pre">BabyAGI</span></code> with Langchain Agents (with Python Code)</a> by <a class="reference external" href="https://www.youtube.com/&#64;1littlecoder">1littlecoder</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/p9v2-xEa9A0">How to Use Langchain With <code class="docutils literal notranslate"><span class="pre">Zapier</span></code> | Write and Send Email with GPT-3 | OpenAI API Tutorial</a> by <a class="reference external" href="https://www.youtube.com/&#64;starmorph">StarMorph AI</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/NC1Ni9KS-rk">Use Your Locally Stored Files To Get Response From GPT - <code class="docutils literal notranslate"><span class="pre">OpenAI</span></code> | Langchain | Python</a> by <a class="reference external" href="https://www.youtube.com/&#64;shweta-lodha">Shweta Lodha</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/veV2I-NEjaM"><code class="docutils literal notranslate"><span class="pre">Langchain</span> <span class="pre">JS</span></code> | How to Use GPT-3, GPT-4 to Reference your own Data | <code class="docutils literal notranslate"><span class="pre">OpenAI</span> <span class="pre">Embeddings</span></code> Intro</a> by <a class="reference external" href="https://www.youtube.com/&#64;starmorph">StarMorph AI</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/kmbS6FDQh7c">The easiest way to work with large language models | Learn LangChain in 10min</a> by <a class="reference external" href="https://www.youtube.com/&#64;SophiaYangDS">Sophia Yang</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/yWbnH6inT_U">4 Autonomous AI Agents: “Westworld” simulation <code class="docutils literal notranslate"><span class="pre">BabyAGI</span></code>, <code class="docutils literal notranslate"><span class="pre">AutoGPT</span></code>, <code class="docutils literal notranslate"><span class="pre">Camel</span></code>, <code class="docutils literal notranslate"><span class="pre">LangChain</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;SophiaYangDS">Sophia Yang</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/J-GL0htqda8">AI CAN SEARCH THE INTERNET? Langchain Agents + OpenAI ChatGPT</a> by <a class="reference external" href="https://www.youtube.com/&#64;tylerwhatsgood">tylerwhatsgood</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/jRnUPUTkZmU">Query Your Data with GPT-4 | Embeddings, Vector Databases | Langchain JS Knowledgebase</a> by <a class="reference external" href="https://www.youtube.com/&#64;starmorph">StarMorph AI</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/7AGj4Td5Lgw"><code class="docutils literal notranslate"><span class="pre">Weaviate</span></code> + LangChain for LLM apps presented by Erika Cardenas</a> by <a class="reference external" href="https://www.youtube.com/&#64;Weaviate"><code class="docutils literal notranslate"><span class="pre">Weaviate</span></code> • Vector Database</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/oYVYIq0lOtI">Langchain Overview — How to Use Langchain &amp; <code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;pythoninoffice6568">Python In Office</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/oYVYIq0lOtI">Langchain Overview - How to Use Langchain &amp; <code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;pythoninoffice6568">Python In Office</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/NIG8lXk0ULg">Custom langchain Agent &amp; Tools with memory. Turn any <code class="docutils literal notranslate"><span class="pre">Python</span> <span class="pre">function</span></code> into langchain tool with Gpt 3</a> by <a class="reference external" href="https://www.youtube.com/&#64;echohive">echohive</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/Xxxuw4_iCzw">LangChain: Run Language Models Locally - <code class="docutils literal notranslate"><span class="pre">Hugging</span> <span class="pre">Face</span> <span class="pre">Models</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;engineerprompt">Prompt Engineering</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/TQZfB2bzVwU"><code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code> with any <code class="docutils literal notranslate"><span class="pre">YouTube</span></code> video using langchain and <code class="docutils literal notranslate"><span class="pre">chromadb</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;echohive">echohive</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/v2i1YDtrIwk">How to Talk to a <code class="docutils literal notranslate"><span class="pre">PDF</span></code> using LangChain and <code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;automatalearninglab">Automata Learning Lab</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/O5C0wfsen98">Langchain Document Loaders Part 1: Unstructured Files</a> by <a class="reference external" href="https://www.youtube.com/&#64;merksworld">Merk</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/1aRu8b0XNOQ">LangChain - Prompt Templates (what all the best prompt engineers use)</a> by <a class="reference external" href="https://www.youtube.com/&#64;nick_daigs">Nick Daigler</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/DkW_rDndts8">LangChain. Crear aplicaciones Python impulsadas por GPT</a> by <a class="reference external" href="https://www.youtube.com/&#64;0utKast">Jesús Conde</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/fLy0VenZyGc">Easiest Way to Use GPT In Your Products | LangChain Basics Tutorial</a> by <a class="reference external" href="https://www.youtube.com/&#64;therachelwoods">Rachel Woods</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/wx1z_hs5P6E"><code class="docutils literal notranslate"><span class="pre">BabyAGI</span></code> + <code class="docutils literal notranslate"><span class="pre">GPT-4</span></code> Langchain Agent with Internet Access</a> by <a class="reference external" href="https://www.youtube.com/&#64;tylerwhatsgood">tylerwhatsgood</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/mb_YAABSplk">Learning LLM Agents. How does it actually work? LangChain, AutoGPT &amp; OpenAI</a> by <a class="reference external" href="https://www.youtube.com/&#64;processusAI">Arnoldas Kemeklis</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/Wxx1KUWJFv4">Get Started with LangChain in <code class="docutils literal notranslate"><span class="pre">Node.js</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;DevelopersDigest">Developers Digest</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/DYOU_Z0hAwo">LangChain + <code class="docutils literal notranslate"><span class="pre">OpenAI</span></code> tutorial: Building a Q&amp;A system w/ own text data</a> by <a class="reference external" href="https://www.youtube.com/&#64;SamuelChan">Samuel Chan</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/yribLAb-pxA">Langchain + <code class="docutils literal notranslate"><span class="pre">Zapier</span></code> Agent</a> by <a class="reference external" href="https://www.youtube.com/&#64;merksworld">Merk</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/9Y0TBC63yZg">Connecting the Internet with <code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code> (LLMs) using Langchain And Answers Your Questions</a> by <a class="reference external" href="https://www.youtube.com/&#64;insightbuilder">Kamalraj M M</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/sp3-WLKEcBg">Build More Powerful LLM Applications for Business’s with LangChain (Beginners Guide)</a> by<a class="reference external" href="https://www.youtube.com/&#64;nocodeblackbox"> No Code Blackbox</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/zJxDHaWt-6o">LangFlow LLM Agent Demo for 🦜🔗LangChain</a> by <a class="reference external" href="https://www.youtube.com/&#64;CobusGreylingZA">Cobus Greyling</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/eYer3uzrcuM">Chatbot Factory: Streamline Python Chatbot Creation with LLMs and Langchain</a> by <a class="reference external" href="https://www.youtube.com/&#64;CobusGreylingZA">Finxter</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/0XDLyY90E2c">LangChain Tutorial - ChatGPT mit eigenen Daten</a> by <a class="reference external" href="https://www.youtube.com/&#64;codingcrashkurse6429">Coding Crashkurse</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/tjeti5vXWOU">Chat with a <code class="docutils literal notranslate"><span class="pre">CSV</span></code> | LangChain Agents Tutorial (Beginners)</a> by <a class="reference external" href="https://www.youtube.com/&#64;godataprof">GoDataProf</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/fw8y5VRei5Y">Introdução ao Langchain - #Cortes - Live DataHackers</a> by <a class="reference external" href="https://www.youtube.com/&#64;profjoaogabriellima">Prof. João Gabriel Lima</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/vxUGx8aZpDE">LangChain: Level up <code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code> !? | LangChain Tutorial Part 1</a> by <a class="reference external" href="https://www.youtube.com/&#64;codeaffinitydev">Code Affinity</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/QpTiXyK1jus">KI schreibt krasses Youtube Skript 😲😳 | LangChain Tutorial Deutsch</a> by <a class="reference external" href="https://www.youtube.com/&#64;simpleki">SimpleKI</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/Kjy7cx1r75g">Chat with Audio: Langchain, <code class="docutils literal notranslate"><span class="pre">Chroma</span> <span class="pre">DB</span></code>, OpenAI, and <code class="docutils literal notranslate"><span class="pre">Assembly</span> <span class="pre">AI</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;AIAnytime">AI Anytime</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/9G05qybShv8">QA over documents with Auto vector index selection with Langchain router chains</a> by <a class="reference external" href="https://www.youtube.com/&#64;echohive">echohive</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/O7NhQGu1m6c">Build your own custom LLM application with <code class="docutils literal notranslate"><span class="pre">Bubble.io</span></code> &amp; Langchain (No Code &amp; Beginner friendly)</a> by <a class="reference external" href="https://www.youtube.com/&#64;nocodeblackbox">No Code Blackbox</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/X4YbNECRr7o">Simple App to Question Your Docs: Leveraging <code class="docutils literal notranslate"><span class="pre">Streamlit</span></code>, <code class="docutils literal notranslate"><span class="pre">Hugging</span> <span class="pre">Face</span> <span class="pre">Spaces</span></code>, LangChain, and <code class="docutils literal notranslate"><span class="pre">Claude</span></code>!</a> by <a class="reference external" href="https://www.youtube.com/&#64;chrisalexiuk">Chris Alexiuk</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/5zIU6_rdJCU">LANGCHAIN AI- <code class="docutils literal notranslate"><span class="pre">ConstitutionalChainAI</span></code> + Databutton AI ASSISTANT Web App</a> by <a class="reference external" href="https://www.youtube.com/&#64;Avra_b">Avra</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/cvAwOGfeHgw">LANGCHAIN AI AUTONOMOUS AGENT WEB APP - 👶 <code class="docutils literal notranslate"><span class="pre">BABY</span> <span class="pre">AGI</span></code> 🤖 with EMAIL AUTOMATION using <code class="docutils literal notranslate"><span class="pre">DATABUTTON</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;Avra_b">Avra</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/v_LIcVyg5dk">The Future of Data Analysis: Using A.I. Models in Data Analysis (LangChain)</a> by <a class="reference external" href="https://www.youtube.com/&#64;absentdata">Absent Data</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/70lqvTFh_Yg">Memory in LangChain | Deep dive (python)</a> by <a class="reference external" href="https://www.youtube.com/&#64;EdenMarco">Eden Marco</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/zS8_qosHNMw">9 LangChain UseCases | Beginner’s Guide | 2023</a> by <a class="reference external" href="https://www.youtube.com/&#64;datasciencebasics">Data Science Basics</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/JSe11L1a_QQ">Use Large Language Models in Jupyter Notebook | LangChain | Agents &amp; Indexes</a> by <a class="reference external" href="https://www.youtube.com/&#64;AbhinawTiwariAT">Abhinaw Tiwari</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/N4k459Zw2PU">How to Talk to Your Langchain Agent | <code class="docutils literal notranslate"><span class="pre">11</span> <span class="pre">Labs</span></code> + <code class="docutils literal notranslate"><span class="pre">Whisper</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;vrsen">VRSEN</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/mPYEPzLkeks">LangChain Deep Dive: 5 FUN AI App Ideas To Build Quickly and Easily</a> by <a class="reference external" href="https://www.youtube.com/&#64;jamesnocode">James NoCode</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/ogEalPMUCSY">BEST OPEN Alternative to OPENAI’s EMBEDDINGs for Retrieval QA: LangChain</a> by <a class="reference external" href="https://www.youtube.com/&#64;engineerprompt">Prompt Engineering</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/T6c_XsyaNSQ">LangChain 101: Models</a> by <a class="reference external" href="https://www.youtube.com/&#64;realmckaywrigley">Mckay Wrigley</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/W3AoeMrg27o">LangChain with JavaScript Tutorial #1 | Setup &amp; Using LLMs</a> by <a class="reference external" href="https://www.youtube.com/&#64;leonvanzyl">Leon van Zyl</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/iI84yym473Q">LangChain Overview &amp; Tutorial for Beginners: Build Powerful AI Apps Quickly &amp; Easily (ZERO CODE)</a> by <a class="reference external" href="https://www.youtube.com/&#64;jamesnocode">James NoCode</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/UO699Szp82M">LangChain In Action: Real-World Use Case With Step-by-Step Tutorial</a> by <a class="reference external" href="https://www.youtube.com/&#64;rabbitmetrics">Rabbitmetrics</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/p_MQRWH5Y6k">Summarizing and Querying Multiple Papers with LangChain</a> by <a class="reference external" href="https://www.youtube.com/&#64;automatalearninglab">Automata Learning Lab</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/Webau9lEzoI">Using Langchain (and <code class="docutils literal notranslate"><span class="pre">Replit</span></code>) through <code class="docutils literal notranslate"><span class="pre">Tana</span></code>, ask <code class="docutils literal notranslate"><span class="pre">Google</span></code>/<code class="docutils literal notranslate"><span class="pre">Wikipedia</span></code>/<code class="docutils literal notranslate"><span class="pre">Wolfram</span> <span class="pre">Alpha</span></code> to fill out a table</a> by <a class="reference external" href="https://www.youtube.com/&#64;StianHaklev">Stian Håklev</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/wUAUdEw5oxM">Langchain PDF App (GUI) | Create a ChatGPT For Your <code class="docutils literal notranslate"><span class="pre">PDF</span></code> in Python</a> by <a class="reference external" href="https://www.youtube.com/&#64;alejandro_ao">Alejandro AO - Software &amp; Ai</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/imDfPmMKEjM">Auto-GPT with LangChain 🔥 | Create Your Own Personal AI Assistant</a> by <a class="reference external" href="https://www.youtube.com/&#64;datasciencebasics">Data Science Basics</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/3jFXRNn2Bu8">Create Your OWN Slack AI Assistant with Python &amp; LangChain</a> by <a class="reference external" href="https://www.youtube.com/&#64;daveebbelaar">Dave Ebbelaar</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/4p1Fojur8Zw">How to Create LOCAL Chatbots with GPT4All and LangChain [Full Guide]</a> by <a class="reference external" href="https://www.youtube.com/&#64;LiamOttley">Liam Ottley</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/hOrtuumOrv8">Build a <code class="docutils literal notranslate"><span class="pre">Multilingual</span> <span class="pre">PDF</span></code> Search App with LangChain, <code class="docutils literal notranslate"><span class="pre">Cohere</span></code> and <code class="docutils literal notranslate"><span class="pre">Bubble</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;menloparklab">Menlo Park Lab</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/jDJIIVWTZDE">Building a LangChain Agent (code-free!) Using <code class="docutils literal notranslate"><span class="pre">Bubble</span></code> and <code class="docutils literal notranslate"><span class="pre">Flowise</span></code></a> by <a class="reference external" href="https://www.youtube.com/&#64;menloparklab">Menlo Park Lab</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/s33v5cIeqA4">Build a LangChain-based Semantic PDF Search App with No-Code Tools Bubble and Flowise</a> by <a class="reference external" href="https://www.youtube.com/&#64;menloparklab">Menlo Park Lab</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/Cwq91cj2Pnc">LangChain Memory Tutorial | Building a ChatGPT Clone in Python</a> by <a class="reference external" href="https://www.youtube.com/&#64;alejandro_ao">Alejandro AO - Software &amp; Ai</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/TeDgIDqQmzs">ChatGPT For Your DATA | Chat with Multiple Documents Using LangChain</a> by <a class="reference external" href="https://www.youtube.com/&#64;datasciencebasics">Data Science Basics</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/XJRoDEctAwA"><code class="docutils literal notranslate"><span class="pre">Llama</span> <span class="pre">Index</span></code>: Chat with Documentation using URL Loader</a> by <a class="reference external" href="https://www.youtube.com/&#64;merksworld">Merk</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/1MsmqMg3yUc">Using OpenAI, LangChain, and <code class="docutils literal notranslate"><span class="pre">Gradio</span></code> to Build Custom GenAI Applications</a> by <a class="reference external" href="https://www.youtube.com/&#64;dkhundley">David Hundley</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/FuqdVNB_8c0">LangChain, Chroma DB, OpenAI Beginner Guide | ChatGPT with your PDF</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/MlK6SIjcjE8">LangChain Crash Course: Build an AutoGPT app in 25 minutes</a> by <a class="reference external" href="https://www.youtube.com/&#64;NicholasRenotte">Nicholas Renotte</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/LbT1yp6quS8">LangChain Crash Course - Build apps with language models</a> by <a class="reference external" href="https://www.youtube.com/&#64;patloeber">Patrick Loeber</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/aywZrzNaKjs">LangChain Explained in 13 Minutes | QuickStart Tutorial for Beginners</a> by <a class="reference external" href="https://www.youtube.com/&#64;rabbitmetrics">Rabbitmetrics</a></p></li>
+</ul>
+</section>
+<section id="tutorial-series">
+<h2>Tutorial Series<a class="headerlink" href="#tutorial-series" title="Permalink to this headline">#</a></h2>
+<section id="langchain-for-gen-ai-and-llms-by-james-briggs">
+<h3><a class="reference external" href="https://www.youtube.com/playlist?list=PLIUOU7oqGTLieV9uTIFMm6_4PXg-hlN6F">LangChain for Gen AI and LLMs</a> by <a class="reference external" href="https://www.youtube.com/&#64;jamesbriggs">James Briggs</a>:<a class="headerlink" href="#langchain-for-gen-ai-and-llms-by-james-briggs" title="Permalink to this headline">#</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://youtu.be/nE2skSRWTTs">Getting Started with <code class="docutils literal notranslate"><span class="pre">GPT-3</span></code> vs. Open Source LLMs</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/RflBcK0oDH0">Prompt Templates for <code class="docutils literal notranslate"><span class="pre">GPT</span> <span class="pre">3.5</span></code> and other LLMs</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/S8j9Tk0lZHU">LLM Chains using <code class="docutils literal notranslate"><span class="pre">GPT</span> <span class="pre">3.5</span></code> and other LLMs</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/X05uK0TZozM">Chatbot Memory for <code class="docutils literal notranslate"><span class="pre">Chat-GPT</span></code>, <code class="docutils literal notranslate"><span class="pre">Davinci</span></code> + other LLMs</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/CnAgB3A5OlU">Chat with OpenAI in LangChain</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/kvdVduIJsc8">Fixing LLM Hallucinations with Retrieval Augmentation in LangChain</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/jSP-gSEyVeI">LangChain Agents Deep Dive with GPT 3.5</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/q-HNphrWsDE">Create Custom Tools for Chatbots in LangChain</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/H6bCqqw9xyI">Build Conversational Agents with Vector DBs</a></p></li>
+</ul>
+</section>
+<section id="langchain-101-by-data-independent">
+<h3><a class="reference external" href="https://www.youtube.com/playlist?list=PLqZXAkvF1bPNQER9mLmDbntNfSpzdDIU5">LangChain 101</a> by <a class="reference external" href="https://www.youtube.com/&#64;DataIndependent">Data Independent</a>:<a class="headerlink" href="#langchain-101-by-data-independent" title="Permalink to this headline">#</a></h3>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="https://youtu.be/_v_fgW2SkkQ">What Is LangChain? - LangChain + <code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code> Overview</a></p></li>
+</ol>
+<ul class="simple">
+<li><p><a class="reference external" href="https://youtu.be/kYRB-vJFy38">Quickstart Guide</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/2xxziIWmaSA">Beginner Guide To 7 Essential Concepts</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/UijbzCIJ99g"><code class="docutils literal notranslate"><span class="pre">OpenAI</span></code> + <code class="docutils literal notranslate"><span class="pre">Wolfram</span> <span class="pre">Alpha</span></code></a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/EnT-ZTrcPrg">Ask Questions On Your Custom (or Private) Files</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/IqqHqDcXLww">Connect <code class="docutils literal notranslate"><span class="pre">Google</span> <span class="pre">Drive</span> <span class="pre">Files</span></code> To <code class="docutils literal notranslate"><span class="pre">OpenAI</span></code></a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/pNcQ5XXMgH4"><code class="docutils literal notranslate"><span class="pre">YouTube</span> <span class="pre">Transcripts</span></code> + <code class="docutils literal notranslate"><span class="pre">OpenAI</span></code></a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/h0DHDp1FbmQ">Question A 300 Page Book (w/ <code class="docutils literal notranslate"><span class="pre">OpenAI</span></code> + <code class="docutils literal notranslate"><span class="pre">Pinecone</span></code>)</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/f9_BWhCI4Zo">Workaround <code class="docutils literal notranslate"><span class="pre">OpenAI's</span></code> Token Limit With Chain Types</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/U_eV8wfMkXU">Build Your Own OpenAI + LangChain Web App in 23 Minutes</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/e9P7FLi5Zy8">Working With The New <code class="docutils literal notranslate"><span class="pre">ChatGPT</span> <span class="pre">API</span></code></a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/y1pyAQM-3Bo">OpenAI + LangChain Wrote Me 100 Custom Sales Emails</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/KwAXfey-xQk">Structured Output From <code class="docutils literal notranslate"><span class="pre">OpenAI</span></code> (Clean Dirty Data)</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/7tNm0yiDigU">Connect <code class="docutils literal notranslate"><span class="pre">OpenAI</span></code> To +5,000 Tools (LangChain + <code class="docutils literal notranslate"><span class="pre">Zapier</span></code>)</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/xZzvwR9jdPA">Use LLMs To Extract Data From Text (Expert Mode)</a></p></li>
+<li><p>⛓ <a class="reference external" href="https://youtu.be/shkMOHwJ4SM">Extract Insights From Interview Transcripts Using LLMs</a></p></li>
+<li><p>⛓ <a class="reference external" href="https://youtu.be/qaPMdcCqtWk">5 Levels Of LLM Summarizing: Novice to Expert</a></p></li>
+</ul>
+</section>
+<section id="langchain-how-to-and-guides-by-sam-witteveen">
+<h3><a class="reference external" href="https://www.youtube.com/playlist?list=PL8motc6AQftk1Bs42EW45kwYbyJ4jOdiZ">LangChain How to and guides</a> by <a class="reference external" href="https://www.youtube.com/&#64;samwitteveenai">Sam Witteveen</a>:<a class="headerlink" href="#langchain-how-to-and-guides-by-sam-witteveen" title="Permalink to this headline">#</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://youtu.be/J_0qvRt4LNk">LangChain Basics - LLMs &amp; PromptTemplates with Colab</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/hI2BY7yl_Ac">LangChain Basics - Tools and Chains</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/phHqvLHCwH4"><code class="docutils literal notranslate"><span class="pre">ChatGPT</span> <span class="pre">API</span></code> Announcement &amp; Code Walkthrough with LangChain</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/X550Zbz_ROE">Conversations with Memory (explanation &amp; code walkthrough)</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/VW5LBavIfY4">Chat with <code class="docutils literal notranslate"><span class="pre">Flan20B</span></code></a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/Kn7SX2Mx_Jk">Using <code class="docutils literal notranslate"><span class="pre">Hugging</span> <span class="pre">Face</span> <span class="pre">Models</span></code> locally (code walkthrough)</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/dy7-LvDu-3s"><code class="docutils literal notranslate"><span class="pre">PAL</span></code> : Program-aided Language Models with LangChain code</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/LNq_2s_H01Y">Building a Summarization System with LangChain and <code class="docutils literal notranslate"><span class="pre">GPT-3</span></code> - Part 1</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/d-yeHDLgKHw">Building a Summarization System with LangChain and <code class="docutils literal notranslate"><span class="pre">GPT-3</span></code> - Part 2</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/7YEiEyfPF5U">Microsoft’s <code class="docutils literal notranslate"><span class="pre">Visual</span> <span class="pre">ChatGPT</span></code> using LangChain</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/ziu87EXZVUE">LangChain Agents - Joining Tools and Chains with Decisions</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/rFNG0MIEuW0">Comparing LLMs with LangChain</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/uoVqNFDwpX4">Using <code class="docutils literal notranslate"><span class="pre">Constitutional</span> <span class="pre">AI</span></code> in LangChain</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/v6sF8Ed3nTE">Talking to <code class="docutils literal notranslate"><span class="pre">Alpaca</span></code> with LangChain - Creating an Alpaca Chatbot</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/xQ3mZhw69bc">Talk to your <code class="docutils literal notranslate"><span class="pre">CSV</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">Excel</span></code> with LangChain</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/QBcDLSE2ERA"><code class="docutils literal notranslate"><span class="pre">BabyAGI</span></code>: Discover the Power of Task-Driven Autonomous Agents!</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/DRgPyOXZ-oE">Improve your <code class="docutils literal notranslate"><span class="pre">BabyAGI</span></code> with LangChain</a></p></li>
+<li><p>⛓ <a class="reference external" href="https://youtu.be/ZzgUqFtxgXI">Master <code class="docutils literal notranslate"><span class="pre">PDF</span></code> Chat with LangChain - Your essential guide to queries on documents</a></p></li>
+<li><p>⛓ <a class="reference external" href="https://youtu.be/KerHlb8nuVc">Using LangChain with <code class="docutils literal notranslate"><span class="pre">DuckDuckGO</span></code> <code class="docutils literal notranslate"><span class="pre">Wikipedia</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">PythonREPL</span></code> Tools</a></p></li>
+<li><p>⛓ <a class="reference external" href="https://youtu.be/biS8G8x8DdA">Building Custom Tools and Agents with LangChain (gpt-3.5-turbo)</a></p></li>
+<li><p>⛓ <a class="reference external" href="https://youtu.be/3yPBVii7Ct0">LangChain Retrieval QA Over Multiple Files with <code class="docutils literal notranslate"><span class="pre">ChromaDB</span></code></a></p></li>
+<li><p>⛓ <a class="reference external" href="https://youtu.be/cFCGUjc33aU">LangChain Retrieval QA with Instructor Embeddings &amp; <code class="docutils literal notranslate"><span class="pre">ChromaDB</span></code> for PDFs</a></p></li>
+<li><p>⛓ <a class="reference external" href="https://youtu.be/9ISVjh8mdlA">LangChain + Retrieval Local LLMs for Retrieval QA - No OpenAI!!!</a></p></li>
+</ul>
+</section>
+<section id="langchain-by-prompt-engineering">
+<h3><a class="reference external" href="https://www.youtube.com/playlist?list=PLVEEucA9MYhOu89CX8H3MBZqayTbcCTMr">LangChain</a> by <a class="reference external" href="https://www.youtube.com/&#64;engineerprompt">Prompt Engineering</a>:<a class="headerlink" href="#langchain-by-prompt-engineering" title="Permalink to this headline">#</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://youtu.be/5-fc4Tlgmro">LangChain Crash Course — All You Need to Know to Build Powerful Apps with LLMs</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/s5LhRdh5fu4">Working with MULTIPLE <code class="docutils literal notranslate"><span class="pre">PDF</span></code> Files in LangChain: <code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code> for your Data</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/TLf90ipMzfE"><code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code> for YOUR OWN <code class="docutils literal notranslate"><span class="pre">PDF</span></code> files with LangChain</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/wrD-fZvT6UI">Talk to YOUR DATA without OpenAI APIs: LangChain</a></p></li>
+<li><p>⛓️ <a class="reference external" href="https://youtu.be/RBnuhhmD21U">CHATGPT For WEBSITES: Custom ChatBOT</a></p></li>
+</ul>
+</section>
+<section id="langchain-by-chat-with-data">
+<h3>LangChain by <a class="reference external" href="https://www.youtube.com/&#64;chatwithdata">Chat with data</a><a class="headerlink" href="#langchain-by-chat-with-data" title="Permalink to this headline">#</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://youtu.be/bH722QgRlhQ">LangChain Beginner’s Tutorial for <code class="docutils literal notranslate"><span class="pre">Typescript</span></code>/<code class="docutils literal notranslate"><span class="pre">Javascript</span></code></a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/Ix9WIZpArm0"><code class="docutils literal notranslate"><span class="pre">GPT-4</span></code> Tutorial: How to Chat With Multiple <code class="docutils literal notranslate"><span class="pre">PDF</span></code> Files (~1000 pages of Tesla’s 10-K Annual Reports)</a></p></li>
+<li><p><a class="reference external" href="https://youtu.be/ih9PBGVVOO4"><code class="docutils literal notranslate"><span class="pre">GPT-4</span></code> &amp; LangChain Tutorial: How to Chat With A 56-Page <code class="docutils literal notranslate"><span class="pre">PDF</span></code> Document (w/<code class="docutils literal notranslate"><span class="pre">Pinecone</span></code>)</a></p></li>
+<li><p>⛓ <a class="reference external" href="https://youtu.be/R2FMzcsmQY8">LangChain &amp; Supabase Tutorial: How to Build a ChatGPT Chatbot For Your Website</a></p></li>
+</ul>
+</section>
+<section id="get-sh-t-done-with-prompt-engineering-and-langchain-by-venelin-valkov">
+<h3><a class="reference external" href="https://www.youtube.com/watch?v=muXbPpG_ys4&amp;list=PLEJK-H61Xlwzm5FYLDdKt_6yibO33zoMW">Get SH*T Done with Prompt Engineering and LangChain</a> by <a class="reference external" href="https://www.youtube.com/&#64;venelin_valkov">Venelin Valkov</a><a class="headerlink" href="#get-sh-t-done-with-prompt-engineering-and-langchain-by-venelin-valkov" title="Permalink to this headline">#</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.youtube.com/watch?v=muXbPpG_ys4">Getting Started with LangChain: Load Custom Data, Run OpenAI Models, Embeddings and <code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code></a></p></li>
+<li><p><a class="reference external" href="https://www.youtube.com/watch?v=FQnvfR8Dmr0">Loaders, Indexes &amp; Vectorstores in LangChain: Question Answering on <code class="docutils literal notranslate"><span class="pre">PDF</span></code> files with <code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code></a></p></li>
+<li><p><a class="reference external" href="https://www.youtube.com/watch?v=zy6LiK5F5-s">LangChain Models: <code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code>, <code class="docutils literal notranslate"><span class="pre">Flan</span> <span class="pre">Alpaca</span></code>, <code class="docutils literal notranslate"><span class="pre">OpenAI</span> <span class="pre">Embeddings</span></code>, Prompt Templates &amp; Streaming</a></p></li>
+<li><p><a class="reference external" href="https://www.youtube.com/watch?v=h1tJZQPcimM">LangChain Chains: Use <code class="docutils literal notranslate"><span class="pre">ChatGPT</span></code> to Build Conversational Agents, Summaries and Q&amp;A on Text With LLMs</a></p></li>
+<li><p><a class="reference external" href="https://www.youtube.com/watch?v=Ew3sGdX8at4">Analyze Custom CSV Data with <code class="docutils literal notranslate"><span class="pre">GPT-4</span></code> using Langchain</a></p></li>
+<li><p>⛓ <a class="reference external" href="https://youtu.be/CyuUlf54wTs">Build ChatGPT Chatbots with LangChain Memory: Understanding and Implementing Memory in Conversations</a></p></li>
+</ul>
+<hr class="docutils" />
+<p>⛓ icon marks a new video [last update 2023-05-15]</p>
+</section>
+</section>
+</section>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="../additional_resources.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Additional resources</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="../integrations.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Integrations</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Harrison Chase<br/>
+  
+      &copy; Copyright 2023, Harrison Chase.<br/>
+    Last updated on Jun 05, 2023.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

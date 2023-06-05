@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/microsoft_powerpoint",
+  "id": "integrations/microsoft_powerpoint",
+  "title": "Microsoft PowerPoint",
+  "description": "Microsoft PowerPoint is a presentation program by Microsoft.",
+  "source": "@site/docs/integrations/microsoft_powerpoint.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/microsoft_powerpoint",
+  "permalink": "/docs/integrations/microsoft_powerpoint",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/microsoft_powerpoint.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

@@ -1,0 +1,20 @@
+{
+  "unversionedId": "index",
+  "id": "index",
+  "title": "Welcome to LangChain",
+  "description": "LangChain is a framework for developing applications powered by language models. It enables applications that are",
+  "source": "@site/docs/index.md",
+  "sourceDirName": ".",
+  "slug": "/",
+  "permalink": "/docs/",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/index.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "sidebar",
+  "next": {
+    "title": "Installation",
+    "permalink": "/docs/getting_started/installation"
+  }
+}

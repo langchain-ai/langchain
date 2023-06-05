@@ -1,0 +1,69 @@
+
+msgid ""
+msgstr ""
+"Project-Id-Version: Sphinx-Book-Theme\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: te\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "open issue"
+msgstr "ఓపెన్ ఇష్యూ"
+
+msgid "Download this page"
+msgstr "ఈ పేజీని డౌన్‌లోడ్ చేయండి"
+
+msgid "Download source file"
+msgstr "మూల ఫైల్‌ను డౌన్‌లోడ్ చేయండి"
+
+msgid "Launch"
+msgstr "ప్రారంభించండి"
+
+msgid "Edit this page"
+msgstr "ఈ పేజీని సవరించండి"
+
+msgid "Toggle navigation"
+msgstr "నావిగేషన్‌ను టోగుల్ చేయండి"
+
+msgid "Theme by the"
+msgstr "ద్వారా థీమ్"
+
+msgid "Source repository"
+msgstr "మూల రిపోజిటరీ"
+
+msgid "Last updated on"
+msgstr "చివరిగా నవీకరించబడింది"
+
+msgid "By the"
+msgstr "ద్వారా"
+
+msgid "Sphinx Book Theme"
+msgstr "సింహిక పుస్తక థీమ్"
+
+msgid "Open an issue"
+msgstr "సమస్యను తెరవండి"
+
+msgid "next page"
+msgstr "తరువాతి పేజీ"
+
+msgid "Copyright"
+msgstr "కాపీరైట్"
+
+msgid "Search this book..."
+msgstr "ఈ పుస్తకాన్ని శోధించండి ..."
+
+msgid "Print to PDF"
+msgstr "PDF కి ముద్రించండి"
+
+msgid "By"
+msgstr "ద్వారా"
+
+msgid "previous page"
+msgstr "ముందు పేజి"
+
+msgid "Download notebook file"
+msgstr "నోట్బుక్ ఫైల్ను డౌన్లోడ్ చేయండి"
+
+msgid "suggest edit"
+msgstr "సవరించమని సూచించండి"

@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/duckdb",
+  "id": "integrations/duckdb",
+  "title": "DuckDB",
+  "description": "DuckDB is an in-process SQL OLAP database management system.",
+  "source": "@site/docs/integrations/duckdb.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/duckdb",
+  "permalink": "/docs/integrations/duckdb",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/duckdb.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

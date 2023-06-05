@@ -1,0 +1,15 @@
+{
+  "unversionedId": "integrations/pinecone",
+  "id": "integrations/pinecone",
+  "title": "Pinecone",
+  "description": "This page covers how to use the Pinecone ecosystem within LangChain.",
+  "source": "@site/docs/integrations/pinecone.md",
+  "sourceDirName": "integrations",
+  "slug": "/integrations/pinecone",
+  "permalink": "/docs/integrations/pinecone",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/integrations/pinecone.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}

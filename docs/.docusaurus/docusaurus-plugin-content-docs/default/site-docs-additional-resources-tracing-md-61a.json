@@ -1,0 +1,15 @@
+{
+  "unversionedId": "additional_resources/tracing",
+  "id": "additional_resources/tracing",
+  "title": "Tracing",
+  "description": "By enabling tracing in your LangChain runs, you’ll be able to more effectively visualize, step through, and debug your chains and agents.",
+  "source": "@site/docs/additional_resources/tracing.md",
+  "sourceDirName": "additional_resources",
+  "slug": "/additional_resources/tracing",
+  "permalink": "/docs/additional_resources/tracing",
+  "draft": false,
+  "editUrl": "https://github.com/hwchase17/langchainjs/edit/main/docs/docs/additional_resources/tracing.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}
