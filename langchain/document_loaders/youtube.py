@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, Sequence
 from urllib.parse import parse_qs, urlparse
 
 from pydantic import root_validator
@@ -146,7 +146,7 @@ class YoutubeLoader(BaseLoader):
         self,
         video_id: str,
         add_video_info: bool = False,
-        language: List[str] = ["en"],
+        language: Union[str, Sequence[str]] = "en",
         translation: str = "en",
         continue_on_failure: bool = False,
     ):
@@ -154,6 +154,10 @@ class YoutubeLoader(BaseLoader):
         self.video_id = video_id
         self.add_video_info = add_video_info
         self.language = language
+        if isinstance(language, str):
+            self.language = [language]
+        else:
+            self.language = language
         self.translation = translation
         self.continue_on_failure = continue_on_failure
 
@@ -201,7 +205,10 @@ class YoutubeLoader(BaseLoader):
             return []
 
         try:
-            transcript = transcript_list.find_transcript(self.language)
+            if isinstance(self.language, str):
+                transcript = transcript_list.find_transcript([self.language])
+            else:
+                transcript = transcript_list.find_transcript(self.language)
         except NoTranscriptFound:
             en_transcript = transcript_list.find_transcript(["en"])
             transcript = en_transcript.translate(self.translation)
