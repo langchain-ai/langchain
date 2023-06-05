@@ -3986,14 +3986,14 @@ tenacity = ">=8.1.0,<9.0.0"
 
 [[package]]
 name = "langchainplus-sdk"
-version = "0.0.3"
+version = "0.0.4"
 description = "Client library to connect to the LangChainPlus LLM Tracing and Evaluation Platform."
 category = "main"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchainplus_sdk-0.0.3-py3-none-any.whl", hash = "sha256:3ae7ae3503619df2bf531d5466b9235e8f242c7167f664f35050409cc9f80780"},
-    {file = "langchainplus_sdk-0.0.3.tar.gz", hash = "sha256:87481a3ac2a1855ab12985c7aaf7a06a4bd5caa16394db50f055224ab95f1687"},
+    {file = "langchainplus_sdk-0.0.4-py3-none-any.whl", hash = "sha256:ba72276b0e9cb148f572d531fbed41017d3a0072dc5a1110d8d2f3af06efce75"},
+    {file = "langchainplus_sdk-0.0.4.tar.gz", hash = "sha256:0c09af62e81975e33561c655ba9b32777d79834218c9377d28578a9558740044"},
 ]
 
 [package.dependencies]
@@ -11266,7 +11266,11 @@ text-helpers = ["chardet"]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
 <<<<<<< HEAD
+<<<<<<< HEAD
 content-hash = "190059b07b111e19ec5b516be227b81728163fee14928c92cba2c0212d35ead0"
 =======
 content-hash = "5859360403255ac998156d49afafd6b30d8d4b33a07b71b6350ddbb2d0aa0579"
 >>>>>>> 76c8a7a4 (Add LCP SDK Dep)
+=======
+content-hash = "ec0d889d9291785b93452446f00a43fc5f367ff49171df5eda705316ff346789"
+>>>>>>> c8e50a9c (rm server)
