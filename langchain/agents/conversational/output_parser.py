@@ -28,3 +28,6 @@ class ConvoOutputParser(AgentOutputParser):
     @property
     def _type(self) -> str:
         return "conversational"
+    # Added this method to return the type of the parser
+    def get_type(self) -> str:
+        return self._type
