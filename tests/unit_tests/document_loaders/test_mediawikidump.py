@@ -8,7 +8,7 @@ PARENT_DIR = Path(__file__).parent / "sample_documents"
 
 @pytest.mark.requires("mwparserfromhell")
 def test_loading_flawed_xml()-> None:
-    loader = MWDumpLoader(PARENT_DIR / "mwtest_current_pages.xml")
+    loader = MWDumpLoader((PARENT_DIR / "mwtest_current_pages.xml").absolute())
     try:
         loader.load()
     except Exception as e:
@@ -17,7 +17,7 @@ def test_loading_flawed_xml()-> None:
 @pytest.mark.requires("mwparserfromhell")
 def test_skipping_errors() -> None:
     loader = MWDumpLoader(
-        file_path = PARENT_DIR / "mwtest_current_pages.xml",
+        file_path = (PARENT_DIR / "mwtest_current_pages.xml").absolute(),
         stop_on_error=False)
     documents = loader.load()
     assert len(documents) == 3
@@ -25,7 +25,7 @@ def test_skipping_errors() -> None:
 @pytest.mark.requires("mwparserfromhell")
 def test_skipping_redirects() -> None:
     loader = MWDumpLoader(
-        file_path = PARENT_DIR / "mwtest_current_pages.xml",
+        file_path = (PARENT_DIR / "mwtest_current_pages.xml").absolute(),
         skip_redirects=True,
         stop_on_error=False)
     documents = loader.load()
@@ -34,7 +34,7 @@ def test_skipping_redirects() -> None:
 @pytest.mark.requires("mwparserfromhell")
 def test_multiple_namespaces() -> None:
     loader = MWDumpLoader(
-        file_path = PARENT_DIR / "mwtest_current_pages.xml",
+        file_path = (PARENT_DIR / "mwtest_current_pages.xml").absolute(),
         namespaces=[0,6],
         skip_redirects=True,
         stop_on_error=False)
