@@ -63,8 +63,8 @@ RETURN v.name, e.degree
 ---\n"""
 
 NGQL_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
-    "Generate Cypher", "Generate NebulaGraph Cypher").replace(
-    "Instructions:", NEBULAGRAPH_EXTRA_INSTRUCTIONS)
+    "Generate Cypher", "Generate NebulaGraph Cypher"
+).replace("Instructions:", NEBULAGRAPH_EXTRA_INSTRUCTIONS)
 
 
 NGQL_GENERATION_PROMPT = PromptTemplate(

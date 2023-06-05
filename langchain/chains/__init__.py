@@ -68,4 +68,5 @@ __all__ = [
     "ConversationalRetrievalChain",
     "OpenAPIEndpointChain",
     "FlareChain",
+    "NebulaGraphQAChain",
 ]

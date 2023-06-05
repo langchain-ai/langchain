@@ -1,6 +1,9 @@
-from typing import Any, Dict, List
-from string import Template
 import logging
+from string import Template
+from typing import TYPE_CHECKING, Any, Dict
+
+if TYPE_CHECKING:
+    from nebula3.gclient.net.SessionPool import SessionPool
 
 rel_query = Template(
     """
@@ -21,7 +24,7 @@ class NebulaGraph:
 
     def __init__(
         self,
-        space,
+        space: str,
         username: str = "root",
         password: str = "nebula",
         address: str = "127.0.0.1",
@@ -30,8 +33,8 @@ class NebulaGraph:
     ) -> None:
         """Create a new NebulaGraph wrapper instance."""
         try:
-            import nebula3
-            import pandas
+            import nebula3  # noqa: F401
+            import pandas  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Please install NebulaGraph Python client and pandas first: "
@@ -53,7 +56,7 @@ class NebulaGraph:
         except Exception as e:
             raise ValueError(f"Could not refresh schema. Error: {e}")
 
-    def _get_session_pool(self):
+    def _get_session_pool(self) -> SessionPool:
         assert all(
             [self.username, self.password, self.address, self.port, self.space]
         ), (
@@ -61,9 +64,9 @@ class NebulaGraph:
             "username, password, address, port, space"
         )
 
-        from nebula3.gclient.net.SessionPool import SessionPool
         from nebula3.Config import SessionPoolConfig
         from nebula3.Exception import AuthFailedException, InValidHostname
+        from nebula3.gclient.net.SessionPool import SessionPool
 
         config = SessionPoolConfig()
         config.max_size = self.session_pool_size
@@ -89,11 +92,11 @@ class NebulaGraph:
                 "Please ensure that the username and password are correct"
             )
         except RuntimeError as e:
-            raise ValueError("Error initializing session pool. Error: {e}")
+            raise ValueError(f"Error initializing session pool. Error: {e}")
 
         return session_pool
 
-    def __del__(self):
+    def __del__(self) -> None:
         try:
             self.session_pool.close()
         except Exception as e:
@@ -106,9 +109,8 @@ class NebulaGraph:
 
     def execute(self, query: str, params: dict = {}, retry: int = 0) -> Any:
         """Query NebulaGraph database."""
-        from nebula3.Exception import NoValidSessionException
+        from nebula3.Exception import IOErrorException, NoValidSessionException
         from nebula3.fbthrift.transport.TTransport import TTransportException
-        from nebula3.Exception import IOErrorException
 
         try:
             result = self.session_pool.execute_parameter(query, params)
@@ -143,11 +145,9 @@ class NebulaGraph:
                 )
                 return self.execute(query, params, retry)
             else:
-                raise ValueError(
-                    f"Error executing query to NebulaGraph. Error: {e}"
-                )
+                raise ValueError(f"Error executing query to NebulaGraph. Error: {e}")
 
-        except (TTransportException, IOErrorException) as e:
+        except (TTransportException, IOErrorException):
             # connection issue, try to recreate session pool
             if retry < RETRY_TIMES:
                 retry += 1
@@ -169,9 +169,7 @@ class NebulaGraph:
             r = self.execute(f"DESCRIBE TAG `{tag_name}`")
             props, types = r.column_values("Field"), r.column_values("Type")
             for i in range(r.row_size()):
-                tag_schema["properties"].append(
-                    (props[i].cast(), types[i].cast())
-                )
+                tag_schema["properties"].append((props[i].cast(), types[i].cast()))
             tags_schema.append(tag_schema)
         for edge_type in self.execute("SHOW EDGES").column_values("Name"):
             edge_type_name = edge_type.cast()
@@ -179,9 +177,7 @@ class NebulaGraph:
             r = self.execute(f"DESCRIBE EDGE `{edge_type_name}`")
             props, types = r.column_values("Field"), r.column_values("Type")
             for i in range(r.row_size()):
-                edge_schema["properties"].append(
-                    (props[i].cast(), types[i].cast())
-                )
+                edge_schema["properties"].append((props[i].cast(), types[i].cast()))
             edge_types_schema.append(edge_schema)
 
             # build relationships types
@@ -199,7 +195,7 @@ class NebulaGraph:
 
     def query(self, query: str, retry: int = 0) -> Dict[str, Any]:
         result = self.execute(query, retry=retry)
-        import pandas as pd
+
         columns = result.keys()
         d: Dict[str, list] = {}
         for col_num in range(result.col_size()):

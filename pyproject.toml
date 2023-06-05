@@ -281,7 +281,8 @@ all = [
     "azure-ai-vision",
     "azure-cognitiveservices-speech",
     "momento",
-    "tigrisdb"
+    "tigrisdb",
+    "nebula3-python",
 ]
 
 # An extra used to be able to add extended testing.
