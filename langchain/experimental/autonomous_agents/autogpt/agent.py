@@ -47,10 +47,8 @@ class AutoGPT:
         self.output_parser = output_parser
         self.tools = tools
         self.feedback_tool = feedback_tool
-        if chat_history_persistence_file_path is None:
-            self.chat_history_memory = ChatMessageHistory()
-        else:
-            self.chat_history_memory = FileChatMessageHistory(chat_history_persistence_file_path)
+        self.chat_history_memory = ChatMessageHistory() if chat_history_persistence_file_path is None \
+            else FileChatMessageHistory(chat_history_persistence_file_path)
 
     @classmethod
     def from_llm_and_tools(
