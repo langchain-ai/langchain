@@ -279,7 +279,8 @@ all = [
     "azure-ai-formrecognizer",
     "azure-ai-vision",
     "azure-cognitiveservices-speech",
-    "momento"
+    "momento",
+    "tigrisdb"
 ]
 
 # An extra used to be able to add extended testing.

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
@@ -35,7 +37,7 @@ class Tigris(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -57,7 +59,7 @@ class Tigris(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[TigrisFilter] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query."""
         docs_with_scores = self.similarity_search_with_score(query, k, filter)
@@ -98,15 +100,15 @@ class Tigris(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[VST],
+        cls,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         client: Optional[TigrisClient] = None,
         index_name: Optional[str] = None,
-        **kwargs: Any
-    ) -> VST:
+        **kwargs: Any,
+    ) -> Tigris:
         """Return VectorStore initialized from texts and embeddings."""
         if not index_name:
             raise ValueError("`index_name` is required")
