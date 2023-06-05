@@ -1,0 +1,152 @@
+# Quickstart guide
+
+## Installation
+
+To install LangChain run:
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from "@theme/CodeBlock";
+
+<Tabs>
+  <TabItem value="pip" label="Pip" default>
+    <CodeBlock language="bash">pip install langchain</CodeBlock>
+  </TabItem>
+  <TabItem value="conda" label="Conda">
+    <CodeBlock language="bash">conda install langchain</CodeBlock>
+  </TabItem>
+</Tabs>
+
+## Environment Setup
+
+Using LangChain will usually require integrations with one or more model providers, data stores, APIs, etc.
+
+For this example, we'll use OpenAI's model APIs. First we'll need to install their Python package:
+
+```bash
+pip install openai
+```
+
+Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
+
+```bash
+export OPENAI_API_KEY="..."
+```
+
+If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
+
+```python
+from langchain.llms import OpenAI
+
+llm = OpenAI(openai_api_key="...")
+```
+
+## Building a Language Model Application
+
+Now we can start building our language model application. LangChain provides many modules that can be used to build language model applications. Modules can be used as stand-alones in simple applications and they can be combined for more complex use cases.
+
+## LLMs
+#### Get predictions from a language model
+
+The basic building block of LangChain is the LLM, which takes in text and generates more text.
+
+As an example, suppose we're building an application that generates a company name based on a company description. In order to do this, we need to initialize an OpenAI model wrapper. In this case, since we want the outputs to be MORE random, we'll initialize our model with a HIGH temperature.
+
+```python
+from langchain.llms import OpenAI
+
+llm = OpenAI(temperature=0.9)
+```
+
+And now we can pass in text and get predictions!
+
+```python
+llm("What would be a good company name for a company that makes colorful socks?")
+# >> Feetful of Fun
+```
+
+For more details on how to use LLMs within LangChain, see the [LLM getting started guide](../modules/models/llms/getting_started.ipynb).
+
+## Chat Models
+#### Get message completions from a chat model
+
+Chat models are a variation on language models. While chat models use language models under the hood, the interface they expose is a bit different: rather than expose a "text in, text out" API, they expose an interface where "chat messages" are the inputs and outputs.
+
+Chat model APIs are fairly new, so we are still figuring out the correct abstractions.
+
+You can get chat completions by passing one or more messages to the chat model. The response will be a message. The types of messages currently supported in LangChain are `AIMessage`, `HumanMessage`, `SystemMessage`, and `ChatMessage` -- `ChatMessage` takes in an arbitrary role parameter. Most of the time, you'll just be dealing with `HumanMessage`, `AIMessage`, and `SystemMessage`.
+
+```python
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage
+)
+
+chat = ChatOpenAI(temperature=0)
+chat([HumanMessage(content="Translate this sentence from English to French. I love programming.")])
+# >> AIMessage(content="J'aime programmer.", additional_kwargs={})
+```
+
+You can also pass in multiple messages for OpenAI's `gpt-3.5-turbo` and `gpt-4` models.
+
+```python
+messages = [
+    SystemMessage(content="You are a helpful assistant that translates English to French."),
+    HumanMessage(content="I love programming.")
+]
+chat(messages)
+# >> AIMessage(content="J'aime programmer.", additional_kwargs={})
+```
+
+You can go one step further and generate completions for multiple sets of messages using `generate`. This returns an `LLMResult` with an additional `message` parameter:
+
+```python
+batch_messages = [
+    [
+        SystemMessage(content="You are a helpful assistant that translates English to French."),
+        HumanMessage(content="I love programming.")
+    ],
+    [
+        SystemMessage(content="You are a helpful assistant that translates English to French."),
+        HumanMessage(content="I love artificial intelligence.")
+    ],
+]
+result = chat.generate(batch_messages)
+result
+# >> LLMResult(generations=[[ChatGeneration(text="J'aime programmer.", generation_info=None, message=AIMessage(content="J'aime programmer.", additional_kwargs={}))], [ChatGeneration(text="J'aime l'intelligence artificielle.", generation_info=None, message=AIMessage(content="J'aime l'intelligence artificielle.", additional_kwargs={}))]], llm_output={'token_usage': {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}})
+```
+
+You can recover things like token usage from this LLMResult:
+
+```python
+result.llm_output['token_usage']
+# >> {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}
+```
+
+## Prompt Templates
+#### Manage model prompts
+
+<Tabs>
+    <TabItem value="llms" label="LLMs" default>
+    <p>
+    Most LLM applications do not pass user input directly into to an LLM. Usually they will add the user input to a larger piece of text, called a prompt, that provides additional context on the specific task at hand.
+    </p>
+    <br></br>
+    <p>
+    In the previous example, the text we passed to the model contained instructions to generate a company name. For our application, it'd be great if the user only had to provide the description of a company/product, without having to worry about giving the model instructions.
+    </p>
+    <br></br>
+    <p>
+    With PromptTemplates this is easy! In this case our template would be very simple:
+    </p>
+
+   <CodeBlock language="python">
+   {
+`from langchain.prompts import PromptTemplate\n
+prompt = PromptTemplate.from_template("What is a good name for a company that makes {product}?")`
+   }
+   </CodeBlock>
+    </TabItem>
+</Tabs>
