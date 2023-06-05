@@ -8,14 +8,14 @@ class AudioSplitter(BaseBlobSplitter):
 
     """Dump YouTube url as mp3 file."""
 
-    # TODO: Output should be a list of the blob paths?
     def lazy_split(self, blob: Blob) -> Iterator[Blob]:
+        
         """Lazily split the blob."""
 
         from pydub import AudioSegment
 
         # Blob.data is BytesIO object to store audio file in memory
-        audio = AudioSegment.from_file(blob.data)
+        audio = AudioSegment.from_file(blob.path)
 
         # Define the duration of each chunk in minutes
         chunk_duration = 20
@@ -26,5 +26,5 @@ class AudioSplitter(BaseBlobSplitter):
         # Split the audio into chunk_duration_ms chunks and return blobs
         for i in range(0, len(audio), chunk_duration_ms):
             chunk = audio[i : i + chunk_duration_ms]
-            yield Blob.from_data(chunk)
+            yield Blob.from_data(chunk.export(format="mp3").read())
     
