@@ -32,9 +32,7 @@ def _create_retry_decorator(llm: Cohere) -> Callable[[Any], Any]:
         reraise=True,
         stop=stop_after_attempt(llm.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(
-            retry_if_exception_type(cohere.error.CohereError)
-        ),
+        retry=(retry_if_exception_type(cohere.error.CohereError)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
@@ -170,7 +168,9 @@ class Cohere(LLM):
         else:
             params["stop_sequences"] = stop
 
-        response = completion_with_retry(self, model=self.model, prompt=prompt, **params)
+        response = completion_with_retry(
+            self, model=self.model, prompt=prompt, **params
+        )
         text = response.generations[0].text
         # If stop tokens are provided, Cohere's endpoint returns them.
         # In order to make this consistent with other endpoints, we strip them.
