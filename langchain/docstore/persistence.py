@@ -56,12 +56,12 @@ Usage:
         }
     ) # <-- This will sync the file system store with the vector store
 """
-import abc
 import dataclasses
 from typing import TypedDict, Sequence, Optional, Any, Iterator
 from uuid import UUID
 from pathlib import Path
 
+from langchain.docstore.base import ArtifactLayer
 from langchain.output_parsers import json
 from langchain.schema import Document, BaseDocumentTransformer
 from langchain.vectorstores.base import VectorStore
@@ -89,29 +89,13 @@ class FreeFormSelector(BaseSelector):
     kwargs: Any
 
 
-class ArtifactLayer(abc.ABC):
-    @abc.abstractmethod
-    def exists(self, ids: Sequence[str]) -> Sequence[bool]:
-        """Check if the artifacts with the given id exist."""
-
-    def add(self, documents: Sequence[Document]) -> None:
-        """Add the given artifacts."""
-        raise NotImplementedError()
-
-    def get_child_documents(self, hash_: UUID) -> Iterator[Document]:
-        """Get the child documents of the given parent document."""
-        yield from self.get_matching_documents(Selector(parent=hash_))
-
-    def get_matching_documents(self, selector: Selector) -> Iterator[Document]:
-        """Yield documents matching the given selector."""
-        raise NotImplementedError()
-
-
 def serialize_document(document: Document) -> str:
+    """Serialize the given document to a string."""
     raise NotImplementedError()
 
 
 def deserialize_document(serialized_document: str) -> Document:
+    """Deserialize the given document from a string."""
     raise NotImplementedError()
 
 
@@ -156,7 +140,7 @@ class CachingDocumentTransformer(BaseDocumentTransformer):
         # and content hashes match
         document_transformer: BaseDocumentTransformer,
     ) -> None:
-        """Initialize the storage intercepter."""
+        """Initialize the storage interceptor."""
         self._artifact_layer = artifact_layer
         self._document_transformer = document_transformer
 

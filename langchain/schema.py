@@ -12,6 +12,7 @@ from typing import (
     Sequence,
     TypeVar,
     Union,
+    Mapping,
 )
 from uuid import UUID
 
@@ -264,10 +265,29 @@ class BaseChatMessageHistory(ABC):
         """Remove all messages from the store"""
 
 
+import uuid
+import hashlib
+from uuid import uuid5
+
+
+def hash_content(content: str):
+    """Hash the content of a document to generate a UUID."""
+    # Create a hash object
+    hash_object = hashlib.sha256(content.encode())
+
+    # Get the hexadecimal digest of the hash
+    hash_hexdigest = hash_object.hexdigest()
+
+    # Generate a UUID based on the hash
+    generated_uuid = uuid.UUID(hash_hexdigest)
+
+    return generated_uuid
+
+
 class Document(BaseModel):
     """Interface for interacting with a document."""
 
-    id: Optional[str]  # Use assigned document id, optional
+    id: str  # Use assigned document id, optional
     hash_: UUID  # A hash of the content + metadata
     page_content: str
     # Required field for provenance.
@@ -281,10 +301,15 @@ class Document(BaseModel):
     parent_doc_hashes: Sequence[str] = ()
 
     ## Initialization hook to calculate hash
-
-    # Not included here, but should be to generalize document to blob
-    # mimetype: str
-    # encoding
+    @root_validator()
+    def assign_id_if_not_provided(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Assign an ID if one is not provided."""
+        content_hash = hashlib.sha256(values["page_content"].encode()).hexdigest()
+        hash_ = str(uuid5(UUID(int=0), content_hash))
+        if "id" not in values:
+            # Generate an ID based on the hash of the content
+            values["id"] = hash_
+        return values
 
 
 class BaseRetriever(ABC):
