@@ -153,7 +153,7 @@ class GPT4All(LLM):
         if values["n_threads"] is not None:
             # set n_threads
             values["client"].model.set_thread_count(values["n_threads"])
-        
+
         try:
             values["backend"] = values["client"].model_type
         except AttributeError:
