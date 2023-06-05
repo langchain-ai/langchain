@@ -1,22 +1,15 @@
 """Common schema objects."""
 from __future__ import annotations
 
+import hashlib
+import uuid
 from abc import ABC, abstractmethod
 from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-    Mapping,
+    Any, Dict, Generic, List, NamedTuple, Optional, Sequence, TypeVar, Union, Tuple,
 )
-from uuid import UUID
+from uuid import UUID, uuid5
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator, ValidationError
 
 
 def get_buffer_string(
@@ -265,12 +258,7 @@ class BaseChatMessageHistory(ABC):
         """Remove all messages from the store"""
 
 
-import uuid
-import hashlib
-from uuid import uuid5
-
-
-def hash_content(content: str):
+def _hash_content(content: str):
     """Hash the content of a document to generate a UUID."""
     # Create a hash object
     hash_object = hashlib.sha256(content.encode())
@@ -293,19 +281,24 @@ class Document(BaseModel):
     # Required field for provenance.
     # Provenance ALWAYS refers to the original source of the document.
     # No matter what transformations have been done on the context.
-    provenance: Sequence[str] = ()
+    provenance: Tuple[str, ...] = tuple()
     # User created metadata
     metadata: dict = Field(default_factory=dict)
     # Use to keep track of parent documents from which the document was generated
     # We could keep this is a non sequence to get started for simplicity
-    parent_doc_hashes: Sequence[str] = ()
+    parent_hashes: Tuple[str, ...] = tuple()
 
-    ## Initialization hook to calculate hash
-    @root_validator()
+    @root_validator(pre=True)
     def assign_id_if_not_provided(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Assign an ID if one is not provided."""
-        content_hash = hashlib.sha256(values["page_content"].encode()).hexdigest()
-        hash_ = str(uuid5(UUID(int=0), content_hash))
+        if "page_content" not in values:
+            raise ValidationError("Must provide page_content")
+        if "hash_" not in values:
+            content_hash = hashlib.sha256(values["page_content"].encode()).hexdigest()
+            hash_ = str(uuid5(UUID(int=0), content_hash))
+            values["hash_"] = hash_
+        else:
+            hash_ = values["hash_"]
         if "id" not in values:
             # Generate an ID based on the hash of the content
             values["id"] = hash_

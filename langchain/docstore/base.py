@@ -1,10 +1,10 @@
 """Interface to access to place that stores documents."""
 import abc
 from abc import ABC, abstractmethod
-from typing import Dict, Union, Sequence, Iterator
+from typing import Dict, Union, Sequence, Iterator, Optional
 from uuid import UUID
 
-from langchain.docstore.persistence import Selector
+import dataclasses
 from langchain.schema import Document
 
 
@@ -28,6 +28,20 @@ class AddableMixin(ABC):
         """Add more documents."""
 
 
+@dataclasses.dataclass(frozen=True)
+class Selector:
+    """Selector for documents."""
+
+    parent_hashes: Optional[Sequence[UUID]] = None
+    provenance: Optional[str] = None
+
+# @dataclasses.dataclass(frozen=True)
+# class FreeFormSelector(BaseSelector):
+#     # Some selector that matches syntax of underlying vector store
+#     query: str
+#     kwargs: Any
+
+
 class ArtifactLayer(abc.ABC):
     """Use to keep track of artifacts generated while processing content.
 
@@ -42,13 +56,18 @@ class ArtifactLayer(abc.ABC):
     def exists(self, ids: Sequence[str]) -> Sequence[bool]:
         """Check if the artifacts with the given id exist."""
 
+    # @abc.abstractmethod
+    # def exist_by_hash(self, hashes: Sequence[str]) -> Sequence[bool]:
+    #     """Check if the artifacts with the given hash exist."""
+    #     raise NotImplementedError()
+
     def add(self, documents: Sequence[Document]) -> None:
         """Add the given artifacts."""
         raise NotImplementedError()
 
-    def get_child_documents(self, hash_: UUID) -> Iterator[Document]:
+    def get_child_documents(self, hashes: Sequence[UUID]) -> Iterator[Document]:
         """Get the child documents of the given parent document."""
-        yield from self.get_matching_documents(Selector(parent=hash_))
+        yield from self.get_matching_documents(Selector(parent_hashes=hashes))
 
     def get_matching_documents(self, selector: Selector) -> Iterator[Document]:
         """Yield documents matching the given selector."""

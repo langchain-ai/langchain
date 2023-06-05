@@ -56,54 +56,67 @@ Usage:
         }
     ) # <-- This will sync the file system store with the vector store
 """
-import dataclasses
-from typing import TypedDict, Sequence, Optional, Any, Iterator
-from uuid import UUID
+from json import JSONDecodeError
 from pathlib import Path
+from typing import TypedDict, Sequence, Optional, Any, Iterator, Union
 
-from langchain.docstore.base import ArtifactLayer
+from langchain.docstore.base import ArtifactLayer, Selector
 from langchain.output_parsers import json
 from langchain.schema import Document, BaseDocumentTransformer
 from langchain.vectorstores.base import VectorStore
+import json
+from uuid import UUID
+
 
 MaybeDocument = Optional[Document]
 
 
-@dataclasses.dataclass(frozen=True)
-class BaseSelector:
-    pass
+class UUIDEncoder(json.JSONEncoder):
+    """TODO detemine if there's a better solution."""
 
-
-@dataclasses.dataclass(frozen=True)
-class Selector(BaseSelector):
-    """Selector for documents."""
-
-    parent: Optional[UUID] = None
-    provenance: Optional[str] = None
-
-
-@dataclasses.dataclass(frozen=True)
-class FreeFormSelector(BaseSelector):
-    # Some selector that matches syntax of underlying vector store
-    query: str
-    kwargs: Any
+    def default(self, obj):
+        if isinstance(obj, UUID):
+            return str(obj)  # Convert UUID to string
+        return super().default(obj)
 
 
 def serialize_document(document: Document) -> str:
     """Serialize the given document to a string."""
-    raise NotImplementedError()
+    try:
+        return json.dumps(document.dict(), cls=UUIDEncoder)
+    except JSONDecodeError:
+        raise ValueError(f"Could not serialize document with ID: {document.id}")
 
 
 def deserialize_document(serialized_document: str) -> Document:
     """Deserialize the given document from a string."""
-    raise NotImplementedError()
+    return Document.parse_obj(json.loads(serialized_document))
+
+
+PathLike = Union[str, Path]
+
+
+class Artifact(TypedDict):
+    id: str
+    parent_ids: Sequence[str]
+    metadata: Any
+
+
+class MetadataFormat(TypedDict):
+    artifacts: Sequence[str]
 
 
 class FileSystemArtifactLayer(ArtifactLayer):
-    def __init__(self, parent_dir: Path) -> None:
-        self.parent_dir = parent_dir
-        # Bad, but keep JSON file memory for now (race conditions/locks etc)
-        metadata_path = parent_dir / "metadata.json"
+    """An artifact layer for storing artifacts on the file system."""
+
+    def __init__(self, root: PathLike) -> None:
+        """Initialize the file system artifact layer."""
+        self.root = root
+        # Metadata file will be kept in memory for now and updated with
+        # each call.
+        # This is hacky and error prone due to race conditions (if multiple
+        # processes are writing), but OK for prototyping.
+        metadata_path = root / "metadata.json"
         with open(metadata_path, "r") as f:
             metadata_json = json.load(f)
         self.metadata_json = metadata_json
