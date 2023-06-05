@@ -615,11 +615,11 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # Heading level 2
                 # ---------------
                 # End of code block
-                "```\n\n",
+                "```\n",
                 # Horizontal lines
-                "\n\n\*\*\*\n\n",
-                "\n\n---\n\n",
-                "\n\n___\n\n",
+                "\n\*\*\*+\n",
+                "\n---+\n",
+                "\n___+\n",
                 # Note that this splitter doesn't handle horizontal lines defined
                 # by *three or more* of ***, ---, or ___, but this is not handled
                 "\n\n",
