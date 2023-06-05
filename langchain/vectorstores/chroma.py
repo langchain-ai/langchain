@@ -50,7 +50,7 @@ class Chroma(VectorStore):
                 from langchain.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
-                vectorstore = Chroma("langchain_store", embeddings.embed_query)
+                vectorstore = Chroma("langchain_store", embeddings)
     """
 
     _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
