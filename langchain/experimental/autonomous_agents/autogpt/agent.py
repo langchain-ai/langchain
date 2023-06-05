@@ -14,13 +14,14 @@ from langchain.experimental.autonomous_agents.autogpt.prompt import AutoGPTPromp
 from langchain.experimental.autonomous_agents.autogpt.prompt_generator import (
     FINISH_NAME,
 )
-from langchain.memory import FileChatMessageHistory, ChatMessageHistory
+from langchain.memory import ChatMessageHistory, FileChatMessageHistory
 from langchain.schema import (
     AIMessage,
+    BaseChatMessageHistory,
     BaseMessage,
     Document,
     HumanMessage,
-    SystemMessage, BaseChatMessageHistory,
+    SystemMessage,
 )
 from langchain.tools.base import BaseTool
 from langchain.tools.human.tool import HumanInputRun
@@ -47,8 +48,11 @@ class AutoGPT:
         self.output_parser = output_parser
         self.tools = tools
         self.feedback_tool = feedback_tool
-        self.chat_history_memory = ChatMessageHistory() if chat_history_persistence_file_path is None \
+        self.chat_history_memory = (
+            ChatMessageHistory()
+            if chat_history_persistence_file_path is None
             else FileChatMessageHistory(chat_history_persistence_file_path)
+        )
 
     @classmethod
     def from_llm_and_tools(
@@ -78,7 +82,7 @@ class AutoGPT:
             output_parser or AutoGPTOutputParser(),
             tools,
             feedback_tool=human_feedback_tool,
-            chat_history_persistence_file_path=chat_history_persistence_file_path
+            chat_history_persistence_file_path=chat_history_persistence_file_path,
         )
 
     def run(self, goals: List[str]) -> str:
