@@ -45,14 +45,14 @@ class Aviary(LLM):
 
     model: str
     aviary_url: str
-    aviary_token: Optional[str] = Field(None, exclude=True)
+    aviary_token: str = Field("", exclude=True)
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         aviary_url = get_from_dict_or_env(values, "aviary_url", "AVIARY_URL")
@@ -63,12 +63,10 @@ class Aviary(LLM):
             values, "aviary_token", "AVIARY_TOKEN", default=""
         )
         values["aviary_token"] = aviary_token
+
+        aviary_endpoint = aviary_url + "models"
+        headers = {"Authorization": f"Bearer {aviary_token}"} if aviary_token else {}
         try:
-            aviary_endpoint = aviary_url + "models"
-            if aviary_token:
-                headers = {"Authorization": f"Bearer {aviary_token}"}
-            else:
-                headers = {}
             response = requests.get(aviary_endpoint, headers=headers)
             result = response.json()
             # Confirm model is available
@@ -79,10 +77,7 @@ class Aviary(LLM):
 
         except requests.exceptions.RequestException as e:
             raise ValueError(e)
-        if not aviary_url.endswith("/"):
-            aviary_url += "/"
-        values["aviary_url"] = aviary_url
-        values["aviary_token"] = aviary_token
+
         return values
 
     @property
@@ -97,6 +92,13 @@ class Aviary(LLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "aviary"
+
+    @property
+    def headers(self) -> Dict[str, str]:
+        if self.aviary_token:
+            return {"Authorization": f"Bearer {self.aviary_token}"}
+        else:
+            return {}
 
     def _call(
         self,
@@ -117,10 +119,9 @@ class Aviary(LLM):
                 response = aviary("Tell me a joke.")
         """
         url = self.aviary_url + "query/" + self.model.replace("/", "--")
-        headers = {"Authorization": f"Bearer {self.aviary_token}"}
         response = requests.post(
             url,
-            headers=headers,
+            headers=self.headers,
             json={"prompt": prompt},
             timeout=TIMEOUT,
         )
