@@ -3,16 +3,14 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Dict, List, Optional
-
+from typing import Dict, Iterator, List, Optional
 from pydantic import BaseModel, Field
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base_o365 import O365BaseLoader
-from langchain.document_loaders.sharepoint_file import SharePointFileLoader
+from langchain.document_loaders.parsers.registry import get_parser
+
 
 SCOPES = ["sharepoint", "basic"]
-
 
 class _FileType(str, Enum):
     DOC = "doc"
@@ -42,7 +40,6 @@ class SharePointLoader(O365BaseLoader):
     folder_path: Optional[str] = None
     object_ids: Optional[List[str]] = None
     auth_with_token: bool = False
-    file_loader: SharePointFileLoader = Field(default_factory=SharePointFileLoader)
 
     def _fetch_mime_types(self) -> Dict[str, str]:
         """This method will give you a Dictionary where the supported file types
@@ -51,7 +48,8 @@ class SharePointLoader(O365BaseLoader):
         file_mime_types = file_types.fetch_mime_types()
         return file_mime_types
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
+        """Load documents lazily. Use this when working at a large scale."""
         try:
             from O365.drive import Drive, Folder
         except ImportError:
@@ -63,16 +61,24 @@ class SharePointLoader(O365BaseLoader):
         )
         storage = account.storage()
         drive = storage.get_drive(self.document_library_id)
-        docs: List[Document] = []
+        blob_parser = get_parser("default")
         if not isinstance(drive, Drive):
             raise ValueError(f"There isn't a Drive with id {self.document_library_id}.")
         if self.folder_path:
             target_folder = drive.get_item_by_path(self.folder_path)
             if not isinstance(target_folder, Folder):
                 raise ValueError(f"There isn't a folder with path {self.folder_path}.")
-            docs.extend(self._load_from_folder(folder=target_folder))
+            for blob in self._load_from_folder(folder=target_folder):
+                yield from blob_parser.lazy_parse(blob)
         if self.object_ids:
-            docs.extend(
-                self._load_from_object_ids(drive=drive, object_ids=self.object_ids)
-            )
-        return docs
+            for blob in self._load_from_object_ids(drive=drive, object_ids=self.object_ids):
+                yield from blob_parser.lazy_parse(blob)
+
+
+    def load(self) -> List[Document]:
+        """Load all documents."""
+        return list(self.lazy_load())
+
+
+            
+

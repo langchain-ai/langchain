@@ -64,7 +64,6 @@ from langchain.document_loaders.notiondb import NotionDBLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.odt import UnstructuredODTLoader
 from langchain.document_loaders.onedrive import OneDriveLoader
-from langchain.document_loaders.onedrive_file import OneDriveFileLoader
 from langchain.document_loaders.pdf import (
     MathpixPDFLoader,
     OnlinePDFLoader,
@@ -187,7 +186,6 @@ __all__ = [
     "NotionDirectoryLoader",
     "ObsidianLoader",
     "OneDriveLoader",
-    "OneDriveFileLoader",
     "OnlinePDFLoader",
     "OutlookMessageLoader",
     "PDFMinerLoader",

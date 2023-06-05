@@ -6,14 +6,14 @@ import os
 import tempfile
 from abc import abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Union
+from typing import TYPE_CHECKING, Dict, Iterable, List, Union
 
 from pydantic import BaseModel, BaseSettings, Field, FilePath, SecretStr
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.onedrive_file import OneDriveFileLoader
-from langchain.document_loaders.sharepoint_file import SharePointFileLoader
+from langchain.document_loaders.blob_loaders.file_system import FileSystemBlobLoader
+from langchain.document_loaders.blob_loaders.schema import Blob
 
 if TYPE_CHECKING:
     from O365 import Account
@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+CHUNK_SIZE = 1024 * 1024 * 5
 
 class _O365Settings(BaseSettings):
     client_id: str = Field(..., env="O365_CLIENT_ID")
@@ -38,7 +39,6 @@ class _O365TokenStorage(BaseSettings):
 
 class O365BaseLoader(BaseLoader, BaseModel):
     settings: _O365Settings = Field(default_factory=_O365Settings)
-    file_loader: Union[OneDriveFileLoader, SharePointFileLoader]
 
     @abstractmethod
     def _fetch_mime_types(self) -> Dict[str, str]:
@@ -46,52 +46,56 @@ class O365BaseLoader(BaseLoader, BaseModel):
         are the keys and their corresponding mime types are the values."""
         ...
 
-    def _load_from_folder(self, folder: Folder) -> List[Document]:
+    def _load_from_folder(self, folder: Folder) -> Iterable[Blob]:
         """
-        Loads all supported document files from the specified folder
-        and returns a list of Document objects.
+        Load all files from a specified folder which have a MIME type present in the MIME types the loader is looking for. 
+        Then, load them into the system as binary large objects (Blobs).
 
-        Args:
-            folder (Folder): The folder object to load the documents from.
+        Parameters
+        ----------
+        folder : Folder
+            The Folder instance from which the files are to be loaded. This Folder instance should represent a directory 
+            in a file system where the files are stored.
 
-        Returns:
-            List[Document]: A list of Document objects representing
-            the loaded documents.
-
+        Yields
+        -------
+        Iterable[Blob]
+            An iterator that yields Blob instances, which are binary representations of the files loaded from the folder.
         """
-        docs = []
         file_mime_types = self._fetch_mime_types()
         items = folder.get_items()
         with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = f"{temp_dir}"
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            os.makedirs(os.path.dirname(temp_dir), exist_ok=True)
             for file in items:
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
-                        docs.extend(self.file_loader.load(file=file))
-        return docs
+                        file.download(to_path=temp_dir, chunk_size=CHUNK_SIZE)
+            loader = FileSystemBlobLoader(path=temp_dir)
+            yield from loader.yield_blobs()
 
     def _load_from_object_ids(
         self, drive: Drive, object_ids: List[str]
-    ) -> List[Document]:
+    ) -> Iterable[Blob]:
         """
-        Loads all supported document files from the specified OneDrive
-        drive based on their object IDs and returns a list
-        of Document objects.
+        Load files, specified by their object_ids, from a drive, and load them into the system as binary large objects (Blobs).
 
-        Args:
-            drive (Drive): The OneDrive drive object
-            to load the documents from.
+        Parameters
+        ----------
+        drive : Drive
+            The Drive instance from which the files are to be loaded. This Drive instance should represent a cloud storage 
+            service or similar storage system where the files are stored.
 
-        Returns:
-            List[Document]: A list of Document objects representing
-            the loaded documents.
+        object_ids : List[str]
+            A list of object_id strings. Each object_id represents a unique identifier for a file in the drive.
+
+        Yields
+        -------
+        Iterable[Blob]
+            An iterator that yields Blob instances, which are binary representations of the files loaded from the drive using 
+            the specified object_ids.
         """
-        docs = []
         file_mime_types = self._fetch_mime_types()
         with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = f"{temp_dir}"
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
             for object_id in object_ids:
                 file = drive.get_item(object_id)
                 if not file:
@@ -102,8 +106,9 @@ class O365BaseLoader(BaseLoader, BaseModel):
                     continue
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
-                        docs.extend(self.file_loader.load(file=file))
-        return docs
+                        file.download(to_path=temp_dir, chunk_size=CHUNK_SIZE)
+            loader = FileSystemBlobLoader(path=temp_dir)
+            yield from loader.yield_blobs()
 
     def _auth(
         self, settings: _O365Settings, scopes: List[str], auth_with_token: bool = False
