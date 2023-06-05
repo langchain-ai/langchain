@@ -78,7 +78,7 @@ class SitemapLoader(WebBaseLoader):
             loc = url.find("loc")
             if not loc:
                 continue
-                
+
             # Strip leading and trailing whitespace and newlines
             loc_text = loc.text.strip()
 
