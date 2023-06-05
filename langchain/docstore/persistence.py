@@ -7,6 +7,54 @@ This code makes a few assumptions:
 3) Existing transformers operate on [doc] -> [doc] and would need to be updated to keep track of history  (parent_doc_hashes)
 4) Changing the transformer interface to operate on doc -> doc or doc -> [doc], will allow the an interceptor to update the history by itself.
 
+
+Here are some possible APIs for this (we would want to converge to the simplest correct version)
+
+Usage:
+
+    ... code-block:: python
+
+    file_system_store = FileSystemArtifactLayer( # <-- All artifacts will be stored here
+        parent_dir=Path("data/artifacts"),
+    )
+    
+    pipeline = sequential(
+        [MimeParser(), TextSplitter()], interceptor=CachingDocumentTransformer(file_system_store)
+    )
+    
+    doc_iterable = FileSystemLoader.from("data/my_videos", pipeline)
+    vector_store = VectorStore.from(doc_iterable)
+    
+    
+## Or some variations
+    
+    pipeline = compose_transformation(
+        [MimeParser(), TextSplitter(), VectorStore.from], interceptor=CachingDocumentTransformer(file_system_store)
+    )
+    
+    
+## or
+    
+    ... code-block:: python
+
+    file_system_store = FileSystemArtifactLayer( # <-- All artifacts will be stored here
+        parent_dir=Path("data/artifacts"),
+    )
+    
+    pipeline = sequential(
+        [MimeParser(), TextSplitter()], interceptor=CachingDocumentTransformer(file_system_store)
+    )
+    
+    
+    _ = pipeline.process(docs) # <-- This will store the docs in the file system store
+    
+    sync(
+        file_system_store, vector_store, selector={
+            "provenance": startswith("https://wikipedia"), # All content from wikipedia
+            "parent_transformer": "TextSplitter", # After content was text splitted
+            "updated_after": today().offset(hours=-5) # updated in the last 5 hours
+        }
+    ) # <-- This will sync the file system store with the vector store
 """
 import abc
 import dataclasses
