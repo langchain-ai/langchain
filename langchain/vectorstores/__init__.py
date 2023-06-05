@@ -4,6 +4,7 @@ from langchain.vectorstores.annoy import Annoy
 from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
+from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
 from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
@@ -51,4 +52,6 @@ __all__ = [
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "Typesense",
+    "Clickhouse",
+    "ClickhouseSettings",
 ]
