@@ -113,12 +113,14 @@ class Clarifai(VectorStore):
         """
 
         assert len(texts) > 0, "No texts provided to add to the vectorstore."
-        assert len(texts) == len(metadatas), "Number of texts and metadatas should be the same."
+
+        if metadatas is not None:
+            assert len(texts) == len(metadatas), "Number of texts and metadatas should be the same."
 
         input_ids = []
         for idx, text in enumerate(texts):
             try:
-                metadata = metadatas[i] if metadatas else {}
+                metadata = metadatas[idx] if metadatas else {}
                 input_id = self._post_text_input(text, metadata)
                 input_ids.append(input_id)
                 print(f"Input {input_id} posted successfully.")
@@ -191,13 +193,7 @@ class Clarifai(VectorStore):
             requested_text = request.text
 
             print(
-                "\tScore %.2f for annotation: %s off input: %s, text: %s"
-                % (
-                    hit.score,
-                    hit.annotation.id,
-                    hit.input.id,
-                    requested_text[:125],
-                )
+                f"\tScore {hit.score:.2f} for annotation: {hit.annotation.id} off input: {hit.input.id}, text: {requested_text[:125]}"
             )
 
             docs_and_scores.append((Document(page_content=requested_text, metadata=metadata), hit.score))
