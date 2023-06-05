@@ -514,9 +514,9 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         elif language == Language.RST:
             return [
                 # Split along section titles
-                "\n===+\n",
-                "\n---+\n",
-                "\n\*\*\*+\n",
+                "\n=+\n",
+                "\n-+\n",
+                "\n\*+\n",
                 # Split along directive markers
                 "\n\n.. *\n\n",
                 # Split by the normal type of lines
