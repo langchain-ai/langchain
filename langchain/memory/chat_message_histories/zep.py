@@ -136,7 +136,9 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         """Search Zep memory for messages matching the query"""
         from zep_python import MemorySearchPayload
 
-        payload: MemorySearchPayload = MemorySearchPayload(text=query, metadata=metadata)
+        payload: MemorySearchPayload = MemorySearchPayload(
+            text=query, metadata=metadata
+        )
 
         return self.zep_client.search_memory(self.session_id, payload, limit=limit)
 
