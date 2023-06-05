@@ -275,6 +275,12 @@ Lists
 - Item 1
 - Item 2
 - Item 3
+
+Comment
+*******
+Not a comment
+
+.. This is a comment
     """
     chunks = splitter.split_text(code)
     assert chunks == [
@@ -285,10 +291,16 @@ Lists
         "This is the",
         "content of the",
         "section.",
-        "Lists\n-----",
+        "Lists",
+        "-----",
         "- Item 1",
         "- Item 2",
         "- Item 3",
+        "Comment",
+        "*******",
+        "Not a comment",
+        ".. This is a",
+        "comment",
     ]
 
 
@@ -509,3 +521,58 @@ fn main() {
     """
     chunks = splitter.split_text(code)
     assert chunks == ["fn main() {", 'println!("Hello', ",", 'World!");', "}"]
+
+
+def test_markdown_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.MARKDOWN, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+# Sample Document
+
+## Section
+
+This is the content of the section.
+
+## Lists
+
+- Item 1
+- Item 2
+- Item 3
+
+### Horizontal lines
+
+***********
+____________
+-------------------
+
+#### Code blocks
+```
+This is a code block
+```
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "# Sample",
+        "Document",
+        "## Section",
+        "This is the",
+        "content of the",
+        "section.",
+        "## Lists",
+        "- Item 1",
+        "- Item 2",
+        "- Item 3",
+        "### Horizontal",
+        "lines",
+        "***********",
+        "____________",
+        "---------------",
+        "----",
+        "#### Code",
+        "blocks",
+        "```",
+        "This is a code",
+        "block",
+        "```",
+    ]
