@@ -56,8 +56,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self,
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
-        length_function: Union[Callable[[str], int], Callable[[List[str]], List[int]]] = len,
-        batched_length: bool = False,
+        length_function: Callable[[str], int] = len,
+        batched_length_function: Optional[Callable[[List[str]], List[int]]] = None,
         keep_separator: bool = False,
     ):
         """Create a new TextSplitter.
@@ -66,6 +66,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunk_size: Maximum size of chunks to return
             chunk_overlap: Overlap in characters between chunks
             length_function: Function that measures the length of given chunks
+            batched_length_function: Function that measures chunk lengths in batches
             keep_separator: Whether or not to keep the separator in the chunks
         """
         if chunk_overlap > chunk_size:
@@ -76,7 +77,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
-        self._batched_length = batched_length
+        self._batched_length_function = batched_length_function
         self._keep_separator = keep_separator
 
     @abstractmethod
@@ -114,7 +115,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             return text
 
     def _merge_splits(
-        self, splits: Iterable[str], separator: str, lengths: Optional[Iterable[int]] = None
+        self,
+        splits: Iterable[str],
+        separator: str,
+        lengths: Optional[Iterable[int]] = None,
     ) -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
@@ -160,13 +164,17 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             docs.append(doc)
         return docs
 
-    def _text_lengths(self, texts: List[str]) -> List[int]:
-        if self._batched_length:
-            return self._length_function(texts)
+    def _text_lengths(self, texts: Iterable[str]) -> List[int]:
+        if self._batched_length_function is not None:
+            if not isinstance(texts, list):
+                texts = list(texts)
+            return self._batched_length_function(texts)
         return [self._length_function(text) for text in texts]
 
     @classmethod
-    def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
+    def from_huggingface_tokenizer(
+        cls, tokenizer: Any, batched: bool = True, **kwargs: Any
+    ) -> TextSplitter:
         """Text splitter that uses HuggingFace tokenizer to count length."""
         try:
             from transformers import PreTrainedTokenizerBase
@@ -176,7 +184,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     "Tokenizer received was not an instance of PreTrainedTokenizerBase"
                 )
 
-            def _huggingface_tokenizer_length(texts: List[str]) -> List[int]:
+            def _huggingface_tokenizer_length(text: str) -> int:
+                return len(tokenizer.encode(text))
+
+            def _huggingface_tokenizer_batched_length(texts: List[str]) -> List[int]:
                 return tokenizer(texts, truncation=False, return_length=True).lengths
 
         except ImportError:
@@ -184,7 +195,11 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-        return cls(length_function=_huggingface_tokenizer_length, batched_length = True, **kwargs)
+        if batched:
+            kwargs["batched_length_function"] = _huggingface_tokenizer_batched_length
+        else:
+            kwargs["length_function"] = _huggingface_tokenizer_length
+        return cls(**kwargs)
 
     @classmethod
     def from_tiktoken_encoder(
@@ -457,7 +472,9 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 _good_split_lengths.append(_len)
             else:
                 if _good_splits:
-                    merged_text = self._merge_splits(_good_splits, _separator, lengths=_good_split_lengths)
+                    merged_text = self._merge_splits(
+                        _good_splits, _separator, lengths=_good_split_lengths
+                    )
                     final_chunks.extend(merged_text)
                     _good_splits = []
                     _good_split_lengths = []
@@ -467,7 +484,9 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                     other_info = self._split_text(s, new_separators)
                     final_chunks.extend(other_info)
         if _good_splits:
-            merged_text = self._merge_splits(_good_splits, _separator, lengths=_good_split_lengths)
+            merged_text = self._merge_splits(
+                _good_splits, _separator, lengths=_good_split_lengths
+            )
             final_chunks.extend(merged_text)
         return final_chunks
 

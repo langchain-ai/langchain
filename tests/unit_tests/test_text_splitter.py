@@ -1,6 +1,7 @@
 """Test text splitting functionality."""
-import pytest
 from typing import List
+
+import pytest
 
 from langchain.docstore.document import Document
 from langchain.text_splitter import (
@@ -175,9 +176,8 @@ def test_batched_recursive_character_text_splitter() -> None:
         return [len(text) for text in texts]
 
     text_splitter = RecursiveCharacterTextSplitter(
-        separators=["\n", " "],
-        length_function=_batched_length,
-        batched_length=True,
+        separators=["\n", " ", ""],
+        batched_length_function=_batched_length,
         chunk_size=1,
         chunk_overlap=0,
     )
