@@ -205,10 +205,7 @@ class YoutubeLoader(BaseLoader):
             return []
 
         try:
-            if isinstance(self.language, str):
-                transcript = transcript_list.find_transcript([self.language])
-            else:
-                transcript = transcript_list.find_transcript(self.language)
+            transcript = transcript_list.find_transcript(self.language)
         except NoTranscriptFound:
             en_transcript = transcript_list.find_transcript(["en"])
             transcript = en_transcript.translate(self.translation)
