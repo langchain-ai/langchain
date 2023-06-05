@@ -85,7 +85,7 @@ def _convert_chain_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
 
 def _convert_tool_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
     base_span = _convert_run_to_wb_span(trace_tree, run)
-    base_span.results = [trace_tree.Result(inputs=serialize_inputs(run.inputs), outputs=run.outputs)]
+    base_span.results = [trace_tree.Result(inputs=_serialize_inputs(run.inputs), outputs=run.outputs)]
     base_span.child_spans = [
         _convert_lc_run_to_wb_span(trace_tree, child_run)
         for child_run in run.child_runs
