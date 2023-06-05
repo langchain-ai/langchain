@@ -1,5 +1,6 @@
 """Load Data from a MediaWiki dump xml."""
-from typing import List, Optional
+from pathlib import Path
+from typing import List, Optional, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -29,24 +30,50 @@ class MWDumpLoader(BaseLoader):
     :type file_path: str
     :param encoding: Charset encoding, defaults to "utf8"
     :type encoding: str, optional
-    :param namespaces: The namespace of pages you want to parse. See https://www.mediawiki.org/wiki/Help:Namespaces#Localisation for a list of all common namespaces
+    :param namespaces: The namespace of pages you want to parse.
+        See https://www.mediawiki.org/wiki/Help:Namespaces#Localisation
+        for a list of all common namespaces
     :type namespaces: List[int],optional
-    :param skip_redirects: TR=rue to skip pages that redirect to other pages, False to keep them. False by default
+    :param skip_redirects: TR=rue to skip pages that redirect to other pages,
+        False to keep them. False by default
     :type skip_redirects: bool, optional
-    :param stop_on_error: False to skip over pages that cause parsing errors, True to stop. True by default
+    :param stop_on_error: False to skip over pages that cause parsing errors,
+        True to stop. True by default
     :type stop_on_error: bool, optional
     """
 
     def __init__(
-            self, file_path: str, 
-            encoding: Optional[str] = "utf8",
-            namespaces: Optional[List[int]] = [-1, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-            skip_redirects: Optional[bool]=False,
-            stop_on_error: Optional[bool]=True):
+        self,
+        file_path: Union[str, Path],
+        encoding: Optional[str] = "utf8",
+        namespaces: Optional[List[int]] = None,
+        skip_redirects: Optional[bool] = False,
+        stop_on_error: Optional[bool] = True,
+    ):
         """Initialize with file path."""
-        self.file_path = file_path
+        _default_namespaces = [
+            -1,
+            -2,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+        ]
+        self.file_path = file_path if isinstance(file_path, str) else str(file_path)
         self.encoding = encoding
-        self.namespaces = namespaces
+        self.namespaces = namespaces or _default_namespaces
         self.skip_redirects = skip_redirects
         self.stop_on_error = stop_on_error
 
@@ -60,7 +87,7 @@ class MWDumpLoader(BaseLoader):
         docs = []
 
         for page in dump.pages:
-            if self.skip_redirects and page.redirect and page.redirect != None:
+            if self.skip_redirects and page.redirect and page.redirect is not None:
                 continue
             if page.namespace in self.namespaces:
                 try:

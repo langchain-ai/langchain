@@ -6,37 +6,44 @@ from langchain.document_loaders.mediawikidump import MWDumpLoader
 
 PARENT_DIR = Path(__file__).parent / "sample_documents"
 
+
 @pytest.mark.requires("mwparserfromhell")
-def test_loading_flawed_xml()-> None:
+def test_loading_flawed_xml() -> None:
     loader = MWDumpLoader((PARENT_DIR / "mwtest_current_pages.xml").absolute())
     try:
         loader.load()
     except Exception as e:
         assert e == ValueError
 
+
 @pytest.mark.requires("mwparserfromhell")
 def test_skipping_errors() -> None:
     loader = MWDumpLoader(
-        file_path = (PARENT_DIR / "mwtest_current_pages.xml").absolute(),
-        stop_on_error=False)
+        file_path=(PARENT_DIR / "mwtest_current_pages.xml").absolute(),
+        stop_on_error=False,
+    )
     documents = loader.load()
     assert len(documents) == 3
+
 
 @pytest.mark.requires("mwparserfromhell")
 def test_skipping_redirects() -> None:
     loader = MWDumpLoader(
-        file_path = (PARENT_DIR / "mwtest_current_pages.xml").absolute(),
+        file_path=(PARENT_DIR / "mwtest_current_pages.xml").absolute(),
         skip_redirects=True,
-        stop_on_error=False)
+        stop_on_error=False,
+    )
     documents = loader.load()
     assert len(documents) == 2
+
 
 @pytest.mark.requires("mwparserfromhell")
 def test_multiple_namespaces() -> None:
     loader = MWDumpLoader(
-        file_path = (PARENT_DIR / "mwtest_current_pages.xml").absolute(),
-        namespaces=[0,6],
+        file_path=(PARENT_DIR / "mwtest_current_pages.xml").absolute(),
+        namespaces=[0, 6],
         skip_redirects=True,
-        stop_on_error=False)
+        stop_on_error=False,
+    )
     documents = loader.load()
-    assert len(documents) == 3 
+    assert len(documents) == 3
