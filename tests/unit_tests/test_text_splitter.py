@@ -275,6 +275,12 @@ Lists
 - Item 1
 - Item 2
 - Item 3
+
+Comment
+*******
+Not a comment
+
+.. This is a comment
     """
     chunks = splitter.split_text(code)
     assert chunks == [
@@ -285,10 +291,16 @@ Lists
         "This is the",
         "content of the",
         "section.",
-        "Lists\n-----",
+        "Lists",
+        "-----",
         "- Item 1",
         "- Item 2",
         "- Item 3",
+        "Comment",
+        "*******",
+        "Not a comment",
+        ".. This is a",
+        "comment",
     ]
 
 
