@@ -6595,13 +6595,13 @@ wcwidth = "*"
 
 [[package]]
 name = "promptlayer"
-version = "0.1.84"
+version = "0.1.85"
 description = "PromptLayer is a package to keep track of your GPT models training"
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "promptlayer-0.1.84.tar.gz", hash = "sha256:38db68a67dd6d075d124badca0998070a79adce611df00e037b706704369c30a"},
+    {file = "promptlayer-0.1.85.tar.gz", hash = "sha256:7f5ee282361e200253f0aa53267756a112d3aa1fa29d680a634031c617de20de"},
 ]
 
 [package.dependencies]
