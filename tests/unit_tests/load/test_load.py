@@ -8,7 +8,7 @@ from langchain.load.load import loads
 from langchain.prompts.prompt import PromptTemplate
 
 
-def test_load_openai_llm():
+def test_load_openai_llm() -> None:
     llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
     llm_string = dumps(llm)
     llm2 = loads(llm_string, secrets_map={"OPENAI_API_KEY": "hello"})
@@ -18,7 +18,7 @@ def test_load_openai_llm():
     assert isinstance(llm2, OpenAI)
 
 
-def test_load_llmchain():
+def test_load_llmchain() -> None:
     llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)

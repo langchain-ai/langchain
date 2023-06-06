@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 class BaseSerialized(TypedDict):
     lc: int
-    type: str
     id: List[str]
 
 
@@ -42,7 +41,7 @@ class Serializable(BaseModel, ABC):
 
     lc_kwargs: Dict[str, Any] = dict()
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.lc_kwargs = kwargs
 
@@ -55,7 +54,8 @@ class Serializable(BaseModel, ABC):
             if cls is Serializable:
                 break
 
-            secrets.update(super(cls, self).lc_secrets)
+            # mypy doesn't understand this, but it is correct
+            secrets.update(super(cls, self).lc_secrets)  # type: ignore [arg-type]
 
         return {
             "lc": 1,
@@ -74,7 +74,9 @@ class Serializable(BaseModel, ABC):
         }
 
 
-def replace_secrets(root: Dict[Any, Any], secrets_map: Dict[str, str]):
+def replace_secrets(
+    root: Dict[Any, Any], secrets_map: Dict[str, str]
+) -> Dict[Any, Any]:
     result = root.copy()
     for path, secret_id in secrets_map.items():
         [*parts, last] = path.split(".")

@@ -124,7 +124,7 @@ class BaseOpenAI(BaseLLM):
     """Wrapper around OpenAI large language models."""
 
     @property
-    def lc_secrets(self):
+    def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
 
     client: Any  #: :meta private:
@@ -662,8 +662,8 @@ class OpenAIChat(BaseLLM):
     """
 
     @property
-    def lc_secrets(self) -> Mapping[str, Any]:
-        return {"openai_api_key": self.openai_api_key}
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"openai_api_key": "OPENAI_API_KEY"}
 
     client: Any  #: :meta private:
     model_name: str = "gpt-3.5-turbo"
