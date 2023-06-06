@@ -14,9 +14,10 @@ from langchain.experimental.autonomous_agents.autogpt.prompt import AutoGPTPromp
 from langchain.experimental.autonomous_agents.autogpt.prompt_generator import (
     FINISH_NAME,
 )
-from langchain.memory import ChatMessageHistory, FileChatMessageHistory
+from langchain.memory import ChatMessageHistory
 from langchain.schema import (
     AIMessage,
+    BaseChatMessageHistory,
     Document,
     HumanMessage,
     SystemMessage,
@@ -37,7 +38,7 @@ class AutoGPT:
         output_parser: BaseAutoGPTOutputParser,
         tools: List[BaseTool],
         feedback_tool: Optional[HumanInputRun] = None,
-        chat_history_persistence_file_path: Optional[str] = None,
+        chat_history_memory: BaseChatMessageHistory = ChatMessageHistory(),
     ):
         self.ai_name = ai_name
         self.memory = memory
@@ -46,11 +47,7 @@ class AutoGPT:
         self.output_parser = output_parser
         self.tools = tools
         self.feedback_tool = feedback_tool
-        self.chat_history_memory = (
-            ChatMessageHistory()
-            if chat_history_persistence_file_path is None
-            else FileChatMessageHistory(chat_history_persistence_file_path)
-        )
+        self.chat_history_memory = chat_history_memory
 
     @classmethod
     def from_llm_and_tools(
@@ -62,7 +59,7 @@ class AutoGPT:
         llm: BaseChatModel,
         human_in_the_loop: bool = False,
         output_parser: Optional[BaseAutoGPTOutputParser] = None,
-        chat_history_persistence_file_path: Optional[str] = None,
+        chat_history_memory: BaseChatMessageHistory = ChatMessageHistory(),
     ) -> AutoGPT:
         prompt = AutoGPTPrompt(
             ai_name=ai_name,
@@ -80,7 +77,7 @@ class AutoGPT:
             output_parser or AutoGPTOutputParser(),
             tools,
             feedback_tool=human_feedback_tool,
-            chat_history_persistence_file_path=chat_history_persistence_file_path,
+            chat_history_memory=chat_history_memory,
         )
 
     def run(self, goals: List[str]) -> str:
