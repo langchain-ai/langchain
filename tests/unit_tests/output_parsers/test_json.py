@@ -89,6 +89,18 @@ TEXT_BEFORE_AND_AFTER = """Action: Testing
 ```
 This should do the trick"""
 
+TWO_BACKTICKS_IN_THE_END = """```json
+{
+    "foo": "bar"
+}
+``"""
+
+ONE_BACKTICK_IN_THE_END = """```json
+{
+    "foo": "bar"
+}
+`"""
+
 TEST_CASES = [
     GOOD_JSON,
     JSON_WITH_NEW_LINES,
@@ -99,6 +111,8 @@ TEST_CASES = [
     NO_TICKS_WHITE_SPACE,
     TEXT_BEFORE,
     TEXT_AFTER,
+    TWO_BACKTICKS_IN_THE_END,
+    ONE_BACKTICK_IN_THE_END,
 ]
 
 
