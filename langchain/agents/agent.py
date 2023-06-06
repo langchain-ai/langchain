@@ -422,9 +422,11 @@ class Agent(BaseSingleActionAgent):
         for action, observation in intermediate_steps:
             thoughts.append(action.log)
             thoughts.append(f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}")
-            if self.length_function(thoughts)>self.scratchpad_max_size:
-                thoughts.pop(0)
-                thoughts.pop(0)
+        total_length = self.length_function("".join(thoughts))
+        while total_length>self.scratchpad_max_size:
+            thoughts.pop(0)
+            thoughts.pop(0)
+            total_length = self.length_function("".join(thoughts))
         return "".join(thoughts)
 
     def plan(
