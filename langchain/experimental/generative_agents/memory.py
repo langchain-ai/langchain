@@ -137,6 +137,64 @@ class GenerativeAgentMemory(BaseMemory):
         else:
             return 0.0
 
+    def _score_memories_importance(self, memory_content: str) -> List[float]:
+        """Score the absolute importance of the given memory."""
+        prompt = PromptTemplate.from_template(
+            "On the scale of 1 to 10, where 1 is purely mundane"
+            + " (e.g., brushing teeth, making bed) and 10 is"
+            + " extremely poignant (e.g., a break up, college"
+            + " acceptance), rate the likely poignancy of the"
+            + " following piece of memory. Always answer with only a list of numbers."
+            + " If just given one memory still respond in a list."
+            + " Memories are separated by semi colans (;)"
+            + "\Memories: {memory_content}"
+            + "\nRating: "
+        )
+        scores = self.chain(prompt).run(memory_content=memory_content).strip()
+
+        if self.verbose:
+            logger.info(f"Importance scores: {scores}")
+
+        # Split into list of strings and convert to floats
+        scores_list = [float(x) for x in scores.split(";")]
+
+        return scores_list
+
+    def add_memories(
+        self, memory_content: str, now: Optional[datetime] = None
+    ) -> List[str]:
+        """Add an observations or memories to the agent's memory."""
+        importance_scores = self._score_memories_importance(memory_content)
+
+        self.aggregate_importance += max(importance_scores)
+        memory_list = memory_content.split(";")
+        documents = []
+
+        for i in range(len(memory_list)):
+            documents.append(
+                Document(
+                    page_content=memory_list[i],
+                    metadata={"importance": importance_scores[i]},
+                )
+            )
+
+        result = self.memory_retriever.add_documents(documents, current_time=now)
+
+        # After an agent has processed a certain amount of memories (as measured by
+        # aggregate importance), it is time to reflect on recent events to add
+        # more synthesized memories to the agent's memory stream.
+        if (
+            self.reflection_threshold is not None
+            and self.aggregate_importance > self.reflection_threshold
+            and not self.reflecting
+        ):
+            self.reflecting = True
+            self.pause_to_reflect(now=now)
+            # Hack to clear the importance from reflection
+            self.aggregate_importance = 0.0
+            self.reflecting = False
+        return result
+
     def add_memory(
         self, memory_content: str, now: Optional[datetime] = None
     ) -> List[str]:
