@@ -122,13 +122,13 @@ class TextSplitter(BaseDocumentTransformer, ABC):
     ) -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
-        separator_len = self._text_lengths([separator])[0]
+        separator_len = self._text_length(separator)
 
         docs = []
         current_doc: List[str] = []
         current_doc_lengths: List[int] = []
         total = 0
-        split_lengths = lengths or self._text_lengths(splits)
+        split_lengths = lengths or self._iter_text_lengths(splits)
         for d, _len in zip(splits, split_lengths):
             if (
                 total + _len + (separator_len if len(current_doc) > 0 else 0)
@@ -164,25 +164,38 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             docs.append(doc)
         return docs
 
-    def _text_lengths(self, texts: Iterable[str]) -> List[int]:
+    def _text_length(self, text: str) -> int:
+        if self._batched_length_function is not None:
+            return self._batched_length_function([text])[0]
+        return self._length_function(text)
+
+    def _iter_text_lengths(self, texts: Iterable[str]) -> Iterable[int]:
         if self._batched_length_function is not None:
             if not isinstance(texts, list):
                 texts = list(texts)
-            return self._batched_length_function(texts)
-        return [self._length_function(text) for text in texts]
+            lengths = self._batched_length_function(texts)
+            for _len in lengths:
+                yield _len
+        else:
+            for text in texts:
+                yield self._length_function(text)
 
     @classmethod
     def from_huggingface_tokenizer(
-        cls, tokenizer: Any, batched: bool = True, **kwargs: Any
+        cls, tokenizer: Any, batched: Optional[bool] = None, **kwargs: Any
     ) -> TextSplitter:
         """Text splitter that uses HuggingFace tokenizer to count length."""
         try:
-            from transformers import PreTrainedTokenizerBase
+            from transformers import PreTrainedTokenizerBase, PreTrainedTokenizerFast
 
             if not isinstance(tokenizer, PreTrainedTokenizerBase):
                 raise ValueError(
                     "Tokenizer received was not an instance of PreTrainedTokenizerBase"
                 )
+            if batched is None and isinstance(tokenizer, PreTrainedTokenizerFast):
+                # Take advantage of huggingface's fast tokenizers
+                # by batching tokenization of splits
+                batched = True
 
             def _huggingface_tokenizer_length(text: str) -> int:
                 return len(tokenizer.encode(text))
@@ -465,7 +478,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         _good_splits = []
         _good_split_lengths = []
         _separator = "" if self._keep_separator else separator
-        split_lengths = self._text_lengths(splits)
+        split_lengths = self._iter_text_lengths(splits)
         for s, _len in zip(splits, split_lengths):
             if _len < self._chunk_size:
                 _good_splits.append(s)

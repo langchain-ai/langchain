@@ -1,5 +1,5 @@
 """Test text splitting functionality."""
-from typing import List
+from typing import Any, Dict, List
 
 import pytest
 
@@ -168,23 +168,39 @@ Bye!\n\n-H."""
 
 def test_batched_recursive_character_text_splitter() -> None:
     """Test recursive text splitter with batched length."""
-    num_length_calls = 0
+    num_batched_length_calls = 0
+    num_unbatched_length_calls = 0
 
     def _batched_length(texts: List[str]) -> List[int]:
-        nonlocal num_length_calls
-        num_length_calls += 1
+        nonlocal num_batched_length_calls
+        num_batched_length_calls += 1
         return [len(text) for text in texts]
 
-    text_splitter = RecursiveCharacterTextSplitter(
-        separators=["\n", " ", ""],
-        batched_length_function=_batched_length,
-        chunk_size=1,
+    def _length(text: str) -> int:
+        nonlocal num_unbatched_length_calls
+        num_unbatched_length_calls += 1
+        return len(text)
+
+    kwargs: Dict[str, Any] = dict(
+        separators=["\n", " "],
+        keep_separator=False,
+        chunk_size=3,
         chunk_overlap=0,
     )
-    output = text_splitter.split_text("a\nb c")
-    assert output == ["a", "b", "c"]
-    # Called each time text is split, and an additional time for each separator
-    assert num_length_calls == 4
+    batched_text_splitter = RecursiveCharacterTextSplitter(
+        batched_length_function=_batched_length,
+        **kwargs,
+    )
+    text_splitter = RecursiveCharacterTextSplitter(
+        length_function=_length,
+        **kwargs,
+    )
+    input_text = "a b\nc d"
+    batched_output = batched_text_splitter.split_text(input_text)
+    unbatched_output = text_splitter.split_text(input_text)
+    assert batched_output == ["a b", "c d"]
+    assert batched_output == unbatched_output
+    assert num_batched_length_calls < num_unbatched_length_calls
 
 
 def test_split_documents() -> None:
