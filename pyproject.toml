@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.189"
+version = "0.0.190"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -90,7 +90,7 @@ pandas = {version = "^2.0.1", optional = true}
 telethon = {version = "^1.28.5", optional = true}
 neo4j = {version = "^5.8.1", optional = true}
 psychicapi = {version = "^0.5", optional = true}
-zep-python = {version="^0.30", optional=true}
+zep-python = {version=">=0.31", optional=true}
 langkit = {version = ">=0.0.1.dev3, <0.1.0", optional = true}
 chardet = {version="^5.1.0", optional=true}
 requests-toolbelt = {version = "^1.0.0", optional = true}
