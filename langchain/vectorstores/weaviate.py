@@ -314,6 +314,11 @@ class Weaviate(VectorStore):
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
+        """
+        Return list of documents most similar to the query
+        text and cosine distance in float for each.
+        Lower score represents more similarity.
+        """
         if self._embedding is None:
             raise ValueError(
                 "_embedding cannot be None for similarity_search_with_score"

@@ -25,6 +25,7 @@ from langchain.schema import (
     HumanMessage,
     LLMResult,
     PromptValue,
+    RunInfo,
 )
 
 
@@ -206,6 +207,8 @@ class BaseChatModel(BaseLanguageModel, ABC):
             generations=generations, llm_output=llm_output  # type: ignore
         )
         run_manager.on_llm_end(output)
+        if run_manager:
+            output.run = RunInfo(run_id=run_manager.run_id)
         return output
 
     async def agenerate(
@@ -291,6 +294,8 @@ class BaseChatModel(BaseLanguageModel, ABC):
             generations=generations, llm_output=llm_output  # type: ignore
         )
         await run_manager.on_llm_end(output)
+        if run_manager:
+            output.run = RunInfo(run_id=run_manager.run_id)
         return output
 
     def generate_prompt(

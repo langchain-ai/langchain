@@ -10,7 +10,8 @@
 
 ### Tutorials
 [LangChain Tutorials](https://www.youtube.com/watch?v=FuqdVNB_8c0&list=PL9V0lbeJ69brU-ojMpU1Y7Ic58Tap0Cw6) by [Edrick](https://www.youtube.com/@edrickdch):
-- ⛓ [LangChain, Chroma DB, OpenAI Beginner Guide | ChatGPT with your PDF](https://youtu.be/FuqdVNB_8c0) 
+- ⛓ [LangChain, Chroma DB, OpenAI Beginner Guide | ChatGPT with your PDF](https://youtu.be/FuqdVNB_8c0)
+- ⛓ [LangChain 101: The Complete Beginner's Guide](https://youtu.be/P3MAbZ2eMUI) 
 
 [LangChain Crash Course: Build an AutoGPT app in 25 minutes](https://youtu.be/MlK6SIjcjE8) by [Nicholas Renotte](https://www.youtube.com/@NicholasRenotte)
 
