@@ -189,7 +189,8 @@ class FAISS(VectorStore):
             k: Number of Documents to return. Defaults to 4.
 
         Returns:
-            List of Documents most similar to the query and score for each
+            List of documents most similar to the query text and L2 distance
+            in float for each. Lower score represents more similarity.
         """
         faiss = dependable_faiss_import()
         vector = np.array([embedding], dtype=np.float32)
@@ -218,7 +219,8 @@ class FAISS(VectorStore):
             k: Number of Documents to return. Defaults to 4.
 
         Returns:
-            List of Documents most similar to the query and score for each
+            List of documents most similar to the query text with
+            L2 distance in float. Lower score represents more similarity.
         """
         embedding = self.embedding_function(query)
         docs = self.similarity_search_with_score_by_vector(embedding, k)
