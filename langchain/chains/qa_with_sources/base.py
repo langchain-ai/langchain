@@ -129,7 +129,8 @@ class BaseQAWithSourcesChain(Chain, ABC):
             input_documents=docs, callbacks=_run_manager.get_child(), **inputs
         )
         if re.search(r"SOURCES:\s", answer):
-            answer, sources = re.split(r"SOURCES:\s", answer)
+            answer = re.split(r"SOURCES:\s", answer)[0]
+            sources = [i for i in re.split(r"SOURCES:\s", answer)[1:]]
         else:
             sources = ""
         result: Dict[str, Any] = {
