@@ -64,17 +64,21 @@ class ArtifactStore(abc.ABC):
         """Check if the artifacts with the given id exist."""
         raise NotImplementedError()
 
-    def add(
+    def upsert(
         self,
         documents: Sequence[Document],
         # Find better way to propagate information about tags
         # this may be moved into a wrapper object
         # called: DocumentWithMetadata
-        tags: Sequence[str]
+        tags: Sequence[str],
     ) -> None:
         """Add the given artifacts."""
         raise NotImplementedError()
 
-    def get_matching_documents(self, selector: Selector) -> Iterator[Document]:
+    def list_documents(self, selector: Selector) -> Iterator[Document]:
         """Yield documents matching the given selector."""
+        raise NotImplementedError()
+
+    def list_document_ids(self, selector: Selector) -> Iterator[str]:
+        """Yield document ids matching the given selector."""
         raise NotImplementedError()
