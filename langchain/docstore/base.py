@@ -70,6 +70,7 @@ class ArtifactStore(abc.ABC):
         # Find better way to propagate information about tags
         # this may be moved into a wrapper object
         # called: DocumentWithMetadata
+        tags: Sequence[str]
     ) -> None:
         """Add the given artifacts."""
         raise NotImplementedError()

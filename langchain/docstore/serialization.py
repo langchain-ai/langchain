@@ -36,7 +36,7 @@ def serialize_document(document: Document) -> str:
     try:
         return json.dumps(document.dict(), cls=UUIDEncoder)
     except JSONDecodeError:
-        raise ValueError(f"Could not serialize document with ID: {document.id}")
+        raise ValueError(f"Could not serialize document with ID: {document.uid}")
 
 
 def deserialize_document(serialized_document: str) -> Document:

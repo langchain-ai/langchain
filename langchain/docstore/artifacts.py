@@ -73,7 +73,6 @@ from typing import (
     Iterable,
     Tuple,
 )
-from uuid import UUID
 
 from langchain.docstore.base import ArtifactStore, Selector
 from langchain.docstore.serialization import serialize_document, deserialize_document
@@ -215,9 +214,9 @@ class FileSystemArtifactLayer(ArtifactStore):
         """Check if the artifacts with the given uuid exist."""
         return self.metadata_store.exists_by_uids(uuids)
 
-    def _get_file_path(self, uuid: UUID) -> Path:
+    def _get_file_path(self, uid: str) -> Path:
         """Get path to file for the given uuid."""
-        return self.root / f"{uuid}"
+        return self.root / f"{uid}"
 
     def add(self, documents: Sequence[Document], tags: Sequence[str]) -> None:
         """Add the given artifacts."""
@@ -233,7 +232,7 @@ class FileSystemArtifactLayer(ArtifactStore):
                     "uid": document.uid,
                     "parent_uids": document.parent_uids,
                     "metadata": document.metadata,
-                    "tags": tags,
+                    "tags": tuple(tags),
                 }
             )
 
