@@ -1,10 +1,21 @@
 from abc import ABC, abstractmethod
 from typing import List
+from enum import Enum
 
 from langchain.docstore.document import Document
 from langchain.vectorstores import VectorStore
 import hashlib
 import json
+
+class ChunkOperation(str, Enum):
+    """Enum for chunk operations."""
+    ADD = 'ADD'
+    UPDATE = 'UPDATE'
+    REMOVE = 'REMOVE'
+
+class DocumentWithOperation(Document):
+    operation: ChunkOperation
+    id: str
 
 class DocumentManager(ABC):
     """Interface for document manager.
@@ -32,13 +43,3 @@ class DocumentManager(ABC):
         Additionally, removes any documents that are not in
         `documents`.
         """
-
-class ChunkOperation(str, Enum):
-    """Enum for chunk operations."""
-    ADD = 'ADD'
-    UPDATE = 'UPDATE'
-    REMOVE = 'REMOVE'
-
-class DocumentWithOperation(Document):
-    operation: ChunkOperation
-    id: str

@@ -1,8 +1,11 @@
-from typing import Dict
+from typing import Dict, List
+import json
+import hashlib
 
 from dataclasses import dataclass
 
-from langchain.document_manager.base import DocumentManager, ChunkOperation, DocumentWithOperation
+# from langchain.document_manager.base import DocumentManager, ChunkOperation, DocumentWithOperation
+from base import DocumentManager, ChunkOperation, DocumentWithOperation
 
 from langchain.docstore.document import Document
 from langchain.text_splitter import TextSplitter
@@ -39,19 +42,19 @@ class InMemoryDocumentManager(DocumentManager):
         Returns a Dict of chunks that should be added to the vector store.
         """
         if len(documents) != len(ids):
-            raise ValueError("Unequal count of documents and ids."
+            raise ValueError("Unequal count of documents and ids.")
 
         seen = set()
         for id in ids:
             if id in seen:
                 raise ValueError("Duplicate ids.")
-            if id in self._documents:
+            if id in self._documents_with_state:
                 raise ValueError("Document with id {} already exists.".format(id))
             seen.add(id)
 
         chunks_to_add = []
         for document, id in zip(documents, ids):
-            chunks = self.text_splitter.create_documents([document.page_content])
+            chunks = self.text_splitter.create_documents(document.page_content)
             chunk_hashes = [_get_hash(chunk) for chunk in chunks]
             doc_with_state = _DocumentWithState(id, self.get_document_hash(document), chunk_hashes)
             self._documents_with_state[id] = doc_with_state
@@ -64,7 +67,7 @@ class InMemoryDocumentManager(DocumentManager):
 
     def update(self, documents: List[Document], ids: List[str]) -> List[DocumentWithOperation]:
         """Updates documents in the document manager."""
-        chunk_operations = {}
+        chunk_operations = []
         for new_document, id in zip(documents, ids):
             if id not in self._documents_with_state:
                 raise ValueError(f"Document with id {id} does not exist.")
@@ -90,8 +93,9 @@ class InMemoryDocumentManager(DocumentManager):
                 if len(new_chunks) < len(doc_with_state.chunk_hashes):
                     # Remove old chunks.
                     for i in range(len(new_chunks), len(doc_with_state.chunk_hashes)):
+                        # Add hacky placeholder value for page_content to satisfy pydantic.
                         chunk_operations.append(
-                        DocumentWithOperation(id=_get_chunk_id(id, i), operation=ChunkOperation.REMOVE))
+                        DocumentWithOperation(page_content="placeholder", id=_get_chunk_id(id, i), operation=ChunkOperation.REMOVE))
                 doc_with_state.hash = new_document_hash
                 doc_with_state.chunk_hashes = new_hashes
         return chunk_operations
@@ -102,8 +106,9 @@ class InMemoryDocumentManager(DocumentManager):
         Additionally, removes any documents that are not in
         `documents`.
         """
+        chunk_operations = []
         if len(documents) != len(ids):
-            raise ValueError("Unequal count of documents and ids."
+            raise ValueError("Unequal count of documents and ids.")
         id_set = set(ids)
         if len(ids) != len(id_set):
             raise ValueError("Duplicate ids.")
@@ -116,12 +121,12 @@ class InMemoryDocumentManager(DocumentManager):
                 chunk_operations.extend(self.update([document], [id]))
 
         # Compute chunks to be deleted.
-        chunk_operations = []
         for doc_id in self._documents_with_state:
             if doc_id not in id_set:
                 doc_with_state = self._documents_with_state[doc_id]
                 for i in range(len(doc_with_state.chunk_hashes)):
+                    # Add hacky placeholder value for page_content to satisfy pydantic.
                     chunk_operations.append(
-                        DocumentWithOperation(id=_get_chunk_id(doc_id, i), operation=ChunkOperation.REMOVE))
+                        DocumentWithOperation(page_content="placeholder", id=_get_chunk_id(doc_id, i), operation=ChunkOperation.REMOVE))
 
         return chunk_operations
