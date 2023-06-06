@@ -26,7 +26,7 @@ class FaunaLoader(BaseLoader):
         self.secrect = secrect
         self.metadata_fields = metadata_fields
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> List[Document]:
         try:
             from fauna import fql, Page
             from fauna.client import Client

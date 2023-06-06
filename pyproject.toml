@@ -120,7 +120,6 @@ pytest = "^7.3.0"
 pytest-cov = "^4.0.0"
 pytest-dotenv = "^0.5.2"
 duckdb-engine = "^0.7.0"
-fauna= "0.6.1"
 pytest-watcher = "^0.2.6"
 freezegun = "^1.2.2"
 responses = "^0.22.0"
@@ -275,7 +274,8 @@ extended_testing = [
  "zep-python",
  "gql",
  "requests_toolbelt",
- "html2text"
+ "html2text",
+ "fauna"
 ]
 
 [tool.ruff]
