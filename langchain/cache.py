@@ -165,6 +165,7 @@ class SQLAlchemyCache(BaseCache):
         with Session(self.engine) as session:
             session.query(self.cache_schema).delete()
 
+
 class SQLiteCache(SQLAlchemyCache):
     """Cache that uses SQLite as a backend."""
 
