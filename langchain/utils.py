@@ -2,7 +2,10 @@
 import contextlib
 import datetime
 import importlib
+import json
 import os
+import subprocess
+from functools import cache
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from requests import HTTPError, Response
@@ -131,3 +134,20 @@ def guard_import(
             f"Please install it with `pip install {pip_name or module_name}`."
         )
     return module
+
+
+@cache
+def get_openai_default_values(
+    var_names: List[str] = ["openai.api_type", "openai.api_base", "openai.api_version"]
+)->Dict[str, str]:
+    print_vars = ",".join([f'"{v}": "%s"' for v in var_names])
+    # import openai; print({"name": "value"...})
+    SCRIPT = (
+        "import openai; print('{" + print_vars + "}'%(" + ",".join(var_names) + "))"
+    )
+    res = subprocess.check_output(["python", "-c", SCRIPT])
+    # format output into dictionary {"api_type": "openai",..}
+    return {
+        k.replace("openai.", ""): v if v != "None" else None
+        for k, v in json.loads(res.decode("UTF-8")).items()
+    }

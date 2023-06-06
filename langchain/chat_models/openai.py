@@ -38,7 +38,7 @@ from langchain.schema import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, get_openai_default_values
 
 if TYPE_CHECKING:
     import tiktoken
@@ -220,6 +220,9 @@ class ChatOpenAI(BaseChatModel):
         try:
             import openai
 
+            # restore values that may have been changed from other `chat_models`
+            for k, v in get_openai_default_values().items():
+                setattr(openai, k, v)
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "

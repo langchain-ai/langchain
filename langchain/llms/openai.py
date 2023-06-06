@@ -35,7 +35,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, get_openai_default_values
 
 logger = logging.getLogger(__name__)
 
@@ -235,6 +235,9 @@ class BaseOpenAI(BaseLLM):
         try:
             import openai
 
+            # restore values that may have been changed from other `chat_models`
+            for k, v in get_openai_default_values().items():
+                setattr(openai, k, v)
             openai.api_key = openai_api_key
             if openai_api_base:
                 openai.api_base = openai_api_base
