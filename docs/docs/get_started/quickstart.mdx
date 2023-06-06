@@ -17,7 +17,7 @@ import CodeBlock from "@theme/CodeBlock";
   </TabItem>
 </Tabs>
 
-## Environment Setup
+## Environment setup
 
 Using LangChain will usually require integrations with one or more model providers, data stores, APIs, etc.
 
@@ -41,7 +41,7 @@ from langchain.llms import OpenAI
 llm = OpenAI(openai_api_key="...")
 ```
 
-## Building a Language Model Application
+## Building an application
 
 Now we can start building our language model application. LangChain provides many modules that can be used to build language model applications. Modules can be used as stand-alones in simple applications and they can be combined for more complex use cases.
 
@@ -67,7 +67,7 @@ llm("What would be a good company name for a company that makes colorful socks?"
 
 For more details on how to use LLMs within LangChain, see the [LLM getting started guide](../modules/models/llms/getting_started.ipynb).
 
-## Chat Models
+## Chat models
 #### Get message completions from a chat model
 
 Chat models are a variation on language models. While chat models use language models under the hood, the interface they expose is a bit different: rather than expose a "text in, text out" API, they expose an interface where "chat messages" are the inputs and outputs.
@@ -125,8 +125,8 @@ result.llm_output['token_usage']
 # >> {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}
 ```
 
-## Prompt Templates
-#### Manage model prompts
+## Prompt templates
+#### Manage model inputs
 
 <Tabs>
     <TabItem value="llms" label="LLMs" default>
@@ -141,12 +141,74 @@ result.llm_output['token_usage']
     <p>
     With PromptTemplates this is easy! In this case our template would be very simple:
     </p>
-
+    <br></br>
    <CodeBlock language="python">
    {
 `from langchain.prompts import PromptTemplate\n
-prompt = PromptTemplate.from_template("What is a good name for a company that makes {product}?")`
+prompt = PromptTemplate.from_template("What is a good name for a company that makes {product}?")
+prompt.format(product="colorful socks")
+# >> What is a good name for a company that makes colorful socks?
+`
    }
    </CodeBlock>
     </TabItem>
+    <TabItem value="chat_models" label="Chat models" default>
+    <p>Similar to LLMs, you can make use of templating by using a `MessagePromptTemplate`. You can build a `ChatPromptTemplate` from one or more `MessagePromptTemplate`s. You can use `ChatPromptTemplate`'s `format_prompt` -- this returns a `PromptValue`, which you can convert to a string or `Message` object, depending on whether you want to use the formatted value as input to an llm or chat model.</p>
+    <br></br>
+    <p>For convenience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:</p>
+    <br></br>
+    <CodeBlock language="python">
+    {
+`from langchain.chat_models import ChatOpenAI
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)\n
+chat = ChatOpenAI(temperature=0)\n
+template = "You are a helpful assistant that translates {input_language} to {output_language}."
+system_message_prompt = SystemMessagePromptTemplate.from_template(template)
+human_template = "{text}"
+human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)\n
+chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])\n
+chat(chat_prompt.format_prompt(input_language="English", output_language="French", text="I love programming.").to_messages())
+# >>AIMessage(content="J'aime programmer.", additional_kwargs={})
+`
+    }
+    </CodeBlock>
+    </TabItem>
 </Tabs>
+
+## Chains
+#### Combine LLMs and prompts in structured sequences
+
+Now that we've got a model and a prompt template, we'll want to combine the two. Chains give us a way to link (or chain) together multiple primitives, like models, prompts, and other chains.
+
+<Tabs>
+<TabItem value="llms" label="LLMs" default>
+<p>The simplest and most common type of chain is an LLMChain, which passes an input first to a PromptTemplate and then to an LLM. We can construct an LLM chain from our existing model and prompt template. Using this we can replace</p>
+<CodeBlock language="python">llm("What would be a good company name for a company that makes colorful socks?")</CodeBlock>
+<p>with</p>
+<CodeBlock language="python">
+{`
+from langchain.chains import LLMChain\n
+chain = LLMChain(llm=llm, prompt=prompt)
+chain.run("colorful socks")
+# >> Feetful of Fun
+`
+}
+<p>There we go, our first chain! Understanding how this simple chain works will set you up well for working with more complex chains.</p>
+</CodeBlock>
+</TabItem>
+<TabItem value="chat_models" label="Chat models" default>
+<p>The `LLMChain` discussed in the above section can be used with chat models as well:</p>
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="llms" label="LLMs" default>
+</TabItem>
+<TabItem value="chat_models" label="Chat models" default>
+</TabItem>
+</Tabs>
+
