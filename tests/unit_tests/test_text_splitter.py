@@ -601,7 +601,6 @@ def test_html_code_splitter() -> None:
             </div>
     """
     chunks = splitter.split_text(code)
-    print(chunks)
     assert chunks == [
         "<h1>Sample Document</h1>\n    <h2>Section</h2>",
         '<p id="1234">Reference content.</p>',
