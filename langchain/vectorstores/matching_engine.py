@@ -224,8 +224,10 @@ class MatchingEngine(VectorStore):
                 results.append(Document(page_content=page_content))
         else:
             for doc in response[0]:
-                page_content = self.firestore_client.collection(self.firestore_collection_name).document(doc.id).get().to_dict()['content']
-                results.append(Document(page_content=page_content))
+                page = self.firestore_client.collection(self.firestore_collection_name).document(doc.id).get().to_dict()
+                metadata = {"id": doc.id}
+                metadata.update({key: value for key, value in page.items() if key!='content'})
+                results.append(Document(page_content=page['content'], metadata=metadata))
 
         logger.debug("Downloaded documents for query.")
 
