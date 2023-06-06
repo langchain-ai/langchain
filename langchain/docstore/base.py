@@ -45,14 +45,7 @@ class Selector:
     ids: Optional[Sequence[str]] = None
 
 
-# @dataclasses.dataclass(frozen=True)
-# class FreeFormSelector(BaseSelector):
-#     # Some selector that matches syntax of underlying vector store
-#     query: str
-#     kwargs: Any
-
-
-class ArtifactLayer(abc.ABC):
+class ArtifactStore(abc.ABC):
     """Use to keep track of artifacts generated while processing content.
 
     The first version of the artifact store is used to work with Documents

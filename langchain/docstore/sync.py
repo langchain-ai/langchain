@@ -1,7 +1,7 @@
 """Module contains doc for syncing from docstore to vectorstores."""
 from typing import TypedDict, Sequence
 
-from langchain.docstore.base import ArtifactLayer, Selector
+from langchain.docstore.base import ArtifactStore, Selector
 from langchain.vectorstores import VectorStore
 
 
@@ -21,11 +21,11 @@ class SyncResult(TypedDict):
 
 
 def sync(
-    artifact_layer: ArtifactLayer, vector_store: VectorStore, selector: Selector
+    artifact_store: ArtifactStore, vector_store: VectorStore, selector: Selector
 ) -> SyncResult:
     """Sync the given artifact layer with the given vector store."""
 
-    matching_documents = artifact_layer.get_matching_documents(selector)
+    matching_documents = artifact_store.get_matching_documents(selector)
     # IDs must fit into memory for this to work.
     upsert_info = vector_store.upsert_by_id(documents=matching_documents)
     # Non-intuitive interface, but simple to implement

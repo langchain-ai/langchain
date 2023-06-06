@@ -75,7 +75,7 @@ from typing import (
 )
 from uuid import UUID
 
-from langchain.docstore.base import ArtifactLayer, Selector
+from langchain.docstore.base import ArtifactStore, Selector
 from langchain.docstore.serialization import serialize_document, deserialize_document
 from langchain.document_loaders.base import BaseLoader
 from langchain.output_parsers import json
@@ -197,7 +197,7 @@ class InMemoryStore(MetadataStore):
         return cls(content)
 
 
-class FileSystemArtifactLayer(ArtifactLayer):
+class FileSystemArtifactLayer(ArtifactStore):
     """An artifact layer for storing artifacts on the file system."""
 
     def __init__(self, root: PathLike) -> None:
@@ -311,14 +311,14 @@ class DocumentPipeline(BaseLoader):
         loader: BaseLoader,
         *,
         transformers: Optional[Sequence[BaseDocumentTransformer]] = None,
-        caching_layer: Optional[ArtifactLayer] = None,
+        artifact_store: Optional[ArtifactStore] = None,
         # Would be ideal if we could implement something like this
         progress_bar: bool = False,
     ) -> None:
         """Initialize the document pipeline."""
         self.loader = loader
         self.transformers = transformers
-        self.caching_layer = caching_layer
+        self.artifact_store = artifact_store
 
     def lazy_load(
         self,
@@ -340,7 +340,7 @@ class DocumentPipeline(BaseLoader):
         self, documents: Sequence[Document], transformation: BaseDocumentTransformer
     ) -> Iterable[Document]:
         """Transform the given documents using the transformation with caching."""
-        docs_exist = self.caching_layer.exists_by_uuid(
+        docs_exist = self.artifact_store.exists_by_uuid(
             [document.hash_ for document in documents]
         )
 
@@ -355,11 +355,15 @@ class DocumentPipeline(BaseLoader):
                 for transformed_doc in transformed_docs:
                     if not transformed_doc.parent_hashes:
                         transformed_doc.parent_hashes = {document.hash_}
-                self.caching_layer.add(transformed_docs)
+
+                # TODO(EUGENE): Extract transformation information here
+                # to add to metadata store
+                transformation_name = transformation.__class__.__name__
+                self.artifact_store.add(transformed_docs)
                 new_docs.extend(transformed_docs)
             else:
                 new_docs.extend(
-                    self.caching_layer.get_matching_documents(
+                    self.artifact_store.get_matching_documents(
                         Selector(parent_hashes=[document.hash_])
                     )
                 )
