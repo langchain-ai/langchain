@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Protocol
+from abc import abstractmethod
+from typing import Any, Dict, List, Optional
 
-from langchainplus_sdk.evaluation.evaluator import EvaluationResult
+from langchainplus_sdk import EvaluationResult, RunEvaluator
 from langchainplus_sdk.schemas import Example, Run
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
@@ -11,9 +12,10 @@ from langchain.chains.llm import LLMChain
 from langchain.schema import BaseOutputParser
 
 
-class RunEvalInputMapper(Protocol):
+class RunEvalInputMapper:
     """Map the inputs of a run to the inputs of an evaluation."""
 
+    @abstractmethod
     def map(self, run: Run, example: Optional[Example] = None) -> Dict[str, Any]:
         """Maps the Run and Optional[Example] to a dictionary"""
 
@@ -29,7 +31,7 @@ class RunEvaluatorOutputParser(BaseOutputParser[EvaluationResult]):
         return self.parse(text)
 
 
-class RunEvaluator(Chain):
+class RunEvaluatorChain(Chain, RunEvaluator):
     """Evaluate Run and optional examples."""
 
     input_mapper: RunEvalInputMapper

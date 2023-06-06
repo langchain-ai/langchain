@@ -11,7 +11,7 @@ from langchain.evaluation.qa.eval_prompt import PROMPT as QA_DEFAULT_PROMPT
 from langchain.evaluation.qa.eval_prompt import SQL_PROMPT
 from langchain.evaluation.run_evaluators.base import (
     RunEvalInputMapper,
-    RunEvaluator,
+    RunEvaluatorChain,
     RunEvaluatorOutputParser,
 )
 from langchain.evaluation.run_evaluators.criteria_prompt import (
@@ -90,8 +90,8 @@ def get_qa_evaluator(
     answer_key: str = "output",
     evaluation_name: Optional[str] = None,
     **kwargs: Any,
-) -> RunEvaluator:
-    """Get a RunEvaluator for evaluating a model's response against ground truth."""
+) -> RunEvaluatorChain:
+    """Get an eval chain that compares response against ground truth."""
     if isinstance(prompt, str):
         prompt = _QA_PROMPTS[prompt]
     eval_chain = QAEvalChain.from_llm(llm=llm, prompt=prompt, **kwargs)
@@ -111,7 +111,7 @@ def get_qa_evaluator(
             choices_map={"CORRECT": 1, "INCORRECT": 0},
         ),
     )
-    return RunEvaluator(
+    return RunEvaluatorChain(
         eval_chain=eval_chain,
         input_mapper=input_mapper,
         output_parser=output_parser,
@@ -169,8 +169,8 @@ def get_criteria_evaluator(
     prompt: PromptTemplate = CRITERIA_PROMPT,
     evaluation_name: Optional[str] = None,
     **kwargs: Any,
-) -> RunEvaluator:
-    """Get a RunEvaluator for grading a model's response against a map of criteria."""
+) -> RunEvaluatorChain:
+    """Get an eval chain for grading a model's response against a map of criteria."""
     if isinstance(criteria, str):
         criteria = {criteria: _SUPPORTED_CRITERIA[criteria]}
     elif isinstance(criteria, Sequence):
@@ -192,7 +192,7 @@ def get_criteria_evaluator(
         ),
     )
     eval_chain = LLMChain(llm=llm, prompt=prompt_, **kwargs)
-    return RunEvaluator(
+    return RunEvaluatorChain(
         eval_chain=eval_chain,
         input_mapper=input_mapper,
         output_parser=parser,

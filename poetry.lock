@@ -3985,23 +3985,6 @@ requests = ">=2,<3"
 tenacity = ">=8.1.0,<9.0.0"
 
 [[package]]
-name = "langchainplus-sdk"
-version = "0.0.4"
-description = "Client library to connect to the LangChainPlus LLM Tracing and Evaluation Platform."
-category = "main"
-optional = false
-python-versions = ">=3.8.1,<4.0"
-files = [
-    {file = "langchainplus_sdk-0.0.4-py3-none-any.whl", hash = "sha256:ba72276b0e9cb148f572d531fbed41017d3a0072dc5a1110d8d2f3af06efce75"},
-    {file = "langchainplus_sdk-0.0.4.tar.gz", hash = "sha256:0c09af62e81975e33561c655ba9b32777d79834218c9377d28578a9558740044"},
-]
-
-[package.dependencies]
-pydantic = ">=1,<2"
-requests = ">=2,<3"
-tenacity = ">=8.1.0,<9.0.0"
-
-[[package]]
 name = "langcodes"
 version = "3.3.0"
 description = "Tools for labeling human languages with IETF language tags"
@@ -6612,13 +6595,13 @@ wcwidth = "*"
 
 [[package]]
 name = "promptlayer"
-version = "0.1.84"
+version = "0.1.85"
 description = "PromptLayer is a package to keep track of your GPT models training"
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "promptlayer-0.1.84.tar.gz", hash = "sha256:38db68a67dd6d075d124badca0998070a79adce611df00e037b706704369c30a"},
+    {file = "promptlayer-0.1.85.tar.gz", hash = "sha256:7f5ee282361e200253f0aa53267756a112d3aa1fa29d680a634031c617de20de"},
 ]
 
 [package.dependencies]
@@ -7182,17 +7165,10 @@ category = "main"
 optional = true
 python-versions = ">=3.8"
 files = [
-<<<<<<< HEAD
     {file = "pylance-0.4.18-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:9741880ede522b4f80ae9a43b499265096dca4eb2a2a2d72690cb01eb6ef6fed"},
     {file = "pylance-0.4.18-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:8b2e2baf0dfeb65da8f993872f4c375d6ad16ada4472756f888f033ce72dbd86"},
     {file = "pylance-0.4.18-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c81f891a6230fc38e60f01f16923263a082f7fd1646c15aad1e940d29c4e8a83"},
     {file = "pylance-0.4.18-cp38-abi3-win_amd64.whl", hash = "sha256:eda511361a4545bb32fb98bcb270a1a41aaf022dd63cc306fdf5698310ba81ce"},
-=======
-    {file = "pylance-0.4.12-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:2b86fb8dccc03094c0db37bef0d91bda60e8eb0d1eddf245c6971450c8d8a53f"},
-    {file = "pylance-0.4.12-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:0bc82914b13204187d673b5f3d45f93219c38a0e9d0542ba251074f639669789"},
-    {file = "pylance-0.4.12-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5a4bcce77f99ecd4cbebbadb01e58d5d8138d40eb56bdcdbc3b20b0475e7a472"},
-    {file = "pylance-0.4.12-cp38-abi3-win_amd64.whl", hash = "sha256:9616931c5300030adb9626d22515710a127d1e46a46737a7a0f980b52f13627c"},
->>>>>>> 76c8a7a4 (Add LCP SDK Dep)
 ]
 
 [package.dependencies]
@@ -11265,12 +11241,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-<<<<<<< HEAD
-<<<<<<< HEAD
 content-hash = "190059b07b111e19ec5b516be227b81728163fee14928c92cba2c0212d35ead0"
-=======
-content-hash = "5859360403255ac998156d49afafd6b30d8d4b33a07b71b6350ddbb2d0aa0579"
->>>>>>> 76c8a7a4 (Add LCP SDK Dep)
-=======
-content-hash = "ec0d889d9291785b93452446f00a43fc5f367ff49171df5eda705316ff346789"
->>>>>>> c8e50a9c (rm server)
