@@ -576,3 +576,39 @@ This is a code block
         "block",
         "```",
     ]
+
+
+def test_html_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.HTML, chunk_size=60, chunk_overlap=0
+    )
+    code = """
+<h1>Sample Document</h1>
+    <h2>Section</h2>
+        <p id="1234">Reference content.</p>
+
+    <h2>Lists</h2>
+        <ul>
+            <li>Item 1</li>
+            <li>Item 2</li>
+            <li>Item 3</li>
+        </ul>
+
+        <h3>A block</h3>
+            <div class="amazing">
+                <p>Some text</p>
+                <p>Some more text</p>
+            </div>
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "<h1>Sample Document</h1>\n    <h2>Section</h2>",
+        '<p id="1234">Reference content.</p>',
+        "<h2>Lists</h2>\n        <ul>",
+        "<li>Item 1</li>\n            <li>Item 2</li>",
+        "<li>Item 3</li>\n        </ul>",
+        "<h3>A block</h3>",
+        '<div class="amazing">',
+        "<p>Some text</p>",
+        "<p>Some more text</p>\n            </div>",
+    ]
