@@ -48,6 +48,7 @@ from langchain.tools.powerbi.tool import (
     ListPowerBITool,
     QueryPowerBITool,
 )
+from langchain.tools.pubmed.tool import PubmedQueryRun
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.shell.tool import ShellTool
 from langchain.tools.steamship_image_generation import SteamshipImageGenerationTool
@@ -120,4 +121,5 @@ __all__ = [
     "tool",
     "YouTubeSearchTool",
     "BraveSearch",
+    "PubmedQueryRun",
 ]

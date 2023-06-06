@@ -43,8 +43,8 @@ class _VertexAICommon(BaseModel):
         base_params = {
             "temperature": self.temperature,
             "max_output_tokens": self.max_output_tokens,
-            "top_k": self.top_p,
-            "top_p": self.top_k,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
         }
         return {**base_params}
 

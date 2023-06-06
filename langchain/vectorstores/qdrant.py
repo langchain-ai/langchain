@@ -192,7 +192,9 @@ class Qdrant(VectorStore):
             filter: Filter by metadata. Defaults to None.
 
         Returns:
-            List of Documents most similar to the query and score for each.
+            List of documents most similar to the query text and cosine
+            distance in float for each.
+            Lower score represents more similarity.
         """
 
         if filter is not None and isinstance(filter, dict):
