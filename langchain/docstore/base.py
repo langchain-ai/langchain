@@ -30,10 +30,17 @@ class AddableMixin(ABC):
 
 @dataclasses.dataclass(frozen=True)
 class Selector:
-    """Selector for documents."""
+    """Selector for documents.
+
+    this is just for experimentation -- need a better representation
+
+    maybe jq if metadata
+    """
 
     parent_hashes: Optional[Sequence[UUID]] = None
-    provenance: Optional[str] = None
+    hashes: Optional[Sequence[UUID]] = None
+    ids: Optional[Sequence[str]] = None
+
 
 # @dataclasses.dataclass(frozen=True)
 # class FreeFormSelector(BaseSelector):

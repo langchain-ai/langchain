@@ -57,16 +57,17 @@ Usage:
     ) # <-- This will sync the file system store with the vector store
 """
 from json import JSONDecodeError
+
+import abc
+import json
 from pathlib import Path
-from typing import TypedDict, Sequence, Optional, Any, Iterator, Union
+from typing import TypedDict, Sequence, Optional, Any, Iterator, Union, List, Iterable
+from uuid import UUID
 
 from langchain.docstore.base import ArtifactLayer, Selector
 from langchain.output_parsers import json
 from langchain.schema import Document, BaseDocumentTransformer
 from langchain.vectorstores.base import VectorStore
-import json
-from uuid import UUID
-
 
 MaybeDocument = Optional[Document]
 
@@ -98,12 +99,81 @@ PathLike = Union[str, Path]
 
 class Artifact(TypedDict):
     id: str
-    parent_ids: Sequence[str]
+    hash_: str
+    parent_hashes: List[str]
     metadata: Any
 
 
 class MetadataFormat(TypedDict):
-    artifacts: Sequence[str]
+    artifacts: List[Artifact]
+
+
+class MetadataStore(abc.ABC):
+    """Abstract metadata store."""
+
+    def select(self, selector: Selector) -> Sequence[str]:
+        """Select the artifacts matching the given selector."""
+        raise NotImplementedError
+
+
+class InMemoryStore(MetadataStore):
+    def __init__(self, data: MetadataFormat) -> None:
+        """Initialize the in-memory store."""
+        self.data = data
+
+    def select(self, selector: Selector) -> Iterable[str]:
+        """Return an iterable of the matching artifacts."""
+        # FOR LOOP THROUGH ALL ARTIFACTS. THIS IS FINE
+        # It's done to avoid keeping 
+
+        for artifact in self.data:
+
+
+        already_seen = set()
+        if selector.parent_hashes:
+            # Non efficient
+            for artifact in self.data["artifacts"]:
+                if set(artifact["parent_hashes"]).intersection(selector.parent_hashes):
+                    yield artifact["id"]
+                    already_seen.add(artifact["id"])
+
+        if selector.ids:
+            for artifact in self.data["artifacts"]:
+                if (
+                    artifact["id"] in selector.ids
+                    and artifact["id"] not in already_seen
+                ):
+                    yield artifact["id"]
+                    already_seen.add(artifact["id"])
+
+        if selector.hashes:
+            for artifact in self.data["artifacts"]:
+                if (
+                    artifact["hash_"] in selector.hashes
+                    and artifact["id"] not in already_seen
+                ):
+                    yield artifact["id"]
+                    already_seen.add(artifact["id"])
+
+    def save(self, path: PathLike) -> None:
+        """Save the metadata to the given path."""
+        with open(path, "w") as f:
+            json.dump(self.data, f)
+
+    def add(self, artifact: Artifact) -> None:
+        """Add the given artifact to the store."""
+        self.data["artifacts"].append(artifact)
+
+    def remove(self, selector: Selector) -> None:
+        """Remove the given artifacts from the store."""
+        raise NotImplementedError
+
+    @classmethod
+    def from_file(cls, path: PathLike) -> "InMemoryStore":
+        with open(path, "r") as f:
+            content = json.load(f)
+
+        return cls(content)
 
 
 class FileSystemArtifactLayer(ArtifactLayer):
@@ -111,15 +181,13 @@ class FileSystemArtifactLayer(ArtifactLayer):
 
     def __init__(self, root: PathLike) -> None:
         """Initialize the file system artifact layer."""
-        self.root = root
+        self.root = root if isinstance(root, Path) else Path(root)
         # Metadata file will be kept in memory for now and updated with
         # each call.
         # This is hacky and error prone due to race conditions (if multiple
         # processes are writing), but OK for prototyping.
         metadata_path = root / "metadata.json"
-        with open(metadata_path, "r") as f:
-            metadata_json = json.load(f)
-        self.metadata_json = metadata_json
+        self.metadata_store = InMemoryStore.from_file(metadata_path)
 
     def exists(self, ids: Sequence[str]) -> Sequence[bool]:
         """Check if the artifacts with the given id exist."""
@@ -130,7 +198,8 @@ class FileSystemArtifactLayer(ArtifactLayer):
         # Write the documents to the file system
         for document in documents:
             # Use the document hash to write the contents to the file system
-            with open(self.parent_dir / f"{document.hash_}", "w") as f:
+            file_path = self.root / f"{document.hash_}"
+            with open(file_path, "w") as f:
                 f.write(serialize_document(document))
 
     def get_matching_documents(self, selector: Selector) -> Iterator[Document]:
