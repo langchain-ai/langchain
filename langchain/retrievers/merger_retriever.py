@@ -67,7 +67,7 @@ class MergerRetriever(BaseRetriever):
 
         return refined_documents
 
-def merge_documents(self, query: str) -> List[str]:
+    def merge_documents(self, query: str) -> List[str]:
         """
         Merge the results of the retrievers.
 
@@ -80,8 +80,7 @@ def merge_documents(self, query: str) -> List[str]:
 
         # Get the results of all retrievers.
         retriever_docs = [
-            retriever.get_relevant_documents(query)
-            for retriever in self.retrievers
+            retriever.get_relevant_documents(query) for retriever in self.retrievers
         ]
 
         # Merge the results of the retrievers.
