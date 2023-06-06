@@ -160,7 +160,7 @@ async def atrace_as_chain_group(
     example_id: Optional[Union[str, UUID]] = None,
     tenant_id: Optional[str] = None,
     session_extra: Optional[Dict[str, Any]] = None,
-) -> AsyncGenerator[AsyncCallbackManager, None, None]:
+) -> AsyncGenerator[AsyncCallbackManager, None]:
     """Get a callback manager for a chain group in a context manager."""
     cb = LangChainTracer(
         tenant_id=tenant_id,
