@@ -1,18 +1,13 @@
 """Test caching for LLMs and ChatModels."""
 import os
-from typing import Any, Dict, Generator, Union
+from typing import Dict, Generator, Union
 
 import pytest
 from _pytest.fixtures import FixtureRequest
 
 import langchain
 from langchain.cache import (
-    BaseCache,
-    GPTCache,
     InMemoryCache,
-    MomentoCache,
-    RedisCache,
-    SQLAlchemyCache,
     SQLiteCache,
 )
 from langchain.chat_models import FakeListChatModel
@@ -21,33 +16,31 @@ from langchain.llms import FakeListLLM
 from langchain.llms.base import BaseLLM
 from langchain.schema import AIMessage, ChatGeneration, Generation, _message_from_dict
 
-CACHE_DB_FILE = "cache.test.db"
+CACHE_DB_FILE = ".langchain.test.db"
 
 CACHE_OPTIONS = [
-    ("memory", InMemoryCache()),
-    ("sqlite", SQLiteCache(CACHE_DB_FILE)),
-    # - Redis Cache
-    # - GPTCache
-    # - Momento Cache
-    # - SQLAlchemy Cache
+    InMemoryCache(),
+    SQLiteCache(CACHE_DB_FILE),
 ]
 
 
 @pytest.fixture(autouse=True, params=CACHE_OPTIONS)
 def set_cache_and_teardown(request: FixtureRequest) -> Generator[None, None, None]:
     # Will be run before each test
-    cache_type, cache_instance = request.param
-    if cache_type == "sqlite":
-        if os.path.exists(CACHE_DB_FILE):
-            os.remove(CACHE_DB_FILE)
+    cache_instance = request.param
     langchain.llm_cache = cache_instance
+    if langchain.llm_cache:
+        langchain.llm_cache.clear()
+    else:
+        raise ValueError("Cache not set. This should never happen.")
 
     yield
 
     # Will be run after each test
-    if cache_type == "sqlite":
-        if os.path.exists(CACHE_DB_FILE):
-            os.remove(CACHE_DB_FILE)
+    if langchain.llm_cache:
+        langchain.llm_cache.clear()
+    else:
+        raise ValueError("Cache not set. This should never happen.")
 
 
 def test_llm_caching() -> None:
@@ -55,7 +48,7 @@ def test_llm_caching() -> None:
     response = "Test response"
     cached_response = "Cached test response"
     llm = FakeListLLM(responses=[response])
-    if isinstance(langchain.llm_cache, BaseCache):
+    if langchain.llm_cache:
         langchain.llm_cache.update(
             prompt=prompt,
             llm_string=create_llm_string(llm),
@@ -65,7 +58,7 @@ def test_llm_caching() -> None:
     else:
         raise ValueError(
             "The cache not set. This should never happen, as the pytest fixture "
-            "`set_cache` always sets the cache."
+            "`set_cache_and_teardown` always sets the cache."
         )
 
 
@@ -79,7 +72,7 @@ def test_chat_model_caching() -> None:
         {"type": "ai", "data": {"content": cached_response}}
     )
     llm = FakeListChatModel(responses=[response])
-    if isinstance(langchain.llm_cache, BaseCache):
+    if langchain.llm_cache:
         langchain.llm_cache.update(
             prompt=chat_history_as_string(prompt),
             llm_string=create_llm_string(llm),
@@ -91,7 +84,7 @@ def test_chat_model_caching() -> None:
     else:
         raise ValueError(
             "The cache not set. This should never happen, as the pytest fixture "
-            "`set_cache` always sets the cache."
+            "`set_cache_and_teardown` always sets the cache."
         )
 
 
