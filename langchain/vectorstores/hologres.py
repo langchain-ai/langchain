@@ -35,7 +35,7 @@ class HologresWrapper:
         self.conn.commit()
 
         self.cursor.execute(
-            f"""create table {self.table_name} (
+            f"""create table if not exists {self.table_name} (
                 id text,
                 embedding float4[] check(array_ndims(embedding) = 1 and array_length(embedding, 1) = {self.ndims}),
                 metadata json,
@@ -54,7 +54,8 @@ class HologresWrapper:
 
     def get_by_id(self, id: str) -> List[Tuple]:
         self.cursor.execute(
-            f"select id, embedding, metadata, document from {self.table_name} where id = {id};"
+            f"select id, embedding, metadata, document from {self.table_name} where id = %s;",
+            (id)
         )
         self.conn.commit()
         return self.cursor.fetchall()
@@ -67,22 +68,26 @@ class HologresWrapper:
         id: Optional[str] = None,
     ) -> None:
         self.cursor.execute(
-            f'insert into {self.table_name} values (\'{id if id is not None else "null"}\', array{json.dumps(embedding)}::float4[], \'{json.dumps(metadata)}\', \'{document}\')'
+            f'insert into "{self.table_name}" values (%s, array{json.dumps(embedding)}::float4[], %s, %s)',
+            (id if id is not None else "null", json.dumps(metadata), document)
         )
         self.conn.commit()
 
     def query_nearest_neighbours(
         self, embedding: List[float], k: int, filter: Optional[Dict[str, str]] = None
     ) -> List[Tuple[str, str, float]]:
+        params = []
         filter_clause = ""
         if filter is not None:
             conjuncts = []
             for key, val in filter.items():
-                conjuncts.append(f"metadata->>'{key}'='{val}'")
+                conjuncts.append(f"metadata->>%s=%s")
+                params.append(key)
+                params.append(val)
             filter_clause = "where " + " and ".join(conjuncts)
 
         sql = f"select document, metadata::text, pm_approx_squared_euclidean_distance(array{json.dumps(embedding)}::float4[], embedding) as distance from {self.table_name} {filter_clause} order by distance asc limit {k};"
-        self.cursor.execute(sql)
+        self.cursor.execute(sql, tuple(params))
         self.conn.commit()
         return self.cursor.fetchall()
 
@@ -136,6 +141,7 @@ class Hologres(VectorStore):
             self.storage.create_vector_extension()
         except Exception as e:
             self.logger.exception(e)
+            raise e
 
     def create_table(self) -> None:
         self.storage.create_table(self.pre_delete_table)
@@ -196,6 +202,7 @@ class Hologres(VectorStore):
                 self.storage.insert(embedding, metadata, text, id)
         except Exception as e:
             self.logger.exception(e)
+            self.storage.conn.commit()
 
     def add_texts(
         self,
