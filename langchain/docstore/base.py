@@ -1,7 +1,7 @@
 """Interface to access to place that stores documents."""
 import abc
 from abc import ABC, abstractmethod
-from typing import Dict, Union, Sequence, Iterator, Optional
+from typing import Dict, Union, Sequence, Iterator, Optional, List
 from uuid import UUID
 
 import dataclasses
@@ -63,7 +63,7 @@ class ArtifactLayer(abc.ABC):
     """
 
     @abc.abstractmethod
-    def exists(self, ids: Sequence[str]) -> Sequence[bool]:
+    def exists(self, ids: Sequence[str]) -> List[bool]:
         """Check if the artifacts with the given id exist."""
 
     # @abc.abstractmethod

@@ -120,6 +120,24 @@ class InMemoryStore(MetadataStore):
         """Initialize the in-memory store."""
         super().__init__()
         self.data = data
+        self.artifacts = data["artifacts"]
+        # indexes for speed
+        self.artifact_uuid = {artifact["uuid"]: artifact for artifact in self.artifacts}
+        self.artifact_ids = {
+            artifact["custom_id"]: artifact for artifact in self.artifacts
+        }
+
+    def exists_by_id(self, ids: Sequence[str]) -> List[bool]:
+        """Order preserving check if the artifact with the given id exists."""
+        return [bool(id_ in self.artifact_ids) for id_ in ids]
+
+    def exists_by_uuid(self, uuids: Sequence[UUID]) -> List[bool]:
+        """Order preserving check if the artifact with the given uuid exists."""
+        return [bool(uuid_ in self.artifact_ids) for uuid_ in uuids]
+
+    def get_by_uuids(self, uuids: Sequence[UUID]) -> List[Artifact]:
+        """Return the documents with the given uuids."""
+        return [self.artifact_uuid[uuid] for uuid in uuids]
 
     def select(self, selector: Selector) -> Iterable[str]:
         """Return the hashes the artifacts matching the given selector."""
@@ -148,10 +166,18 @@ class InMemoryStore(MetadataStore):
     def add(self, artifact: Artifact) -> None:
         """Add the given artifact to the store."""
         self.data["artifacts"].append(artifact)
+        # TODO(EUGENE): Handle DEFINE collision semantics
+        self.artifact_uuid[artifact["uuid"]] = artifact
+        self.artifact_ids[artifact["custom_id"]] = artifact
 
     def remove(self, selector: Selector) -> None:
         """Remove the given artifacts from the store."""
-        raise NotImplementedError
+        uuids = list(self.select(selector))
+        self.remove_by_uuids(uuids)
+
+    def remove_by_uuids(self, uuids: Sequence[UUID]) -> None:
+        """Remove the given artifacts from the store."""
+        raise NotImplementedError()
 
     @classmethod
     def from_file(cls, path: PathLike) -> "InMemoryStore":
@@ -169,16 +195,25 @@ class FileSystemArtifactLayer(ArtifactLayer):
         self.root = root if isinstance(root, Path) else Path(root)
         # Metadata file will be kept in memory for now and updated with
         # each call.
-        # This is hacky and error prone due to race conditions (if multiple
-        # processes are writing), but OK for prototyping.
+        # This is error-prone due to race conditions (if multiple
+        # processes are writing), but OK for prototyping / simple use cases.
         metadata_path = root / "metadata.json"
+        self.metadata_path = metadata_path
         self.metadata_store = InMemoryStore.from_file(metadata_path)
 
-    def exists(self, ids: Sequence[str]) -> Sequence[bool]:
-        """Check if the artifacts with the given id exist."""
-        # Use the metadata file to check if the file exists
+    def exists_by_uuid(self, uuids: Sequence[UUID]) -> List[bool]:
+        """Check if the artifacts with the given uuid exist."""
+        return self.metadata_store.exists_by_uuid(uuids)
 
-    def add(self, documents: Sequence[Document]):
+    def exists_by_id(self, ids: Sequence[str]) -> List[bool]:
+        """Check if the artifacts with the given id exist."""
+        return self.metadata_store.exists_by_id(ids)
+
+    def _get_file_path(self, uuid: UUID) -> Path:
+        """Get path to file for the given uuid."""
+        return self.root / f"{uuid}"
+
+    def add(self, documents: Sequence[Document]) -> None:
         """Add the given artifacts."""
         # Write the documents to the file system
         for document in documents:
@@ -187,17 +222,29 @@ class FileSystemArtifactLayer(ArtifactLayer):
             with open(file_path, "w") as f:
                 f.write(serialize_document(document))
 
+            self.metadata_store.add(
+                {
+                    "custom_id": document.id,
+                    "uuid": document.hash_,
+                    "parent_uuids": document.parent_hashes,
+                    "metadata": document.metadata,
+                }
+            )
+
+        self.metadata_store.save(self.metadata_path)
+
     def get_matching_documents(self, selector: Selector) -> Iterator[Document]:
         """Can even use JQ here!"""
-        # Use the metadata file to get the matching documents with the selector
-        matching_document_uuids = []
+        uuids = self.metadata_store.select(selector)
 
-        for uuid in matching_document_uuids:
-            with open(self.parent_dir / f"{uuid}", "r") as f:
+        for uuid in uuids:
+            # artifact = self.metadata_store.get_by_uuids([uuid])[0]
+            path = self._get_file_path(uuid)
+            with open(path, "r") as f:
                 yield deserialize_document(f.read())
 
 
-class CachingInterceptor(BaseDocumentTransformer):
+class CachingInterceptor:
     def __init__(
         self,
         artifact_layer: ArtifactLayer,
