@@ -11,7 +11,7 @@ def default(obj: Any) -> Any:
     return json.JSONEncoder.default(json.JSONEncoder, obj)
 
 
-def dumps(obj: any, *, pretty=False):
+def dumps(obj: Any, *, pretty=False):
     if pretty:
         kwargs = {"indent": 2}
     else:
