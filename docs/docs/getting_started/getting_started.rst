@@ -328,7 +328,7 @@ Dynamically call chains based on user input
             pip install google-search-results
 
 
-        And set the corresponding environment variable.
+        And set the SERPAPI_API_KEY environment variable.
 
         .. code-block:: python
 
