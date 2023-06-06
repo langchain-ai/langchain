@@ -25,6 +25,7 @@ from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
+from langchain.vectorstores.matching_engine import MatchingEngine
 
 __all__ = [
     "Redis",
@@ -56,4 +57,5 @@ __all__ = [
     "Clickhouse",
     "ClickhouseSettings",
     "Tigris",
+    "MatchingEngine",
 ]
