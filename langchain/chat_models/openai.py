@@ -380,7 +380,7 @@ class ChatOpenAI(BaseChatModel):
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
-        openai_creds = {
+        openai_creds: Dict[str, Any] = {
             "api_key": self.openai_api_key,
             "api_base": self.openai_api_base,
             "organization": self.openai_organization,
