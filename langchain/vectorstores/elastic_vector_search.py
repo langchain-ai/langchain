@@ -334,6 +334,8 @@ class ElasticKnnSearch(ElasticVectorSearch):
         es_cloud_id: Optional[str] = None,
         es_user: Optional[str] = None,
         es_password: Optional[str] = None,
+        vector_query_field: Optional[str] = 'vector',
+        query_field: Optional[str] = 'text'
     ):
         """
         Initializes an instance of the ElasticKnnSearch class and sets up the
@@ -362,6 +364,8 @@ class ElasticKnnSearch(ElasticVectorSearch):
 
         self.embedding = embedding
         self.index_name = index_name
+        self.query_field = query_field
+        self.vector_query_field = vector_query_field
 
         # If a pre-existing Elasticsearch connection is provided, use it.
         if es_connection is not None:
@@ -394,17 +398,16 @@ class ElasticKnnSearch(ElasticVectorSearch):
             }
         }
 
-    @staticmethod
     def _default_knn_query(
+        self,
         query_vector: Optional[List[float]] = None,
         query: Optional[str] = None,
         model_id: Optional[str] = None,
-        field: Optional[str] = "vector",
         k: Optional[int] = 10,
         num_candidates: Optional[int] = 10,
     ) -> Dict:
         knn: Dict = {
-            "field": field,
+            "field": self.vector_query_field,
             "k": k,
             "num_candidates": num_candidates,
         }
@@ -440,7 +443,6 @@ class ElasticKnnSearch(ElasticVectorSearch):
         fields: Optional[
             Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
         ] = None,
-        vector_query_field: Optional[str] = 'vector'
     ) -> Dict:
         """
         Performs a k-nearest neighbor (k-NN) search on the Elasticsearch index.
@@ -474,7 +476,7 @@ class ElasticKnnSearch(ElasticVectorSearch):
         """
 
         knn_query_body = self._default_knn_query(
-            query_vector=query_vector, query=query, model_id=model_id, k=k, field=vector_query_field
+            query_vector=query_vector, query=query, model_id=model_id, k=k
         )
 
         # Perform the kNN search on the Elasticsearch index and return the results.
@@ -500,8 +502,6 @@ class ElasticKnnSearch(ElasticVectorSearch):
         fields: Optional[
             Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
         ] = None,
-        vector_query_field: Optional[str] = 'vector',
-        query_field: Optional[str] = 'text'
     ) -> Dict[Any, Any]:
         """Performs a hybrid k-nearest neighbor (k-NN) and text-based search on the
             Elasticsearch index.
@@ -540,14 +540,14 @@ class ElasticKnnSearch(ElasticVectorSearch):
         """
 
         knn_query_body = self._default_knn_query(
-            query_vector=query_vector, query=query, model_id=model_id, k=k, field=vector_query_field
+            query_vector=query_vector, query=query, model_id=model_id, k=k
         )
 
         # Modify the knn_query_body to add a "boost" parameter
         knn_query_body["boost"] = knn_boost
 
         # Generate the body of the standard Elasticsearch query
-        match_query_body = {"match": {query_field: {"query": query, "boost": query_boost}}}
+        match_query_body = {"match": {self.query_field: {"query": query, "boost": query_boost}}}
 
         # Perform the hybrid search on the Elasticsearch index and return the results.
         res = self.client.search(
@@ -559,3 +559,4 @@ class ElasticKnnSearch(ElasticVectorSearch):
             source=source,
         )
         return dict(res)
+
