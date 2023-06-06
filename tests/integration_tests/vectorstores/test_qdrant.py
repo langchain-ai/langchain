@@ -143,7 +143,6 @@ def test_qdrant_similarity_search_with_relevance_score_no_threshold() -> None:
         metadatas=metadatas,
         location=":memory:",
     )
-
     output = docsearch.similarity_search_with_relevance_scores(
         "foo", k=3, score_threshold=None
     )
