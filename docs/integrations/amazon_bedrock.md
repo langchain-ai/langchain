@@ -1,4 +1,4 @@
-# Bedrock
+# Amazon Bedrock
 
 >[Amazon Bedrock](https://aws.amazon.com/bedrock/) is a fully managed service that makes FMs from leading AI startups and Amazon available via an API, so you can choose from a wide range of FMs to find the model that is best suited for your use case.
 
@@ -18,7 +18,7 @@ from langchain import Bedrock
 
 ## Text Embedding Models
 
-See a [usage example](../modules/models/text_embedding/examples/bedrock.ipynb).
+See a [usage example](../modules/models/text_embedding/examples/amazon_bedrock.ipynb).
 ```python
 from langchain.embeddings import BedrockEmbeddings
 ```
