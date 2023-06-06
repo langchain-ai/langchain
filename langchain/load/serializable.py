@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
-from typing import TypedDict, Literal, Any
+from abc import ABC
+from typing import Dict, List, TypedDict, Literal, Any
 
 from pydantic import BaseModel
 
@@ -7,12 +7,12 @@ from pydantic import BaseModel
 class BaseSerialized(TypedDict):
     lc: int
     type: str
-    id: list[str]
+    id: List[str]
 
 
 class SerializedConstructor(BaseSerialized):
     type: Literal["constructor"]
-    kwargs: dict[str, Any]
+    kwargs: Dict[str, Any]
 
 
 class SerializedSecret(BaseSerialized):
@@ -25,7 +25,7 @@ class SerializedNotImplemented(BaseSerialized):
 
 class Serializable(BaseModel, ABC):
     @property
-    def lc_namespace(self) -> list[str]:
+    def lc_namespace(self) -> List[str]:
         """
         Return the namespace of the langchain object.
         eg. ["langchain", "llms", "openai"]
@@ -33,14 +33,14 @@ class Serializable(BaseModel, ABC):
         return self.__class__.__module__.split(".")
 
     @property
-    def lc_secrets(self) -> dict[str, str]:
+    def lc_secrets(self) -> Dict[str, str]:
         """
         Return a map of constructor argument names to secret ids.
         eg. {"openai_api_key": "OPENAI_API_KEY"}
         """
         return dict()
 
-    lc_kwargs: dict[str, Any] = dict()
+    lc_kwargs: Dict[str, Any] = dict()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -74,7 +74,7 @@ class Serializable(BaseModel, ABC):
         }
 
 
-def replace_secrets(root: dict[Any, Any], secrets_map: dict[str, str]):
+def replace_secrets(root: Dict[Any, Any], secrets_map: Dict[str, str]):
     result = root.copy()
     for path, secret_id in secrets_map.items():
         [*parts, last] = path.split(".")

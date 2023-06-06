@@ -1,17 +1,17 @@
 import json
 import importlib
-from typing import Any
+from typing import Any, Dict
 
 from langchain.load.serializable import Serializable
 
 
 class Reviver:
-    secrets_map: dict[str, str]
+    secrets_map: Dict[str, str]
 
-    def __init__(self, secrets_map: dict[str, str] = None):
+    def __init__(self, secrets_map: Dict[str, str] = None):
         self.secrets_map = secrets_map or dict()
 
-    def __call__(self, value: dict[str, Any]):
+    def __call__(self, value: Dict[str, Any]):
         if (
             value.get("lc", None) == 1
             and value.get("type", None) == "secret"
@@ -62,5 +62,5 @@ class Reviver:
         return value
 
 
-def loads(text: str, *, secrets_map: dict[str, str] = None):
+def loads(text: str, *, secrets_map: Dict[str, str] = None):
     return json.loads(text, object_hook=Reviver(secrets_map))
