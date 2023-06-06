@@ -1,31 +1,35 @@
 # PromptLayer
 
-This page covers how to use [PromptLayer](https://www.promptlayer.com) within LangChain.
-It is broken into two parts: installation and setup, and then references to specific PromptLayer wrappers.
+>[PromptLayer](https://docs.promptlayer.com/what-is-promptlayer/wxpF9EZkUwvdkwvVE9XEvC/how-promptlayer-works/dvgGSxNe6nB1jj8mUVbG8r) 
+> is a devtool that allows you to track, manage, and share your GPT prompt engineering. 
+> It acts as a middleware between your code and OpenAI's python library, recording all your API requests 
+> and saving relevant metadata for easy exploration and search in the [PromptLayer](https://www.promptlayer.com) dashboard.
 
 ## Installation and Setup
 
-If you want to work with PromptLayer:
-- Install the promptlayer python library `pip install promptlayer`
+- Install the `promptlayer` python library 
+```bash
+pip install promptlayer
+```
 - Create a PromptLayer account
 - Create an api token and set it as an environment variable (`PROMPTLAYER_API_KEY`)
 
-## Wrappers
 
-### LLM
+## LLM
 
-There exists an PromptLayer OpenAI LLM wrapper, which you can access with
 ```python
 from langchain.llms import PromptLayerOpenAI
 ```
 
-To tag your requests, use the argument `pl_tags` when instanializing the LLM
+### Example
+
+To tag your requests, use the argument `pl_tags` when instantiating the LLM
 ```python
 from langchain.llms import PromptLayerOpenAI
 llm = PromptLayerOpenAI(pl_tags=["langchain-requests", "chatbot"])
 ```
 
-To get the PromptLayer request id, use the argument `return_pl_id` when instanializing the LLM
+To get the PromptLayer request id, use the argument `return_pl_id` when instantiating the LLM
 ```python
 from langchain.llms import PromptLayerOpenAI
 llm = PromptLayerOpenAI(return_pl_id=True)
@@ -42,8 +46,14 @@ You can use the PromptLayer request ID to add a prompt, score, or other metadata
 
 This LLM is identical to the [OpenAI LLM](./openai.md), except that
 - all your requests will be logged to your PromptLayer account
-- you can add `pl_tags` when instantializing to tag your requests on PromptLayer
-- you can add `return_pl_id` when instantializing to return a PromptLayer request id to use [while tracking requests](https://magniv.notion.site/Track-4deee1b1f7a34c1680d085f82567dab9).
+- you can add `pl_tags` when instantiating to tag your requests on PromptLayer
+- you can add `return_pl_id` when instantiating to return a PromptLayer request id to use [while tracking requests](https://magniv.notion.site/Track-4deee1b1f7a34c1680d085f82567dab9).
 
+## Chat Model
 
-PromptLayer also provides native wrappers for [`PromptLayerChatOpenAI`](../modules/models/chat/integrations/promptlayer_chatopenai.ipynb) and `PromptLayerOpenAIChat`
+```python
+from langchain.chat_models import PromptLayerChatOpenAI
+```
+
+See a [usage example](../modules/models/chat/integrations/promptlayer_chatopenai.ipynb).
+
