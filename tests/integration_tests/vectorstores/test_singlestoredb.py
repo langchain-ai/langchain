@@ -13,10 +13,14 @@ TEST_SINGLE_RESULT = [Document(page_content="foo")]
 TEST_SINGLE_WITH_METADATA_RESULT = [Document(page_content="foo", metadata={"a": "b"})]
 TEST_RESULT = [Document(page_content="foo"), Document(page_content="foo")]
 
+try:
+    import singlestoredb as s2
+    singlestoredb_installed = True
+except ImportError:
+    singlestoredb_installed = False
+
 
 def drop(table_name: str) -> None:
-    import singlestoredb as s2
-
     with s2.connect(TEST_SINGLESTOREDB_URL) as conn:
         conn.autocommit(True)
         with conn.cursor() as cursor:
@@ -42,6 +46,7 @@ def texts() -> List[str]:
     return ["foo", "bar", "baz"]
 
 
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
 def test_singlestoredb(texts: List[str]) -> None:
     """Test end to end construction and search."""
     table_name = "test_singlestoredb"
@@ -57,6 +62,7 @@ def test_singlestoredb(texts: List[str]) -> None:
     drop(table_name)
 
 
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
 def test_singlestoredb_new_vector(texts: List[str]) -> None:
     """Test adding a new document"""
     table_name = "test_singlestoredb_new_vector"
@@ -73,6 +79,7 @@ def test_singlestoredb_new_vector(texts: List[str]) -> None:
     drop(table_name)
 
 
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
 def test_singlestoredb_from_existing(texts: List[str]) -> None:
     """Test adding a new document"""
     table_name = "test_singlestoredb_from_existing"
@@ -94,6 +101,7 @@ def test_singlestoredb_from_existing(texts: List[str]) -> None:
     drop(table_name)
 
 
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
 def test_singlestoredb_from_documents(texts: List[str]) -> None:
     """Test from_documents constructor."""
     table_name = "test_singlestoredb_from_documents"
@@ -110,6 +118,7 @@ def test_singlestoredb_from_documents(texts: List[str]) -> None:
     drop(table_name)
 
 
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
 def test_singlestoredb_add_texts_to_existing(texts: List[str]) -> None:
     """Test adding a new document"""
     table_name = "test_singlestoredb_add_texts_to_existing"
