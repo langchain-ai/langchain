@@ -5,7 +5,7 @@ import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import requests
@@ -68,7 +68,7 @@ class LangChainTracer(BaseTracer):
 
     def __init__(
         self,
-        example_id: Optional[UUID] = None,
+        example_id: Optional[Union[UUID, str]] = None,
         session_name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -77,7 +77,9 @@ class LangChainTracer(BaseTracer):
         self.session: Optional[TracerSession] = None
         self._endpoint = get_endpoint()
         self._headers = get_headers()
-        self.example_id = example_id
+        self.example_id = (
+            UUID(example_id) if isinstance(example_id, str) else example_id
+        )
         self.session_name = session_name or os.getenv("LANGCHAIN_SESSION", "default")
         # set max_workers to 1 to process tasks in order
         self.executor = ThreadPoolExecutor(max_workers=1)
