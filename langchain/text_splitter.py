@@ -245,6 +245,14 @@ class CharacterTextSplitter(TextSplitter):
         splits = _split_text_with_regex(text, self._separator, self._keep_separator)
         _separator = "" if self._keep_separator else self._separator
         return self._merge_splits(splits, _separator)
+    
+    def split_wrap_text(self, text: str, prefix: str = "", suffix: str = "") -> List[str]:
+        """Split incoming text then add `prefix` and `suffix` to each split text"""
+        # First we naively split the large input into a bunch of smaller ones.
+        splits = _split_text_with_regex(text, self._separator, self._keep_separator)
+        _separator = "" if self._keep_separator else self._separator
+        return [prefix + t + suffix 
+                for t in self._merge_splits(splits, _separator)]
 
 
 # should be in newer Python versions (3.10+)
@@ -457,6 +465,12 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
     def split_text(self, text: str) -> List[str]:
         return self._split_text(text, self._separators)
+
+    def split_wrap_text(
+        self, text: str, prefix: str = "", suffix: str = ""
+    ) -> List[str]:
+        """add `prefix` and `suffix` to each split text"""
+        return [prefix + t + suffix for t in self._split_text(text, self._separators)]
 
     @classmethod
     def from_language(

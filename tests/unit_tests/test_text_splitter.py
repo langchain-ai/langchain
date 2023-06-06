@@ -31,6 +31,14 @@ def test_character_text_splitter() -> None:
     expected_output = ["foo bar", "bar baz", "baz 123"]
     assert output == expected_output
 
+def test_character_text_wrap_splitter() -> None:
+    """Test splitting by character count."""
+    text = "foo bar baz 123"
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=7, chunk_overlap=3)
+    output = splitter.split_wrap_text(text, prefix='*', suffix='*')
+    expected_output = ["*foo bar*", "*bar baz*", "*baz 123*"]
+    assert output == expected_output
+
 
 def test_character_text_splitter_empty_doc() -> None:
     """Test splitting by character count doesn't create empty documents."""
@@ -162,6 +170,36 @@ Bye!\n\n-H."""
         "-H.",
     ]
     assert output == expected_output
+def test_split_wrap_text() -> None:
+    """Test split wrap text."""
+    text = """Hi.\n\nI'm Harrison.\n\nHow? Are? You?\nOkay then f f f f.
+This is a weird text to write, but gotta test the splittingggg some how.
+
+Bye!\n\n-H."""
+    splitter = RecursiveCharacterTextSplitter(chunk_size=10, chunk_overlap=1)
+    output = splitter.split_wrap_text(text, prefix="*", suffix="*")
+    expected_output = [
+    "*Hi.*",
+    "*I'm*",
+    "*Harrison.*",
+    "*How? Are?*",
+    "*You?*",
+    "*Okay then*",
+    "*f f f f.*",
+    "*This is a*",
+    "*weird*",
+    "*text to*",
+    "*write,*",
+    "*but gotta*",
+    "*test the*",
+    "*splitting*",
+    "*gggg*",
+    "*some how.*",
+    "*Bye!*",
+    "*-H.*",
+    ]
+    assert output == expected_output
+
 
 
 def test_split_documents() -> None:
