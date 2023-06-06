@@ -1,0 +1,21 @@
+# Vespa
+
+>[Vespa](https://vespa.ai/) is a fully featured search engine and vector database. 
+> It supports vector search (ANN), lexical search, and search in structured data, all in the same query.
+ 
+## Installation and Setup
+
+
+```bash
+pip install pyvespa
+```
+
+
+
+## Retriever
+
+See a [usage example](../modules/indexes/retrievers/examples/vespa.ipynb).
+
+```python
+from langchain.retrievers import VespaRetriever
+```

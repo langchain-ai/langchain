@@ -4,6 +4,7 @@ from langchain.vectorstores.annoy import Annoy
 from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
+from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
 from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
@@ -20,6 +21,7 @@ from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.sklearn import SKLearnVectorStore
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
+from langchain.vectorstores.tigris import Tigris
 from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
@@ -53,4 +55,7 @@ __all__ = [
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "Typesense",
+    "Clickhouse",
+    "ClickhouseSettings",
+    "Tigris",
 ]

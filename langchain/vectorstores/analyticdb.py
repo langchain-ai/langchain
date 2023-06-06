@@ -8,7 +8,11 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 import sqlalchemy
 from sqlalchemy import REAL, Index
 from sqlalchemy.dialects.postgresql import ARRAY, JSON, UUID
-from sqlalchemy.ext.declarative import declarative_base
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship
 from sqlalchemy.sql.expression import func
 

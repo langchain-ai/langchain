@@ -18,7 +18,7 @@ from langchain import Bedrock
 
 ## Text Embedding Models
 
-See a [usage example](../modules/models/text_embedding/examples/bedrock.ipynb).
+See a [usage example](../modules/models/text_embedding/examples/amazon_bedrock.ipynb).
 ```python
 from langchain.embeddings import BedrockEmbeddings
 ```

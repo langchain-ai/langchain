@@ -150,3 +150,6 @@ wandb/
 # integration test artifacts
 data_map*
 \[('_type', 'fake'), ('stop', None)]
+
+# Replit files
+*replit*
