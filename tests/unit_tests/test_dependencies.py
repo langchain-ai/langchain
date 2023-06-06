@@ -38,6 +38,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "aiohttp",
         "async-timeout",
         "dataclasses-json",
+        "langchainplus-sdk",
         "numexpr",
         "numpy",
         "openapi-schema-pydantic",

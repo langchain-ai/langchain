@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.190"
+version = "0.0.191"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -9,7 +9,6 @@ repository = "https://www.github.com/hwchase17/langchain"
 
 [tool.poetry.scripts]
 langchain-server = "langchain.server:main"
-langchain = "langchain.cli.main:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -103,6 +102,8 @@ py-trello = {version = "^0.19.0", optional = true}
 momento = {version = "^1.5.0", optional = true}
 bibtexparser = {version = "^1.4.0", optional = true}
 pyspark = {version = "^3.4.0", optional = true}
+tigrisdb = {version = "^1.0.0b6", optional = true}
+langchainplus-sdk = "^0.0.4"
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -278,7 +279,8 @@ all = [
     "azure-ai-formrecognizer",
     "azure-ai-vision",
     "azure-cognitiveservices-speech",
-    "momento"
+    "momento",
+    "tigrisdb"
 ]
 
 # An extra used to be able to add extended testing.

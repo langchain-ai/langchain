@@ -4,7 +4,11 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
+from datetime import datetime
 from typing import Any, Callable, Coroutine, Dict, Iterator, List, Optional, Union
+
+from langchainplus_sdk import LangChainPlusClient
+from langchainplus_sdk.schemas import Example
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackHandler
@@ -12,7 +16,6 @@ from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
-from langchain.client.models import Example
 from langchain.llms.base import BaseLLM
 from langchain.schema import (
     BaseMessage,
@@ -372,3 +375,107 @@ def run_on_examples(
             print(f"{i+1} processed", flush=True, end="\r")
     results[str(example.id)] = result
     return results
+
+
+def _get_session_name(
+    session_name: Optional[str],
+    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+    dataset_name: str,
+) -> str:
+    if session_name is not None:
+        return session_name
+    current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    if isinstance(llm_or_chain_factory, BaseLanguageModel):
+        model_name = llm_or_chain_factory.__class__.__name__
+    else:
+        model_name = llm_or_chain_factory().__class__.__name__
+    return f"{dataset_name}-{model_name}-{current_time}"
+
+
+async def arun_on_dataset(
+    dataset_name: str,
+    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+    *,
+    concurrency_level: int = 5,
+    num_repetitions: int = 1,
+    session_name: Optional[str] = None,
+    verbose: bool = False,
+    client: Optional[LangChainPlusClient] = None,
+) -> Dict[str, Any]:
+    """
+    Run the chain on a dataset and store traces to the specified session name.
+
+    Args:
+        client: Client to use to read the dataset.
+        dataset_name: Name of the dataset to run the chain on.
+        llm_or_chain_factory: Language model or Chain constructor to run
+            over the dataset. The Chain constructor is used to permit
+            independent calls on each example without carrying over state.
+        concurrency_level: The number of async tasks to run concurrently.
+        num_repetitions: Number of times to run the model on each example.
+            This is useful when testing success rates or generating confidence
+            intervals.
+        session_name: Name of the session to store the traces in.
+            Defaults to {dataset_name}-{chain class name}-{datetime}.
+        verbose: Whether to print progress.
+        client: Client to use to read the dataset. If not provided, a new
+            client will be created using the credentials in the environment.
+
+    Returns:
+        A dictionary mapping example ids to the model outputs.
+    """
+    client_ = client or LangChainPlusClient()
+    session_name = _get_session_name(session_name, llm_or_chain_factory, dataset_name)
+    dataset = client_.read_dataset(dataset_name=dataset_name)
+    examples = client_.list_examples(dataset_id=str(dataset.id))
+
+    return await arun_on_examples(
+        examples,
+        llm_or_chain_factory,
+        concurrency_level=concurrency_level,
+        num_repetitions=num_repetitions,
+        session_name=session_name,
+        verbose=verbose,
+    )
+
+
+def run_on_dataset(
+    dataset_name: str,
+    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+    *,
+    num_repetitions: int = 1,
+    session_name: Optional[str] = None,
+    verbose: bool = False,
+    client: Optional[LangChainPlusClient] = None,
+) -> Dict[str, Any]:
+    """Run the chain on a dataset and store traces to the specified session name.
+
+    Args:
+        dataset_name: Name of the dataset to run the chain on.
+        llm_or_chain_factory: Language model or Chain constructor to run
+            over the dataset. The Chain constructor is used to permit
+            independent calls on each example without carrying over state.
+        concurrency_level: Number of async workers to run in parallel.
+        num_repetitions: Number of times to run the model on each example.
+            This is useful when testing success rates or generating confidence
+            intervals.
+        session_name: Name of the session to store the traces in.
+            Defaults to {dataset_name}-{chain class name}-{datetime}.
+        verbose: Whether to print progress.
+        client: Client to use to access the dataset. If None, a new client
+            will be created using the credentials in the environment.
+
+    Returns:
+        A dictionary mapping example ids to the model outputs.
+    """
+    client_ = client or LangChainPlusClient()
+    session_name = _get_session_name(session_name, llm_or_chain_factory, dataset_name)
+    dataset = client_.read_dataset(dataset_name=dataset_name)
+    examples = client_.list_examples(dataset_id=str(dataset.id))
+    return run_on_examples(
+        examples,
+        llm_or_chain_factory,
+        num_repetitions=num_repetitions,
+        session_name=session_name,
+        verbose=verbose,
+    )
