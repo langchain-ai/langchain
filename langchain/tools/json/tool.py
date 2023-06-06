@@ -37,6 +37,8 @@ class JsonSpec(BaseModel):
         if not path.exists():
             raise FileNotFoundError(f"File not found: {path}")
         dict_ = json.loads(path.read_text())
+        if isinstance(dict_, list):
+            dict_ = dict(enumerate(dict_))
         return cls(dict_=dict_)
 
     def keys(self, text: str) -> str:
