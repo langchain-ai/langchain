@@ -1,5 +1,4 @@
 """Test caching for LLMs and ChatModels."""
-import os
 from typing import Dict, Generator, Union
 
 import pytest
