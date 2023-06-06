@@ -1,0 +1,4 @@
+[submodule "docs/docs/_shared"]
+	path = docs/docs/_shared
+	url = https://github.com/langchain-ai/langchain-shared-docs
+	branch = main
