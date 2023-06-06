@@ -5,9 +5,20 @@ import functools
 import logging
 import os
 import warnings
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID, uuid4
 
 import langchain
@@ -114,6 +125,58 @@ def tracing_v2_enabled(
     tracing_v2_callback_var.set(cb)
     yield
     tracing_v2_callback_var.set(None)
+
+
+@contextmanager
+def trace_as_chain_group(
+    group_name: str,
+    *,
+    session_name: Optional[str] = None,
+    example_id: Optional[Union[str, UUID]] = None,
+    tenant_id: Optional[str] = None,
+    session_extra: Optional[Dict[str, Any]] = None,
+) -> Generator[CallbackManager, None, None]:
+    """Get a callback manager for a chain group in a context manager."""
+    cb = LangChainTracer(
+        tenant_id=tenant_id,
+        session_name=session_name,
+        example_id=example_id,
+        session_extra=session_extra,
+    )
+    cm = CallbackManager.configure(
+        inheritable_callbacks=[cb],
+    )
+
+    run_manager = cm.on_chain_start({"name": group_name}, {})
+    yield run_manager.get_child()
+    run_manager.on_chain_end({})
+
+
+@asynccontextmanager
+async def atrace_as_chain_group(
+    group_name: str,
+    *,
+    session_name: Optional[str] = None,
+    example_id: Optional[Union[str, UUID]] = None,
+    tenant_id: Optional[str] = None,
+    session_extra: Optional[Dict[str, Any]] = None,
+) -> AsyncGenerator[AsyncCallbackManager, None]:
+    """Get a callback manager for a chain group in a context manager."""
+    cb = LangChainTracer(
+        tenant_id=tenant_id,
+        session_name=session_name,
+        example_id=example_id,
+        session_extra=session_extra,
+    )
+    cm = AsyncCallbackManager.configure(
+        inheritable_callbacks=[cb],
+    )
+
+    run_manager = await cm.on_chain_start({"name": group_name}, {})
+    try:
+        yield run_manager.get_child()
+    finally:
+        await run_manager.on_chain_end({})
 
 
 def _handle_event(
