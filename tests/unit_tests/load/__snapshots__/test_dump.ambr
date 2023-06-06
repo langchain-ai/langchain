@@ -1,4 +1,25 @@
 # serializer version: 1
+# name: test_person
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "test_dump",
+      "Person"
+    ],
+    "kwargs": {
+      "secret": {
+        "lc": 1,
+        "type": "secret",
+        "id": [
+          "SECRET"
+        ]
+      }
+    }
+  }
+  '''
+# ---
 # name: test_serialize_llmchain
   '''
   {

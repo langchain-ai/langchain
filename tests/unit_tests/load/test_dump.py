@@ -1,13 +1,27 @@
 """Test for Serializable base class"""
 
-from typing import Any
+from typing import Any, Dict
 
 import openai
 
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.load.dump import dumps
+from langchain.load.serializable import Serializable
 from langchain.prompts.prompt import PromptTemplate
+
+
+class Person(Serializable):
+    secret: str
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"secret": "SECRET"}
+
+
+def test_person(snapshot: Any) -> None:
+    p = Person(secret="hello")
+    assert dumps(p, pretty=True) == snapshot
 
 
 def test_serialize_openai_llm(snapshot: Any) -> None:

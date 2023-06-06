@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Dict, List, Literal, TypedDict
+from typing import Any, Dict, List, Literal, TypedDict, cast
 
 from pydantic import BaseModel, Field
 
@@ -65,9 +65,13 @@ class Serializable(BaseModel, ABC):
             if cls is Serializable:
                 break
 
-            # mypy doesn't understand this, but it is correct
-            secrets.update(super(cls, self).lc_secrets)  # type: ignore [arg-type]
-            lc_kwargs.update({k: getattr(self, k) for k in super(cls, self).lc_attributes})  # type: ignore [arg-type]
+            # Get a reference to self bound to each class in the MRO
+            this = cast(
+                Serializable, self if cls is self.__class__ else super(cls, self)
+            )
+
+            secrets.update(this.lc_secrets)
+            lc_kwargs.update({k: getattr(self, k) for k in this.lc_attributes})
 
         return {
             "lc": 1,
@@ -78,13 +82,8 @@ class Serializable(BaseModel, ABC):
             else _replace_secrets(lc_kwargs, secrets),
         }
 
-    @classmethod
-    def to_json_not_implemented(cls) -> SerializedNotImplemented:
-        return {
-            "lc": 1,
-            "type": "not_implemented",
-            "id": [*cls.__module__.split("."), cls.__name__],
-        }
+    def to_json_not_implemented(self) -> SerializedNotImplemented:
+        return to_json_not_implemented(self)
 
 
 def _replace_secrets(
