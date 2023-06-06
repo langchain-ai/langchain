@@ -2,9 +2,9 @@
 import datetime
 import math
 import tempfile
+import warnings
 
 import pytest
-import warnings
 
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
