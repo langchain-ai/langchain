@@ -20,14 +20,11 @@ from typing import TypedDict
 
 class UpsertResult(TypedDict):
     # Number of documents updated
-    num_updated: int
+    num_updated: Optional[int]
     # Number of documents newly added
-    num_added: int
+    num_added: Optional[int]
     # Documents can be skipped if hashes match
-    num_skipped: int
-    # All the ids in the original request either upserted or skipped
-    # Maybe there's a better place to put this in
-    ids_in_request: Sequence[str]
+    num_skipped: Optional[int]
 
 
 class VectorStore(ABC):
@@ -74,12 +71,13 @@ class VectorStore(ABC):
         metadatas = [doc.metadata for doc in documents]
         return self.add_texts(texts, metadatas, **kwargs)
 
-    def upsert_by_id(self, documents: Iterable[Document], **kwargs) -> UpsertResult:
+    def upsert_by_id(self, documents: Sequence[Document], **kwargs) -> UpsertResult:
         """Update or insert a document into the vectorstore."""
-        # Uperstion logic based on document ID, not document hash_!!
-        raise NotImplementedError
+        raise NotImplementedError()
 
     # THIS MAY NEED TO BE CLEANED UP. ITS NOT SUPER PRETTY BUT IT IS EFFICIENT.
+    # THIS SHOULD PROBABL BE REPLACED TO DELETION BY A METADATA TAG
+    # OTHERWISE MEMORY MANAGEMENT IS AN ISSUE
     def delete_non_matching_ids(self, ids: Iterable[str], **kwargs) -> int:
         """Delete all ids that are not in the given list, but are in the vector store"""
         raise NotImplementedError

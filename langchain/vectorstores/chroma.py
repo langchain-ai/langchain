@@ -3,15 +3,16 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Sequence
 
 import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import xor_args
-from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.base import VectorStore, UpsertResult
 from langchain.vectorstores.utils import maximal_marginal_relevance
+from typing import List, Iterable
 
 if TYPE_CHECKING:
     import chromadb
@@ -161,6 +162,29 @@ class Chroma(VectorStore):
             metadatas=metadatas, embeddings=embeddings, documents=texts, ids=ids
         )
         return ids
+
+    def upsert_by_id(self, documents: Sequence[Document], **kwargs) -> UpsertResult:
+        """Upsert documents by ID."""
+        upsert_result: UpsertResult = {
+            # Chroma upsert does not return this information
+            "num_added": None,
+            "num_updated": None,
+            "num_skipped": None,
+        }
+        info = [(doc.uid, doc.metadata, doc.page_content) for doc in documents]
+        uids, metadata, texts = zip(*info)
+
+        if self._embedding_function is not None:
+            embeddings = self._embedding_function.embed_documents(
+                [doc.page_content for doc in documents]
+            )
+        else:
+            embeddings = None
+
+        self._collection.upsert(
+            ids=uids, metadatas=metadata, embeddings=embeddings, documents=texts
+        )
+        return upsert_result
 
     def similarity_search(
         self,
