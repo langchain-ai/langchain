@@ -14,7 +14,7 @@ line_template = '\t"{name}": {type}  // {description}'
 class ResponseSchema(BaseModel):
     name: str
     description: str
-    type: str
+    type: str = "string"
 
 
 def _get_sub_string(schema: ResponseSchema) -> str:
