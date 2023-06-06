@@ -387,7 +387,7 @@ class Agent(BaseSingleActionAgent):
     llm_chain: LLMChain
     output_parser: AgentOutputParser
     allowed_tools: Optional[List[str]] = None
-    scratchpad_max_size: int = 3000
+    scratchpad_max_size: int = 5000
     length_function: Callable[[str], int] = len
 
     def dict(self, **kwargs: Any) -> Dict:
