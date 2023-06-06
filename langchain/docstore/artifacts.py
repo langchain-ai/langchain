@@ -187,8 +187,8 @@ class InMemoryStore(MetadataStore):
 
     def select(self, selector: Selector) -> Iterable[str]:
         """Return the hashes the artifacts matching the given selector."""
-        # FOR LOOP THROUGH ALL ARTIFACTS
-        # Can be optimized later
+        # Inefficient implementation that loops through all artifacts.
+        # Optimize later.
         for artifact in self.data["artifacts"]:
             uid = artifact["uid"]
             # Implement conjunctive normal form
@@ -196,7 +196,7 @@ class InMemoryStore(MetadataStore):
                 yield uid
                 continue
 
-            if artifact["parent_uids"] and set(artifact["parent_uids"]).intersection(
+            if selector.parent_uids and set(artifact["parent_uids"]).intersection(
                 selector.parent_uids
             ):
                 yield uid
@@ -301,6 +301,10 @@ class FileSystemArtifactLayer(ArtifactStore):
             )
 
         self.metadata_store.save(self.metadata_path)
+
+    def list_document_ids(self, selector: Selector) -> Iterator[str]:
+        """List the document ids matching the given selector."""
+        return self.metadata_store.select(selector)
 
     def list_documents(self, selector: Selector) -> Iterator[Document]:
         """Can even use JQ here!"""
