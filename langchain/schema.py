@@ -15,7 +15,9 @@ from typing import (
 )
 from uuid import UUID
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
+
+from langchain.load.serializable import Serializable
 
 RUN_KEY = "__run"
 
@@ -55,7 +57,7 @@ class AgentFinish(NamedTuple):
     log: str
 
 
-class Generation(BaseModel):
+class Generation(Serializable):
     """Output of a single generation."""
 
     text: str
@@ -67,7 +69,7 @@ class Generation(BaseModel):
     # TODO: add log probs
 
 
-class BaseMessage(BaseModel):
+class BaseMessage(Serializable):
     """Message object."""
 
     content: str
@@ -159,13 +161,13 @@ class ChatGeneration(Generation):
         return values
 
 
-class RunInfo(BaseModel):
+class RunInfo(Serializable):
     """Class that contains all relevant metadata for a Run."""
 
     run_id: UUID
 
 
-class ChatResult(BaseModel):
+class ChatResult(Serializable):
     """Class that contains all relevant information for a Chat Result."""
 
     generations: List[ChatGeneration]
@@ -174,7 +176,7 @@ class ChatResult(BaseModel):
     """For arbitrary LLM provider specific output."""
 
 
-class LLMResult(BaseModel):
+class LLMResult(Serializable):
     """Class that contains all relevant information for an LLM Result."""
 
     generations: List[List[Generation]]
@@ -194,7 +196,7 @@ class LLMResult(BaseModel):
         )
 
 
-class PromptValue(BaseModel, ABC):
+class PromptValue(Serializable, ABC):
     @abstractmethod
     def to_string(self) -> str:
         """Return prompt as string."""
@@ -204,7 +206,7 @@ class PromptValue(BaseModel, ABC):
         """Return prompt as messages."""
 
 
-class BaseMemory(BaseModel, ABC):
+class BaseMemory(Serializable, ABC):
     """Base interface for memory in chains."""
 
     class Config:
@@ -282,7 +284,7 @@ class BaseChatMessageHistory(ABC):
         """Remove all messages from the store"""
 
 
-class Document(BaseModel):
+class Document(Serializable):
     """Interface for interacting with a document."""
 
     page_content: str
@@ -321,7 +323,7 @@ Memory = BaseMemory
 T = TypeVar("T")
 
 
-class BaseOutputParser(BaseModel, ABC, Generic[T]):
+class BaseOutputParser(Serializable, ABC, Generic[T]):
     """Class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.

@@ -15,13 +15,13 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
-from langchain.load.serializable import Serializable
+from langchain.load.dump import dumpd
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import LLMResult, PromptValue
 
 
-class LLMChain(Serializable, Chain):
+class LLMChain(Chain):
     """Chain to run queries against LLMs.
 
     Example:
@@ -148,7 +148,7 @@ class LLMChain(Serializable, Chain):
             callbacks, self.callbacks, self.verbose
         )
         run_manager = callback_manager.on_chain_start(
-            {"name": self.__class__.__name__},
+            dumpd(self),
             {"input_list": input_list},
         )
         try:
@@ -168,7 +168,7 @@ class LLMChain(Serializable, Chain):
             callbacks, self.callbacks, self.verbose
         )
         run_manager = await callback_manager.on_chain_start(
-            {"name": self.__class__.__name__},
+            dumpd(self),
             {"input_list": input_list},
         )
         try:

@@ -1,13 +1,13 @@
 """Test for Serializable base class"""
 
 import openai
+import pytest
 
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.load.dump import dumps
 from langchain.load.load import loads
 from langchain.prompts.prompt import PromptTemplate
-import pytest
 
 
 def test_load_openai_llm() -> None:

@@ -19,6 +19,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
+from langchain.load.dump import dumpd
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -186,7 +187,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             run_manager = callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts, invocation_params=params
+                dumpd(self), prompts, invocation_params=params
             )
             try:
                 output = (
@@ -205,7 +206,7 @@ class BaseLLM(BaseLanguageModel, ABC):
             return output
         if len(missing_prompts) > 0:
             run_manager = callback_manager.on_llm_start(
-                {"name": self.__class__.__name__},
+                dumpd(self),
                 missing_prompts,
                 invocation_params=params,
             )
@@ -263,7 +264,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             run_manager = await callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts, invocation_params=params
+                dumpd(self), prompts, invocation_params=params
             )
             try:
                 output = (
@@ -282,7 +283,7 @@ class BaseLLM(BaseLanguageModel, ABC):
             return output
         if len(missing_prompts) > 0:
             run_manager = await callback_manager.on_llm_start(
-                {"name": self.__class__.__name__},
+                dumpd(self),
                 missing_prompts,
                 invocation_params=params,
             )

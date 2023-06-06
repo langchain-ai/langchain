@@ -93,7 +93,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         execution_order = self._get_execution_order(parent_run_id_)
         llm_run = Run(
             id=run_id,
-            name=serialized.get("name"),
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"prompts": prompts},
@@ -154,7 +153,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         execution_order = self._get_execution_order(parent_run_id_)
         chain_run = Run(
             id=run_id,
-            name=serialized.get("name"),
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs=inputs,
@@ -216,7 +214,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         execution_order = self._get_execution_order(parent_run_id_)
         tool_run = Run(
             id=run_id,
-            name=serialized.get("name"),
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"input": input_str},
