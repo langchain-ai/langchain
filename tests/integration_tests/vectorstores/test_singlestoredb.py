@@ -15,6 +15,7 @@ TEST_RESULT = [Document(page_content="foo"), Document(page_content="foo")]
 
 try:
     import singlestoredb as s2
+
     singlestoredb_installed = True
 except ImportError:
     singlestoredb_installed = False
