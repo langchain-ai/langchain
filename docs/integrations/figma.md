@@ -1,0 +1,21 @@
+# Figma
+
+>[Figma](https://www.figma.com/) is a collaborative web application for interface design.
+
+## Installation and Setup
+
+The Figma API requires an `access token`, `node_ids`, and a `file key`.
+
+The `file key` can be pulled from the URL.  https://www.figma.com/file/{filekey}/sampleFilename
+
+`Node IDs` are also available in the URL. Click on anything and look for the '?node-id={node_id}' param.
+
+`Access token` [instructions](https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens).
+
+## Document Loader
+
+See a [usage example](../modules/indexes/document_loaders/examples/figma.ipynb).
+
+```python
+from langchain.document_loaders import FigmaFileLoader
+```

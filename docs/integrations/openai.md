@@ -1,40 +1,50 @@
 # OpenAI
 
-This page covers how to use the OpenAI ecosystem within LangChain.
-It is broken into two parts: installation and setup, and then references to specific OpenAI wrappers.
+>[OpenAI](https://en.wikipedia.org/wiki/OpenAI) is American artificial intelligence (AI) research laboratory 
+> consisting of the non-profit `OpenAI Incorporated`
+> and its for-profit subsidiary corporation `OpenAI Limited Partnership`. 
+> `OpenAI` conducts AI research with the declared intention of promoting and developing a friendly AI. 
+> `OpenAI` systems run on an `Azure`-based supercomputing platform from `Microsoft`.
+
+>The [OpenAI API](https://platform.openai.com/docs/models) is powered by a diverse set of models with different capabilities and price points.
+> 
+>[ChatGPT](https://chat.openai.com) is the Artificial Intelligence (AI) chatbot developed by `OpenAI`.
 
 ## Installation and Setup
-- Install the Python SDK with `pip install openai`
+- Install the Python SDK with
+```bash
+pip install openai
+```
 - Get an OpenAI api key and set it as an environment variable (`OPENAI_API_KEY`)
-- If you want to use OpenAI's tokenizer (only available for Python 3.9+), install it with `pip install tiktoken`
+- If you want to use OpenAI's tokenizer (only available for Python 3.9+), install it
+```bash
+pip install tiktoken
+```
 
-## Wrappers
 
-### LLM
+## LLM
 
-There exists an OpenAI LLM wrapper, which you can access with 
 ```python
 from langchain.llms import OpenAI
 ```
 
-If you are using a model hosted on Azure, you should use different wrapper for that:
+If you are using a model hosted on `Azure`, you should use different wrapper for that:
 ```python
 from langchain.llms import AzureOpenAI
 ```
-For a more detailed walkthrough of the Azure wrapper, see [this notebook](../modules/models/llms/integrations/azure_openai_example.ipynb)
+For a more detailed walkthrough of the `Azure` wrapper, see [this notebook](../modules/models/llms/integrations/azure_openai_example.ipynb)
 
 
 
-### Embeddings
+## Text Embedding Model
 
-There exists an OpenAI Embeddings wrapper, which you can access with 
 ```python
 from langchain.embeddings import OpenAIEmbeddings
 ```
 For a more detailed walkthrough of this, see [this notebook](../modules/models/text_embedding/examples/openai.ipynb)
 
 
-### Tokenizer
+## Tokenizer
 
 There are several places you can use the `tiktoken` tokenizer. By default, it is used to count tokens
 for OpenAI LLMs.
@@ -46,10 +56,18 @@ CharacterTextSplitter.from_tiktoken_encoder(...)
 ```
 For a more detailed walkthrough of this, see [this notebook](../modules/indexes/text_splitters/examples/tiktoken.ipynb)
 
-### Moderation
-You can also access the OpenAI content moderation endpoint with
+## Chain
+
+See a [usage example](../modules/chains/examples/moderation.ipynb).
 
 ```python
 from langchain.chains import OpenAIModerationChain
 ```
-For a more detailed walkthrough of this, see [this notebook](../modules/chains/examples/moderation.ipynb)
+
+## Document Loader
+
+See a [usage example](../modules/indexes/document_loaders/examples/chatgpt_loader.ipynb).
+
+```python
+from langchain.document_loaders.chatgpt import ChatGPTLoader
+```

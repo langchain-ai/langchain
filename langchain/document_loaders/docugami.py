@@ -63,7 +63,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         try:
             from lxml import etree
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import lxml python package. "
                 "Please install it with `pip install lxml`."
             )
@@ -259,7 +259,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     try:
                         from lxml import etree
                     except ImportError:
-                        raise ValueError(
+                        raise ImportError(
                             "Could not import lxml python package. "
                             "Please install it with `pip install lxml`."
                         )

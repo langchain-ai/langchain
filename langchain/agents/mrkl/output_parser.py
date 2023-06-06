@@ -23,10 +23,34 @@ class MRKLOutputParser(AgentOutputParser):
         )
         match = re.search(regex, text, re.DOTALL)
         if not match:
-            raise OutputParserException(f"Could not parse LLM output: `{text}`")
+            if not re.search(r"Action\s*\d*\s*:[\s]*(.*?)", text, re.DOTALL):
+                raise OutputParserException(
+                    f"Could not parse LLM output: `{text}`",
+                    observation="Invalid Format: Missing 'Action:' after 'Thought:'",
+                    llm_output=text,
+                    send_to_llm=True,
+                )
+            elif not re.search(
+                r"[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)", text, re.DOTALL
+            ):
+                raise OutputParserException(
+                    f"Could not parse LLM output: `{text}`",
+                    observation="Invalid Format:"
+                    " Missing 'Action Input:' after 'Action:'",
+                    llm_output=text,
+                    send_to_llm=True,
+                )
+            else:
+                raise OutputParserException(f"Could not parse LLM output: `{text}`")
         action = match.group(1).strip()
         action_input = match.group(2)
-        return AgentAction(action, action_input.strip(" ").strip('"'), text)
+
+        tool_input = action_input.strip(" ")
+        # ensure if its a well formed SQL query we don't remove any trailing " chars
+        if tool_input.startswith("SELECT ") is False:
+            tool_input = tool_input.strip('"')
+
+        return AgentAction(action, tool_input, text)
 
     @property
     def _type(self) -> str:

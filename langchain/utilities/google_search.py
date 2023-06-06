@@ -33,7 +33,7 @@ class GoogleSearchAPIWrapper(BaseModel):
     - That’s all you have to fill up, the rest doesn’t matter.
     In the left-side menu, click Edit search engine → {your search engine name}
     → Setup Set Search the entire web to ON. Remove the URL you added from
-     the list of Sites to search.
+    the list of Sites to search.
     - Under Search engine ID you’ll find the search-engine-ID.
 
     4. Enable the Custom Search API

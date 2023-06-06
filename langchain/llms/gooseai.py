@@ -22,6 +22,7 @@ class GooseAI(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import GooseAI
             gooseai = GooseAI(model_name="gpt-neo-20b")
 
@@ -100,7 +101,7 @@ class GooseAI(LLM):
             openai.api_base = "https://api.goose.ai/v1"
             values["client"] = openai.Completion
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )

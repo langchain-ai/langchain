@@ -29,6 +29,7 @@ class ArxivAPIWrapper(BaseModel):
           if True: the `metadata` of the loaded Documents gets all available meta info
             (see https://lukasschwab.me/arxiv.py/index.html#Result),
           if False: the `metadata` gets only the most informative fields.
+
     """
 
     arxiv_client: Any  #: :meta private:
@@ -58,7 +59,7 @@ class ArxivAPIWrapper(BaseModel):
             )
             values["arxiv_result"] = arxiv.Result
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import arxiv python package. "
                 "Please install it with `pip install arxiv`."
             )
