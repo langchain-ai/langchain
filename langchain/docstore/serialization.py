@@ -10,12 +10,25 @@ from langchain.schema import Document
 
 
 class UUIDEncoder(JSONEncoder):
-    """TODO detemine if there's a better solution."""
+    """Will either be replaced by Nuno's serialization method or something else.
+
+    Potentially there will be no serialization for a document object since
+    the document can be broken into 2 pieces:
+
+    * the content -> saved on disk or in database
+    * the metadata -> saved in metadata store
+
+    It may not make sense to keep the metadata together with the document
+    for the persistence.
+    """
 
     def default(self, obj):
         if isinstance(obj, UUID):
             return str(obj)  # Convert UUID to string
         return super().default(obj)
+
+
+# PUBLIC API
 
 
 def serialize_document(document: Document) -> str:

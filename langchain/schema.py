@@ -5,7 +5,16 @@ import hashlib
 import uuid
 from abc import ABC, abstractmethod
 from typing import (
-    Any, Dict, Generic, List, NamedTuple, Optional, Sequence, TypeVar, Union, Tuple,
+    Any,
+    Dict,
+    Generic,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    Tuple,
 )
 from uuid import UUID, uuid5
 
@@ -286,7 +295,7 @@ class Document(BaseModel):
     metadata: dict = Field(default_factory=dict)
     # Use to keep track of parent documents from which the document was generated
     # We could keep this is a non sequence to get started for simplicity
-    parent_hashes: Tuple[str, ...] = tuple()
+    parent_hashes: Tuple[UUID, ...] = tuple()
 
     @root_validator(pre=True)
     def assign_id_if_not_provided(cls, values: Dict[str, Any]) -> Dict[str, Any]:

@@ -79,6 +79,7 @@ class VectorStore(ABC):
         # Uperstion logic based on document ID, not document hash_!!
         raise NotImplementedError
 
+    # THIS MAY NEED TO BE CLEANED UP. ITS NOT SUPER PRETTY BUT IT IS EFFICIENT.
     def delete_non_matching_ids(self, ids: Iterable[str], **kwargs) -> int:
         """Delete all ids that are not in the given list, but are in the vector store"""
         raise NotImplementedError

@@ -83,14 +83,20 @@ MaybeDocument = Optional[Document]
 PathLike = Union[str, Path]
 
 
+# TODO: MAJOR MAJOR MAJOR MAJOR
+# FIX SEMANTICS WITH REGARDS TO ID, UUID. AND POTENTIALLY ARTIFACT_ID
+# NEED TO REASON THROUGH USE CASES CAREFULLY TO REASON ABOUT WHATS MINIMAL SUFFICIENT
+
+
 class Artifact(TypedDict):
+
     """A representation of an artifact."""
 
     custom_id: str
     """Optionally user assigned ID. If not provided, set to uuid."""
     uuid: UUID
     """A uuid represent the hash of the artifact."""
-    parent_uuids: Tuple[str, ...]
+    parent_uuids: Tuple[UUID, ...]
     """A tuple of uuids representing the parent artifacts."""
     metadata: Any
     """A dictionary representing the metadata of the artifact."""
@@ -139,7 +145,7 @@ class InMemoryStore(MetadataStore):
         """Return the documents with the given uuids."""
         return [self.artifact_uuid[uuid] for uuid in uuids]
 
-    def select(self, selector: Selector) -> Iterable[str]:
+    def select(self, selector: Selector) -> Iterable[UUID]:
         """Return the hashes the artifacts matching the given selector."""
         # FOR LOOP THROUGH ALL ARTIFACTS
         # Can be optimized later
@@ -244,39 +250,50 @@ class FileSystemArtifactLayer(ArtifactLayer):
                 yield deserialize_document(f.read())
 
 
+# TODO(EUGENE):
+# - Figure out if it works like a decorator or a wrapper
+# Likely has to work as a decorator...
+# - Figure out if this inherits from BaseDocumentTransformer
+# - Problem is keeping a beautiful API if we have to handle:
+# -- Blob interfaces, document loading, embedding, etc.
 class CachingInterceptor:
+    """Caching interceptor for document transformers."""
+
     def __init__(
         self,
         artifact_layer: ArtifactLayer,
-        # This wraps a particular transformer
-        # Once hashes are added to the transformation logic itself
-        # We can skip the usage of the transformer completely if transformation
-        # and content hashes match
-        document_transformer: BaseDocumentTransformer,
+        underlying_transformer: Union[BaseDocumentTransformer],
     ) -> None:
         """Initialize the storage interceptor."""
         self._artifact_layer = artifact_layer
-        self._document_transformer = document_transformer
+        self._underlying_transformer = underlying_transformer
 
-    def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
+    def transform(self, documents: Sequence[Document], **kwargs: Any) -> List[Document]:
         """Transform the given documents."""
-        existence = self._artifact_layer.exists([document.id for document in documents])
+        docs_exist = self._artifact_layer.exists_by_uuid(
+            [document.hash_ for document in documents]
+        )
 
         # non batched variant for speed implemented
         new_docs = []
 
-        for document, exists in zip(documents, existence):
+        for document, exists in zip(documents, docs_exist):
             if not exists:
-                transformed_docs = self._document_transformer.transform_documents(
+                transformed_docs = self._underlying_transformer.transform_documents(
                     [document], **kwargs
                 )
+
+                # Make sure that lineage is included
+                for transformed_doc in transformed_docs:
+                    if not transformed_doc.parent_hashes:
+                        transformed_doc.parent_hashes = {document.hash_}
                 self._artifact_layer.add(transformed_docs)
                 new_docs.extend(transformed_docs)
             else:
                 new_docs.extend(
-                    self._artifact_layer.get_child_documents(document.hash_)
+                    self._artifact_layer.get_matching_documents(
+                        Selector(parent_hashes=[document.hash_])
+                    )
                 )
 
         return new_docs

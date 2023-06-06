@@ -1,4 +1,4 @@
-from langchain.docstore.persistence import serialize_document, deserialize_document
+from langchain.docstore.artifacts import serialize_document, deserialize_document
 from langchain.schema import Document
 
 

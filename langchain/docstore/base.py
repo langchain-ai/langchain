@@ -62,9 +62,13 @@ class ArtifactLayer(abc.ABC):
     with Documents.
     """
 
-    @abc.abstractmethod
-    def exists(self, ids: Sequence[str]) -> List[bool]:
+    def exists_by_uuid(self, uuids: Sequence[UUID]) -> List[bool]:
+        """Check if the artifacts with the given uuid exist."""
+        raise NotImplementedError()
+
+    def exists_by_id(self, ids: Sequence[str]) -> List[bool]:
         """Check if the artifacts with the given id exist."""
+        raise NotImplementedError()
 
     # @abc.abstractmethod
     # def exist_by_hash(self, hashes: Sequence[str]) -> Sequence[bool]:
@@ -74,10 +78,6 @@ class ArtifactLayer(abc.ABC):
     def add(self, documents: Sequence[Document]) -> None:
         """Add the given artifacts."""
         raise NotImplementedError()
-
-    def get_child_documents(self, hashes: Sequence[UUID]) -> Iterator[Document]:
-        """Get the child documents of the given parent document."""
-        yield from self.get_matching_documents(Selector(parent_hashes=hashes))
 
     def get_matching_documents(self, selector: Selector) -> Iterator[Document]:
         """Yield documents matching the given selector."""
