@@ -60,15 +60,13 @@ class Serializable(BaseModel, ABC):
         lc_kwargs = {k: getattr(self, k, v) for k, v in self.lc_kwargs.items()}
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
-        for cls in self.__class__.mro():
+        for cls in [None, *self.__class__.mro()]:
             # Once we get to Serializable, we're done
             if cls is Serializable:
                 break
 
             # Get a reference to self bound to each class in the MRO
-            this = cast(
-                Serializable, self if cls is self.__class__ else super(cls, self)
-            )
+            this = cast(Serializable, self if cls is None else super(cls, self))
 
             secrets.update(this.lc_secrets)
             lc_kwargs.update({k: getattr(self, k) for k in this.lc_attributes})
