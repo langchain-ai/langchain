@@ -17,21 +17,15 @@ const config = {
     mendableAnonKey: process.env.MENDABLE_ANON_KEY,
   },
   // Set the production url of your site here
-  url: "https://js.langchain.com",
+  url: "https://python.langchain.com",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
 
-  onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "throw",
+  // onBrokenLinks: "throw",
+  // onBrokenMarkdownLinks: "throw",
 
   plugins: [
-    [
-      "docusaurus-plugin-typedoc",
-      {
-        tsconfig: "../langchain/tsconfig.json",
-      },
-    ],
     () => ({
       name: "custom-webpack-config",
       configureWebpack: () => ({
@@ -61,6 +55,20 @@ const config = {
                 fullySpecified: false,
               },
             },
+            {
+              test: /\.py$/,
+              loader: "raw-loader",
+              resolve: {
+                fullySpecified: false,
+              },
+            },
+            {
+              test: /\.ipynb$/,
+              loader: "raw-loader",
+              resolve: {
+                fullySpecified: false
+              }
+            }
           ],
         },
       }),

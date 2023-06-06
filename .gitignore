@@ -73,6 +73,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/docs/_build/
 
 # PyBuilder
 target/
@@ -153,3 +154,8 @@ data_map*
 
 # Replit files
 *replit*
+
+node_modules
+docs/.yarn/
+docs/node_modules/
+docs/.docusaurus/
