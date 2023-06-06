@@ -231,7 +231,7 @@ def test_structured_args_decorator_no_infer_schema() -> None:
     assert isinstance(structured_tool_input, BaseTool)
     assert structured_tool_input.name == "structured_tool_input"
     args = {"arg1": 1, "arg2": 0.001, "opt_arg": {"foo": "bar"}}
-    with pytest.raises(ValueError):
+    with pytest.raises(ToolException):
         assert structured_tool_input.run(args)
 
 
