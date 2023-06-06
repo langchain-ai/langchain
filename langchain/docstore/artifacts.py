@@ -57,6 +57,8 @@ Usage:
     ) # <-- This will sync the file system store with the vector store
 """
 
+from __future__ import annotations
+
 import abc
 import json
 from pathlib import Path
@@ -75,8 +77,10 @@ from uuid import UUID
 
 from langchain.docstore.base import ArtifactLayer, Selector
 from langchain.docstore.serialization import serialize_document, deserialize_document
+from langchain.document_loaders.base import BaseLoader
 from langchain.output_parsers import json
 from langchain.schema import Document, BaseDocumentTransformer
+from langchain.text_splitter import TextSplitter
 
 MaybeDocument = Optional[Document]
 
@@ -186,7 +190,7 @@ class InMemoryStore(MetadataStore):
         raise NotImplementedError()
 
     @classmethod
-    def from_file(cls, path: PathLike) -> "InMemoryStore":
+    def from_file(cls, path: PathLike) -> InMemoryStore:
         """Load store metadata from the given path."""
         with open(path, "r") as f:
             content = json.load(f)
@@ -250,27 +254,93 @@ class FileSystemArtifactLayer(ArtifactLayer):
                 yield deserialize_document(f.read())
 
 
+## VARIANT 1. And apply as a decorator
 # TODO(EUGENE):
 # - Figure out if it works like a decorator or a wrapper
 # Likely has to work as a decorator...
 # - Figure out if this inherits from BaseDocumentTransformer
 # - Problem is keeping a beautiful API if we have to handle:
 # -- Blob interfaces, document loading, embedding, etc.
-class CachingInterceptor:
-    """Caching interceptor for document transformers."""
+# class CachingInterceptor:
+#     """Caching interceptor for document transformers."""
+#
+#     def __init__(
+#         self,
+#         artifact_layer: ArtifactLayer,
+#         underlying_transformer: BaseDocumentTransformer,
+#     ) -> None:
+#         """Initialize the storage interceptor."""
+#         self._artifact_layer = artifact_layer
+#         self._underlying_transformer = underlying_transformer
+#
+#     def transform(self, documents: Sequence[Document], **kwargs: Any) -> List[Document]:
+#         """Transform the given documents."""
+#         docs_exist = self._artifact_layer.exists_by_uuid(
+#             [document.hash_ for document in documents]
+#         )
+#
+#         # non batched variant for speed implemented
+#         new_docs = []
+#
+#         for document, exists in zip(documents, docs_exist):
+#             if not exists:
+#                 transformed_docs = self._underlying_transformer.transform_documents(
+#                     [document], **kwargs
+#                 )
+#
+#                 # Make sure that lineage is included
+#                 for transformed_doc in transformed_docs:
+#                     if not transformed_doc.parent_hashes:
+#                         transformed_doc.parent_hashes = {document.hash_}
+#                 self._artifact_layer.add(transformed_docs)
+#                 new_docs.extend(transformed_docs)
+#             else:
+#                 new_docs.extend(
+#                     self._artifact_layer.get_matching_documents(
+#                         Selector(parent_hashes=[document.hash_])
+#                     )
+#                 )
+#
+#         return new_docs
+#
 
+
+class DocumentPipeline(BaseLoader):
     def __init__(
         self,
-        artifact_layer: ArtifactLayer,
-        underlying_transformer: Union[BaseDocumentTransformer],
+        loader: BaseLoader,
+        *,
+        transformers: Optional[Sequence[BaseDocumentTransformer]] = None,
+        caching_layer: Optional[ArtifactLayer] = None,
+        # Would be ideal if we could implement something like this
+        progress_bar: bool = False,
     ) -> None:
-        """Initialize the storage interceptor."""
-        self._artifact_layer = artifact_layer
-        self._underlying_transformer = underlying_transformer
+        """Initialize the document pipeline."""
+        self.loader = loader
+        self.transformers = transformers
+        self.caching_layer = caching_layer
 
-    def transform(self, documents: Sequence[Document], **kwargs: Any) -> List[Document]:
-        """Transform the given documents."""
-        docs_exist = self._artifact_layer.exists_by_uuid(
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        """Lazy load the documents."""
+        transformations = self.transformers or []
+        # Need syntax for determining whether this should be cached.
+        for document in self.loader.lazy_load():
+            new_documents = [document]
+            for transformation in transformations:
+                # Batched for now here -- logic may be a bit complex for streaming
+                new_documents = list(
+                    self._propagate_documents(new_documents, transformation)
+                )
+
+            yield from new_documents
+
+    def _propagate_documents(
+        self, documents: Sequence[Document], transformation: BaseDocumentTransformer
+    ) -> Iterable[Document]:
+        """Transform the given documents using the transformation with caching."""
+        docs_exist = self.caching_layer.exists_by_uuid(
             [document.hash_ for document in documents]
         )
 
@@ -279,21 +349,33 @@ class CachingInterceptor:
 
         for document, exists in zip(documents, docs_exist):
             if not exists:
-                transformed_docs = self._underlying_transformer.transform_documents(
-                    [document], **kwargs
-                )
+                transformed_docs = transformation.transform_documents([document])
 
                 # Make sure that lineage is included
                 for transformed_doc in transformed_docs:
                     if not transformed_doc.parent_hashes:
                         transformed_doc.parent_hashes = {document.hash_}
-                self._artifact_layer.add(transformed_docs)
+                self.caching_layer.add(transformed_docs)
                 new_docs.extend(transformed_docs)
             else:
                 new_docs.extend(
-                    self._artifact_layer.get_matching_documents(
+                    self.caching_layer.get_matching_documents(
                         Selector(parent_hashes=[document.hash_])
                     )
                 )
 
-        return new_docs
+            yield from new_docs
+
+    def load(self) -> List[Document]:
+        """Load the documents."""
+        return list(self.lazy_load())
+
+    def execute(self) -> None:
+        """Execute the pipeline."""
+        for _ in self.lazy_load():
+            pass
+
+    def load_and_split(
+        self, text_splitter: Optional[TextSplitter] = None
+    ) -> List[Document]:
+        raise NotImplementedError("This method will never be implemented.")
