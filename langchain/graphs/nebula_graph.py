@@ -195,7 +195,6 @@ class NebulaGraph:
 
     def query(self, query: str, retry: int = 0) -> Dict[str, Any]:
         result = self.execute(query, retry=retry)
-
         columns = result.keys()
         d: Dict[str, list] = {}
         for col_num in range(result.col_size()):

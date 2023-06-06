@@ -51,21 +51,22 @@ CYPHER_GENERATION_PROMPT = PromptTemplate(
 
 NEBULAGRAPH_EXTRA_INSTRUCTIONS = """
 Instructions:
-NebulaGraph Cypher is dialect rather than standard:
+
+First, generate cypher then convert it to NebulaGraph Cypher dialect(rather than standard):
 1. it requires explicit label specification when referring to node properties: v.`Foo`.name
-2. it uses double equals sign for comparison: "==" instead of "="
-for exampple, CORRECT:
-MATCH (v:`Foo`)-[e]->() WHERE v.`Foo`.`age` == 30
-RETURN v.`Foo`.name, e.`degree`;
-INCORRECT:
-MATCH (v:Foo) WHERE v.age = 30
-RETURN v.name, e.degree
----\n"""
+2. it uses double equals sign for comparison: `==` rather than `=`
+For instance:
+```diff
+< MATCH (p:person)-[:directed]->(m:movie) WHERE m.name = 'The Godfather II'
+< RETURN p.name;
+---
+> MATCH (p:`person`)-[:directed]->(m:`movie`) WHERE m.`movie`.`name` == 'The Godfather II'
+> RETURN p.`person`.`name`;
+```\n"""
 
 NGQL_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
     "Generate Cypher", "Generate NebulaGraph Cypher"
 ).replace("Instructions:", NEBULAGRAPH_EXTRA_INSTRUCTIONS)
-
 
 NGQL_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"], template=NGQL_GENERATION_TEMPLATE
