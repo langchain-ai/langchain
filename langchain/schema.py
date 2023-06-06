@@ -267,35 +267,21 @@ class BaseChatMessageHistory(ABC):
         """Remove all messages from the store"""
 
 
-def _hash_content(content: str):
-    """Hash the content of a document to generate a UUID."""
-    # Create a hash object
-    hash_object = hashlib.sha256(content.encode())
-
-    # Get the hexadecimal digest of the hash
-    hash_hexdigest = hash_object.hexdigest()
-
-    # Generate a UUID based on the hash
-    generated_uuid = uuid.UUID(hash_hexdigest)
-
-    return generated_uuid
-
-
 class Document(BaseModel):
     """Interface for interacting with a document."""
 
-    id: str  # Use assigned document id, optional
+    uid: str  # Assigned unique identifier
     hash_: UUID  # A hash of the content + metadata
     page_content: str
     # Required field for provenance.
     # Provenance ALWAYS refers to the original source of the document.
     # No matter what transformations have been done on the context.
-    provenance: Tuple[str, ...] = tuple()
+    provenance: Tuple[str, ...] = tuple()  # TODO(not needed for now)
     # User created metadata
     metadata: dict = Field(default_factory=dict)
     # Use to keep track of parent documents from which the document was generated
     # We could keep this is a non sequence to get started for simplicity
-    parent_hashes: Tuple[UUID, ...] = tuple()
+    parent_uids: Tuple[str, ...] = tuple()  # TODO(Move to metadata store)
 
     @root_validator(pre=True)
     def assign_id_if_not_provided(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -303,14 +289,17 @@ class Document(BaseModel):
         if "page_content" not in values:
             raise ValidationError("Must provide page_content")
         if "hash_" not in values:
+            # TODO: Hash should be updated to include all metadata fields.
+            # Document should become immutable likely otherwise it invalidates
+            # any logic done based on hash -- and that's the default uid used.
             content_hash = hashlib.sha256(values["page_content"].encode()).hexdigest()
             hash_ = str(uuid5(UUID(int=0), content_hash))
             values["hash_"] = hash_
         else:
             hash_ = values["hash_"]
-        if "id" not in values:
+        if "uid" not in values:
             # Generate an ID based on the hash of the content
-            values["id"] = hash_
+            values["uid"] = str(hash_)
         return values
 
 

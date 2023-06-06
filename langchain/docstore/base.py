@@ -1,10 +1,9 @@
 """Interface to access to place that stores documents."""
 import abc
+import dataclasses
 from abc import ABC, abstractmethod
 from typing import Dict, Union, Sequence, Iterator, Optional, List
-from uuid import UUID
 
-import dataclasses
 from langchain.schema import Document
 
 
@@ -40,9 +39,11 @@ class Selector:
     if operating on JSON metadata or else something free form like SQL.
     """
 
-    parent_hashes: Optional[Sequence[UUID]] = None
-    hashes: Optional[Sequence[UUID]] = None
-    ids: Optional[Sequence[str]] = None
+    parent_uids: Optional[Sequence[str]] = None
+    uids: Optional[Sequence[str]] = None
+    # Pick up all artifacts with the given tags.
+    # Maybe we should call this transformations.
+    tags: Optional[Sequence[str]] = None
 
 
 class ArtifactStore(abc.ABC):
@@ -55,20 +56,21 @@ class ArtifactStore(abc.ABC):
     with Documents.
     """
 
-    def exists_by_uuid(self, uuids: Sequence[UUID]) -> List[bool]:
+    def exists_by_uid(self, uids: Sequence[str]) -> List[bool]:
         """Check if the artifacts with the given uuid exist."""
         raise NotImplementedError()
 
-    def exists_by_id(self, ids: Sequence[str]) -> List[bool]:
+    def exists_by_parent_uids(self, uids: Sequence[str]) -> List[bool]:
         """Check if the artifacts with the given id exist."""
         raise NotImplementedError()
 
-    # @abc.abstractmethod
-    # def exist_by_hash(self, hashes: Sequence[str]) -> Sequence[bool]:
-    #     """Check if the artifacts with the given hash exist."""
-    #     raise NotImplementedError()
-
-    def add(self, documents: Sequence[Document]) -> None:
+    def add(
+        self,
+        documents: Sequence[Document],
+        # Find better way to propagate information about tags
+        # this may be moved into a wrapper object
+        # called: DocumentWithMetadata
+    ) -> None:
         """Add the given artifacts."""
         raise NotImplementedError()
 

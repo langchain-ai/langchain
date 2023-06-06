@@ -87,6 +87,11 @@ MaybeDocument = Optional[Document]
 PathLike = Union[str, Path]
 
 
+# KNOWN WAYS THIS CAN FAIL:
+# 1) If the process crashes while text splitting, creating only some of the artifacts
+#    ... new pipeline will not re-create the missing artifacts! (at least for now)
+#    it will use the ones that exist and assume that all of them have been created
+
 # TODO: MAJOR MAJOR MAJOR MAJOR
 # FIX SEMANTICS WITH REGARDS TO ID, UUID. AND POTENTIALLY ARTIFACT_ID
 # NEED TO REASON THROUGH USE CASES CAREFULLY TO REASON ABOUT WHATS MINIMAL SUFFICIENT
@@ -96,14 +101,18 @@ class Artifact(TypedDict):
 
     """A representation of an artifact."""
 
-    custom_id: str
-    """Optionally user assigned ID. If not provided, set to uuid."""
-    uuid: UUID
-    """A uuid represent the hash of the artifact."""
-    parent_uuids: Tuple[UUID, ...]
+    uid: str
+    """A unique identifier for the artifact."""
+    parent_uids: Tuple[str, ...]
     """A tuple of uuids representing the parent artifacts."""
     metadata: Any
     """A dictionary representing the metadata of the artifact."""
+    tags: Tuple[str, ...]
+    """A tuple of tags associated with the artifact.
+    
+    Can use tags to add information about the transformation that was applied
+    to the given artifact. There's probably a better representation.
+    """
 
 
 class Metadata(TypedDict):
@@ -132,40 +141,31 @@ class InMemoryStore(MetadataStore):
         self.data = data
         self.artifacts = data["artifacts"]
         # indexes for speed
-        self.artifact_uuid = {artifact["uuid"]: artifact for artifact in self.artifacts}
-        self.artifact_ids = {
-            artifact["custom_id"]: artifact for artifact in self.artifacts
-        }
+        self.artifact_uids = {artifact["uid"]: artifact for artifact in self.artifacts}
 
-    def exists_by_id(self, ids: Sequence[str]) -> List[bool]:
+    def exists_by_uids(self, uids: Sequence[str]) -> List[bool]:
         """Order preserving check if the artifact with the given id exists."""
-        return [bool(id_ in self.artifact_ids) for id_ in ids]
+        return [bool(uid in self.artifact_uids) for uid in uids]
 
-    def exists_by_uuid(self, uuids: Sequence[UUID]) -> List[bool]:
-        """Order preserving check if the artifact with the given uuid exists."""
-        return [bool(uuid_ in self.artifact_ids) for uuid_ in uuids]
-
-    def get_by_uuids(self, uuids: Sequence[UUID]) -> List[Artifact]:
+    def get_by_uids(self, uids: Sequence[str]) -> List[Artifact]:
         """Return the documents with the given uuids."""
-        return [self.artifact_uuid[uuid] for uuid in uuids]
+        return [self.artifact_uids[uid] for uid in uids]
 
-    def select(self, selector: Selector) -> Iterable[UUID]:
+    def select(self, selector: Selector) -> Iterable[str]:
         """Return the hashes the artifacts matching the given selector."""
         # FOR LOOP THROUGH ALL ARTIFACTS
         # Can be optimized later
         for artifact in self.data["artifacts"]:
-            if selector.ids and artifact["uuid"] in selector.ids:
-                yield artifact["uuid"]
+            uid = artifact["uid"]
+            # Implement conjunctive normal form
+            if selector.uids and artifact["uid"] in selector.uids:
+                yield uid
                 continue
 
-            if selector.hashes and artifact["uuid"] in selector.hashes:
-                yield artifact["uuid"]
-                continue
-
-            if artifact["parent_uuids"] and set(artifact["parent_uuids"]).intersection(
-                selector.parent_hashes
+            if artifact["parent_uids"] and set(artifact["parent_uids"]).intersection(
+                selector.parent_uids
             ):
-                yield artifact["uuid"]
+                yield uid
                 continue
 
     def save(self, path: PathLike) -> None:
@@ -177,17 +177,17 @@ class InMemoryStore(MetadataStore):
         """Add the given artifact to the store."""
         self.data["artifacts"].append(artifact)
         # TODO(EUGENE): Handle DEFINE collision semantics
-        self.artifact_uuid[artifact["uuid"]] = artifact
-        self.artifact_ids[artifact["custom_id"]] = artifact
+        self.artifact_uids[artifact["uid"]] = artifact
 
     def remove(self, selector: Selector) -> None:
         """Remove the given artifacts from the store."""
-        uuids = list(self.select(selector))
-        self.remove_by_uuids(uuids)
+        uids = list(self.select(selector))
+        self.remove_by_uuids(uids)
 
-    def remove_by_uuids(self, uuids: Sequence[UUID]) -> None:
+    def remove_by_uuids(self, uids: Sequence[str]) -> None:
         """Remove the given artifacts from the store."""
-        raise NotImplementedError()
+        for uid in uids:
+            del self.artifact_uids[uid]
 
     @classmethod
     def from_file(cls, path: PathLike) -> InMemoryStore:
@@ -211,19 +211,15 @@ class FileSystemArtifactLayer(ArtifactStore):
         self.metadata_path = metadata_path
         self.metadata_store = InMemoryStore.from_file(metadata_path)
 
-    def exists_by_uuid(self, uuids: Sequence[UUID]) -> List[bool]:
+    def exists_by_uid(self, uuids: Sequence[str]) -> List[bool]:
         """Check if the artifacts with the given uuid exist."""
-        return self.metadata_store.exists_by_uuid(uuids)
-
-    def exists_by_id(self, ids: Sequence[str]) -> List[bool]:
-        """Check if the artifacts with the given id exist."""
-        return self.metadata_store.exists_by_id(ids)
+        return self.metadata_store.exists_by_uids(uuids)
 
     def _get_file_path(self, uuid: UUID) -> Path:
         """Get path to file for the given uuid."""
         return self.root / f"{uuid}"
 
-    def add(self, documents: Sequence[Document]) -> None:
+    def add(self, documents: Sequence[Document], tags: Sequence[str]) -> None:
         """Add the given artifacts."""
         # Write the documents to the file system
         for document in documents:
@@ -234,10 +230,10 @@ class FileSystemArtifactLayer(ArtifactStore):
 
             self.metadata_store.add(
                 {
-                    "custom_id": document.id,
-                    "uuid": document.hash_,
-                    "parent_uuids": document.parent_hashes,
+                    "uid": document.uid,
+                    "parent_uids": document.parent_uids,
                     "metadata": document.metadata,
+                    "tags": tags,
                 }
             )
 
@@ -340,8 +336,8 @@ class DocumentPipeline(BaseLoader):
         self, documents: Sequence[Document], transformation: BaseDocumentTransformer
     ) -> Iterable[Document]:
         """Transform the given documents using the transformation with caching."""
-        docs_exist = self.artifact_store.exists_by_uuid(
-            [document.hash_ for document in documents]
+        docs_exist = self.artifact_store.exists_by_uid(
+            [document.uid for document in documents]
         )
 
         # non batched variant for speed implemented
@@ -359,12 +355,16 @@ class DocumentPipeline(BaseLoader):
                 # TODO(EUGENE): Extract transformation information here
                 # to add to metadata store
                 transformation_name = transformation.__class__.__name__
-                self.artifact_store.add(transformed_docs)
+                self.artifact_store.add(transformed_docs, tags=[transformation_name])
                 new_docs.extend(transformed_docs)
             else:
                 new_docs.extend(
+                    # TODO(Eugene): In this form, this will fail in cases
+                    # where the original transformation failed half way throough
+                    # and only created some of the children.
+                    # MAJOR
                     self.artifact_store.get_matching_documents(
-                        Selector(parent_hashes=[document.hash_])
+                        Selector(parent_uids=[document.uid])
                     )
                 )
 
