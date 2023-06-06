@@ -56,104 +56,89 @@ Usage:
         }
     ) # <-- This will sync the file system store with the vector store
 """
-from json import JSONDecodeError
 
 import abc
 import json
 from pathlib import Path
-from typing import TypedDict, Sequence, Optional, Any, Iterator, Union, List, Iterable
+from typing import (
+    TypedDict,
+    Sequence,
+    Optional,
+    Any,
+    Iterator,
+    Union,
+    List,
+    Iterable,
+    Tuple,
+)
 from uuid import UUID
 
 from langchain.docstore.base import ArtifactLayer, Selector
+from langchain.docstore.serialization import serialize_document, deserialize_document
 from langchain.output_parsers import json
 from langchain.schema import Document, BaseDocumentTransformer
-from langchain.vectorstores.base import VectorStore
 
 MaybeDocument = Optional[Document]
-
-
-class UUIDEncoder(json.JSONEncoder):
-    """TODO detemine if there's a better solution."""
-
-    def default(self, obj):
-        if isinstance(obj, UUID):
-            return str(obj)  # Convert UUID to string
-        return super().default(obj)
-
-
-def serialize_document(document: Document) -> str:
-    """Serialize the given document to a string."""
-    try:
-        return json.dumps(document.dict(), cls=UUIDEncoder)
-    except JSONDecodeError:
-        raise ValueError(f"Could not serialize document with ID: {document.id}")
-
-
-def deserialize_document(serialized_document: str) -> Document:
-    """Deserialize the given document from a string."""
-    return Document.parse_obj(json.loads(serialized_document))
-
 
 PathLike = Union[str, Path]
 
 
 class Artifact(TypedDict):
-    id: str
-    hash_: str
-    parent_hashes: List[str]
+    """A representation of an artifact."""
+
+    custom_id: str
+    """Optionally user assigned ID. If not provided, set to uuid."""
+    uuid: UUID
+    """A uuid represent the hash of the artifact."""
+    parent_uuids: Tuple[str, ...]
+    """A tuple of uuids representing the parent artifacts."""
     metadata: Any
+    """A dictionary representing the metadata of the artifact."""
 
 
-class MetadataFormat(TypedDict):
+class Metadata(TypedDict):
+    """Metadata format"""
+
     artifacts: List[Artifact]
 
 
 class MetadataStore(abc.ABC):
     """Abstract metadata store."""
 
-    def select(self, selector: Selector) -> Sequence[str]:
+    def select(self, selector: Selector) -> Iterable[str]:
         """Select the artifacts matching the given selector."""
         raise NotImplementedError
 
 
 class InMemoryStore(MetadataStore):
-    def __init__(self, data: MetadataFormat) -> None:
+    """In-memory metadata store backed by a file.
+
+    In its current form, this store will be really slow for large collections of files.
+    """
+
+    def __init__(self, data: Metadata) -> None:
         """Initialize the in-memory store."""
+        super().__init__()
         self.data = data
 
     def select(self, selector: Selector) -> Iterable[str]:
-        """Return an iterable of the matching artifacts."""
-        # FOR LOOP THROUGH ALL ARTIFACTS. THIS IS FINE
-        # It's done to avoid keeping 
+        """Return the hashes the artifacts matching the given selector."""
+        # FOR LOOP THROUGH ALL ARTIFACTS
+        # Can be optimized later
+        for artifact in self.data["artifacts"]:
+            if selector.ids and artifact["uuid"] in selector.ids:
+                yield artifact["uuid"]
+                continue
 
-        for artifact in self.data:
+            if selector.hashes and artifact["uuid"] in selector.hashes:
+                yield artifact["uuid"]
+                continue
 
-
-        already_seen = set()
-        if selector.parent_hashes:
-            # Non efficient
-            for artifact in self.data["artifacts"]:
-                if set(artifact["parent_hashes"]).intersection(selector.parent_hashes):
-                    yield artifact["id"]
-                    already_seen.add(artifact["id"])
-
-        if selector.ids:
-            for artifact in self.data["artifacts"]:
-                if (
-                    artifact["id"] in selector.ids
-                    and artifact["id"] not in already_seen
-                ):
-                    yield artifact["id"]
-                    already_seen.add(artifact["id"])
-
-        if selector.hashes:
-            for artifact in self.data["artifacts"]:
-                if (
-                    artifact["hash_"] in selector.hashes
-                    and artifact["id"] not in already_seen
-                ):
-                    yield artifact["id"]
-                    already_seen.add(artifact["id"])
+            if artifact["parent_uuids"] and set(artifact["parent_uuids"]).intersection(
+                selector.parent_hashes
+            ):
+                yield artifact["uuid"]
+                continue
 
     def save(self, path: PathLike) -> None:
         """Save the metadata to the given path."""
@@ -170,9 +155,9 @@ class InMemoryStore(MetadataStore):
 
     @classmethod
     def from_file(cls, path: PathLike) -> "InMemoryStore":
+        """Load store metadata from the given path."""
         with open(path, "r") as f:
             content = json.load(f)
-
         return cls(content)
 
 
@@ -212,7 +197,7 @@ class FileSystemArtifactLayer(ArtifactLayer):
                 yield deserialize_document(f.read())
 
 
-class CachingDocumentTransformer(BaseDocumentTransformer):
+class CachingInterceptor(BaseDocumentTransformer):
     def __init__(
         self,
         artifact_layer: ArtifactLayer,
@@ -248,39 +233,3 @@ class CachingDocumentTransformer(BaseDocumentTransformer):
                 )
 
         return new_docs
-
-
-class SyncResult(TypedDict):
-    """Syncing result."""
-
-    first_n_errors: Sequence[str]
-    """First n errors that occurred during syncing."""
-    num_added: int
-    """Number of added documents."""
-    num_updated: int
-    """Number of updated documents because they were not up to date."""
-    num_deleted: int
-    """Number of deleted documents."""
-    num_skipped: int
-    """Number of skipped documents because they were already up to date."""
-
-
-def sync(
-    artifact_layer: ArtifactLayer, vector_store: VectorStore, selector: Selector
-) -> SyncResult:
-    """Sync the given artifact layer with the given vector store."""
-
-    matching_documents = artifact_layer.get_matching_documents(selector)
-    # IDs must fit into memory for this to work.
-    upsert_info = vector_store.upsert_by_id(documents=matching_documents)
-    # Non-intuitive interface, but simple to implement
-    # (maybe we can have a better solution though)
-    num_deleted = vector_store.delete_non_matching_ids(upsert_info["ids_in_request"])
-
-    return {
-        "first_n_errors": [],
-        "num_added": upsert_info["num_added"],
-        "num_updated": upsert_info["num_updated"],
-        "num_skipped": upsert_info["num_skipped"],
-        "num_deleted": num_deleted,
-    }

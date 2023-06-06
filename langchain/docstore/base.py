@@ -30,11 +30,14 @@ class AddableMixin(ABC):
 
 @dataclasses.dataclass(frozen=True)
 class Selector:
-    """Selector for documents.
+    """Selection criteria represented in conjunctive normal form.
 
-    this is just for experimentation -- need a better representation
+    https://en.wikipedia.org/wiki/Conjunctive_normal_form
 
-    maybe jq if metadata
+    At the moment, the explicit representation is used for simplicity / prototyping.
+
+    It may be replaced by an ability of specifying selection with jq
+    if operating on JSON metadata or else something free form like SQL.
     """
 
     parent_hashes: Optional[Sequence[UUID]] = None
