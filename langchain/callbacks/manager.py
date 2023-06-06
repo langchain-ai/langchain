@@ -5,9 +5,20 @@ import functools
 import logging
 import os
 import warnings
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID, uuid4
 
 import langchain
@@ -23,8 +34,8 @@ from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.callbacks.tracers.langchain_v1 import LangChainTracerV1, TracerSessionV1
-from langchain.callbacks.tracers.schemas import TracerSession
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
+from langchain.callbacks.tracers.wandb import WandbTracer
 from langchain.schema import (
     AgentAction,
     AgentFinish,
@@ -44,6 +55,12 @@ tracing_callback_var: ContextVar[
 ] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
+wandb_tracing_callback_var: ContextVar[
+    Optional[WandbTracer]
+] = ContextVar(  # noqa: E501
+    "tracing_wandb_callback", default=None
+)
+
 tracing_v2_callback_var: ContextVar[
     Optional[LangChainTracer]
 ] = ContextVar(  # noqa: E501
@@ -77,31 +94,89 @@ def tracing_enabled(
 
 
 @contextmanager
+def wandb_tracing_enabled(
+    session_name: str = "default",
+) -> Generator[None, None, None]:
+    """Get WandbTracer in a context manager."""
+    cb = WandbTracer()
+    wandb_tracing_callback_var.set(cb)
+    yield None
+    wandb_tracing_callback_var.set(None)
+
+
+@contextmanager
 def tracing_v2_enabled(
     session_name: Optional[str] = None,
     *,
     example_id: Optional[Union[str, UUID]] = None,
-    tenant_id: Optional[str] = None,
-    session_extra: Optional[Dict[str, Any]] = None,
-) -> Generator[TracerSession, None, None]:
+) -> Generator[None, None, None]:
     """Get the experimental tracer handler in a context manager."""
     # Issue a warning that this is experimental
     warnings.warn(
-        "The experimental tracing v2 is in development. "
+        "The tracing v2 API is in development. "
         "This is not yet stable and may change in the future."
     )
     if isinstance(example_id, str):
         example_id = UUID(example_id)
+    cb = LangChainTracer(
+        example_id=example_id,
+        session_name=session_name,
+    )
+    tracing_v2_callback_var.set(cb)
+    yield
+    tracing_v2_callback_var.set(None)
+
+
+@contextmanager
+def trace_as_chain_group(
+    group_name: str,
+    *,
+    session_name: Optional[str] = None,
+    example_id: Optional[Union[str, UUID]] = None,
+    tenant_id: Optional[str] = None,
+    session_extra: Optional[Dict[str, Any]] = None,
+) -> Generator[CallbackManager, None, None]:
+    """Get a callback manager for a chain group in a context manager."""
     cb = LangChainTracer(
         tenant_id=tenant_id,
         session_name=session_name,
         example_id=example_id,
         session_extra=session_extra,
     )
-    session = cb.ensure_session()
-    tracing_v2_callback_var.set(cb)
-    yield session
-    tracing_v2_callback_var.set(None)
+    cm = CallbackManager.configure(
+        inheritable_callbacks=[cb],
+    )
+
+    run_manager = cm.on_chain_start({"name": group_name}, {})
+    yield run_manager.get_child()
+    run_manager.on_chain_end({})
+
+
+@asynccontextmanager
+async def atrace_as_chain_group(
+    group_name: str,
+    *,
+    session_name: Optional[str] = None,
+    example_id: Optional[Union[str, UUID]] = None,
+    tenant_id: Optional[str] = None,
+    session_extra: Optional[Dict[str, Any]] = None,
+) -> AsyncGenerator[AsyncCallbackManager, None]:
+    """Get a callback manager for a chain group in a context manager."""
+    cb = LangChainTracer(
+        tenant_id=tenant_id,
+        session_name=session_name,
+        example_id=example_id,
+        session_extra=session_extra,
+    )
+    cm = AsyncCallbackManager.configure(
+        inheritable_callbacks=[cb],
+    )
+
+    run_manager = await cm.on_chain_start({"name": group_name}, {})
+    try:
+        yield run_manager.get_child()
+    finally:
+        await run_manager.on_chain_end({})
 
 
 def _handle_event(
@@ -135,6 +210,8 @@ def _handle_event(
             else:
                 logger.warning(f"Error in {event_name} callback: {e}")
         except Exception as e:
+            if handler.raise_error:
+                raise e
             logging.warning(f"Error in {event_name} callback: {e}")
 
 
@@ -831,11 +908,16 @@ def _configure(
             callback_manager.add_handler(handler, False)
 
     tracer = tracing_callback_var.get()
+    wandb_tracer = wandb_tracing_callback_var.get()
     open_ai = openai_callback_var.get()
     tracing_enabled_ = (
         os.environ.get("LANGCHAIN_TRACING") is not None
         or tracer is not None
         or os.environ.get("LANGCHAIN_HANDLER") is not None
+    )
+    wandb_tracing_enabled_ = (
+        os.environ.get("LANGCHAIN_WANDB_TRACING") is not None
+        or wandb_tracer is not None
     )
 
     tracer_v2 = tracing_v2_callback_var.get()
@@ -851,6 +933,7 @@ def _configure(
         or debug
         or tracing_enabled_
         or tracing_v2_enabled_
+        or wandb_tracing_enabled_
         or open_ai is not None
     ):
         if verbose and not any(
@@ -876,6 +959,14 @@ def _configure(
                 handler = LangChainTracerV1()
                 handler.load_session(tracer_session)
                 callback_manager.add_handler(handler, True)
+        if wandb_tracing_enabled_ and not any(
+            isinstance(handler, WandbTracer) for handler in callback_manager.handlers
+        ):
+            if wandb_tracer:
+                callback_manager.add_handler(wandb_tracer, True)
+            else:
+                handler = WandbTracer()
+                callback_manager.add_handler(handler, True)
         if tracing_v2_enabled_ and not any(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
@@ -885,7 +976,6 @@ def _configure(
             else:
                 try:
                     handler = LangChainTracer(session_name=tracer_session)
-                    handler.ensure_session()
                     callback_manager.add_handler(handler, True)
                 except Exception as e:
                     logger.warning(

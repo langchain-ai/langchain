@@ -6,6 +6,11 @@ This section covers several options for that. Note that these options are meant 
 
 What follows is a list of template GitHub repositories designed to be easily forked and modified to use your chain. This list is far from exhaustive, and we are EXTREMELY open to contributions here.
 
+## [Anyscale](https://www.anyscale.com/model-serving)
+
+Anyscale is a unified compute platform that makes it easy to develop, deploy, and manage scalable LLM applications in production using Ray.
+With Anyscale you can scale the most challenging LLM-based workloads and both develop and deploy LLM-based apps on a single compute platform.
+
 ## [Streamlit](https://github.com/hwchase17/langchain-streamlit-template)
 
 This repo serves as a template for how to deploy a LangChain with Streamlit.

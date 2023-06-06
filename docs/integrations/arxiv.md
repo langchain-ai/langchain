@@ -26,3 +26,11 @@ See a [usage example](../modules/indexes/document_loaders/examples/arxiv.ipynb).
 ```python
 from langchain.document_loaders import ArxivLoader
 ```
+
+## Retriever
+
+See a [usage example](../modules/indexes/retrievers/examples/arxiv.ipynb).
+
+```python
+from langchain.retrievers import ArxivRetriever
+```

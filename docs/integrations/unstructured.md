@@ -4,8 +4,7 @@
 [Unstructured.IO](https://www.unstructured.io/) extracts clean text from raw source documents like
 PDFs and Word documents.
 This page covers how to use the [`unstructured`](https://github.com/Unstructured-IO/unstructured)
-ecosystem within LangChain. 
-
+ecosystem within LangChain.
 
 ## Installation and Setup
 
@@ -20,12 +19,6 @@ its dependencies running locally.
     - `tesseract-ocr`(images and PDFs)
     - `libreoffice` (MS Office docs)
     - `pandoc` (EPUBs)
-- If you are parsing PDFs using the `"hi_res"` strategy, run the following to install the `detectron2` model, which
-  `unstructured` uses for layout detection:
-    - `pip install "detectron2@git+https://github.com/facebookresearch/detectron2.git@e2ce8dc#egg=detectron2"`
-    - If `detectron2` is not installed, `unstructured` will fallback to processing PDFs
-      using the `"fast"` strategy, which uses `pdfminer` directly and doesn't require
-      `detectron2`.
 
 If you want to get up and running with less set up, you can
 simply run `pip install unstructured` and use `UnstructuredAPIFileLoader` or

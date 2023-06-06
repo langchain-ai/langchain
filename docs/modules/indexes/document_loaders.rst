@@ -30,6 +30,7 @@ For detailed instructions on how to get set up with Unstructured, see installati
    :maxdepth: 1
    :glob:
 
+   ./document_loaders/examples/audio.ipynb
    ./document_loaders/examples/conll-u.ipynb
    ./document_loaders/examples/copypaste.ipynb
    ./document_loaders/examples/csv.ipynb
@@ -88,7 +89,7 @@ We don't need any access permissions to these datasets and services.
 
 
 Proprietary dataset or service loaders
-------------------------------
+--------------------------------------
 These datasets and services are not from the public domain.
 These loaders mostly transform data from specific formats of applications or cloud services,
 for example **Google Drive**.
