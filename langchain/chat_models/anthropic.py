@@ -19,6 +19,21 @@ from langchain.schema import (
 )
 
 
+def get_updated_token_counts(
+    response: Dict[str, Any], token_counts: Dict[str, int]
+) -> dict:
+    _token_key_map = {
+        "completion_token_count": "completion_tokens",
+        "prompt_token_count": "prompt_tokens",
+    }
+    result = {
+        api_key: token_counts.get(api_key, 0) + response[response_key]
+        for response_key, api_key in _token_key_map.items()
+    }
+    result["total_tokens"] = sum(result.values())
+    return result
+
+
 class ChatAnthropic(BaseChatModel, _AnthropicCommon):
     r"""Wrapper around Anthropic's large language model.
 
@@ -99,6 +114,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
         if stop:
             params["stop_sequences"] = stop
+        token_usage: Dict[str, int] = {}
 
         if self.streaming:
             completion = ""
@@ -112,9 +128,13 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
                     )
         else:
             response = self.client.completion(**params)
+            token_usage = get_updated_token_counts(response, token_usage)
             completion = response["completion"]
         message = AIMessage(content=completion)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        return ChatResult(
+            generations=[ChatGeneration(message=message)],
+            llm_output={"token_usage": token_usage, "model_name": self.model},
+        )
 
     async def _agenerate(
         self,
@@ -126,7 +146,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
         if stop:
             params["stop_sequences"] = stop
-
+        token_usage: Dict[str, int] = {}
         if self.streaming:
             completion = ""
             stream_resp = await self.client.acompletion_stream(**params)
@@ -139,9 +159,13 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
                     )
         else:
             response = await self.client.acompletion(**params)
+            token_usage = get_updated_token_counts(response, token_usage)
             completion = response["completion"]
         message = AIMessage(content=completion)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        return ChatResult(
+            generations=[ChatGeneration(message=message)],
+            llm_output={"token_usage": token_usage, "model_name": self.model},
+        )
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
