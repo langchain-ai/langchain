@@ -50,7 +50,13 @@ def get_prompts(
                 chat_history_as_string(prompt), llm_string
             )
             if isinstance(cache_val, list):
-                existing_prompts[i] = ChatResult(generations=cache_val)
+                # the cache stores List[Generation]; we parse it to List[ChatGeneration]
+                cache_val_for_chat = [
+                    ChatGeneration(text=gen.text, message=AIMessage(content=gen.text))
+                    for gen in cache_val
+                ]
+
+                existing_prompts[i] = ChatResult(generations=cache_val_for_chat)
             else:
                 missing_prompts.append(prompt)
                 missing_prompt_idxs.append(i)
