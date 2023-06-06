@@ -56,8 +56,10 @@ class Serializable(BaseModel, ABC):
 
     def to_json(self) -> SerializedConstructor:
         secrets = dict()
+        # Get latest values for kwargs if there is an attribute with same name
+        lc_kwargs = {k: getattr(self, k, v) for k, v in self.lc_kwargs.items()}
 
-        # Merge the lc_secrets from every class in the MRO
+        # Merge the lc_secrets and lc_attributes from every class in the MRO
         for cls in self.__class__.mro():
             # Once we get to Serializable, we're done
             if cls is Serializable:
@@ -65,28 +67,27 @@ class Serializable(BaseModel, ABC):
 
             # mypy doesn't understand this, but it is correct
             secrets.update(super(cls, self).lc_secrets)  # type: ignore [arg-type]
-
-        # Get latest values for kwargs if there is an attribute with same name
-        lc_kwargs = {k: getattr(self, k, v) for k, v in self.lc_kwargs.items()}
-        # Add additional attributes from lc_attributes
-        lc_kwargs.update({k: getattr(self, k) for k in self.lc_attributes})
+            lc_kwargs.update({k: getattr(self, k) for k in super(cls, self).lc_attributes})  # type: ignore [arg-type]
 
         return {
             "lc": 1,
             "type": "constructor",
             "id": [*self.lc_namespace, self.__class__.__name__],
-            "kwargs": lc_kwargs if not secrets else replace_secrets(lc_kwargs, secrets),
+            "kwargs": lc_kwargs
+            if not secrets
+            else _replace_secrets(lc_kwargs, secrets),
         }
 
-    def to_json_not_implemented(self) -> SerializedNotImplemented:
+    @classmethod
+    def to_json_not_implemented(cls) -> SerializedNotImplemented:
         return {
             "lc": 1,
             "type": "not_implemented",
-            "id": [*self.lc_namespace, self.__class__.__name__],
+            "id": [*cls.__module__.split("."), cls.__name__],
         }
 
 
-def replace_secrets(
+def _replace_secrets(
     root: Dict[Any, Any], secrets_map: Dict[str, str]
 ) -> Dict[Any, Any]:
     result = root.copy()
@@ -105,3 +106,19 @@ def replace_secrets(
                 "id": [secret_id],
             }
     return result
+
+
+def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
+    id: List[str] = []
+    try:
+        if hasattr(obj, "__name__"):
+            id = [*obj.__module__.split("."), obj.__name__]  # type: ignore [attr-defined]
+        elif hasattr(obj, "__class__"):
+            id = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
+    except:
+        pass
+    return {
+        "lc": 1,
+        "type": "not_implemented",
+        "id": id,
+    }

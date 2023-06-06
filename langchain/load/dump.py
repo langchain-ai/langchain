@@ -1,19 +1,17 @@
 import json
 from typing import Any
 
-from langchain.load.serializable import Serializable
+from langchain.load.serializable import Serializable, to_json_not_implemented
 
 
-class LangChainJSONEncoder(json.JSONEncoder):
-    def __call__(self, obj: Any) -> Any:
-        if isinstance(obj, Serializable):
-            return obj.to_json()
-
-        return super().default(obj)
+def default(obj: Any) -> Any:
+    if isinstance(obj, Serializable):
+        return obj.to_json()
+    else:
+        return to_json_not_implemented(obj)
 
 
 def dumps(obj: Any, *, pretty: bool = False) -> str:
-    default = LangChainJSONEncoder()
     if pretty:
         return json.dumps(obj, default=default, indent=2)
     else:
