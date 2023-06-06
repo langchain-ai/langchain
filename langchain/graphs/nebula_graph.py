@@ -2,8 +2,6 @@ import logging
 from string import Template
 from typing import TYPE_CHECKING, Any, Dict
 
-if TYPE_CHECKING:
-    from nebula3.gclient.net.SessionPool import SessionPool
 
 rel_query = Template(
     """
@@ -56,7 +54,7 @@ class NebulaGraph:
         except Exception as e:
             raise ValueError(f"Could not refresh schema. Error: {e}")
 
-    def _get_session_pool(self) -> SessionPool:
+    def _get_session_pool(self) -> Any:
         assert all(
             [self.username, self.password, self.address, self.port, self.space]
         ), (
