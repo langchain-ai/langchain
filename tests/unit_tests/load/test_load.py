@@ -1,8 +1,7 @@
 """Test for Serializable base class"""
 
-from langchain.llms.openai import OpenAI
-
 from langchain.chains.llm import LLMChain
+from langchain.llms.openai import OpenAI
 from langchain.load.dump import dumps
 from langchain.load.load import loads
 from langchain.prompts.prompt import PromptTemplate

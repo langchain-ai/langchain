@@ -1,6 +1,7 @@
 """Test for Serializable base class"""
 
 from typing import Any
+
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.load.dump import dumps

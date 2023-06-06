@@ -1,5 +1,5 @@
-import json
 import importlib
+import json
 from typing import Any, Dict, Optional
 
 from langchain.load.serializable import Serializable
@@ -27,7 +27,8 @@ class Reviver:
             and value.get("id", None) is not None
         ):
             raise NotImplementedError(
-                f"Trying to load an object that doesn't implement serialization: {value}"
+                "Trying to load an object that doesn't implement "
+                f"serialization: {value}"
             )
 
         if (
