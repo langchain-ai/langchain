@@ -50,7 +50,7 @@ class Chroma(VectorStore):
                 from langchain.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
-                vectorstore = Chroma("langchain_store", embeddings.embed_query)
+                vectorstore = Chroma("langchain_store", embeddings)
     """
 
     _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
@@ -217,8 +217,9 @@ class Chroma(VectorStore):
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List[Tuple[Document, float]]: List of documents most similar to the query
-                text with distance in float.
+            List[Tuple[Document, float]]: List of documents most similar to
+            the query text and cosine distance in float for each.
+            Lower score represents more similarity.
         """
         if self._embedding_function is None:
             results = self.__query_collection(

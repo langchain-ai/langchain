@@ -7,9 +7,15 @@ from aiohttp import ClientSession
 
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import tracing_enabled
-from langchain.callbacks.manager import tracing_v2_enabled
+from langchain.callbacks.manager import (
+    atrace_as_chain_group,
+    trace_as_chain_group,
+    tracing_v2_enabled,
+)
+from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
 
 questions = [
     (
@@ -152,3 +158,59 @@ def test_tracing_v2_context_manager() -> None:
         agent.run(questions[0])  # this should be traced
 
     agent.run(questions[0])  # this should not be traced
+
+
+def test_trace_as_group() -> None:
+    llm = OpenAI(temperature=0.9)
+    prompt = PromptTemplate(
+        input_variables=["product"],
+        template="What is a good name for a company that makes {product}?",
+    )
+    chain = LLMChain(llm=llm, prompt=prompt)
+    with trace_as_chain_group("my_group") as group_manager:
+        chain.run(product="cars", callbacks=group_manager)
+        chain.run(product="computers", callbacks=group_manager)
+        chain.run(product="toys", callbacks=group_manager)
+
+    with trace_as_chain_group("my_group_2") as group_manager:
+        chain.run(product="toys", callbacks=group_manager)
+
+
+def test_trace_as_group_with_env_set() -> None:
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    llm = OpenAI(temperature=0.9)
+    prompt = PromptTemplate(
+        input_variables=["product"],
+        template="What is a good name for a company that makes {product}?",
+    )
+    chain = LLMChain(llm=llm, prompt=prompt)
+    with trace_as_chain_group("my_group") as group_manager:
+        chain.run(product="cars", callbacks=group_manager)
+        chain.run(product="computers", callbacks=group_manager)
+        chain.run(product="toys", callbacks=group_manager)
+
+    with trace_as_chain_group("my_group_2") as group_manager:
+        chain.run(product="toys", callbacks=group_manager)
+
+
+@pytest.mark.asyncio
+async def test_trace_as_group_async() -> None:
+    llm = OpenAI(temperature=0.9)
+    prompt = PromptTemplate(
+        input_variables=["product"],
+        template="What is a good name for a company that makes {product}?",
+    )
+    chain = LLMChain(llm=llm, prompt=prompt)
+    async with atrace_as_chain_group("my_group") as group_manager:
+        await chain.arun(product="cars", callbacks=group_manager)
+        await chain.arun(product="computers", callbacks=group_manager)
+        await chain.arun(product="toys", callbacks=group_manager)
+
+    async with atrace_as_chain_group("my_group_2") as group_manager:
+        await asyncio.gather(
+            *[
+                chain.arun(product="toys", callbacks=group_manager),
+                chain.arun(product="computers", callbacks=group_manager),
+                chain.arun(product="cars", callbacks=group_manager),
+            ]
+        )

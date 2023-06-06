@@ -35,13 +35,20 @@ from langchain.llms import AzureOpenAI
 For a more detailed walkthrough of the `Azure` wrapper, see [this notebook](../modules/models/llms/integrations/azure_openai_example.ipynb)
 
 
-
 ## Text Embedding Model
 
 ```python
 from langchain.embeddings import OpenAIEmbeddings
 ```
 For a more detailed walkthrough of this, see [this notebook](../modules/models/text_embedding/examples/openai.ipynb)
+
+
+## Chat Model
+
+```python
+from langchain.chat_models import ChatOpenAI
+```
+For a more detailed walkthrough of this, see [this notebook](../modules/models/chat/integrations/openai.ipynb)
 
 
 ## Tokenizer
