@@ -19,21 +19,6 @@ from langchain.schema import (
 )
 
 
-def get_updated_token_counts(
-    response: Dict[str, Any], token_counts: Dict[str, int]
-) -> dict:
-    _token_key_map = {
-        "completion_token_count": "completion_tokens",
-        "prompt_token_count": "prompt_tokens",
-    }
-    result = {
-        api_key: token_counts.get(api_key, 0) + response[response_key]
-        for response_key, api_key in _token_key_map.items()
-    }
-    result["total_tokens"] = sum(result.values())
-    return result
-
-
 class ChatAnthropic(BaseChatModel, _AnthropicCommon):
     r"""Wrapper around Anthropic's large language model.
 
@@ -104,6 +89,19 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             text.rstrip()
         )  # trim off the trailing ' ' that might come from the "Assistant: "
 
+    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+        overall_token_usage: dict = {}
+        for output in llm_outputs:
+            if output is None:
+                continue
+            token_usage = output["token_usage"]
+            for k, v in token_usage.items():
+                if k in overall_token_usage:
+                    overall_token_usage[k] += v
+                else:
+                    overall_token_usage[k] = v
+        return {"token_usage": overall_token_usage, "model_name": self.model}
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -114,8 +112,6 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
         if stop:
             params["stop_sequences"] = stop
-        token_usage: Dict[str, int] = {}
-
         if self.streaming:
             completion = ""
             stream_resp = self.client.completion_stream(**params)
@@ -126,14 +122,19 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
                     run_manager.on_llm_new_token(
                         delta,
                     )
+
         else:
             response = self.client.completion(**params)
-            token_usage = get_updated_token_counts(response, token_usage)
             completion = response["completion"]
+        token_usage = {
+            "prompt_tokens": self.get_num_tokens(prompt),
+            "completion_tokens": self.get_num_tokens(completion),
+        }
+        token_usage["total_tokens"] = sum(token_usage.values())
         message = AIMessage(content=completion)
         return ChatResult(
             generations=[ChatGeneration(message=message)],
-            llm_output={"token_usage": token_usage, "model_name": self.model},
+            llm_output={"token_usage": token_usage},
         )
 
     async def _agenerate(
@@ -146,7 +147,6 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
         if stop:
             params["stop_sequences"] = stop
-        token_usage: Dict[str, int] = {}
         if self.streaming:
             completion = ""
             stream_resp = await self.client.acompletion_stream(**params)
@@ -159,12 +159,16 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
                     )
         else:
             response = await self.client.acompletion(**params)
-            token_usage = get_updated_token_counts(response, token_usage)
             completion = response["completion"]
+        token_usage = {
+            "prompt_tokens": self.get_num_tokens(prompt),
+            "completion_tokens": self.get_num_tokens(completion),
+        }
+        token_usage["total_tokens"] = sum(token_usage.values())
         message = AIMessage(content=completion)
         return ChatResult(
             generations=[ChatGeneration(message=message)],
-            llm_output={"token_usage": token_usage, "model_name": self.model},
+            llm_output={"token_usage": token_usage},
         )
 
     def get_num_tokens(self, text: str) -> int:

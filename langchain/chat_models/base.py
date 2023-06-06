@@ -116,7 +116,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
             "run_manager"
         )
         try:
-            results = await asyncio.gather(
+            results: List[ChatResult] = await asyncio.gather(
                 *[
                     self._agenerate(m, stop=stop, run_manager=run_manager)
                     if new_arg_supported
