@@ -387,6 +387,8 @@ class Agent(BaseSingleActionAgent):
     llm_chain: LLMChain
     output_parser: AgentOutputParser
     allowed_tools: Optional[List[str]] = None
+    scratchpad_max_size: int = 3000
+    length_function: Callable[[str], int] = len
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
@@ -416,11 +418,14 @@ class Agent(BaseSingleActionAgent):
         self, intermediate_steps: List[Tuple[AgentAction, str]]
     ) -> Union[str, List[BaseMessage]]:
         """Construct the scratchpad that lets the agent continue its thought process."""
-        thoughts = ""
+        thoughts = []
         for action, observation in intermediate_steps:
-            thoughts += action.log
-            thoughts += f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}"
-        return thoughts
+            thoughts.append(action.log)
+            thoughts.append(f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}")
+            if self.length_function(thoughts)>self.scratchpad_max_size:
+                thoughts.pop(0)
+                thoughts.pop(0)
+        return "".join(thoughts)
 
     def plan(
         self,
