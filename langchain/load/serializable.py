@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Any, Dict, List, Literal, TypedDict
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BaseSerialized(TypedDict):
@@ -39,7 +39,16 @@ class Serializable(BaseModel, ABC):
         """
         return dict()
 
-    lc_kwargs: Dict[str, Any] = dict()
+    @property
+    def lc_attributes(self) -> List[str]:
+        """
+        Return a list of attribute names that should be included in the
+        serialized kwargs. These attributes must be accepted by the
+        constructor.
+        """
+        return []
+
+    lc_kwargs: Dict[str, Any] = Field(default_factory=dict, exclude=True)
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -57,13 +66,16 @@ class Serializable(BaseModel, ABC):
             # mypy doesn't understand this, but it is correct
             secrets.update(super(cls, self).lc_secrets)  # type: ignore [arg-type]
 
+        # Get latest values for kwargs if there is an attribute with same name
+        lc_kwargs = {k: getattr(self, k, v) for k, v in self.lc_kwargs.items()}
+        # Add additional attributes from lc_attributes
+        lc_kwargs.update({k: getattr(self, k) for k in self.lc_attributes})
+
         return {
             "lc": 1,
             "type": "constructor",
             "id": [*self.lc_namespace, self.__class__.__name__],
-            "kwargs": self.lc_kwargs
-            if not secrets
-            else replace_secrets(self.lc_kwargs, secrets),
+            "kwargs": lc_kwargs if not secrets else replace_secrets(lc_kwargs, secrets),
         }
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:

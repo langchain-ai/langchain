@@ -10,8 +10,9 @@ import yaml
 from pydantic import Extra, Field, root_validator
 
 from langchain.formatting import formatter
-from langchain.load.serializable import Serializable
 from langchain.schema import BaseMessage, BaseOutputParser, HumanMessage, PromptValue
+
+from langchain.load.serializable import Serializable
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
