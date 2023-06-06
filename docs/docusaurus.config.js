@@ -11,7 +11,7 @@ const examplesPath = path.resolve(__dirname, "..", "examples", "src");
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "🦜️🔗 Langchain",
-  tagline: "LangChain JS Docs",
+  tagline: "LangChain Python Docs",
   favicon: "img/favicon.ico",
   customFields: {
     mendableAnonKey: process.env.MENDABLE_ANON_KEY,
@@ -128,23 +128,18 @@ const config = {
         title: "🦜️🔗 LangChain",
         items: [
           {
-            href: "https://docs.langchain.com/docs/",
-            label: "Concepts",
-            position: "left",
-          },
-          {
-            href: "https://python.langchain.com/en/latest/",
+            href: "/docs/",
             label: "Python Docs",
             position: "left",
           },
           {
-            to: "/docs/",
+            to: "https://js.langchain.com/docs",
             label: "JS/TS Docs",
             position: "left",
           },
           // Please keep GitHub link to the right for consistency.
           {
-            href: "https://github.com/hwchase17/langchainjs",
+            href: "https://github.com/hwchase17/langchain",
             label: "GitHub",
             position: "right",
           },

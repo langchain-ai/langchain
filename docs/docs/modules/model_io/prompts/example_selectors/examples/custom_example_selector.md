@@ -1,4 +1,4 @@
-# How to create a custom example selector
+# Custom example selector
 
 In this tutorial, we'll create a custom example selector that selects every alternate example from a given list of examples.
 

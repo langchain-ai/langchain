@@ -9,7 +9,7 @@ that can execute and implement solutions on your behalf. Before reading any more
 recommended that you read the documentation in the `agent` module to understand the concepts associated with agents more.
 Specifically, you should be familiar with what the `agent`, `tool`, and `agent executor` abstractions are before reading more.
 
-- [Agent Documentation](../modules/agents.rst) (for interacting with the outside world)
+- [Agent Documentation](../modules/agents.html) (for interacting with the outside world)
 
 ## Create Your Own Agent
 
