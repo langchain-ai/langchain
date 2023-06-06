@@ -404,7 +404,9 @@ class MyScale(VectorStore):
                   alone. The default name for it is `metadata`.
 
         Returns:
-            List[Document]: List of documents
+            List[Document]: List of documents most similar to the query text
+            and cosine distance in float for each.
+            Lower score represents more similarity.
         """
         q_str = self._build_qstr(self.embedding_function(query), k, where_str)
         try:
