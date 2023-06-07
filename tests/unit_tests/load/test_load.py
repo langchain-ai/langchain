@@ -9,10 +9,19 @@ from langchain.load.load import loads
 from langchain.prompts.prompt import PromptTemplate
 
 
+def openai_installed() -> bool:
+    try:
+        import openai
+    except ImportError:
+        return False
+    return True
+
+
 class NotSerializable:
     pass
 
 
+@pytest.mark.skipif(not openai_installed, reason="openai not installed")
 def test_load_openai_llm() -> None:
     llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
     llm_string = dumps(llm)
@@ -23,6 +32,7 @@ def test_load_openai_llm() -> None:
     assert isinstance(llm2, OpenAI)
 
 
+@pytest.mark.skipif(not openai_installed, reason="openai not installed")
 def test_load_llmchain() -> None:
     llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
     prompt = PromptTemplate.from_template("hello {name}!")
@@ -37,6 +47,7 @@ def test_load_llmchain() -> None:
     assert isinstance(chain2.prompt, PromptTemplate)
 
 
+@pytest.mark.skipif(not openai_installed, reason="openai not installed")
 def test_load_llmchain_with_non_serializable_arg() -> None:
     llm = OpenAI(
         model="davinci",
