@@ -1,4 +1,5 @@
 """Test FAISS functionality."""
+import datetime
 import math
 import tempfile
 
@@ -105,10 +106,10 @@ def test_faiss_local_save_load() -> None:
     """Test end to end serialization."""
     texts = ["foo", "bar", "baz"]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings())
-
-    with tempfile.NamedTemporaryFile() as temp_file:
-        docsearch.save_local(temp_file.name)
-        new_docsearch = FAISS.load_local(temp_file.name, FakeEmbeddings())
+    temp_timestamp = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    with tempfile.TemporaryDirectory(suffix="_" + temp_timestamp + "/") as temp_folder:
+        docsearch.save_local(temp_folder)
+        new_docsearch = FAISS.load_local(temp_folder, FakeEmbeddings())
     assert new_docsearch.index is not None
 
 
@@ -118,7 +119,7 @@ def test_faiss_similarity_search_with_relevance_scores() -> None:
     docsearch = FAISS.from_texts(
         texts,
         FakeEmbeddings(),
-        normalize_score_fn=lambda score: 1.0 - score / math.sqrt(2),
+        relevance_score_fn=lambda score: 1.0 - score / math.sqrt(2),
     )
     outputs = docsearch.similarity_search_with_relevance_scores("foo", k=1)
     output, score = outputs[0]
@@ -130,11 +131,9 @@ def test_faiss_invalid_normalize_fn() -> None:
     """Test the similarity search with normalized similarities."""
     texts = ["foo", "bar", "baz"]
     docsearch = FAISS.from_texts(
-        texts, FakeEmbeddings(), normalize_score_fn=lambda _: 2.0
+        texts, FakeEmbeddings(), relevance_score_fn=lambda _: 2.0
     )
-    with pytest.raises(
-        ValueError, match="Normalized similarity scores must be between 0 and 1"
-    ):
+    with pytest.warns(Warning, match="scores must be between"):
         docsearch.similarity_search_with_relevance_scores("foo", k=1)
 
 
@@ -143,4 +142,5 @@ def test_missing_normalize_score_fn() -> None:
     with pytest.raises(ValueError):
         texts = ["foo", "bar", "baz"]
         faiss_instance = FAISS.from_texts(texts, FakeEmbeddings())
+        faiss_instance.relevance_score_fn = None
         faiss_instance.similarity_search_with_relevance_scores("foo", k=2)
