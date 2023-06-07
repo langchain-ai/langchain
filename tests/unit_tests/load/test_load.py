@@ -1,6 +1,5 @@
 """Test for Serializable base class"""
 
-import openai
 import pytest
 
 from langchain.chains.llm import LLMChain
@@ -8,6 +7,10 @@ from langchain.llms.openai import OpenAI
 from langchain.load.dump import dumps
 from langchain.load.load import loads
 from langchain.prompts.prompt import PromptTemplate
+
+
+class NotSerializable:
+    pass
 
 
 def test_load_openai_llm() -> None:
@@ -39,7 +42,7 @@ def test_load_llmchain_with_non_serializable_arg() -> None:
         model="davinci",
         temperature=0.5,
         openai_api_key="hello",
-        client=openai.Completion,
+        client=NotSerializable,
     )
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
