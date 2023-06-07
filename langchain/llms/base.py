@@ -167,6 +167,7 @@ class BaseLLM(BaseLanguageModel, ABC):
             )
         params = self.dict()
         params["stop"] = stop
+        options = {"stop": stop}
         (
             existing_prompts,
             llm_string,
@@ -187,7 +188,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             run_manager = callback_manager.on_llm_start(
-                dumpd(self), prompts, invocation_params=params
+                dumpd(self), prompts, invocation_params=params, options=options
             )
             try:
                 output = (
@@ -209,6 +210,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                 dumpd(self),
                 missing_prompts,
                 invocation_params=params,
+                options=options,
             )
             try:
                 new_results = (
@@ -244,6 +246,7 @@ class BaseLLM(BaseLanguageModel, ABC):
         """Run the LLM on the given prompt and input."""
         params = self.dict()
         params["stop"] = stop
+        options = {"stop": stop}
         (
             existing_prompts,
             llm_string,
@@ -264,7 +267,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             run_manager = await callback_manager.on_llm_start(
-                dumpd(self), prompts, invocation_params=params
+                dumpd(self), prompts, invocation_params=params, options=options
             )
             try:
                 output = (
@@ -286,6 +289,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                 dumpd(self),
                 missing_prompts,
                 invocation_params=params,
+                options=options,
             )
             try:
                 new_results = (
