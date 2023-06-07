@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from pydantic import BaseModel, Extra, root_validator
@@ -16,7 +16,8 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
     To use, you should have the
     environment variable ``DEEPINFRA_API_TOKEN`` set with your API token, or pass
     it as a named parameter to the constructor.
-    There are multiple embeddings models available, see https://deepinfra.com/models?type=embeddings.
+    There are multiple embeddings models available,
+    see https://deepinfra.com/models?type=embeddings.
 
     Example:
         .. code-block:: python
@@ -26,9 +27,15 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
                 model_id="sentence-transformers/clip-ViT-B-32",
                 deepinfra_api_token="my-api-key"
             )
-            r1 = deepinfra_emb.embed_documents(["Alpha is the first letter of Greek alphabet",
-                                                "Beta is the second letter of Greek alphabet"])
-            r2 = deepinfra_emb.embed_query("What is the second letter of Greek alphabet")
+            r1 = deepinfra_emb.embed_documents(
+                [
+                    "Alpha is the first letter of Greek alphabet",
+                    "Beta is the second letter of Greek alphabet",
+                ]
+            )
+            r2 = deepinfra_emb.embed_query(
+                "What is the second letter of Greek alphabet"
+            )
 
     """
 
