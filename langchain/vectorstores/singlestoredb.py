@@ -180,7 +180,8 @@ class SingleStoreDB(VectorStore):
         """Create table if it doesn't exist."""
         conn = self.connection_pool.connect()
         try:
-            with conn.cursor() as cur:
+            cur = conn.cursor()
+            try:
                 cur.execute(
                     """CREATE TABLE IF NOT EXISTS {}
                     ({} TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
@@ -191,6 +192,8 @@ class SingleStoreDB(VectorStore):
                         self.metadata_field,
                     ),
                 )
+            finally:
+                cur.close()
         finally:
             conn.close()
 
@@ -215,7 +218,8 @@ class SingleStoreDB(VectorStore):
         """
         conn = self.connection_pool.connect()
         try:
-            with conn.cursor() as cur:
+            cur = conn.cursor()
+            try:
                 # Write data to singlestore db
                 for i, text in enumerate(texts):
                     # Use provided values by default or fallback
@@ -235,6 +239,8 @@ class SingleStoreDB(VectorStore):
                             json.dumps(metadata),
                         ),
                     )
+            finally:
+                cur.close()
         finally:
             conn.close()
         return []
@@ -272,7 +278,8 @@ class SingleStoreDB(VectorStore):
         conn = self.connection_pool.connect()
         result = []
         try:
-            with conn.cursor() as cur:
+            cur = conn.cursor()
+            try:
                 cur.execute(
                     """SELECT {}, {}, DOT_PRODUCT({}, JSON_ARRAY_PACK(%s)) as __score 
                     FROM {} ORDER BY __score DESC LIMIT %s""".format(
@@ -290,6 +297,8 @@ class SingleStoreDB(VectorStore):
                 for row in cur.fetchall():
                     doc = Document(page_content=row[0], metadata=row[1])
                     result.append((doc, float(row[2])))
+            finally:
+                cur.close()
         finally:
             conn.close()
         return result
