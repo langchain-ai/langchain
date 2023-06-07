@@ -1,5 +1,6 @@
 from typing import List
 from langchain.schema import BaseRetriever
+from langchain.schema import Document
 
 
 class MergerRetriever(BaseRetriever):
@@ -23,7 +24,7 @@ class MergerRetriever(BaseRetriever):
 
         self.retrievers = retrievers
 
-    def get_relevant_documents(self, query: str) -> List[str]:
+    def get_relevant_documents(self, query: str) -> List[Document]:
         """
         Get the relevant documents for a given query.
 
@@ -39,7 +40,7 @@ class MergerRetriever(BaseRetriever):
 
         return merged_documents
 
-    async def aget_relevant_documents(self, query: str) -> List[str]:
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
         """
         Asynchronously get the relevant documents for a given query.
 
@@ -55,7 +56,7 @@ class MergerRetriever(BaseRetriever):
 
         return merged_documents
 
-    def merge_documents(self, query: str) -> List[str]:
+    def merge_documents(self, query: str) -> List[Document]:
         """
         Merge the results of the retrievers.
 
@@ -81,7 +82,7 @@ class MergerRetriever(BaseRetriever):
 
         return merged_documents
 
-    async def amerge_documents(self, query: str) -> List[str]:
+    async def amerge_documents(self, query: str) -> List[Document]:
         """
         Asynchronously merge the results of the retrievers.
 
