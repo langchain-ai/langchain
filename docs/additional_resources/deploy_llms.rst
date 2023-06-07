@@ -24,9 +24,9 @@ This guide aims to provide a comprehensive overview of the requirements for depl
 
 Understanding these components is crucial when assessing serving systems. LangChain integrates with several open-source projects designed to tackle these issues, providing a robust framework for productionizing your LLM applications. Some notable frameworks include:
 
-- `Ray Serve <../../../ecosystem/ray_serve.html>`_
+- `Ray Serve <../integrations/ray_serve.html>`_
 - `BentoML <https://github.com/ssheng/BentoChain>`_
-- `Modal <../../../ecosystem/modal.html>`_
+- `Modal <../integrations/modal.html>`_
 
 These links will provide further information on each ecosystem, assisting you in finding the best fit for your LLM deployment needs.
 
