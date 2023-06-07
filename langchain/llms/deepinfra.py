@@ -98,8 +98,10 @@ class DeepInfra(LLM):
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
         if res.status_code != 200:
-            raise ValueError("Error raised by inference API HTTP code: %s, %s"
-                             % (res.status_code, res.text))
+            raise ValueError(
+                "Error raised by inference API HTTP code: %s, %s"
+                % (res.status_code, res.text)
+            )
         try:
             t = res.json()
             text = t["results"][0]["generated_text"]
