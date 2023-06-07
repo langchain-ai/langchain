@@ -6,7 +6,6 @@ from pydantic import BaseModel, Extra, root_validator
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 
-
 DEFAULT_MODEL_ID = "sentence-transformers/clip-ViT-B-32"
 
 
