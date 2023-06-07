@@ -15,7 +15,7 @@ from typing import (
 )
 from uuid import UUID
 
-from pydantic import Extra, Field, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.load.serializable import Serializable
 
@@ -161,13 +161,13 @@ class ChatGeneration(Generation):
         return values
 
 
-class RunInfo(Serializable):
+class RunInfo(BaseModel):
     """Class that contains all relevant metadata for a Run."""
 
     run_id: UUID
 
 
-class ChatResult(Serializable):
+class ChatResult(BaseModel):
     """Class that contains all relevant information for a Chat Result."""
 
     generations: List[ChatGeneration]
@@ -176,7 +176,7 @@ class ChatResult(Serializable):
     """For arbitrary LLM provider specific output."""
 
 
-class LLMResult(Serializable):
+class LLMResult(BaseModel):
     """Class that contains all relevant information for an LLM Result."""
 
     generations: List[List[Generation]]
