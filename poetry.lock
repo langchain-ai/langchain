@@ -1685,13 +1685,13 @@ files = [
 
 [[package]]
 name = "deeplake"
-version = "3.5.4"
+version = "3.6.0"
 description = "Activeloop Deep Lake"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "deeplake-3.5.4.tar.gz", hash = "sha256:a05eba10141fe1e5be5f0ed115a42da1320d6675d644b49790dc28485a87aa32"},
+    {file = "deeplake-3.6.0.tar.gz", hash = "sha256:bf502ed4fcd19624e750c649b8dd2fb892529a29384c8a816bbb09005b763db1"},
 ]
 
 [package.dependencies]
@@ -1708,11 +1708,12 @@ pyjwt = "*"
 tqdm = "*"
 
 [package.extras]
-all = ["IPython", "av (>=8.1.0)", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.54)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
+all = ["IPython", "av (>=8.1.0)", "azure-cli", "azure-identity", "azure-storage-blob", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.55)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
 audio = ["av (>=8.1.0)"]
 av = ["av (>=8.1.0)"]
+azure = ["azure-cli", "azure-identity", "azure-storage-blob"]
 dicom = ["nibabel", "pydicom"]
-enterprise = ["libdeeplake (==0.0.54)", "pyjwt"]
+enterprise = ["libdeeplake (==0.0.55)", "pyjwt"]
 gcp = ["google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)"]
 gdrive = ["google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "oauth2client (>=4.1.3,<4.2.0)"]
 medical = ["nibabel", "pydicom"]
@@ -2524,14 +2525,14 @@ grpc = ["grpcio (>=1.44.0,<2.0.0dev)"]
 
 [[package]]
 name = "gptcache"
-version = "0.1.29.1"
+version = "0.1.30"
 description = "GPTCache, a powerful caching library that can be used to speed up and lower the cost of chat applications that rely on the LLM service. GPTCache works as a memcache for AIGC applications, similar to how Redis works for traditional applications."
 category = "main"
 optional = false
 python-versions = ">=3.8.1"
 files = [
-    {file = "gptcache-0.1.29.1-py3-none-any.whl", hash = "sha256:e281f1c7bf1f2cc72e0193d6e15ad3d50e7cb358d04332ef96b98f732aee8a74"},
-    {file = "gptcache-0.1.29.1.tar.gz", hash = "sha256:c7c07c5300422feed302f4a140ff5e25e01f04885c81fb3388e07b3c3a82647a"},
+    {file = "gptcache-0.1.30-py3-none-any.whl", hash = "sha256:57c37babe85161fbbe547cb036f6780b33232d70557ae085daccf3c032bc7b14"},
+    {file = "gptcache-0.1.30.tar.gz", hash = "sha256:a69f600e286dee3e7f3b151c8b269778a4e6a7d5da409c01fbfbedf3239d0cd9"},
 ]
 
 [package.dependencies]
@@ -8904,20 +8905,20 @@ themes = ["myst-parser (>=0.12.9,<0.13.0)", "pydata-sphinx-theme (>=0.4.0,<0.5.0
 
 [[package]]
 name = "sphinx-rtd-theme"
-version = "1.2.1"
+version = "1.2.2"
 description = "Read the Docs theme for Sphinx"
 category = "dev"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
 files = [
-    {file = "sphinx_rtd_theme-1.2.1-py2.py3-none-any.whl", hash = "sha256:2cc9351176cbf91944ce44cefd4fab6c3b76ac53aa9e15d6db45a3229ad7f866"},
-    {file = "sphinx_rtd_theme-1.2.1.tar.gz", hash = "sha256:cf9a7dc0352cf179c538891cb28d6fad6391117d4e21c891776ab41dd6c8ff70"},
+    {file = "sphinx_rtd_theme-1.2.2-py2.py3-none-any.whl", hash = "sha256:6a7e7d8af34eb8fc57d52a09c6b6b9c46ff44aea5951bc831eeb9245378f3689"},
+    {file = "sphinx_rtd_theme-1.2.2.tar.gz", hash = "sha256:01c5c5a72e2d025bd23d1f06c59a4831b06e6ce6c01fdd5ebfe9986c0a880fc7"},
 ]
 
 [package.dependencies]
 docutils = "<0.19"
 sphinx = ">=1.6,<7"
-sphinxcontrib-jquery = {version = ">=2.0.0,<3.0.0 || >3.0.0", markers = "python_version > \"3\""}
+sphinxcontrib-jquery = ">=4,<5"
 
 [package.extras]
 dev = ["bump2version", "sphinxcontrib-httpdomain", "transifex-client", "wheel"]
@@ -10384,14 +10385,14 @@ yarl = "*"
 
 [[package]]
 name = "wasabi"
-version = "1.1.1"
+version = "1.1.2"
 description = "A lightweight console printing and formatting toolkit"
 category = "main"
 optional = true
 python-versions = ">=3.6"
 files = [
-    {file = "wasabi-1.1.1-py3-none-any.whl", hash = "sha256:32e44649d99a64e08e40c1c96cddb69fad460bd0cc33802a53cab6714dfb73f8"},
-    {file = "wasabi-1.1.1.tar.gz", hash = "sha256:f5ee7c609027811bd16e620f2fd7a7319466005848e41b051a62053ab8fd70d6"},
+    {file = "wasabi-1.1.2-py3-none-any.whl", hash = "sha256:0a3f933c4bf0ed3f93071132c1b87549733256d6c8de6473c5f7ed2e171b5cf9"},
+    {file = "wasabi-1.1.2.tar.gz", hash = "sha256:1aaef3aceaa32edb9c91330d29d3936c0c39fdb965743549c173cb54b16c30b5"},
 ]
 
 [package.dependencies]
@@ -11240,4 +11241,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "285a251c93675983d27f8a1e9554ded5e3e3fe9cb01810c05741d4553176ee90"
+content-hash = "8c0ab1bdc8b506e38e6fa4cba40dcf2df47473212d47fa1086c6aae8ddf2c021"
