@@ -5,7 +5,7 @@ import importlib
 import json
 import os
 import subprocess
-from functools import cache
+from functools import lru_cache
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from requests import HTTPError, Response
@@ -136,7 +136,7 @@ def guard_import(
     return module
 
 
-@cache
+@lru_cache(maxsize=None)
 def get_openai_default_values(
     var_names: List[str] = ["openai.api_type", "openai.api_base", "openai.api_version"]
 )->Dict[str, str]:
