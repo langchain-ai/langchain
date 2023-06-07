@@ -825,7 +825,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         tasks = []
         managers = []
 
-        for message in messages:
+        for message_list in messages:
             run_id_ = uuid4()
 
             tasks.append(
@@ -834,7 +834,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                     "on_chat_model_start",
                     "ignore_chat_model",
                     serialized,
-                    [message],
+                    [message_list],
                     run_id=run_id_,
                     parent_run_id=self.parent_run_id,
                     **kwargs,
