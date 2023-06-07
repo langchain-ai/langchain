@@ -97,8 +97,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             embeddings = OpenAIEmbeddings(
                 deployment="your-embeddings-deployment-name",
                 model="your-embeddings-model-name",
-                api_base="https://your-endpoint.openai.azure.com/",
-                api_type="azure",
+                openai_api_base="https://your-endpoint.openai.azure.com/",
+                openai_api_type="azure",
             )
             text = "This is a test query."
             query_result = embeddings.embed_query(text)
@@ -257,10 +257,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 average = embed_with_retry(
                     self,
                     input="",
-                    engine=self.deployment,
-                    request_timeout=self.request_timeout,
-                    headers=self.headers,
-                )["data"][0]["embedding"]
+                    **self._invocation_params,
+                )[
+                    "data"
+                ][0]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
@@ -280,10 +280,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             return embed_with_retry(
                 self,
                 input=[text],
-                engine=engine,
-                request_timeout=self.request_timeout,
-                headers=self.headers,
-            )["data"][0]["embedding"]
+                **self._invocation_params,
+            )[
+                "data"
+            ][0]["embedding"]
 
     def embed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
