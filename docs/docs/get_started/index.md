@@ -4,8 +4,6 @@
 1. **Data-aware**: connect a language model to other sources of data
 2. **Agentic**: allow a language model to interact with its environment
 
-Note: These docs are Python-specific. There are [separate docs for JavaScript](https://js.langchain.com/docs/).
-
 ## Get started
 
 We recommend heading to our [Quickstart guide](./quickstart.html) to familiarize yourself with the framework.

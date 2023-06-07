@@ -1,12 +1,19 @@
-# Installation
-
 ## Official release
 
 To install LangChain run:
 
-```bash
-pip install langchain
-```
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from "@theme/CodeBlock";
+
+<Tabs>
+  <TabItem value="pip" label="Pip" default>
+    <CodeBlock language="bash">pip install langchain</CodeBlock>
+  </TabItem>
+  <TabItem value="conda" label="Conda">
+    <CodeBlock language="bash">conda install langchain -c conda-forge</CodeBlock>
+  </TabItem>
+</Tabs>
 
 That will install the bare minimum requirements of LangChain.
 A lot of the value of LangChain comes when integrating it with various model providers, datastores, etc.

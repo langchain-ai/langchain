@@ -101,7 +101,7 @@ In order to load agents, you should understand the following concepts:
 
 **Agents**: For a list of supported agents and their specifications, see [here](agents.md).
 
-**Tools**: For a list of predefined tools and their specifications, see [here](tools.md).
+**Tools**: For a list of predefined tools and their specifications, see [here](./tools.html).
 
 
 ```python
