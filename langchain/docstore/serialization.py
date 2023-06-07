@@ -43,4 +43,6 @@ def serialize_document(document: Document) -> str:
 
 def deserialize_document(serialized_document: str) -> Document:
     """Deserialize the given document from a string."""
-    return Document.parse_obj(json.loads(serialized_document))
+    return Document(
+        page_content=json.loads(serialized_document),
+    )
