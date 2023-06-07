@@ -6,6 +6,11 @@ This section covers several options for that. Note that these options are meant 
 
 What follows is a list of template GitHub repositories designed to be easily forked and modified to use your chain. This list is far from exhaustive, and we are EXTREMELY open to contributions here.
 
+## [Anyscale](https://www.anyscale.com/model-serving)
+
+Anyscale is a unified compute platform that makes it easy to develop, deploy, and manage scalable LLM applications in production using Ray.
+With Anyscale you can scale the most challenging LLM-based workloads and both develop and deploy LLM-based apps on a single compute platform.
+
 ## [Streamlit](https://github.com/hwchase17/langchain-streamlit-template)
 
 This repo serves as a template for how to deploy a LangChain with Streamlit.
@@ -18,6 +23,12 @@ This repo serves as a template for how deploy a LangChain with Gradio.
 It implements a chatbot interface, with a "Bring-Your-Own-Token" approach (nice for not wracking up big bills).
 It also contains instructions for how to deploy this app on the Hugging Face platform.
 This is heavily influenced by James Weaver's [excellent examples](https://huggingface.co/JavaFXpert).
+
+## [Chainlit](https://github.com/Chainlit/cookbook)
+
+This repo is a cookbook explaining how to visualize and deploy LangChain agents with Chainlit.
+You create ChatGPT-like UIs with Chainlit. Some of the key features include intermediary steps visualisation, element management & display (images, text, carousel, etc.) as well as cloud deployment.
+Chainlit [doc](https://docs.chainlit.io/langchain) on the integration with LangChain
 
 ## [Beam](https://github.com/slai-labs/get-beam/tree/main/examples/langchain-question-answering)
 
