@@ -150,7 +150,7 @@ class SQLDatabase:
                 hostname. Defaults to None.
             api_token (Optional[str]): The Databricks personal access token for
                 accessing the Databricks SQL warehouse or the cluster. If not provided,
-                it attempts to fetch from 'DATABRICKS_API_TOKEN'. If still unavailable
+                it attempts to fetch from 'DATABRICKS_TOKEN'. If still unavailable
                 and running in a Databricks notebook, a temporary token for the current
                 user is generated. Defaults to None.
             warehouse_id (Optional[str]): The warehouse ID in the Databricks SQL. If
@@ -197,7 +197,7 @@ class SQLDatabase:
         default_api_token = context.apiToken if context else None
         if api_token is None:
             api_token = utils.get_from_env(
-                "api_token", "DATABRICKS_API_TOKEN", default_api_token
+                "api_token", "DATABRICKS_TOKEN", default_api_token
             )
 
         if warehouse_id is None and cluster_id is None:
