@@ -639,7 +639,6 @@ class CallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
-        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[CallbackManagerForLLMRun]:
         """Run when LLM starts running."""
@@ -672,7 +671,6 @@ class CallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
-        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[CallbackManagerForLLMRun]:
         """Run when LLM starts running."""
@@ -778,7 +776,6 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
-        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[AsyncCallbackManagerForLLMRun]:
         """Run when LLM starts running."""
@@ -819,7 +816,6 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
-        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         tasks = []
