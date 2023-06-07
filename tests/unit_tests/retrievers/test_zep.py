@@ -10,12 +10,12 @@ from langchain.retrievers import ZepRetriever
 from langchain.schema import Document
 
 if TYPE_CHECKING:
-    from zep_python import SearchResult, ZepClient
+    from zep_python import MemorySearchResult, ZepClient
 
 
 @pytest.fixture
-def search_results() -> List[SearchResult]:
-    from zep_python import Message, SearchResult
+def search_results() -> List[MemorySearchResult]:
+    from zep_python import MemorySearchResult, Message
 
     search_result = [
         {
@@ -43,7 +43,7 @@ def search_results() -> List[SearchResult]:
     ]
 
     return [
-        SearchResult(
+        MemorySearchResult(
             message=Message.parse_obj(result["message"]),
             summary=result["summary"],
             dist=result["dist"],
@@ -55,7 +55,7 @@ def search_results() -> List[SearchResult]:
 @pytest.fixture
 @pytest.mark.requires("zep_python")
 def zep_retriever(
-    mocker: MockerFixture, search_results: List[SearchResult]
+    mocker: MockerFixture, search_results: List[MemorySearchResult]
 ) -> ZepRetriever:
     mock_zep_client: ZepClient = mocker.patch("zep_python.ZepClient", autospec=True)
     mock_zep_client.search_memory.return_value = copy.deepcopy(  # type: ignore
@@ -71,7 +71,7 @@ def zep_retriever(
 
 @pytest.mark.requires("zep_python")
 def test_zep_retriever_get_relevant_documents(
-    zep_retriever: ZepRetriever, search_results: List[SearchResult]
+    zep_retriever: ZepRetriever, search_results: List[MemorySearchResult]
 ) -> None:
     documents: List[Document] = zep_retriever.get_relevant_documents(
         query="My trip to Iceland"
@@ -82,7 +82,7 @@ def test_zep_retriever_get_relevant_documents(
 @pytest.mark.requires("zep_python")
 @pytest.mark.asyncio
 async def test_zep_retriever_aget_relevant_documents(
-    zep_retriever: ZepRetriever, search_results: List[SearchResult]
+    zep_retriever: ZepRetriever, search_results: List[MemorySearchResult]
 ) -> None:
     documents: List[Document] = await zep_retriever.aget_relevant_documents(
         query="My trip to Iceland"
@@ -91,7 +91,7 @@ async def test_zep_retriever_aget_relevant_documents(
 
 
 def _test_documents(
-    documents: List[Document], search_results: List[SearchResult]
+    documents: List[Document], search_results: List[MemorySearchResult]
 ) -> None:
     assert len(documents) == 2
     for i, document in enumerate(documents):
