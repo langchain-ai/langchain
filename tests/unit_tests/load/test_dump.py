@@ -2,12 +2,13 @@
 
 from typing import Any, Dict
 
+import pytest
+
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.load.dump import dumps
 from langchain.load.serializable import Serializable
 from langchain.prompts.prompt import PromptTemplate
-import pytest
 
 
 def openai_installed() -> bool:
