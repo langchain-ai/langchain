@@ -13,7 +13,7 @@ from langchain.prompts.prompt import PromptTemplate
 
 def openai_installed() -> bool:
     try:
-        import openai
+        import openai  # noqa: F401
     except ImportError:
         return False
     return True
