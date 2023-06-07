@@ -43,7 +43,7 @@ class StringRunEvalInputMapper(RunEvalInputMapper, BaseModel):
     def map(self, run: Run, example: Optional[Example] = None) -> Dict[str, str]:
         """Maps the Run and Optional[Example] to a dictionary"""
         if run.outputs is None:
-            raise ValueError("Run outputs cannot be None.")
+            raise ValueError(f"Run {run.id} has no outputs.")
 
         data = {
             value: run.outputs.get(key) for key, value in self.prediction_map.items()

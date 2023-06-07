@@ -3969,14 +3969,14 @@ tests = ["pytest", "pytest-mock"]
 
 [[package]]
 name = "langchainplus-sdk"
-version = "0.0.4"
+version = "0.0.6"
 description = "Client library to connect to the LangChainPlus LLM Tracing and Evaluation Platform."
 category = "main"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchainplus_sdk-0.0.4-py3-none-any.whl", hash = "sha256:ba72276b0e9cb148f572d531fbed41017d3a0072dc5a1110d8d2f3af06efce75"},
-    {file = "langchainplus_sdk-0.0.4.tar.gz", hash = "sha256:0c09af62e81975e33561c655ba9b32777d79834218c9377d28578a9558740044"},
+    {file = "langchainplus_sdk-0.0.6-py3-none-any.whl", hash = "sha256:43fe01c66442b88403c969b8812f6be81e023c0d2a6d5d3572a8d87961438658"},
+    {file = "langchainplus_sdk-0.0.6.tar.gz", hash = "sha256:c911a98fd2d02baa48f742b7d700fd6a55f11c9a545ee5d66b08825940c9a32e"},
 ]
 
 [package.dependencies]
@@ -5591,14 +5591,14 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "0.27.7"
+version = "0.27.8"
 description = "Python client library for the OpenAI API"
 category = "main"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-0.27.7-py3-none-any.whl", hash = "sha256:788fb7fa85bf7caac6c1ed7eea5984254a1bdaf09ef485acf0e5718c8b2dc25a"},
-    {file = "openai-0.27.7.tar.gz", hash = "sha256:bca95fd4c3054ef38924def096396122130454442ec52005915ecf8269626b1d"},
+    {file = "openai-0.27.8-py3-none-any.whl", hash = "sha256:e0a7c2f7da26bdbe5354b03c6d4b82a2f34bd4458c7a17ae1a7092c3e397e03c"},
+    {file = "openai-0.27.8.tar.gz", hash = "sha256:2483095c7db1eee274cebac79e315a986c4e55207bb4fa7b82d185b3a2ed9536"},
 ]
 
 [package.dependencies]
@@ -6340,20 +6340,20 @@ tests = ["check-manifest", "coverage", "defusedxml", "markdown2", "olefile", "pa
 
 [[package]]
 name = "pinecone-client"
-version = "2.2.1"
+version = "2.2.2"
 description = "Pinecone client and SDK"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.8"
 files = [
-    {file = "pinecone-client-2.2.1.tar.gz", hash = "sha256:0878dcaee447c46c8d1b3d71c854689daa7e548e5009a171780907c7d4e74789"},
-    {file = "pinecone_client-2.2.1-py3-none-any.whl", hash = "sha256:6976a22aee57a9813378607506c8c36b0317dfa36a08a5397aaaeab2eef66c1b"},
+    {file = "pinecone-client-2.2.2.tar.gz", hash = "sha256:391fe413754efd4e0ef00154b44271d63c4cdd4bedf088d23111a5725d863210"},
+    {file = "pinecone_client-2.2.2-py3-none-any.whl", hash = "sha256:21fddb752668efee4d3c6b706346d9580e36a8b06b8d97afd60bd33ef2536e7e"},
 ]
 
 [package.dependencies]
 dnspython = ">=2.0.0"
 loguru = ">=0.5.0"
-numpy = "*"
+numpy = ">=1.22.0"
 python-dateutil = ">=2.5.3"
 pyyaml = ">=5.4"
 requests = ">=2.19.0"
@@ -6362,7 +6362,7 @@ typing-extensions = ">=3.7.4"
 urllib3 = ">=1.21.1"
 
 [package.extras]
-grpc = ["googleapis-common-protos (>=1.53.0)", "grpc-gateway-protoc-gen-openapiv2 (==0.1.0)", "grpcio (>=1.44.0)", "lz4 (>=3.1.3)", "protobuf (==3.19.3)"]
+grpc = ["googleapis-common-protos (>=1.53.0)", "grpc-gateway-protoc-gen-openapiv2 (==0.1.0)", "grpcio (>=1.44.0)", "lz4 (>=3.1.3)", "protobuf (>=3.19.5,<3.20.0)"]
 
 [[package]]
 name = "pinecone-text"
@@ -7159,16 +7159,15 @@ tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
 name = "pylance"
-version = "0.4.18"
+version = "0.4.19"
 description = "python wrapper for lance-rs"
 category = "main"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "pylance-0.4.18-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:9741880ede522b4f80ae9a43b499265096dca4eb2a2a2d72690cb01eb6ef6fed"},
-    {file = "pylance-0.4.18-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:8b2e2baf0dfeb65da8f993872f4c375d6ad16ada4472756f888f033ce72dbd86"},
-    {file = "pylance-0.4.18-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c81f891a6230fc38e60f01f16923263a082f7fd1646c15aad1e940d29c4e8a83"},
-    {file = "pylance-0.4.18-cp38-abi3-win_amd64.whl", hash = "sha256:eda511361a4545bb32fb98bcb270a1a41aaf022dd63cc306fdf5698310ba81ce"},
+    {file = "pylance-0.4.19-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:7f5dbf2c384de6c499a2d876be4aec5cbb8f8ef65d490ac93fbd84251ae61e7c"},
+    {file = "pylance-0.4.19-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:b2125d50ef28af11b5473e72f82ce9af30756ae655b982582c58267b72216043"},
+    {file = "pylance-0.4.19-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f98fc8cbc5f66d35ea7701eae691c195df4e45cca8c8f33d9e1a71f24077d7a6"},
 ]
 
 [package.dependencies]
@@ -9219,14 +9218,14 @@ full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyam
 
 [[package]]
 name = "steamship"
-version = "2.17.5"
+version = "2.17.6"
 description = "The fastest way to add language AI to your product."
 category = "main"
 optional = true
 python-versions = "*"
 files = [
-    {file = "steamship-2.17.5-py3-none-any.whl", hash = "sha256:4782281aca0d69f6c050623355687eb4a48d5a2108ac274d96e029779aad82f0"},
-    {file = "steamship-2.17.5.tar.gz", hash = "sha256:e0a6d0e46744b3208b306dffe87d20ecf46113d333bc76515191b0d5c9eb28bb"},
+    {file = "steamship-2.17.6-py3-none-any.whl", hash = "sha256:7d25db57f19d228f82ce445e15ace66b2a2e3ac25307d69c4828c27026e8e44c"},
+    {file = "steamship-2.17.6.tar.gz", hash = "sha256:ff3af96d7f0eef2036c222513af51ac356f0753123a7bf44bdb31eccd2d957df"},
 ]
 
 [package.dependencies]
@@ -11241,4 +11240,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "190059b07b111e19ec5b516be227b81728163fee14928c92cba2c0212d35ead0"
+content-hash = "285a251c93675983d27f8a1e9554ded5e3e3fe9cb01810c05741d4553176ee90"
