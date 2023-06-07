@@ -1,4 +1,4 @@
-API References
+API Reference
 ==========================
 
 | Full documentation on all methods, classes, and APIs in LangChain.

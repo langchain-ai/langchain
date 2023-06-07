@@ -129,13 +129,18 @@ const config = {
         items: [
           {
             href: "/docs/",
-            label: "Python Docs",
+            label: "Docs",
+            position: "left",
+          },
+          {
+            href: "pathname:///_build/html/index.html",
+            label: "API Reference",
             position: "left",
           },
           {
             to: "https://js.langchain.com/docs",
             label: "JS/TS Docs",
-            position: "left",
+            position: "right",
           },
           // Please keep GitHub link to the right for consistency.
           {

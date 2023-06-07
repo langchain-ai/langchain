@@ -17,7 +17,7 @@
 
 import toml
 
-with open("../pyproject.toml") as f:
+with open("../../pyproject.toml") as f:
     data = toml.load(f)
 
 # -- Project information -----------------------------------------------------
