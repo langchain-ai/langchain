@@ -10,6 +10,7 @@ from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemory
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.lancedb import LanceDB
+from langchain.vectorstores.matching_engine import MatchingEngine
 from langchain.vectorstores.milvus import Milvus
 from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 from langchain.vectorstores.myscale import MyScale, MyScaleSettings
@@ -25,7 +26,6 @@ from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
-from langchain.vectorstores.matching_engine import MatchingEngine
 
 __all__ = [
     "Redis",
