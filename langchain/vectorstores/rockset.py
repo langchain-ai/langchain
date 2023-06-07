@@ -8,13 +8,18 @@ from typing import Any, Iterable, List, Optional, Tuple
 # Make sure you have rockset client installed. If not, you can
 # install it with `pip install rockset`.
 from rockset import RocksetClient, ApiException
-from rockset.models import QueryResponse
+from rockset.models import QueryResponse, DeleteDocumentsRequestData
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger(__name__)
+
+
+"""
+Everything below assumes `commons` Rockset workspace. TODO: Add support for workspace args.
+"""
 
 
 class Rockset(VectorStore):
@@ -33,14 +38,14 @@ class Rockset(VectorStore):
             from langchain.embeddings.openai import OpenAIEmbeddings
             import rockset
 
-            # Make sure you use the right host (region) for your Rockset instance, and APIKEY has
-            # both read-write access to your collection.
-            # Defining the host is optional and defaults to *https://api.use1a1.rockset.com*
+            # Make sure you use the right host (region) for your Rockset instance
+            # and APIKEY has both read-write access to your collection.
 
-            rs = rockset.Rockset.Client(host=rockset.Regions.use1a1, api_key="***")
+            rs = rockset.RocksetClient(host=rockset.Regions.use1a1, api_key="***")
             collection_name = "langchain_demo"
             embeddings = OpenAIEmbeddings()
-            vectorstore = Rockset(rs, collection_name, embeddings, "description", "description_embedding")
+            vectorstore = Rockset(rs, collection_name, embeddings,
+                "description", "description_embedding")
 
     """
 
@@ -56,7 +61,8 @@ class Rockset(VectorStore):
         Args:
             client: Rockset client object
             collection: Rockset collection to insert docs / query
-            embeddings: Langchain Embeddings object to use to generate embedding for given text.
+            embeddings: Langchain Embeddings object to use to generate
+                        embedding for given text.
             text_key: column in Rockset collection to use to store the text
             embedding_key: column in Rockset collection to use to store the embedding.
                            Note: We must apply `VECTOR_ENFORCE()` on this column via
@@ -68,6 +74,7 @@ class Rockset(VectorStore):
                 f"client should be an instance of rockset.RocksetClient, "
                 f"got {type(client)}"
             )
+        # TODO: check that `collection_name` exists in rockset. Create if not.
         self._client = client
         self._collection_name = collection_name
         self._embeddings = embeddings
@@ -94,137 +101,24 @@ class Rockset(VectorStore):
 
         """
         batch = []
+        stored_ids = []
+
         for i, text in enumerate(texts):
-            if i % batch_size == 0:
-                # send the current batch
-                self._client.Documents.add_documents(
-                    collection=self._collection, data=batch
-                )
+            if len(batch) == batch_size:
+                stored_ids += self._write_documents_to_rockset(batch)
                 batch = []
-            doc = metadatas[i] if metadatas else {}
-            if ids:
+            doc = {}
+            if metadatas and len(metadatas) > i:
+                doc = metadatas[i]
+            if ids and len(ids) > i:
                 doc["_id"] = ids[i]
             doc[self._text_key] = text
-            doc[self._embedding_key] = self._embedding_function(text)
+            doc[self._embedding_key] = self._embeddings.embed_query(text)
             batch.append(doc)
-
-    # Rockset supports these vector distance functions.
-    class DistanceFunction(Enum):
-        COSINE_SIM = "COSINE_SIM"
-        EUCLIDEAN_DIST = "EUCLIDEAN_DIST"
-        DOT_PRODUCT = "DOT_PRODUCT"
-
-    def _build_query_sql(
-        self,
-        query_embedding: List[float],
-        distance_func: DistanceFunction,
-        k: int = 4,
-        where_str: Optional[str] = None,
-    ) -> str:
-        """Builds Rockset SQL query to query similar vectors to query_vector"""
-
-        q_embedding_str = ",".join(map(str, query_embedding))
-        distance_str = f"""{distance_func.value}({self._embedding_key}, [{q_embedding_str}]) as dist"""
-        q_str = f"""
-            SELECT * EXCEPT ({self._embedding_key}), {distance_str}
-            FROM {self._collection_name}
-            WHERE {where_str}
-            ORDER BY dist DESC
-            LIMIT {str(k)}
-            """
-        return q_str
-
-    def similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        distance_func: DistanceFunction,
-        k: int = 4,
-        where_str: Optional[str] = None,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        """Perform a similarity search with Rockset
-
-        Args:
-            query (str): Text to look up documents similar to.
-            distance_func (DistanceFunction): how to compute distance between two vectors in Rockset.
-            k (int, optional): Top K neighbors to retrieve. Defaults to 4.
-            where_str (Optional[str], optional): Metadata filters supplied as a SQL `where`
-                condition string. Defaults to None.
-                eg. "price<=70.0 AND brand='Nintendo'"
-
-            NOTE: Please do not let end-user to fill this and always be aware
-                  of SQL injection.
-            TODO:
-
-        Returns:
-            List[Tuple[Document, float]]: List of documents with their relevance score
-        """
-        return self.similarity_search_by_vector(
-            self._embeddings.embed_query(query),
-            distance_func,
-            k,
-            where_str,
-            **kwargs,
-        )
-
-    def similarity_search(
-        self,
-        query: str,
-        distance_func: DistanceFunction,
-        k: int = 4,
-        where_str: Optional[str] = None,
-        **kwargs: Any,
-    ) -> List[Document]:
-        """Same as `similarity_search_with_relevance_scores` but doesn't return the scores."""
-        docs_and_scores = self.similarity_search_with_score(
-            query, distance_func, k, where_str, **kwargs
-        )
-        return [doc for doc, _ in docs_and_scores]
-
-    def similarity_search_by_vector(
-        self,
-        query_embedding: List[float],
-        distance_func: DistanceFunction,
-        k: int = 4,
-        where_str: Optional[str] = None,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        """Accepts a query_embedding (vector), and returns documents whose similar embeddings."""
-
-        q_str = self._build_query_sql(query_embedding, distance_func, k, where_str)
-        try:
-            results = self._client.Queries.query(sql={"query": q_str})
-        except ApiException as e:
-            logger.error("Exception when querying Rockset: %s\n", e)
-            return []
-        finalResult = []
-        for r in results:
-            metadata = {}
-            assert isinstance(
-                r, QueryResponse
-            ), "Rockset query result must be of type `QueryResponse`"
-            for k, v in r.attribute_map["results"]:
-                if k == self._text_key:
-                    assert isinstance(
-                        v, str
-                    ), "page content stored in column `{}` must be of type `str`. \
-                        But found: `{}`".format(
-                        self._text_key, type(v)
-                    )
-                    page_content = v
-                elif k == "dist":
-                    assert isinstance(
-                        v, float
-                    ), "Computed distance between vectors must of type `float`. But found {}".format(
-                        type(v)
-                    )
-                    score = v
-                else:
-                    metadata[k] = v
-            finalResult.append(
-                tuple(Document(page_content=page_content, metadata=metadata), score)
-            )
-        return finalResult
+        if len(batch) > 0:
+            stored_ids += self._write_documents_to_rockset(batch)
+            batch = []
+        return stored_ids
 
     @classmethod
     def from_texts(
@@ -252,3 +146,163 @@ class Rockset(VectorStore):
         rockset = cls(client, collection_name, embeddings, text_key, embedding_key)
         rockset.add_texts(texts, metadatas, ids, batch_size)
         return rockset
+
+    # Rockset supports these vector distance functions.
+    class DistanceFunction(Enum):
+        COSINE_SIM = "COSINE_SIM"
+        EUCLIDEAN_DIST = "EUCLIDEAN_DIST"
+        DOT_PRODUCT = "DOT_PRODUCT"
+
+        # how to sort results for "similarity"
+        def order_by(self) -> str:
+            if self.value == "EUCLIDEAN_DIST":
+                return "ASC"
+            return "DESC"
+
+    def similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        distance_func: DistanceFunction,
+        k: int = 4,
+        where_str: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Perform a similarity search with Rockset
+
+        Args:
+            query (str): Text to look up documents similar to.
+            distance_func (DistanceFunction): how to compute distance between two
+                vectors in Rockset.
+            k (int, optional): Top K neighbors to retrieve. Defaults to 4.
+            where_str (Optional[str], optional): Metadata filters supplied as a
+                SQL `where` condition string. Defaults to None.
+                eg. "price<=70.0 AND brand='Nintendo'"
+
+            NOTE: Please do not let end-user to fill this and always be aware
+                  of SQL injection.
+
+        Returns:
+            List[Tuple[Document, float]]: List of documents with their relevance score
+        """
+        return self.similarity_search_by_vector(
+            self._embeddings.embed_query(query),
+            distance_func,
+            k,
+            where_str,
+            **kwargs,
+        )
+
+    def similarity_search(
+        self,
+        query: str,
+        distance_func: DistanceFunction,
+        k: int = 4,
+        where_str: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Same as `similarity_search_with_relevance_scores` but
+        doesn't return the scores.
+        """
+        docs_and_scores = self.similarity_search_with_relevance_scores(
+            query, distance_func, k, where_str, **kwargs
+        )
+        return [doc for doc, _ in docs_and_scores]
+
+    def similarity_search_by_vector(
+        self,
+        query_embedding: List[float],
+        distance_func: DistanceFunction,
+        k: int = 4,
+        where_str: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Accepts a query_embedding (vector), and returns documents with
+        similar embeddings."""
+
+        q_str = self._build_query_sql(query_embedding, distance_func, k, where_str)
+        try:
+            query_response = self._client.Queries.query(sql={"query": q_str})
+        except ApiException as e:
+            logger.error("Exception when querying Rockset: %s\n", e)
+            return []
+        finalResult = []
+        for document in getattr(
+            query_response, query_response.attribute_map["results"]
+        ):
+            metadata = {}
+            assert isinstance(
+                document, dict
+            ), "document should be of type `dict[str,Any]`. But found: `{}`".format(
+                type(document)
+            )
+            for k, v in document.items():
+                if k == self._text_key:
+                    assert isinstance(
+                        v, str
+                    ), "page content stored in column `{}` must be of type `str`. \
+                        But found: `{}`".format(
+                        self._text_key, type(v)
+                    )
+                    page_content = v
+                elif k == "dist":
+                    assert isinstance(
+                        v, float
+                    ), "Computed distance between vectors must of type `float`. \
+                        But found {}".format(
+                        type(v)
+                    )
+                    score = v
+                elif k not in ["_id", "_event_time", "_meta"]:
+                    # These columns are populated by Rockset when documents are
+                    # inserted. No need to return them in metadata dict.
+                    metadata[k] = v
+            finalResult.append(
+                tuple([Document(page_content=page_content, metadata=metadata), score])
+            )
+        return finalResult
+
+    # Helper functions
+
+    def _build_query_sql(
+        self,
+        query_embedding: List[float],
+        distance_func: DistanceFunction,
+        k: int = 4,
+        where_str: Optional[str] = None,
+    ) -> str:
+        """Builds Rockset SQL query to query similar vectors to query_vector"""
+
+        q_embedding_str = ",".join(map(str, query_embedding))
+        distance_str = f"""{distance_func.value}({self._embedding_key}, [{q_embedding_str}]) as dist"""
+        if where_str:
+            return f"""
+SELECT * EXCEPT({self._embedding_key}), {distance_str}
+FROM {self._collection_name}
+WHERE {where_str}
+ORDER BY dist {distance_func.order_by()}
+LIMIT {str(k)}
+"""
+
+        return f"""
+SELECT * EXCEPT({self._embedding_key}), {distance_str}
+FROM {self._collection_name}
+ORDER BY dist {distance_func.order_by()}
+LIMIT {str(k)}
+"""
+
+    def _write_documents_to_rockset(self, batch: List[dict]) -> List[str]:
+        add_doc_res = self._client.Documents.add_documents(
+            collection=self._collection_name, data=batch
+        )
+        return [
+            getattr(doc_status, doc_status.attribute_map["id"])
+            for doc_status in getattr(add_doc_res, add_doc_res.attribute_map["data"])
+        ]
+
+    def delete_texts(self, ids: List[str]) -> None:
+        """Delete a list of docs from the Rockset collection"""
+
+        self._client.Documents.delete_documents(
+            collection=self._collection_name,
+            data=ids,
+        )
