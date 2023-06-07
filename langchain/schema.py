@@ -182,8 +182,18 @@ class LLMResult(BaseModel):
     each input could have multiple generations."""
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""
-    run: Optional[RunInfo] = None
+    run: Optional[List[RunInfo]] = None
     """Run metadata."""
+
+    def flatten(self) -> List[LLMResult]:
+        """Flatten generations into a single list."""
+        return [
+            LLMResult(
+                generations=[gen],
+                llm_output=self.llm_output,
+            )
+            for gen in self.generations
+        ]
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, LLMResult):
