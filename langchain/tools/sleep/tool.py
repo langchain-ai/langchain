@@ -1,10 +1,14 @@
 """Tool for agent to sleep."""
 from asyncio import sleep as asleep
 from time import sleep
-from typing import Type
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 
 
@@ -24,6 +28,7 @@ class SleepTool(BaseTool):
     def _run(
         self,
         sleep_time: int,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Sleep tool."""
         sleep(sleep_time)
@@ -32,6 +37,7 @@ class SleepTool(BaseTool):
     async def _arun(
         self,
         sleep_time: int,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the sleep tool asynchronously."""
         await asleep(sleep_time)
