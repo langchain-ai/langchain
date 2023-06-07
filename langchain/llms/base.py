@@ -184,7 +184,11 @@ class BaseLLM(BaseLanguageModel, ABC):
             )
             try:
                 output = (
-                    self._generate(prompts, stop=stop, run_manager=run_managers[0])
+                    self._generate(
+                        prompts,
+                        stop=stop,
+                        run_manager=run_managers[0] if run_managers else None,
+                    )
                     if new_arg_supported
                     else self._generate(prompts, stop=stop)
                 )
@@ -209,7 +213,9 @@ class BaseLLM(BaseLanguageModel, ABC):
             try:
                 new_results = (
                     self._generate(
-                        missing_prompts, stop=stop, run_manager=run_managers[0]
+                        missing_prompts,
+                        stop=stop,
+                        run_manager=run_managers[0] if run_managers else None,
                     )
                     if new_arg_supported
                     else self._generate(missing_prompts, stop=stop)

@@ -82,7 +82,9 @@ class BaseChatModel(BaseLanguageModel, ABC):
         )
         try:
             results = [
-                self._generate(m, stop=stop, run_manager=run_managers[0])
+                self._generate(
+                    m, stop=stop, run_manager=run_managers[0] if run_managers else None
+                )
                 if new_arg_supported
                 else self._generate(m, stop=stop)
                 for m in messages
@@ -126,7 +128,11 @@ class BaseChatModel(BaseLanguageModel, ABC):
         try:
             results = await asyncio.gather(
                 *[
-                    self._agenerate(m, stop=stop, run_manager=run_managers[0])
+                    self._agenerate(
+                        m,
+                        stop=stop,
+                        run_manager=run_managers[0] if run_managers else None,
+                    )
                     if new_arg_supported
                     else self._agenerate(m, stop=stop)
                     for m in messages
