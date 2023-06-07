@@ -41,11 +41,21 @@ class StructuredOutputParser(BaseOutputParser):
 
         example:
         ```python
-        from langchain.output_parsers.structured import StructuredOutputParser, ResponseSchema
+        from langchain.output_parsers.structured import (
+            StructuredOutputParser, ResponseSchema
+        )
 
         response_schemas = [
-            ResponseSchema(name="foo", description="a list of strings", type="List[string]"),
-            ResponseSchema(name="bar", description="a string", type="string"),
+            ResponseSchema(
+                name="foo", 
+                description="a list of strings", 
+                type="List[string]"
+                ),
+            ResponseSchema(
+                name="bar", 
+                description="a string", 
+                type="string"
+                ),
         ]
 
         parser = StructuredOutputParser.from_response_schemas(response_schemas)
@@ -53,7 +63,8 @@ class StructuredOutputParser(BaseOutputParser):
         print(parser.get_format_instructions())
 
         output:
-        # The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":
+        # The output should be a markdown code snippet formatted in the following
+        # schema, including the leading and trailing "```json" and "```":
         #
         # ```json
         # {
@@ -62,8 +73,8 @@ class StructuredOutputParser(BaseOutputParser):
         # }
 
         Args:
-            only_json (bool): If True, only the json in the markdown code snippet will be returned, without the introducing text.
-                Defaults to False.
+            only_json (bool): If True, only the json in the markdown code snippet 
+                will be returned, without the introducing text. Defaults to False.
         """
         schema_str = "\n".join(
             [_get_sub_string(schema) for schema in self.response_schemas]
