@@ -13,7 +13,7 @@ As of June 2023, the API supports Vicuna-13B by default. We are going to support
 
 ## How to
 
-### 1. Get an API key at https://shaleprotocol.com for free
+### 1. Find the link to our Discord on https://shaleprotocol.com. Generate an API key through the "Shale Bot" on our Discord. No credit card is required and no free trials. It's a forever free tier with 1K limit per day per API key.
 
 ### 2. Use https://shale.live/v1 as OpenAI API drop-in replacement 
 
