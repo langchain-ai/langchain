@@ -11,14 +11,6 @@ from langchain.load.serializable import Serializable
 from langchain.prompts.prompt import PromptTemplate
 
 
-def openai_installed() -> bool:
-    try:
-        import openai  # noqa: F401
-    except ImportError:
-        return False
-    return True
-
-
 class Person(Serializable):
     secret: str
 
@@ -60,13 +52,13 @@ def test_person(snapshot: Any) -> None:
     assert dumps(sp, pretty=True) == snapshot
 
 
-@pytest.mark.skipif(not openai_installed, reason="openai not installed")
+@pytest.mark.requires("openai")
 def test_serialize_openai_llm(snapshot: Any) -> None:
     llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
     assert dumps(llm, pretty=True) == snapshot
 
 
-@pytest.mark.skipif(not openai_installed, reason="openai not installed")
+@pytest.mark.requires("openai")
 def test_serialize_llmchain(snapshot: Any) -> None:
     llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
     prompt = PromptTemplate.from_template("hello {name}!")
@@ -74,7 +66,7 @@ def test_serialize_llmchain(snapshot: Any) -> None:
     assert dumps(chain, pretty=True) == snapshot
 
 
-@pytest.mark.skipif(not openai_installed, reason="openai not installed")
+@pytest.mark.requires("openai")
 def test_serialize_llmchain_with_non_serializable_arg(snapshot: Any) -> None:
     llm = OpenAI(
         model="davinci",
