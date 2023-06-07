@@ -31,8 +31,6 @@ class _VertexAICommon(BaseModel):
     "among the top-k most probable tokens."
     stop: Optional[List[str]] = None
     "Optional list of stop words to use when generating."
-    echo: bool = False
-    "Whether to echo the prompt in the output."
     project: Optional[str] = None
     "The default GCP project to use when making Vertex API calls."
     location: str = "us-central1"
@@ -54,10 +52,7 @@ class _VertexAICommon(BaseModel):
 
     def _predict(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         res = self.client.predict(prompt, **self._default_params)
-        text = self._enforce_stop_words(res.text, stop)
-        if not self.echo:
-            text = text[len(prompt) :]
-        return text
+        return self._enforce_stop_words(res.text, stop)
 
     def _enforce_stop_words(self, text: str, stop: Optional[List[str]] = None) -> str:
         if stop is None and self.stop is not None:
