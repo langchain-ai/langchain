@@ -1,10 +1,14 @@
 # Shale Protocol
 
-[Shale Protocol](https://shaleprotocol.com) provides free and production-ready LLMs APIs to accelerate researches and innovations based on open LLMs.
+[Shale Protocol](https://shaleprotocol.com) provides production-ready inference APIs for open LLMs. 
 
-With Shale Protocol, developers/resaerchers can create apps and explore the power of open LLMs with no cost.
+Our free tier supports up to 1K daily requests per key as we want to eliminate the barrier for anyone to start building genAI apps with LLMs. 
 
-This page covers how use Shale Protocol as an LLM back-end with LangChain.
+With Shale Protocol, developers/researchers can create apps and explore the capabilities of open LLMs at no cost.
+
+This page covers how Shale-Serve API can be incorporated with LangChain.
+
+As of June 2023, the API supports Vicuna-13B by default. We are going to support more LLMs such as Falcon-40B in future releases. 
 
 
 ## How to
