@@ -2,8 +2,6 @@
 
 from typing import Any, Dict
 
-import openai
-
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.load.dump import dumps
@@ -41,6 +39,10 @@ class SpecialPerson(Person):
         return {"another_visible": self.another_visible}
 
 
+class NotSerializable:
+    pass
+
+
 def test_person(snapshot: Any) -> None:
     p = Person(secret="hello")
     assert dumps(p, pretty=True) == snapshot
@@ -65,7 +67,7 @@ def test_serialize_llmchain_with_non_serializable_arg(snapshot: Any) -> None:
         model="davinci",
         temperature=0.5,
         openai_api_key="hello",
-        client=openai.Completion,
+        client=NotSerializable,
     )
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
