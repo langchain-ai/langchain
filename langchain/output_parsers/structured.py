@@ -44,7 +44,7 @@ class StructuredOutputParser(BaseOutputParser):
         from langchain.output_parsers.structured import StructuredOutputParser, ResponseSchema
 
         response_schemas = [
-            ResponseSchema(name="foo", description="a list of strings", type="List[string]", items={"type": "string"}),
+            ResponseSchema(name="foo", description="a list of strings", type="List[string]"),
             ResponseSchema(name="bar", description="a string", type="string"),
         ]
 
