@@ -272,16 +272,18 @@ class Document(BaseModel):
 
     uid: str  # Assigned unique identifier
     hash_: UUID  # A hash of the content + metadata
+    # TODO(We likely want multiple hashes, one for content, one for metadata, etc)
+    # content_hash_: UUID  # A hash of the content alone.
     page_content: str
     # Required field for provenance.
     # Provenance ALWAYS refers to the original source of the document.
     # No matter what transformations have been done on the context.
-    provenance: Tuple[str, ...] = tuple()  # TODO(not needed for now)
+    # provenance: Tuple[str, ...] = tuple()  # TODO(not needed for now)
     # User created metadata
     metadata: dict = Field(default_factory=dict)
     # Use to keep track of parent documents from which the document was generated
     # We could keep this is a non sequence to get started for simplicity
-    parent_uids: Tuple[str, ...] = tuple()  # TODO(Move to metadata store)
+    # parent_uids: Tuple[str, ...] = tuple()  # TODO(Move to metadata store)
 
     @root_validator(pre=True)
     def assign_id_if_not_provided(cls, values: Dict[str, Any]) -> Dict[str, Any]:

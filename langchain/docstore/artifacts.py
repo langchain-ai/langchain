@@ -1,65 +1,8 @@
-"""Base persistence layer for artifacts.
-
-This code makes a few assumptions:
-
-1) Vector stores can accept a STRING user provided ID for a document and store the document.
-2) We can fit all the document IDs into memory
-3) Existing transformers operate on [doc] -> [doc] and would need to be updated to keep track of history  (parent_doc_hashes)
-4) Changing the transformer interface to operate on doc -> doc or doc -> [doc], will allow the an interceptor to update the history by itself.
-
-
-Here are some possible APIs for this (we would want to converge to the simplest correct version)
-
-Usage:
-
-    ... code-block:: python
-
-    file_system_store = FileSystemArtifactLayer( # <-- All artifacts will be stored here
-        parent_dir=Path("data/artifacts"),
-    )
-    
-    pipeline = sequential(
-        [MimeParser(), TextSplitter()], interceptor=CachingDocumentTransformer(file_system_store)
-    )
-    
-    doc_iterable = FileSystemLoader.from("data/my_videos", pipeline)
-    vector_store = VectorStore.from(doc_iterable)
-    
-    
-## Or some variations
-    
-    pipeline = compose_transformation(
-        [MimeParser(), TextSplitter(), VectorStore.from], interceptor=CachingDocumentTransformer(file_system_store)
-    )
-    
-    
-## or
-    
-    ... code-block:: python
-
-    file_system_store = FileSystemArtifactLayer( # <-- All artifacts will be stored here
-        parent_dir=Path("data/artifacts"),
-    )
-    
-    pipeline = sequential(
-        [MimeParser(), TextSplitter()], interceptor=CachingDocumentTransformer(file_system_store)
-    )
-    
-    
-    _ = pipeline.process(docs) # <-- This will store the docs in the file system store
-    
-    sync(
-        file_system_store, vector_store, selector={
-            "provenance": startswith("https://wikipedia"), # All content from wikipedia
-            "parent_transformer": "TextSplitter", # After content was text splitted
-            "updated_after": today().offset(hours=-5) # updated in the last 5 hours
-        }
-    ) # <-- This will sync the file system store with the vector store
-"""
-
+"""Artifact storage."""
 from __future__ import annotations
 
 import abc
+import datetime
 import json
 from pathlib import Path
 from typing import (
@@ -75,7 +18,7 @@ from typing import (
     Literal,
 )
 
-from langchain.docstore.base import ArtifactStore, Selector
+from langchain.docstore.base import ArtifactStore, Selector, Artifact, ArtifactWithData
 from langchain.docstore.serialization import serialize_document, deserialize_document
 from langchain.document_loaders.base import BaseLoader
 from langchain.embeddings.base import Embeddings
@@ -87,42 +30,6 @@ MaybeDocument = Optional[Document]
 PathLike = Union[str, Path]
 
 
-# KNOWN WAYS THIS CAN FAIL:
-# 1) If the process crashes while text splitting, creating only some of the artifacts
-#    ... new pipeline will not re-create the missing artifacts! (at least for now)
-#    it will use the ones that exist and assume that all of them have been created
-
-# TODO: MAJOR MAJOR MAJOR MAJOR
-# FIX SEMANTICS WITH REGARDS TO ID, UUID. AND POTENTIALLY ARTIFACT_ID
-# NEED TO REASON THROUGH USE CASES CAREFULLY TO REASON ABOUT WHATS MINIMAL SUFFICIENT
-
-
-class Artifact(TypedDict):
-
-    """A representation of an artifact."""
-
-    uid: str
-    """A unique identifier for the artifact."""
-    parent_uids: Tuple[str, ...]
-    """A tuple of uuids representing the parent artifacts."""
-    metadata: Any
-    """A dictionary representing the metadata of the artifact."""
-    tags: Tuple[str, ...]
-    """A tuple of tags associated with the artifact.
-    
-    Can use tags to add information about the transformation that was applied
-    to the given artifact. There's probably a better representation.
-    """
-    # The data type may be a bad idea.
-    type_: Union[Literal["document"], Literal["embedding"]]
-    """The type of the artifact."""  # THIS MAY NEED TO BE CHANGED
-    data: Optional[bytes]
-    """The data of the artifact when the artifact contains the data by value.
-    
-    This may need to be changed. Will contain embedding data as a first pass.
-    """
-
-
 class Metadata(TypedDict):
     """Metadata format"""
 
@@ -130,7 +37,10 @@ class Metadata(TypedDict):
 
 
 class MetadataStore(abc.ABC):
-    """Abstract metadata store."""
+    """Abstract metadata store.
+
+    Need to populate with all required methods.
+    """
 
     @abc.abstractmethod
     def upsert(self, artifact: Artifact):
@@ -260,51 +170,30 @@ class FileSystemArtifactLayer(ArtifactStore):
         """Get path to file for the given uuid."""
         return self.root / f"{uid}"
 
-    def upsert_embedding(
+    def upsert(
         self,
-        documents: Sequence[Document],
-        embedding: Sequence[Sequence[float]],
-        tags: Sequence[str] = tuple(),
+        artifacts_with_data: Sequence[ArtifactWithData],
     ) -> None:
-        """Upsert embeddings."""
-        raise NotImplementedError()
-        for document in documents:
-            self.metadata_store.upsert(
-                {
-                    "uid": document.uid,
-                    "parent_uids": document.parent_uids,
-                    "metadata": document.metadata,
-                    "tags": tuple(tags),
-                    "type_": "embedding",
-                    "data": embedding,
-                }
-            )
-
-    def upsert(self, documents: Sequence[Document], tags: Sequence[str]) -> None:
         """Add the given artifacts."""
         # Write the documents to the file system
-        for document in documents:
+        for artifact_with_data in artifacts_with_data:
             # Use the document hash to write the contents to the file system
+            document = artifact_with_data["document"]
             file_path = self.root / f"{document.hash_}"
             with open(file_path, "w") as f:
                 f.write(serialize_document(document))
 
-            self.metadata_store.upsert(
-                {
-                    "uid": document.uid,
-                    "parent_uids": document.parent_uids,
-                    "metadata": document.metadata,
-                    "tags": tuple(tags),
-                    "type_": "document",
-                    "data": None,
-                }
-            )
+            artifact = artifact_with_data["artifact"].copy()
+            # Storing at a file -- can clean up the artifact with data request
+            # later
+            artifact["location"] = file_path
+            self.metadata_store.upsert(artifact)
 
         self.metadata_store.save(self.metadata_path)
 
     def list_document_ids(self, selector: Selector) -> Iterator[str]:
         """List the document ids matching the given selector."""
-        return self.metadata_store.select(selector)
+        yield from self.metadata_store.select(selector)
 
     def list_documents(self, selector: Selector) -> Iterator[Document]:
         """Can even use JQ here!"""
@@ -312,21 +201,44 @@ class FileSystemArtifactLayer(ArtifactStore):
 
         for uuid in uuids:
             artifact = self.metadata_store.get_by_uids([uuid])[0]
-            path = self._get_file_path(uuid)
+            path = artifact["location"]
             with open(path, "r") as f:
-                document = deserialize_document(f.read())
-                # TODO(): Handle metadata properly + hashes properly
-                #         Some parts of the metadata should never ever be stored
-                #         in the document, otherwise we may end up with subtle bugs
-                #         due to matching hashes. (or we change hashing strategy to
-                #         include all metadata)
-                document.uid = artifact["uid"]
-                document.parent_uids = artifact["parent_uids"]
-                document.metadata = artifact["metadata"]
-                yield document
+                page_content = deserialize_document(f.read()).page_content
+                yield Document(
+                    uid=artifact["uid"],
+                    parent_uids=artifact["parent_uids"],
+                    metadata=artifact["metadata"],
+                    tags=artifact["tags"],
+                    page_content=page_content,
+                )
 
 
-class Pipeline(BaseLoader):
+def _convert_document_to_artifact_upsert(
+    document: Document, parent_documents: Sequence[Document], transformation_hash: str
+) -> ArtifactWithData:
+    """Convert the given documents to artifacts for upserting."""
+    dt = datetime.datetime.now().isoformat()
+    parent_uids = [parent_doc.uid for parent_doc in parent_documents]
+    parent_hashes = [parent_doc.hash_ for parent_doc in parent_documents]
+
+    return {
+        "uid": document.uid,
+        "parent_uids": parent_uids,
+        "metadata": document.metadata,
+        "parent_hashes": parent_hashes,
+        "tags": tuple(),
+        "type_": "document",
+        "data": None,
+        "location": None,
+        "data_hash": document.hash_,
+        "metadata_hash": "N/A",
+        "created_at": dt,
+        "updated_at": dt,
+        "transformation_hash": transformation_hash,
+    }
+
+
+class Pipeline(BaseLoader):  # MAY NOT WANT TO INHERIT FROM LOADER
     def __init__(
         self,
         loader: BaseLoader,
@@ -360,7 +272,8 @@ class Pipeline(BaseLoader):
         for document in doc_iterator:
             new_documents = [document]
             for transformation in transformations:
-                # Batched for now here -- logic may be a bit complex for streaming
+                # Batched for now here -- lots of optimization possible
+                # but not needed for now and is likely going to get complex
                 new_documents = list(
                     self._propagate_documents(new_documents, transformation)
                 )
@@ -389,22 +302,24 @@ class Pipeline(BaseLoader):
 
             transformed_docs = transformation.transform_documents([document])
 
-            # Make sure that lineage is included
-            for transformed_doc in transformed_docs:
-                if not transformed_doc.parent_uids:
-                    transformed_doc.parent_uids = (document.uid,)
+            # MAJOR: Hash should encapsulate transformation parameters
+            transformation_hash = transformation.__class__.__name__
 
-            # TODO(EUGENE): Extract transformation information here
-            # to add to metadata store
-            transformation_name = transformation.__class__.__name__
-            self.artifact_store.upsert(transformed_docs, tags=[transformation_name])
+            artifacts_with_data = [
+                _convert_document_to_artifact_upsert(
+                    transformed_doc, [document], transformation_hash
+                )
+                for transformed_doc in transformed_docs
+            ]
+
+            self.artifact_store.upsert(artifacts_with_data)
             yield from transformed_docs
 
     def load(self) -> List[Document]:
         """Load the documents."""
         return list(self.lazy_load())
 
-    def run(self) -> None:
+    def run(self) -> None:  # BAD API NEED
         """Execute the pipeline, returning nothing."""
         for _ in self.lazy_load():
             pass

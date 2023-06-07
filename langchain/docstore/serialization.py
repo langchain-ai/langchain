@@ -34,7 +34,9 @@ class UUIDEncoder(JSONEncoder):
 def serialize_document(document: Document) -> str:
     """Serialize the given document to a string."""
     try:
-        return json.dumps(document.dict(), cls=UUIDEncoder)
+        # Serialize only the content.
+        # Metadata always stored separately.
+        return json.dumps(document.page_content)
     except JSONDecodeError:
         raise ValueError(f"Could not serialize document with ID: {document.uid}")
 
