@@ -40,13 +40,13 @@ class Serializable(BaseModel, ABC):
         return dict()
 
     @property
-    def lc_attributes(self) -> List[str]:
+    def lc_attributes(self) -> Dict:
         """
         Return a list of attribute names that should be included in the
         serialized kwargs. These attributes must be accepted by the
         constructor.
         """
-        return []
+        return {}
 
     lc_kwargs: Dict[str, Any] = Field(default_factory=dict, exclude=True)
 
@@ -69,7 +69,7 @@ class Serializable(BaseModel, ABC):
             this = cast(Serializable, self if cls is None else super(cls, self))
 
             secrets.update(this.lc_secrets)
-            lc_kwargs.update({k: getattr(self, k) for k in this.lc_attributes})
+            lc_kwargs.update(this.lc_attributes)
 
         return {
             "lc": 1,
@@ -106,16 +106,16 @@ def _replace_secrets(
 
 
 def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
-    id: List[str] = []
+    _id: List[str] = []
     try:
         if hasattr(obj, "__name__"):
-            id = [*obj.__module__.split("."), obj.__name__]  # type: ignore [attr-defined]
+            _id = [*obj.__module__.split("."), obj.__name__]
         elif hasattr(obj, "__class__"):
-            id = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
-    except:
+            _id = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
+    except Exception:
         pass
     return {
         "lc": 1,
         "type": "not_implemented",
-        "id": id,
+        "id": _id,
     }

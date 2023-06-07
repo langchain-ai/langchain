@@ -22,7 +22,7 @@ class Person(Serializable):
 
     @property
     def lc_attributes(self) -> Dict[str, str]:
-        return ["you_can_see_me"]
+        return {"you_can_see_me": self.you_can_see_me}
 
 
 class SpecialPerson(Person):
@@ -38,7 +38,7 @@ class SpecialPerson(Person):
     # Gets merged with parent class's attributes
     @property
     def lc_attributes(self) -> Dict[str, str]:
-        return ["another_visible"]
+        return {"another_visible": self.another_visible}
 
 
 def test_person(snapshot: Any) -> None:
