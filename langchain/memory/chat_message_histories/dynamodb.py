@@ -21,12 +21,19 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         table_name: name of the DynamoDB table
         session_id: arbitrary key that is used to store the messages
             of a single chat session.
+        endpoint_url: URL of the AWS endpoint to connect to. This argument
+            is optional and useful for test purposes, like using Localstack.
+            If you plan to use AWS cloud service, you normally don't have to 
+            worry about setting the endpoint_url.
     """
 
-    def __init__(self, table_name: str, session_id: str):
+    def __init__(self, table_name: str, session_id: str, endpoint_url: str = None):
         import boto3
 
-        client = boto3.resource("dynamodb")
+        if endpoint_url:
+            client = boto3.resource("dynamodb", endpoint_url=endpoint_url)
+        else:
+            client = boto3.resource("dynamodb")
         self.table = client.Table(table_name)
         self.session_id = session_id
 
