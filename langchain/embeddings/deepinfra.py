@@ -31,15 +31,14 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
             r2 = deepinfra_emb.embed_query("What is the second letter of Greek alphabet")
 
     """
+
     model_id: str = DEFAULT_MODEL_ID
     """Embeddings model to use."""
     normalize: bool = False
     """whether to normalize the computed embeddings"""
     embed_instruction: str = "passage: "
     """Instruction used to embed documents."""
-    query_instruction: str = (
-        "query: "
-    )
+    query_instruction: str = "query: "
     """Instruction used to embed the query."""
     model_kwargs: Optional[dict] = None
     """Other model keyword args"""
@@ -83,8 +82,10 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
         if res.status_code != 200:
-            raise ValueError("Error raised by inference API HTTP code: %s, %s"
-                             % (res.status_code, res.text))
+            raise ValueError(
+                "Error raised by inference API HTTP code: %s, %s"
+                % (res.status_code, res.text)
+            )
         try:
             t = res.json()
             embeddings = t["embeddings"]
