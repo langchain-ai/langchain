@@ -685,7 +685,7 @@ class CallbackManager(BaseCallbackManager):
                 "on_chat_model_start",
                 "ignore_chat_model",
                 serialized,
-                [message],
+                [message_list],
                 run_id=run_id_,
                 parent_run_id=self.parent_run_id,
                 **kwargs,
