@@ -1,6 +1,5 @@
 from typing import List
-from langchain.schema import BaseRetriever
-from langchain.schema import Document
+from langchain.schema import BaseRetriever, Document
 
 
 class MergerRetriever(BaseRetriever):
