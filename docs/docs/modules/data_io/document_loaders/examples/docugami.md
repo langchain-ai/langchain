@@ -212,7 +212,7 @@ documents[0].metadata
 
 </CodeOutputBlock>
 
-We can use a [self-querying retriever](../../retrievers/examples/self_query.ipynb) to improve our query accuracy, using this additional metadata:
+We can use a [self-querying retriever](../../retrievers/how_to/self_query.ipynb) to improve our query accuracy, using this additional metadata:
 
 
 ```python
