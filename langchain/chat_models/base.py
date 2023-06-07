@@ -73,7 +73,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         callback_manager = CallbackManager.configure(
             callbacks, self.callbacks, self.verbose
         )
-        run_manager = callback_manager.on_chat_model_start(
+        run_managers = callback_manager.on_chat_model_start(
             {"name": self.__class__.__name__}, messages, invocation_params=params
         )
 
@@ -82,20 +82,25 @@ class BaseChatModel(BaseLanguageModel, ABC):
         )
         try:
             results = [
-                self._generate(m, stop=stop, run_manager=run_manager)
+                self._generate(m, stop=stop, run_manager=run_managers[0])
                 if new_arg_supported
                 else self._generate(m, stop=stop)
                 for m in messages
             ]
         except (KeyboardInterrupt, Exception) as e:
-            run_manager.on_llm_error(e)
+            for run_manager in run_managers:
+                run_manager.on_llm_error(e)
             raise e
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
-        run_manager.on_llm_end(output)
-        if run_manager:
-            output.run = RunInfo(run_id=run_manager.run_id)
+        flattened_outputs = output.flatten()
+        for manager, flattened_output in zip(run_managers, flattened_outputs):
+            manager.on_llm_end(flattened_output)
+        if run_managers:
+            output.run = [
+                RunInfo(run_id=run_manager.run_id) for run_manager in run_managers
+            ]
         return output
 
     async def agenerate(
@@ -111,7 +116,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         callback_manager = AsyncCallbackManager.configure(
             callbacks, self.callbacks, self.verbose
         )
-        run_manager = await callback_manager.on_chat_model_start(
+        run_managers = await callback_manager.on_chat_model_start(
             {"name": self.__class__.__name__}, messages, invocation_params=params
         )
 
@@ -121,21 +126,33 @@ class BaseChatModel(BaseLanguageModel, ABC):
         try:
             results = await asyncio.gather(
                 *[
-                    self._agenerate(m, stop=stop, run_manager=run_manager)
+                    self._agenerate(m, stop=stop, run_manager=run_managers[0])
                     if new_arg_supported
                     else self._agenerate(m, stop=stop)
                     for m in messages
                 ]
             )
         except (KeyboardInterrupt, Exception) as e:
-            await run_manager.on_llm_error(e)
+            await asyncio.gather(
+                *[run_manager.on_llm_error(e) for run_manager in run_managers]
+            )
             raise e
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
-        await run_manager.on_llm_end(output)
-        if run_manager:
-            output.run = RunInfo(run_id=run_manager.run_id)
+        flattened_outputs = output.flatten()
+        await asyncio.gather(
+            *[
+                run_manager.on_llm_end(flattened_output)
+                for run_manager, flattened_output in zip(
+                    run_managers, flattened_outputs
+                )
+            ]
+        )
+        if run_managers:
+            output.run = [
+                RunInfo(run_id=run_manager.run_id) for run_manager in run_managers
+            ]
         return output
 
     def generate_prompt(

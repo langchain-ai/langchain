@@ -18,11 +18,12 @@ def _test_callback_manager(
     manager: CallbackManager, *handlers: BaseFakeCallbackHandler
 ) -> None:
     """Test the CallbackManager."""
-    run_manager = manager.on_llm_start({}, [])
-    run_manager.on_llm_end(LLMResult(generations=[]))
-    run_manager.on_llm_error(Exception())
-    run_manager.on_llm_new_token("foo")
-    run_manager.on_text("foo")
+    run_managers = manager.on_llm_start({}, ["prompt"])
+    for run_manager in run_managers:
+        run_manager.on_llm_end(LLMResult(generations=[]))
+        run_manager.on_llm_error(Exception())
+        run_manager.on_llm_new_token("foo")
+        run_manager.on_text("foo")
 
     run_manager_chain = manager.on_chain_start({"name": "foo"}, {})
     run_manager_chain.on_chain_end({})
@@ -42,11 +43,12 @@ async def _test_callback_manager_async(
     manager: AsyncCallbackManager, *handlers: BaseFakeCallbackHandler
 ) -> None:
     """Test the CallbackManager."""
-    run_manager = await manager.on_llm_start({}, [])
-    await run_manager.on_llm_end(LLMResult(generations=[]))
-    await run_manager.on_llm_error(Exception())
-    await run_manager.on_llm_new_token("foo")
-    await run_manager.on_text("foo")
+    run_managers = await manager.on_llm_start({}, ["prompt"])
+    for run_manager in run_managers:
+        await run_manager.on_llm_end(LLMResult(generations=[]))
+        await run_manager.on_llm_error(Exception())
+        await run_manager.on_llm_new_token("foo")
+        await run_manager.on_text("foo")
 
     run_manager_chain = await manager.on_chain_start({"name": "foo"}, {})
     await run_manager_chain.on_chain_end({})
@@ -95,9 +97,10 @@ def test_ignore_llm() -> None:
     handler1 = FakeCallbackHandler(ignore_llm_=True)
     handler2 = FakeCallbackHandler()
     manager = CallbackManager(handlers=[handler1, handler2])
-    run_manager = manager.on_llm_start({}, [])
-    run_manager.on_llm_end(LLMResult(generations=[]))
-    run_manager.on_llm_error(Exception())
+    run_managers = manager.on_llm_start({}, ["prompt"])
+    for run_manager in run_managers:
+        run_manager.on_llm_end(LLMResult(generations=[]))
+        run_manager.on_llm_error(Exception())
     assert handler1.starts == 0
     assert handler1.ends == 0
     assert handler1.errors == 0
