@@ -678,7 +678,7 @@ class CallbackManager(BaseCallbackManager):
         """Run when LLM starts running."""
 
         managers = []
-        for message in messages:
+        for message_list in messages:
             run_id_ = uuid4()
             _handle_event(
                 self.handlers,
