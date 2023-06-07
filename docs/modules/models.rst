@@ -11,38 +11,28 @@ but we have individual pages for each model type.
 The pages contain more detailed "how-to" guides for working with that model,
 as well as a list of different model providers.
 
-**LLMs**
-
-Large Language Models (LLMs) are the first type of models we cover.
-These models take a text string as input, and return a text string as output.
+|
+- `Getting Started <./models/getting_started.html>`_: An overview of the models.
 
 
-**Chat Models**
+Model Types
+-----------
 
-Chat Models are the second type of models we cover.
-These models are usually backed by a language model, but their APIs are more structured.
-Specifically, these models take a list of Chat Messages as input, and return a Chat Message.
+- `LLMs <./models/llms.html>`_: **Large Language Models (LLMs)** take a text string as input and return a text string as output.
 
-**Text Embedding Models**
+- `Chat Models <./models/chat.html>`_: **Chat Models** are usually backed by a language model, but their APIs are more structured.
+  Specifically, these models take a list of Chat Messages as input, and return a Chat Message.
 
-The third type of models we cover are text embedding models.
-These models take text as input and return a list of floats.
+- `Text Embedding Models <./models/text_embedding.html>`_: **Text embedding models** take text as input and return a list of floats.
 
-Getting Started
----------------
 
 .. toctree::
    :maxdepth: 1
+   :caption: Models
+   :name: models
+   :hidden:
 
-   ./models/getting_started.ipynb
-
-
-Go Deeper
----------
-
-.. toctree::
-   :maxdepth: 1
-
+   ./models/getting_started.html
    ./models/llms.rst
    ./models/chat.rst
    ./models/text_embedding.rst
