@@ -2,7 +2,6 @@
 import datetime
 import math
 import tempfile
-import warnings
 
 import pytest
 
