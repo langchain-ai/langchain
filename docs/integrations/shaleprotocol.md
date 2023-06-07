@@ -1,6 +1,6 @@
 # Shale Protocol
 
-[Shale Protocol](https://shaleprotocol.com) provides production-ready inference APIs for open LLMs. 
+[Shale Protocol](https://shaleprotocol.com) provides production-ready inference APIs for open LLMs. It's a Plug & Play API as it's hosted on a highly scalable GPU cloud infrastructure. 
 
 Our free tier supports up to 1K daily requests per key as we want to eliminate the barrier for anyone to start building genAI apps with LLMs. 
 
