@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from langchain.output_parsers.format_instructions import (
     STRUCTURED_FORMAT_INSTRUCTIONS,
-    STRUCTURED_INPUT_FORMAT_INSTRUCTIONS
+    STRUCTURED_FORMAT_SIMPLE_INSTRUCTIONS
 )
 from langchain.output_parsers.json import parse_and_check_json_markdown
 from langchain.schema import BaseOutputParser
@@ -35,12 +35,9 @@ class StructuredOutputParser(BaseOutputParser):
     ) -> StructuredOutputParser:
         return cls(response_schemas=response_schemas)
 
-    def get_format_instructions(self, input_format=False) -> str:
+    def get_format_instructions(self, only_json: bool=False) -> str:
         """
         Method to get the format instructions for the output parser.
-
-        Args:
-            input_format (bool): Whether to get the format instructions for the input or output. Defaults to False (output format instructions)
 
         example:
         ```python
@@ -54,7 +51,7 @@ class StructuredOutputParser(BaseOutputParser):
         parser = StructuredOutputParser.from_response_schemas(response_schemas)
 
         print(parser.get_format_instructions())
-
+    
         output:
         # The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":
         #
@@ -64,13 +61,18 @@ class StructuredOutputParser(BaseOutputParser):
         #     "bar": string  // a string
         # }
 
-        NOTE: if the input_format is True, only the first row change with the following:
-        # The input will be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":
+        
+        Args:
+            only_json (bool): If True, only the json in the markdown code snippet will be returned, without the introducing text.
+                Defaults to False.
         """
         schema_str = "\n".join(
             [_get_sub_string(schema) for schema in self.response_schemas]
         )
-        return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
+        if only_json:
+            return STRUCTURED_FORMAT_SIMPLE_INSTRUCTIONS.format(format=schema_str)
+        else:
+            return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
 
 
     def parse(self, text: str) -> Any:
