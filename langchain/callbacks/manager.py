@@ -5,9 +5,20 @@ import functools
 import logging
 import os
 import warnings
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID, uuid4
 
 import langchain
@@ -114,6 +125,50 @@ def tracing_v2_enabled(
     tracing_v2_callback_var.set(cb)
     yield
     tracing_v2_callback_var.set(None)
+
+
+@contextmanager
+def trace_as_chain_group(
+    group_name: str,
+    *,
+    session_name: Optional[str] = None,
+    example_id: Optional[Union[str, UUID]] = None,
+) -> Generator[CallbackManager, None, None]:
+    """Get a callback manager for a chain group in a context manager."""
+    cb = LangChainTracer(
+        session_name=session_name,
+        example_id=example_id,
+    )
+    cm = CallbackManager.configure(
+        inheritable_callbacks=[cb],
+    )
+
+    run_manager = cm.on_chain_start({"name": group_name}, {})
+    yield run_manager.get_child()
+    run_manager.on_chain_end({})
+
+
+@asynccontextmanager
+async def atrace_as_chain_group(
+    group_name: str,
+    *,
+    session_name: Optional[str] = None,
+    example_id: Optional[Union[str, UUID]] = None,
+) -> AsyncGenerator[AsyncCallbackManager, None]:
+    """Get a callback manager for a chain group in a context manager."""
+    cb = LangChainTracer(
+        session_name=session_name,
+        example_id=example_id,
+    )
+    cm = AsyncCallbackManager.configure(
+        inheritable_callbacks=[cb],
+    )
+
+    run_manager = await cm.on_chain_start({"name": group_name}, {})
+    try:
+        yield run_manager.get_child()
+    finally:
+        await run_manager.on_chain_end({})
 
 
 def _handle_event(
@@ -815,6 +870,16 @@ class AsyncCallbackManager(BaseCallbackManager):
 T = TypeVar("T", CallbackManager, AsyncCallbackManager)
 
 
+def env_var_is_set(env_var: str) -> bool:
+    """Check if an environment variable is set."""
+    return env_var in os.environ and os.environ[env_var] not in (
+        "",
+        "0",
+        "false",
+        "False",
+    )
+
+
 def _configure(
     callback_manager_cls: Type[T],
     inheritable_callbacks: Callbacks = None,
@@ -848,18 +913,17 @@ def _configure(
     wandb_tracer = wandb_tracing_callback_var.get()
     open_ai = openai_callback_var.get()
     tracing_enabled_ = (
-        os.environ.get("LANGCHAIN_TRACING") is not None
+        env_var_is_set("LANGCHAIN_TRACING")
         or tracer is not None
-        or os.environ.get("LANGCHAIN_HANDLER") is not None
+        or env_var_is_set("LANGCHAIN_HANDLER")
     )
     wandb_tracing_enabled_ = (
-        os.environ.get("LANGCHAIN_WANDB_TRACING") is not None
-        or wandb_tracer is not None
+        env_var_is_set("LANGCHAIN_WANDB_TRACING") or wandb_tracer is not None
     )
 
     tracer_v2 = tracing_v2_callback_var.get()
     tracing_v2_enabled_ = (
-        os.environ.get("LANGCHAIN_TRACING_V2") is not None or tracer_v2 is not None
+        env_var_is_set("LANGCHAIN_TRACING_V2") or tracer_v2 is not None
     )
     tracer_session = os.environ.get("LANGCHAIN_SESSION")
     debug = _get_debug()

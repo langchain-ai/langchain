@@ -61,6 +61,7 @@ _EXPECTED = [
     "tool",
     "YouTubeSearchTool",
     "BraveSearch",
+    "PubmedQueryRun",
 ]
 
 

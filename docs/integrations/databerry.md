@@ -1,25 +1,17 @@
 # Databerry
 
-This page covers how to use the [Databerry](https://databerry.ai) within LangChain.
+>[Databerry](https://databerry.ai) is an [open source](https://github.com/gmpetrov/databerry) document retrieval platform that helps to connect your personal data with Large Language Models.
 
-## What is Databerry?
 
-Databerry is an [open source](https://github.com/gmpetrov/databerry) document retrievial platform that helps to connect your personal data with Large Language Models.
+## Installation and Setup
 
-![Databerry](../_static/DataberryDashboard.png)
+We need to sign up for Databerry, create a datastore, add some data and get your datastore api endpoint url. 
+We need the [API Key](https://docs.databerry.ai/api-reference/authentication).
 
-## Quick start
+## Retriever
 
-Retrieving documents stored in Databerry from LangChain is very easy!
+See a [usage example](../modules/indexes/retrievers/examples/databerry.ipynb).
 
 ```python
 from langchain.retrievers import DataberryRetriever
-
-retriever = DataberryRetriever(
-    datastore_url="https://api.databerry.ai/query/clg1xg2h80000l708dymr0fxc",
-    # api_key="DATABERRY_API_KEY", # optional if datastore is public
-    # top_k=10 # optional
-)
-
-docs = retriever.get_relevant_documents("What's Databerry?")
 ```
