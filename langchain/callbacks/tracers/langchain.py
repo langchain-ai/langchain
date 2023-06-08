@@ -5,7 +5,7 @@ import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import requests
@@ -25,10 +25,8 @@ from langchain.callbacks.tracers.schemas import (
     RunTypeEnum,
     RunUpdate,
     TracerSession,
-    TracerSessionCreate,
 )
 from langchain.schema import BaseMessage, messages_to_dict
-from langchain.utils import raise_for_status_with_text
 
 logger = logging.getLogger(__name__)
 
@@ -65,49 +63,13 @@ retry_decorator = retry(
 )
 
 
-@retry_decorator
-def _get_tenant_id(
-    tenant_id: Optional[str], endpoint: Optional[str], headers: Optional[dict]
-) -> str:
-    """Get the tenant ID for the LangChain API."""
-    tenant_id_: Optional[str] = tenant_id or os.getenv("LANGCHAIN_TENANT_ID")
-    if tenant_id_:
-        return tenant_id_
-    endpoint_ = endpoint or get_endpoint()
-    headers_ = headers or get_headers()
-    response = None
-    try:
-        response = requests.get(endpoint_ + "/tenants", headers=headers_)
-        raise_for_status_with_text(response)
-    except HTTPError as e:
-        if response is not None and response.status_code == 500:
-            raise LangChainTracerAPIError(
-                f"Failed to get tenant ID from LangChain API. {e}"
-            )
-        else:
-            raise LangChainTracerUserError(
-                f"Failed to get tenant ID from LangChain API. {e}"
-            )
-    except Exception as e:
-        raise LangChainTracerError(
-            f"Failed to get tenant ID from LangChain API. {e}"
-        ) from e
-
-    tenants: List[Dict[str, Any]] = response.json()
-    if not tenants:
-        raise ValueError(f"No tenants found for URL {endpoint_}")
-    return tenants[0]["id"]
-
-
 class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
     def __init__(
         self,
-        tenant_id: Optional[str] = None,
-        example_id: Optional[UUID] = None,
+        example_id: Optional[Union[UUID, str]] = None,
         session_name: Optional[str] = None,
-        session_extra: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer."""
@@ -115,10 +77,10 @@ class LangChainTracer(BaseTracer):
         self.session: Optional[TracerSession] = None
         self._endpoint = get_endpoint()
         self._headers = get_headers()
-        self.tenant_id = tenant_id
-        self.example_id = example_id
+        self.example_id = (
+            UUID(example_id) if isinstance(example_id, str) else example_id
+        )
         self.session_name = session_name or os.getenv("LANGCHAIN_SESSION", "default")
-        self.session_extra = session_extra
         # set max_workers to 1 to process tasks in order
         self.executor = ThreadPoolExecutor(max_workers=1)
 
@@ -149,62 +111,20 @@ class LangChainTracer(BaseTracer):
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
 
-    def ensure_tenant_id(self) -> str:
-        """Load or use the tenant ID."""
-        tenant_id = self.tenant_id or _get_tenant_id(
-            self.tenant_id, self._endpoint, self._headers
-        )
-        self.tenant_id = tenant_id
-        return tenant_id
-
-    @retry_decorator
-    def ensure_session(self) -> TracerSession:
-        """Upsert a session."""
-        if self.session is not None:
-            return self.session
-        tenant_id = self.ensure_tenant_id()
-        url = f"{self._endpoint}/sessions?upsert=true"
-        session_create = TracerSessionCreate(
-            name=self.session_name, extra=self.session_extra, tenant_id=tenant_id
-        )
-        response = None
-        try:
-            response = requests.post(
-                url,
-                data=session_create.json(),
-                headers=self._headers,
-            )
-            response.raise_for_status()
-        except HTTPError as e:
-            if response is not None and response.status_code == 500:
-                raise LangChainTracerAPIError(
-                    f"Failed to upsert session to LangChain API. {e}"
-                )
-            else:
-                raise LangChainTracerUserError(
-                    f"Failed to upsert session to LangChain API. {e}"
-                )
-        except Exception as e:
-            raise LangChainTracerError(
-                f"Failed to upsert session to LangChain API. {e}"
-            ) from e
-        self.session = TracerSession(**response.json())
-        return self.session
-
     def _persist_run(self, run: Run) -> None:
-        """Persist a run."""
+        """The Langchain Tracer uses Post/Patch rather than persist."""
 
     @retry_decorator
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
-        session = self.ensure_session()
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
         run_dict = run.dict()
         del run_dict["child_runs"]
-        run_create = RunCreate(**run_dict, session_id=session.id)
+        run_create = RunCreate(**run_dict, session_name=self.session_name)
         response = None
         try:
+            # TODO: Add retries when async
             response = requests.post(
                 f"{self._endpoint}/runs",
                 data=run_create.json(),
