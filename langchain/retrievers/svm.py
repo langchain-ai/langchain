@@ -5,7 +5,7 @@ https://github.com/karpathy/randomfun/blob/master/knn_vs_svm.ipynb"""
 from __future__ import annotations
 
 import concurrent.futures
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 from pydantic import BaseModel
@@ -21,9 +21,9 @@ def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
 
 def retrieve(query_embeds: np.ndarray,
              index: np.ndarray,
-             max_iter=10000,
-             tol=1e-6,
-             C=0.1):
+             max_iter: int=10000,
+             tol: float=1e-6,
+             C: float=0.1) -> Tuple[np.ndarray, np.ndarray]:
     """Function used by langchain.retrievers.svm.SVMRetriever and
     langchain.vectorstores.sklearn.SKLearnSVMVectorStore."""
     from sklearn import svm

@@ -11,6 +11,8 @@ from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Type
 from uuid import uuid4
 from functools import partial
 
+import numpy as np
+
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import guard_import
@@ -203,7 +205,7 @@ class SKLearnVectorStoreBase(VectorStore):
             )
         self._embeddings_np = self._np.asarray(self._embeddings)
 
-    def _get_filtered_data(self, filter: Optional[Dict[str, str]]=None):
+    def _get_filtered_data(self, filter: Optional[Dict[str, str]]=None) -> np.ndarray:
         mask = self._np.ones(len(self._ids), dtype=bool)
         if filter is None or len(filter) == 0:
             return mask
@@ -297,7 +299,6 @@ class SKLearnVectorStoreBase(VectorStore):
         k: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
         lambda_mult: float = 0.5,
-        filter: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -317,6 +318,7 @@ class SKLearnVectorStoreBase(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        filter = kwargs.pop('filter', None)
         indices_dists = self._similarity_index_search_with_score(
             embedding, k=fetch_k, filter=filter, **kwargs
         )
@@ -342,7 +344,6 @@ class SKLearnVectorStoreBase(VectorStore):
         query: str,
         k: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
-        filter: Optional[dict] = None,
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
@@ -370,7 +371,7 @@ class SKLearnVectorStoreBase(VectorStore):
 
         embedding = self._embedding_function.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mul=lambda_mult, filter=filter,
+            embedding, k, fetch_k, lambda_mul=lambda_mult,
         )
         return docs
 
