@@ -371,6 +371,7 @@ def _load_vector_db_qa_with_sources_chain(
         **config,
     )
 
+
 def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
     if "retriever" in kwargs:
         retriever = kwargs.pop("retriever")
@@ -391,6 +392,7 @@ def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
         retriever=retriever,
         **config,
     )
+
 
 def _load_vector_db_qa(config: dict, **kwargs: Any) -> VectorDBQA:
     if "vectorstore" in kwargs:
