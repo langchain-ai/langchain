@@ -204,8 +204,9 @@ class ConfluenceLoader(BaseLoader):
         :type limit: int, optional
         :param max_pages: Maximum number of pages to retrieve in total, defaults 1000
         :type max_pages: int, optional
-        :param ocr_languages: The languages to use for the Tesseract agent. To use a language,
-                              you'll first need to install the appropriate Tesseract language pack.
+        :param ocr_languages: The languages to use for the Tesseract agent. To use a
+                              language, you'll first need to install the appropriate
+                              Tesseract language pack.
         :type ocr_languages: str, optional
         :raises ValueError: _description_
         :raises ImportError: _description_
