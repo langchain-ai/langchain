@@ -97,7 +97,8 @@
           "input_variables": [
             "name"
           ],
-          "template": "hello {name}!"
+          "template": "hello {name}!",
+          "template_format": "f-string"
         }
       }
     }
@@ -237,7 +238,8 @@
           "input_variables": [
             "name"
           ],
-          "template": "hello {name}!"
+          "template": "hello {name}!",
+          "template_format": "f-string"
         }
       }
     }
