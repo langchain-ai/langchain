@@ -15,6 +15,7 @@ from langchain.agents.react.base import ReActDocstoreAgent, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
 from langchain.agents.tools import Tool, tool
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+from langchain.tools.base import ToolException
 
 
 @pytest.mark.parametrize(
@@ -63,7 +64,7 @@ def test_tool_no_args_specified_assumes_str() -> None:
     assert some_tool.args == expected_args
     assert some_tool.run("foobar") == "foobar"
     assert some_tool.run({"tool_input": "foobar"}) == "foobar"
-    with pytest.raises(ValueError, match="Too many arguments to single-input tool"):
+    with pytest.raises(ToolException, match="Too many arguments to single-input tool"):
         some_tool.run({"tool_input": "foobar", "other_input": "bar"})
 
 
