@@ -1,12 +1,12 @@
 """Evaluation classes that interface with traced runs and datasets."""
 from langchain.evaluation.run_evaluators.base import (
-    RunEvaluatorInputMapper,
     RunEvaluatorChain,
+    RunEvaluatorInputMapper,
     RunEvaluatorOutputParser,
 )
 from langchain.evaluation.run_evaluators.implementations import (
     ChoicesOutputParser,
-    StringRunEvalInputMapper,
+    StringRunEvaluatorInputMapper,
     get_criteria_evaluator,
     get_qa_evaluator,
 )
@@ -17,6 +17,6 @@ __all__ = [
     "RunEvaluatorOutputParser",
     "get_qa_evaluator",
     "get_criteria_evaluator",
-    "StringRunEvalInputMapper",
+    "StringRunEvaluatorInputMapper",
     "ChoicesOutputParser",
 ]
