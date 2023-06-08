@@ -248,8 +248,9 @@ class SingleStoreDB(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        """
-        Returns the most similar indexed documents to the query text. Uses cosine similarity.
+        """Returns the most similar indexed documents to the query text.
+
+        Uses cosine similarity.
 
         Args:
             query (str): The query text for which to find similar documents.
