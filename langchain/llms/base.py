@@ -182,7 +182,13 @@ class BaseLLM(BaseLanguageModel, ABC):
         prompt_strings = [p.to_string() for p in prompts]
         return await self.agenerate(prompt_strings, stop=stop, callbacks=callbacks)
 
-    def _generate_helper(self, prompts, stop, run_managers, new_arg_supported):
+    def _generate_helper(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]],
+        run_managers: List[CallbackManagerForLLMRun],
+        new_arg_supported: bool,
+    ) -> LLMResult:
         try:
             output = (
                 self._generate(
@@ -244,7 +250,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                 {"name": self.__class__.__name__}, prompts, invocation_params=params
             )
             output = self._generate_helper(
-                prompts, stop, run_managers, new_arg_supported
+                prompts, stop, run_managers, bool(new_arg_supported)
             )
             return output
         if len(missing_prompts) > 0:
@@ -254,7 +260,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                 invocation_params=params,
             )
             new_results = self._generate_helper(
-                missing_prompts, stop, run_managers, new_arg_supported
+                missing_prompts, stop, run_managers, bool(new_arg_supported)
             )
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
@@ -270,7 +276,13 @@ class BaseLLM(BaseLanguageModel, ABC):
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
 
-    async def _agenerate_helper(self, prompts, stop, run_managers, new_arg_supported):
+    async def _agenerate_helper(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]],
+        run_managers: List[AsyncCallbackManagerForLLMRun],
+        new_arg_supported: bool,
+    ) -> LLMResult:
         try:
             output = (
                 await self._agenerate(
@@ -334,7 +346,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                 {"name": self.__class__.__name__}, prompts, invocation_params=params
             )
             output = await self._agenerate_helper(
-                prompts, stop, run_managers, new_arg_supported
+                prompts, stop, run_managers, bool(new_arg_supported)
             )
             return output
         if len(missing_prompts) > 0:
@@ -344,7 +356,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                 invocation_params=params,
             )
             new_results = await self._agenerate_helper(
-                missing_prompts, stop, run_managers, new_arg_supported
+                missing_prompts, stop, run_managers, bool(new_arg_supported)
             )
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
