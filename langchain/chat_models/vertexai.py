@@ -1,6 +1,6 @@
 """Wrapper around Google VertexAI chat-based models."""
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import root_validator
 
@@ -93,6 +93,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         """Generate next turn in the conversation.
 
@@ -122,7 +123,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         chat = self.client.start_chat(context=context, **self._default_params)
         for pair in history.history:
             chat._history.append((pair.question.content, pair.answer.content))
-        response = chat.send_message(question.content, **self._default_params)
+        response = chat.send_message(question.content, **self._default_params, **kwargs)
         text = self._enforce_stop_words(response.text, stop)
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
 
@@ -131,6 +132,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         raise NotImplementedError(
             """Vertex AI doesn't support async requests at the moment."""

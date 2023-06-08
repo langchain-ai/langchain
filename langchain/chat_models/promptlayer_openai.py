@@ -42,6 +42,7 @@ class PromptLayerChatOpenAI(ChatOpenAI):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any
     ) -> ChatResult:
         """Call ChatOpenAI generate and then call PromptLayer API to log the request."""
         from promptlayer.utils import get_api_key, promptlayer_api_request
@@ -52,7 +53,7 @@ class PromptLayerChatOpenAI(ChatOpenAI):
         message_dicts, params = super()._create_message_dicts(messages, stop)
         for i, generation in enumerate(generated_responses.generations):
             response_dict, params = super()._create_message_dicts(
-                [generation.message], stop
+                [generation.message], stop, **kwargs
             )
             pl_request_id = promptlayer_api_request(
                 "langchain.PromptLayerChatOpenAI",
@@ -79,6 +80,7 @@ class PromptLayerChatOpenAI(ChatOpenAI):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any
     ) -> ChatResult:
         """Call ChatOpenAI agenerate and then call PromptLayer to log."""
         from promptlayer.utils import get_api_key, promptlayer_api_request_async
@@ -89,7 +91,7 @@ class PromptLayerChatOpenAI(ChatOpenAI):
         message_dicts, params = super()._create_message_dicts(messages, stop)
         for i, generation in enumerate(generated_responses.generations):
             response_dict, params = super()._create_message_dicts(
-                [generation.message], stop
+                [generation.message], stop, **kwargs
             )
             pl_request_id = await promptlayer_api_request_async(
                 "langchain.PromptLayerChatOpenAI.async",
