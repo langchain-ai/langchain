@@ -37,6 +37,7 @@ For detailed instructions on how to get set up with Unstructured, see installati
    ./document_loaders/examples/email.ipynb
    ./document_loaders/examples/epub.ipynb
    ./document_loaders/examples/evernote.ipynb
+   ./document_loaders/examples/excel.ipynb
    ./document_loaders/examples/facebook_chat.ipynb
    ./document_loaders/examples/file_directory.ipynb
    ./document_loaders/examples/html.ipynb
