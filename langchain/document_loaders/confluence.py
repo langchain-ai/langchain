@@ -229,7 +229,11 @@ class ConfluenceLoader(BaseLoader):
                 expand="body.storage.value",
             )
             docs += self.process_pages(
-                pages, include_restricted_content, include_attachments, include_comments, ocr_languages
+                pages,
+                include_restricted_content,
+                include_attachments,
+                include_comments,
+                ocr_languages,
             )
 
         if label:
@@ -255,7 +259,11 @@ class ConfluenceLoader(BaseLoader):
                 expand="body.storage.value",
             )
             docs += self.process_pages(
-                pages, include_restricted_content, include_attachments, include_comments, ocr_languages
+                pages,
+                include_restricted_content,
+                include_attachments,
+                include_comments,
+                ocr_languages,
             )
 
         if page_ids:
@@ -275,7 +283,9 @@ class ConfluenceLoader(BaseLoader):
                 page = get_page(page_id=page_id, expand="body.storage.value")
                 if not include_restricted_content and not self.is_public_page(page):
                     continue
-                doc = self.process_page(page, include_attachments, include_comments, ocr_languages)
+                doc = self.process_page(
+                    page, include_attachments, include_comments, ocr_languages
+                )
                 docs.append(doc)
 
         return docs
@@ -345,7 +355,9 @@ class ConfluenceLoader(BaseLoader):
         for page in pages:
             if not include_restricted_content and not self.is_public_page(page):
                 continue
-            doc = self.process_page(page, include_attachments, include_comments, ocr_languages)
+            doc = self.process_page(
+                page, include_attachments, include_comments, ocr_languages
+            )
             docs.append(doc)
 
         return docs
@@ -393,7 +405,11 @@ class ConfluenceLoader(BaseLoader):
             },
         )
 
-    def process_attachment(self, page_id: str, ocr_languages: Optional[str] = None,) -> List[str]:
+    def process_attachment(
+        self,
+        page_id: str,
+        ocr_languages: Optional[str] = None,
+    ) -> List[str]:
         try:
             from PIL import Image  # noqa: F401
         except ImportError:
@@ -432,7 +448,11 @@ class ConfluenceLoader(BaseLoader):
 
         return texts
 
-    def process_pdf(self, link: str, ocr_languages: Optional[str] = None,) -> str:
+    def process_pdf(
+        self,
+        link: str,
+        ocr_languages: Optional[str] = None,
+    ) -> str:
         try:
             import pytesseract  # noqa: F401
             from pdf2image import convert_from_bytes  # noqa: F401
@@ -462,7 +482,11 @@ class ConfluenceLoader(BaseLoader):
 
         return text
 
-    def process_image(self, link: str, ocr_languages: Optional[str] = None,) -> str:
+    def process_image(
+        self,
+        link: str,
+        ocr_languages: Optional[str] = None,
+    ) -> str:
         try:
             import pytesseract  # noqa: F401
             from PIL import Image  # noqa: F401
@@ -536,7 +560,11 @@ class ConfluenceLoader(BaseLoader):
 
         return text
 
-    def process_svg(self, link: str, ocr_languages: Optional[str] = None,) -> str:
+    def process_svg(
+        self,
+        link: str,
+        ocr_languages: Optional[str] = None,
+    ) -> str:
         try:
             import pytesseract  # noqa: F401
             from PIL import Image  # noqa: F401
