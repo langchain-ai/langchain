@@ -31,7 +31,7 @@ class _VertexAICommon(BaseModel):
     "among the top-k most probable tokens."
     stop: Optional[List[str]] = None
     "Optional list of stop words to use when generating."
-    project: Optional[str] = None
+    project_id: Optional[str] = None
     "The default GCP project to use when making Vertex API calls."
     location: str = "us-central1"
     "The default location to use when making API calls."
@@ -67,7 +67,7 @@ class _VertexAICommon(BaseModel):
 
     @classmethod
     def _try_init_vertexai(cls, values: Dict) -> None:
-        allowed_params = ["project", "location", "credentials"]
+        allowed_params = ["project_id", "location", "credentials"]
         params = {k: v for k, v in values.items() if k in allowed_params}
         init_vertexai(**params)
         return None
