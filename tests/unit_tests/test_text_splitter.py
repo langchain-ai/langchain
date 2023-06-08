@@ -182,7 +182,6 @@ def test_iterative_text_splitter() -> None:
 This is a weird text to write, but gotta test the splittingggg some how.
 
 Bye!\n\n-H."""
-    # ["\n\n", "\n", " ", ""]
     splitter = RecursiveCharacterTextSplitter(chunk_size=10, chunk_overlap=1)
     output = splitter.split_text(text)
     expected_output = [
