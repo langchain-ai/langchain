@@ -1,7 +1,6 @@
 import logging
 from string import Template
-from typing import TYPE_CHECKING, Any, Dict
-
+from typing import Any, Dict
 
 rel_query = Template(
     """

@@ -1,11 +1,12 @@
 import unittest
-
+from typing import Any
 from unittest.mock import MagicMock, patch
+
 from langchain.graphs import NebulaGraph
 
 
 class TestNebulaGraph(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.space = "test_space"
         self.username = "test_user"
         self.password = "test_password"
@@ -14,7 +15,7 @@ class TestNebulaGraph(unittest.TestCase):
         self.session_pool_size = 10
 
     @patch("nebula3.gclient.net.SessionPool.SessionPool")
-    def test_init(self, mock_session_pool):
+    def test_init(self, mock_session_pool: Any) -> None:
         mock_session_pool.return_value = MagicMock()
         nebula_graph = NebulaGraph(
             self.space,
@@ -32,7 +33,7 @@ class TestNebulaGraph(unittest.TestCase):
         self.assertEqual(nebula_graph.session_pool_size, self.session_pool_size)
 
     @patch("nebula3.gclient.net.SessionPool.SessionPool")
-    def test_get_session_pool(self, mock_session_pool):
+    def test_get_session_pool(self, mock_session_pool: Any) -> None:
         mock_session_pool.return_value = MagicMock()
         nebula_graph = NebulaGraph(
             self.space,
@@ -46,7 +47,7 @@ class TestNebulaGraph(unittest.TestCase):
         self.assertIsInstance(session_pool, MagicMock)
 
     @patch("nebula3.gclient.net.SessionPool.SessionPool")
-    def test_del(self, mock_session_pool):
+    def test_del(self, mock_session_pool: Any) -> None:
         mock_session_pool.return_value = MagicMock()
         nebula_graph = NebulaGraph(
             self.space,
@@ -60,7 +61,7 @@ class TestNebulaGraph(unittest.TestCase):
         mock_session_pool.return_value.close.assert_called_once()
 
     @patch("nebula3.gclient.net.SessionPool.SessionPool")
-    def test_execute(self, mock_session_pool):
+    def test_execute(self, mock_session_pool: Any) -> None:
         mock_session_pool.return_value = MagicMock()
         nebula_graph = NebulaGraph(
             self.space,
@@ -75,7 +76,7 @@ class TestNebulaGraph(unittest.TestCase):
         self.assertIsInstance(result, MagicMock)
 
     @patch("nebula3.gclient.net.SessionPool.SessionPool")
-    def test_refresh_schema(self, mock_session_pool):
+    def test_refresh_schema(self, mock_session_pool: Any) -> None:
         mock_session_pool.return_value = MagicMock()
         nebula_graph = NebulaGraph(
             self.space,
