@@ -1,4 +1,5 @@
 """Test text splitting functionality."""
+from typing import List
 import pytest
 
 from langchain.docstore.document import Document
@@ -133,12 +134,55 @@ def test_metadata_not_shallow() -> None:
     assert docs[1].metadata == {"source": "1"}
 
 
+def test_iterative_text_splitter_keep_separator() -> None:
+    chunk_size = 5
+    output = __test_iterative_text_splitter(chunk_size=chunk_size, keep_separator=True)
+
+    assert output == [
+        "....5",
+        "X..3",
+        "Y...4",
+        "X....5",
+        "Y...",
+    ]
+
+
+def test_iterative_text_splitter_discard_separator() -> None:
+    chunk_size = 5
+    output = __test_iterative_text_splitter(chunk_size=chunk_size, keep_separator=False)
+
+    assert output == [
+        "....5",
+        "..3",
+        "...4",
+        "....5",
+        "...",
+    ]
+
+
+def __test_iterative_text_splitter(chunk_size: int, keep_separator: bool) -> List[str]:
+    chunk_size += 1 if keep_separator else 0
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=0,
+        separators=["X", "Y"],
+        keep_separator=keep_separator,
+    )
+    text = "....5X..3Y...4X....5Y..."
+    output = splitter.split_text(text)
+    for chunk in output:
+        assert len(chunk) <= chunk_size, f"Chunk is larger than {chunk_size}"
+    return output
+
+
 def test_iterative_text_splitter() -> None:
     """Test iterative text splitter."""
     text = """Hi.\n\nI'm Harrison.\n\nHow? Are? You?\nOkay then f f f f.
 This is a weird text to write, but gotta test the splittingggg some how.
 
 Bye!\n\n-H."""
+    # ["\n\n", "\n", " ", ""]
     splitter = RecursiveCharacterTextSplitter(chunk_size=10, chunk_overlap=1)
     output = splitter.split_text(text)
     expected_output = [
