@@ -38,7 +38,7 @@ class AutoGPT:
         output_parser: BaseAutoGPTOutputParser,
         tools: List[BaseTool],
         feedback_tool: Optional[HumanInputRun] = None,
-        chat_history_memory: BaseChatMessageHistory = ChatMessageHistory(),
+        chat_history_memory: Optional[BaseChatMessageHistory] = None,
     ):
         self.ai_name = ai_name
         self.memory = memory
@@ -47,7 +47,7 @@ class AutoGPT:
         self.output_parser = output_parser
         self.tools = tools
         self.feedback_tool = feedback_tool
-        self.chat_history_memory = chat_history_memory
+        self.chat_history_memory = chat_history_memory or ChatMessageHistory()
 
     @classmethod
     def from_llm_and_tools(
@@ -59,7 +59,7 @@ class AutoGPT:
         llm: BaseChatModel,
         human_in_the_loop: bool = False,
         output_parser: Optional[BaseAutoGPTOutputParser] = None,
-        chat_history_memory: BaseChatMessageHistory = ChatMessageHistory(),
+        chat_history_memory: Optional[BaseChatMessageHistory] = None,
     ) -> AutoGPT:
         prompt = AutoGPTPrompt(
             ai_name=ai_name,
