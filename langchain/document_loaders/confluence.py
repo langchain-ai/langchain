@@ -180,7 +180,7 @@ class ConfluenceLoader(BaseLoader):
         include_comments: bool = False,
         limit: Optional[int] = 50,
         max_pages: Optional[int] = 1000,
-        ocr_languages: str = None,
+        ocr_languages: Optional[str] = None,
     ) -> List[Document]:
         """
         :param space_key: Space key retrieved from a confluence URL, defaults to None
@@ -338,7 +338,7 @@ class ConfluenceLoader(BaseLoader):
         include_restricted_content: bool,
         include_attachments: bool,
         include_comments: bool,
-        ocr_languages: str,
+        ocr_languages: Optional[str] = None,
     ) -> List[Document]:
         """Process a list of pages into a list of documents."""
         docs = []
@@ -355,7 +355,7 @@ class ConfluenceLoader(BaseLoader):
         page: dict,
         include_attachments: bool,
         include_comments: bool,
-        ocr_languages: str
+        ocr_languages: Optional[str] = None,
     ) -> Document:
         try:
             from bs4 import BeautifulSoup  # type: ignore
@@ -393,7 +393,7 @@ class ConfluenceLoader(BaseLoader):
             },
         )
 
-    def process_attachment(self, page_id: str, ocr_languages: str) -> List[str]:
+    def process_attachment(self, page_id: str, ocr_languages: Optional[str] = None,) -> List[str]:
         try:
             from PIL import Image  # noqa: F401
         except ImportError:
@@ -432,7 +432,7 @@ class ConfluenceLoader(BaseLoader):
 
         return texts
 
-    def process_pdf(self, link: str, ocr_languages: str) -> str:
+    def process_pdf(self, link: str, ocr_languages: Optional[str] = None,) -> str:
         try:
             import pytesseract  # noqa: F401
             from pdf2image import convert_from_bytes  # noqa: F401
@@ -462,7 +462,7 @@ class ConfluenceLoader(BaseLoader):
 
         return text
 
-    def process_image(self, link: str, ocr_languages: str) -> str:
+    def process_image(self, link: str, ocr_languages: Optional[str] = None,) -> str:
         try:
             import pytesseract  # noqa: F401
             from PIL import Image  # noqa: F401
@@ -536,7 +536,7 @@ class ConfluenceLoader(BaseLoader):
 
         return text
 
-    def process_svg(self, link: str, ocr_languages: str) -> str:
+    def process_svg(self, link: str, ocr_languages: Optional[str] = None,) -> str:
         try:
             import pytesseract  # noqa: F401
             from PIL import Image  # noqa: F401
