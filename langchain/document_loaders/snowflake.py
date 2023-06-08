@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional, Dict, Any, Tuple
-from snowflake.connector import DictCursor
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
+
+import pandas as pd
+
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-import pandas as pd
+from snowflake.connector import DictCursor
+
 if TYPE_CHECKING:
     from snowflake.connector import SnowflakeConnection
 
@@ -18,19 +21,20 @@ class SnowflakeLoader(BaseLoader):
     are written into the `page_content` and none into the `metadata`.
 
     """
+
     def __init__(
-            self,
-            query: str,
-            user: str,
-            password: str,
-            account: str,
-            warehouse: str,
-            role: str,
-            database: str,
-            schema: str,
-            parameters: Optional[Dict[str, Any]] = None,
-            page_content_columns: Optional[List[str]] = None,
-            metadata_columns: Optional[List[str]] = None,
+        self,
+        query: str,
+        user: str,
+        password: str,
+        account: str,
+        warehouse: str,
+        role: str,
+        database: str,
+        schema: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        page_content_columns: Optional[List[str]] = None,
+        metadata_columns: Optional[List[str]] = None,
     ):
         """Initialize Snowflake document loader.
 
@@ -58,7 +62,7 @@ class SnowflakeLoader(BaseLoader):
         self.page_content_columns = page_content_columns
         self.metadata_columns = metadata_columns
 
-    def _execute_query(self):
+    def _execute_query(self) -> List[str]:
         try:
             import snowflake.connector
         except ImportError as ex:
@@ -75,7 +79,7 @@ class SnowflakeLoader(BaseLoader):
             role=self.role,
             database=self.database,
             schema=self.schema,
-            parameters=self.parameters
+            parameters=self.parameters,
         )
         query_result = []
         try:
@@ -85,34 +89,38 @@ class SnowflakeLoader(BaseLoader):
             cur.execute(self.query, self.parameters)
             cur.execute(self.query)
             query_result = cur.fetchall()
-            query_result = [{k.lower(): v for k, v in item.items()} for item in query_result]
+            query_result = [
+                {k.lower(): v for k, v in item.items()} for item in query_result
+            ]
         except Exception as e:
             return e
         finally:
             cur.close()
         return query_result
 
-    def _get_columns(self, query_result: List[Dict[str, Any]]) -> Tuple[List[str], List[str]]:
+    def _get_columns(
+        self, query_result: List[Dict[str, Any]]
+    ) -> Tuple[List[str], List[str]]:
         page_content_columns = self.page_content_columns
         metadata_columns = self.metadata_columns
         if page_content_columns is None and query_result:
-            page_content_columns = query_result[0].keys()
+            page_content_columns = list(
+                query_result[0].keys()
+            )  # Convert dict_keys to list
         if metadata_columns is None:
             metadata_columns = []
         return page_content_columns, metadata_columns
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         query_result = self._execute_query()
         if isinstance(query_result, Exception):
             print(f"An error occurred during the query: {query_result}")
             return []
         page_content_columns, metadata_columns = self._get_columns(query_result)
-        docs: List[Document] = []
         for row in query_result:
             page_content = "\n".join(
                 f"{k}: {v}" for k, v in row.items() if k in page_content_columns
             )
             metadata = {k: v for k, v in row.items() if k in metadata_columns}
             doc = Document(page_content=page_content, metadata=metadata)
-            docs.append(doc)
-        return docs
+            yield doc
