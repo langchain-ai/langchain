@@ -6,8 +6,6 @@ import logging
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
-import psycopg2
-
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -19,6 +17,7 @@ _LANGCHAIN_DEFAULT_TABLE_NAME = "langchain_pg_embedding"
 
 class HologresWrapper:
     def __init__(self, connection_string: str, ndims: int, table_name: str) -> None:
+        import psycopg2
         self.table_name = table_name
         self.conn = psycopg2.connect(connection_string)
         self.cursor = self.conn.cursor()
@@ -29,7 +28,7 @@ class HologresWrapper:
         self.cursor.execute("create extension if not exists proxima")
         self.conn.commit()
 
-    def create_table(self, drop_if_exist=True) -> None:
+    def create_table(self, drop_if_exist: bool = True) -> None:
         if drop_if_exist:
             self.cursor.execute(f"drop table if exists {self.table_name}")
         self.conn.commit()
@@ -183,7 +182,7 @@ class Hologres(VectorStore):
 
     def add_embeddings(
         self,
-        texts: List[str],
+        texts: Iterable[str],
         embeddings: List[List[float]],
         metadatas: List[dict],
         ids: List[str],
@@ -307,7 +306,7 @@ class Hologres(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
-        results: List[Tuple(str, str, float)] = self.storage.query_nearest_neighbours(
+        results: List[Tuple[str, str, float]] = self.storage.query_nearest_neighbours(
             embedding, k, filter
         )
 
