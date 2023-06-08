@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 from langchain.schema import (
     BaseChatMessageHistory,
@@ -23,11 +23,13 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             of a single chat session.
         endpoint_url: URL of the AWS endpoint to connect to. This argument
             is optional and useful for test purposes, like using Localstack.
-            If you plan to use AWS cloud service, you normally don't have to 
+            If you plan to use AWS cloud service, you normally don't have to
             worry about setting the endpoint_url.
     """
 
-    def __init__(self, table_name: str, session_id: str, endpoint_url: str = None):
+    def __init__(
+        self, table_name: str, session_id: str, endpoint_url: Optional[str] = None
+    ):
         import boto3
 
         if endpoint_url:
