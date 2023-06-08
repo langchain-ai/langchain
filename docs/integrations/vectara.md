@@ -37,13 +37,13 @@ To query the vectorstore, you can use the `similarity_search` method (or `simila
 results = vectara.similarity_score("How do I get a job?")
 ```
 
-`similarity_score` also supports the following additional arguments:
-- `k`: number of results to return (default 5)
-- `lambda_val`: the [lexical matching](https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching) factor for hybrid search (default 0.025)
+`similarity_search_with_score` also supports the following additional arguments:
+- `k`: number of results to return (defaults to 5)
+- `lambda_val`: the [lexical matching](https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching) factor for hybrid search (defaults to 0.025)
 - `filter`: a [filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview) to apply to the results (default None)
-- `num_sent_context`: number of sentences to include before/after the actual matching segment when returning results (default 5)
+- `n_sentence_context`: number of sentences to include before/after the actual matching segment when returning results (defaults to 3)
 
-The results are returned as a list of `SearchResult` objects, which contain the
+The results are returned as a list of relevant documents, and a relevance score of each document.
 
 
 For a more detailed walkthrough of the Vectara wrapper, see one of the two example notebooks:
