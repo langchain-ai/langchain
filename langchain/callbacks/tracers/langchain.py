@@ -12,6 +12,7 @@ from langchainplus_sdk import LangChainPlusClient
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum, TracerSession
+from langchain.env import get_runtime_environment
 from langchain.schema import BaseMessage, messages_to_dict
 
 logger = logging.getLogger(__name__)
@@ -72,9 +73,11 @@ class LangChainTracer(BaseTracer):
         """Persist a run."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        run = self.client.create_run(
-            **run.dict(exclude={"child_runs"}), session_name=self.session_name
-        )
+        run_dict = run.dict(exclude={"child_runs"})
+        extra = run_dict.get("extra", {})
+        extra["runtime"] = get_runtime_environment()
+        run_dict["extra"] = extra
+        run = self.client.create_run(**run_dict, session_name=self.session_name)
 
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
