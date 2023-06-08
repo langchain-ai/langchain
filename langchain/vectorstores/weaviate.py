@@ -124,10 +124,18 @@ class Weaviate(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Upload texts with metadata (properties) to Weaviate."""
-        from weaviate.util import get_valid_uuid
-
+        """
+        Upload texts with metadata (properties) to Weaviate.
+        Pass "uuids" to set custom IDs or overwrite existing texts
+        """
         ids = []
+        if not isinstance(texts, list):
+            texts = list(texts)
+
+        vectors: Optional[List[List[float]]] = None
+        if self._embedding:
+            vectors = self._embedding.embed_documents(texts)
+
         with self._client.batch as batch:
             for i, text in enumerate(texts):
                 data_properties = {self._text_key: text}
@@ -135,21 +143,11 @@ class Weaviate(VectorStore):
                     for key, val in metadatas[i].items():
                         data_properties[key] = _json_serializable(val)
 
-                # If the UUID of one of the objects already exists
-                # then the existing object will be replaced by the new object.
-                _id = (
-                    kwargs["uuids"][i] if "uuids" in kwargs else get_valid_uuid(uuid4())
-                )
-
-                if self._embedding is not None:
-                    vector = self._embedding.embed_documents([text])[0]
-                else:
-                    vector = None
-                batch.add_data_object(
+                _id = batch.add_data_object(
                     data_object=data_properties,
                     class_name=self._index_name,
-                    uuid=_id,
-                    vector=vector,
+                    uuid=kwargs["uuids"][i] if "uuids" in kwargs else None,
+                    vector=vectors[i] if vectors else None,
                 )
                 ids.append(_id)
         return ids
