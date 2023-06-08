@@ -5,7 +5,18 @@ import asyncio
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
+from typing import (
+    Any,
+    ClassVar,
+    Collection,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+)
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -347,6 +358,11 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
     vectorstore: VectorStore
     search_type: str = "similarity"
     search_kwargs: dict = Field(default_factory=dict)
+    allowed_search_types: ClassVar[Collection[str]] = (
+        "similarity",
+        "similarity_score_threshold",
+        "mmr",
+    )
 
     class Config:
         """Configuration for this pydantic object."""
@@ -356,19 +372,19 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
     @root_validator()
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""
-        if "search_type" in values:
-            search_type = values["search_type"]
-            if search_type not in ("similarity", "similarity_score_threshold", "mmr"):
-                raise ValueError(f"search_type of {search_type} not allowed.")
-            if search_type == "similarity_score_threshold":
-                score_threshold = values["search_kwargs"].get("score_threshold")
-                if (score_threshold is None) or (
-                    not isinstance(score_threshold, float)
-                ):
-                    raise ValueError(
-                        "`score_threshold` is not specified with a float value(0~1) "
-                        "in `search_kwargs`."
-                    )
+        search_type = values["search_type"]
+        if search_type not in cls.allowed_search_types:
+            raise ValueError(
+                f"search_type of {search_type} not allowed. Valid values are: "
+                f"{cls.allowed_search_types}"
+            )
+        if search_type == "similarity_score_threshold":
+            score_threshold = values["search_kwargs"].get("score_threshold")
+            if (score_threshold is None) or (not isinstance(score_threshold, float)):
+                raise ValueError(
+                    "`score_threshold` is not specified with a float value(0~1) "
+                    "in `search_kwargs`."
+                )
         return values
 
     def get_relevant_documents(self, query: str) -> List[Document]:
