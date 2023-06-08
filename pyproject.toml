@@ -284,6 +284,7 @@ all = [
     "azure-cognitiveservices-speech",
     "momento",
     "singlestoredb",
+    "tigrisdb",
     "nebula3-python",
 ]
 
