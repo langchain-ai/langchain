@@ -1,3 +1,4 @@
+from langchain.document_loaders.parsers.audio import OpenAIWhisperParser
 from langchain.document_loaders.parsers.html import BS4HTMLParser
 from langchain.document_loaders.parsers.pdf import (
     PDFMinerParser,
@@ -9,6 +10,7 @@ from langchain.document_loaders.parsers.pdf import (
 
 __all__ = [
     "BS4HTMLParser",
+    "OpenAIWhisperParser",
     "PDFMinerParser",
     "PDFPlumberParser",
     "PyMuPDFParser",

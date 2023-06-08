@@ -182,7 +182,11 @@ class Qdrant(VectorStore):
         return list(map(itemgetter(0), results))
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, filter: Optional[MetadataFilter] = None
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[MetadataFilter] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -192,7 +196,9 @@ class Qdrant(VectorStore):
             filter: Filter by metadata. Defaults to None.
 
         Returns:
-            List of Documents most similar to the query and score for each.
+            List of documents most similar to the query text and cosine
+            distance in float for each.
+            Lower score represents more similarity.
         """
 
         if filter is not None and isinstance(filter, dict):
@@ -221,6 +227,28 @@ class Qdrant(VectorStore):
             )
             for result in results
         ]
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores in the range [0, 1].
+
+        0 is dissimilar, 1 is most similar.
+
+        Args:
+            query: input text
+            k: Number of Documents to return. Defaults to 4.
+            **kwargs: kwargs to be passed to similarity search. Should include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
+
+        Returns:
+            List of Tuples of (doc, similarity_score)
+        """
+        return self.similarity_search_with_score(query, k, **kwargs)
 
     def max_marginal_relevance_search(
         self,
