@@ -62,7 +62,7 @@ class SnowflakeLoader(BaseLoader):
         self.page_content_columns = page_content_columns
         self.metadata_columns = metadata_columns
 
-    def _execute_query(self) -> List[str]:
+    def _execute_query(self) -> List[Dict[str, Any]]:
         try:
             import snowflake.connector
         except ImportError as ex:
@@ -86,14 +86,15 @@ class SnowflakeLoader(BaseLoader):
             cur = conn.cursor(DictCursor)
             cur.execute("USE DATABASE " + self.database)
             cur.execute("USE SCHEMA " + self.schema)
-            cur.execute(self.query, self.parameters)
-            cur.execute(self.query)
+            cur.execute(self.query, self.parameters)  # consider if this is needed
+            # cur.execute(self.query)  # comment this line
             query_result = cur.fetchall()
             query_result = [
                 {k.lower(): v for k, v in item.items()} for item in query_result
             ]
         except Exception as e:
-            return e
+            print(f"An error occurred: {e}")
+            query_result = []
         finally:
             cur.close()
         return query_result
@@ -101,15 +102,15 @@ class SnowflakeLoader(BaseLoader):
     def _get_columns(
         self, query_result: List[Dict[str, Any]]
     ) -> Tuple[List[str], List[str]]:
-        page_content_columns = self.page_content_columns
-        metadata_columns = self.metadata_columns
+        page_content_columns = self.page_content_columns if self.page_content_columns else []
+        metadata_columns = self.metadata_columns if self.metadata_columns else []
         if page_content_columns is None and query_result:
             page_content_columns = list(
                 query_result[0].keys()
-            )  # Convert dict_keys to list
+            )
         if metadata_columns is None:
             metadata_columns = []
-        return page_content_columns, metadata_columns
+        return page_content_columns or [], metadata_columns
 
     def lazy_load(self) -> Iterator[Document]:
         query_result = self._execute_query()
