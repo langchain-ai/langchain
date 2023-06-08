@@ -93,10 +93,13 @@ class BaseChatModel(BaseLanguageModel, ABC):
             for run_manager in run_managers:
                 run_manager.on_llm_error(e)
             raise e
+        flattened_outputs = [
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)
+            for res in results
+        ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
-        flattened_outputs = output.flatten()
         for manager, flattened_output in zip(run_managers, flattened_outputs):
             manager.on_llm_end(flattened_output)
         if run_managers:
@@ -143,10 +146,13 @@ class BaseChatModel(BaseLanguageModel, ABC):
                 *[run_manager.on_llm_error(e) for run_manager in run_managers]
             )
             raise e
+        flattened_outputs = [
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)
+            for res in results
+        ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
-        flattened_outputs = output.flatten()
         await asyncio.gather(
             *[
                 run_manager.on_llm_end(flattened_output)
