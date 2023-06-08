@@ -55,6 +55,9 @@ class Vectara(VectorStore):
         else:
             logging.debug(f"Using corpus id {self._vectara_corpus_id}")
         self._session = requests.Session()  # to reuse connections
+        adapter = requests.adapters.HTTPAdapter(max_retries=3)
+        self._session.mount('http://', adapter)
+
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
@@ -95,15 +98,11 @@ class Vectara(VectorStore):
             return False
         return True
 
-    def _index_doc(self, doc_id: str, text: str, metadata: dict) -> bool:
+    def _index_doc(self, doc: dict) -> bool:
         request: dict[str, Any] = {}
         request["customer_id"] = self._vectara_customer_id
         request["corpus_id"] = self._vectara_corpus_id
-        request["document"] = {
-            "document_id": doc_id,
-            "metadataJson": json.dumps(metadata),
-            "section": [{"text": text, "metadataJson": json.dumps(metadata)}],
-        }
+        request["document"] = doc
 
         response = self._session.post(
             headers=self._get_post_headers(),
@@ -138,15 +137,21 @@ class Vectara(VectorStore):
             List of ids from adding the texts into the vectorstore.
 
         """
-        ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
-        for i, doc in enumerate(texts):
-            doc_id = ids[i]
-            metadata = metadatas[i] if metadatas else {}
-            succeeded = self._index_doc(doc_id, doc, metadata)
-            if not succeeded:
-                self._delete_doc(doc_id)
-                self._index_doc(doc_id, doc, metadata)
-        return ids
+        doc_id = md5(' '.join(texts).encode()).hexdigest()
+        if metadatas is None:
+            metadatas = [{} for _ in texts]
+        doc = {
+            "document_id": doc_id,
+            "metadataJson": json.dumps({'source': 'langchain'}),
+            "section": [
+                {"text": text, "metadataJson": json.dumps(md)} for text,md in zip(texts,metadatas)
+            ],
+        }
+        succeeded = self._index_doc(doc)
+        if not succeeded:
+            self._delete_doc(doc_id)
+            self._index_doc(doc)
+        return [doc_id]
 
     def similarity_search_with_score(
         self,
@@ -154,7 +159,7 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
-        n_sentence_context: int = 5,
+        n_sentence_context: int = 3,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return Vectara documents most similar to query, along with scores.
@@ -236,7 +241,7 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
-        n_sentence_context: int = 5,
+        n_sentence_context: int = 3,
         **kwargs: Any,
     ) -> List[Document]:
         """Return Vectara documents most similar to query, along with scores.
@@ -301,7 +306,7 @@ class VectaraRetriever(VectorStoreRetriever):
             "lambda_val": 0.025,
             "k": 5,
             "filter": "",
-            "n_sentence_context": "5",
+            "n_sentence_context": "3",
         }
     )
     """Search params.
