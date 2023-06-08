@@ -25,7 +25,6 @@ wikipedia = {version = "^1", optional = true}
 elasticsearch = {version = "^8", optional = true}
 opensearch-py = {version = "^2.0.0", optional = true}
 redis = {version = "^4", optional = true}
-fauna = {version = "0.7.0", optional = true}
 manifest-ml = {version = "^0.0.1", optional = true}
 spacy = {version = "^3", optional = true}
 nltk = {version = "^3", optional = true}
@@ -161,7 +160,6 @@ wrapt = "^1.15.0"
 openai = "^0.27.4"
 elasticsearch = {extras = ["async"], version = "^8.6.2"}
 redis = "^4.5.4"
-fauna = "0.7.0"
 pinecone-client = "^2.2.1"
 pinecone-text = "^0.4.2"
 pymongo = "^4.3.3"
@@ -242,7 +240,6 @@ all = [
     "pymongo",
     "weaviate-client",
     "redis",
-    "fauna",
     "google-api-python-client",
     "google-auth",
     "wolframalpha",
