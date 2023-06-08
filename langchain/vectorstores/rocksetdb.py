@@ -5,11 +5,6 @@ import logging
 from enum import Enum
 from typing import Any, Iterable, List, Optional, Tuple
 
-# Make sure you have rockset client installed. If not, you can
-# install it with `pip install rockset`.
-from rockset import RocksetClient, ApiException
-from rockset.models import QueryResponse, DeleteDocumentsRequestData
-
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
@@ -52,8 +47,8 @@ class Rockset(VectorStore):
     def __init__(
         self,
         client: Any,
-        collection_name: str,
         embeddings: Embeddings,
+        collection_name: str,
         text_key: str,
         embedding_key: str,
     ):
@@ -69,6 +64,14 @@ class Rockset(VectorStore):
                            Rockset ingest transformation.
 
         """
+        try:
+            from rockset import RocksetClient
+        except ImportError:
+            raise ValueError(
+                "Could not import rockset client python package. "
+                "Please isntall it with `pip install rockset`."
+            )
+
         if not isinstance(client, RocksetClient):
             raise ValueError(
                 f"client should be an instance of rockset.RocksetClient, "
@@ -87,6 +90,7 @@ class Rockset(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore
 
@@ -100,7 +104,7 @@ class Rockset(VectorStore):
             List of ids from adding the texts into the vectorstore.
 
         """
-        batch = []
+        batch: list[dict] = []
         stored_ids = []
 
         for i, text in enumerate(texts):
@@ -123,8 +127,8 @@ class Rockset(VectorStore):
     @classmethod
     def from_texts(
         cls,
-        texts: Iterable[str],
-        embeddings: Embeddings,
+        texts: List[str],
+        embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         client: Any = None,
         collection_name: str = "",
@@ -132,18 +136,19 @@ class Rockset(VectorStore):
         embedding_key: str = "",
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
+        **kwargs: Any,
     ) -> Rockset:
         """Create Rockset wrapper with existing texts.
         This is intended as a quicker way to get started.
         """
 
         # Sanitize imputs
-        assert client is not None
-        assert collection_name != ""
-        assert text_key != ""
-        assert embedding_key != ""
+        assert client is not None, "Rockset Client cannot be None"
+        assert collection_name, "Collection name cannot be empty"
+        assert text_key, "Text key name cannot be empty"
+        assert embedding_key, "Embedding key cannot be empty"
 
-        rockset = cls(client, collection_name, embeddings, text_key, embedding_key)
+        rockset = cls(client, embedding, collection_name, text_key, embedding_key)
         rockset.add_texts(texts, metadatas, ids, batch_size)
         return rockset
 
@@ -162,8 +167,8 @@ class Rockset(VectorStore):
     def similarity_search_with_relevance_scores(
         self,
         query: str,
-        distance_func: DistanceFunction,
         k: int = 4,
+        distance_func: DistanceFunction = DistanceFunction.COSINE_SIM,
         where_str: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -184,10 +189,10 @@ class Rockset(VectorStore):
         Returns:
             List[Tuple[Document, float]]: List of documents with their relevance score
         """
-        return self.similarity_search_by_vector(
+        return self.similarity_search_by_vector_with_relevance_scores(
             self._embeddings.embed_query(query),
-            distance_func,
             k,
+            distance_func,
             where_str,
             **kwargs,
         )
@@ -195,40 +200,57 @@ class Rockset(VectorStore):
     def similarity_search(
         self,
         query: str,
-        distance_func: DistanceFunction,
         k: int = 4,
+        distance_func: DistanceFunction = DistanceFunction.COSINE_SIM,
         where_str: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Same as `similarity_search_with_relevance_scores` but
         doesn't return the scores.
         """
-        docs_and_scores = self.similarity_search_with_relevance_scores(
-            query, distance_func, k, where_str, **kwargs
+        return self.similarity_search_by_vector(
+            self._embeddings.embed_query(query),
+            k,
+            distance_func,
+            where_str,
+            **kwargs,
         )
-        return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_by_vector(
         self,
-        query_embedding: List[float],
-        distance_func: DistanceFunction,
+        embedding: List[float],
         k: int = 4,
+        distance_func: DistanceFunction = DistanceFunction.COSINE_SIM,
+        where_str: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Accepts a query_embedding (vector), and returns documents with
+        similar embeddings."""
+
+        docs_and_scores = self.similarity_search_by_vector_with_relevance_scores(
+            embedding, k, distance_func, where_str, **kwargs
+        )
+        return [doc for doc, _ in docs_and_scores]
+
+    def similarity_search_by_vector_with_relevance_scores(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        distance_func: DistanceFunction = DistanceFunction.COSINE_SIM,
         where_str: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Accepts a query_embedding (vector), and returns documents with
-        similar embeddings."""
+        similar embeddings along with their relevance scores."""
 
-        q_str = self._build_query_sql(query_embedding, distance_func, k, where_str)
+        q_str = self._build_query_sql(embedding, distance_func, k, where_str)
         try:
             query_response = self._client.Queries.query(sql={"query": q_str})
-        except ApiException as e:
+        except Exception as e:
             logger.error("Exception when querying Rockset: %s\n", e)
             return []
-        finalResult = []
-        for document in getattr(
-            query_response, query_response.attribute_map["results"]
-        ):
+        finalResult: list[Tuple[Document, float]] = []
+        for document in query_response.results:
             metadata = {}
             assert isinstance(
                 document, dict
@@ -257,7 +279,7 @@ class Rockset(VectorStore):
                     # inserted. No need to return them in metadata dict.
                     metadata[k] = v
             finalResult.append(
-                tuple([Document(page_content=page_content, metadata=metadata), score])
+                (Document(page_content=page_content, metadata=metadata), score)
             )
         return finalResult
 
@@ -274,18 +296,11 @@ class Rockset(VectorStore):
 
         q_embedding_str = ",".join(map(str, query_embedding))
         distance_str = f"""{distance_func.value}({self._embedding_key}, [{q_embedding_str}]) as dist"""
-        if where_str:
-            return f"""
+        where_str = f"WHERE {where_str}\n" if where_str else ""
+        return f"""\
 SELECT * EXCEPT({self._embedding_key}), {distance_str}
 FROM {self._collection_name}
-WHERE {where_str}
-ORDER BY dist {distance_func.order_by()}
-LIMIT {str(k)}
-"""
-
-        return f"""
-SELECT * EXCEPT({self._embedding_key}), {distance_str}
-FROM {self._collection_name}
+{where_str}\
 ORDER BY dist {distance_func.order_by()}
 LIMIT {str(k)}
 """
@@ -294,15 +309,19 @@ LIMIT {str(k)}
         add_doc_res = self._client.Documents.add_documents(
             collection=self._collection_name, data=batch
         )
-        return [
-            getattr(doc_status, doc_status.attribute_map["id"])
-            for doc_status in getattr(add_doc_res, add_doc_res.attribute_map["data"])
-        ]
+        return [doc_status._id for doc_status in add_doc_res.data]
 
     def delete_texts(self, ids: List[str]) -> None:
         """Delete a list of docs from the Rockset collection"""
+        try:
+            from rockset.models import DeleteDocumentsRequestData
+        except ImportError:
+            raise ValueError(
+                "Could not import rockset client python package. "
+                "Please isntall it with `pip install rockset`."
+            )
 
         self._client.Documents.delete_documents(
             collection=self._collection_name,
-            data=ids,
+            data=[DeleteDocumentsRequestData(id=i) for i in ids],
         )

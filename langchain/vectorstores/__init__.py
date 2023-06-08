@@ -17,6 +17,7 @@ from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSear
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.redis import Redis
+from langchain.vectorstores.rocksetdb import Rockset
 from langchain.vectorstores.sklearn import SKLearnVectorStore
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
@@ -56,4 +57,5 @@ __all__ = [
     "Clickhouse",
     "ClickhouseSettings",
     "Tigris",
+    "Rockset",
 ]

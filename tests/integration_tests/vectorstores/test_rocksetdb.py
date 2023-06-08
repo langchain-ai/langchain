@@ -1,17 +1,17 @@
-import os
 import logging
+import os
+import sys
 from typing import List
 
 import rockset
 import rockset.models
-import pytest
 
 from langchain.docstore.document import Document
+from langchain.vectorstores.rocksetdb import Rockset
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     fake_texts,
 )
-from langchain.vectorstores.rockset import Rockset
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,8 @@ logger = logging.getLogger(__name__)
 # It generates vector embeddings of length 10.
 #
 # Set env ROCKSET_DELETE_DOCS_ON_START=1 if you want to delete all docs from
-# the collection before running any test.
+# the collection before running any test. Be careful, this will delete any
+# existing documents in your Rockset collection.
 #
 # See https://rockset.com/blog/introducing-vector-search-on-rockset/ for more details.
 
@@ -54,7 +55,7 @@ class TestRockset:
             host = rockset.Regions.usw2a1
         elif region == "euc1a1":
             host = rockset.Regions.euc1a1
-        elif region == "dev-staging":
+        elif region == "dev":
             host = rockset.DevRegions.usw2a1
         else:
             logger.warn(
@@ -90,12 +91,8 @@ class TestRockset:
         embeddings = ConsistentFakeEmbeddings()
         embeddings.embed_documents(fake_texts)
         cls.rockset_vectorstore = Rockset(
-            client, collection_name, embeddings, text_key, embedding_key
+            client, embeddings, collection_name, text_key, embedding_key
         )
-
-    @classmethod
-    def teardown_class(cls) -> None:
-        cls.rocsket_vectorstore = None
 
     def test_rockset_insert_and_search(self) -> None:
         """Test end to end vector search in Rockset"""
@@ -118,7 +115,7 @@ class TestRockset:
             query="foo",
             distance_func=Rockset.DistanceFunction.COSINE_SIM,
             k=1,
-            where_str="metadata_index != 0".format(text_key),
+            where_str="metadata_index != 0",
         )
         assert output == [Document(page_content="bar", metadata={"metadata_index": 1})]
 
@@ -130,7 +127,7 @@ class TestRockset:
             4,
         )
         vector_str = ",".join(map(str, vector))
-        expected = f"""
+        expected = f"""\
 SELECT * EXCEPT(description_embedding), \
 COSINE_SIM(description_embedding, [{vector_str}]) as dist
 FROM langchain_demo
@@ -148,7 +145,7 @@ LIMIT 4
             "age >= 10",
         )
         vector_str = ",".join(map(str, vector))
-        expected = f"""
+        expected = f"""\
 SELECT * EXCEPT(description_embedding), \
 COSINE_SIM(description_embedding, [{vector_str}]) as dist
 FROM langchain_demo
