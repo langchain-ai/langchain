@@ -180,7 +180,7 @@ class ConfluenceLoader(BaseLoader):
         include_comments: bool = False,
         limit: Optional[int] = 50,
         max_pages: Optional[int] = 1000,
-        ocr_languages: Optional[str] = None,
+        ocr_languages: str = None,
     ) -> List[Document]:
         """
         :param space_key: Space key retrieved from a confluence URL, defaults to None
