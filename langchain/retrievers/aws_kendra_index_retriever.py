@@ -17,7 +17,7 @@ class AwsKendraIndexRetriever(BaseRetriever):
     kclient: Any
     """ boto3 client for Kendra. """
 
-    def __init__(self, kclient: Any, kendraindex: str, k=3, languagecode="en"):
+    def __init__(self, kclient: Any, kendraindex: str, k: int=3, languagecode: str="en"):
         self.kendraindex = kendraindex
         self.k = k
         self.languagecode = languagecode
