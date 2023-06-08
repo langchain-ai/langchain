@@ -61,7 +61,7 @@ class Serializable(BaseModel, ABC):
         super().__init__(**kwargs)
         self.lc_kwargs = kwargs
 
-    def to_json(self) -> SerializedConstructor:
+    def to_json(self) -> SerializedConstructor | SerializedNotImplemented:
         if not self.lc_serializable:
             return self.to_json_not_implemented()
 
@@ -70,7 +70,7 @@ class Serializable(BaseModel, ABC):
         lc_kwargs = {
             k: getattr(self, k, v)
             for k, v in self.lc_kwargs.items()
-            if not self.__exclude_fields__.get(k, False)
+            if not self.__exclude_fields__.get(k, False)  # type: ignore
         }
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
