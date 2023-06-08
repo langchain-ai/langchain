@@ -106,11 +106,7 @@ pyspark = {version = "^3.4.0", optional = true}
 tigrisdb = {version = "^1.0.0b6", optional = true}
 nebula3-python = {version = "^3.4.0", optional = true}
 langchainplus-sdk = ">=0.0.6"
-mwparserfromhell = {version = "^0.6.4", extras = ["extended_testing"]}
-mwxml = {version = "^0.3.3", extras = ["extended_testing"]}
-tigrisdb = {version = "^1.0.0b6", optional = true}
-nebula3-python = {version = "^3.4.0", optional = true}
-langchainplus-sdk = ">=0.0.6"
+mwparserfromhell = {version = "^0.6.4", optional = true}
 
 
 [tool.poetry.group.docs.dependencies]
@@ -308,7 +304,8 @@ extended_testing = [
  "tqdm",
  "lxml",
  "atlassian-python-api",
- "beautifulsoup4",
+ "mwparserfromhell",
+ "mwxml",
  "pandas",
  "telethon",
  "psychicapi",
