@@ -10,8 +10,8 @@ from langchain.evaluation.qa.eval_chain import QAEvalChain
 from langchain.evaluation.qa.eval_prompt import PROMPT as QA_DEFAULT_PROMPT
 from langchain.evaluation.qa.eval_prompt import SQL_PROMPT
 from langchain.evaluation.run_evaluators.base import (
-    RunEvalInputMapper,
     RunEvaluatorChain,
+    RunEvaluatorInputMapper,
     RunEvaluatorOutputParser,
 )
 from langchain.evaluation.run_evaluators.criteria_prompt import (
@@ -25,7 +25,7 @@ _QA_PROMPTS = {
 }
 
 
-class StringRunEvalInputMapper(RunEvalInputMapper, BaseModel):
+class StringRunEvaluatorInputMapper(RunEvaluatorInputMapper, BaseModel):
     """Maps the Run and Optional[Example] to a dictionary."""
 
     prediction_map: Mapping[str, str]
@@ -97,7 +97,7 @@ def get_qa_evaluator(
     eval_chain = QAEvalChain.from_llm(llm=llm, prompt=prompt, **kwargs)
     input_mapper = kwargs.pop(
         "input_mapper",
-        StringRunEvalInputMapper(
+        StringRunEvaluatorInputMapper(
             input_map={input_key: "query"},
             prediction_map={prediction_key: "result"},
             answer_map={answer_key: "answer"},
@@ -179,7 +179,7 @@ def get_criteria_evaluator(
     prompt_ = prompt.partial(criteria=criteria_str)
     input_mapper = kwargs.pop(
         "input_mapper",
-        StringRunEvalInputMapper(
+        StringRunEvaluatorInputMapper(
             input_map={input_key: "input"},
             prediction_map={prediction_key: "output"},
         ),
