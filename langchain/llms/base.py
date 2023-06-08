@@ -108,7 +108,9 @@ class BaseLLM(BaseLanguageModel, ABC):
         else:
             return verbose
 
-    def _flatten_llm_result(self, prompts: List[str], result: LLMResult) -> List[LLMResult]:
+    def _flatten_llm_result(
+        self, prompts: List[str], result: LLMResult
+    ) -> List[LLMResult]:
         """Flatten the LLMResult into a list of LLMResults for batched runs."""
         if len(result.generations) != len(prompts):
             raise ValueError(
@@ -119,7 +121,9 @@ class BaseLLM(BaseLanguageModel, ABC):
         for prompt, gens in zip(prompts, result.generations):
             try:
                 llm_output = {
-                    "completion_tokens": self.get_num_tokens("".join([gen.text for gen in gens])),
+                    "completion_tokens": self.get_num_tokens(
+                        "".join([gen.text for gen in gens])
+                    ),
                     "prompt_tokens": self.get_num_tokens(prompt),
                 }
                 llm_output["total_tokens"] = (
