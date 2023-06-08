@@ -185,16 +185,6 @@ class LLMResult(BaseModel):
     run: Optional[List[RunInfo]] = None
     """Run metadata."""
 
-    def flatten(self) -> List[LLMResult]:
-        """Flatten generations into a single list."""
-        return [
-            LLMResult(
-                generations=[gen],
-                llm_output=self.llm_output,
-            )
-            for gen in self.generations
-        ]
-
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, LLMResult):
             return NotImplemented
