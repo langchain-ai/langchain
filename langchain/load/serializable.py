@@ -67,7 +67,11 @@ class Serializable(BaseModel, ABC):
 
         secrets = dict()
         # Get latest values for kwargs if there is an attribute with same name
-        lc_kwargs = {k: getattr(self, k, v) for k, v in self.lc_kwargs.items()}
+        lc_kwargs = {
+            k: getattr(self, k, v)
+            for k, v in self.lc_kwargs.items()
+            if not self.__exclude_fields__.get(k, False)
+        }
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
         for cls in [None, *self.__class__.mro()]:

@@ -4,15 +4,14 @@ from typing import Any, Dict
 
 import pytest
 
+from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.llm import LLMChain
+from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.openai import OpenAI
 from langchain.load.dump import dumps
 from langchain.load.serializable import Serializable
-from langchain.prompts.prompt import PromptTemplate
-
-from langchain.chat_models.openai import ChatOpenAI
-
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain.prompts.prompt import PromptTemplate
 
 
 class Person(Serializable):
@@ -62,7 +61,14 @@ def test_person(snapshot: Any) -> None:
 
 @pytest.mark.requires("openai")
 def test_serialize_openai_llm(snapshot: Any) -> None:
-    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
+    llm = OpenAI(
+        model="davinci",
+        temperature=0.5,
+        openai_api_key="hello",
+        # This is excluded from serialization
+        callbacks=[LangChainTracer()],
+    )
+    llm.temperature = 0.7  # this is reflected in serialization
     assert dumps(llm, pretty=True) == snapshot
 
 
