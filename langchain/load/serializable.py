@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Dict, List, Literal, TypedDict, cast
+from typing import Any, Dict, List, Literal, TypedDict, Union, cast
 
 from pydantic import BaseModel, Field
 
@@ -61,7 +61,7 @@ class Serializable(BaseModel, ABC):
         super().__init__(**kwargs)
         self.lc_kwargs = kwargs
 
-    def to_json(self) -> SerializedConstructor | SerializedNotImplemented:
+    def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
         if not self.lc_serializable:
             return self.to_json_not_implemented()
 

@@ -225,7 +225,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
 
     @property
     def _prompt_type(self) -> str:
-        raise NotImplementedError
+        return "chat"
 
     def save(self, file_path: Union[Path, str]) -> None:
         raise NotImplementedError
