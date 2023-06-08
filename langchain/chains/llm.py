@@ -35,6 +35,10 @@ class LLMChain(Chain):
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
     """
 
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     prompt: BasePromptTemplate
     """Prompt object to use."""
     llm: BaseLanguageModel

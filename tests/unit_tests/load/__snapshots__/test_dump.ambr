@@ -104,6 +104,83 @@
   }
   '''
 # ---
+# name: test_serialize_llmchain_chat
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain",
+      "chains",
+      "llm",
+      "LLMChain"
+    ],
+    "kwargs": {
+      "llm": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "chat_models",
+          "openai",
+          "ChatOpenAI"
+        ],
+        "kwargs": {
+          "model": "davinci",
+          "temperature": 0.5,
+          "openai_api_key": "hello"
+        }
+      },
+      "prompt": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "prompts",
+          "chat",
+          "ChatPromptTemplate"
+        ],
+        "kwargs": {
+          "input_variables": [
+            "name"
+          ],
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain",
+                "prompts",
+                "chat",
+                "HumanMessagePromptTemplate"
+              ],
+              "kwargs": {
+                "prompt": {
+                  "lc": 1,
+                  "type": "constructor",
+                  "id": [
+                    "langchain",
+                    "prompts",
+                    "prompt",
+                    "PromptTemplate"
+                  ],
+                  "kwargs": {
+                    "input_variables": [
+                      "name"
+                    ],
+                    "template": "hello {name}!",
+                    "template_format": "f-string"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+  '''
+# ---
 # name: test_serialize_llmchain_with_non_serializable_arg
   '''
   {

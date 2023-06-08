@@ -22,6 +22,10 @@ from langchain.schema import (
 
 
 class BaseMessagePromptTemplate(Serializable, ABC):
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     @abstractmethod
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """To messages."""

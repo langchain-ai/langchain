@@ -127,6 +127,10 @@ class BaseOpenAI(BaseLLM):
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
 
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     client: Any  #: :meta private:
     model_name: str = Field("text-davinci-003", alias="model")
     """Model name to use."""

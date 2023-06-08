@@ -112,6 +112,10 @@ class BasePromptTemplate(Serializable, ABC):
         default_factory=dict
     )
 
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     class Config:
         """Configuration for this pydantic object."""
 

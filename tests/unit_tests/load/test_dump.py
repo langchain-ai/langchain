@@ -10,11 +10,19 @@ from langchain.load.dump import dumps
 from langchain.load.serializable import Serializable
 from langchain.prompts.prompt import PromptTemplate
 
+from langchain.chat_models.openai import ChatOpenAI
+
+from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+
 
 class Person(Serializable):
     secret: str
 
     you_can_see_me: str = "hello"
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -62,6 +70,16 @@ def test_serialize_openai_llm(snapshot: Any) -> None:
 def test_serialize_llmchain(snapshot: Any) -> None:
     llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
     prompt = PromptTemplate.from_template("hello {name}!")
+    chain = LLMChain(llm=llm, prompt=prompt)
+    assert dumps(chain, pretty=True) == snapshot
+
+
+@pytest.mark.requires("openai")
+def test_serialize_llmchain_chat(snapshot: Any) -> None:
+    llm = ChatOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
+    prompt = ChatPromptTemplate.from_messages(
+        [HumanMessagePromptTemplate.from_template("hello {name}!")]
+    )
     chain = LLMChain(llm=llm, prompt=prompt)
     assert dumps(chain, pretty=True) == snapshot
 

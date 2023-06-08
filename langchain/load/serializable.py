@@ -24,6 +24,13 @@ class SerializedNotImplemented(BaseSerialized):
 
 class Serializable(BaseModel, ABC):
     @property
+    def lc_serializable(self) -> bool:
+        """
+        Return whether or not the class is serializable.
+        """
+        return False
+
+    @property
     def lc_namespace(self) -> List[str]:
         """
         Return the namespace of the langchain object.
@@ -55,6 +62,9 @@ class Serializable(BaseModel, ABC):
         self.lc_kwargs = kwargs
 
     def to_json(self) -> SerializedConstructor:
+        if not self.lc_serializable:
+            return self.to_json_not_implemented()
+
         secrets = dict()
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {k: getattr(self, k, v) for k, v in self.lc_kwargs.items()}
