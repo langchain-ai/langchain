@@ -334,8 +334,8 @@ class ElasticKnnSearch(ElasticVectorSearch):
         es_cloud_id: Optional[str] = None,
         es_user: Optional[str] = None,
         es_password: Optional[str] = None,
-        vector_query_field: Optional[str] = 'vector',
-        query_field: Optional[str] = 'text'
+        vector_query_field: Optional[str] = "vector",
+        query_field: Optional[str] = "text",
     ):
         """
         Initializes an instance of the ElasticKnnSearch class and sets up the
@@ -547,7 +547,9 @@ class ElasticKnnSearch(ElasticVectorSearch):
         knn_query_body["boost"] = knn_boost
 
         # Generate the body of the standard Elasticsearch query
-        match_query_body = {"match": {self.query_field: {"query": query, "boost": query_boost}}}
+        match_query_body = {
+            "match": {self.query_field: {"query": query, "boost": query_boost}}
+        }
 
         # Perform the hybrid search on the Elasticsearch index and return the results.
         res = self.client.search(
@@ -559,4 +561,3 @@ class ElasticKnnSearch(ElasticVectorSearch):
             source=source,
         )
         return dict(res)
-
