@@ -30,8 +30,8 @@ def similarity_search_test() -> None:
     embeddings: OpenAIEmbeddings = OpenAIEmbeddings(model=model, chunk_size=1)
     # Create Vector store
     vector_store: AzureSearch = AzureSearch(
-        azure_cognitive_search_name=vector_store_address,
-        azure_cognitive_search_key=vector_store_password,
+        azure_search_endpoint=vector_store_address,
+        azure_search_key=vector_store_password,
         index_name=index_name,
         embedding_function=embeddings.embed_query,
     )
@@ -44,7 +44,7 @@ def similarity_search_test() -> None:
             {"title": "Title 3", "any_metadata": "Metadata 3"},
         ],
     )
-    time.sleep(0.25)
+    time.sleep(1)
     res = vector_store.similarity_search(query="Test 1", k=3)
     assert len(res) == 3
 
@@ -55,13 +55,13 @@ def from_text_similarity_search_test() -> None:
     embeddings: OpenAIEmbeddings = OpenAIEmbeddings(model=model, chunk_size=1)
     # Create Vector store
     vector_store: AzureSearch = AzureSearch.from_texts(
-        azure_cognitive_search_name=vector_store_address,
-        azure_cognitive_search_key=vector_store_password,
+        azure_search_endpoint=vector_store_address,
+        azure_search_key=vector_store_password,
         index_name=index_name,
         texts=["Test 1", "Test 2", "Test 3"],
         embedding=embeddings,
     )
-    time.sleep(0.25)
+    time.sleep(1)
     # Perform a similarity search
     res = vector_store.similarity_search(query="Test 1", k=3)
     assert len(res) == 3
@@ -73,8 +73,8 @@ def test_semantic_hybrid_search() -> None:
     embeddings: OpenAIEmbeddings = OpenAIEmbeddings(model=model, chunk_size=1)
     # Create Vector store
     vector_store: AzureSearch = AzureSearch(
-        azure_cognitive_search_name=vector_store_address,
-        azure_cognitive_search_key=vector_store_password,
+        azure_search_endpoint=vector_store_address,
+        azure_search_key=vector_store_password,
         index_name=index_name,
         embedding_function=embeddings.embed_query,
         semantic_configuration_name="default",
@@ -88,6 +88,6 @@ def test_semantic_hybrid_search() -> None:
             {"title": "Title 3", "any_metadata": "Metadata 3"},
         ],
     )
-    time.sleep(0.25)
+    time.sleep(1)
     res = vector_store.semantic_hybrid_search(query="What's Azure Search?", k=3)
     assert len(res) == 3

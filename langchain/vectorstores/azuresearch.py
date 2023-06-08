@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import uuid
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
+import base64
 
 import numpy as np
 from azure.core.credentials import AzureKeyCredential
@@ -33,30 +33,23 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever
 from langchain.vectorstores.base import VectorStore
+from langchain.utils import get_from_env
 
 logger = logging.getLogger()
 
-AZURESEARCH_DIMENSIONS = int(
-    os.environ.get("AZURESEARCH_DIMENSIONS", 1536)
-)  # Default to OpenAI's ada-002 embedding model vector size
-
 # Allow overriding field names for Azure Search
-FIELDS_ID = os.environ.get("AZURESEARCH_FIELDS_ID", "id")
-FIELDS_TITLE = os.environ.get("AZURESEARCH_FIELDS_TITLE", "title")
-FIELDS_CONTENT = os.environ.get("AZURESEARCH_FIELDS_CONTENT", "content")
-FIELDS_CONTENT_VECTOR = os.environ.get(
-    "AZURESEARCH_FIELDS_CONTENT_VECTOR", "content_vector"
-)
-FIELDS_TAG = os.environ.get("AZURESEARCH_FIELDS_TAG", "tag")
-FIELDS_METADATA = os.environ.get("AZURESEARCH_FIELDS_TAG", "metadata")
+FIELDS_ID = get_from_env(key="AZURESEARCH_FIELDS_ID",env_key="AZURESEARCH_FIELDS_ID", default="id")
+FIELDS_CONTENT = get_from_env(key="AZURESEARCH_FIELDS_CONTENT",env_key="AZURESEARCH_FIELDS_CONTENT", default="content")
+FIELDS_CONTENT_VECTOR = get_from_env(key="AZURESEARCH_FIELDS_CONTENT_VECTOR",env_key="AZURESEARCH_FIELDS_CONTENT_VECTOR", default="content_vector")
+FIELDS_METADATA = get_from_env(key="AZURESEARCH_FIELDS_TAG",env_key="AZURESEARCH_FIELDS_TAG", default="metadata")
 
 MAX_UPLOAD_BATCH_SIZE = 1000
 
-
-def get_search_client(
+def _get_search_client(
     endpoint: str,
     key: str,
     index_name: str,
+    embedding_function: Callable,
     semantic_configuration_name: Optional[str] = None,
 ) -> SearchClient:
     if key is None:
@@ -78,12 +71,6 @@ def get_search_client(
                 filterable=True,
             ),
             SearchableField(
-                name=FIELDS_TITLE,
-                type=SearchFieldDataType.String,
-                searchable=True,
-                retrievable=True,
-            ),
-            SearchableField(
                 name=FIELDS_CONTENT,
                 type=SearchFieldDataType.String,
                 searchable=True,
@@ -93,15 +80,8 @@ def get_search_client(
                 name=FIELDS_CONTENT_VECTOR,
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
-                dimensions=AZURESEARCH_DIMENSIONS,
+                dimensions=len(embedding_function("Text")),
                 vector_search_configuration="default",
-            ),
-            SearchableField(
-                name=FIELDS_TAG,
-                type=SearchFieldDataType.String,
-                filterable=True,
-                searchable=True,
-                retrievable=True,
             ),
             SearchableField(
                 name=FIELDS_METADATA,
@@ -134,10 +114,6 @@ def get_search_client(
                     SemanticConfiguration(
                         name=semantic_configuration_name,
                         prioritized_fields=PrioritizedFields(
-                            title_field=SemanticField(field_name=FIELDS_TITLE),
-                            prioritized_keywords_fields=[
-                                SemanticField(field_name=FIELDS_TAG)
-                            ],
                             prioritized_content_fields=[
                                 SemanticField(field_name=FIELDS_CONTENT)
                             ],
@@ -156,17 +132,18 @@ def get_search_client(
         index_client.create_index(index)
     # Create the search client
     return SearchClient(
-        endpoint=endpoint, index_name=index_name, credential=AzureKeyCredential(key)
+        endpoint=endpoint, index_name=index_name, credential=credential
     )
 
 
 class AzureSearch(VectorStore):
     def __init__(
         self,
-        azure_cognitive_search_name: str,
-        azure_cognitive_search_key: str,
+        azure_search_endpoint: str,
+        azure_search_key: str,
         index_name: str,
         embedding_function: Callable,
+        search_type: str = "hybrid",
         semantic_configuration_name: Optional[str] = None,
         semantic_query_language: str = "en-us",
         **kwargs: Any,
@@ -174,12 +151,14 @@ class AzureSearch(VectorStore):
         """Initialize with necessary components."""
         # Initialize base class
         self.embedding_function = embedding_function
-        self.client = get_search_client(
-            azure_cognitive_search_name,
-            azure_cognitive_search_key,
+        self.client = _get_search_client(
+            azure_search_endpoint,
+            azure_search_key,
             index_name,
+            embedding_function,
             semantic_configuration_name,
         )
+        self.search_type = search_type
         self.semantic_configuration_name = semantic_configuration_name
         self.semantic_query_language = semantic_query_language
 
@@ -197,14 +176,14 @@ class AzureSearch(VectorStore):
         for i, text in enumerate(texts):
             # Use provided key otherwise use default key
             key = keys[i] if keys else str(uuid.uuid4())
+            # Encoding key for Azure Search valid characters
+            key = base64.urlsafe_b64encode(bytes(key, "utf-8")).decode("ascii")
             metadata = metadatas[i] if metadatas else {}
             # Add data to index
             data.append(
                 {
                     "@search.action": "upload",
                     FIELDS_ID: key,
-                    FIELDS_TITLE: metadata.get(FIELDS_TITLE, ""),
-                    FIELDS_TAG: metadata.get(FIELDS_TAG, ""),
                     FIELDS_CONTENT: text,
                     FIELDS_CONTENT_VECTOR: np.array(
                         self.embedding_function(text), dtype=np.float32
@@ -221,6 +200,11 @@ class AzureSearch(VectorStore):
                     raise Exception(response)
                 # Reset data
                 data = []
+        
+        # Considering case where data is an exact multiple of batch-size entries
+        if len(data) == 0:
+            return ids
+
         # Upload data to index
         response = self.client.upload_documents(documents=data)
         # Check if all documents were successfully uploaded
@@ -229,32 +213,45 @@ class AzureSearch(VectorStore):
         else:
             raise Exception(response)
 
-    def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+
+    def similarity_search(self, query: str, k: int = 50, **kwargs: Any):
+        search_type = kwargs.get("search_type", self.search_type)
+        if search_type == "similarity":
+            docs = self.vector_search(query, k=k)
+        elif search_type == "hybrid":
+            docs = self.hybrid_search(query, k=k)
+        elif search_type == "semantic_hybrid":
+            docs = self.semantic_hybrid_search(query, k=k)
+        else:
+            raise ValueError(f"search_type of {search_type} not allowed.")
+        return docs
+
+    def vector_search(
+        self, query: str, k: int = 50, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
 
         Args:
             query (str): The query text for which to find similar documents.
-            k (int): The number of documents to return. Default is 4.
+            k (int): The number of documents to return. Default is 50.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
         """
-        docs_and_scores = self.similarity_search_with_score(
+        docs_and_scores = self.vector_search_with_score(
             query, k=k, filters=kwargs.get("filters", None)
         )
         return [doc for doc, _ in docs_and_scores]
 
-    def similarity_search_with_score(
-        self, query: str, k: int = 4, filters: Optional[str] = None
+    def vector_search_with_score(
+        self, query: str, k: int = 50, filters: Optional[str] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return. Defaults to 50.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -268,7 +265,7 @@ class AzureSearch(VectorStore):
                 k=k,
                 fields=FIELDS_CONTENT_VECTOR,
             ),
-            select=[f"{FIELDS_TITLE},{FIELDS_CONTENT},{FIELDS_METADATA}"],
+            select=[f"{FIELDS_ID},{FIELDS_CONTENT},{FIELDS_METADATA}"],
             filter=filters,
         )
         # Convert results to Document objects
@@ -278,19 +275,19 @@ class AzureSearch(VectorStore):
                     page_content=result[FIELDS_CONTENT],
                     metadata=json.loads(result[FIELDS_METADATA]),
                 ),
-                1 - float(result["@search.score"]),
+                float(result["@search.score"]),
             )
             for result in results
         ]
         return docs
 
-    def hybrid_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
+    def hybrid_search(self, query: str, k: int = 50, **kwargs: Any) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
 
         Args:
             query (str): The query text for which to find similar documents.
-            k (int): The number of documents to return. Default is 4.
+            k (int): The number of documents to return. Default is 50.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
@@ -301,13 +298,13 @@ class AzureSearch(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def hybrid_search_with_score(
-        self, query: str, k: int = 4, filters: Optional[str] = None
+        self, query: str, k: int = 50, filters: Optional[str] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query with an hybrid query.
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return. Defaults to 50.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -321,7 +318,7 @@ class AzureSearch(VectorStore):
                 k=k,
                 fields=FIELDS_CONTENT_VECTOR,
             ),
-            select=[f"{FIELDS_TITLE},{FIELDS_CONTENT},{FIELDS_METADATA}"],
+            select=[f"{FIELDS_ID},{FIELDS_CONTENT},{FIELDS_METADATA}"],
             filter=filters,
             top=k,
         )
@@ -332,21 +329,21 @@ class AzureSearch(VectorStore):
                     page_content=result[FIELDS_CONTENT],
                     metadata=json.loads(result[FIELDS_METADATA]),
                 ),
-                1 - float(result["@search.score"]),
+                float(result["@search.score"]),
             )
             for result in results
         ]
         return docs
 
     def semantic_hybrid_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = 50, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
 
         Args:
             query (str): The query text for which to find similar documents.
-            k (int): The number of documents to return. Default is 4.
+            k (int): The number of documents to return. Default is 50.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
@@ -357,13 +354,13 @@ class AzureSearch(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def semantic_hybrid_search_with_score(
-        self, query: str, k: int = 4, filters: Optional[str] = None
+        self, query: str, k: int = 50, filters: Optional[str] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query with an hybrid query.
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return. Defaults to 50.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -374,10 +371,10 @@ class AzureSearch(VectorStore):
                 value=np.array(
                     self.embedding_function(query), dtype=np.float32
                 ).tolist(),
-                k=k,
+                k=50, # Hardcoded value to maximize L2 retrieval
                 fields=FIELDS_CONTENT_VECTOR,
             ),
-            select=[f"{FIELDS_TITLE},{FIELDS_CONTENT},{FIELDS_METADATA}"],
+            select=[f"{FIELDS_ID},{FIELDS_CONTENT},{FIELDS_METADATA}"],
             filter=filters,
             query_type="semantic",
             query_language=self.semantic_query_language,
@@ -416,7 +413,7 @@ class AzureSearch(VectorStore):
                         },
                     },
                 ),
-                1 - float(result["@search.score"]),
+                float(result["@search.score"]),
             )
             for result in results
         ]
@@ -428,18 +425,15 @@ class AzureSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        azure_cognitive_search_name: str = os.getenv("AZURE_SEARCH_ENDPOINT", ""),
-        azure_cognitive_search_key: str = os.getenv("AZURE_SEARCH_ADMIN_KEY", ""),
-        index_name: Optional[str] = None,
+        azure_search_endpoint: str = "",
+        azure_search_key: str = "",
+        index_name: Optional[str] = "langchain-index",
         **kwargs: Any,
     ) -> AzureSearch:
-        # Name of the search index if not given
-        if not index_name:
-            index_name = uuid.uuid4().hex
         # Creating a new Azure Search instance
         azure_search = cls(
-            azure_cognitive_search_name,
-            azure_cognitive_search_key,
+            azure_search_endpoint,
+            azure_search_key,
             index_name,
             embedding.embed_query,
         )
@@ -450,8 +444,7 @@ class AzureSearch(VectorStore):
 class AzureSearchVectorStoreRetriever(BaseRetriever, BaseModel):
     vectorstore: AzureSearch
     search_type: str = "similarity"
-    k: int = 4
-    score_threshold: float = 0.4
+    k: int = 50
 
     class Config:
         """Configuration for this pydantic object."""
@@ -469,7 +462,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever, BaseModel):
 
     def get_relevant_documents(self, query: str) -> List[Document]:
         if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(query, k=self.k)
+            docs = self.vectorstore.vector_search(query, k=self.k)
         elif self.search_type == "hybrid":
             docs = self.vectorstore.hybrid_search(query, k=self.k)
         elif self.search_type == "semantic_hybrid":

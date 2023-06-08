@@ -19,8 +19,10 @@ from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
+from langchain.vectorstores.azuresearch import AzureSearch
 
 __all__ = [
+    "AzureSearch",
     "Redis",
     "ElasticVectorSearch",
     "FAISS",
