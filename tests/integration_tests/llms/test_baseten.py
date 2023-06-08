@@ -1,8 +1,13 @@
 """Test Baseten API wrapper."""
 import os
+
+import baseten
+import pytest
+
 from langchain.llms.baseten import Baseten
 
 
+@pytest.mark.requires(baseten)
 def test_baseten_call() -> None:
     """Test valid call to Baseten."""
     baseten.login(os.environ["BASETEN_API_KEY"])

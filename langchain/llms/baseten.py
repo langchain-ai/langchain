@@ -7,8 +7,8 @@ from pydantic import Field
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
-
 logger = logging.getLogger(__name__)
+
 
 class Baseten(LLM):
     """Use your Baseten models in Langchain
@@ -22,7 +22,7 @@ class Baseten(LLM):
     Any other model parameters can also
     be passed in with the format input={model_param: value, ...}
 
-    The Baseten model must accept a dictionary of input with the key 
+    The Baseten model must accept a dictionary of input with the key
     "prompt" and return a dictionary with a key "data" which maps
     to a list of response strings.
 
