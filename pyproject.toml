@@ -104,6 +104,7 @@ bibtexparser = {version = "^1.4.0", optional = true}
 singlestoredb = {version = "^0.6.1", optional = true}
 pyspark = {version = "^3.4.0", optional = true}
 tigrisdb = {version = "^1.0.0b6", optional = true}
+nebula3-python = {version = "^3.4.0", optional = true}
 langchainplus-sdk = ">=0.0.6"
 
 
@@ -283,7 +284,7 @@ all = [
     "azure-cognitiveservices-speech",
     "momento",
     "singlestoredb",
-    "tigrisdb"
+    "nebula3-python",
 ]
 
 # An extra used to be able to add extended testing.
