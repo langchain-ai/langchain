@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import requests
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.langchain import get_headers
 from langchain.callbacks.tracers.schemas import (
     ChainRun,
     LLMRun,
@@ -19,6 +18,14 @@ from langchain.callbacks.tracers.schemas import (
 )
 from langchain.schema import get_buffer_string
 from langchain.utils import raise_for_status_with_text
+
+
+def get_headers() -> Dict[str, Any]:
+    """Get the headers for the LangChain API."""
+    headers: Dict[str, Any] = {"Content-Type": "application/json"}
+    if os.getenv("LANGCHAIN_API_KEY"):
+        headers["x-api-key"] = os.getenv("LANGCHAIN_API_KEY")
+    return headers
 
 
 def _get_endpoint() -> str:
