@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
-from snowflake.connector import DictCursor
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -61,6 +59,7 @@ class SnowflakeLoader(BaseLoader):
     def _execute_query(self) -> List[Dict[str, Any]]:
         try:
             import snowflake.connector
+            from snowflake.connector import DictCursor
         except ImportError as ex:
             raise ValueError(
                 "Could not import snowflake-connector-python package. "
@@ -77,7 +76,6 @@ class SnowflakeLoader(BaseLoader):
             schema=self.schema,
             parameters=self.parameters,
         )
-        query_result = []
         try:
             cur = conn.cursor(DictCursor)
             cur.execute("USE DATABASE " + self.database)
