@@ -32,6 +32,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     recursive: bool = False
     file_types: Optional[Sequence[str]] = None
     load_trashed_files: bool = False
+    # NOTE(MthwRobinson) - changing the file_loader_cls to type here currently
+    # results in pydantic validation errors
     file_loader_cls: Any = None
     file_loader_kwargs: Dict["str", Any] = {}
 
