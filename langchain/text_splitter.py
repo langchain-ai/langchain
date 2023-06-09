@@ -20,6 +20,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 from langchain.docstore.document import Document
@@ -265,7 +266,7 @@ class Tokenizer:
 
 def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
     """Split incoming text and return chunks."""
-    splits = []
+    splits: list[str] = []
     input_ids = tokenizer.encode(text)
     start_idx = 0
     cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
@@ -338,16 +339,25 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
     ) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
-        from transformers import AutoTokenizer
+
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError:
+            raise ImportError(
+                "Could not import sentence_transformer python package. "
+                "This is needed in order to for SentenceTransformersTokenTextSplitter. "
+                "Please install it with `pip install sentence-transformers`."
+            )
 
         self.model_name = model_name
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self._model = SentenceTransformer(self.model_name)
+        self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 
     def _initialize_chunk_configuration(
         self, *, tokens_per_chunk: Optional[int]
     ) -> None:
-        self.maximum_tokens_per_chunk = self.tokenizer.max_len_single_sentence
+        self.maximum_tokens_per_chunk = cast(int, self._model.max_seq_length)
 
         if tokens_per_chunk is None:
             self.tokens_per_chunk = self.maximum_tokens_per_chunk
