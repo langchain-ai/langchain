@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import logging
 import os
 import traceback
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -113,6 +113,7 @@ class Clarifai(VectorStore):
         )
 
         if post_inputs_response.status.code != status_code_pb2.SUCCESS:
+            logging.error(post_inputs_response.status)
             raise Exception("Post inputs failed, status: " + post_inputs_response.status.description)
 
         input_id = post_inputs_response.inputs[0].id
@@ -150,9 +151,9 @@ class Clarifai(VectorStore):
                 metadata = metadatas[idx] if metadatas else {}
                 input_id = self._post_text_input(text, metadata)
                 input_ids.append(input_id)
-                print(f"Input {input_id} posted successfully.")
+                logging.debug(f"Input {input_id} posted successfully.")
             except Exception as error:
-                print(f"Post inputs failed: {error}")
+                logging.warning(f"Post inputs failed: {error}")
                 traceback.print_exc()
 
         return input_ids
@@ -227,7 +228,7 @@ class Clarifai(VectorStore):
             request.encoding = request.apparent_encoding
             requested_text = request.text
 
-            print(
+            logging.debug(
                 f"\tScore {hit.score:.2f} for annotation: {hit.annotation.id} off input: {hit.input.id}, text: {requested_text[:125]}"
             )
 
