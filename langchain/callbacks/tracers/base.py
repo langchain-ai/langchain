@@ -3,12 +3,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
-from langchain.schema import LLMResult
+from langchain.schema import Document, LLMResult
 
 
 class TracerException(Exception):
@@ -262,6 +262,65 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._end_trace(tool_run)
         self._on_tool_error(tool_run)
 
+    def on_retriever_start(
+        self,
+        query: str,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run when Retriever starts running."""
+        parent_run_id_ = str(parent_run_id) if parent_run_id else None
+        execution_order = self._get_execution_order(parent_run_id_)
+        retrieval_run = Run(
+            id=run_id,
+            name="Retriever",
+            parent_run_id=parent_run_id,
+            inputs={"query": query},
+            extra=kwargs,
+            start_time=datetime.utcnow(),
+            execution_order=execution_order,
+            child_execution_order=execution_order,
+            child_runs=[],
+            run_type=RunTypeEnum.retriever,
+        )
+        self._start_trace(retrieval_run)
+        self._on_retriever_start(retrieval_run)
+
+    def on_retriever_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        *,
+        run_id: UUID,
+        **kwargs: Any,
+    ) -> None:
+        """Run when Retriever errors."""
+        if not run_id:
+            raise TracerException("No run_id provided for on_retriever_error callback.")
+        retrieval_run = self.run_map.get(str(run_id))
+        if retrieval_run is None or retrieval_run.run_type != RunTypeEnum.retriever:
+            raise TracerException("No retriever Run found to be traced")
+
+        retrieval_run.error = repr(error)
+        retrieval_run.end_time = datetime.utcnow()
+        self._end_trace(retrieval_run)
+        self._on_retriever_error(retrieval_run)
+
+    def on_retriever_end(
+        self, documents: Sequence[Document], *, run_id: UUID, **kwargs: Any
+    ) -> None:
+        """Run when Retriever ends running."""
+        if not run_id:
+            raise TracerException("No run_id provided for on_retriever_end callback.")
+        retrieval_run = self.run_map.get(str(run_id))
+        if retrieval_run is None or retrieval_run.run_type != RunTypeEnum.retriever:
+            raise TracerException("No retriever Run found to be traced")
+        retrieval_run.outputs = {"documents": documents}
+        retrieval_run.end_time = datetime.utcnow()
+        self._end_trace(retrieval_run)
+        self._on_retriever_end(retrieval_run)
+
     def __deepcopy__(self, memo: dict) -> BaseTracer:
         """Deepcopy the tracer."""
         return self
@@ -299,3 +358,12 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Process the Chat Model Run upon start."""
+
+    def _on_retriever_start(self, run: Run) -> None:
+        """Process the Retriever Run upon start."""
+
+    def _on_retriever_end(self, run: Run) -> None:
+        """Process the Retriever Run."""
+
+    def _on_retriever_error(self, run: Run) -> None:
+        """Process the Retriever Run upon error."""
