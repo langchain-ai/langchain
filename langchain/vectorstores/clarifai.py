@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import logging
 import os
 import traceback
@@ -9,6 +10,8 @@ import requests
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+
+logger = logging.getLogger(__name__)
 
 
 class Clarifai(VectorStore):
@@ -51,7 +54,8 @@ class Clarifai(VectorStore):
             from clarifai.client import create_stub
         except ImportError:
             raise ValueError(
-                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
+                "Could not import clarifai python package. "
+                "Please install it with `pip install clarifai`."
             )
 
         if api_base is None:
@@ -92,7 +96,8 @@ class Clarifai(VectorStore):
             from google.protobuf.struct_pb2 import Struct
         except ImportError:
             raise ValueError(
-                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
+                "Could not import clarifai python package. "
+                "Please install it with `pip install clarifai`."
             )
 
         input_metadata = Struct()
@@ -113,8 +118,10 @@ class Clarifai(VectorStore):
         )
 
         if post_inputs_response.status.code != status_code_pb2.SUCCESS:
-            logging.error(post_inputs_response.status)
-            raise Exception("Post inputs failed, status: " + post_inputs_response.status.description)
+            logger.error(post_inputs_response.status)
+            raise Exception(
+                "Post inputs failed, status: " + post_inputs_response.status.description
+            )
 
         input_id = post_inputs_response.inputs[0].id
 
@@ -143,7 +150,9 @@ class Clarifai(VectorStore):
         assert len(list(texts)) > 0, "No texts provided to add to the vectorstore."
 
         if metadatas is not None:
-            assert len(list(texts)) == len(metadatas), "Number of texts and metadatas should be the same."
+            assert len(list(texts)) == len(
+                metadatas
+            ), "Number of texts and metadatas should be the same."
 
         input_ids = []
         for idx, text in enumerate(texts):
@@ -151,9 +160,9 @@ class Clarifai(VectorStore):
                 metadata = metadatas[idx] if metadatas else {}
                 input_id = self._post_text_input(text, metadata)
                 input_ids.append(input_id)
-                logging.debug(f"Input {input_id} posted successfully.")
+                logger.debug(f"Input {input_id} posted successfully.")
             except Exception as error:
-                logging.warning(f"Post inputs failed: {error}")
+                logger.warning(f"Post inputs failed: {error}")
                 traceback.print_exc()
 
         return input_ids
@@ -182,7 +191,8 @@ class Clarifai(VectorStore):
             from google.protobuf import json_format
         except ImportError:
             raise ValueError(
-                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
+                "Could not import clarifai python package. "
+                "Please install it with `pip install clarifai`."
             )
 
         # Get number of docs to return
@@ -213,7 +223,10 @@ class Clarifai(VectorStore):
 
         # Check if search was successful
         if post_annotations_searches_response.status.code != status_code_pb2.SUCCESS:
-            raise Exception("Post searches failed, status: " + post_annotations_searches_response.status.description)
+            raise Exception(
+                "Post searches failed, status: "
+                + post_annotations_searches_response.status.description
+            )
 
         # Retrieve hits
         hits = post_annotations_searches_response.hits
@@ -228,11 +241,13 @@ class Clarifai(VectorStore):
             request.encoding = request.apparent_encoding
             requested_text = request.text
 
-            logging.debug(
+            logger.debug(
                 f"\tScore {hit.score:.2f} for annotation: {hit.annotation.id} off input: {hit.input.id}, text: {requested_text[:125]}"
             )
 
-            docs_and_scores.append((Document(page_content=requested_text, metadata=metadata), hit.score))
+            docs_and_scores.append(
+                (Document(page_content=requested_text, metadata=metadata), hit.score)
+            )
 
         return docs_and_scores
 
