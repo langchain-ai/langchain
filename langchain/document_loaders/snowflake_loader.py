@@ -118,3 +118,6 @@ class SnowflakeLoader(BaseLoader):
             metadata = {k: v for k, v in row.items() if k in metadata_columns}
             doc = Document(page_content=page_content, metadata=metadata)
             yield doc
+
+    def load(self) -> List[Document]:
+        return list(self.lazy_load())
