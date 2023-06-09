@@ -25,6 +25,7 @@ from langchain.schema import (
     Generation,
     LLMResult,
     PromptValue,
+    RunInfo,
     get_buffer_string,
 )
 
@@ -190,6 +191,8 @@ class BaseLLM(BaseLanguageModel, ABC):
                 run_manager.on_llm_error(e)
                 raise e
             run_manager.on_llm_end(output)
+            if run_manager:
+                output.run = RunInfo(run_id=run_manager.run_id)
             return output
         if len(missing_prompts) > 0:
             run_manager = callback_manager.on_llm_start(
@@ -210,10 +213,14 @@ class BaseLLM(BaseLanguageModel, ABC):
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
+            run_info = None
+            if run_manager:
+                run_info = RunInfo(run_id=run_manager.run_id)
         else:
             llm_output = {}
+            run_info = None
         generations = [existing_prompts[i] for i in range(len(prompts))]
-        return LLMResult(generations=generations, llm_output=llm_output)
+        return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
 
     async def agenerate(
         self,
@@ -256,6 +263,8 @@ class BaseLLM(BaseLanguageModel, ABC):
                 await run_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
             await run_manager.on_llm_end(output, verbose=self.verbose)
+            if run_manager:
+                output.run = RunInfo(run_id=run_manager.run_id)
             return output
         if len(missing_prompts) > 0:
             run_manager = await callback_manager.on_llm_start(
@@ -278,10 +287,14 @@ class BaseLLM(BaseLanguageModel, ABC):
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
+            run_info = None
+            if run_manager:
+                run_info = RunInfo(run_id=run_manager.run_id)
         else:
             llm_output = {}
+            run_info = None
         generations = [existing_prompts[i] for i in range(len(prompts))]
-        return LLMResult(generations=generations, llm_output=llm_output)
+        return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
 
     def __call__(
         self, prompt: str, stop: Optional[List[str]] = None, callbacks: Callbacks = None

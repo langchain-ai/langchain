@@ -36,7 +36,7 @@ The first category of how-to guides here cover specific parts of working with ag
    :glob:
    :hidden:
 
-   ./examples/*
+   ./agents/examples/*
 
 
 Agent Toolkits
@@ -46,26 +46,26 @@ The next set of examples covers agents with toolkits.
 As opposed to the examples above, these examples are not intended to show off an agent `type`,
 but rather to show off an agent applied to particular use case.
 
-`SQLDatabase Agent <./agent_toolkits/sql_database.html>`_: This notebook covers how to interact with an arbitrary SQL database using an agent.
+`SQLDatabase Agent <./toolkits/sql_database.html>`_: This notebook covers how to interact with an arbitrary SQL database using an agent.
 
-`JSON Agent <./agent_toolkits/json.html>`_: This notebook covers how to interact with a JSON dictionary using an agent.
+`JSON Agent <./toolkits/json.html>`_: This notebook covers how to interact with a JSON dictionary using an agent.
 
-`OpenAPI Agent <./agent_toolkits/openapi.html>`_: This notebook covers how to interact with an arbitrary OpenAPI endpoint using an agent.
+`OpenAPI Agent <./toolkits/openapi.html>`_: This notebook covers how to interact with an arbitrary OpenAPI endpoint using an agent.
 
-`VectorStore Agent <./agent_toolkits/vectorstore.html>`_: This notebook covers how to interact with VectorStores using an agent.
+`VectorStore Agent <./toolkits/vectorstore.html>`_: This notebook covers how to interact with VectorStores using an agent.
 
-`Python Agent <./agent_toolkits/python.html>`_: This notebook covers how to produce and execute python code using an agent.
+`Python Agent <./toolkits/python.html>`_: This notebook covers how to produce and execute python code using an agent.
 
-`Pandas DataFrame Agent <./agent_toolkits/pandas.html>`_: This notebook covers how to do question answering over a pandas dataframe using an agent. Under the hood this calls the Python agent..
+`Pandas DataFrame Agent <./toolkits/pandas.html>`_: This notebook covers how to do question answering over a pandas dataframe using an agent. Under the hood this calls the Python agent..
 
-`CSV Agent <./agent_toolkits/csv.html>`_: This notebook covers how to do question answering over a csv file. Under the hood this calls the Pandas DataFrame agent.
+`CSV Agent <./toolkits/csv.html>`_: This notebook covers how to do question answering over a csv file. Under the hood this calls the Pandas DataFrame agent.
 
 .. toctree::
    :maxdepth: 1
    :glob:
    :hidden:
 
-   ./agent_toolkits/*
+   ./toolkits/*
 
 
 Agent Types

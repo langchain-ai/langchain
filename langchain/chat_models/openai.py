@@ -196,22 +196,22 @@ class ChatOpenAI(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        openai_api_key = get_from_dict_or_env(
+        values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        openai_organization = get_from_dict_or_env(
+        values["openai_organization"] = get_from_dict_or_env(
             values,
             "openai_organization",
             "OPENAI_ORGANIZATION",
             default="",
         )
-        openai_api_base = get_from_dict_or_env(
+        values["openai_api_base"] = get_from_dict_or_env(
             values,
             "openai_api_base",
             "OPENAI_API_BASE",
             default="",
         )
-        openai_proxy = get_from_dict_or_env(
+        values["openai_proxy"] = get_from_dict_or_env(
             values,
             "openai_proxy",
             "OPENAI_PROXY",
@@ -225,13 +225,6 @@ class ChatOpenAI(BaseChatModel):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        openai.api_key = openai_api_key
-        if openai_organization:
-            openai.organization = openai_organization
-        if openai_api_base:
-            openai.api_base = openai_api_base
-        if openai_proxy:
-            openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
         try:
             values["client"] = openai.ChatCompletion
         except AttributeError:
@@ -333,7 +326,7 @@ class ChatOpenAI(BaseChatModel):
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
+        params = dict(self._invocation_params)
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
@@ -383,6 +376,21 @@ class ChatOpenAI(BaseChatModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {**{"model_name": self.model_name}, **self._default_params}
+
+    @property
+    def _invocation_params(self) -> Mapping[str, Any]:
+        """Get the parameters used to invoke the model."""
+        openai_creds: Dict[str, Any] = {
+            "api_key": self.openai_api_key,
+            "api_base": self.openai_api_base,
+            "organization": self.openai_organization,
+            "model": self.model_name,
+        }
+        if self.openai_proxy:
+            import openai
+
+            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
+        return {**openai_creds, **self._default_params}
 
     @property
     def _llm_type(self) -> str:

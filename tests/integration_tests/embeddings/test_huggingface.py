@@ -26,7 +26,8 @@ def test_huggingface_embedding_query() -> None:
 def test_huggingface_instructor_embedding_documents() -> None:
     """Test huggingface embeddings."""
     documents = ["foo bar"]
-    embedding = HuggingFaceInstructEmbeddings()
+    model_name = "hkunlp/instructor-base"
+    embedding = HuggingFaceInstructEmbeddings(model_name=model_name)
     output = embedding.embed_documents(documents)
     assert len(output) == 1
     assert len(output[0]) == 768
@@ -35,6 +36,22 @@ def test_huggingface_instructor_embedding_documents() -> None:
 def test_huggingface_instructor_embedding_query() -> None:
     """Test huggingface embeddings."""
     query = "foo bar"
-    embedding = HuggingFaceInstructEmbeddings()
+    model_name = "hkunlp/instructor-base"
+    embedding = HuggingFaceInstructEmbeddings(model_name=model_name)
     output = embedding.embed_query(query)
     assert len(output) == 768
+
+
+def test_huggingface_instructor_embedding_normalize() -> None:
+    """Test huggingface embeddings."""
+    query = "foo bar"
+    model_name = "hkunlp/instructor-base"
+    encode_kwargs = {"normalize_embeddings": True}
+    embedding = HuggingFaceInstructEmbeddings(
+        model_name=model_name, encode_kwargs=encode_kwargs
+    )
+    output = embedding.embed_query(query)
+    assert len(output) == 768
+    eps = 1e-5
+    norm = sum([o**2 for o in output])
+    assert abs(1 - norm) <= eps

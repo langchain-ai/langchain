@@ -13,8 +13,11 @@ from typing import (
     TypeVar,
     Union,
 )
+from uuid import UUID
 
 from pydantic import BaseModel, Extra, Field, root_validator
+
+RUN_KEY = "__run"
 
 
 def get_buffer_string(
@@ -156,6 +159,12 @@ class ChatGeneration(Generation):
         return values
 
 
+class RunInfo(BaseModel):
+    """Class that contains all relevant metadata for a Run."""
+
+    run_id: UUID
+
+
 class ChatResult(BaseModel):
     """Class that contains all relevant information for a Chat Result."""
 
@@ -173,6 +182,16 @@ class LLMResult(BaseModel):
     each input could have multiple generations."""
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""
+    run: Optional[RunInfo] = None
+    """Run metadata."""
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, LLMResult):
+            return NotImplemented
+        return (
+            self.generations == other.generations
+            and self.llm_output == other.llm_output
+        )
 
 
 class PromptValue(BaseModel, ABC):
@@ -234,18 +253,11 @@ class BaseChatMessageHistory(ABC):
                        messages = json.loads(f.read())
                     return messages_from_dict(messages)
 
-               def add_user_message(self, message: str):
-                   message_ = HumanMessage(content=message)
-                   messages = self.messages.append(_message_to_dict(_message))
+               def add_message(self, message: BaseMessage) -> None:
+                   messages = self.messages.append(_message_to_dict(message))
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        json.dump(f, messages)
-
-               def add_ai_message(self, message: str):
-                   message_ = AIMessage(content=message)
-                   messages = self.messages.append(_message_to_dict(_message))
-                   with open(os.path.join(storage_path, session_id), 'w') as f:
-                       json.dump(f, messages)
-
+               
                def clear(self):
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        f.write("[]")
@@ -253,13 +265,17 @@ class BaseChatMessageHistory(ABC):
 
     messages: List[BaseMessage]
 
-    @abstractmethod
     def add_user_message(self, message: str) -> None:
         """Add a user message to the store"""
+        self.add_message(HumanMessage(content=message))
 
-    @abstractmethod
     def add_ai_message(self, message: str) -> None:
         """Add an AI message to the store"""
+        self.add_message(AIMessage(content=message))
+
+    def add_message(self, message: BaseMessage) -> None:
+        """Add a self-created message to the store"""
+        raise NotImplementedError
 
     @abstractmethod
     def clear(self) -> None:

@@ -30,12 +30,14 @@ For detailed instructions on how to get set up with Unstructured, see installati
    :maxdepth: 1
    :glob:
 
+   ./document_loaders/examples/audio.ipynb
    ./document_loaders/examples/conll-u.ipynb
    ./document_loaders/examples/copypaste.ipynb
    ./document_loaders/examples/csv.ipynb
    ./document_loaders/examples/email.ipynb
    ./document_loaders/examples/epub.ipynb
    ./document_loaders/examples/evernote.ipynb
+   ./document_loaders/examples/excel.ipynb
    ./document_loaders/examples/facebook_chat.ipynb
    ./document_loaders/examples/file_directory.ipynb
    ./document_loaders/examples/html.ipynb
@@ -88,7 +90,7 @@ We don't need any access permissions to these datasets and services.
 
 
 Proprietary dataset or service loaders
-------------------------------
+--------------------------------------
 These datasets and services are not from the public domain.
 These loaders mostly transform data from specific formats of applications or cloud services,
 for example **Google Drive**.
@@ -130,6 +132,7 @@ We need access tokens and sometime other parameters to get access to these datas
    ./document_loaders/examples/notion.ipynb
    ./document_loaders/examples/obsidian.ipynb
    ./document_loaders/examples/psychic.ipynb
+   ./document_loaders/examples/pyspark_dataframe.ipynb
    ./document_loaders/examples/readthedocs_documentation.ipynb
    ./document_loaders/examples/reddit.ipynb
    ./document_loaders/examples/roam.ipynb

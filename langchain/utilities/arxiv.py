@@ -29,9 +29,10 @@ class ArxivAPIWrapper(BaseModel):
           if True: the `metadata` of the loaded Documents gets all available meta info
             (see https://lukasschwab.me/arxiv.py/index.html#Result),
           if False: the `metadata` gets only the most informative fields.
+
     """
 
-    arxiv_client: Any  #: :meta private:
+    arxiv_search: Any  #: :meta private:
     arxiv_exceptions: Any  # :meta private:
     top_k_results: int = 3
     ARXIV_MAX_QUERY_LENGTH = 300

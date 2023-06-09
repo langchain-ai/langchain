@@ -1,18 +1,18 @@
-# Your PR Title (What it does)
-
 <!--
 Thank you for contributing to LangChain! Your PR will appear in our release under the title you set. Please make sure it highlights your valuable contribution.
 
 Replace this with a description of the change, the issue it fixes (if applicable), and relevant context. List any dependencies required for this change.
 
 After you're done, someone will review your PR. They may suggest improvements. If no one reviews your PR within a few days, feel free to @-mention the same people again, as notifications can get lost.
+
+Finally, we'd love to show appreciation for your contribution - if you'd like us to shout you out on Twitter, please also include your handle!
 -->
 
 <!-- Remove if not applicable -->
 
 Fixes # (issue)
 
-## Before submitting
+#### Before submitting
 
 <!-- If you're adding a new integration, please include:
 
@@ -26,9 +26,9 @@ etc:
 https://github.com/hwchase17/langchain/blob/master/.github/CONTRIBUTING.md
 -->
 
-## Who can review?
+#### Who can review?
 
-Community members can review the PR once tests pass. Tag maintainers/contributors who might be interested:
+Tag maintainers/contributors who might be interested:
 
 <!-- For a quicker response, figure out the right person to tag with @
 
@@ -52,5 +52,5 @@ Community members can review the PR once tests pass. Tag maintainers/contributor
 
   VectorStores / Retrievers / Memory
   - @dev2049
-        
+
  -->

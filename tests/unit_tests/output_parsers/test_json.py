@@ -64,6 +64,31 @@ NO_TICKS_WHITE_SPACE = """
 }
 """
 
+TEXT_BEFORE = """Thought: I need to use the search tool
+
+Action:
+```
+{
+  "foo": "bar"
+}
+```"""
+
+TEXT_AFTER = """```
+{
+  "foo": "bar"
+}
+```
+This should do the trick"""
+
+TEXT_BEFORE_AND_AFTER = """Action: Testing
+
+```
+{
+  "foo": "bar"
+}
+```
+This should do the trick"""
+
 TEST_CASES = [
     GOOD_JSON,
     JSON_WITH_NEW_LINES,
@@ -72,6 +97,8 @@ TEST_CASES = [
     TICKS_WITH_NEW_LINES_EVERYWHERE,
     NO_TICKS,
     NO_TICKS_WHITE_SPACE,
+    TEXT_BEFORE,
+    TEXT_AFTER,
 ]
 
 
