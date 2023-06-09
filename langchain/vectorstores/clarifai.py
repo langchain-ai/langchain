@@ -3,7 +3,9 @@ from __future__ import annotations
 import os
 import traceback
 from typing import Any, Dict, Iterable, List, Optional
+
 import requests
+
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
@@ -49,7 +51,8 @@ class Clarifai(VectorStore):
             from clarifai.client import create_stub
         except ImportError:
             raise ValueError(
-                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
+                "Could not import clarifai python package. "
+                "Please install it with `pip install clarifai`."
             )
 
         if api_base is None:
@@ -64,7 +67,12 @@ class Clarifai(VectorStore):
                 "Please set those env variables with a valid user ID, app ID and personal access token from https://clarifai.com/settings/security."
             )
 
-        self._auth = ClarifaiAuthHelper(user_id=self._user_id, app_id=self._app_id, pat=self._pat, base=self._api_base)
+        self._auth = ClarifaiAuthHelper(
+            user_id=self._user_id,
+            app_id=self._app_id,
+            pat=self._pat,
+            base=self._api_base,
+        )
         self._stub = create_stub(self._auth)
         self._userDataObject = self._auth.get_user_app_id_proto()
         self._number_of_docs = number_of_docs
@@ -85,7 +93,8 @@ class Clarifai(VectorStore):
             from google.protobuf.struct_pb2 import Struct
         except ImportError:
             raise ValueError(
-                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
+                "Could not import clarifai python package. "
+                "Please install it with `pip install clarifai`."
             )
 
         input_metadata = Struct()
@@ -106,7 +115,9 @@ class Clarifai(VectorStore):
         )
 
         if post_inputs_response.status.code != status_code_pb2.SUCCESS:
-            raise Exception("Post inputs failed, status: " + post_inputs_response.status.description)
+            raise Exception(
+                "Post inputs failed, status: " + post_inputs_response.status.description
+            )
 
         input_id = post_inputs_response.inputs[0].id
 
@@ -135,7 +146,9 @@ class Clarifai(VectorStore):
         assert len(texts) > 0, "No texts provided to add to the vectorstore."
 
         if metadatas is not None:
-            assert len(texts) == len(metadatas), "Number of texts and metadatas should be the same."
+            assert len(texts) == len(
+                metadatas
+            ), "Number of texts and metadatas should be the same."
 
         input_ids = []
         for idx, text in enumerate(texts):
@@ -174,7 +187,8 @@ class Clarifai(VectorStore):
             from google.protobuf import json_format
         except ImportError:
             raise ValueError(
-                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
+                "Could not import clarifai python package. "
+                "Please install it with `pip install clarifai`."
             )
 
         # Get number of docs to return
@@ -205,7 +219,10 @@ class Clarifai(VectorStore):
 
         # Check if search was successful
         if post_annotations_searches_response.status.code != status_code_pb2.SUCCESS:
-            raise Exception("Post searches failed, status: " + post_annotations_searches_response.status.description)
+            raise Exception(
+                "Post searches failed, status: "
+                + post_annotations_searches_response.status.description
+            )
 
         # Retrieve hits
         hits = post_annotations_searches_response.hits
@@ -224,7 +241,9 @@ class Clarifai(VectorStore):
                 f"\tScore {hit.score:.2f} for annotation: {hit.annotation.id} off input: {hit.input.id}, text: {requested_text[:125]}"
             )
 
-            docs_and_scores.append((Document(page_content=requested_text, metadata=metadata), hit.score))
+            docs_and_scores.append(
+                (Document(page_content=requested_text, metadata=metadata), hit.score)
+            )
 
         return docs_and_scores
 

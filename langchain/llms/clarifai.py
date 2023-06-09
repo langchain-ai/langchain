@@ -55,7 +55,9 @@ class Clarifai(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that we have all required info to access Clarifai platform and python package exists in environment."""
-        values["clarifai_pat_key"] = get_from_dict_or_env(values, "clarifai_pat_key", "CLARIFAI_PAT_KEY")
+        values["clarifai_pat_key"] = get_from_dict_or_env(
+            values, "clarifai_pat_key", "CLARIFAI_PAT_KEY"
+        )
         user_id = values.get("user_id")
         app_id = values.get("app_id")
         model_id = values.get("model_id")
@@ -79,7 +81,8 @@ class Clarifai(LLM):
             from clarifai_grpc.grpc.api.status import status_code_pb2
         except ImportError:
             raise ImportError(
-                "Could not import cohere python package. " "Please install it with `pip install clarifai`."
+                "Could not import cohere python package. "
+                "Please install it with `pip install clarifai`."
             )
         return values
 
@@ -120,20 +123,24 @@ class Clarifai(LLM):
         """
 
         try:
+            from clarifai.auth.helper import ClarifaiAuthHelper
+            from clarifai.client import create_stub
             from clarifai_grpc.grpc.api import (
                 resources_pb2,
                 service_pb2,
             )
             from clarifai_grpc.grpc.api.status import status_code_pb2
-            from clarifai.auth.helper import ClarifaiAuthHelper
-            from clarifai.client import create_stub
         except ImportError:
             raise ImportError(
-                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
+                "Could not import clarifai python package. "
+                "Please install it with `pip install clarifai`."
             )
 
         auth = ClarifaiAuthHelper(
-            user_id=self.user_id, app_id=self.app_id, pat=self.clarifai_pat_key, base=self.api_base
+            user_id=self.user_id,
+            app_id=self.app_id,
+            pat=self.clarifai_pat_key,
+            base=self.api_base,
         )
         self.userDataObject = auth.get_user_app_id_proto()
         self.stub = create_stub(auth)
@@ -150,13 +157,22 @@ class Clarifai(LLM):
             user_app_id=self.userDataObject,  # The userDataObject is created in the overview and is required when using a PAT
             model_id=self.model_id,
             version_id=self.model_version_id,  # This is optional. Defaults to the latest model version
-            inputs=[resources_pb2.Input(data=resources_pb2.Data(text=resources_pb2.Text(raw=prompt)))],
+            inputs=[
+                resources_pb2.Input(
+                    data=resources_pb2.Data(text=resources_pb2.Text(raw=prompt))
+                )
+            ],
         )
-        post_model_outputs_response = self.stub.PostModelOutputs(post_model_outputs_request)
+        post_model_outputs_response = self.stub.PostModelOutputs(
+            post_model_outputs_request
+        )
 
         if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
             print(post_model_outputs_response.status)
-            raise Exception("Post model outputs failed, status: " + post_model_outputs_response.status.description)
+            raise Exception(
+                "Post model outputs failed, status: "
+                + post_model_outputs_response.status.description
+            )
 
         text = post_model_outputs_response.outputs[0].data.text.raw
 
