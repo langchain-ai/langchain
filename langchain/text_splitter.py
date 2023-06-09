@@ -12,11 +12,13 @@ from typing import (
     Any,
     Callable,
     Collection,
+    Dict,
     Iterable,
     List,
     Literal,
     Optional,
     Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -252,6 +254,114 @@ class CharacterTextSplitter(TextSplitter):
         splits = _split_text_with_regex(text, self._separator, self._keep_separator)
         _separator = "" if self._keep_separator else self._separator
         return self._merge_splits(splits, _separator)
+
+
+class MarkdownHeaderTextSplitter(TextSplitter):
+    """Implementation of splitting markdown based on user-supplied delimiters.
+    The text associated with each delimiter is returned w/ delimier as metadata."""
+
+    def __init__(self, splits: List[Tuple[str, Optional[str]]], **kwargs: Any):
+        # Sort by seperator length and the number of "#"
+        # E.g.,  Ensure "###" will come before "##" and "#"
+        # TODO: Both means of sorting may not be required
+        """Create a new TextSplitter."""
+        super().__init__(**kwargs)
+        self.splits = sorted(splits, key=lambda x: (-len(x[0]), -x[0].count("#")))
+
+    def split_text(self, text: str) -> List[Dict[str, Union[str, str]]]:
+        # Regex matches any of the separators in self.splits (except for the newline)
+        # (Newlines create line breaks, which we may want to split, or separate MD headers and their contents)
+        pattern = "|".join(
+            "(%s\\s*(.*))" % re.escape(sep) for sep, _ in self.splits if sep != "\n"
+        )
+
+        # Text chunk with metadata
+        chunks = []
+
+        # Keys are names of metadata
+        current_metadata = {name: "" for sep, name in self.splits if name}
+        current_content = []
+
+        # Split by newlines, but preserve the exact formatting of the original text
+        for line in text.splitlines(keepends=True):
+            # Removes any leading or trailing whitespace
+            stripped_line = line.strip()
+
+            # Match current line of text against the regular expression pattern
+            match = re.match(pattern, stripped_line)
+
+            # If the line starts w/ a separator defined in splits (like "#" or "##"), it will be a match
+            # Start of a new chunk of content
+            if match:
+                # See if we have accumulated content from previous lines
+                if current_content:
+                    # If so, append it as a chunk and write the chunk since we hit a new seperator
+                    chunks.append(
+                        {
+                            "content": "".join(current_content).strip(),
+                            "metadata": dict(current_metadata),
+                        }
+                    )
+                    # Reset the content
+                    current_content = []
+
+                # Check for the seperator
+                for sep, name in self.splits:
+                    if stripped_line.startswith(sep):
+                        if name is not None:
+                            # Update the rest of the line (after the separator) as the value for that header
+                            current_metadata[name] = stripped_line[len(sep) :].strip()
+
+                            # If the separator is "#", it also clears out the metadata for "Header 2"
+                            # A new "Header 1" implies a new section of the document
+                            if sep == "#":
+                                # Clear out metadata for all headers lower in hierarchy
+                                current_header_index = [
+                                    index
+                                    for index, (sep_, _) in enumerate(self.splits)
+                                    if sep_ == sep
+                                ][0]
+                                current_metadata_keys = list(current_metadata.keys())
+                                for header in current_metadata_keys:
+                                    header_index = [
+                                        index
+                                        for index, (_, name) in enumerate(self.splits)
+                                        if name == header
+                                    ]
+                                    if (
+                                        header_index
+                                        and header_index[0] > current_header_index
+                                    ):
+                                        del current_metadata[header]
+                        break
+
+            # If the line is empty (i.e., only contains whitespace, or is completely empty)
+            # and newline ("\n") is one of the separators, it appends the current content to
+            # the chunks list as a new chunk, and resets the current_content to an empty list
+            elif not stripped_line and ("\n", None) in self.splits:
+                # If we have accumulated content, append it as a chunk
+                if current_content:
+                    chunks.append(
+                        {
+                            "content": "".join(current_content).strip(),
+                            "metadata": dict(current_metadata),
+                        }
+                    )
+                    current_content = []  # reset the content
+
+            # Apend non-empty lines
+            elif stripped_line:
+                current_content.append(stripped_line)
+
+        # Append the last chunk
+        if current_content:
+            chunks.append(
+                {
+                    "content": "".join(current_content).strip(),
+                    "metadata": dict(current_metadata),
+                }
+            )
+        return [chunk for chunk in chunks if chunk["content"]]
 
 
 # should be in newer Python versions (3.10+)
