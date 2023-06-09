@@ -159,3 +159,12 @@ node_modules
 docs/.yarn/
 docs/node_modules/
 docs/.docusaurus/
+docs/.cache-loader/
+docs/_dist
+docs/api_reference/_build
+docs/docs_skeleton/build
+docs/docs_skeleton/node_modules
+docs/docs_skeleton/yarn.lock
+*/_build
+_build
+docs/api_reference/_build

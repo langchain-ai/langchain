@@ -118,6 +118,8 @@ toml = "^0.10.2"
 myst-nb = "^0.17.1"
 linkchecker = "^10.2.1"
 sphinx-copybutton = "^0.5.1"
+nbconvert = "^7.4.0"
+nbdoc = "^0.0.82"
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are

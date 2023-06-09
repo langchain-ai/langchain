@@ -1,0 +1,15 @@
+# Document QA
+
+This walkthrough covers how to use LangChain for question answering over a list of documents.
+
+## Overview
+LangChain provides an assortment of chains specifically tailored for dealing with unstructured text data: StuffDocumentsChain, MapReduceDocumentsChain, RefineDocumentsChain, and MapRerankDocumentsChain. These chains form the basic building blocks for developing more complex chains that interact with such data. They are designed to take both documents and a question as input, then utilize the language model to formulate a response based on the provided documents.
+
+- `StuffDocumentsChain`: This chain is the most straightforward among the three. It simply injects all input documents into the prompt as context and returns the answer to the question. It is suitable for QA tasks over a small number of documents.
+- `MapReduceDocumentsChain`: This chain incorporates a preprocessing step to select relevant sections from each document until the total number of tokens is less than the maximum number of tokens allowed by the model. It then uses the transformed documents as context to answer the question. It is suitable for QA tasks over larger documents and can run the preprocessing step in parallel, reducing the running time.
+- `RefineDocumentsChain`: This chain iterates over the input documents one by one, updating an intermediate answer with each iteration. It uses the previous version of the answer and the next document as context. It is suitable for QA tasks over a large number of documents.
+- `MapRerankDocumentsChain`: This chain runs an initial prompt on each chunk of data, that not only tries to complete a task but also gives a score for how certain it is in its answer. The responses are then ranked according to this score, and the highest score is returned.
+
+import Example from "@snippets/modules/chains/index_examples/question_answering.mdx"
+
+<Example/>

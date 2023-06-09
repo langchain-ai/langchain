@@ -1,0 +1,15 @@
+# Time Weighted VectorStore
+
+This retriever uses a combination of semantic similarity and a time decay.
+
+The algorithm for scoring them is:
+
+```python
+semantic_similarity + (1.0 - decay_rate) ** hours_passed
+```
+
+Notably, `hours_passed` refers to the hours passed since the object in the retriever **was last accessed**, not since it was created. This means that frequently accessed objects remain "fresh."
+
+import Example from "@snippets/modules/data_io/retrievers/how_to/time_weighted_vectorstore.mdx"
+
+<Example/>

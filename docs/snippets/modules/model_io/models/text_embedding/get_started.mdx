@@ -1,0 +1,40 @@
+```python
+from langchain.embeddings import OpenAIEmbeddings
+
+embedding_model = OpenAIEmbeddings()
+embeddings = embedding_model.embed_documents(
+    [
+        "Hi there!",
+        "Oh, hello!",
+        "What's your name?",
+        "My friends call me World",
+        "Hello World!"
+    ]
+)
+len(embeddings), len(embeddings[0])
+```
+
+<CodeOutputBlock language="python">
+
+```
+(5, 1536)
+```
+
+</CodeOutputBlock>
+
+```python
+embedded_query = embedding_model.embed_query("What was the name mentioned in the conversation?")
+embedded_query[:5]
+```
+
+<CodeOutputBlock language="python">
+
+```
+[0.0053587136790156364,
+ -0.0004999046213924885,
+ 0.038883671164512634,
+ -0.003001077566295862,
+ -0.00900818221271038]
+```
+
+</CodeOutputBlock>
