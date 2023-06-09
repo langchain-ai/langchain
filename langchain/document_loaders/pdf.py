@@ -63,8 +63,8 @@ class BasePDFLoader(BaseLoader, ABC):
 
             self.web_path = self.file_path
             self.temp_dir = tempfile.TemporaryDirectory()
-            temp_pdf = Path(self.temp_dir.name) / 'tmp.pdf'
-            with open(temp_pdf, mode='wb') as f:
+            temp_pdf = Path(self.temp_dir.name) / "tmp.pdf"
+            with open(temp_pdf, mode="wb") as f:
                 f.write(r.content)
             self.file_path = str(temp_pdf)
         elif not os.path.isfile(self.file_path):
