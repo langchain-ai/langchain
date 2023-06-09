@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
-import pandas as pd
+from snowflake.connector import DictCursor
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from snowflake.connector import DictCursor
-
-if TYPE_CHECKING:
-    from snowflake.connector import SnowflakeConnection
 
 
 class SnowflakeLoader(BaseLoader):
@@ -47,8 +43,8 @@ class SnowflakeLoader(BaseLoader):
             role: Snowflake role.
             database: Snowflake database
             schema: Snowflake schema
-            page_content_columns: Optional. The columns to write into the `page_content` of the document.
-            metadata_columns: Optional. The columns to write into the `metadata` of the document.
+            page_content_columns: Optional. Columns written to Document `page_content`.
+            metadata_columns: Optional. Columns written to Document `metadata`.
         """
         self.query = query
         self.user = user
@@ -86,8 +82,7 @@ class SnowflakeLoader(BaseLoader):
             cur = conn.cursor(DictCursor)
             cur.execute("USE DATABASE " + self.database)
             cur.execute("USE SCHEMA " + self.schema)
-            cur.execute(self.query, self.parameters)  # consider if this is needed
-            # cur.execute(self.query)  # comment this line
+            cur.execute(self.query, self.parameters)
             query_result = cur.fetchall()
             query_result = [
                 {k.lower(): v for k, v in item.items()} for item in query_result
@@ -102,12 +97,12 @@ class SnowflakeLoader(BaseLoader):
     def _get_columns(
         self, query_result: List[Dict[str, Any]]
     ) -> Tuple[List[str], List[str]]:
-        page_content_columns = self.page_content_columns if self.page_content_columns else []
+        page_content_columns = (
+            self.page_content_columns if self.page_content_columns else []
+        )
         metadata_columns = self.metadata_columns if self.metadata_columns else []
         if page_content_columns is None and query_result:
-            page_content_columns = list(
-                query_result[0].keys()
-            )
+            page_content_columns = list(query_result[0].keys())
         if metadata_columns is None:
             metadata_columns = []
         return page_content_columns or [], metadata_columns
