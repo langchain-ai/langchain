@@ -186,15 +186,19 @@ class Qdrant(VectorStore):
             score_threshold:
                 Define a minimal score threshold for the result.
                 If defined, less similar results will not be returned.
-                Score of the returned result might be higher or smaller than the threshold depending
-                on the Distance function used.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
                 E.g. for cosine similarity only higher scores will be returned.
             consistency:
-                Read consistency of the search. Defines how many replicas should be queried before returning the result.
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
                 Values:
-                - int - number of replicas to query, values should present in all queried replicas
-                - 'majority' - query all replicas, but return values present in the majority of replicas
-                - 'quorum' - query the majority of replicas, return values present in all of them
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                               majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                             all of them
                 - 'all' - query all replicas, and return values present in all replicas
 
         Returns:
@@ -237,15 +241,19 @@ class Qdrant(VectorStore):
             score_threshold:
                 Define a minimal score threshold for the result.
                 If defined, less similar results will not be returned.
-                Score of the returned result might be higher or smaller than the threshold depending
-                on the Distance function used.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
                 E.g. for cosine similarity only higher scores will be returned.
             consistency:
-                Read consistency of the search. Defines how many replicas should be queried before returning the result.
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
                 Values:
-                - int - number of replicas to query, values should present in all queried replicas
-                - 'majority' - query all replicas, but return values present in the majority of replicas
-                - 'quorum' - query the majority of replicas, return values present in all of them
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                               majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                             all of them
                 - 'all' - query all replicas, and return values present in all replicas
 
         Returns:
@@ -448,21 +456,25 @@ class Qdrant(VectorStore):
                 Have effect only in distributed mode.
             write_consistency_factor:
                 Write consistency factor for collection. Default is 1, minimum is 1.
-                Defines how many replicas should apply the operation for us to consider it successful.
-                Increasing this number will make the collection more resilient to inconsistencies, but will
-                also make it fail if not enough replicas are available.
+                Defines how many replicas should apply the operation for us to consider
+                it successful. Increasing this number will make the collection more
+                resilient to inconsistencies, but will also make it fail if not enough
+                replicas are available.
                 Does not have any performance impact.
                 Have effect only in distributed mode.
             on_disk_payload:
                 If true - point`s payload will not be stored in memory.
                 It will be read from the disk every time it is requested.
                 This setting saves RAM by (slightly) increasing the response time.
-                Note: those payload values that are involved in filtering and are indexed - remain in RAM.
+                Note: those payload values that are involved in filtering and are
+                indexed - remain in RAM.
             hnsw_config: Params for HNSW index
             optimizers_config: Params for optimizer
             wal_config: Params for Write-Ahead-Log
-            quantization_config: Params for quantization, if None - quantization will be disabled
-            init_from: Use data stored in another collection to initialize this collection
+            quantization_config:
+                Params for quantization, if None - quantization will be disabled
+            init_from:
+                Use data stored in another collection to initialize this collection
             **kwargs:
                 Additional arguments passed directly into REST client initialization
 
