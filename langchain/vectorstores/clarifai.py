@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import os
 import traceback
-import uuid
 from typing import Any, Dict, Iterable, List, Optional
-
+import requests
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
@@ -27,13 +26,24 @@ class Clarifai(VectorStore):
 
     def __init__(
         self,
-        user_id: str,
-        app_id: str,
+        user_id: Optional[str] = None,
+        app_id: Optional[str] = None,
         pat: Optional[str] = None,
         number_of_docs: Optional[int] = None,
         api_base: Optional[str] = None,
     ) -> None:
-        """Initialize with Clarifai client."""
+        """Initialize with Clarifai client.
+
+        Args:
+            user_id (Optional[str], optional): User ID. Defaults to None.
+            app_id (Optional[str], optional): App ID. Defaults to None.
+            pat (Optional[str], optional): Personal access token. Defaults to None.
+            number_of_docs (Optional[int], optional): Number of documents to return during vector search. Defaults to None.
+            api_base (Optional[str], optional): API base. Defaults to None.
+
+        Raises:
+            ValueError: If user ID, app ID or personal access token is not provided.
+        """
         try:
             from clarifai.auth.helper import DEFAULT_BASE, ClarifaiAuthHelper
             from clarifai.client import create_stub
@@ -42,31 +52,41 @@ class Clarifai(VectorStore):
                 "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
             )
 
-        if pat is None:
-            if "CLARIFAI_PAT_KEY" not in os.environ:
-                raise ValueError(
-                    "Could not find CLARIFAI_PAT in your environment. "
-                    "Please set that env variable with a valid personal access token from https://clarifai.com/settings/security."
-                )
-            pat = os.environ["CLARIFAI_PAT_KEY"]
-
         if api_base is None:
-            api_base = DEFAULT_BASE
+            self._api_base = DEFAULT_BASE
 
-        auth = ClarifaiAuthHelper(user_id=user_id, app_id=app_id, pat=pat, base=api_base)
-        stub = create_stub(auth)
-        userDataObject = auth.get_user_app_id_proto()
+        self._user_id = user_id or os.environ.get("CLARIFAI_USER_ID")
+        self._app_id = app_id or os.environ.get("CLARIFAI_APP_ID")
+        self._pat = pat or os.environ.get("CLARIFAI_PAT_KEY")
+        if self._user_id is None or self._app_id is None or self._pat is None:
+            raise ValueError(
+                "Could not find CLARIFAI_USER_ID, CLARIFAI_APP_ID or CLARIFAI_PAT in your environment. "
+                "Please set those env variables with a valid user ID, app ID and personal access token from https://clarifai.com/settings/security."
+            )
 
-        self._stub = stub
-        self._auth = auth
-        self._userDataObject = userDataObject
+        self._auth = ClarifaiAuthHelper(user_id=self._user_id, app_id=self._app_id, pat=self._pat, base=self._api_base)
+        self._stub = create_stub(self._auth)
+        self._userDataObject = self._auth.get_user_app_id_proto()
         self._number_of_docs = number_of_docs
 
     def _post_text_input(self, text: str, metadata: dict) -> str:
-        """Post text to Clarifai and return the ID of the input."""
-        from clarifai_grpc.grpc.api import resources_pb2, service_pb2
-        from clarifai_grpc.grpc.api.status import status_code_pb2
-        from google.protobuf.struct_pb2 import Struct
+        """Post text to Clarifai and return the ID of the input.
+
+        Args:
+            text (str): Text to post.
+            metadata (dict): Metadata to post.
+
+        Returns:
+            str: ID of the input.
+        """
+        try:
+            from clarifai_grpc.grpc.api import resources_pb2, service_pb2
+            from clarifai_grpc.grpc.api.status import status_code_pb2
+            from google.protobuf.struct_pb2 import Struct
+        except ImportError:
+            raise ValueError(
+                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
+            )
 
         input_metadata = Struct()
         input_metadata.update(metadata)
@@ -125,7 +145,7 @@ class Clarifai(VectorStore):
                 input_ids.append(input_id)
                 print(f"Input {input_id} posted successfully.")
             except Exception as error:
-                print(f"Post inputs failed: {error}" % error)
+                print(f"Post inputs failed: {error}")
                 traceback.print_exc()
 
         return input_ids
@@ -138,7 +158,7 @@ class Clarifai(VectorStore):
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        """Run similarity search with Clarifai.
+        """Run similarity search with score using Clarifai.
 
         Args:
             query (str): Query text to search for.
@@ -148,11 +168,16 @@ class Clarifai(VectorStore):
         Returns:
             List[Document]: List of documents most simmilar to the query text.
         """
-        import requests
-        from clarifai_grpc.grpc.api import resources_pb2, service_pb2
-        from clarifai_grpc.grpc.api.status import status_code_pb2
-        from google.protobuf import json_format
+        try:
+            from clarifai_grpc.grpc.api import resources_pb2, service_pb2
+            from clarifai_grpc.grpc.api.status import status_code_pb2
+            from google.protobuf import json_format
+        except ImportError:
+            raise ValueError(
+                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
+            )
 
+        # Get number of docs to return
         if self._number_of_docs is not None:
             k = self._number_of_docs
 
@@ -178,12 +203,15 @@ class Clarifai(VectorStore):
             )
         )
 
+        # Check if search was successful
         if post_annotations_searches_response.status.code != status_code_pb2.SUCCESS:
             raise Exception("Post searches failed, status: " + post_annotations_searches_response.status.description)
 
+        # Retrieve hits
         hits = post_annotations_searches_response.hits
 
         docs_and_scores = []
+        # Iterate over hits and retrieve metadata and text
         for hit in hits:
             metadata = json_format.MessageToDict(hit.input.data.metadata)
             request = requests.get(hit.input.data.text.url)
@@ -204,17 +232,13 @@ class Clarifai(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[dict] = None,
-        namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        """Return pinecone documents most similar to query.
+        """Run similarity search using Clarifai.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Dictionary of argument(s) to filter on metadata
-            namespace: Namespace to search in. Default will search in '' namespace.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -244,7 +268,6 @@ class Clarifai(VectorStore):
             number_of_docs (Optional[int]): Number of documents to return during vector search. Defaults to None.
             api_base (Optional[str]): API base. Defaults to None.
             metadatas (Optional[List[dict]]): Optional list of metadatas. Defaults to None.
-            ids (Optional[List[str]]): List of document IDs. Defaults to None.
 
         Returns:
             Clarifai: Clarifai vectorstore.
@@ -268,7 +291,6 @@ class Clarifai(VectorStore):
         pat: Optional[str] = None,
         number_of_docs: Optional[int] = None,
         api_base: Optional[str] = None,
-        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Clarifai:
         """Create a Clarifai vectorstore from a list of documents.
@@ -280,7 +302,6 @@ class Clarifai(VectorStore):
             pat (Optional[str]): Personal access token. Defaults to None.
             number_of_docs (Optional[int]): Number of documents to return during vector search. Defaults to None.
             api_base (Optional[str]): API base. Defaults to None.
-            ids (Optional[List[str]]): List of document IDs. Defaults to None.
 
         Returns:
             Clarifai: Clarifai vectorstore.

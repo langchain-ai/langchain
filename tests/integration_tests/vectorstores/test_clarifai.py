@@ -1,4 +1,4 @@
-"""Test Clarifai functionality."""
+"""Test Clarifai vectore store functionality."""
 import pytest
 import time
 from langchain.docstore.document import Document
