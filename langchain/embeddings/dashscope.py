@@ -1,7 +1,6 @@
 """Wrapper around DashScope embedding models."""
 from __future__ import annotations
 
-from requests.exceptions import HTTPError
 import logging
 from typing import (
     Any,
@@ -18,6 +17,7 @@ from typing import (
 
 import numpy as np
 from pydantic import BaseModel, Extra, root_validator
+from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
     retry,
@@ -33,8 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 def _create_retry_decorator(embeddings: DashScopeEmbeddings) -> Callable[[Any], Any]:
-
-    multiplier=1
+    multiplier = 1
     min_seconds = 1
     max_seconds = 4
     # Wait 2^x * 1 second between each retry starting with
@@ -43,9 +42,7 @@ def _create_retry_decorator(embeddings: DashScopeEmbeddings) -> Callable[[Any], 
         reraise=True,
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier, min=min_seconds, max=max_seconds),
-        retry=(
-            retry_if_exception_type(HTTPError)
-        ),
+        retry=(retry_if_exception_type(HTTPError)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
@@ -53,17 +50,22 @@ def _create_retry_decorator(embeddings: DashScopeEmbeddings) -> Callable[[Any], 
 def embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
     retry_decorator = _create_retry_decorator(embeddings)
+
     @retry_decorator
     def _embed_with_retry(**kwargs: Any) -> Any:
         resp = embeddings.client.call(**kwargs)
         if resp.status_code == 200:
-            return resp.output['embeddings']
+            return resp.output["embeddings"]
         elif resp.status_code == 400:
-            raise RuntimeError(f'HTTP error occurred: status_code: {resp.status_code} \n ' \
-                f'code: {resp.code} \n message: {resp.message}')
+            raise RuntimeError(
+                f"HTTP error occurred: status_code: {resp.status_code} \n "
+                f"code: {resp.code} \n message: {resp.message}"
+            )
         else:
-            raise HTTPError(f'HTTP error occurred: status_code: {resp.status_code} \n ' \
-                            f'code: {resp.code} \n message: {resp.message}')
+            raise HTTPError(
+                f"HTTP error occurred: status_code: {resp.status_code} \n "
+                f"code: {resp.code} \n message: {resp.message}"
+            )
 
     return _embed_with_retry(**kwargs)
 
@@ -110,6 +112,7 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         import dashscope
+
         """Validate that api key and python package exists in environment."""
         values["dashscope_api_key"] = get_from_dict_or_env(
             values, "dashscope_api_key", "DASHSCOPE_API_KEY"
@@ -117,6 +120,7 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
         dashscope.api_key = values["dashscope_api_key"]
         try:
             import dashscope
+
             values["client"] = dashscope.TextEmbedding
         except ImportError:
             raise ImportError(
@@ -124,7 +128,7 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
                 "Please install it with `pip install dashscope`."
             )
         return values
-   
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to DashScope's embedding endpoint for embedding search docs.
 
@@ -137,12 +141,9 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         embeddings = embed_with_retry(
-                self,
-                input=texts,
-                text_type='document',
-                model=self.model
+            self, input=texts, text_type="document", model=self.model
         )
-        embedding_list = [item['embedding'] for item in embeddings]
+        embedding_list = [item["embedding"] for item in embeddings]
         return embedding_list
 
     def embed_query(self, text: str) -> List[float]:
@@ -155,9 +156,6 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
             Embedding for the text.
         """
         embedding = embed_with_retry(
-                self,
-                input=text,
-                text_type='query',
-                model=self.model
-        )[0]['embedding']
+            self, input=text, text_type="query", model=self.model
+        )[0]["embedding"]
         return embedding
