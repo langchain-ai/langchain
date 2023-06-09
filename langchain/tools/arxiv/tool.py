@@ -22,7 +22,7 @@ class ArxivQueryRun(BaseTool):
         "from scientific articles on arxiv.org. "
         "Input should be a search query."
     )
-    api_wrapper: ArxivAPIWrapper
+    api_wrapper: ArxivAPIWrapper = Field(default_factory=ArxivAPIWrapper)
 
     def _run(
         self,
