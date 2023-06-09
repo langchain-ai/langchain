@@ -1,4 +1,4 @@
-"""Wrapper around Cohere APIs."""
+"""Wrapper around Clarifai's APIs."""
 import logging
 from typing import Any, Dict, List, Optional
 
