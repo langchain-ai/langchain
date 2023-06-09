@@ -32,3 +32,37 @@ class DataFrameLoader(BaseLoader):
             metadata.pop(self.page_content_column)
             result.append(Document(page_content=text, metadata=metadata))
         return result
+
+   class DataFrameContentLoader(BaseLoader):
+    """Load Pandas DataFrames."""
+    
+    def __init__(self, 
+                 data_frame,
+                 metadata_column: str = None):
+        """Initialize with dataframe object."""
+        import pandas as pd
+        
+        if not isinstance(data_frame, pd.DataFrame):
+            raise ValueError(
+                f"Expected data_frame to be a pd.DataFrame, got {type(data_frame)}"
+            )
+        self.data_frame = data_frame
+        self.metadata_column = metadata_column
+            
+    def load(self) -> List[Document]:
+        """Load from the dataframe."""
+        result = []
+        for _, row in self.data_frame.iterrows():
+            # Extract the metadata column value
+            metadata = {self.metadata_column: row[self.metadata_column]}
+            
+            # Extract all columns except the metadata column and convert to dictionary
+            text = row.drop(self.metadata_column).to_dict()
+            
+            # Convert the text dictionary to a string representation
+            text_str = ', '.join(f'{k}: {v}' for k, v in text.items())
+            
+            # Create a Document object with the text and metadata
+            result.append(Document(page_content=text_str, metadata=metadata))
+            
+        return result
