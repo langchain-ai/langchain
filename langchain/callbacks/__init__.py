@@ -6,6 +6,7 @@ from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
 from langchain.callbacks.file import FileCallbackHandler
 from langchain.callbacks.human import HumanApprovalCallbackHandler
+from langchain.callbacks.infino_callback import InfinoCallbackHandler
 from langchain.callbacks.manager import (
     get_openai_callback,
     tracing_enabled,
@@ -25,6 +26,7 @@ __all__ = [
     "FileCallbackHandler",
     "AimCallbackHandler",
     "WandbCallbackHandler",
+    "InfinoCallbackHandler",
     "MlflowCallbackHandler",
     "ClearMLCallbackHandler",
     "CometCallbackHandler",
