@@ -1,5 +1,6 @@
 """Load Data from a Confluence Space"""
 import logging
+from enum import Enum
 from io import BytesIO
 from typing import Any, Callable, List, Optional, Union
 
@@ -16,6 +17,19 @@ from langchain.document_loaders.base import BaseLoader
 logger = logging.getLogger(__name__)
 
 
+class ContentFormat(str, Enum):
+    STORAGE = "body.storage"
+    VIEW = "body.view"
+
+    def get_content(self, page: dict) -> str:
+        if self == ContentFormat.STORAGE:
+            return page["body"]["storage"]["value"]
+        elif self == ContentFormat.VIEW:
+            return page["body"]["view"]["value"]
+
+        raise ValueError("unknown content format")
+
+
 class ConfluenceLoader(BaseLoader):
     """
     Load Confluence pages. Port of https://llamahub.ai/l/confluence
@@ -30,6 +44,12 @@ class ConfluenceLoader(BaseLoader):
     ConfluenceReader will extract the text from the attachments and add it to the
     Document object. Currently supported attachment types are: PDF, PNG, JPEG/JPG,
     SVG, Word and Excel.
+
+    Confluence API supports difference format of page content. The storage format is the
+    raw XML representation for storage. The view format is the HTML representation for
+    viewing with macros are rendered as though it is viewed by users. You can pass
+    a enum `content_format` argument to `load()` to specify the content format, this is
+    set to `ContentFormat.STORAGE` by default.
 
     Hint: space_key and page_id can both be found in the URL of a page in Confluence
     - https://yoursite.atlassian.com/wiki/spaces/<space_key>/pages/<page_id>
@@ -178,6 +198,7 @@ class ConfluenceLoader(BaseLoader):
         include_archived_content: bool = False,
         include_attachments: bool = False,
         include_comments: bool = False,
+        content_format: ContentFormat = ContentFormat.STORAGE,
         limit: Optional[int] = 50,
         max_pages: Optional[int] = 1000,
     ) -> List[Document]:
@@ -199,6 +220,8 @@ class ConfluenceLoader(BaseLoader):
         :type include_attachments: bool, optional
         :param include_comments: defaults to False
         :type include_comments: bool, optional
+        :param content_format: Specify content format, defaults to ContentFormat.STORAGE
+        :type content_format: ContentFormat
         :param limit: Maximum number of pages to retrieve per request, defaults to 50
         :type limit: int, optional
         :param max_pages: Maximum number of pages to retrieve in total, defaults 1000
@@ -223,10 +246,14 @@ class ConfluenceLoader(BaseLoader):
                 limit=limit,
                 max_pages=max_pages,
                 status="any" if include_archived_content else "current",
-                expand="body.storage.value",
+                expand=content_format.value,
             )
             docs += self.process_pages(
-                pages, include_restricted_content, include_attachments, include_comments
+                pages,
+                include_restricted_content,
+                include_attachments,
+                include_comments,
+                content_format,
             )
 
         if label:
@@ -249,10 +276,14 @@ class ConfluenceLoader(BaseLoader):
                 limit=limit,
                 max_pages=max_pages,
                 include_archived_spaces=include_archived_content,
-                expand="body.storage.value",
+                expand=content_format.value,
             )
             docs += self.process_pages(
-                pages, include_restricted_content, include_attachments, include_comments
+                pages,
+                include_restricted_content,
+                include_attachments,
+                include_comments,
+                content_format,
             )
 
         if page_ids:
@@ -269,10 +300,12 @@ class ConfluenceLoader(BaseLoader):
                     ),
                     before_sleep=before_sleep_log(logger, logging.WARNING),
                 )(self.confluence.get_page_by_id)
-                page = get_page(page_id=page_id, expand="body.storage.value")
+                page = get_page(page_id=page_id, expand=content_format.value)
                 if not include_restricted_content and not self.is_public_page(page):
                     continue
-                doc = self.process_page(page, include_attachments, include_comments)
+                doc = self.process_page(
+                    page, include_attachments, include_comments, content_format
+                )
                 docs.append(doc)
 
         return docs
@@ -335,13 +368,16 @@ class ConfluenceLoader(BaseLoader):
         include_restricted_content: bool,
         include_attachments: bool,
         include_comments: bool,
+        content_format: ContentFormat,
     ) -> List[Document]:
         """Process a list of pages into a list of documents."""
         docs = []
         for page in pages:
             if not include_restricted_content and not self.is_public_page(page):
                 continue
-            doc = self.process_page(page, include_attachments, include_comments)
+            doc = self.process_page(
+                page, include_attachments, include_comments, content_format
+            )
             docs.append(doc)
 
         return docs
@@ -351,6 +387,7 @@ class ConfluenceLoader(BaseLoader):
         page: dict,
         include_attachments: bool,
         include_comments: bool,
+        content_format: ContentFormat,
     ) -> Document:
         try:
             from bs4 import BeautifulSoup  # type: ignore
@@ -364,9 +401,11 @@ class ConfluenceLoader(BaseLoader):
             attachment_texts = self.process_attachment(page["id"])
         else:
             attachment_texts = []
-        text = BeautifulSoup(page["body"]["storage"]["value"], "lxml").get_text(
-            " ", strip=True
-        ) + "".join(attachment_texts)
+
+        content = content_format.get_content(page)
+        text = BeautifulSoup(content, "lxml").get_text(" ", strip=True) + "".join(
+            attachment_texts
+        )
         if include_comments:
             comments = self.confluence.get_page_comments(
                 page["id"], expand="body.view.value", depth="all"
