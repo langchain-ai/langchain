@@ -1,7 +1,11 @@
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.schema import BaseRetriever, Document
 
 
@@ -11,7 +15,13 @@ class LlamaIndexRetriever(BaseRetriever, BaseModel):
     index: Any
     query_kwargs: Dict = Field(default_factory=dict)
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         """Get documents relevant for a query."""
         try:
             from llama_index.indices.base import BaseGPTIndex
@@ -33,7 +43,13 @@ class LlamaIndexRetriever(BaseRetriever, BaseModel):
             )
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError("LlamaIndexRetriever does not support async")
 
 
@@ -43,7 +59,13 @@ class LlamaIndexGraphRetriever(BaseRetriever, BaseModel):
     graph: Any
     query_configs: List[Dict] = Field(default_factory=list)
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         """Get documents relevant for a query."""
         try:
             from llama_index.composability.graph import (
@@ -73,5 +95,11 @@ class LlamaIndexGraphRetriever(BaseRetriever, BaseModel):
             )
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError("LlamaIndexGraphRetriever does not support async")

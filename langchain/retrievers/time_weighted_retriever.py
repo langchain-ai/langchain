@@ -1,10 +1,15 @@
 """Retriever that combines embedding similarity with recency in retrieving values."""
+
 import datetime
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
@@ -80,7 +85,13 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
                 results[buffer_idx] = (doc, relevance)
         return results
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         """Return documents that are relevant to the query."""
         current_time = datetime.datetime.now()
         docs_and_scores = {
@@ -103,7 +114,13 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
             result.append(buffered_doc)
         return result
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         """Return documents that are relevant to the query."""
         raise NotImplementedError
 

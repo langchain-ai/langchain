@@ -22,9 +22,7 @@ from pydantic import BaseModel, Extra, Field, root_validator
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
-        AsyncCallbackManager,
         AsyncCallbackManagerForRetrieverRun,
-        CallbackManager,
         CallbackManagerForRetrieverRun,
         Callbacks,
     )
@@ -318,8 +316,10 @@ class BaseRetriever(ABC):
                 DeprecationWarning,
             )
             swap = cls.get_relevant_documents
-            cls.get_relevant_documents = BaseRetriever.get_relevant_documents
-            cls._get_relevant_documents = swap
+            cls.get_relevant_documents = (  # type: ignore[assignment]
+                BaseRetriever.get_relevant_documents
+            )
+            cls._get_relevant_documents = swap  # type: ignore[assignment]
         if (
             hasattr(cls, "aget_relevant_documents")
             and cls.aget_relevant_documents != BaseRetriever.aget_relevant_documents
@@ -329,9 +329,11 @@ class BaseRetriever(ABC):
                 " instead of `aget_relevant_documents`",
                 DeprecationWarning,
             )
-            swap = cls.aget_relevant_documents
-            cls.aget_relevant_documents = BaseRetriever.aget_relevant_documents
-            cls._aget_relevant_documents = swap
+            aswap = cls.aget_relevant_documents
+            cls.aget_relevant_documents = (  # type: ignore[assignment]
+                BaseRetriever.aget_relevant_documents
+            )
+            cls._aget_relevant_documents = aswap  # type: ignore[assignment]
         parameters = signature(cls._get_relevant_documents).parameters
         cls._new_arg_supported = parameters.get("run_manager") is not None
         # If a V1 retriever broke the interface and expects additional arguments

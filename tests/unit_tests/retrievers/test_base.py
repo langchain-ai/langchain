@@ -23,13 +23,19 @@ def fake_retriever_v1() -> BaseRetriever:
     ):
 
         class FakeRetrieverV1(BaseRetriever):
-            def get_relevant_documents(self, query: str) -> List[Document]:
+            def get_relevant_documents(  # type: ignore[override]
+                self,
+                query: str,
+            ) -> List[Document]:
                 assert isinstance(self, FakeRetrieverV1)
                 return [
                     Document(page_content=query, metadata={"uuid": "1234"}),
                 ]
 
-            async def aget_relevant_documents(self, query: str) -> List[Document]:
+            async def aget_relevant_documents(  # type: ignore[override]
+                self,
+                query: str,
+            ) -> List[Document]:
                 assert isinstance(self, FakeRetrieverV1)
                 return [
                     Document(
@@ -37,13 +43,13 @@ def fake_retriever_v1() -> BaseRetriever:
                     ),
                 ]
 
-        return FakeRetrieverV1()
+        return FakeRetrieverV1()  # type: ignore[abstract]
 
 
 def test_fake_retriever_v1_upgrade(fake_retriever_v1: BaseRetriever) -> None:
     callbacks = FakeCallbackHandler()
-    assert fake_retriever_v1._new_arg_supported == False
-    assert fake_retriever_v1._expects_other_args == False
+    assert fake_retriever_v1._new_arg_supported is False
+    assert fake_retriever_v1._expects_other_args is False
     results: List[Document] = fake_retriever_v1.get_relevant_documents(
         "Foo", callbacks=[callbacks]
     )
@@ -58,8 +64,8 @@ async def test_fake_retriever_v1_upgrade_async(
     fake_retriever_v1: BaseRetriever,
 ) -> None:
     callbacks = FakeCallbackHandler()
-    assert fake_retriever_v1._new_arg_supported == False
-    assert fake_retriever_v1._expects_other_args == False
+    assert fake_retriever_v1._new_arg_supported is False
+    assert fake_retriever_v1._expects_other_args is False
     results: List[Document] = await fake_retriever_v1.aget_relevant_documents(
         "Foo", callbacks=[callbacks]
     )
@@ -79,7 +85,7 @@ def fake_retriever_v1_with_kwargs() -> BaseRetriever:
     ):
 
         class FakeRetrieverV1(BaseRetriever):
-            def get_relevant_documents(
+            def get_relevant_documents(  # type: ignore[override]
                 self, query: str, where_filter: Optional[Dict[str, object]] = None
             ) -> List[Document]:
                 assert isinstance(self, FakeRetrieverV1)
@@ -87,7 +93,7 @@ def fake_retriever_v1_with_kwargs() -> BaseRetriever:
                     Document(page_content=query, metadata=where_filter or {}),
                 ]
 
-            async def aget_relevant_documents(
+            async def aget_relevant_documents(  # type: ignore[override]
                 self, query: str, where_filter: Optional[Dict[str, object]] = None
             ) -> List[Document]:
                 assert isinstance(self, FakeRetrieverV1)
@@ -97,15 +103,15 @@ def fake_retriever_v1_with_kwargs() -> BaseRetriever:
                     ),
                 ]
 
-        return FakeRetrieverV1()
+        return FakeRetrieverV1()  # type: ignore[abstract]
 
 
 def test_fake_retriever_v1_with_kwargs_upgrade(
     fake_retriever_v1_with_kwargs: BaseRetriever,
 ) -> None:
     callbacks = FakeCallbackHandler()
-    assert fake_retriever_v1_with_kwargs._new_arg_supported == False
-    assert fake_retriever_v1_with_kwargs._expects_other_args == True
+    assert fake_retriever_v1_with_kwargs._new_arg_supported is False
+    assert fake_retriever_v1_with_kwargs._expects_other_args is True
     results: List[Document] = fake_retriever_v1_with_kwargs.get_relevant_documents(
         "Foo", callbacks=[callbacks], where_filter={"foo": "bar"}
     )
@@ -121,8 +127,8 @@ async def test_fake_retriever_v1_with_kwargs_upgrade_async(
     fake_retriever_v1_with_kwargs: BaseRetriever,
 ) -> None:
     callbacks = FakeCallbackHandler()
-    assert fake_retriever_v1_with_kwargs._new_arg_supported == False
-    assert fake_retriever_v1_with_kwargs._expects_other_args == True
+    assert fake_retriever_v1_with_kwargs._new_arg_supported is False
+    assert fake_retriever_v1_with_kwargs._expects_other_args is True
     results: List[
         Document
     ] = await fake_retriever_v1_with_kwargs.aget_relevant_documents(
@@ -170,12 +176,12 @@ def fake_retriever_v2() -> BaseRetriever:
                 Document(page_content=f"Async query {query}", metadata=kwargs),
             ]
 
-    return FakeRetrieverV2()
+    return FakeRetrieverV2()  # type: ignore[abstract]
 
 
 def test_fake_retriever_v2(fake_retriever_v2: BaseRetriever) -> None:
     callbacks = FakeCallbackHandler()
-    assert fake_retriever_v2._new_arg_supported == True
+    assert fake_retriever_v2._new_arg_supported is True
     results = fake_retriever_v2.get_relevant_documents("Foo", callbacks=[callbacks])
     assert results[0].page_content == "Foo"
     assert callbacks.retriever_starts == 1
@@ -196,7 +202,7 @@ def test_fake_retriever_v2(fake_retriever_v2: BaseRetriever) -> None:
 @pytest.mark.asyncio
 async def test_fake_retriever_v2_async(fake_retriever_v2: BaseRetriever) -> None:
     callbacks = FakeCallbackHandler()
-    assert fake_retriever_v2._new_arg_supported == True
+    assert fake_retriever_v2._new_arg_supported is True
     results = await fake_retriever_v2.aget_relevant_documents(
         "Foo", callbacks=[callbacks]
     )

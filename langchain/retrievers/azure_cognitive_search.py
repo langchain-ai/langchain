@@ -1,13 +1,18 @@
 """Retriever wrapper for Azure Cognitive Search."""
+
 from __future__ import annotations
 
 import json
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
@@ -81,7 +86,13 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
 
         return response_json["value"]
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         search_results = self._search(query)
 
         return [
@@ -89,7 +100,13 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
             for result in search_results
         ]
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         search_results = await self._asearch(query)
 
         return [

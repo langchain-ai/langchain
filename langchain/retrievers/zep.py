@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.schema import BaseRetriever, Document
 
 if TYPE_CHECKING:
@@ -53,8 +57,13 @@ class ZepRetriever(BaseRetriever):
             if r.message
         ]
 
-    def get_relevant_documents(
-        self, query: str, metadata: Optional[Dict] = None
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        metadata: Optional[Dict] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         from zep_python import MemorySearchPayload
 
@@ -68,8 +77,13 @@ class ZepRetriever(BaseRetriever):
 
         return self._search_result_to_doc(results)
 
-    async def aget_relevant_documents(
-        self, query: str, metadata: Optional[Dict] = None
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        metadata: Optional[Dict] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         from zep_python import MemorySearchPayload
 

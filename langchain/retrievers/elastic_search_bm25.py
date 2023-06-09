@@ -1,9 +1,14 @@
 """Wrapper around Elasticsearch vector database."""
+
 from __future__ import annotations
 
 import uuid
-from typing import Any, Iterable, List
+from typing import Any, Iterable, List, Optional
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
@@ -111,7 +116,13 @@ class ElasticSearchBM25Retriever(BaseRetriever):
             self.client.indices.refresh(index=self.index_name)
         return ids
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         query_dict = {"query": {"match": {"content": query}}}
         res = self.client.search(index=self.index_name, body=query_dict)
 
@@ -120,5 +131,11 @@ class ElasticSearchBM25Retriever(BaseRetriever):
             docs.append(Document(page_content=r["_source"]["content"]))
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError
