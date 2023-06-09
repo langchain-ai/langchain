@@ -8,59 +8,14 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-import requests
-from requests.exceptions import HTTPError
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
+from langchainplus_sdk import LangChainPlusClient
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import (
-    Run,
-    RunCreate,
-    RunTypeEnum,
-    RunUpdate,
-    TracerSession,
-)
+from langchain.callbacks.tracers.schemas import Run, RunTypeEnum, TracerSession
+from langchain.env import get_runtime_environment
 from langchain.schema import BaseMessage, messages_to_dict
 
 logger = logging.getLogger(__name__)
-
-
-def get_headers() -> Dict[str, Any]:
-    """Get the headers for the LangChain API."""
-    headers: Dict[str, Any] = {"Content-Type": "application/json"}
-    if os.getenv("LANGCHAIN_API_KEY"):
-        headers["x-api-key"] = os.getenv("LANGCHAIN_API_KEY")
-    return headers
-
-
-def get_endpoint() -> str:
-    return os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:1984")
-
-
-class LangChainTracerAPIError(Exception):
-    """An error occurred while communicating with the LangChain API."""
-
-
-class LangChainTracerUserError(Exception):
-    """An error occurred while communicating with the LangChain API."""
-
-
-class LangChainTracerError(Exception):
-    """An error occurred while communicating with the LangChain API."""
-
-
-retry_decorator = retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=4, max=10),
-    retry=retry_if_exception_type(LangChainTracerAPIError),
-    before_sleep=before_sleep_log(logger, logging.WARNING),
-)
 
 
 class LangChainTracer(BaseTracer):
@@ -70,19 +25,19 @@ class LangChainTracer(BaseTracer):
         self,
         example_id: Optional[Union[UUID, str]] = None,
         session_name: Optional[str] = None,
+        client: Optional[LangChainPlusClient] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer."""
         super().__init__(**kwargs)
         self.session: Optional[TracerSession] = None
-        self._endpoint = get_endpoint()
-        self._headers = get_headers()
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
         self.session_name = session_name or os.getenv("LANGCHAIN_SESSION", "default")
         # set max_workers to 1 to process tasks in order
         self.executor = ThreadPoolExecutor(max_workers=1)
+        self.client = client or LangChainPlusClient()
 
     def on_chat_model_start(
         self,
@@ -114,60 +69,19 @@ class LangChainTracer(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         """The Langchain Tracer uses Post/Patch rather than persist."""
 
-    @retry_decorator
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        run_dict = run.dict()
-        del run_dict["child_runs"]
-        run_create = RunCreate(**run_dict, session_name=self.session_name)
-        response = None
-        try:
-            # TODO: Add retries when async
-            response = requests.post(
-                f"{self._endpoint}/runs",
-                data=run_create.json(),
-                headers=self._headers,
-            )
-            response.raise_for_status()
-        except HTTPError as e:
-            if response is not None and response.status_code == 500:
-                raise LangChainTracerAPIError(
-                    f"Failed to upsert persist run to LangChain API. {e}"
-                )
-            else:
-                raise LangChainTracerUserError(
-                    f"Failed to persist run to LangChain API. {e}"
-                )
-        except Exception as e:
-            raise LangChainTracerError(
-                f"Failed to persist run to LangChain API. {e}"
-            ) from e
+        run_dict = run.dict(exclude={"child_runs"})
+        extra = run_dict.get("extra", {})
+        extra["runtime"] = get_runtime_environment()
+        run_dict["extra"] = extra
+        run = self.client.create_run(**run_dict, session_name=self.session_name)
 
-    @retry_decorator
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
-        run_update = RunUpdate(**run.dict())
-        response = None
-        try:
-            response = requests.patch(
-                f"{self._endpoint}/runs/{run.id}",
-                data=run_update.json(),
-                headers=self._headers,
-            )
-            response.raise_for_status()
-        except HTTPError as e:
-            if response is not None and response.status_code == 500:
-                raise LangChainTracerAPIError(
-                    f"Failed to update run to LangChain API. {e}"
-                )
-            else:
-                raise LangChainTracerUserError(f"Failed to run to LangChain API. {e}")
-        except Exception as e:
-            raise LangChainTracerError(
-                f"Failed to update run to LangChain API. {e}"
-            ) from e
+        self.client.update_run(run.id, **run.dict())
 
     def _on_llm_start(self, run: Run) -> None:
         """Persist an LLM run."""
