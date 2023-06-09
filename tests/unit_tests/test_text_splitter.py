@@ -1,5 +1,6 @@
 """Test text splitting functionality."""
 from typing import List
+
 import pytest
 
 from langchain.docstore.document import Document
