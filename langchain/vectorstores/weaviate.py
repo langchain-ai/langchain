@@ -127,15 +127,11 @@ class Weaviate(VectorStore):
         """
         Upload texts with metadata (properties) to Weaviate.
         Pass "uuids" list to set custom IDs or overwrite existing texts
-        Pass "vectors" list to use custom vectors for the texts
         """
         ids = []
         if not isinstance(texts, list):
             texts = list(texts)
-
-        vectors: Optional[List[List[float]]] = kwargs.get("vectors")
-        if not vectors and self._embedding:
-            vectors = self._embedding.embed_documents(texts)
+        embeddings = self._embedding.embed_documents(texts) if self._embedding else None
 
         with self._client.batch as batch:
             for i, text in enumerate(texts):
@@ -148,7 +144,7 @@ class Weaviate(VectorStore):
                     data_object=data_properties,
                     class_name=self._index_name,
                     uuid=kwargs["uuids"][i] if "uuids" in kwargs else None,
-                    vector=vectors[i] if vectors else None,
+                    vector=embeddings[i] if embeddings else None,
                 )
                 ids.append(_id)
         return ids
