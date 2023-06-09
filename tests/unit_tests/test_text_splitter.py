@@ -118,6 +118,21 @@ def test_create_documents_with_metadata() -> None:
     assert docs == expected_docs
 
 
+def test_create_documents_with_start_index() -> None:
+    """Test create documents method."""
+    texts = ["foo bar baz 123"]
+    splitter = CharacterTextSplitter(
+        separator=" ", chunk_size=7, chunk_overlap=3, add_start_index=True
+    )
+    docs = splitter.create_documents(texts)
+    expected_docs = [
+        Document(page_content="foo bar", metadata={"start_index": 0}),
+        Document(page_content="bar baz", metadata={"start_index": 4}),
+        Document(page_content="baz 123", metadata={"start_index": 8}),
+    ]
+    assert docs == expected_docs
+
+
 def test_metadata_not_shallow() -> None:
     """Test that metadatas are not shallow."""
     texts = ["foo bar"]
