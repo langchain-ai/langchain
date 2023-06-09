@@ -32,7 +32,7 @@ class ArxivAPIWrapper(BaseModel):
 
     """
 
-    arxiv_client: Any  #: :meta private:
+    arxiv_search: Any  #: :meta private:
     arxiv_exceptions: Any  # :meta private:
     top_k_results: int = 3
     ARXIV_MAX_QUERY_LENGTH = 300

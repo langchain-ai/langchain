@@ -176,6 +176,8 @@ Additional Resources
 
 - `Gallery <https://github.com/kyrolabs/awesome-langchain>`_: A collection of great projects that use Langchain, compiled by the folks at `Kyrolabs <https://kyrolabs.com>`_. Useful for finding inspiration and example implementations.
 
+- `Deploying LLMs in Production <./additional_resources/deploy_llms.html>`_: A collection of best practices and tutorials for deploying LLMs in production.
+
 - `Tracing <./additional_resources/tracing.html>`_: A guide on using tracing in LangChain to visualize the execution of chains and agents.
 
 - `Model Laboratory <./additional_resources/model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
@@ -194,6 +196,8 @@ Additional Resources
    :hidden:
 
    LangChainHub <https://github.com/hwchase17/langchain-hub>
+   ./additional_resources/deployments.md
+   ./additional_resources/deploy_llms.rst
    Gallery <https://github.com/kyrolabs/awesome-langchain>
    ./additional_resources/tracing.md
    ./additional_resources/model_laboratory.ipynb

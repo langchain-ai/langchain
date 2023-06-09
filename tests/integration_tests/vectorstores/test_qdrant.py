@@ -1,4 +1,5 @@
 """Test Qdrant functionality."""
+import tempfile
 from typing import Callable, Optional
 
 import pytest
@@ -130,6 +131,78 @@ def test_qdrant_similarity_search_filters(batch_size: int) -> None:
     ]
 
 
+def test_qdrant_similarity_search_with_relevance_score_no_threshold() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [
+        {"page": i, "metadata": {"page": i + 1, "pages": [i + 2, -1]}}
+        for i in range(len(texts))
+    ]
+    docsearch = Qdrant.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        metadatas=metadatas,
+        location=":memory:",
+    )
+    output = docsearch.similarity_search_with_relevance_scores(
+        "foo", k=3, score_threshold=None
+    )
+    assert len(output) == 3
+    for i in range(len(output)):
+        assert round(output[i][1], 2) >= 0
+        assert round(output[i][1], 2) <= 1
+
+
+def test_qdrant_similarity_search_with_relevance_score_with_threshold() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [
+        {"page": i, "metadata": {"page": i + 1, "pages": [i + 2, -1]}}
+        for i in range(len(texts))
+    ]
+    docsearch = Qdrant.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        metadatas=metadatas,
+        location=":memory:",
+    )
+
+    score_threshold = 0.98
+    kwargs = {"score_threshold": score_threshold}
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3, **kwargs)
+    assert len(output) == 1
+    assert all([score >= score_threshold for _, score in output])
+
+
+def test_qdrant_similarity_search_with_relevance_score_with_threshold_and_filter() -> (
+    None
+):
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [
+        {"page": i, "metadata": {"page": i + 1, "pages": [i + 2, -1]}}
+        for i in range(len(texts))
+    ]
+    docsearch = Qdrant.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        metadatas=metadatas,
+        location=":memory:",
+    )
+    score_threshold = 0.99  # for almost exact match
+    # test negative filter condition
+    negative_filter = {"page": 1, "metadata": {"page": 2, "pages": [3]}}
+    kwargs = {"filter": negative_filter, "score_threshold": score_threshold}
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3, **kwargs)
+    assert len(output) == 0
+    # test positive filter condition
+    positive_filter = {"page": 0, "metadata": {"page": 1, "pages": [2]}}
+    kwargs = {"filter": positive_filter, "score_threshold": score_threshold}
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3, **kwargs)
+    assert len(output) == 1
+    assert all([score >= score_threshold for _, score in output])
+
+
 def test_qdrant_similarity_search_filters_with_qdrant_filters() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -247,3 +320,91 @@ def test_qdrant_embedding_interface_raises(
             embeddings=embeddings,
             embedding_function=embedding_function,
         )
+
+
+def test_qdrant_stores_duplicated_texts() -> None:
+    from qdrant_client import QdrantClient
+    from qdrant_client.http import models as rest
+
+    client = QdrantClient(":memory:")
+    collection_name = "test"
+    client.recreate_collection(
+        collection_name,
+        vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE),
+    )
+
+    vec_store = Qdrant(
+        client,
+        collection_name,
+        embeddings=ConsistentFakeEmbeddings(),
+    )
+    ids = vec_store.add_texts(["abc", "abc"], [{"a": 1}, {"a": 2}])
+
+    assert 2 == len(set(ids))
+    assert 2 == client.count(collection_name).count
+
+
+def test_qdrant_from_texts_stores_duplicated_texts() -> None:
+    from qdrant_client import QdrantClient
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["abc", "abc"],
+            ConsistentFakeEmbeddings(),
+            collection_name="test",
+            path=str(tmpdir),
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        assert 2 == client.count("test").count
+
+
+@pytest.mark.parametrize("batch_size", [1, 64])
+def test_qdrant_from_texts_stores_ids(batch_size: int) -> None:
+    from qdrant_client import QdrantClient
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ids = [
+            "fa38d572-4c31-4579-aedc-1960d79df6df",
+            "cdc1aa36-d6ab-4fb2-8a94-56674fd27484",
+        ]
+        vec_store = Qdrant.from_texts(
+            ["abc", "def"],
+            ConsistentFakeEmbeddings(),
+            ids=ids,
+            collection_name="test",
+            path=str(tmpdir),
+            batch_size=batch_size,
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        assert 2 == client.count("test").count
+        stored_ids = [point.id for point in client.scroll("test")[0]]
+        assert set(ids) == set(stored_ids)
+
+
+@pytest.mark.parametrize("batch_size", [1, 64])
+def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
+    from qdrant_client import QdrantClient
+
+    ids = [
+        "fa38d572-4c31-4579-aedc-1960d79df6df",
+        "cdc1aa36-d6ab-4fb2-8a94-56674fd27484",
+    ]
+
+    client = QdrantClient(":memory:")
+    collection_name = "test"
+    client.recreate_collection(
+        collection_name,
+        vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE),
+    )
+
+    vec_store = Qdrant(client, "test", ConsistentFakeEmbeddings())
+    returned_ids = vec_store.add_texts(["abc", "def"], ids=ids, batch_size=batch_size)
+
+    assert all(first == second for first, second in zip(ids, returned_ids))
+    assert 2 == client.count("test").count
+    stored_ids = [point.id for point in client.scroll("test")[0]]
+    assert set(ids) == set(stored_ids)

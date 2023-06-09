@@ -20,6 +20,10 @@ class LLMInputOutputAdapter:
         input_body = {**model_kwargs}
         if provider == "anthropic" or provider == "ai21":
             input_body["prompt"] = prompt
+        elif provider == "amazon":
+            input_body = dict()
+            input_body["inputText"] = prompt
+            input_body["textGenerationConfig"] = {**model_kwargs}
         else:
             input_body["inputText"] = prompt
 
@@ -101,7 +105,7 @@ class Bedrock(LLM):
         """Validate that AWS credentials to and python package exists in environment."""
 
         # Skip creating new client if passed in constructor
-        if "client" in values:
+        if values["client"] is not None:
             return values
 
         try:

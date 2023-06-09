@@ -10,6 +10,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    TypeVar,
     Union,
 )
 
@@ -18,7 +19,9 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
-    from pymongo import MongoClient
+    from pymongo.collection import Collection
+
+MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 
 logger = logging.getLogger(__name__)
 
@@ -41,15 +44,14 @@ class MongoDBAtlasVectorSearch(VectorStore):
             from pymongo import MongoClient
 
             mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
-            namespace = "<db_name>.<collection_name>"
+            collection = mongo_client["<db_name>"]["<collection_name>"]
             embeddings = OpenAIEmbeddings()
-            vectorstore = MongoDBAtlasVectorSearch(mongo_client, namespace, embeddings)
+            vectorstore = MongoDBAtlasVectorSearch(collection, embeddings)
     """
 
     def __init__(
         self,
-        client: MongoClient,
-        namespace: str,
+        collection: Collection[MongoDBDocumentType],
         embedding: Embeddings,
         *,
         index_name: str = "default",
@@ -58,17 +60,14 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ):
         """
         Args:
-            client: MongoDB client.
-            namespace: MongoDB namespace to add the texts to.
+            collection: MongoDB collection to add the texts to.
             embedding: Text embedding model to use.
             text_key: MongoDB field that will contain the text for each
                 document.
             embedding_key: MongoDB field that will contain the embedding for
                 each document.
         """
-        self._client = client
-        db_name, collection_name = namespace.split(".")
-        self._collection = client[db_name][collection_name]
+        self._collection = collection
         self._embedding = embedding
         self._index_name = index_name
         self._text_key = text_key
@@ -90,7 +89,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 "`pip install pymongo`."
             )
         client: MongoClient = MongoClient(connection_string)
-        return cls(client, namespace, embedding, **kwargs)
+        db_name, collection_name = namespace.split(".")
+        collection = client[db_name][collection_name]
+        return cls(collection, embedding, **kwargs)
 
     def add_texts(
         self,
@@ -232,8 +233,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        client: Optional[MongoClient] = None,
-        namespace: Optional[str] = None,
+        collection: Optional[Collection[MongoDBDocumentType]] = None,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
         """Construct MongoDBAtlasVectorSearch wrapper from raw documents.
@@ -253,18 +253,17 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 from langchain.embeddings import OpenAIEmbeddings
 
                 client = MongoClient("<YOUR-CONNECTION-STRING>")
-                namespace = "<db_name>.<collection_name>"
+                collection = mongo_client["<db_name>"]["<collection_name>"]
                 embeddings = OpenAIEmbeddings()
                 vectorstore = MongoDBAtlasVectorSearch.from_texts(
                     texts,
                     embeddings,
                     metadatas=metadatas,
-                    client=client,
-                    namespace=namespace
+                    collection=collection
                 )
         """
-        if not client or not namespace:
-            raise ValueError("Must provide 'client' and 'namespace' named parameters.")
-        vecstore = cls(client, namespace, embedding, **kwargs)
+        if collection is None:
+            raise ValueError("Must provide 'collection' named parameter.")
+        vecstore = cls(collection, embedding, **kwargs)
         vecstore.add_texts(texts, metadatas=metadatas)
         return vecstore
