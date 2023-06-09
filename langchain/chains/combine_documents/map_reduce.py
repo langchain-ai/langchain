@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
 from pydantic import Extra, root_validator
@@ -141,13 +143,21 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         Combine by mapping first chain over all documents, then reducing the results.
         This reducing can be done recursively if needed (if there are many documents).
         """
-        results = self.llm_chain.apply(
-            # FYI - this is parallelized and so it is fast.
-            [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
-            callbacks=callbacks,
-        )
-        return self._process_results(
-            results, docs, token_max, callbacks=callbacks, **kwargs
+        if len(docs) == 1:
+            results = [
+                {**{self.document_variable_name: docs[0].page_content}, **kwargs}
+            ]
+
+        else:
+            results = self.llm_chain.apply(
+                # FYI - this is parallelized and so it is fast.
+                [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
+                callbacks=callbacks,
+            )
+        return asyncio.run(
+            self._aprocess_results(
+                results, docs, token_max, callbacks=callbacks, **kwargs
+            )
         )
 
     async def acombine_docs(
@@ -156,16 +166,27 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         """Combine documents in a map reduce manner.
 
         Combine by mapping first chain over all documents, then reducing the results.
-        This reducing can be done recursively if needed (if there are many documents).
+        This reducing is done recursively for many documents.
         """
-        results = await self.llm_chain.aapply(
-            # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
-            callbacks=callbacks,
-        )
-        return self._process_results(results, docs, callbacks=callbacks, **kwargs)
+        if len(docs) == 1:
+            results = [
+                {**{self.document_variable_name: docs[0].page_content}, **kwargs}
+            ]
 
-    def _process_results(
+        else:
+            results = await self.llm_chain.aapply(
+                # FYI - this is parallelized and so it is fast.
+                [
+                    {**{self.document_variable_name: d.page_content}, **kwargs}
+                    for d in docs
+                ],
+                callbacks=callbacks,
+            )
+        return await self._aprocess_results(
+            results, docs, callbacks=callbacks, **kwargs
+        )
+
+    async def _aprocess_results(
         self,
         results: List[Dict],
         docs: List[Document],
@@ -182,8 +203,8 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         length_func = self.combine_document_chain.prompt_length
         num_tokens = length_func(result_docs, **kwargs)
 
-        def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
-            return self._collapse_chain.run(
+        async def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
+            return await self._collapse_chain.arun(
                 input_documents=docs, callbacks=callbacks, **kwargs
             )
 
@@ -201,7 +222,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             extra_return_dict = {"intermediate_steps": _results}
         else:
             extra_return_dict = {}
-        output = self.combine_document_chain.run(
+        output = await self.combine_document_chain.arun(
             input_documents=result_docs, callbacks=callbacks, **kwargs
         )
         return output, extra_return_dict
