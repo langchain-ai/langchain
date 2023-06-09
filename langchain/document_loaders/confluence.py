@@ -1,7 +1,7 @@
 """Load Data from a Confluence Space"""
 import logging
 from io import BytesIO
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from tenacity import (
     before_sleep_log,
@@ -282,7 +282,7 @@ class ConfluenceLoader(BaseLoader):
     ) -> List[dict]:
         url = "rest/api/content/search"
 
-        params: dict[str, Any] = {"cql": cql}
+        params: Dict[str, Any] = {"cql": cql}
         params.update(kwargs)
         if include_archived_spaces is not None:
             params["includeArchivedSpaces"] = include_archived_spaces
