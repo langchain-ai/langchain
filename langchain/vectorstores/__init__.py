@@ -10,6 +10,7 @@ from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemory
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.lancedb import LanceDB
+from langchain.vectorstores.matching_engine import MatchingEngine
 from langchain.vectorstores.milvus import Milvus
 from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 from langchain.vectorstores.myscale import MyScale, MyScaleSettings
@@ -17,6 +18,7 @@ from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSear
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.redis import Redis
+from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.sklearn import SKLearnVectorStore
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
@@ -36,6 +38,7 @@ __all__ = [
     "Qdrant",
     "Milvus",
     "Zilliz",
+    "SingleStoreDB",
     "Chroma",
     "OpenSearchVectorSearch",
     "AtlasDB",
@@ -56,4 +59,5 @@ __all__ = [
     "Clickhouse",
     "ClickhouseSettings",
     "Tigris",
+    "MatchingEngine",
 ]

@@ -8,6 +8,7 @@ from langchain.llms.anyscale import Anyscale
 from langchain.llms.aviary import Aviary
 from langchain.llms.bananadev import Banana
 from langchain.llms.base import BaseLLM
+from langchain.llms.baseten import Baseten
 from langchain.llms.beam import Beam
 from langchain.llms.bedrock import Bedrock
 from langchain.llms.cerebriumai import CerebriumAI
@@ -50,6 +51,7 @@ __all__ = [
     "Anyscale",
     "Aviary",
     "Banana",
+    "Baseten",
     "Beam",
     "Bedrock",
     "CerebriumAI",
@@ -98,6 +100,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "anyscale": Anyscale,
     "aviary": Aviary,
     "bananadev": Banana,
+    "baseten": Baseten,
     "beam": Beam,
     "cerebriumai": CerebriumAI,
     "cohere": Cohere,

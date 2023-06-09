@@ -949,6 +949,30 @@ urllib3 = ">=1.25.4,<1.27"
 crt = ["awscrt (==0.16.9)"]
 
 [[package]]
+name = "build"
+version = "0.10.0"
+description = "A simple, correct Python build frontend"
+category = "main"
+optional = true
+python-versions = ">= 3.7"
+files = [
+    {file = "build-0.10.0-py3-none-any.whl", hash = "sha256:af266720050a66c893a6096a2f410989eeac74ff9a68ba194b3f6473e8e26171"},
+    {file = "build-0.10.0.tar.gz", hash = "sha256:d5b71264afdb5951d6704482aac78de887c80691c52b88a9ad195983ca2c9269"},
+]
+
+[package.dependencies]
+colorama = {version = "*", markers = "os_name == \"nt\""}
+packaging = ">=19.0"
+pyproject_hooks = "*"
+tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
+
+[package.extras]
+docs = ["furo (>=2021.08.31)", "sphinx (>=4.0,<5.0)", "sphinx-argparse-cli (>=1.5)", "sphinx-autodoc-typehints (>=1.10)"]
+test = ["filelock (>=3)", "pytest (>=6.2.4)", "pytest-cov (>=2.12)", "pytest-mock (>=2)", "pytest-rerunfailures (>=9.1)", "pytest-xdist (>=1.34)", "setuptools (>=42.0.0)", "setuptools (>=56.0.0)", "toml (>=0.10.0)", "wheel (>=0.36.0)"]
+typing = ["importlib-metadata (>=5.1)", "mypy (==0.991)", "tomli", "typing-extensions (>=3.7.4.3)"]
+virtualenv = ["virtualenv (>=20.0.35)"]
+
+[[package]]
 name = "cachetools"
 version = "5.3.1"
 description = "Extensible memoizing collections and decorators"
@@ -1685,13 +1709,13 @@ files = [
 
 [[package]]
 name = "deeplake"
-version = "3.5.4"
+version = "3.6.0"
 description = "Activeloop Deep Lake"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "deeplake-3.5.4.tar.gz", hash = "sha256:a05eba10141fe1e5be5f0ed115a42da1320d6675d644b49790dc28485a87aa32"},
+    {file = "deeplake-3.6.0.tar.gz", hash = "sha256:bf502ed4fcd19624e750c649b8dd2fb892529a29384c8a816bbb09005b763db1"},
 ]
 
 [package.dependencies]
@@ -1708,11 +1732,12 @@ pyjwt = "*"
 tqdm = "*"
 
 [package.extras]
-all = ["IPython", "av (>=8.1.0)", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.54)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
+all = ["IPython", "av (>=8.1.0)", "azure-cli", "azure-identity", "azure-storage-blob", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.55)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
 audio = ["av (>=8.1.0)"]
 av = ["av (>=8.1.0)"]
+azure = ["azure-cli", "azure-identity", "azure-storage-blob"]
 dicom = ["nibabel", "pydicom"]
-enterprise = ["libdeeplake (==0.0.54)", "pyjwt"]
+enterprise = ["libdeeplake (==0.0.55)", "pyjwt"]
 gcp = ["google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)"]
 gdrive = ["google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "oauth2client (>=4.1.3,<4.2.0)"]
 medical = ["nibabel", "pydicom"]
@@ -2331,6 +2356,17 @@ ssh = ["paramiko"]
 tqdm = ["tqdm"]
 
 [[package]]
+name = "future"
+version = "0.18.3"
+description = "Clean single-source support for Python 3 and 2"
+category = "main"
+optional = true
+python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
+files = [
+    {file = "future-0.18.3.tar.gz", hash = "sha256:34a17436ed1e96697a86f9de3d15a3b0be01d8bc8de9c1dffd59fb8234ed5307"},
+]
+
+[[package]]
 name = "gast"
 version = "0.4.0"
 description = "Python AST that abstracts the underlying Python version"
@@ -2524,14 +2560,14 @@ grpc = ["grpcio (>=1.44.0,<2.0.0dev)"]
 
 [[package]]
 name = "gptcache"
-version = "0.1.29.1"
+version = "0.1.30"
 description = "GPTCache, a powerful caching library that can be used to speed up and lower the cost of chat applications that rely on the LLM service. GPTCache works as a memcache for AIGC applications, similar to how Redis works for traditional applications."
 category = "main"
 optional = false
 python-versions = ">=3.8.1"
 files = [
-    {file = "gptcache-0.1.29.1-py3-none-any.whl", hash = "sha256:e281f1c7bf1f2cc72e0193d6e15ad3d50e7cb358d04332ef96b98f732aee8a74"},
-    {file = "gptcache-0.1.29.1.tar.gz", hash = "sha256:c7c07c5300422feed302f4a140ff5e25e01f04885c81fb3388e07b3c3a82647a"},
+    {file = "gptcache-0.1.30-py3-none-any.whl", hash = "sha256:57c37babe85161fbbe547cb036f6780b33232d70557ae085daccf3c032bc7b14"},
+    {file = "gptcache-0.1.30.tar.gz", hash = "sha256:a69f600e286dee3e7f3b151c8b269778a4e6a7d5da409c01fbfbedf3239d0cd9"},
 ]
 
 [package.dependencies]
@@ -3969,14 +4005,14 @@ tests = ["pytest", "pytest-mock"]
 
 [[package]]
 name = "langchainplus-sdk"
-version = "0.0.4"
+version = "0.0.7"
 description = "Client library to connect to the LangChainPlus LLM Tracing and Evaluation Platform."
 category = "main"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchainplus_sdk-0.0.4-py3-none-any.whl", hash = "sha256:ba72276b0e9cb148f572d531fbed41017d3a0072dc5a1110d8d2f3af06efce75"},
-    {file = "langchainplus_sdk-0.0.4.tar.gz", hash = "sha256:0c09af62e81975e33561c655ba9b32777d79834218c9377d28578a9558740044"},
+    {file = "langchainplus_sdk-0.0.7-py3-none-any.whl", hash = "sha256:aefc471058648bf9fc51f659117d33ef905d25a304d5a021f7e32c30f5921076"},
+    {file = "langchainplus_sdk-0.0.7.tar.gz", hash = "sha256:b58565bdcaf301d2e6e7dd8898f0b8ccf549a35476258e0c14d871d6de02d210"},
 ]
 
 [package.dependencies]
@@ -5160,6 +5196,24 @@ sphinx = ">=1.8"
 traitlets = ">=5"
 
 [[package]]
+name = "nebula3-python"
+version = "3.4.0"
+description = "Python client for NebulaGraph V3.4"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "nebula3-python-3.4.0.tar.gz", hash = "sha256:47bd8b1b4bb2c2f0e5122bc147926cb50578a66841acf6a743cae4d0362c9eaa"},
+    {file = "nebula3_python-3.4.0-py3-none-any.whl", hash = "sha256:d9d94c6a41712875e6ec866907de0789057f860e64f547f87d9f199439759dd6"},
+]
+
+[package.dependencies]
+future = ">=0.18.0"
+httplib2 = ">=0.20.0"
+pytz = ">=2021.1"
+six = ">=1.16.0"
+
+[[package]]
 name = "neo4j"
 version = "5.9.0"
 description = "Neo4j Bolt driver for Python"
@@ -5591,14 +5645,14 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "0.27.7"
+version = "0.27.8"
 description = "Python client library for the OpenAI API"
 category = "main"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-0.27.7-py3-none-any.whl", hash = "sha256:788fb7fa85bf7caac6c1ed7eea5984254a1bdaf09ef485acf0e5718c8b2dc25a"},
-    {file = "openai-0.27.7.tar.gz", hash = "sha256:bca95fd4c3054ef38924def096396122130454442ec52005915ecf8269626b1d"},
+    {file = "openai-0.27.8-py3-none-any.whl", hash = "sha256:e0a7c2f7da26bdbe5354b03c6d4b82a2f34bd4458c7a17ae1a7092c3e397e03c"},
+    {file = "openai-0.27.8.tar.gz", hash = "sha256:2483095c7db1eee274cebac79e315a986c4e55207bb4fa7b82d185b3a2ed9536"},
 ]
 
 [package.dependencies]
@@ -6340,20 +6394,20 @@ tests = ["check-manifest", "coverage", "defusedxml", "markdown2", "olefile", "pa
 
 [[package]]
 name = "pinecone-client"
-version = "2.2.1"
+version = "2.2.2"
 description = "Pinecone client and SDK"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.8"
 files = [
-    {file = "pinecone-client-2.2.1.tar.gz", hash = "sha256:0878dcaee447c46c8d1b3d71c854689daa7e548e5009a171780907c7d4e74789"},
-    {file = "pinecone_client-2.2.1-py3-none-any.whl", hash = "sha256:6976a22aee57a9813378607506c8c36b0317dfa36a08a5397aaaeab2eef66c1b"},
+    {file = "pinecone-client-2.2.2.tar.gz", hash = "sha256:391fe413754efd4e0ef00154b44271d63c4cdd4bedf088d23111a5725d863210"},
+    {file = "pinecone_client-2.2.2-py3-none-any.whl", hash = "sha256:21fddb752668efee4d3c6b706346d9580e36a8b06b8d97afd60bd33ef2536e7e"},
 ]
 
 [package.dependencies]
 dnspython = ">=2.0.0"
 loguru = ">=0.5.0"
-numpy = "*"
+numpy = ">=1.22.0"
 python-dateutil = ">=2.5.3"
 pyyaml = ">=5.4"
 requests = ">=2.19.0"
@@ -6362,7 +6416,7 @@ typing-extensions = ">=3.7.4"
 urllib3 = ">=1.21.1"
 
 [package.extras]
-grpc = ["googleapis-common-protos (>=1.53.0)", "grpc-gateway-protoc-gen-openapiv2 (==0.1.0)", "grpcio (>=1.44.0)", "lz4 (>=3.1.3)", "protobuf (==3.19.3)"]
+grpc = ["googleapis-common-protos (>=1.53.0)", "grpc-gateway-protoc-gen-openapiv2 (==0.1.0)", "grpcio (>=1.44.0)", "lz4 (>=3.1.3)", "protobuf (>=3.19.5,<3.20.0)"]
 
 [[package]]
 name = "pinecone-text"
@@ -6595,13 +6649,13 @@ wcwidth = "*"
 
 [[package]]
 name = "promptlayer"
-version = "0.1.84"
+version = "0.1.85"
 description = "PromptLayer is a package to keep track of your GPT models training"
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "promptlayer-0.1.84.tar.gz", hash = "sha256:38db68a67dd6d075d124badca0998070a79adce611df00e037b706704369c30a"},
+    {file = "promptlayer-0.1.85.tar.gz", hash = "sha256:7f5ee282361e200253f0aa53267756a112d3aa1fa29d680a634031c617de20de"},
 ]
 
 [package.dependencies]
@@ -7159,16 +7213,15 @@ tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
 name = "pylance"
-version = "0.4.18"
+version = "0.4.19"
 description = "python wrapper for lance-rs"
 category = "main"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "pylance-0.4.18-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:9741880ede522b4f80ae9a43b499265096dca4eb2a2a2d72690cb01eb6ef6fed"},
-    {file = "pylance-0.4.18-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:8b2e2baf0dfeb65da8f993872f4c375d6ad16ada4472756f888f033ce72dbd86"},
-    {file = "pylance-0.4.18-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c81f891a6230fc38e60f01f16923263a082f7fd1646c15aad1e940d29c4e8a83"},
-    {file = "pylance-0.4.18-cp38-abi3-win_amd64.whl", hash = "sha256:eda511361a4545bb32fb98bcb270a1a41aaf022dd63cc306fdf5698310ba81ce"},
+    {file = "pylance-0.4.19-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:7f5dbf2c384de6c499a2d876be4aec5cbb8f8ef65d490ac93fbd84251ae61e7c"},
+    {file = "pylance-0.4.19-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:b2125d50ef28af11b5473e72f82ce9af30756ae655b982582c58267b72216043"},
+    {file = "pylance-0.4.19-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f98fc8cbc5f66d35ea7701eae691c195df4e45cca8c8f33d9e1a71f24077d7a6"},
 ]
 
 [package.dependencies]
@@ -7408,6 +7461,21 @@ files = [
 [package.extras]
 doc = ["sphinx", "sphinx_rtd_theme"]
 test = ["flake8", "isort", "pytest"]
+
+[[package]]
+name = "pyproject-hooks"
+version = "1.0.0"
+description = "Wrappers to call pyproject.toml-based build backend hooks."
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "pyproject_hooks-1.0.0-py3-none-any.whl", hash = "sha256:283c11acd6b928d2f6a7c73fa0d01cb2bdc5f07c57a2eeb6e83d5e56b97976f8"},
+    {file = "pyproject_hooks-1.0.0.tar.gz", hash = "sha256:f271b298b97f5955d53fb12b72c1fb1948c22c1a6b70b315c54cedaca0264ef5"},
+]
+
+[package.dependencies]
+tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 
 [[package]]
 name = "pyreadline3"
@@ -8604,6 +8672,39 @@ files = [
 ]
 
 [[package]]
+name = "singlestoredb"
+version = "0.6.1"
+description = "Interface to the SingleStore database and cluster management APIs"
+category = "main"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "singlestoredb-0.6.1-cp36-abi3-macosx_10_9_universal2.whl", hash = "sha256:bf1769e53993981420650a02c59ba367913d9f0256948cc98f6f9d464f74852a"},
+    {file = "singlestoredb-0.6.1-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a4e90fa1dfde1e31f7abe011f75d9dc8cccbc35b968ed8381bd44c0b7dd4026b"},
+    {file = "singlestoredb-0.6.1-cp36-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:44d361c3fa4de6228b525d0b1d22db75790d8e6fb84c3d0b2213bf41774d4323"},
+    {file = "singlestoredb-0.6.1-cp36-abi3-win32.whl", hash = "sha256:ad9543c41286a2095718ad7e133cc8b3b5de938f731157fbb2d4d2b0d1623aff"},
+    {file = "singlestoredb-0.6.1-cp36-abi3-win_amd64.whl", hash = "sha256:f9f9feda947b9fe9182863758118c8961ebb74281098b42894c99b58d30b2526"},
+    {file = "singlestoredb-0.6.1.tar.gz", hash = "sha256:2e00f4cd869dc1ecf33df853c521ebd6ce913af2bf3b2f98675ffa3dc6911636"},
+]
+
+[package.dependencies]
+build = "*"
+PyJWT = "*"
+requests = "*"
+sqlparams = "*"
+wheel = "*"
+
+[package.extras]
+dataframe = ["ibis-singlestoredb"]
+dbt = ["dbt-singlestore"]
+ed22519 = ["PyNaCl (>=1.4.0)"]
+gssapi = ["gssapi"]
+ibis = ["ibis-singlestoredb"]
+kerberos = ["gssapi"]
+rsa = ["cryptography"]
+sqlalchemy = ["sqlalchemy-singlestoredb"]
+
+[[package]]
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -8905,20 +9006,20 @@ themes = ["myst-parser (>=0.12.9,<0.13.0)", "pydata-sphinx-theme (>=0.4.0,<0.5.0
 
 [[package]]
 name = "sphinx-rtd-theme"
-version = "1.2.1"
+version = "1.2.2"
 description = "Read the Docs theme for Sphinx"
 category = "dev"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
 files = [
-    {file = "sphinx_rtd_theme-1.2.1-py2.py3-none-any.whl", hash = "sha256:2cc9351176cbf91944ce44cefd4fab6c3b76ac53aa9e15d6db45a3229ad7f866"},
-    {file = "sphinx_rtd_theme-1.2.1.tar.gz", hash = "sha256:cf9a7dc0352cf179c538891cb28d6fad6391117d4e21c891776ab41dd6c8ff70"},
+    {file = "sphinx_rtd_theme-1.2.2-py2.py3-none-any.whl", hash = "sha256:6a7e7d8af34eb8fc57d52a09c6b6b9c46ff44aea5951bc831eeb9245378f3689"},
+    {file = "sphinx_rtd_theme-1.2.2.tar.gz", hash = "sha256:01c5c5a72e2d025bd23d1f06c59a4831b06e6ce6c01fdd5ebfe9986c0a880fc7"},
 ]
 
 [package.dependencies]
 docutils = "<0.19"
 sphinx = ">=1.6,<7"
-sphinxcontrib-jquery = {version = ">=2.0.0,<3.0.0 || >3.0.0", markers = "python_version > \"3\""}
+sphinxcontrib-jquery = ">=4,<5"
 
 [package.extras]
 dev = ["bump2version", "sphinxcontrib-httpdomain", "transifex-client", "wheel"]
@@ -9138,6 +9239,18 @@ files = [
 ]
 
 [[package]]
+name = "sqlparams"
+version = "5.1.0"
+description = "Convert between various DB API 2.0 parameter styles."
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "sqlparams-5.1.0-py3-none-any.whl", hash = "sha256:ee4ef620a5197535e5ebb9217e2f453f08b044634b3d890f3d6701e4f838c85c"},
+    {file = "sqlparams-5.1.0.tar.gz", hash = "sha256:1abe87a0684567265b2b86f5a482d5c37db237c0268d4c81774ffedce4300199"},
+]
+
+[[package]]
 name = "srsly"
 version = "2.4.6"
 description = "Modern high-performance serialization utilities for Python"
@@ -9219,14 +9332,14 @@ full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyam
 
 [[package]]
 name = "steamship"
-version = "2.17.5"
+version = "2.17.6"
 description = "The fastest way to add language AI to your product."
 category = "main"
 optional = true
 python-versions = "*"
 files = [
-    {file = "steamship-2.17.5-py3-none-any.whl", hash = "sha256:4782281aca0d69f6c050623355687eb4a48d5a2108ac274d96e029779aad82f0"},
-    {file = "steamship-2.17.5.tar.gz", hash = "sha256:e0a6d0e46744b3208b306dffe87d20ecf46113d333bc76515191b0d5c9eb28bb"},
+    {file = "steamship-2.17.6-py3-none-any.whl", hash = "sha256:7d25db57f19d228f82ce445e15ace66b2a2e3ac25307d69c4828c27026e8e44c"},
+    {file = "steamship-2.17.6.tar.gz", hash = "sha256:ff3af96d7f0eef2036c222513af51ac356f0753123a7bf44bdb31eccd2d957df"},
 ]
 
 [package.dependencies]
@@ -9842,7 +9955,7 @@ files = [
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -10385,14 +10498,14 @@ yarl = "*"
 
 [[package]]
 name = "wasabi"
-version = "1.1.1"
+version = "1.1.2"
 description = "A lightweight console printing and formatting toolkit"
 category = "main"
 optional = true
 python-versions = ">=3.6"
 files = [
-    {file = "wasabi-1.1.1-py3-none-any.whl", hash = "sha256:32e44649d99a64e08e40c1c96cddb69fad460bd0cc33802a53cab6714dfb73f8"},
-    {file = "wasabi-1.1.1.tar.gz", hash = "sha256:f5ee7c609027811bd16e620f2fd7a7319466005848e41b051a62053ab8fd70d6"},
+    {file = "wasabi-1.1.2-py3-none-any.whl", hash = "sha256:0a3f933c4bf0ed3f93071132c1b87549733256d6c8de6473c5f7ed2e171b5cf9"},
+    {file = "wasabi-1.1.2.tar.gz", hash = "sha256:1aaef3aceaa32edb9c91330d29d3936c0c39fdb965743549c173cb54b16c30b5"},
 ]
 
 [package.dependencies]
@@ -11227,7 +11340,7 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "momento", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "redis", "requests-toolbelt", "sentence-transformers", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
@@ -11241,4 +11354,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "190059b07b111e19ec5b516be227b81728163fee14928c92cba2c0212d35ead0"
+content-hash = "dbbaa2907bf2ac09ed111ce712772bba0fe56901627f41c53aef71ae5a38d1c6"
