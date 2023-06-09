@@ -195,7 +195,7 @@ def test_chroma_update_document() -> None:
     updated_doc = Document(page_content=updated_content, metadata={"page": "0"})
 
     # Update the document in the Chroma instance
-    docsearch.update_document(document_id=document_id, document=updated_doc)
+    docsearch.update_document(document_ids=[document_id], documents=[updated_doc])
 
     # Perform a similarity search with the updated content
     output = docsearch.similarity_search(updated_content, k=1)
