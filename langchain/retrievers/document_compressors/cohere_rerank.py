@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Dict, Sequence
 from pydantic import Extra, root_validator
 
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
-from langchain.schema.base import Document
+from langchain.schema.document import Document
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:

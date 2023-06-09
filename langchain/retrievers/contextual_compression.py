@@ -1,12 +1,18 @@
 """Retriever that wraps a base retriever and filters the results."""
-from typing import List
+
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Extra
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
-from langchain.schema.base import BaseRetriever, Document
+from langchain.schema.document import Document
+from langchain.schema.retriever import BaseRetriever
 
 
 class ContextualCompressionRetriever(BaseRetriever, BaseModel):
@@ -24,7 +30,13 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         """Get documents relevant for a query.
 
         Args:
@@ -37,7 +49,13 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         compressed_docs = self.base_compressor.compress_documents(docs, query)
         return list(compressed_docs)
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         """Get documents relevant for a query.
 
         Args:

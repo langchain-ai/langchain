@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.math_utils import cosine_similarity
-from langchain.schema.base import BaseDocumentTransformer, Document
+from langchain.schema.document import BaseDocumentTransformer, Document
 
 
 class _DocumentWithState(Document):

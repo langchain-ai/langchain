@@ -4,7 +4,7 @@ from langchain.document_transformers import (
     _DocumentWithState,
 )
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.schema.base import Document
+from langchain.schema.document import Document
 
 
 def test_embeddings_redundant_filter() -> None:

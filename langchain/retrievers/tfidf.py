@@ -2,13 +2,19 @@
 
 Largely based on
 https://github.com/asvskartheek/Text-Retrieval/blob/master/TF-IDF%20Search%20Engine%20(SKLEARN).ipynb"""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional
 
 from pydantic import BaseModel
 
-from langchain.schema.base import BaseRetriever, Document
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
+from langchain.schema.document import Document
+from langchain.schema.retriever import BaseRetriever
 
 
 class TFIDFRetriever(BaseRetriever, BaseModel):
@@ -58,7 +64,13 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
             texts=texts, tfidf_params=tfidf_params, metadatas=metadatas, **kwargs
         )
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         from sklearn.metrics.pairwise import cosine_similarity
 
         query_vec = self.vectorizer.transform(
@@ -70,5 +82,11 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
         return_docs = [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
         return return_docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError

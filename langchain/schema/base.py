@@ -285,37 +285,6 @@ class BaseChatMessageHistory(ABC):
         """Remove all messages from the store"""
 
 
-class Document(BaseModel):
-    """Interface for interacting with a document."""
-
-    page_content: str
-    metadata: dict = Field(default_factory=dict)
-
-
-class BaseRetriever(ABC):
-    @abstractmethod
-    def get_relevant_documents(self, query: str) -> List[Document]:
-        """Get documents relevant for a query.
-
-        Args:
-            query: string to find relevant documents for
-
-        Returns:
-            List of relevant documents
-        """
-
-    @abstractmethod
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
-        """Get documents relevant for a query.
-
-        Args:
-            query: string to find relevant documents for
-
-        Returns:
-            List of relevant documents
-        """
-
-
 # For backwards compatibility
 
 
@@ -405,19 +374,3 @@ class OutputParserException(ValueError):
         self.observation = observation
         self.llm_output = llm_output
         self.send_to_llm = send_to_llm
-
-
-class BaseDocumentTransformer(ABC):
-    """Base interface for transforming documents."""
-
-    @abstractmethod
-    def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        """Transform a list of documents."""
-
-    @abstractmethod
-    async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        """Asynchronously transform a list of documents."""

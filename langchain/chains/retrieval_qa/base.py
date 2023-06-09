@@ -19,7 +19,8 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 from langchain.prompts import PromptTemplate
-from langchain.schema.base import BaseRetriever, Document
+from langchain.schema.document import Document
+from langchain.schema.retriever import BaseRetriever
 from langchain.vectorstores.base import VectorStore
 
 
@@ -94,7 +95,9 @@ class BaseRetrievalQA(Chain):
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
     @abstractmethod
-    def _get_docs(self, question: str) -> List[Document]:
+    def _get_docs(
+        self, question: str, *, run_manager: CallbackManagerForChainRun
+    ) -> List[Document]:
         """Get documents to do question answering over."""
 
     def _call(
@@ -116,7 +119,7 @@ class BaseRetrievalQA(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
 
-        docs = self._get_docs(question)
+        docs = self._get_docs(question, run_manager=_run_manager)
         answer = self.combine_documents_chain.run(
             input_documents=docs, question=question, callbacks=_run_manager.get_child()
         )
@@ -127,7 +130,9 @@ class BaseRetrievalQA(Chain):
             return {self.output_key: answer}
 
     @abstractmethod
-    async def _aget_docs(self, question: str) -> List[Document]:
+    async def _aget_docs(
+        self, question: str, *, run_manager: AsyncCallbackManagerForChainRun
+    ) -> List[Document]:
         """Get documents to do question answering over."""
 
     async def _acall(
@@ -149,7 +154,7 @@ class BaseRetrievalQA(Chain):
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
 
-        docs = await self._aget_docs(question)
+        docs = await self._aget_docs(question, run_manager=_run_manager)
         answer = await self.combine_documents_chain.arun(
             input_documents=docs, question=question, callbacks=_run_manager.get_child()
         )
@@ -177,11 +182,22 @@ class RetrievalQA(BaseRetrievalQA):
 
     retriever: BaseRetriever = Field(exclude=True)
 
-    def _get_docs(self, question: str) -> List[Document]:
-        return self.retriever.get_relevant_documents(question)
+    def _get_docs(
+        self, question: str, *, run_manager: Optional[CallbackManagerForChainRun] = None
+    ) -> List[Document]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
+        return self.retriever.retrieve(question, run_manager=_run_manager.get_child())
 
-    async def _aget_docs(self, question: str) -> List[Document]:
-        return await self.retriever.aget_relevant_documents(question)
+    async def _aget_docs(
+        self,
+        question: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> List[Document]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        return await self.retriever.aretrieve(
+            question, callbacks=_run_manager.get_child()
+        )
 
     @property
     def _chain_type(self) -> str:
@@ -218,7 +234,9 @@ class VectorDBQA(BaseRetrievalQA):
                 raise ValueError(f"search_type of {search_type} not allowed.")
         return values
 
-    def _get_docs(self, question: str) -> List[Document]:
+    def _get_docs(
+        self, question: str, *, run_manager: CallbackManagerForChainRun
+    ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(
                 question, k=self.k, **self.search_kwargs
@@ -231,7 +249,9 @@ class VectorDBQA(BaseRetrievalQA):
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
-    async def _aget_docs(self, question: str) -> List[Document]:
+    async def _aget_docs(
+        self, question: str, *, run_manager: AsyncCallbackManagerForChainRun
+    ) -> List[Document]:
         raise NotImplementedError("VectorDBQA does not support async")
 
     @property

@@ -4,7 +4,7 @@ from typing import List
 import numpy as np
 import pytest
 
-from langchain.schema.base import Document
+from langchain.schema.document import Document
 from langchain.vectorstores.docarray import DocArrayHnswSearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 

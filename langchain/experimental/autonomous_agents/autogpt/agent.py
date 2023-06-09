@@ -14,13 +14,8 @@ from langchain.experimental.autonomous_agents.autogpt.prompt import AutoGPTPromp
 from langchain.experimental.autonomous_agents.autogpt.prompt_generator import (
     FINISH_NAME,
 )
-from langchain.schema.base import (
-    AIMessage,
-    BaseMessage,
-    Document,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain.schema.base import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain.schema.document import Document
 from langchain.tools.base import BaseTool
 from langchain.tools.human.tool import HumanInputRun
 from langchain.vectorstores.base import VectorStoreRetriever

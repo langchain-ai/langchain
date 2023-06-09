@@ -1,8 +1,14 @@
 """Zilliz Retriever"""
+
 from typing import Any, Dict, List, Optional
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.embeddings.base import Embeddings
-from langchain.schema.base import BaseRetriever, Document
+from langchain.schema.document import Document
+from langchain.schema.retriever import BaseRetriever
 from langchain.vectorstores.zilliz import Zilliz
 
 # TODO: Update to ZillizClient + Hybrid Search when available
@@ -36,8 +42,21 @@ class ZillizRetreiver(BaseRetriever):
         """
         self.store.add_texts(texts, metadatas)
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
-        return self.retriever.get_relevant_documents(query)
+    def get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        _run_manager = run_manager or CallbackManagerForRetrieverRun.get_noop_manager()
+        return self.retriever.retrieve(query, callbacks=_run_manager.get_child())
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError

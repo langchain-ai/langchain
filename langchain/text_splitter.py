@@ -22,8 +22,7 @@ from typing import (
     Union,
 )
 
-from langchain.docstore.document import Document
-from langchain.schema.base import BaseDocumentTransformer
+from langchain.schema.document import BaseDocumentTransformer, Document
 
 logger = logging.getLogger(__name__)
 

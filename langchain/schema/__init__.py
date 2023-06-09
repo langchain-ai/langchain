@@ -6,15 +6,12 @@ from langchain.schema.base import (
     AgentFinish,
     AIMessage,
     BaseChatMessageHistory,
-    BaseDocumentTransformer,
     BaseMemory,
     BaseMessage,
     BaseOutputParser,
-    BaseRetriever,
     ChatGeneration,
     ChatMessage,
     ChatResult,
-    Document,
     Generation,
     HumanMessage,
     LLMResult,
@@ -30,6 +27,8 @@ from langchain.schema.base import (
     messages_from_dict,
     messages_to_dict,
 )
+from langchain.schema.document import BaseDocumentTransformer, Document
+from langchain.schema.retriever import BaseRetriever
 
 __all__ = [
     "AIMessage",

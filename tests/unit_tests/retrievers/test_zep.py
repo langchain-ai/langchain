@@ -7,7 +7,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from langchain.retrievers import ZepRetriever
-from langchain.schema.base import Document
+from langchain.schema.document import Document
 
 if TYPE_CHECKING:
     from zep_python import MemorySearchResult, ZepClient

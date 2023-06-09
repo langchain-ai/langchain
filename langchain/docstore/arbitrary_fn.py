@@ -1,7 +1,7 @@
 from typing import Callable, Union
 
 from langchain.docstore.base import Docstore
-from langchain.schema.base import Document
+from langchain.schema.document import Document
 
 
 class DocstoreFn(Docstore):

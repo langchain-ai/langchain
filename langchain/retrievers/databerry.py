@@ -1,9 +1,14 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import aiohttp
 import requests
 
-from langchain.schema.base import BaseRetriever, Document
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
+from langchain.schema.document import Document
+from langchain.schema.retriever import BaseRetriever
 
 
 class DataberryRetriever(BaseRetriever):
@@ -21,7 +26,13 @@ class DataberryRetriever(BaseRetriever):
         self.api_key = api_key
         self.top_k = top_k
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         response = requests.post(
             self.datastore_url,
             json={
@@ -46,7 +57,13 @@ class DataberryRetriever(BaseRetriever):
             for r in data["results"]
         ]
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         async with aiohttp.ClientSession() as session:
             async with session.request(
                 "POST",

@@ -94,6 +94,7 @@ class RunTypeEnum(str, Enum):
     tool = "tool"
     chain = "chain"
     llm = "llm"
+    retriever = "retriever"
 
 
 class RunBase(BaseModel):

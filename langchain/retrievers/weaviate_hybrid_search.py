@@ -6,8 +6,12 @@ from uuid import uuid4
 
 from pydantic import Extra
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
-from langchain.schema.base import BaseRetriever
+from langchain.schema.retriever import BaseRetriever
 
 
 class WeaviateHybridSearchRetriever(BaseRetriever):
@@ -83,7 +87,12 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         return ids
 
     def get_relevant_documents(
-        self, query: str, where_filter: Optional[Dict[str, object]] = None
+        self,
+        query: str,
+        *,
+        where_filter: Optional[Dict[str, object]] = None,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Look up similar documents in Weaviate."""
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
@@ -102,6 +111,11 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         return docs
 
     async def aget_relevant_documents(
-        self, query: str, where_filter: Optional[Dict[str, object]] = None
+        self,
+        query: str,
+        *,
+        where_filter: Optional[Dict[str, object]] = None,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError

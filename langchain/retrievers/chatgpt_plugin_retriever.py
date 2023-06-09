@@ -1,12 +1,17 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import aiohttp
 import requests
 from pydantic import BaseModel
 
-from langchain.schema.base import BaseRetriever, Document
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
+from langchain.schema.document import Document
+from langchain.schema.retriever import BaseRetriever
 
 
 class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
@@ -21,7 +26,13 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
 
         arbitrary_types_allowed = True
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         url, json, headers = self._create_request(query)
         response = requests.post(url, json=json, headers=headers)
         results = response.json()["results"][0]["results"]
@@ -31,7 +42,13 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
             docs.append(Document(page_content=content, metadata=d))
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         url, json, headers = self._create_request(query)
 
         if not self.aiosession:

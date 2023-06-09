@@ -4,7 +4,7 @@ import numpy as np
 from langchain.document_transformers import _DocumentWithState
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers.document_compressors import EmbeddingsFilter
-from langchain.schema.base import Document
+from langchain.schema.document import Document
 
 
 def test_embeddings_filter() -> None:

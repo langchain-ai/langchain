@@ -122,3 +122,15 @@ class LangChainTracer(BaseTracer):
     def _on_tool_error(self, run: Run) -> None:
         """Process the Tool Run upon error."""
         self.executor.submit(self._update_run_single, run.copy(deep=True))
+
+    def _on_retriever_start(self, run: Run) -> None:
+        """Process the Retriever Run upon start."""
+        self.executor.submit(self._persist_run_single, run.copy(deep=True))
+
+    def _on_retriever_end(self, run: Run) -> None:
+        """Process the Retriever Run."""
+        self.executor.submit(self._update_run_single, run.copy(deep=True))
+
+    def _on_retriever_error(self, run: Run) -> None:
+        """Process the Retriever Run upon error."""
+        self.executor.submit(self._update_run_single, run.copy(deep=True))

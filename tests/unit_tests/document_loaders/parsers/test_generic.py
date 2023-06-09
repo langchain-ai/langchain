@@ -7,7 +7,7 @@ import pytest
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.generic import MimeTypeBasedParser
-from langchain.schema.base import Document
+from langchain.schema.document import Document
 
 
 class TestMimeBasedParser:

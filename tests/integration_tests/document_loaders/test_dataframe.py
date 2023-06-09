@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from langchain.document_loaders import DataFrameLoader
-from langchain.schema.base import Document
+from langchain.schema.document import Document
 
 
 @pytest.fixture

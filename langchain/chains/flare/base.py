@@ -8,9 +8,7 @@ import numpy as np
 from pydantic import Field
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import (
-    CallbackManagerForChainRun,
-)
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.flare.prompts import (
     PROMPT,
@@ -20,7 +18,8 @@ from langchain.chains.flare.prompts import (
 from langchain.chains.llm import LLMChain
 from langchain.llms import OpenAI
 from langchain.prompts import BasePromptTemplate
-from langchain.schema.base import BaseRetriever, Generation
+from langchain.schema.base import Generation
+from langchain.schema.retriever import BaseRetriever
 
 
 class _ResponseChain(LLMChain):
@@ -124,7 +123,7 @@ class FlareChain(Chain):
         callbacks = _run_manager.get_child()
         docs = []
         for question in questions:
-            docs.extend(self.retriever.get_relevant_documents(question))
+            docs.extend(self.retriever.retrieve(question, callbacks=callbacks))
         context = "\n\n".join(d.page_content for d in docs)
         result = self.response_chain.predict(
             user_input=user_input,

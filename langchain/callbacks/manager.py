@@ -14,6 +14,7 @@ from typing import (
     Generator,
     List,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -27,6 +28,7 @@ from langchain.callbacks.base import (
     BaseCallbackManager,
     ChainManagerMixin,
     LLMManagerMixin,
+    RetrieverManagerMixin,
     RunManagerMixin,
     ToolManagerMixin,
 )
@@ -43,6 +45,7 @@ from langchain.schema.base import (
     LLMResult,
     get_buffer_string,
 )
+from langchain.schema.document import Document
 
 logger = logging.getLogger(__name__)
 Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
@@ -624,6 +627,91 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
         )
 
 
+class CallbackManagerForRetrieverRun(RunManager, RetrieverManagerMixin):
+    """Callback manager for retriever run."""
+
+    def get_child(self) -> CallbackManager:
+        """Get a child callback manager."""
+        manager = CallbackManager([], parent_run_id=self.run_id)
+        manager.set_handlers(self.inheritable_handlers)
+        return manager
+
+    def on_retriever_end(
+        self,
+        documents: Sequence[Document],
+        **kwargs: Any,
+    ) -> None:
+        """Run when retriever ends running."""
+        _handle_event(
+            self.handlers,
+            "on_retriever_end",
+            "ignore_retriever",
+            documents,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+    def on_retriever_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        **kwargs: Any,
+    ) -> None:
+        """Run when retriever errors."""
+        _handle_event(
+            self.handlers,
+            "on_retriever_error",
+            "ignore_retriever",
+            error,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+
+class AsyncCallbackManagerForRetrieverRun(
+    AsyncRunManager,
+    RetrieverManagerMixin,
+):
+    """Async callback manager for retriever run."""
+
+    def get_child(self) -> AsyncCallbackManager:
+        """Get a child callback manager."""
+        manager = AsyncCallbackManager([], parent_run_id=self.run_id)
+        manager.set_handlers(self.inheritable_handlers)
+        return manager
+
+    async def on_retriever_end(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> None:
+        """Run when retriever ends running."""
+        await _ahandle_event(
+            self.handlers,
+            "on_retriever_end",
+            "ignore_retriever",
+            documents,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+    async def on_retriever_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        **kwargs: Any,
+    ) -> None:
+        """Run when retriever errors."""
+        await _ahandle_event(
+            self.handlers,
+            "on_retriever_error",
+            "ignore_retriever",
+            error,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+
 class CallbackManager(BaseCallbackManager):
     """Callback manager that can be used to handle callbacks from langchain."""
 
@@ -730,6 +818,29 @@ class CallbackManager(BaseCallbackManager):
         )
 
         return CallbackManagerForToolRun(
+            run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
+        )
+
+    def on_retriever_start(
+        self,
+        query: str,
+        run_id: Optional[UUID] = None,
+        parent_run_id: Optional[UUID] = None,
+    ) -> CallbackManagerForRetrieverRun:
+        """Run when retriever starts running."""
+        if run_id is None:
+            run_id = uuid4()
+
+        _handle_event(
+            self.handlers,
+            "on_retriever_start",
+            "ignore_retriever",
+            query,
+            run_id=run_id,
+            parent_run_id=self.parent_run_id,
+        )
+
+        return CallbackManagerForRetrieverRun(
             run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
         )
 
@@ -853,6 +964,29 @@ class AsyncCallbackManager(BaseCallbackManager):
         )
 
         return AsyncCallbackManagerForToolRun(
+            run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
+        )
+
+    async def on_retriever_start(
+        self,
+        query: str,
+        run_id: Optional[UUID] = None,
+        parent_run_id: Optional[UUID] = None,
+    ) -> AsyncCallbackManagerForRetrieverRun:
+        """Run when retriever starts running."""
+        if run_id is None:
+            run_id = uuid4()
+
+        await _ahandle_event(
+            self.handlers,
+            "on_retriever_start",
+            "ignore_retriever",
+            query,
+            run_id=run_id,
+            parent_run_id=self.parent_run_id,
+        )
+
+        return AsyncCallbackManagerForRetrieverRun(
             run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
         )
 

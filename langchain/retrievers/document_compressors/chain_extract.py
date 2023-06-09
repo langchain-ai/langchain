@@ -10,7 +10,8 @@ from langchain.retrievers.document_compressors.base import BaseDocumentCompresso
 from langchain.retrievers.document_compressors.chain_extract_prompt import (
     prompt_template,
 )
-from langchain.schema.base import BaseOutputParser, Document
+from langchain.schema.base import BaseOutputParser
+from langchain.schema.document import Document
 
 
 def default_get_input(query: str, doc: Document) -> Dict[str, Any]:

@@ -4,7 +4,7 @@ import re
 from typing import Any, Callable, Generator, Iterable, List, Optional
 
 from langchain.document_loaders.web_base import WebBaseLoader
-from langchain.schema.base import Document
+from langchain.schema.document import Document
 
 
 def _default_parsing_function(content: Any) -> str:

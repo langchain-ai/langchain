@@ -3,7 +3,7 @@ from typing import List
 
 import pytest
 
-from langchain.schema.base import Document
+from langchain.schema.document import Document
 from langchain.utilities import WikipediaAPIWrapper
 
 
