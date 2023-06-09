@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Generic,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -121,15 +122,17 @@ class ChatMessage(BaseMessage):
         return "chat"
 
 
-def _message_to_dict(message: BaseMessage) -> dict:
+def message_to_dict(message: BaseMessage) -> dict:
     return {"type": message.type, "data": message.dict()}
 
 
-def messages_to_dict(messages: List[BaseMessage]) -> List[dict]:
-    return [_message_to_dict(m) for m in messages]
+def messages_to_dict(messages: Sequence[BaseMessage]) -> List[dict]:
+    """Convert messages to a list of dicts."""
+    return [message_to_dict(m) for m in messages]
 
 
-def _message_from_dict(message: dict) -> BaseMessage:
+def message_from_dict(message: Mapping) -> BaseMessage:
+    """Create a message object from a dict."""
     _type = message["type"]
     if _type == "human":
         return HumanMessage(**message["data"])
@@ -143,8 +146,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         raise ValueError(f"Got unexpected type: {_type}")
 
 
-def messages_from_dict(messages: List[dict]) -> List[BaseMessage]:
-    return [_message_from_dict(m) for m in messages]
+def messages_from_dict(messages: Sequence[Mapping]) -> List[BaseMessage]:
+    return [message_from_dict(m) for m in messages]
 
 
 class ChatGeneration(Generation):
@@ -254,7 +257,7 @@ class BaseChatMessageHistory(ABC):
                     return messages_from_dict(messages)
 
                def add_message(self, message: BaseMessage) -> None:
-                   messages = self.messages.append(_message_to_dict(message))
+                   messages = self.messages.append(message_to_dict(message))
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        json.dump(f, messages)
                

@@ -5,7 +5,7 @@ from typing import List
 from langchain.schema import (
     BaseChatMessageHistory,
     BaseMessage,
-    _message_to_dict,
+    message_to_dict,
     messages_from_dict,
 )
 
@@ -153,7 +153,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
             self.session.execute(
                 """INSERT INTO message_store
                 (id, session_id, history) VALUES (%s, %s, %s);""",
-                (uuid.uuid4(), self.session_id, json.dumps(_message_to_dict(message))),
+                (uuid.uuid4(), self.session_id, json.dumps(message_to_dict(message))),
             )
         except (Unavailable, WriteTimeout, WriteFailure) as error:
             logger.error("Unable to write chat history messages to cassandra")

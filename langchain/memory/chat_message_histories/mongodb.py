@@ -5,7 +5,7 @@ from typing import List
 from langchain.schema import (
     BaseChatMessageHistory,
     BaseMessage,
-    _message_to_dict,
+    message_to_dict,
     messages_from_dict,
 )
 
@@ -75,7 +75,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
             self.collection.insert_one(
                 {
                     "SessionId": self.session_id,
-                    "History": json.dumps(_message_to_dict(message)),
+                    "History": json.dumps(message_to_dict(message)),
                 }
             )
         except errors.WriteError as err:

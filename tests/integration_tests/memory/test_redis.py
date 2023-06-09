@@ -2,7 +2,7 @@ import json
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import RedisChatMessageHistory
-from langchain.schema import _message_to_dict
+from langchain.schema import message_to_dict
 
 
 def test_memory_with_message_store() -> None:
@@ -21,7 +21,7 @@ def test_memory_with_message_store() -> None:
 
     # get the message history from the memory store and turn it into a json
     messages = memory.chat_memory.messages
-    messages_json = json.dumps([_message_to_dict(msg) for msg in messages])
+    messages_json = json.dumps([message_to_dict(msg) for msg in messages])
 
     assert "This is me, the AI" in messages_json
     assert "This is me, the human" in messages_json

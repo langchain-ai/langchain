@@ -5,7 +5,7 @@ from typing import List
 from langchain.schema import (
     BaseChatMessageHistory,
     BaseMessage,
-    _message_to_dict,
+    message_to_dict,
     messages_from_dict,
 )
 
@@ -61,7 +61,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
             sql.Identifier(self.table_name)
         )
         self.cursor.execute(
-            query, (self.session_id, json.dumps(_message_to_dict(message)))
+            query, (self.session_id, json.dumps(message_to_dict(message)))
         )
         self.connection.commit()
 

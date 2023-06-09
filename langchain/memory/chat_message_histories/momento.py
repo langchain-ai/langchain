@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from langchain.schema import (
     BaseChatMessageHistory,
     BaseMessage,
-    _message_to_dict,
+    message_to_dict,
     messages_from_dict,
 )
 from langchain.utils import get_from_env
@@ -153,7 +153,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         """
         from momento.responses import CacheListPushBack
 
-        item = json.dumps(_message_to_dict(message))
+        item = json.dumps(message_to_dict(message))
         push_response = self.cache_client.list_push_back(
             self.cache_name, self.key, item, ttl=self.ttl
         )

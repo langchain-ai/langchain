@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from langchain.schema import (
     BaseChatMessageHistory,
     BaseMessage,
-    _message_to_dict,
+    message_to_dict,
     messages_from_dict,
 )
 
@@ -66,7 +66,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in db"""
         with self.Session() as session:
-            jsonstr = json.dumps(_message_to_dict(message))
+            jsonstr = json.dumps(message_to_dict(message))
             session.add(self.Message(session_id=self.session_id, message=jsonstr))
             session.commit()
 

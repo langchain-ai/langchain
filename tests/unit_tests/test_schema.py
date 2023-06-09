@@ -2,6 +2,7 @@
 
 import unittest
 
+import langchain.schema as schema
 from langchain.schema import (
     AIMessage,
     HumanMessage,
@@ -10,6 +11,7 @@ from langchain.schema import (
     messages_from_dict,
     messages_to_dict,
 )
+from langchain.schema import __all__ as schema_all
 
 
 class TestGetBufferString(unittest.TestCase):
@@ -75,3 +77,43 @@ class TestMessageDictConversion(unittest.TestCase):
             messages_from_dict(messages_to_dict(msgs)),
             msgs,
         )
+
+
+def test_public_api() -> None:
+    """Test for changes in the public API."""
+    expected_all = [
+        "AIMessage",
+        "AgentAction",
+        "AgentFinish",
+        "BaseChatMessageHistory",
+        "BaseDocumentTransformer",
+        "BaseMemory",
+        "BaseMessage",
+        "BaseOutputParser",
+        "BaseRetriever",
+        "ChatGeneration",
+        "ChatMessage",
+        "ChatResult",
+        "Document",
+        "Generation",
+        "HumanMessage",
+        "LLMResult",
+        "Memory",
+        "OutputParserException",
+        "PromptValue",
+        "RUN_KEY",
+        "RunInfo",
+        "SystemMessage",
+        "T",
+        "get_buffer_string",
+        "message_from_dict",
+        "message_to_dict",
+        "messages_from_dict",
+        "messages_to_dict",
+    ]
+
+    assert sorted(schema_all) == expected_all
+
+    # Assert that the object is actually present in the schema module
+    for module_name in expected_all:
+        assert hasattr(schema, module_name) and getattr(schema, module_name) is not None
