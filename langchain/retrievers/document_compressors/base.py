@@ -4,7 +4,7 @@ from typing import List, Sequence, Union
 
 from pydantic import BaseModel
 
-from langchain.schema import BaseDocumentTransformer, Document
+from langchain.schema.base import BaseDocumentTransformer, Document
 
 
 class BaseDocumentCompressor(BaseModel, ABC):

@@ -2,7 +2,7 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema.base import AgentAction, AgentFinish, LLMResult
 
 
 def import_aim() -> Any:

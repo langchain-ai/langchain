@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 
 
 def hash_text(text: str) -> str:

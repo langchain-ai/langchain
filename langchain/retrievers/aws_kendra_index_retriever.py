@@ -2,7 +2,7 @@
 import re
 from typing import Any, Dict, List
 
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 
 
 class AwsKendraIndexRetriever(BaseRetriever):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 
 if TYPE_CHECKING:
     from zep_python import MemorySearchResult

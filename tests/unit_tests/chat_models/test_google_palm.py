@@ -7,7 +7,7 @@ from langchain.chat_models.google_palm import (
     ChatGooglePalmError,
     _messages_to_prompt_dict,
 )
-from langchain.schema import (
+from langchain.schema.base import (
     AIMessage,
     HumanMessage,
     SystemMessage,

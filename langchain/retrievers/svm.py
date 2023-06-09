@@ -11,7 +11,7 @@ import numpy as np
 from pydantic import BaseModel
 
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:

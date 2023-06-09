@@ -23,7 +23,7 @@ from langchain.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import (
+from langchain.schema.base import (
     AgentAction,
     AIMessage,
     BaseMessage,

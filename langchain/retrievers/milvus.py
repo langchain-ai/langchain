@@ -2,7 +2,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 from langchain.vectorstores.milvus import Milvus
 
 # TODO: Update to MilvusClient + Hybrid Search when available

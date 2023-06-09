@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from pydantic import BaseModel, Field
 
-from langchain.schema import BaseOutputParser
+from langchain.schema.base import BaseOutputParser
 
 
 class Step(BaseModel):

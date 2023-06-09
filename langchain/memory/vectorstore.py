@@ -6,7 +6,7 @@ from pydantic import Field
 
 from langchain.memory.chat_memory import BaseMemory
 from langchain.memory.utils import get_prompt_input_key
-from langchain.schema import Document
+from langchain.schema.base import Document
 from langchain.vectorstores.base import VectorStoreRetriever
 
 

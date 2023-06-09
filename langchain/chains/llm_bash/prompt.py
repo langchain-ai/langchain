@@ -5,7 +5,7 @@ import re
 from typing import List
 
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseOutputParser, OutputParserException
+from langchain.schema.base import BaseOutputParser, OutputParserException
 
 _PROMPT_TEMPLATE = """If someone asks you to perform a task, your job is to come up with a series of bash commands that will perform the task. There is no need to put "#!/bin/bash" in your answer. Make sure to reason step by step, using this format:
 

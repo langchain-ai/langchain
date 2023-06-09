@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, TextIO, cast
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.input import print_text
-from langchain.schema import AgentAction, AgentFinish
+from langchain.schema.base import AgentAction, AgentFinish
 
 
 class FileCallbackHandler(BaseCallbackHandler):

@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field, root_validator
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever
+from langchain.schema.base import BaseRetriever
 
 VST = TypeVar("VST", bound="VectorStore")
 

@@ -13,7 +13,7 @@ from langchain.callbacks.utils import (
     import_textstat,
     load_json,
 )
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema.base import AgentAction, AgentFinish, LLMResult
 
 
 def import_clearml() -> Any:

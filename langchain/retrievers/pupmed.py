@@ -1,6 +1,6 @@
 from typing import List
 
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 from langchain.utilities.pupmed import PubMedAPIWrapper
 
 

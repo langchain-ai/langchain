@@ -2,7 +2,7 @@ import json
 import logging
 from typing import List
 
-from langchain.schema import (
+from langchain.schema.base import (
     BaseChatMessageHistory,
     BaseMessage,
     message_to_dict,

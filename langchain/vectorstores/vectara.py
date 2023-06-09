@@ -11,7 +11,7 @@ import requests
 from pydantic import Field
 
 from langchain.embeddings.base import Embeddings
-from langchain.schema import Document
+from langchain.schema.base import Document
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 

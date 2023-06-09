@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Set
 from pydantic import validator
 
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.schema import BaseMemory
+from langchain.schema.base import BaseMemory
 
 
 class CombinedMemory(BaseMemory):

@@ -14,7 +14,7 @@ from momento import CacheClient, Configurations, CredentialProvider
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import MomentoChatMessageHistory
-from langchain.schema import message_to_dict
+from langchain.schema.base import message_to_dict
 
 
 def random_string() -> str:

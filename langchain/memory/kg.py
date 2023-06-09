@@ -13,7 +13,7 @@ from langchain.memory.prompt import (
 )
 from langchain.memory.utils import get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import (
+from langchain.schema.base import (
     BaseMessage,
     SystemMessage,
     get_buffer_string,

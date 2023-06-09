@@ -3,7 +3,7 @@ from typing import Any, Iterator, Mapping, Optional
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.schema import Document
+from langchain.schema.base import Document
 
 
 class PyPDFParser(BaseBlobParser):

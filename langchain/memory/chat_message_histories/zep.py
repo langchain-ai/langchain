@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from langchain.schema import (
+from langchain.schema.base import (
     AIMessage,
     BaseChatMessageHistory,
     BaseMessage,

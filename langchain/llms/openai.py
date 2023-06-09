@@ -34,7 +34,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM
-from langchain.schema import Generation, LLMResult
+from langchain.schema.base import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)

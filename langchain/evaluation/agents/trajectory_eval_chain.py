@@ -6,7 +6,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.evaluation.agents.trajectory_eval_prompt import EVAL_CHAT_PROMPT
-from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
+from langchain.schema.base import AgentAction, BaseOutputParser, OutputParserException
 from langchain.tools.base import BaseTool
 
 

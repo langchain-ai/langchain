@@ -13,7 +13,7 @@ from langchain.math_utils import cosine_similarity
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
-from langchain.schema import Document
+from langchain.schema.base import Document
 
 
 class EmbeddingsFilter(BaseDocumentCompressor):

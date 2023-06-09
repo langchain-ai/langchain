@@ -31,7 +31,7 @@ except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.embeddings.base import Embeddings
-from langchain.schema import Generation
+from langchain.schema.base import Generation
 from langchain.vectorstores.redis import Redis as RedisVectorstore
 
 if TYPE_CHECKING:

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 

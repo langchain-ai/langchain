@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from langchain.output_parsers.format_instructions import STRUCTURED_FORMAT_INSTRUCTIONS
 from langchain.output_parsers.json import parse_and_check_json_markdown
-from langchain.schema import BaseOutputParser
+from langchain.schema.base import BaseOutputParser
 
 line_template = '\t"{name}": {type}  // {description}'
 

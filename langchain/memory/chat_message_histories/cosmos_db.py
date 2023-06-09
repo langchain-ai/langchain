@@ -5,7 +5,7 @@ import logging
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, List, Optional, Type
 
-from langchain.schema import (
+from langchain.schema.base import (
     BaseChatMessageHistory,
     BaseMessage,
     messages_from_dict,

@@ -15,7 +15,7 @@ from langchain.chains.router.multi_retrieval_prompt import (
 )
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
-from langchain.schema import BaseRetriever
+from langchain.schema.base import BaseRetriever
 
 
 class MultiRetrievalQAChain(MultiRouteChain):

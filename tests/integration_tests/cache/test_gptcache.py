@@ -5,7 +5,7 @@ import pytest
 
 import langchain
 from langchain.cache import GPTCache
-from langchain.schema import Generation
+from langchain.schema.base import Generation
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 try:

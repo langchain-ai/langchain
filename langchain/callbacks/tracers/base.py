@@ -8,7 +8,7 @@ from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
-from langchain.schema import LLMResult
+from langchain.schema.base import LLMResult
 
 
 class TracerException(Exception):

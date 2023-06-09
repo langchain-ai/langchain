@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import List
 
-from langchain.schema import (
+from langchain.schema.base import (
     BaseChatMessageHistory,
     BaseMessage,
     messages_from_dict,

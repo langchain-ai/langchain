@@ -5,7 +5,7 @@ import pytest
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.anthropic import ChatAnthropic
-from langchain.schema import (
+from langchain.schema.base import (
     AIMessage,
     BaseMessage,
     ChatGeneration,

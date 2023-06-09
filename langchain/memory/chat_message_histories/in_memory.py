@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from langchain.schema import (
+from langchain.schema.base import (
     BaseChatMessageHistory,
     BaseMessage,
 )

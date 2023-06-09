@@ -17,7 +17,7 @@ from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import BaseLLM
-from langchain.schema import (
+from langchain.schema.base import (
     BaseMessage,
     ChatResult,
     HumanMessage,

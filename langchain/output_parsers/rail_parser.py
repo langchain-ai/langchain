@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from langchain.schema import BaseOutputParser
+from langchain.schema.base import BaseOutputParser
 
 
 class GuardrailsOutputParser(BaseOutputParser):

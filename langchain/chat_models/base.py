@@ -17,7 +17,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
-from langchain.schema import (
+from langchain.schema.base import (
     AIMessage,
     BaseMessage,
     ChatGeneration,

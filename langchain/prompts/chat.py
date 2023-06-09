@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from langchain.memory.buffer import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate, StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import (
+from langchain.schema.base import (
     AIMessage,
     BaseMessage,
     ChatMessage,

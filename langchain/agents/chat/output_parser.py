@@ -3,7 +3,7 @@ from typing import Union
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS
-from langchain.schema import AgentAction, AgentFinish, OutputParserException
+from langchain.schema.base import AgentAction, AgentFinish, OutputParserException
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 

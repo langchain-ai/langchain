@@ -15,7 +15,7 @@ from momento import CacheClient, Configurations, CredentialProvider
 
 import langchain
 from langchain.cache import MomentoCache
-from langchain.schema import Generation, LLMResult
+from langchain.schema.base import Generation, LLMResult
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

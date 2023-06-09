@@ -23,7 +23,7 @@ from typing import (
 )
 
 from langchain.docstore.document import Document
-from langchain.schema import BaseDocumentTransformer
+from langchain.schema.base import BaseDocumentTransformer
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@ import json
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Optional
 
-from langchain.schema import (
+from langchain.schema.base import (
     BaseChatMessageHistory,
     BaseMessage,
     message_to_dict,

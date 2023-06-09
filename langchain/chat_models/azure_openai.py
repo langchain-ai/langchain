@@ -7,7 +7,7 @@ from typing import Any, Dict, Mapping
 from pydantic import root_validator
 
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.schema import ChatResult
+from langchain.schema.base import ChatResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)

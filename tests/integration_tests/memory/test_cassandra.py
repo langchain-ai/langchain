@@ -5,7 +5,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories.cassandra import (
     CassandraChatMessageHistory,
 )
-from langchain.schema import message_to_dict
+from langchain.schema.base import message_to_dict
 
 # Replace these with your cassandra contact points
 contact_points = (

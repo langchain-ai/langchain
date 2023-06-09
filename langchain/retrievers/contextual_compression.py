@@ -6,7 +6,7 @@ from pydantic import BaseModel, Extra
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 
 
 class ContextualCompressionRetriever(BaseRetriever, BaseModel):

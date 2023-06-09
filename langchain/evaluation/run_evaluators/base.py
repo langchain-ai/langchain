@@ -12,7 +12,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.schema import RUN_KEY, BaseOutputParser
+from langchain.schema.base import RUN_KEY, BaseOutputParser
 
 
 class RunEvaluatorInputMapper:

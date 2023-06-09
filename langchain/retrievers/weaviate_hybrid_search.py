@@ -7,7 +7,7 @@ from uuid import uuid4
 from pydantic import Extra
 
 from langchain.docstore.document import Document
-from langchain.schema import BaseRetriever
+from langchain.schema.base import BaseRetriever
 
 
 class WeaviateHybridSearchRetriever(BaseRetriever):

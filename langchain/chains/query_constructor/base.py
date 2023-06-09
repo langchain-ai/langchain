@@ -23,7 +23,7 @@ from langchain.chains.query_constructor.prompt import (
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.output_parsers.json import parse_and_check_json_markdown
-from langchain.schema import BaseOutputParser, OutputParserException
+from langchain.schema.base import BaseOutputParser, OutputParserException
 
 
 class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):

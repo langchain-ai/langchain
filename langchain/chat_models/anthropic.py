@@ -8,7 +8,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.anthropic import _AnthropicCommon
-from langchain.schema import (
+from langchain.schema.base import (
     AIMessage,
     BaseMessage,
     ChatGeneration,

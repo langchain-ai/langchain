@@ -10,7 +10,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.vertexai import _VertexAICommon
-from langchain.schema import (
+from langchain.schema.base import (
     AIMessage,
     BaseMessage,
     ChatGeneration,

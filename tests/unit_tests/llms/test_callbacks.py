@@ -1,5 +1,5 @@
 """Test LLM callbacks."""
-from langchain.schema import HumanMessage
+from langchain.schema.base import HumanMessage
 from tests.unit_tests.callbacks.fake_callback_handler import (
     FakeCallbackHandler,
     FakeCallbackHandlerWithChatStart,

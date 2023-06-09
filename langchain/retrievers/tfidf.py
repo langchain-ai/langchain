@@ -8,7 +8,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from pydantic import BaseModel
 
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 
 
 class TFIDFRetriever(BaseRetriever, BaseModel):

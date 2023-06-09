@@ -4,7 +4,7 @@ import json
 import re
 from typing import List
 
-from langchain.schema import OutputParserException
+from langchain.schema.base import OutputParserException
 
 
 def parse_json_markdown(json_string: str) -> dict:

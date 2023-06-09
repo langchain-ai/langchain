@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, root_validator
 
 from langchain.env import get_runtime_environment
-from langchain.schema import LLMResult
+from langchain.schema.base import LLMResult
 
 
 class TracerSessionV1Base(BaseModel):

@@ -15,7 +15,7 @@ from langchain.callbacks.utils import (
     import_spacy,
     import_textstat,
 )
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema.base import AgentAction, AgentFinish, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 

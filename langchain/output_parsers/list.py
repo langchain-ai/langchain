@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import List
 
-from langchain.schema import BaseOutputParser
+from langchain.schema.base import BaseOutputParser
 
 
 class ListOutputParser(BaseOutputParser):

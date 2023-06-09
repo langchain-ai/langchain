@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 
 
 class MetalRetriever(BaseRetriever):

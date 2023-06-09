@@ -11,7 +11,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import HumanMessage
+from langchain.schema.base import HumanMessage
 
 
 def create_messages() -> List[BaseMessagePromptTemplate]:

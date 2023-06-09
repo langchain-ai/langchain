@@ -5,7 +5,7 @@ import pytest
 
 from langchain.chains.llm_bash.base import LLMBashChain
 from langchain.chains.llm_bash.prompt import _PROMPT_TEMPLATE, BashOutputParser
-from langchain.schema import OutputParserException
+from langchain.schema.base import OutputParserException
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 _SAMPLE_CODE = """

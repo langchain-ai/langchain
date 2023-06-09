@@ -10,7 +10,7 @@ from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
     _get_hours_passed,
 )
-from langchain.schema import Document
+from langchain.schema.base import Document
 from langchain.vectorstores.base import VectorStore
 
 

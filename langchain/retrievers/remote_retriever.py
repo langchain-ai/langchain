@@ -4,7 +4,7 @@ import aiohttp
 import requests
 from pydantic import BaseModel
 
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 
 
 class RemoteLangChainRetriever(BaseRetriever, BaseModel):

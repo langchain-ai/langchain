@@ -6,7 +6,7 @@ import pytest
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema.base import AgentAction, AgentFinish, LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,

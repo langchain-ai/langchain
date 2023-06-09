@@ -2,7 +2,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 from langchain.vectorstores.zilliz import Zilliz
 
 # TODO: Update to ZillizClient + Hybrid Search when available

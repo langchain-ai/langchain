@@ -17,7 +17,7 @@ from langchain.chains.base import Chain
 from langchain.input import get_colored_text
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import LLMResult, PromptValue
+from langchain.schema.base import LLMResult, PromptValue
 
 
 class LLMChain(Chain):

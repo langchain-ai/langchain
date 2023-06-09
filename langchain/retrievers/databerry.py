@@ -3,7 +3,7 @@ from typing import List, Optional
 import aiohttp
 import requests
 
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 
 
 class DataberryRetriever(BaseRetriever):

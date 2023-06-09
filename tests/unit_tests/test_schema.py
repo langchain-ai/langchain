@@ -3,7 +3,8 @@
 import unittest
 
 import langchain.schema as schema
-from langchain.schema import (
+from langchain.schema import __all__ as schema_all
+from langchain.schema.base import (
     AIMessage,
     HumanMessage,
     SystemMessage,
@@ -11,7 +12,6 @@ from langchain.schema import (
     messages_from_dict,
     messages_to_dict,
 )
-from langchain.schema import __all__ as schema_all
 
 
 class TestGetBufferString(unittest.TestCase):

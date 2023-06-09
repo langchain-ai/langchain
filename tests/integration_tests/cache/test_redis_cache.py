@@ -3,7 +3,7 @@ import redis
 
 import langchain
 from langchain.cache import RedisCache, RedisSemanticCache
-from langchain.schema import Generation, LLMResult
+from langchain.schema.base import Generation, LLMResult
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

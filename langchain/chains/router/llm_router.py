@@ -14,7 +14,7 @@ from langchain.chains import LLMChain
 from langchain.chains.router.base import RouterChain
 from langchain.output_parsers.json import parse_and_check_json_markdown
 from langchain.prompts import BasePromptTemplate
-from langchain.schema import BaseOutputParser, OutputParserException
+from langchain.schema.base import BaseOutputParser, OutputParserException
 
 
 class LLMRouterChain(RouterChain):

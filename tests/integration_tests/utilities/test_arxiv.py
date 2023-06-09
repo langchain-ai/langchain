@@ -4,7 +4,7 @@ from typing import Any, List
 import pytest
 
 from langchain.agents.load_tools import load_tools
-from langchain.schema import Document
+from langchain.schema.base import Document
 from langchain.tools.base import BaseTool
 from langchain.utilities import ArxivAPIWrapper
 

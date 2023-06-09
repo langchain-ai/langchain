@@ -1,5 +1,5 @@
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
-from langchain.schema import OutputParserException
+from langchain.schema.base import OutputParserException
 
 
 def test_parse() -> None:

@@ -2,7 +2,7 @@ from typing import Any, Dict, List, cast
 
 from pydantic import BaseModel, Field
 
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 
 
 class LlamaIndexRetriever(BaseRetriever, BaseModel):

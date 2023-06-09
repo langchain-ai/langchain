@@ -3,7 +3,7 @@ import os
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import MongoDBChatMessageHistory
-from langchain.schema import message_to_dict
+from langchain.schema.base import message_to_dict
 
 # Replace these with your mongodb connection string
 connection_string = os.environ["MONGODB_CONNECTION_STRING"]

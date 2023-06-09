@@ -14,7 +14,7 @@ from langchain.experimental.autonomous_agents.autogpt.prompt import AutoGPTPromp
 from langchain.experimental.autonomous_agents.autogpt.prompt_generator import (
     FINISH_NAME,
 )
-from langchain.schema import (
+from langchain.schema.base import (
     AIMessage,
     BaseMessage,
     Document,

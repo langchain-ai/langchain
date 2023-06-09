@@ -12,7 +12,7 @@ from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 from langchain.vectorstores import Chroma, Pinecone, Qdrant, VectorStore, Weaviate
 
 

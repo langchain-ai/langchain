@@ -8,7 +8,7 @@ import aiohttp
 import requests
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
 

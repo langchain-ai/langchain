@@ -5,7 +5,7 @@ import uuid
 from typing import Any, Iterable, List
 
 from langchain.docstore.document import Document
-from langchain.schema import BaseRetriever
+from langchain.schema.base import BaseRetriever
 
 
 class ElasticSearchBM25Retriever(BaseRetriever):

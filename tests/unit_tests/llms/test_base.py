@@ -8,7 +8,7 @@ except ImportError:
 
 import langchain
 from langchain.cache import InMemoryCache, SQLAlchemyCache
-from langchain.schema import Generation, LLMResult
+from langchain.schema.base import Generation, LLMResult
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

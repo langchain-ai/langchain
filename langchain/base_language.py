@@ -7,7 +7,7 @@ from typing import List, Optional, Sequence, Set
 from pydantic import BaseModel
 
 from langchain.callbacks.manager import Callbacks
-from langchain.schema import BaseMessage, LLMResult, PromptValue, get_buffer_string
+from langchain.schema.base import BaseMessage, LLMResult, PromptValue, get_buffer_string
 
 
 def _get_token_ids_default_method(text: str) -> List[int]:

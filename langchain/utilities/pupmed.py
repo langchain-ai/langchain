@@ -7,7 +7,7 @@ from typing import List
 
 from pydantic import BaseModel, Extra
 
-from langchain.schema import Document
+from langchain.schema.base import Document
 
 logger = logging.getLogger(__name__)
 

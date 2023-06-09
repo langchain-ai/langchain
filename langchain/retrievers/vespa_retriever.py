@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
 
-from langchain.schema import BaseRetriever, Document
+from langchain.schema.base import BaseRetriever, Document
 
 if TYPE_CHECKING:
     from vespa.application import Vespa

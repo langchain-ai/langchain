@@ -18,7 +18,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain.schema import RUN_KEY, BaseMemory, RunInfo
+from langchain.schema.base import RUN_KEY, BaseMemory, RunInfo
 
 
 def _get_verbosity() -> bool:
