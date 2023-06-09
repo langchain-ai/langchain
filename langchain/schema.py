@@ -268,6 +268,11 @@ class BaseChatMessageHistory(ABC):
     def add_user_message(self, message: str) -> None:
         """Add a user message to the store"""
         self.add_message(HumanMessage(content=message))
+        
+    def add_user_message(self, message: Dict[str, Any]) -> None:
+        """Add a user message to the store"""
+        message = str(message)
+        self.add_message(HumanMessage(content=message))
 
     def add_ai_message(self, message: str) -> None:
         """Add an AI message to the store"""
