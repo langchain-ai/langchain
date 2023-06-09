@@ -93,15 +93,17 @@ async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
 
 
 def _convert_dict_to_message(_dict: dict) -> BaseMessage:
-    role = _dict["role"]
+    role = _dict.get("role")
+    content = _dict.get("content", "")
+
     if role == "user":
-        return HumanMessage(content=_dict["content"])
+        return HumanMessage(content=content)
     elif role == "assistant":
-        return AIMessage(content=_dict["content"])
+        return AIMessage(content=content)
     elif role == "system":
-        return SystemMessage(content=_dict["content"])
+        return SystemMessage(content=content)
     else:
-        return ChatMessage(content=_dict["content"], role=role)
+        return ChatMessage(content=content, role=role)
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
