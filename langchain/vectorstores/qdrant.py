@@ -529,7 +529,7 @@ class Qdrant(VectorStore):
             wal_config=wal_config,
             quantization_config=quantization_config,
             init_from=init_from,
-            timeout=timeout,
+            timeout=timeout,  # type: ignore[arg-type]
         )
 
         texts_iterator = iter(texts)
