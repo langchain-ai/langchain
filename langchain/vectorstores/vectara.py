@@ -106,7 +106,7 @@ class Vectara(VectorStore):
 
         response = self._session.post(
             headers=self._get_post_headers(),
-            url="https://api.vectara.io/v1/index",
+            url="https://api.vectara.io/v1/core/index",
             data=json.dumps(request),
             timeout=30,
             verify=True,
@@ -137,13 +137,16 @@ class Vectara(VectorStore):
             List of ids from adding the texts into the vectorstore.
 
         """
-        doc_id = md5(' '.join(texts).encode()).hexdigest()
+        doc_hash = md5()
+        for t in texts:
+            doc_hash.update(t.encode())
+        doc_id = doc_hash.hexdigest()
         if metadatas is None:
             metadatas = [{} for _ in texts]
         doc = {
             "document_id": doc_id,
             "metadataJson": json.dumps({'source': 'langchain'}),
-            "section": [
+            "parts": [
                 {"text": text, "metadataJson": json.dumps(md)} for text,md in zip(texts,metadatas)
             ],
         }
@@ -159,7 +162,7 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
-        n_sentence_context: int = 3,
+        n_sentence_context: int = 0,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return Vectara documents most similar to query, along with scores.
@@ -241,7 +244,7 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
-        n_sentence_context: int = 3,
+        n_sentence_context: int = 0,
         **kwargs: Any,
     ) -> List[Document]:
         """Return Vectara documents most similar to query, along with scores.
@@ -306,7 +309,7 @@ class VectaraRetriever(VectorStoreRetriever):
             "lambda_val": 0.025,
             "k": 5,
             "filter": "",
-            "n_sentence_context": "3",
+            "n_sentence_context": "0",
         }
     )
     """Search params.

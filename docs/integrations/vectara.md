@@ -13,6 +13,13 @@ What is Vectara?
 ## Installation and Setup
 To use Vectara with LangChain no special installation steps are required. You just have to provide your customer_id, corpus ID, and an API key created within the Vectara console to enable indexing and searching.
 
+Alternatively these can be provided as environment variables
+- `VECTARA_CUSTOMER_ID`
+- `VECTARA_CORPUS_ID`
+- `VECTARA_API_KEY`
+
+## Usage
+
 ### VectorStore
 
 There exists a wrapper around the Vectara platform, allowing you to use it as a vectorstore, whether for semantic search or example selection.
@@ -41,7 +48,7 @@ results = vectara.similarity_score("How do I get a job?")
 - `k`: number of results to return (defaults to 5)
 - `lambda_val`: the [lexical matching](https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching) factor for hybrid search (defaults to 0.025)
 - `filter`: a [filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview) to apply to the results (default None)
-- `n_sentence_context`: number of sentences to include before/after the actual matching segment when returning results (defaults to 3)
+- `n_sentence_context`: number of sentences to include before/after the actual matching segment when returning results (defaults to 0)
 
 The results are returned as a list of relevant documents, and a relevance score of each document.
 
