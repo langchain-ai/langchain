@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
 from pydantic import Extra, root_validator
@@ -154,11 +153,22 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
                 callbacks=callbacks,
             )
-        return asyncio.run(
-            self._aprocess_results(
-                results, docs, token_max, callbacks=callbacks, **kwargs
+
+        try:
+            import nest_asyncio
+
+            nest_asyncio.apply()
+            return asyncio.run(
+                self._aprocess_results(
+                    results, docs, token_max, callbacks=callbacks, **kwargs
+                )
             )
-        )
+        except ImportError:
+            raise ImportError(
+                """`nest_asyncio` package not found.
+                please install with `pip install nest_asyncio`
+                """
+            )
 
     async def acombine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
