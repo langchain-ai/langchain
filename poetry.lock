@@ -4937,6 +4937,44 @@ files = [
 ]
 
 [[package]]
+name = "mwparserfromhell"
+version = "0.6.4"
+description = "MWParserFromHell is a parser for MediaWiki wikicode."
+category = "main"
+optional = true
+python-versions = ">= 3.6"
+files = [
+    {file = "mwparserfromhell-0.6.4-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:fc4f5718e761a3f5ad76eb9089e0792ed3a6786095abe098e37e7ac7af76afef"},
+    {file = "mwparserfromhell-0.6.4-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b7f19e7d064c467f32e0704becd81c841a807335934134d6aa859d98d01c7cf3"},
+    {file = "mwparserfromhell-0.6.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:511ff847cddb8e7014b6afb0af5dbdb5cf05ada67e31fc39efa34fbbdccb8e8b"},
+    {file = "mwparserfromhell-0.6.4-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:60d86c8d3501edc1331b37df72b74689ee392da077c36a8b453460b8e3714cdd"},
+    {file = "mwparserfromhell-0.6.4-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:54d9819c11530fc00b8a70fa3508898109b3df72336f7b8e52f8faffbe03ee88"},
+    {file = "mwparserfromhell-0.6.4-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2d983914c19dee5c2a13298b1ccd3a1ed2b65c81d322b7e7df99cd5386a460c6"},
+    {file = "mwparserfromhell-0.6.4-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:1c908c9738c5c6bce04b825b3f95592d971ff439ace294a86fc758070afc6d0c"},
+    {file = "mwparserfromhell-0.6.4-cp36-cp36m-win32.whl", hash = "sha256:abae1052b9c12a8814c76dd26ec9cfdd71102e7f89c28fb58a5fba7ee55ad1bc"},
+    {file = "mwparserfromhell-0.6.4-cp36-cp36m-win_amd64.whl", hash = "sha256:f8c450c39ef647678831ecf9a1f8236521d369afc4ae59a9c601d07f298eda35"},
+    {file = "mwparserfromhell-0.6.4-cp37-cp37m-macosx_10_14_x86_64.whl", hash = "sha256:5dfd7f57fa3d516b21790ef7f6094119082baa2e6072cef78fb9f999b77e674f"},
+    {file = "mwparserfromhell-0.6.4-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cd0a74474ed6e85808c874511d28a253ffd2d1e5a3abe915705a25804212ac73"},
+    {file = "mwparserfromhell-0.6.4-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a344ceabde013aa2f9b23494e73af11b99795f63a30124e955c185de2c8ae397"},
+    {file = "mwparserfromhell-0.6.4-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:82010e5b5da130cbcb002747f5592ffca73488e0e9cf1ebdfef6e8559c535c41"},
+    {file = "mwparserfromhell-0.6.4-cp37-cp37m-win32.whl", hash = "sha256:2d6e124396ee41c35ea12017a66c560abb1f7f51bee04e631a149318adaf15e2"},
+    {file = "mwparserfromhell-0.6.4-cp37-cp37m-win_amd64.whl", hash = "sha256:0519497b8a7472298324ef92e1e82c1ab5cab85b4d64462d7ae46c4464c8b872"},
+    {file = "mwparserfromhell-0.6.4-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:dd81220d66bf829664a6f911b3f58e7af3061fd7fdee68c0fc9731f5bcd7519d"},
+    {file = "mwparserfromhell-0.6.4-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:203ad9cd78dec7480fde45c9f49d0bc2a2eaa28fa1b585461fb9f56f6587f46c"},
+    {file = "mwparserfromhell-0.6.4-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d63d76f576e133c14a29f1ad2f3fc2afa17b74945ebc017e8d7d3bcb59f5243c"},
+    {file = "mwparserfromhell-0.6.4-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:7f5682ab9e1a55b20e9fb669582493d196c76a512276456848153c39d726d7d2"},
+    {file = "mwparserfromhell-0.6.4-cp38-cp38-win32.whl", hash = "sha256:e0c3d3bc409f8ac1221639ee2dab0dc830711d9a56a39014aad2824c2c98b3e2"},
+    {file = "mwparserfromhell-0.6.4-cp38-cp38-win_amd64.whl", hash = "sha256:18dac5162471c38e5bbf6ee3698c49d2753e8dde372864112fdaf81047ce89d3"},
+    {file = "mwparserfromhell-0.6.4-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:7c822985760b9e82857ecfb99dbb60ac35d0ebf7b2977a0215c7c56fe70c2b68"},
+    {file = "mwparserfromhell-0.6.4-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d521a2e3787c83ecf607a7806ae655d32f3c3884b2dcf35a388183c6028ddce4"},
+    {file = "mwparserfromhell-0.6.4-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:42eb94a6bad20b7f8845fd2900a45373cb4d414d5a357b27457c7c6c259115c5"},
+    {file = "mwparserfromhell-0.6.4-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:da2568e2a492dcc913f1c026434371af7a24e05dc56450c3ab063d9e580b48f2"},
+    {file = "mwparserfromhell-0.6.4-cp39-cp39-win32.whl", hash = "sha256:3e5f4bb96b68557acd14c4baa62cbe440b6e6d0f5263cb4860d37e1ceeada2a7"},
+    {file = "mwparserfromhell-0.6.4-cp39-cp39-win_amd64.whl", hash = "sha256:0c2bbb36110410b5f6d6d8b2f35f65f8ec8f57c0477609d35bcaac4784a59e5a"},
+    {file = "mwparserfromhell-0.6.4.tar.gz", hash = "sha256:92bec9528ae34d272893ccaf2b527df85c314ff28cfbb3056340467b095d834c"},
+]
+
+[[package]]
 name = "mypy"
 version = "0.991"
 description = "Optional static typing for Python"
@@ -11345,7 +11383,7 @@ azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "chardet", "gql", "html2text", "jq", "lxml", "pandas", "pdfminer-six", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "requests-toolbelt", "scikit-learn", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "bibtexparser", "chardet", "gql", "html2text", "jq", "lxml", "mwparserfromhell", "pandas", "pdfminer-six", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "requests-toolbelt", "scikit-learn", "telethon", "tqdm", "zep-python"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
 qdrant = ["qdrant-client"]
@@ -11354,4 +11392,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "dbbaa2907bf2ac09ed111ce712772bba0fe56901627f41c53aef71ae5a38d1c6"
+content-hash = "dd4577c299c73bd1586207074d6b164635174d75cef458325db9698ee0f91907"
