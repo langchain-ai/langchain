@@ -56,9 +56,9 @@ def embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
         resp = embeddings.client.call(**kwargs)
         if resp.status_code == 200:
             return resp.output["embeddings"]
-        elif resp.status_code == 400:
-            raise RuntimeError(
-                f"HTTP error occurred: status_code: {resp.status_code} \n "
+        elif resp.status_code in [400, 401]:
+            raise ValueError(
+                f"status_code: {resp.status_code} \n "
                 f"code: {resp.code} \n message: {resp.message}"
             )
         else:
