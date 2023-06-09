@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import traceback
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import requests
 
@@ -51,8 +51,7 @@ class Clarifai(VectorStore):
             from clarifai.client import create_stub
         except ImportError:
             raise ValueError(
-                "Could not import clarifai python package. "
-                "Please install it with `pip install clarifai`."
+                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
             )
 
         if api_base is None:
@@ -93,8 +92,7 @@ class Clarifai(VectorStore):
             from google.protobuf.struct_pb2 import Struct
         except ImportError:
             raise ValueError(
-                "Could not import clarifai python package. "
-                "Please install it with `pip install clarifai`."
+                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
             )
 
         input_metadata = Struct()
@@ -115,9 +113,7 @@ class Clarifai(VectorStore):
         )
 
         if post_inputs_response.status.code != status_code_pb2.SUCCESS:
-            raise Exception(
-                "Post inputs failed, status: " + post_inputs_response.status.description
-            )
+            raise Exception("Post inputs failed, status: " + post_inputs_response.status.description)
 
         input_id = post_inputs_response.inputs[0].id
 
@@ -143,12 +139,10 @@ class Clarifai(VectorStore):
             List[str]: List of IDs of the added texts.
         """
 
-        assert len(texts) > 0, "No texts provided to add to the vectorstore."
+        assert len(list(texts)) > 0, "No texts provided to add to the vectorstore."
 
         if metadatas is not None:
-            assert len(texts) == len(
-                metadatas
-            ), "Number of texts and metadatas should be the same."
+            assert len(list(texts)) == len(metadatas), "Number of texts and metadatas should be the same."
 
         input_ids = []
         for idx, text in enumerate(texts):
@@ -170,7 +164,7 @@ class Clarifai(VectorStore):
         filter: Optional[dict] = None,
         namespace: Optional[str] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> List[Tuple[Document, float]]:
         """Run similarity search with score using Clarifai.
 
         Args:
@@ -187,8 +181,7 @@ class Clarifai(VectorStore):
             from google.protobuf import json_format
         except ImportError:
             raise ValueError(
-                "Could not import clarifai python package. "
-                "Please install it with `pip install clarifai`."
+                "Could not import clarifai python package. " "Please install it with `pip install clarifai`."
             )
 
         # Get number of docs to return
@@ -219,10 +212,7 @@ class Clarifai(VectorStore):
 
         # Check if search was successful
         if post_annotations_searches_response.status.code != status_code_pb2.SUCCESS:
-            raise Exception(
-                "Post searches failed, status: "
-                + post_annotations_searches_response.status.description
-            )
+            raise Exception("Post searches failed, status: " + post_annotations_searches_response.status.description)
 
         # Retrieve hits
         hits = post_annotations_searches_response.hits
@@ -241,9 +231,7 @@ class Clarifai(VectorStore):
                 f"\tScore {hit.score:.2f} for annotation: {hit.annotation.id} off input: {hit.input.id}, text: {requested_text[:125]}"
             )
 
-            docs_and_scores.append(
-                (Document(page_content=requested_text, metadata=metadata), hit.score)
-            )
+            docs_and_scores.append((Document(page_content=requested_text, metadata=metadata), hit.score))
 
         return docs_and_scores
 
@@ -268,13 +256,14 @@ class Clarifai(VectorStore):
     @classmethod
     def from_texts(
         cls,
-        user_id: str,
-        app_id: str,
         texts: List[str],
+        embedding: Optional[Embeddings] = None,
+        metadatas: Optional[List[dict]] = None,
+        user_id: Optional[str] = None,
+        app_id: Optional[str] = None,
         pat: Optional[str] = None,
         number_of_docs: Optional[int] = None,
         api_base: Optional[str] = None,
-        metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> Clarifai:
         """Create a Clarifai vectorstore from a list of texts.
@@ -304,9 +293,10 @@ class Clarifai(VectorStore):
     @classmethod
     def from_documents(
         cls,
-        user_id: str,
-        app_id: str,
         documents: List[Document],
+        embedding: Optional[Embeddings] = None,
+        user_id: Optional[str] = None,
+        app_id: Optional[str] = None,
         pat: Optional[str] = None,
         number_of_docs: Optional[int] = None,
         api_base: Optional[str] = None,

@@ -14,7 +14,11 @@ def test_clarifai_with_from_texts() -> None:
     APP_ID = "test-lang-2"
     NUMBER_OF_DOCS = 1
     docsearch = Clarifai.from_texts(
-        USER_ID, APP_ID, texts, pat=None, number_of_docs=NUMBER_OF_DOCS
+        user_id=USER_ID,
+        app_id=APP_ID,
+        texts=texts,
+        pat=None,
+        number_of_docs=NUMBER_OF_DOCS,
     )
     time.sleep(2.5)
     output = docsearch.similarity_search("foo")
@@ -32,7 +36,11 @@ def test_clarifai_with_from_documents() -> None:
     APP_ID = "test-lang-2"
     NUMBER_OF_DOCS = 1
     docsearch = Clarifai.from_documents(
-        USER_ID, APP_ID, [original_doc], pat=None, number_of_docs=NUMBER_OF_DOCS
+        user_id=USER_ID,
+        app_id=APP_ID,
+        documents=[original_doc],
+        pat=None,
+        number_of_docs=NUMBER_OF_DOCS,
     )
     time.sleep(2.5)
     output = docsearch.similarity_search("foo")
@@ -47,9 +55,9 @@ def test_clarifai_with_metadatas() -> None:
     APP_ID = "test-lang-2"
     NUMBER_OF_DOCS = 1
     docsearch = Clarifai.from_texts(
-        USER_ID,
-        APP_ID,
-        texts,
+        user_id=USER_ID,
+        app_id=APP_ID,
+        texts=texts,
         pat=None,
         number_of_docs=NUMBER_OF_DOCS,
         metadatas=metadatas,
@@ -67,9 +75,9 @@ def test_clarifai_with_metadatas_with_scores() -> None:
     APP_ID = "test-lang-2"
     NUMBER_OF_DOCS = 1
     docsearch = Clarifai.from_texts(
-        USER_ID,
-        APP_ID,
-        texts,
+        user_id=USER_ID,
+        app_id=APP_ID,
+        texts=texts,
         pat=None,
         number_of_docs=NUMBER_OF_DOCS,
         metadatas=metadatas,
