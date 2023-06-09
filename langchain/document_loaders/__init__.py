@@ -1,6 +1,7 @@
 """All different types of document loaders."""
 
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
+from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
 from langchain.document_loaders.arxiv import ArxivLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
@@ -134,6 +135,7 @@ TelegramChatLoader = TelegramChatFileLoader
 __all__ = [
     "AZLyricsLoader",
     "AirbyteJSONLoader",
+    "AirtableLoader",
     "ApifyDatasetLoader",
     "ArxivLoader",
     "AzureBlobStorageContainerLoader",

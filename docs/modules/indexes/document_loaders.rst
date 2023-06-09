@@ -30,6 +30,7 @@ For detailed instructions on how to get set up with Unstructured, see installati
    :maxdepth: 1
    :glob:
 
+   ./document_loaders/examples/airtable.ipynb
    ./document_loaders/examples/audio.ipynb
    ./document_loaders/examples/conll-u.ipynb
    ./document_loaders/examples/copypaste.ipynb
