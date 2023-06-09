@@ -119,6 +119,7 @@ from langchain.document_loaders.word_document import (
     Docx2txtLoader,
     UnstructuredWordDocumentLoader,
 )
+from langchain.document_loaders.xml import UnstructuredXMLLoader
 from langchain.document_loaders.youtube import (
     GoogleApiClient,
     GoogleApiYoutubeLoader,
@@ -239,6 +240,7 @@ __all__ = [
     "UnstructuredRTFLoader",
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
+    "UnstructuredXMLLoader",
     "WeatherDataLoader",
     "WebBaseLoader",
     "WhatsAppChatLoader",
