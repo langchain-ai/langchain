@@ -197,10 +197,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "api_version": self.openai_api_version,
         }
         if self.openai_proxy:
-            openai_args["proxy"] = {
+            import openai
+
+            openai.proxy = {
                 "http": self.openai_proxy,
                 "https": self.openai_proxy,
-            }
+            }  # type: ignore[assignment]  # noqa: E501
         return openai_args
 
     # please refer to
