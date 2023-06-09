@@ -100,7 +100,8 @@ class WebBaseLoader(BaseLoader):
                     async with session.get(
                         url, headers=self.session.headers
                     ) as response:
-                        return await response.text()
+                        # return await response.text()
+                        return await response.content.read()
                 except aiohttp.ClientConnectionError as e:
                     if i == retries - 1:
                         raise

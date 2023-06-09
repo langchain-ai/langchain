@@ -28,6 +28,7 @@ class SitemapLoader(WebBaseLoader):
         self,
         web_path: str,
         filter_urls: Optional[List[str]] = None,
+        filter_lastmods: Optional[List[str]] = None,
         parsing_function: Optional[Callable] = None,
         blocksize: Optional[int] = None,
         blocknum: int = 0,
@@ -65,6 +66,7 @@ class SitemapLoader(WebBaseLoader):
         super().__init__(web_path)
 
         self.filter_urls = filter_urls
+        self.filter_lastmods = filter_lastmods
         self.parsing_function = parsing_function or _default_parsing_function
         self.meta_function = meta_function or _default_meta_function
         self.blocksize = blocksize
@@ -84,6 +86,16 @@ class SitemapLoader(WebBaseLoader):
 
             if self.filter_urls and not any(
                 re.match(r, loc_text) for r in self.filter_urls
+            ):
+                continue
+
+            # handle date filtering
+            lastmod = url.find("lastmod")
+            if not lastmod:
+                continue
+            lastmod_text = lastmod.text.strip()
+            if self.filter_lastmods and not any(
+                re.match(r, lastmod_text) for r in self.filter_lastmods
             ):
                 continue
 
