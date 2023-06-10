@@ -310,29 +310,13 @@ class MarkdownHeaderTextSplitter(TextSplitter):
                     if stripped_line.startswith(sep):
                         if name is not None:
                             # Update the rest of the line (after the separator) as the value for that header
-                            current_metadata[name] = stripped_line[len(sep) :].strip()
-
-                            # If the separator is "#", it also clears out the metadata for "Header 2"
-                            # A new "Header 1" implies a new section of the document
-                            if sep == "#":
-                                # Clear out metadata for all headers lower in hierarchy
-                                current_header_index = [
-                                    index
-                                    for index, (sep_, _) in enumerate(self.splits)
-                                    if sep_ == sep
-                                ][0]
-                                current_metadata_keys = list(current_metadata.keys())
-                                for header in current_metadata_keys:
-                                    header_index = [
-                                        index
-                                        for index, (_, name) in enumerate(self.splits)
-                                        if name == header
-                                    ]
-                                    if (
-                                        header_index
-                                        and header_index[0] > current_header_index
-                                    ):
-                                        del current_metadata[header]
+                            current_metadata[name] = stripped_line[len(sep):].strip()
+                            
+                            # clear out metadata for all headers lower in hierarchy
+                            current_header_index = [index for index, (sep_, _) in enumerate(self.splits) if sep_ == sep][0]
+                            for header, index in [(name_, index) for index, (sep_, name_) in enumerate(self.splits) if name_]:
+                                if index > current_header_index:
+                                    current_metadata[header] = ''
                         break
 
             # If the line is empty (i.e., only contains whitespace, or is completely empty)
