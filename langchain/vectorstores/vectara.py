@@ -56,8 +56,7 @@ class Vectara(VectorStore):
             logging.debug(f"Using corpus id {self._vectara_corpus_id}")
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
-        self._session.mount('http://', adapter)
-
+        self._session.mount("http://", adapter)
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
@@ -145,9 +144,10 @@ class Vectara(VectorStore):
             metadatas = [{} for _ in texts]
         doc = {
             "document_id": doc_id,
-            "metadataJson": json.dumps({'source': 'langchain'}),
+            "metadataJson": json.dumps({"source": "langchain"}),
             "parts": [
-                {"text": text, "metadataJson": json.dumps(md)} for text,md in zip(texts,metadatas)
+                {"text": text, "metadataJson": json.dumps(md)}
+                for text, md in zip(texts, metadatas)
             ],
         }
         succeeded = self._index_doc(doc)
@@ -175,7 +175,8 @@ class Vectara(VectorStore):
                 filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview
                 for more details.
-            n_sentence_context: number of sentences before/after the matching segment to add
+            n_sentence_context: number of sentences before/after the matching segment
+                to add
 
         Returns:
             List of Documents most similar to the query and score for each.
@@ -256,7 +257,8 @@ class Vectara(VectorStore):
                 filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview for more
                 details.
-            n_sentence_context: number of sentences before/after the matching segment to add
+            n_sentence_context: number of sentences before/after the matching segment
+                to add
 
         Returns:
             List of Documents most similar to the query
