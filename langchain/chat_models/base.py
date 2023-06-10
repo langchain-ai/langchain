@@ -25,6 +25,7 @@ from langchain.schema import (
     HumanMessage,
     LLMResult,
     PromptValue,
+    RunInfo,
 )
 
 
@@ -93,6 +94,8 @@ class BaseChatModel(BaseLanguageModel, ABC):
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
         run_manager.on_llm_end(output)
+        if run_manager:
+            output.run = RunInfo(run_id=run_manager.run_id)
         return output
 
     async def agenerate(
@@ -131,6 +134,8 @@ class BaseChatModel(BaseLanguageModel, ABC):
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
         await run_manager.on_llm_end(output)
+        if run_manager:
+            output.run = RunInfo(run_id=run_manager.run_id)
         return output
 
     def generate_prompt(
@@ -183,6 +188,19 @@ class BaseChatModel(BaseLanguageModel, ABC):
         else:
             raise ValueError("Unexpected generation type")
 
+    async def _call_async(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        callbacks: Callbacks = None,
+    ) -> BaseMessage:
+        result = await self.agenerate([messages], stop=stop, callbacks=callbacks)
+        generation = result.generations[0][0]
+        if isinstance(generation, ChatGeneration):
+            return generation.message
+        else:
+            raise ValueError("Unexpected generation type")
+
     def call_as_llm(self, message: str, stop: Optional[List[str]] = None) -> str:
         return self.predict(message, stop=stop)
 
@@ -202,6 +220,23 @@ class BaseChatModel(BaseLanguageModel, ABC):
         else:
             _stop = list(stop)
         return self(messages, stop=_stop)
+
+    async def apredict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        result = await self._call_async([HumanMessage(content=text)], stop=_stop)
+        return result.content
+
+    async def apredict_messages(
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
+    ) -> BaseMessage:
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        return await self._call_async(messages, stop=_stop)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

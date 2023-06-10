@@ -29,7 +29,10 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
     try:
         import google.api_core.exceptions
     except ImportError:
-        raise ImportError()
+        raise ImportError(
+            "Could not import google-api-core python package. "
+            "Please install it with `pip install google-api-core`."
+        )
 
     multiplier = 2
     min_seconds = 1
@@ -105,7 +108,10 @@ class GooglePalm(BaseLLM, BaseModel):
 
             genai.configure(api_key=google_api_key)
         except ImportError:
-            raise ImportError("Could not import google.generativeai python package.")
+            raise ImportError(
+                "Could not import google-generativeai python package. "
+                "Please install it with `pip install google-generativeai`."
+            )
 
         values["client"] = genai
 

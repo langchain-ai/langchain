@@ -82,6 +82,28 @@ class TestWeaviate:
         assert output == [Document(page_content="foo", metadata={"page": 0})]
 
     @pytest.mark.vcr(ignore_localhost=True)
+    def test_similarity_search_with_metadata_and_additional(
+        self, weaviate_url: str, embedding_openai: OpenAIEmbeddings
+    ) -> None:
+        """Test end to end construction and search with metadata and additional."""
+        texts = ["foo", "bar", "baz"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = Weaviate.from_texts(
+            texts, embedding_openai, metadatas=metadatas, weaviate_url=weaviate_url
+        )
+        output = docsearch.similarity_search(
+            "foo",
+            k=1,
+            additional=["certainty"],
+        )
+        assert output == [
+            Document(
+                page_content="foo",
+                metadata={"page": 0, "_additional": {"certainty": 1}},
+            )
+        ]
+
+    @pytest.mark.vcr(ignore_localhost=True)
     def test_similarity_search_with_uuids(
         self, weaviate_url: str, embedding_openai: OpenAIEmbeddings
     ) -> None:

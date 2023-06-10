@@ -1,4 +1,5 @@
 from langchain.retrievers.arxiv import ArxivRetriever
+from langchain.retrievers.aws_kendra_index_retriever import AwsKendraIndexRetriever
 from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
 from langchain.retrievers.chatgpt_plugin_retriever import ChatGPTPluginRetriever
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
@@ -7,6 +8,7 @@ from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
 from langchain.retrievers.knn import KNNRetriever
 from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetriever
+from langchain.retrievers.pupmed import PubMedRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.svm import SVMRetriever
@@ -21,6 +23,8 @@ from langchain.retrievers.zep import ZepRetriever
 
 __all__ = [
     "ArxivRetriever",
+    "PubMedRetriever",
+    "AwsKendraIndexRetriever",
     "AzureCognitiveSearchRetriever",
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",

@@ -25,6 +25,7 @@ from langchain.schema import (
     Generation,
     LLMResult,
     PromptValue,
+    RunInfo,
     get_buffer_string,
 )
 
@@ -190,6 +191,8 @@ class BaseLLM(BaseLanguageModel, ABC):
                 run_manager.on_llm_error(e)
                 raise e
             run_manager.on_llm_end(output)
+            if run_manager:
+                output.run = RunInfo(run_id=run_manager.run_id)
             return output
         if len(missing_prompts) > 0:
             run_manager = callback_manager.on_llm_start(
@@ -210,10 +213,14 @@ class BaseLLM(BaseLanguageModel, ABC):
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
+            run_info = None
+            if run_manager:
+                run_info = RunInfo(run_id=run_manager.run_id)
         else:
             llm_output = {}
+            run_info = None
         generations = [existing_prompts[i] for i in range(len(prompts))]
-        return LLMResult(generations=generations, llm_output=llm_output)
+        return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
 
     async def agenerate(
         self,
@@ -256,6 +263,8 @@ class BaseLLM(BaseLanguageModel, ABC):
                 await run_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
             await run_manager.on_llm_end(output, verbose=self.verbose)
+            if run_manager:
+                output.run = RunInfo(run_id=run_manager.run_id)
             return output
         if len(missing_prompts) > 0:
             run_manager = await callback_manager.on_llm_start(
@@ -278,10 +287,14 @@ class BaseLLM(BaseLanguageModel, ABC):
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
+            run_info = None
+            if run_manager:
+                run_info = RunInfo(run_id=run_manager.run_id)
         else:
             llm_output = {}
+            run_info = None
         generations = [existing_prompts[i] for i in range(len(prompts))]
-        return LLMResult(generations=generations, llm_output=llm_output)
+        return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
 
     def __call__(
         self, prompt: str, stop: Optional[List[str]] = None, callbacks: Callbacks = None
@@ -299,6 +312,13 @@ class BaseLLM(BaseLanguageModel, ABC):
             .text
         )
 
+    async def _call_async(
+        self, prompt: str, stop: Optional[List[str]] = None, callbacks: Callbacks = None
+    ) -> str:
+        """Check Cache and run the LLM on the given prompt and input."""
+        result = await self.agenerate([prompt], stop=stop, callbacks=callbacks)
+        return result.generations[0][0].text
+
     def predict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
         if stop is None:
             _stop = None
@@ -315,6 +335,24 @@ class BaseLLM(BaseLanguageModel, ABC):
         else:
             _stop = list(stop)
         content = self(text, stop=_stop)
+        return AIMessage(content=content)
+
+    async def apredict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        return await self._call_async(text, stop=_stop)
+
+    async def apredict_messages(
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
+    ) -> BaseMessage:
+        text = get_buffer_string(messages)
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        content = await self._call_async(text, stop=_stop)
         return AIMessage(content=content)
 
     @property

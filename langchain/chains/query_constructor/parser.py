@@ -68,11 +68,14 @@ class QueryTransformer(Transformer):
     def program(self, *items: Any) -> tuple:
         return items
 
-    def func_call(self, func_name: Any, *args: Any) -> FilterDirective:
+    def func_call(self, func_name: Any, args: list) -> FilterDirective:
         func = self._match_func_name(str(func_name))
         if isinstance(func, Comparator):
-            return Comparison(comparator=func, attribute=args[0][0], value=args[0][1])
-        return Operation(operator=func, arguments=args[0])
+            return Comparison(comparator=func, attribute=args[0], value=args[1])
+        elif len(args) == 1 and func in (Operator.AND, Operator.OR):
+            return args[0]
+        else:
+            return Operation(operator=func, arguments=args)
 
     def _match_func_name(self, func_name: str) -> Union[Operator, Comparator]:
         if func_name in set(Comparator):

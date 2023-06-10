@@ -18,6 +18,7 @@ class Anyscale(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import Anyscale
             anyscale = Anyscale(anyscale_service_url="SERVICE_URL",
                                 anyscale_service_route="SERVICE_ROUTE",
