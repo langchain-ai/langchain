@@ -61,7 +61,7 @@ def test_cypher_generating_run() -> None:
 
 
 def test_cypher_top_k() -> None:
-    """Test that top_k parameter correctly limits the number of results in the context."""
+    """Test top_k parameter correctly limits the number of results in the context."""
     url = os.environ.get("NEO4J_URL")
     username = os.environ.get("NEO4J_USERNAME")
     password = os.environ.get("NEO4J_PASSWORD")
@@ -127,7 +127,10 @@ def test_cypher_intermediate_steps() -> None:
     assert output["result"] == expected_output
 
     query = output["intermediate_steps"][0]["query"]
-    expected_query = "\n\nMATCH (a:Actor)-[:ACTED_IN]->(m:Movie {title: 'Pulp Fiction'}) RETURN a.name"
+    expected_query = (
+        "\n\nMATCH (a:Actor)-[:ACTED_IN]->"
+        "(m:Movie {title: 'Pulp Fiction'}) RETURN a.name"
+    )
     assert query == expected_query
 
     context = output["intermediate_steps"][1]["context"]
