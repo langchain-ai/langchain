@@ -14,6 +14,8 @@ from typing import (
     Type,
     Union,
     cast,
+    TypeVar,
+    Sequence,
 )
 
 import numpy as np
@@ -27,10 +29,16 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 if TYPE_CHECKING:
     import chromadb
     import chromadb.config
-    from chromadb.api.types import maybe_cast_one_to_many
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
+
+Text = str
+Vector = Union[Sequence[float], Sequence[int]]
+Embedding = Vector
+Parameter = TypeVar("Parameter", Embedding, Text)
+T = TypeVar("T")
+OneOrMany = Union[T, List[T]]
 
 
 def _results_to_docs(results: Any) -> List[Document]:
@@ -423,26 +431,17 @@ class Chroma(VectorStore):
         self._client.persist()
 
     def update_document(self, document_id: str, document: Document) -> None:
-        """Update a document in the collection.
+        """Update a documents in the collection.
 
         Args:
             document_id (str): ID of the document to update.
             document (Document): Document to update.
-        """
-        text = document.page_content
-        metadata = document.metadata
-        if self._embedding_function is None:
-            raise ValueError(
-                "For update, you must specify an embedding function on creation."
-            )
-        embeddings = self._embedding_function.embed_documents([text])
 
-        self._collection.update(
-            ids=[document_id],
-            embeddings=embeddings,
-            documents=[text],
-            metadatas=[metadata],
-        )
+        Warning:
+            use upsert() for batch updatation of documents.
+        """
+
+        self._collection.upsert(ids=document_id, documents=document)
 
     def upsert(
         self,
@@ -459,18 +458,21 @@ class Chroma(VectorStore):
             ids (Optional[List[str]]): Optional list of IDs.
             embeddings (Optional[List[List[int, float]]])
             documents (Optional[List[Document]]): List of (langchain.schema.Document).
-            texts (Iterable[str]): Texts to add to the vectorstore.
-            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
+            texts (Optional[List[str]]): Optional Texts to add to the vectorstore.
+            metadatas (Optional[List[dict]]): Optional list of metadatas.
 
         Returns:
             List[str]: List of IDs of the added texts.
+
+        Raises:
+            ValueError: If you don't specify an embedding function.
+            ValueError: If you don't provide any of (embeddings, documents, texts)
+            ValueError: If you provide both documents and texts
         """
-        try:
-            from chromadb.api.types import maybe_cast_one_to_many
-        except ImportError:
+
+        if self._embedding_function is None:
             raise ValueError(
-                "Could not import chromadb python package. "
-                "Please install it with `pip install chromadb`."
+                "For upsert, you must specify an embedding function on creation."
             )
 
         if embeddings is None and documents is None and texts is None:
@@ -479,7 +481,7 @@ class Chroma(VectorStore):
                 (embeddings, documents, texts)"""
             )
         if documents is not None and texts is not None:
-            raise ValueError("You most provide either documents or texts, not both.")
+            raise ValueError("You must provide either documents or texts, not both.")
 
         if documents is not None:
             texts = [doc.page_content for doc in documents]
@@ -611,3 +613,22 @@ class Chroma(VectorStore):
             client_settings=client_settings,
             client=client,
         )
+
+
+def maybe_cast_one_to_many(
+    target: OneOrMany[Parameter],
+) -> List[Parameter]:
+    """Infers if target is Embedding or Text and casts it to a many object if its one"""
+
+    if isinstance(target, Sequence):
+        # One Document or ID
+        if isinstance(target, str) and target is not None:
+            return [target]
+        # One Embedding
+        if isinstance(target[0], (int, float)):
+            return [target]  # type: ignore
+    # One Metadata dict
+    if isinstance(target, dict):
+        return [target]
+    # Already a sequence
+    return target  # type: ignore
