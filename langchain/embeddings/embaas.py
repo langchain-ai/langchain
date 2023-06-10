@@ -11,6 +11,7 @@ from langchain.utils import get_from_dict_or_env
 MAX_BATCH_SIZE = 256
 EMBAAS_API_URL = "https://api.embaas.io/v1/embeddings/"
 
+
 class EmbaasEmbeddings(BaseModel, Embeddings):
     """Wrapper around Embaas's embedding service.
 
@@ -95,7 +96,8 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
             parsed_response = e.response.json()
             if "message" in parsed_response:
                 raise ValueError(
-                    f"Validation Error raised by embaas embeddings API: {parsed_response['message']}"
+                    "Validation Error raised by embaas embeddings API:"
+                    f"{parsed_response['message']}"
                 )
             raise
 
@@ -108,7 +110,8 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        batches = [texts[i:i + MAX_BATCH_SIZE] for i in range(0, len(texts), MAX_BATCH_SIZE)]
+        batches = [texts[i:i + MAX_BATCH_SIZE]
+                   for i in range(0, len(texts), MAX_BATCH_SIZE)]
         embeddings = [self._generate_embeddings(batch) for batch in batches]
         # flatten the list of lists into a single list
         embeddings = [embedding for batch in embeddings for embedding in batch]
