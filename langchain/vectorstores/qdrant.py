@@ -60,7 +60,7 @@ class Qdrant(VectorStore):
         embeddings: Optional[Embeddings] = None,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
-        vector_key: Optional[str] = None,
+        vectors_config: Optional[dict[str, "rest.VectorParams"]] = None,
         embedding_function: Optional[Callable] = None,  # deprecated
     ):
         """Initialize with necessary components."""
@@ -95,7 +95,7 @@ class Qdrant(VectorStore):
         self.collection_name = collection_name
         self.content_payload_key = content_payload_key or self.CONTENT_KEY
         self.metadata_payload_key = metadata_payload_key or self.METADATA_KEY
-        self.vector_key = vector_key or None
+        self.vectors_config = vectors_config or None
 
         if embedding_function is not None:
             warnings.warn(
@@ -172,6 +172,7 @@ class Qdrant(VectorStore):
         offset: int = 0,
         score_threshold: Optional[float] = None,
         consistency: Optional[common_types.ReadConsistency] = None,
+        vector_key: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
@@ -206,6 +207,18 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
+        # If collection uses multiple vectors, one to use for query must be set
+        if self.vectors_config:
+            if not vector_key:
+                raise ValueError(
+                    "Collection uses multiple vectors, but which to query was not set as 'vector_key'"
+                )
+            # Also, confirm it is one of provided vectors
+            if vector_key not in self.vectors_config:
+                raise ValueError(
+                    "Value for 'vector_key' refers to vector not set in 'vectors_config'"
+                )
+
         results = self.similarity_search_with_score(
             query,
             k,
@@ -214,6 +227,7 @@ class Qdrant(VectorStore):
             offset=offset,
             score_threshold=score_threshold,
             consistency=consistency,
+            vector_key=vector_key,
             **kwargs,
         )
         return list(map(itemgetter(0), results))
@@ -227,6 +241,7 @@ class Qdrant(VectorStore):
         offset: int = 0,
         score_threshold: Optional[float] = None,
         consistency: Optional[common_types.ReadConsistency] = None,
+        vector_key: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
@@ -277,7 +292,7 @@ class Qdrant(VectorStore):
         qdrant_query = self._embed_query(query)
         results = self.client.search(
             collection_name=self.collection_name,
-            query_vector=(self.vector_key, qdrant_query) if self.vector_key else qdrant_query,
+            query_vector=(vector_key, qdrant_query) if vector_key else qdrant_query,
             query_filter=qdrant_filter,
             search_params=search_params,
             limit=k,
@@ -580,7 +595,7 @@ class Qdrant(VectorStore):
             embeddings=embedding,
             content_payload_key=content_payload_key,
             metadata_payload_key=metadata_payload_key,
-            vector_key=list(vectors_config)[0] if vectors_config else None,
+            vectors_config=vectors_config,
         )
 
     @classmethod
