@@ -182,7 +182,7 @@ class Anthropic(LLM, _AnthropicCommon):
 
         """
         stop = self._get_anthropic_stop(stop)
-        params = self._default_params | kwargs
+        params = {**self._default_params, **kwargs}
         if self.streaming:
             stream_resp = self.client.completion_stream(
                 prompt=self._wrap_prompt(prompt),

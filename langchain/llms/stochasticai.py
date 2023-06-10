@@ -103,7 +103,7 @@ class StochasticAI(LLM):
                 response = StochasticAI("Tell me a joke.")
         """
         params = self.model_kwargs or {}
-        params = params | kwargs
+        params = {**params, **kwargs}
         response_post = requests.post(
             url=self.api_url,
             json={"prompt": prompt, "params": params},

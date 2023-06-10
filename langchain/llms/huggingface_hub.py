@@ -108,7 +108,8 @@ class HuggingFaceHub(LLM):
                 response = hf("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
-        response = self.client(inputs=prompt, params=_model_kwargs | kwargs)
+        params = {**_model_kwargs, **kwargs}
+        response = self.client(inputs=prompt, params=params)
         if "error" in response:
             raise ValueError(f"Error raised by inference API: {response['error']}")
         if self.client.task == "text-generation":

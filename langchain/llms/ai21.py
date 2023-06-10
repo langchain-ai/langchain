@@ -141,7 +141,7 @@ class AI21(LLM):
                 base_url = "https://api.ai21.com/studio/v1/experimental"
             else:
                 base_url = "https://api.ai21.com/studio/v1"
-        params = self._default_params | kwargs
+        params = {**self._default_params, **kwargs}
         response = requests.post(
             url=f"{base_url}/{self.model}/complete",
             headers={"Authorization": f"Bearer {self.ai21_api_key}"},

@@ -80,7 +80,7 @@ class Modal(LLM):
     ) -> str:
         """Call to Modal endpoint."""
         params = self.model_kwargs or {}
-        params = params | kwargs
+        params = {**params, **kwargs}
         response = requests.post(
             url=self.endpoint_url,
             headers={

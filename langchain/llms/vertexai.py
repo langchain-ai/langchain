@@ -53,7 +53,7 @@ class _VertexAICommon(BaseModel):
     def _predict(
         self, prompt: str, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> str:
-        params = self._default_params | kwargs
+        params = {**self._default_params, **kwargs}
         res = self.client.predict(prompt, **params)
         return self._enforce_stop_words(res.text, stop)
 

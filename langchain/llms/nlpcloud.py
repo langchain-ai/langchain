@@ -142,6 +142,6 @@ class NLPCloud(LLM):
             end_sequence = stop[0]
         else:
             end_sequence = None
-        params = self._default_params | kwargs
+        params = {**self._default_params, **kwargs}
         response = self.client.generation(prompt, end_sequence=end_sequence, **params)
         return response["generated_text"]

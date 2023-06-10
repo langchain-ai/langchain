@@ -204,7 +204,7 @@ class GPT4All(LLM):
         if run_manager:
             text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
         text = ""
-        params = self._default_params() | kwargs
+        params = {**self._default_params(), **kwargs}
         for token in self.client.generate(prompt, **params):
             if text_callback:
                 text_callback(token)

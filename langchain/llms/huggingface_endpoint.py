@@ -115,7 +115,8 @@ class HuggingFaceEndpoint(LLM):
         _model_kwargs = self.model_kwargs or {}
 
         # payload samples
-        parameter_payload = {"inputs": prompt, "parameters": _model_kwargs | kwargs}
+        params = {**_model_kwargs, **kwargs}
+        parameter_payload = {"inputs": prompt, "parameters": params}
 
         # HTTP headers for authorization
         headers = {

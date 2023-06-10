@@ -83,7 +83,7 @@ class DeepInfra(LLM):
                 response = di("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
-        _model_kwargs = _model_kwargs | kwargs
+        _model_kwargs = {**_model_kwargs, **kwargs}
         # HTTP headers for authorization
         headers = {
             "Authorization": f"bearer {self.deepinfra_api_token}",

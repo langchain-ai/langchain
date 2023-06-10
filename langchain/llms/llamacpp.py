@@ -228,6 +228,7 @@ class LlamaCpp(LLM):
             return combined_text_output
         else:
             params = self._get_parameters(stop)
+            params = {**params, **kwargs}
             result = self.client(prompt=prompt, **params)
             return result["choices"][0]["text"]
 

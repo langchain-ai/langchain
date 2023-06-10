@@ -146,7 +146,7 @@ class GooseAI(LLM):
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
 
-        params = params | kwargs
+        params = {**params, **kwargs}
 
         response = self.client.create(engine=self.model_name, prompt=prompt, **params)
         text = response.choices[0].text

@@ -98,7 +98,7 @@ class Banana(LLM):
                 "Please install it with `pip install banana-dev`."
             )
         params = self.model_kwargs or {}
-        params = params | kwargs
+        params = {**params, **kwargs}
         api_key = self.banana_api_key
         model_key = self.model_key
         model_inputs = {

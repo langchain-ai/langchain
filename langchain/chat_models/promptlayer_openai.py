@@ -55,11 +55,12 @@ class PromptLayerChatOpenAI(ChatOpenAI):
             response_dict, params = super()._create_message_dicts(
                 [generation.message], stop
             )
+            params = {**params, **kwargs}
             pl_request_id = promptlayer_api_request(
                 "langchain.PromptLayerChatOpenAI",
                 "langchain",
                 message_dicts,
-                params | kwargs,
+                params,
                 self.pl_tags,
                 response_dict,
                 request_start_time,
@@ -93,11 +94,12 @@ class PromptLayerChatOpenAI(ChatOpenAI):
             response_dict, params = super()._create_message_dicts(
                 [generation.message], stop
             )
+            params = {**params, **kwargs}
             pl_request_id = await promptlayer_api_request_async(
                 "langchain.PromptLayerChatOpenAI.async",
                 "langchain",
                 message_dicts,
-                params | kwargs,
+                params,
                 self.pl_tags,
                 response_dict,
                 request_start_time,

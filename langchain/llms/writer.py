@@ -142,7 +142,7 @@ class Writer(LLM):
                 f"/organization/{self.writer_org_id}"
                 f"/model/{self.model_id}/completions"
             )
-        params = self._default_params | kwargs
+        params = {**self._default_params, **kwargs}
         response = requests.post(
             url=base_url,
             headers={

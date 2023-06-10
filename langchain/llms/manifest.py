@@ -55,8 +55,8 @@ class ManifestWrapper(LLM):
             raise NotImplementedError(
                 f"Manifest currently only supports a single stop token, got {stop}"
             )
-        _kwargs = self.llm_kwargs or {}
-        _kwargs = _kwargs | kwargs
+        params = self.llm_kwargs or {}
+        params = {**params, **kwargs}
         if stop is not None:
-            _kwargs["stop_token"] = stop
-        return self.client.run(prompt, **_kwargs)
+            params["stop_token"] = stop
+        return self.client.run(prompt, **params)

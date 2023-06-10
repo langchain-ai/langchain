@@ -168,7 +168,7 @@ class Cohere(LLM):
             params["stop_sequences"] = self.stop
         else:
             params["stop_sequences"] = stop
-        params = params | kwargs
+        params = {**params, **kwargs}
         response = completion_with_retry(
             self, model=self.model, prompt=prompt, **params
         )
