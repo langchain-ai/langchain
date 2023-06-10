@@ -2,11 +2,10 @@ Callbacks
 =========
 
 .. note::
-   `Conceptual Guide <https://docs.langchain.com/docs/components/callbacks>`_
+   `Conceptual Guide <./callbacks.html>`_
 
 LangChain provides a callbacks system that allows you to hook into the various stages of your LLM application. 
-This is useful for logging, `monitoring <https://python.langchain.com/en/latest/tracing.html>`_, 
-`streaming <https://python.langchain.com/en/latest/modules/models/llms/examples/streaming_llm.html>`_, and other tasks.
+This is useful for logging, `monitoring <../tracing.html>`_, `streaming <./models/llms/examples/streaming_llm.html>`_, and other tasks.
 
 The following sections of documentation are provided:
 
@@ -22,6 +21,6 @@ The following sections of documentation are provided:
    :name: Callbacks
    :hidden:
 
-   ./callbakcs/getting_started.ipynb
+   ./callbacks/getting_started.ipynb
    ./callbacks/how_to_guides.rst
    Reference<../reference/modules/callbacks.rst>

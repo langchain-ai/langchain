@@ -2,8 +2,7 @@ How-To Guides
 =============
 
 LangChain provides a callbacks system that allows you to hook into the various stages of your LLM application. 
-This is useful for logging, `monitoring <https://python.langchain.com/en/latest/tracing.html>`_, 
-`streaming <https://python.langchain.com/en/latest/modules/models/llms/examples/streaming_llm.html>`_, and other tasks.
+This is useful for logging, `monitoring <../../tracing.html>`_, `streaming <../models/llms/examples/streaming_llm.html>`_, and other tasks.
 
 You can subscribe to these events by using the `callbacks` argument available throughout the API. This 
 argument is list of handler objects, which are expected to implement one or more of the methods described 
