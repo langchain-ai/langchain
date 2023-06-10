@@ -451,10 +451,9 @@ class BaseOpenAI(BaseLLM):
             "organization": self.openai_organization,
         }
         if self.openai_proxy:
-            openai_creds["proxy"] = {
-                "http": self.openai_proxy,
-                "https": self.openai_proxy,
-            }
+            import openai
+
+            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
         return {**openai_creds, **self._default_params}
 
     @property
