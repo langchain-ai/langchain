@@ -130,6 +130,7 @@ class BaseLLM(BaseLanguageModel, ABC):
         prompts: List[PromptValue],
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> LLMResult:
         prompt_strings = [p.to_string() for p in prompts]
         return self.generate(prompt_strings, stop=stop, callbacks=callbacks)
@@ -139,6 +140,7 @@ class BaseLLM(BaseLanguageModel, ABC):
         prompts: List[PromptValue],
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> LLMResult:
         prompt_strings = [p.to_string() for p in prompts]
         return await self.agenerate(prompt_strings, stop=stop, callbacks=callbacks)
@@ -319,7 +321,9 @@ class BaseLLM(BaseLanguageModel, ABC):
         result = await self.agenerate([prompt], stop=stop, callbacks=callbacks)
         return result.generations[0][0].text
 
-    def predict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+    def predict(
+        self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
+    ) -> str:
         if stop is None:
             _stop = None
         else:
@@ -327,7 +331,11 @@ class BaseLLM(BaseLanguageModel, ABC):
         return self(text, stop=_stop)
 
     def predict_messages(
-        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
+        self,
+        messages: List[BaseMessage],
+        *,
+        stop: Optional[Sequence[str]] = None,
+        **kwargs: Any,
     ) -> BaseMessage:
         text = get_buffer_string(messages)
         if stop is None:
@@ -337,7 +345,9 @@ class BaseLLM(BaseLanguageModel, ABC):
         content = self(text, stop=_stop)
         return AIMessage(content=content)
 
-    async def apredict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+    async def apredict(
+        self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
+    ) -> str:
         if stop is None:
             _stop = None
         else:
@@ -345,7 +355,11 @@ class BaseLLM(BaseLanguageModel, ABC):
         return await self._call_async(text, stop=_stop)
 
     async def apredict_messages(
-        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
+        self,
+        messages: List[BaseMessage],
+        *,
+        stop: Optional[Sequence[str]] = None,
+        **kwargs: Any,
     ) -> BaseMessage:
         text = get_buffer_string(messages)
         if stop is None:

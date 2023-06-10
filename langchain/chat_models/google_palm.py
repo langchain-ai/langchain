@@ -280,6 +280,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         prompt = _messages_to_prompt_dict(messages)
 
@@ -300,6 +301,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         prompt = _messages_to_prompt_dict(messages)
 
