@@ -33,6 +33,8 @@ class GraphCypherQAChain(Chain):
     qa_chain: LLMChain
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
+    return_direct: bool = False
+    """Whether or not to return the result of querying the graph directly."""
 
     @property
     def input_keys(self) -> List[str]:
@@ -93,12 +95,17 @@ class GraphCypherQAChain(Chain):
         )
         context = self.graph.query(generated_cypher)
 
-        _run_manager.on_text("Full Context:", end="\n", verbose=self.verbose)
-        _run_manager.on_text(
-            str(context), color="green", end="\n", verbose=self.verbose
-        )
-        result = self.qa_chain(
-            {"question": question, "context": context},
-            callbacks=callbacks,
-        )
-        return {self.output_key: result[self.qa_chain.output_key]}
+        if self.return_direct:
+            final_result = context
+        else:
+            _run_manager.on_text("Full Context:", end="\n", verbose=self.verbose)
+            _run_manager.on_text(
+                str(context), color="green", end="\n", verbose=self.verbose
+            )
+            result = self.qa_chain(
+                {"question": question, "context": context},
+                callbacks=callbacks,
+            )
+            final_result = result[self.qa_chain.output_key]
+            
+        return {self.output_key: final_result}
