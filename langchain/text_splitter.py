@@ -439,7 +439,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         final_chunks = []
         # Get appropriate separator to use
         separator = separators[-1]
-        new_separators = None
+        new_separators = []
         for i, _s in enumerate(separators):
             if _s == "":
                 separator = _s
@@ -461,7 +461,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                     merged_text = self._merge_splits(_good_splits, _separator)
                     final_chunks.extend(merged_text)
                     _good_splits = []
-                if new_separators is None:
+                if not new_separators:
                     final_chunks.append(s)
                 else:
                     other_info = self._split_text(s, new_separators)
