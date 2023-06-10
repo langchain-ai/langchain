@@ -266,7 +266,7 @@ class Tokenizer:
 
 def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
     """Split incoming text and return chunks."""
-    splits: list[str] = []
+    splits: List[str] = []
     input_ids = tokenizer.encode(text)
     start_idx = 0
     cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
