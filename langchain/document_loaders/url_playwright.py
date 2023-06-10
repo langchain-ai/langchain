@@ -88,7 +88,7 @@ class PlaywrightURLLoader(BaseLoader):
         return docs
 
     async def aload(self) -> List[Document]:
-        """Load the specified URLs using Playwright and create Document instances asynchronously.
+        """Load the specified URLs with Playwright and create Documents asynchronously.
         Use this function when in a jupyter notebook environment.
 
         Returns:
