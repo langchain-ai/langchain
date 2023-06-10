@@ -103,8 +103,6 @@ def test_cypher_intermediate_steps() -> None:
     assert username is not None
     assert password is not None
 
-    TOP_K = 1
-
     graph = Neo4jGraph(
         url=url,
         username=username,
