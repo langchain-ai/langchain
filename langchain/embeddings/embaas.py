@@ -1,5 +1,5 @@
 """Wrapper around Embaas embeddings API."""
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from pydantic import BaseModel, Extra, root_validator
