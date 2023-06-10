@@ -200,6 +200,7 @@ class LlamaCpp(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call the Llama model and return the output.
 

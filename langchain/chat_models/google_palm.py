@@ -292,6 +292,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
             top_p=self.top_p,
             top_k=self.top_k,
             candidate_count=self.n,
+            **kwargs,
         )
 
         return _response_to_result(response, stop)

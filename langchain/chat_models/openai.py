@@ -305,7 +305,7 @@ class ChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params.update(kwargs)
+        params = params | kwargs
         if self.streaming:
             inner_completion = ""
             role = "assistant"
@@ -353,7 +353,7 @@ class ChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params.update(kwargs)
+        params = params | kwargs
         if self.streaming:
             inner_completion = ""
             role = "assistant"

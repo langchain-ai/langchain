@@ -97,7 +97,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         **kwargs: Any,
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
+        params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
 
@@ -125,7 +125,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         **kwargs: Any,
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
+        params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
 

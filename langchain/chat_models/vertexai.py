@@ -120,7 +120,8 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
         history = _parse_chat_history(messages[:-1])
         context = history.system_message.content if history.system_message else None
-        chat = self.client.start_chat(context=context, **self._default_params)
+        params = self._default_params | kwargs
+        chat = self.client.start_chat(context=context, **params)
         for pair in history.history:
             chat._history.append((pair.question.content, pair.answer.content))
         response = chat.send_message(question.content, **self._default_params)

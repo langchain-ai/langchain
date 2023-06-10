@@ -64,7 +64,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> LLMResult:
         """Top Level call"""
 
@@ -104,7 +104,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> LLMResult:
         """Top Level call"""
         params = self.dict()
@@ -145,7 +145,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         prompts: List[PromptValue],
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
         return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
@@ -155,7 +155,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         prompts: List[PromptValue],
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
         return await self.agenerate(
@@ -168,7 +168,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ChatResult:
         """Top Level call"""
 
@@ -178,7 +178,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ChatResult:
         """Top Level call"""
 
@@ -201,7 +201,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> BaseMessage:
         result = await self.agenerate(
             [messages], stop=stop, callbacks=callbacks, **kwargs
@@ -232,7 +232,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         messages: List[BaseMessage],
         *,
         stop: Optional[Sequence[str]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> BaseMessage:
         if stop is None:
             _stop = None
@@ -257,7 +257,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         messages: List[BaseMessage],
         *,
         stop: Optional[Sequence[str]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> BaseMessage:
         if stop is None:
             _stop = None
@@ -288,9 +288,9 @@ class SimpleChatModel(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ChatResult:
-        output_str = self._call(messages, stop=stop, run_manager=run_manager)
+        output_str = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
         message = AIMessage(content=output_str)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
@@ -301,6 +301,7 @@ class SimpleChatModel(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Simpler interface."""
 
@@ -309,7 +310,9 @@ class SimpleChatModel(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ChatResult:
-        func = partial(self._generate, messages, stop=stop, run_manager=run_manager)
+        func = partial(
+            self._generate, messages, stop=stop, run_manager=run_manager, **kwargs
+        )
         return await asyncio.get_event_loop().run_in_executor(None, func)
