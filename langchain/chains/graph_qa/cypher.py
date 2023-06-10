@@ -14,6 +14,8 @@ from langchain.chains.llm import LLMChain
 from langchain.graphs.neo4j_graph import Neo4jGraph
 from langchain.prompts.base import BasePromptTemplate
 
+INTERMEDIATE_STEPS_KEY = "intermediate_steps"
+
 
 def extract_cypher(text: str) -> str:
     # The pattern to find Cypher code enclosed in triple backticks
@@ -33,6 +35,10 @@ class GraphCypherQAChain(Chain):
     qa_chain: LLMChain
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
+    top_k: int = 10
+    """Number of results to return from the query"""
+    return_intermediate_steps: bool = False
+    """Whether or not to return the intermediate steps along with the final answer."""
     return_direct: bool = False
     """Whether or not to return the result of querying the graph directly."""
 
@@ -82,6 +88,8 @@ class GraphCypherQAChain(Chain):
         callbacks = _run_manager.get_child()
         question = inputs[self.input_key]
 
+        intermediate_steps: List = []
+
         generated_cypher = self.cypher_generation_chain.run(
             {"question": question, "schema": self.graph.get_schema}, callbacks=callbacks
         )
@@ -93,7 +101,11 @@ class GraphCypherQAChain(Chain):
         _run_manager.on_text(
             generated_cypher, color="green", end="\n", verbose=self.verbose
         )
-        context = self.graph.query(generated_cypher)
+
+        intermediate_steps.append({"query": generated_cypher})
+
+        # Retrieve and limit the number of results
+        context = self.graph.query(generated_cypher)[: self.top_k]
 
         if self.return_direct:
             final_result = context
@@ -102,10 +114,17 @@ class GraphCypherQAChain(Chain):
             _run_manager.on_text(
                 str(context), color="green", end="\n", verbose=self.verbose
             )
+
+            intermediate_steps.append({"context": context})
+
             result = self.qa_chain(
                 {"question": question, "context": context},
                 callbacks=callbacks,
             )
             final_result = result[self.qa_chain.output_key]
 
-        return {self.output_key: final_result}
+        chain_result: Dict[str, Any] = {self.output_key: final_result}
+        if self.return_intermediate_steps:
+            chain_result[INTERMEDIATE_STEPS_KEY] = intermediate_steps
+
+        return chain_result
