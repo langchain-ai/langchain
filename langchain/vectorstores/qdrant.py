@@ -397,6 +397,7 @@ class Qdrant(VectorStore):
         wal_config: Optional[common_types.WalConfigDiff] = None,
         quantization_config: Optional[common_types.QuantizationConfig] = None,
         init_from: Optional[common_types.InitFrom] = None,
+        vectors_config: Optional[dict[str, "rest.VectorParams"]] = None,
         **kwargs: Any,
     ) -> Qdrant:
         """Construct Qdrant wrapper from a list of texts.
@@ -508,8 +509,9 @@ class Qdrant(VectorStore):
         from qdrant_client.http import models as rest
 
         # Just do a single quick embedding to get vector size
-        partial_embeddings = embedding.embed_documents(texts[:1])
-        vector_size = len(partial_embeddings[0])
+        if not vectors_config:
+            partial_embeddings = embedding.embed_documents(texts[:1])
+            vector_size = len(partial_embeddings[0])
 
         collection_name = collection_name or uuid.uuid4().hex
         distance_func = distance_func.upper()
@@ -531,7 +533,7 @@ class Qdrant(VectorStore):
 
         client.recreate_collection(
             collection_name=collection_name,
-            vectors_config=rest.VectorParams(
+            vectors_config=vectors_config or rest.VectorParams(
                 size=vector_size,
                 distance=rest.Distance[distance_func],
             ),
