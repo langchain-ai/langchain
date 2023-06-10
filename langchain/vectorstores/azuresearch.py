@@ -213,8 +213,7 @@ class AzureSearch(VectorStore):
         else:
             raise Exception(response)
 
-
-    def similarity_search(self, query: str, k: int = 50, **kwargs: Any):
+    def similarity_search(self, query: str, k: int = 4, **kwargs: Any):
         search_type = kwargs.get("search_type", self.search_type)
         if search_type == "similarity":
             docs = self.vector_search(query, k=k)
@@ -227,14 +226,14 @@ class AzureSearch(VectorStore):
         return docs
 
     def vector_search(
-        self, query: str, k: int = 50, **kwargs: Any
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
 
         Args:
             query (str): The query text for which to find similar documents.
-            k (int): The number of documents to return. Default is 50.
+            k (int): The number of documents to return. Default is 4.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
@@ -245,13 +244,13 @@ class AzureSearch(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def vector_search_with_score(
-        self, query: str, k: int = 50, filters: Optional[str] = None
+        self, query: str, k: int = 4, filters: Optional[str] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 50.
+            k: Number of Documents to return. Defaults to 4.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -281,13 +280,13 @@ class AzureSearch(VectorStore):
         ]
         return docs
 
-    def hybrid_search(self, query: str, k: int = 50, **kwargs: Any) -> List[Document]:
+    def hybrid_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
 
         Args:
             query (str): The query text for which to find similar documents.
-            k (int): The number of documents to return. Default is 50.
+            k (int): The number of documents to return. Default is 4.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
@@ -298,13 +297,13 @@ class AzureSearch(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def hybrid_search_with_score(
-        self, query: str, k: int = 50, filters: Optional[str] = None
+        self, query: str, k: int = 4, filters: Optional[str] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query with an hybrid query.
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 50.
+            k: Number of Documents to return. Defaults to 4.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -336,14 +335,14 @@ class AzureSearch(VectorStore):
         return docs
 
     def semantic_hybrid_search(
-        self, query: str, k: int = 50, **kwargs: Any
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
 
         Args:
             query (str): The query text for which to find similar documents.
-            k (int): The number of documents to return. Default is 50.
+            k (int): The number of documents to return. Default is 4.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
@@ -354,13 +353,13 @@ class AzureSearch(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def semantic_hybrid_search_with_score(
-        self, query: str, k: int = 50, filters: Optional[str] = None
+        self, query: str, k: int = 4, filters: Optional[str] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query with an hybrid query.
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 50.
+            k: Number of Documents to return. Defaults to 4.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -443,8 +442,8 @@ class AzureSearch(VectorStore):
 
 class AzureSearchVectorStoreRetriever(BaseRetriever, BaseModel):
     vectorstore: AzureSearch
-    search_type: str = "similarity"
-    k: int = 50
+    search_type: str = "hybrid"
+    k: int = 4
 
     class Config:
         """Configuration for this pydantic object."""
