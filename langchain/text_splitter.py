@@ -256,96 +256,136 @@ class CharacterTextSplitter(TextSplitter):
         return self._merge_splits(splits, _separator)
 
 
-class MarkdownHeaderTextSplitter(TextSplitter):
-    """Implementation of splitting markdown based on user-supplied delimiters.
-    The text associated with each delimiter is returned w/ delimier as metadata."""
+class MarkdownHeaderTextSplitter:
+    """Implementation of splitting markdown files based on specified headers."""
 
-    def __init__(self, splits: List[Tuple[str, Optional[str]]], **kwargs: Any):
-        # Sort by seperator length and the number of "#"
-        # E.g.,  Ensure "###" will come before "##" and "#"
-        # TODO: Both means of sorting may not be required
-        """Create a new TextSplitter."""
-        super().__init__(**kwargs)
-        self.splits = sorted(splits, key=lambda x: (-len(x[0]), -x[0].count("#")))
+    def __init__(
+        self, headers_to_split_on: List[Tuple[str, str]], return_each_line: bool = False
+    ):
+        """Create a new MarkdownHeaderTextSplitter.
 
-    def split_text(self, text: str) -> List[Dict[str, Union[str, str]]]:
-        # Regex matches any of the separators in self.splits (except for the newline)
-        # (Newlines create line breaks, which we may want to split, or separate MD headers and their contents)
-        pattern = "|".join(
-            "(%s\\s*(.*))" % re.escape(sep) for sep, _ in self.splits if sep != "\n"
+        Args:
+            headers_to_split_on: Headers we want to track
+            return_each_line: Return each line w/ associated headers
+        """
+        # Output line-by-line or aggregated into chunks w/ common headers
+        self.return_each_line = return_each_line
+        # Given the headers we want to split on (e.g., "#, ##, etc", order them by length
+        self.headers_to_split_on = sorted(
+            headers_to_split_on, key=lambda split: len(split[0]), reverse=True
         )
 
-        # Text chunk with metadata
-        chunks = []
+    def aggregate_lines_to_chunks(
+        self, lines: List[Dict[str, Union[str, Dict[str, Any]]]]
+    ) -> List[Dict[str, Union[str, Dict[str, Any]]]]:
+        """Combine lines with common metadata into chunks
+        Args:
+            lines: Line of text / associated header metadata
+        """
+        aggregated_chunks: List[Dict[str, Union[str, Dict[str, Any]]]] = []
 
-        # Keys are names of metadata
-        current_metadata = {name: "" for sep, name in self.splits if name}
-        current_content = []
+        for line in lines:
+            if (
+                aggregated_chunks
+                and aggregated_chunks[-1]["metadata"] == line["metadata"]
+            ):
+                # If the last line in the aggregated list has the same metadata as the current line,
+                # append the current content to the last lines's content
+                aggregated_chunks[-1]["content"] += "\n" + line["content"]
+            else:
+                # Otherwise, append the current line to the aggregated list
+                aggregated_chunks.append(line)
+        return aggregated_chunks
 
-        # Split by newlines, but preserve the exact formatting of the original text
-        for line in text.splitlines(keepends=True):
-            # Removes any leading or trailing whitespace
+    def split_text(self, text: str) -> List[Dict[str, Union[str, Dict[str, str]]]]:
+        """Split markdown file
+        Args:
+            text: Markdown file"""
+
+        # Split the input text by newline character ("\n").
+        lines = text.split("\n")
+        # Final output
+        lines_with_metadata: List[Dict[str, Union[int, str]]] = []
+        # Content and metadata of the chunk currently being processed
+        current_content: List[str] = []
+        current_metadata: Dict[str, str] = {}
+        # Keep track of the nested header structure
+        header_stack: List[Dict[str, Union[int, str]]] = []
+        initial_metadata: Dict[str, str] = {}
+
+        for line in lines:
             stripped_line = line.strip()
+            # Check each line against each of the header types (e.g., #, ##)
+            for sep, name in self.headers_to_split_on:
+                # Check if line starts with a header that we intend to split on
+                if stripped_line.startswith(sep) and (
+                    # Header with no text OR header is followed by space
+                    # Both are valid conditions that sep is being used a header
+                    len(stripped_line) == len(sep)
+                    or stripped_line[len(sep)] == " "
+                ):
+                    # Ensure we are tracking the header as metadata
+                    if name is not None:
+                        # Get the current header level
+                        current_header_level = sep.count("#")
 
-            # Match current line of text against the regular expression pattern
-            match = re.match(pattern, stripped_line)
+                        # Pop out headers of lower or same level from the stack
+                        while (
+                            header_stack
+                            and header_stack[-1]["level"] >= current_header_level
+                        ):
+                            # We have encountered a new header at the same or higher level
+                            popped_header = header_stack.pop()
+                            # Clear the metadata for the popped header in initial_metadata
+                            if popped_header["name"] in initial_metadata:
+                                initial_metadata.pop(popped_header["name"])
 
-            # If the line starts w/ a separator defined in splits (like "#" or "##"), it will be a match
-            # Start of a new chunk of content
-            if match:
-                # See if we have accumulated content from previous lines
-                if current_content:
-                    # If so, append it as a chunk and write the chunk since we hit a new seperator
-                    chunks.append(
+                        # Push the current header to the stack
+                        header = {
+                            "level": current_header_level,
+                            "name": name,
+                            "data": stripped_line[len(sep) :].strip(),
+                        }
+                        header_stack.append(header)
+                        # Update initial_metadata with the current header
+                        initial_metadata[name] = header["data"]
+
+                    # Add the previous line to the lines_with_metadata only if current_content is not empty
+                    if current_content:
+                        lines_with_metadata.append(
+                            {
+                                "content": "\n".join(current_content),
+                                "metadata": current_metadata.copy(),
+                            }
+                        )
+                        current_content.clear()
+
+                    break
+            else:
+                if stripped_line:
+                    current_content.append(stripped_line)
+                elif current_content:
+                    lines_with_metadata.append(
                         {
-                            "content": "".join(current_content).strip(),
-                            "metadata": dict(current_metadata),
+                            "content": "\n".join(current_content),
+                            "metadata": current_metadata.copy(),
                         }
                     )
-                    # Reset the content
-                    current_content = []
+                    current_content.clear()
 
-                # Check for the seperator
-                for sep, name in self.splits:
-                    if stripped_line.startswith(sep):
-                        if name is not None:
-                            # Update the rest of the line (after the separator) as the value for that header
-                            current_metadata[name] = stripped_line[len(sep):].strip()
-                            
-                            # clear out metadata for all headers lower in hierarchy
-                            current_header_index = [index for index, (sep_, _) in enumerate(self.splits) if sep_ == sep][0]
-                            for header, index in [(name_, index) for index, (sep_, name_) in enumerate(self.splits) if name_]:
-                                if index > current_header_index:
-                                    current_metadata[header] = ''
-                        break
+            current_metadata = initial_metadata.copy()
 
-            # If the line is empty (i.e., only contains whitespace, or is completely empty)
-            # and newline ("\n") is one of the separators, it appends the current content to
-            # the chunks list as a new chunk, and resets the current_content to an empty list
-            elif not stripped_line and ("\n", None) in self.splits:
-                # If we have accumulated content, append it as a chunk
-                if current_content:
-                    chunks.append(
-                        {
-                            "content": "".join(current_content).strip(),
-                            "metadata": dict(current_metadata),
-                        }
-                    )
-                    current_content = []  # reset the content
-
-            # Apend non-empty lines
-            elif stripped_line:
-                current_content.append(stripped_line)
-
-        # Append the last chunk
         if current_content:
-            chunks.append(
-                {
-                    "content": "".join(current_content).strip(),
-                    "metadata": dict(current_metadata),
-                }
+            lines_with_metadata.append(
+                {"content": "\n".join(current_content), "metadata": current_metadata}
             )
-        return [chunk for chunk in chunks if chunk["content"]]
+
+        # lines_with_metadata has each line with associated header metadata
+        # aggregate these into chunks based on common metadata
+        if self.return_each_line == False:
+            return self.aggregate_lines_to_chunks(lines_with_metadata)
+        else:
+            return lines_with_metadata
 
 
 # should be in newer Python versions (3.10+)
