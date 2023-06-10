@@ -2,6 +2,8 @@
 
 from typing import Optional
 
+from pydantic import Field
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
