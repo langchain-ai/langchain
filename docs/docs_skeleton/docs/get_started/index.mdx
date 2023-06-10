@@ -1,12 +1,16 @@
 # Introduction
 
-**LangChain** is a framework for developing applications powered by language models. It enables applications that are
-1. **Data-aware**: connect a language model to other sources of data
-2. **Agentic**: allow a language model to interact with its environment
+**LangChain** is a framework for developing applications powered by language models. It enables applications that are:
+- **Data-aware**: connect a language model to other sources of data
+- **Agentic**: allow a language model to interact with its environment
+
+The main value props of LangChain are:
+1. **Components**: abstractions for working with language models, along with a collection of implementations for each abstraction. The components are easy to use whether you are using the rest of the LangChain framework or not.
+2. **Off-the-shelf chains**: a chain is a structured assembly of components for accomplishing specific higher level tasks. LangChain comes with built-in chains that can be extended or used as-is.
 
 ## Get started
 
-We recommend heading to our [Quickstart guide](./quickstart.html) to familiarize yourself with the framework.
+Head to our [Quickstart](/docs/get_started/quickstart.html) guide to familiarize yourself with the framework.
 
 ## Modules
 
@@ -19,19 +23,26 @@ LangChain provides standard, extendable interfaces and external integrations for
 - [Agents](/docs/modules/agents.html): Let chains choose which tools to use given high-level directives
 - [Callbacks](/docs/modules/callbacks/getting_started.html): Log and stream intermediate steps of any chain
 
-![LangChain modules](../_static/lc_modules.jpg)
+![LangChain modules](pathname:///img/lc_modules.jpg)
 
-## Examples
+## Use cases
 
-Walkthroughs for common use cases and additional examples of applications built on LangChain:
+Walkthroughs and best-practices for common end-to-end use cases:
 
-- [Use cases](/docs/examples/use_cases/autonomous_agents.html)
-- [Additional resources](/docs/examples/additional_resources/youtube.html)
+- [Use cases](/docs/use_cases.html)
+
+## Guides
+
+Design guides for key parts of the stack and development process:
+
+- [Guides](/docs/guides.html)
 
 ## Ecosystem
 
 LangChain is part of a rich ecosystem of tools integrated with the framework and applications built on top of it:
 
-- [Integrations](/docs/ecosystem/integrations/ai21.html): Use your favorite models, tools and applications within LangChain
+- [Integrations](/docs/ecosystem/integrations.html): Use your favorite models, tools and applications within LangChain
 - [Dependents](/docs/ecosystem/dependents.html): Repositories that use LangChain
 - [Deployments](/docs/ecosystem/deployments.html): Instructions, code snippets, and template repositories for deploying LangChain apps
+- [YouTube tutorials](/docs/examples/ecosystem/youtube.html): Tutorials by folks in the community
+- [Gallery](https://github.com/kyrolabs/awesome-langchain): Awesome LangChain projects, compiled by the folks at [KyroLabs](https://kyrolabs.com)

@@ -1,11 +1,34 @@
+### Setup
+
+To start we'll need to install the OpenAI Python package:
+
+```bash
+pip install openai
+```
+
+Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
+
+```bash
+export OPENAI_API_KEY="..."
+```
+
+If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
+
 ```python
 from langchain.llms import OpenAI
 
-llm = OpenAI(model_name="text-ada-001", n=2, best_of=2)
+llm = OpenAI(openai_api_key="...")
 ```
 
-**Generate Text:** The most basic functionality an LLM has is just the ability to call it, passing in a string and getting back a string.
+otherwise you can initialize without any params:
+```python
+from langchain.llms import OpenAI
 
+llm = OpenAI()
+```
+
+### `__call__`: string in -> string out
+The simplest way to use an LLM is a callable: pass in a string, get a string completion.
 
 ```python
 llm("Tell me a joke")
@@ -14,13 +37,13 @@ llm("Tell me a joke")
 <CodeOutputBlock lang="python">
 
 ```
-    '\n\nWhy did the chicken cross the road?\n\nTo get to the other side.'
+    'Why did the chicken cross the road?\n\nTo get to the other side.'
 ```
 
 </CodeOutputBlock>
 
-**Generate:** More broadly, you can call it with a list of inputs, getting back a more complete response than just the text. This complete response includes things like multiple top responses, as well as LLM provider specific information
-
+### `generate`: batch calls, richer outputs
+`generate` lets you can call the model with a list of strings, getting back a more complete response than just the text. This complete response can includes things like multiple top responses and other LLM provider-specific information:
 
 ```python
 llm_result = llm.generate(["Tell me a joke", "Tell me a poem"]*15)
@@ -80,23 +103,6 @@ llm_result.llm_output
     {'token_usage': {'completion_tokens': 3903,
       'total_tokens': 4023,
       'prompt_tokens': 120}}
-```
-
-</CodeOutputBlock>
-
-**Number of Tokens:** You can also estimate how many tokens a piece of text will be in that model. This is useful because models have a context length (and cost more for more tokens), which means you need to be aware of how long the text you are passing in is.
-
-Notice that by default the tokens are estimated using [tiktoken](https://github.com/openai/tiktoken) (except for legacy version <3.8, where a Hugging Face tokenizer is used)
-
-
-```python
-llm.get_num_tokens("what a joke")
-```
-
-<CodeOutputBlock lang="python">
-
-```
-    3
 ```
 
 </CodeOutputBlock>
