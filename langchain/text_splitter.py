@@ -58,6 +58,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
         keep_separator: bool = False,
+        add_start_index: bool = False,
     ):
         """Create a new TextSplitter.
 
@@ -66,6 +67,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunk_overlap: Overlap in characters between chunks
             length_function: Function that measures the length of given chunks
             keep_separator: Whether or not to keep the separator in the chunks
+            add_start_index: If `True`, includes chunk's start index in metadata
         """
         if chunk_overlap > chunk_size:
             raise ValueError(
@@ -76,6 +78,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
         self._keep_separator = keep_separator
+        self._add_start_index = add_start_index
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
@@ -88,10 +91,13 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
+            index = -1
             for chunk in self.split_text(text):
-                new_doc = Document(
-                    page_content=chunk, metadata=copy.deepcopy(_metadatas[i])
-                )
+                metadata = copy.deepcopy(_metadatas[i])
+                if self._add_start_index:
+                    index = text.find(chunk, index + 1)
+                    metadata["start_index"] = index
+                new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
         return documents
 
