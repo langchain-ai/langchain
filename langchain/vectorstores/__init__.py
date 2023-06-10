@@ -2,6 +2,7 @@
 from langchain.vectorstores.analyticdb import AnalyticDB
 from langchain.vectorstores.annoy import Annoy
 from langchain.vectorstores.atlas import AtlasDB
+from langchain.vectorstores.awadb import AwaDB
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
@@ -60,4 +61,5 @@ __all__ = [
     "ClickhouseSettings",
     "Tigris",
     "MatchingEngine",
+    "AwaDB",
 ]
