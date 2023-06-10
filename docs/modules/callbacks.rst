@@ -2,7 +2,7 @@ Callbacks
 =========
 
 .. note::
-   `Conceptual Guide <./callbacks.html>`_
+   `Conceptual Guide <https://docs.langchain.com/docs/components/callbacks>`_
 
 LangChain provides a callbacks system that allows you to hook into the various stages of your LLM application. 
 This is useful for logging, `tracing <../additional_resources/tracing.html>`_, `streaming <./models/llms/examples/streaming_llm.html>`_, and other tasks.
