@@ -107,5 +107,5 @@ class GraphCypherQAChain(Chain):
                 callbacks=callbacks,
             )
             final_result = result[self.qa_chain.output_key]
-            
+
         return {self.output_key: final_result}

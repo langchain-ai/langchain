@@ -59,7 +59,8 @@ def test_cypher_generating_run() -> None:
     expected_output = " Bruce Willis played in Pulp Fiction."
     assert output == expected_output
 
-def test_cypher_direct_return() -> None:
+
+def test_cypher_return_direct() -> None:
     """Test that chain returns direct results."""
     url = os.environ.get("NEO4J_URL")
     username = os.environ.get("NEO4J_USERNAME")
@@ -83,7 +84,9 @@ def test_cypher_direct_return() -> None:
     # Refresh schema information
     graph.refresh_schema()
 
-    chain = GraphCypherQAChain.from_llm(OpenAI(temperature=0), graph=graph, direct_return=True)
+    chain = GraphCypherQAChain.from_llm(
+        OpenAI(temperature=0), graph=graph, return_direct=True
+    )
     output = chain.run("Who played in Pulp Fiction?")
-    expected_output = " Bruce Willis played in Pulp Fiction."
+    expected_output = [{"a.name": "Bruce Willis"}]
     assert output == expected_output
