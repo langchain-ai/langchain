@@ -61,6 +61,7 @@ class SnowflakeLoader(BaseLoader):
     def _execute_query(self) -> List[Dict[str, Any]]:
         try:
             import snowflake.connector
+            from snowflake.connector import DictCursor
         except ImportError as ex:
             raise ValueError(
                 "Could not import snowflake-connector-python package. "
@@ -78,7 +79,7 @@ class SnowflakeLoader(BaseLoader):
             parameters=self.parameters,
         )
         try:
-            cur = conn.cursor()
+            cur = conn.cursor(DictCursor)
             cur.execute("USE DATABASE " + self.database)
             cur.execute("USE SCHEMA " + self.schema)
             cur.execute(self.query, self.parameters)
