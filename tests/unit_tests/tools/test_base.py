@@ -586,4 +586,5 @@ def test_structured_tool_from_function() -> None:
     }
 
     prefix = "foo(bar: int, baz: str) -> str - "
+    assert foo.__doc__ is not None
     assert structured_tool.description == prefix + foo.__doc__.strip()
