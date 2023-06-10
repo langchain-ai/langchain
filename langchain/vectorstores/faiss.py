@@ -220,7 +220,7 @@ class FAISS(VectorStore):
         return docs[:k]
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, **kwargs
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -285,7 +285,8 @@ class FAISS(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch after filtering to pass to MMR algorithm.
+            fetch_k: Number of Documents to fetch after filtering to
+                     pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
