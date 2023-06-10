@@ -1,4 +1,4 @@
-"""Wrapper around llama.cpp."""
+"""Wrapper around text-generation-webui."""
 import logging
 import requests
 from typing import Any, Dict, Generator, List, Optional
@@ -12,17 +12,22 @@ logger = logging.getLogger(__name__)
 
 
 class TextGen(LLM):
-    """Wrapper around the llama.cpp model.
+    """Wrapper around the text-generation-webui model.
 
-    To use, you should have the llama-cpp-python library installed, and provide the
-    path to the Llama model as a named parameter to the constructor.
-    Check out: https://github.com/abetlen/llama-cpp-python
+    To use, you should have the text-generation-webui installed, a model loaded,
+    and --api added as a command-line option.
+
+    Suggested installation, use one-click installer for your OS:
+    https://github.com/oobabooga/text-generation-webui#one-click-installers
+
+    Paremeters below taken from text-generation-webui api example:
+    https://github.com/oobabooga/text-generation-webui/blob/main/api-examples/api-example.py
 
     Example:
         .. code-block:: python
 
-            from langchain.llms import LlamaCppEmbeddings
-            llm = LlamaCppEmbeddings(model_path="/path/to/llama/model")
+            from langchain.llms import TextGen
+            llm = TextGen(model_url="http://localhost:8500")
     """
 
     model_url: str
@@ -133,10 +138,10 @@ class TextGen(LLM):
 
     def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
         """
-        Performs sanity check, preparing paramaters in format needed by llama_cpp.
+        Performs sanity check, preparing paramaters in format needed by textgen.
 
         Args:
-            stop (Optional[List[str]]): List of stop sequences for llama_cpp.
+            stop (Optional[List[str]]): List of stop sequences for textgen.
 
         Returns:
             Dictionary containing the combined parameters.
@@ -174,7 +179,7 @@ class TextGen(LLM):
 
                 from langchain.llms import TextGen
                 llm = TextGen(model_url="http://localhost:5000")
-                llm("This is a prompt.")
+                llm("Write a story about llamas.")
         """
         if self.streaming:
             raise ValueError("`streaming` option currently unsupported.")
