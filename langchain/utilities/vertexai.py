@@ -18,7 +18,7 @@ def raise_vertex_import_error() -> None:
 
 
 def init_vertexai(
-    project_id: Optional[str] = None,
+    project: Optional[str] = None,
     location: Optional[str] = None,
     credentials: Optional["Credentials"] = None,
 ) -> None:
@@ -40,7 +40,7 @@ def init_vertexai(
         raise_vertex_import_error()
 
     vertexai.init(
-        project=project_id,
+        project=project,
         location=location,
         credentials=credentials,
     )

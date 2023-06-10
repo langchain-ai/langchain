@@ -8,6 +8,7 @@ from langchain.embeddings.aleph_alpha import (
 )
 from langchain.embeddings.bedrock import BedrockEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
+from langchain.embeddings.deepinfra import DeepInfraEmbeddings
 from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
 from langchain.embeddings.fake import FakeEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
@@ -58,6 +59,7 @@ __all__ = [
     "MiniMaxEmbeddings",
     "VertexAIEmbeddings",
     "BedrockEmbeddings",
+    "DeepInfraEmbeddings",
 ]
 
 

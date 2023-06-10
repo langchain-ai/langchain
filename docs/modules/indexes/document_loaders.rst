@@ -116,6 +116,7 @@ We need access tokens and sometime other parameters to get access to these datas
    ./document_loaders/examples/discord_loader.ipynb
    ./document_loaders/examples/docugami.ipynb
    ./document_loaders/examples/duckdb.ipynb
+   ./document_loaders/examples/fauna.ipynb
    ./document_loaders/examples/figma.ipynb
    ./document_loaders/examples/gitbook.ipynb
    ./document_loaders/examples/git.ipynb
@@ -137,6 +138,7 @@ We need access tokens and sometime other parameters to get access to these datas
    ./document_loaders/examples/reddit.ipynb
    ./document_loaders/examples/roam.ipynb
    ./document_loaders/examples/slack.ipynb
+   ./document_loaders/examples/snowflake.ipynb
    ./document_loaders/examples/spreedly.ipynb
    ./document_loaders/examples/stripe.ipynb
    ./document_loaders/examples/tomarkdown.ipynb

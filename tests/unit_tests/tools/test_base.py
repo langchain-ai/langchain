@@ -556,3 +556,35 @@ async def test_async_exception_handling_non_tool_exception() -> None:
     _tool = _FakeExceptionTool(exception=ValueError())
     with pytest.raises(ValueError):
         await _tool.arun({})
+
+
+def test_structured_tool_from_function() -> None:
+    """Test that structured tools can be created from functions."""
+
+    def foo(bar: int, baz: str) -> str:
+        """Docstring
+        Args:
+            bar: int
+            baz: str
+        """
+        raise NotImplementedError()
+
+    structured_tool = StructuredTool.from_function(foo)
+    assert structured_tool.name == "foo"
+    assert structured_tool.args == {
+        "bar": {"title": "Bar", "type": "integer"},
+        "baz": {"title": "Baz", "type": "string"},
+    }
+
+    assert structured_tool.args_schema.schema() == {
+        "properties": {
+            "bar": {"title": "Bar", "type": "integer"},
+            "baz": {"title": "Baz", "type": "string"},
+        },
+        "title": "fooSchemaSchema",
+        "type": "object",
+    }
+
+    prefix = "foo(bar: int, baz: str) -> str - "
+    assert foo.__doc__ is not None
+    assert structured_tool.description == prefix + foo.__doc__.strip()

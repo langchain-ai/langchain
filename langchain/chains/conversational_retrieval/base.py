@@ -12,6 +12,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
+    Callbacks,
 )
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -204,6 +205,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         verbose: bool = False,
         condense_question_llm: Optional[BaseLanguageModel] = None,
         combine_docs_chain_kwargs: Optional[Dict] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
         """Load chain from LLM."""
@@ -212,17 +214,22 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             llm,
             chain_type=chain_type,
             verbose=verbose,
+            callbacks=callbacks,
             **combine_docs_chain_kwargs,
         )
 
         _llm = condense_question_llm or llm
         condense_question_chain = LLMChain(
-            llm=_llm, prompt=condense_question_prompt, verbose=verbose
+            llm=_llm,
+            prompt=condense_question_prompt,
+            verbose=verbose,
+            callbacks=callbacks,
         )
         return cls(
             retriever=retriever,
             combine_docs_chain=doc_chain,
             question_generator=condense_question_chain,
+            callbacks=callbacks,
             **kwargs,
         )
 
@@ -264,6 +271,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         chain_type: str = "stuff",
         combine_docs_chain_kwargs: Optional[Dict] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
         """Load chain from LLM."""
@@ -271,12 +279,16 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         doc_chain = load_qa_chain(
             llm,
             chain_type=chain_type,
+            callbacks=callbacks,
             **combine_docs_chain_kwargs,
         )
-        condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
+        condense_question_chain = LLMChain(
+            llm=llm, prompt=condense_question_prompt, callbacks=callbacks
+        )
         return cls(
             vectorstore=vectorstore,
             combine_docs_chain=doc_chain,
             question_generator=condense_question_chain,
+            callbacks=callbacks,
             **kwargs,
         )

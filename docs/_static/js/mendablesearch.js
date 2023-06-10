@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         style: { darkMode: false, accentColor: '#010810' },
         floatingButtonStyle: { color: '#ffffff', backgroundColor: '#010810' },
         anon_key: '82842b36-3ea6-49b2-9fb8-52cfc4bde6bf', // Mendable Search Public ANON key, ok to be public
+        cmdShortcutKey:'j',
         messageSettings: {
           openSourcesInNewTab: false,
           prettySources: true // Prettify the sources displayed now
