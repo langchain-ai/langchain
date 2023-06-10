@@ -108,44 +108,6 @@ class BaseLLM(BaseLanguageModel, ABC):
         else:
             return verbose
 
-    def _flatten_llm_result(
-        self, prompts: List[str], result: LLMResult
-    ) -> List[LLMResult]:
-        """Flatten the LLMResult into a list of LLMResults for batched runs."""
-        if len(result.generations) != len(prompts):
-            raise ValueError(
-                f"Expected {len(prompts)} generations, got {len(result.generations)}"
-            )
-
-        llm_outputs = []
-        for prompt, gens in zip(prompts, result.generations):
-            try:
-                token_usage = {
-                    "completion_tokens": self.get_num_tokens(
-                        "".join([gen.text for gen in gens])
-                    ),
-                    "prompt_tokens": self.get_num_tokens(prompt),
-                }
-                token_usage["total_tokens"] = (
-                    token_usage["completion_tokens"] + token_usage["prompt_tokens"]
-                )
-                llm_output = {
-                    "token_usage": token_usage,
-                }
-                if result.llm_output and result.llm_output["model_name"]:
-                    llm_output["model_name"] = result.llm_output["model_name"]
-
-            except ImportError:
-                llm_output = None
-            llm_outputs.append(llm_output)
-        return [
-            LLMResult(
-                generations=[gen],
-                llm_output=llm_output,
-            )
-            for gen, llm_output in zip(result.generations, llm_outputs)
-        ]
-
     @abstractmethod
     def _generate(
         self,
@@ -203,9 +165,7 @@ class BaseLLM(BaseLanguageModel, ABC):
             for run_manager in run_managers:
                 run_manager.on_llm_error(e)
             raise e
-        flattened_outputs = (
-            self._flatten_llm_result(prompts, output) if len(prompts) > 1 else [output]
-        )
+        flattened_outputs = output.flatten()
         for manager, flattened_output in zip(run_managers, flattened_outputs):
             manager.on_llm_end(flattened_output)
         if run_managers:
@@ -298,9 +258,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                 *[run_manager.on_llm_error(e) for run_manager in run_managers]
             )
             raise e
-        flattened_outputs = (
-            self._flatten_llm_result(prompts, output) if len(prompts) > 1 else [output]
-        )
+        flattened_outputs = output.flatten()
         await asyncio.gather(
             *[
                 run_manager.on_llm_end(flattened_output)

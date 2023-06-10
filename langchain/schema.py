@@ -185,6 +185,32 @@ class LLMResult(BaseModel):
     run: Optional[List[RunInfo]] = None
     """Run metadata."""
 
+    def flatten(self) -> List[LLMResult]:
+        """Flatten generations into a single list."""
+        llm_results = []
+        for i, gen_list in enumerate(self.generations):
+            # Avoid double counting tokens in OpenAICallback
+            if i == 0:
+                llm_results.append(
+                    LLMResult(
+                        generations=[gen_list],
+                        llm_output=self.llm_output,
+                    )
+                )
+            else:
+                if self.llm_output is not None:
+                    llm_output = self.llm_output.copy()
+                    llm_output["token_usage"] = None
+                else:
+                    llm_output = None
+                llm_results.append(
+                    LLMResult(
+                        generations=[gen_list],
+                        llm_output=llm_output,
+                    )
+                )
+        return llm_results
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, LLMResult):
             return NotImplemented
