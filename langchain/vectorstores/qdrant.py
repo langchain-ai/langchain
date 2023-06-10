@@ -580,6 +580,7 @@ class Qdrant(VectorStore):
             embeddings=embedding,
             content_payload_key=content_payload_key,
             metadata_payload_key=metadata_payload_key,
+            vector_key=list(vectors_config)[0] if vectors_config else None,
         )
 
     @classmethod
