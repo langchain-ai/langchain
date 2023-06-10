@@ -1,8 +1,8 @@
 """Callback Handler that prints to std out."""
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {
     "gpt-4": 0.03,

@@ -200,7 +200,7 @@ class LLMResult(BaseModel):
             else:
                 if self.llm_output is not None:
                     llm_output = self.llm_output.copy()
-                    llm_output["token_usage"] = None
+                    llm_output["token_usage"] = dict()
                 else:
                     llm_output = None
                 llm_results.append(
