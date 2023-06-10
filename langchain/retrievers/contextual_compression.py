@@ -44,7 +44,10 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         Returns:
             Sequence of relevant documents
         """
-        docs = self.base_retriever.get_relevant_documents(query)
+        run_manager_ = run_manager or CallbackManagerForRetrieverRun.get_noop_manager()
+        docs = self.base_retriever.get_relevant_documents(
+            query, callbacks=run_manager_.get_child(), **kwargs
+        )
         compressed_docs = self.base_compressor.compress_documents(docs, query)
         return list(compressed_docs)
 
@@ -63,6 +66,11 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         Returns:
             List of relevant documents
         """
-        docs = await self.base_retriever.aget_relevant_documents(query)
+        run_manager_ = (
+            run_manager or AsyncCallbackManagerForRetrieverRun.get_noop_manager()
+        )
+        docs = await self.base_retriever.aget_relevant_documents(
+            query, callbacks=run_manager_.get_child(), **kwargs
+        )
         compressed_docs = await self.base_compressor.acompress_documents(docs, query)
         return list(compressed_docs)
