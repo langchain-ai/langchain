@@ -30,6 +30,7 @@ from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
+from langchain.llms.octoai_endpoint import OctoAIEndpoint
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.openlm import OpenLM
 from langchain.llms.petals import Petals
@@ -91,6 +92,7 @@ __all__ = [
     "HuggingFaceTextGenInference",
     "FakeListLLM",
     "VertexAI",
+    "OctoAIEndpoint",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -125,6 +127,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "pipelineai": PipelineAI,
     "huggingface_pipeline": HuggingFacePipeline,
     "azure": AzureOpenAI,
+    "octoai_endpoint": OctoAIEndpoint,
     "replicate": Replicate,
     "self_hosted": SelfHostedPipeline,
     "self_hosted_hugging_face": SelfHostedHuggingFaceLLM,
