@@ -133,7 +133,6 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     def combine_docs(
         self,
         docs: List[Document],
-        token_max: int = 3000,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[str, dict]:
@@ -159,9 +158,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
             nest_asyncio.apply()
             return asyncio.run(
-                self._aprocess_results(
-                    results, docs, token_max, callbacks=callbacks, **kwargs
-                )
+                self._aprocess_results(results, docs, callbacks=callbacks, **kwargs)
             )
         except ImportError:
             raise ImportError(
@@ -171,7 +168,10 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             )
 
     async def acombine_docs(
-        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: List[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Tuple[str, dict]:
         """Combine documents in a map reduce manner.
 
@@ -213,8 +213,8 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         length_func = self.combine_document_chain.prompt_length
         num_tokens = length_func(result_docs, **kwargs)
 
-        async def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
-            return await self._collapse_chain.arun(
+        def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
+            return self._collapse_chain.run(
                 input_documents=docs, callbacks=callbacks, **kwargs
             )
 
