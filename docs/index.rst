@@ -57,7 +57,7 @@ For each module LangChain provides standard, extendable interfaces. LangChain al
 
 - `Agents <./modules/agents.html>`_: An agent is a Chain in which an LLM, given a high-level directive and a set of tools, repeatedly decides an action, executes the action and observes the outcome until the high-level directive is complete.
 
-- `Callbacks <./modules/callbacks/getting_started.html>`_: Callbacks let you log and stream the intermediate steps of any chain, making it easy to observe, debug, and evaluate the internals of an application.
+- `Callbacks <./modules/callbacks.html>`_: Callbacks let you log and stream the intermediate steps of any chain, making it easy to observe, debug, and evaluate the internals of an application.
 
 .. toctree::
    :maxdepth: 1
