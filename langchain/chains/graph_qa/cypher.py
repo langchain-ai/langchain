@@ -76,7 +76,7 @@ class GraphCypherQAChain(Chain):
         self,
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         """Generate Cypher statement, use it to look up in db and answer question."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
