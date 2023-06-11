@@ -273,6 +273,7 @@ class BaseOpenAI(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         """Call out to OpenAI's endpoint with k unique prompts.
 
@@ -290,6 +291,7 @@ class BaseOpenAI(BaseLLM):
         """
         # TODO: write a unit test for this
         params = self._invocation_params
+        params = {**params, **kwargs}
         sub_prompts = self.get_sub_prompts(params, prompts, stop)
         choices = []
         token_usage: Dict[str, int] = {}
@@ -326,9 +328,11 @@ class BaseOpenAI(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         """Call out to OpenAI's endpoint async with k unique prompts."""
         params = self._invocation_params
+        params = {**params, **kwargs}
         sub_prompts = self.get_sub_prompts(params, prompts, stop)
         choices = []
         token_usage: Dict[str, int] = {}
@@ -771,8 +775,10 @@ class OpenAIChat(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         messages, params = self._get_chat_params(prompts, stop)
+        params = {**params, **kwargs}
         if self.streaming:
             response = ""
             params["stream"] = True
@@ -804,8 +810,10 @@ class OpenAIChat(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         messages, params = self._get_chat_params(prompts, stop)
+        params = {**params, **kwargs}
         if self.streaming:
             response = ""
             params["stream"] = True
