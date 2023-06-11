@@ -66,6 +66,7 @@ class DeepInfra(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to DeepInfra's inference API endpoint.
 
@@ -82,6 +83,7 @@ class DeepInfra(LLM):
                 response = di("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
+        _model_kwargs = {**_model_kwargs, **kwargs}
         # HTTP headers for authorization
         headers = {
             "Authorization": f"bearer {self.deepinfra_api_token}",
