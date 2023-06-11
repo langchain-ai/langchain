@@ -35,7 +35,7 @@ class TextGen(LLM):
 
     max_new_tokens: Optional[int] = 250
     """The maximum number of tokens to generate."""
-    
+
     do_sample: bool = Field(True, alias="do_sample")
     """Do sample"""
 
@@ -103,27 +103,27 @@ class TextGen(LLM):
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling textgen."""
         return {
-            'max_new_tokens': self.max_new_tokens,
-            'do_sample': self.do_sample,
-            'temperature': self.temperature,
-            'top_p': self.top_p,
-            'typical_p': self.typical_p,
-            'epsilon_cutoff': self.epsilon_cutoff,
-            'eta_cutoff': self.eta_cutoff,
-            'repetition_penalty': self.repetition_penalty,
-            'top_k': self.top_k,
-            'min_length': self.min_length,
-            'no_repeat_ngram_size': self.no_repeat_ngram_size,
-            'num_beams': self.num_beams,
-            'penalty_alpha': self.penalty_alpha,
-            'length_penalty': self.length_penalty,
-            'early_stopping': self.early_stopping,
-            'seed': self.seed,
-            'add_bos_token': self.add_bos_token,
-            'truncation_length': self.truncation_length,
-            'ban_eos_token': self.ban_eos_token,
-            'skip_special_tokens': self.skip_special_tokens,
-            'stopping_strings': self.stopping_strings,
+            "max_new_tokens": self.max_new_tokens,
+            "do_sample": self.do_sample,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "typical_p": self.typical_p,
+            "epsilon_cutoff": self.epsilon_cutoff,
+            "eta_cutoff": self.eta_cutoff,
+            "repetition_penalty": self.repetition_penalty,
+            "top_k": self.top_k,
+            "min_length": self.min_length,
+            "no_repeat_ngram_size": self.no_repeat_ngram_size,
+            "num_beams": self.num_beams,
+            "penalty_alpha": self.penalty_alpha,
+            "length_penalty": self.length_penalty,
+            "early_stopping": self.early_stopping,
+            "seed": self.seed,
+            "add_bos_token": self.add_bos_token,
+            "truncation_length": self.truncation_length,
+            "ban_eos_token": self.ban_eos_token,
+            "skip_special_tokens": self.skip_special_tokens,
+            "stopping_strings": self.stopping_strings,
         }
 
     @property
@@ -183,7 +183,7 @@ class TextGen(LLM):
         """
         if self.streaming:
             raise ValueError("`streaming` option currently unsupported.")
-        
+
         url = f"{self.model_url}/api/v1/generate"
         params = self._get_parameters(stop)
         request = params.copy()
@@ -191,11 +191,10 @@ class TextGen(LLM):
         response = requests.post(url, json=request)
 
         if response.status_code == 200:
-            result = response.json()['results'][0]['text']
+            result = response.json()["results"][0]["text"]
             print(prompt + result)
         else:
             print(f"ERROR: response: {response}")
             result = ""
 
         return result
-
