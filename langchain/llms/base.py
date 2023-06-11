@@ -496,7 +496,7 @@ class LLM(BaseLLM):
         """Run the LLM on the given prompt and input."""
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
 
-        async def get_completion(prompt):
+        async def get_completion(prompt: str) -> str:
             return (
                 await self._acall(prompt, stop=stop, run_manager=run_manager)
                 if new_arg_supported
