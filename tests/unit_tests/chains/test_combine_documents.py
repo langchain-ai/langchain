@@ -10,7 +10,10 @@ from langchain.chains.combine_documents.map_reduce import (
     _collapse_docs,
     _split_list_of_docs,
 )
+from langchain.chains.summarize import load_summarize_chain
 from langchain.docstore.document import Document
+
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 def _fake_docs_len_func(docs: List[Document]) -> int:
@@ -139,3 +142,37 @@ def test_format_doc_missing_metadata() -> None:
     )
     with pytest.raises(ValueError):
         format_document(doc, prompt)
+
+
+@pytest.fixture
+def fake_llm():
+    return FakeLLM(
+        queries={
+            0: "first",
+            1: "second",
+            2: "third",
+            3: "fourth",
+        },
+        sequential_responses=True,
+    )
+
+
+def test_single_llm_call_on_one_document(fake_llm: FakeLLM):
+    chain = load_summarize_chain(
+        llm=fake_llm,
+        chain_type="map_reduce",
+        return_intermediate_steps=False,
+    )
+    output = chain.run({"input_documents": [Document(page_content="foo")]})
+    assert output == "first"
+
+
+@pytest.mark.asyncio
+async def test_single_llm_acall_on_one_document(fake_llm: FakeLLM):
+    chain = load_summarize_chain(
+        llm=fake_llm,
+        chain_type="map_reduce",
+        return_intermediate_steps=False,
+    )
+    output = await chain.arun({"input_documents": [Document(page_content="foo")]})
+    assert output == "first"

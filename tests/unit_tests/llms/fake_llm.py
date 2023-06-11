@@ -3,7 +3,10 @@ from typing import Any, List, Mapping, Optional, cast
 
 from pydantic import validator
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms.base import LLM
 
 
@@ -34,6 +37,23 @@ class FakeLLM(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        if self.sequential_responses:
+            return self._get_next_response_in_sequence
+
+        if self.queries is not None:
+            return self.queries[prompt]
+        if stop is None:
+            return "foo"
+        else:
+            return "bar"
+
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         if self.sequential_responses:
