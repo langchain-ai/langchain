@@ -98,11 +98,15 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
                     f"Error raised by inference API: {parsed_response['error']}"
                 )
 
-            if "data" not in parsed_response:
+            if "data" in parsed_response:
+                embeddings = parsed_response["data"]
+            elif "output" in parsed_response:
+                embeddings = parsed_response["output"]
+            else:
                 raise ValueError(
                     f"Error raised by inference API, no key data: {parsed_response}"
                 )
-            embeddings = parsed_response["data"]
+
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(
                 f"Error raised by inference API: {e}.\nResponse: {response.text}"
