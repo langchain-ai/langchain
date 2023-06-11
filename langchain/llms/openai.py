@@ -665,14 +665,6 @@ class OpenAIChat(BaseLLM):
             openaichat = OpenAIChat(model_name="gpt-3.5-turbo")
     """
 
-    @property
-    def lc_serializable(self) -> bool:
-        return True
-
-    @property
-    def lc_secrets(self) -> Dict[str, str]:
-        return {"openai_api_key": "OPENAI_API_KEY"}
-
     client: Any  #: :meta private:
     model_name: str = "gpt-3.5-turbo"
     """Model name to use."""
