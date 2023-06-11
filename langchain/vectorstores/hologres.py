@@ -36,10 +36,11 @@ class HologresWrapper:
 
         self.cursor.execute(
             f"""create table if not exists {self.table_name} (
-                id text,
-                embedding float4[] check(array_ndims(embedding) = 1 and array_length(embedding, 1) = {self.ndims}),
-                metadata json,
-                document text);"""
+id text,
+embedding float4[] check(array_ndims(embedding) = 1 and \
+array_length(embedding, 1) = {self.ndims}),
+metadata json,
+document text);"""
         )
         self.cursor.execute(
             f"call set_table_property('{self.table_name}'"
@@ -53,8 +54,12 @@ class HologresWrapper:
         self.conn.commit()
 
     def get_by_id(self, id: str) -> List[Tuple]:
+        statement = (
+            f"select id, embedding, metadata, "
+            f"document from {self.table_name} where id = %s;"
+        )
         self.cursor.execute(
-            f"select id, embedding, metadata, document from {self.table_name} where id = %s;",
+            statement,
             (id),
         )
         self.conn.commit()
@@ -68,7 +73,8 @@ class HologresWrapper:
         id: Optional[str] = None,
     ) -> None:
         self.cursor.execute(
-            f'insert into "{self.table_name}" values (%s, array{json.dumps(embedding)}::float4[], %s, %s)',
+            f'insert into "{self.table_name}" '
+            f"values (%s, array{json.dumps(embedding)}::float4[], %s, %s)",
             (id if id is not None else "null", json.dumps(metadata), document),
         )
         self.conn.commit()
@@ -81,12 +87,17 @@ class HologresWrapper:
         if filter is not None:
             conjuncts = []
             for key, val in filter.items():
-                conjuncts.append(f"metadata->>%s=%s")
+                conjuncts.append("metadata->>%s=%s")
                 params.append(key)
                 params.append(val)
             filter_clause = "where " + " and ".join(conjuncts)
 
-        sql = f"select document, metadata::text, pm_approx_squared_euclidean_distance(array{json.dumps(embedding)}::float4[], embedding) as distance from {self.table_name} {filter_clause} order by distance asc limit {k};"
+        sql = (
+            f"select document, metadata::text, "
+            f"pm_approx_squared_euclidean_distance(array{json.dumps(embedding)}"
+            f"::float4[], embedding) as distance from"
+            f" {self.table_name} {filter_clause} order by distance asc limit {k};"
+        )
         self.cursor.execute(sql, tuple(params))
         self.conn.commit()
         return self.cursor.fetchall()
@@ -99,7 +110,8 @@ class Hologres(VectorStore):
     - `embedding_function` any embedding function implementing
         `langchain.embeddings.base.Embeddings` interface.
     - `ndims` is the number of dimensions of the embedding output.
-    - `table_name` is the name of the table to store embeddings and data. (default: langchain_pg_embedding)
+    - `table_name` is the name of the table to store embeddings and data.
+        (default: langchain_pg_embedding)
         - NOTE: The table will be created when initializing the store (if not exists)
             So, make sure the user has the right permissions to create tables.
     - `pre_delete_table` if True, will delete the table if it exists.

@@ -2,8 +2,6 @@
 import os
 from typing import List
 
-from sqlalchemy.orm import Session
-
 from langchain.docstore.document import Document
 from langchain.vectorstores.hologres import Hologres
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
