@@ -276,13 +276,13 @@ class MarkdownHeaderTextSplitter:
         )
 
     def aggregate_lines_to_chunks(
-        self, lines: List[Dict[str, Union[str, Dict[str, Any]]]]
-    ) -> List[Dict[str, Union[str, Dict[str, Any]]]]:
+        self, lines: List[Dict[str, Union[str, Dict[str, str]]]]
+    ) -> List[Dict[str, Union[str, Dict[str, str]]]]:
         """Combine lines with common metadata into chunks
         Args:
             lines: Line of text / associated header metadata
         """
-        aggregated_chunks: List[Dict[str, Union[str, Dict[str, Any]]]] = []
+        aggregated_chunks: List[Dict[str, Union[str, Dict[str, str]]]] = []
 
         for line in lines:
             if (
@@ -330,15 +330,14 @@ class MarkdownHeaderTextSplitter:
                         current_header_level = sep.count("#")
 
                         # Pop out headers of lower or same level from the stack
-                        while (
-                            header_stack
-                            and header_stack[-1]["level"] >= current_header_level
-                        ):
-                            # We have encountered a new header at the same or higher level
-                            popped_header = header_stack.pop()
-                            # Clear the metadata for the popped header in initial_metadata
-                            if popped_header["name"] in initial_metadata:
-                                initial_metadata.pop(popped_header["name"])
+                        while header_stack:
+                            assert isinstance(header_stack[-1]["level"], int), "Expected int"
+                            if header_stack[-1]["level"] >= current_header_level:
+                                # We have encountered a new header at the same or higher level
+                                popped_header = header_stack.pop()
+                                # Clear the metadata for the popped header in initial_metadata
+                                if popped_header["name"] in initial_metadata:
+                                    initial_metadata.pop(popped_header["name"])
 
                         # Push the current header to the stack
                         header = {
