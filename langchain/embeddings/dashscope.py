@@ -7,15 +7,9 @@ from typing import (
     Callable,
     Dict,
     List,
-    Literal,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
 )
 
-import numpy as np
 from pydantic import BaseModel, Extra, root_validator
 from requests.exceptions import HTTPError
 from tenacity import (
