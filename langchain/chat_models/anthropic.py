@@ -94,9 +94,10 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
+        params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
 
@@ -121,9 +122,10 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
+        params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
 
