@@ -1,6 +1,7 @@
 """All different types of document loaders."""
 
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
+from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
 from langchain.document_loaders.arxiv import ArxivLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
@@ -90,6 +91,7 @@ from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.sitemap import SitemapLoader
 from langchain.document_loaders.slack_directory import SlackDirectoryLoader
+from langchain.document_loaders.snowflake_loader import SnowflakeLoader
 from langchain.document_loaders.spreedly import SpreedlyLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.stripe import StripeLoader
@@ -119,6 +121,7 @@ from langchain.document_loaders.word_document import (
     Docx2txtLoader,
     UnstructuredWordDocumentLoader,
 )
+from langchain.document_loaders.xml import UnstructuredXMLLoader
 from langchain.document_loaders.youtube import (
     GoogleApiClient,
     GoogleApiYoutubeLoader,
@@ -134,6 +137,7 @@ TelegramChatLoader = TelegramChatFileLoader
 __all__ = [
     "AZLyricsLoader",
     "AirbyteJSONLoader",
+    "AirtableLoader",
     "ApifyDatasetLoader",
     "ArxivLoader",
     "AzureBlobStorageContainerLoader",
@@ -239,9 +243,11 @@ __all__ = [
     "UnstructuredRTFLoader",
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
+    "UnstructuredXMLLoader",
     "WeatherDataLoader",
     "WebBaseLoader",
     "WhatsAppChatLoader",
     "WikipediaLoader",
     "YoutubeLoader",
+    "SnowflakeLoader",
 ]
