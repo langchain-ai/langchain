@@ -302,8 +302,10 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
         if self.streaming:
             inner_completion = ""
             role = "assistant"
@@ -348,8 +350,10 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
         if self.streaming:
             inner_completion = ""
             role = "assistant"
