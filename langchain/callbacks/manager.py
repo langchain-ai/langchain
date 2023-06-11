@@ -204,7 +204,7 @@ def _handle_event(
         except Exception as e:
             if handler.raise_error:
                 raise e
-            logging.warning(f"Error in {event_name} callback: {e}")
+            logger.warning(f"Error in {event_name} callback: {e}")
 
 
 async def _ahandle_event_for_handler(
