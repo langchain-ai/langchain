@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import (
     Any,
     Callable,
-    Coroutine,
     Dict,
     List,
     Optional,
     Protocol,
     Tuple,
-    Union,
 )
 
 from pydantic import Extra, root_validator
@@ -201,7 +198,8 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[List, dict]:
-        """Splits and collapses docs later reduced by `_reduce_results` or async `_areduce_results`"""
+        """Splits and collapses docs later reduced by
+        `_reduce_results` or async `_areduce_results`"""
         question_result_key = self.llm_chain.output_key
         result_docs = [
             Document(page_content=r[question_result_key], metadata=docs[i].metadata)
