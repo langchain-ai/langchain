@@ -92,6 +92,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         # Adapted from https://developers.google.com/drive/api/v3/quickstart/python
         try:
             from google.auth.transport.requests import Request
+            from google.auth import default
             from google.oauth2 import service_account
             from google.oauth2.credentials import Credentials
             from google_auth_oauthlib.flow import InstalledAppFlow
@@ -116,6 +117,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
+            elif "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
+                creds, project = default()
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     str(self.credentials_path), SCOPES
