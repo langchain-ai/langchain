@@ -19,7 +19,8 @@ from langchain.chains.pal.math_prompt import MATH_PROMPT
 from langchain.prompts.base import BasePromptTemplate
 from langchain.utilities import PythonREPL
 
-DEFAULT_CODE_VALIDATIONS = {'solution_function': 'solution', 'allow_imports': False, 'allow_non_solution_root_scope_expressions': False, 'allow_non_math_operations': True}
+DEFAULT_CODE_VALIDATIONS = {'solution_expression': None, 'allow_imports': False, 'allow_non_math_operations': True, 'allow_command_exec': False}
+COMMAND_EXECUTION_FUNCTIONS = ['system', 'exec']
 
 class PALChain(Chain):
     """Implements Program-Aided Language Models."""
@@ -87,7 +88,7 @@ class PALChain(Chain):
         _run_manager.on_text(code, color="green", end="\n", verbose=self.verbose)
         PALChain.validate_code(code, self.code_validations)
         repl = PythonREPL(_globals=self.python_globals, _locals=self.python_locals)
-        res = repl.run(code + f"\n{self.get_answer_expr}")
+        res = repl.run(code + f"\n{self.get_answer_expr}", timeout=10)
         output = {self.output_key: res.strip()}
         if self.return_intermediate_steps:
             output["intermediate_steps"] = code
@@ -103,41 +104,46 @@ class PALChain(Chain):
             raise ValueError(f"Generated code is expected to be a string, instead found {type(code)}")
         except OverflowError:
             raise ValueError(f"Generated code too long / complex to be parsed by ast: {code}")
-        
-        top_level_nodes = list(ast.iter_child_nodes(code_tree))
-        if code_validations.get('allow_non_solution_root_scope_expressions') is False and len(top_level_nodes) > 1:
-            raise ValueError(f"Generated code has more than 1 root scope expressions: {code}")
-        
-        solution_func_name = code_validations.get('solution_function')
-        if not isinstance(solution_func_name, str):
-            raise ValueError(f"solution_function code validation parameter should be str, instead found {type(solution_func_name)}")
-        found_solution_func = False
+
+        solution_expr = code_validations.get('solution_expression')
+        if solution_expr is None:
+            raise ValueError(f"Expected solution_expression to be {type(Dict[str, Any])} instead found None")
+        solution_expr_name = solution_expr.get('name')
+        if not isinstance(solution_expr_name, str):
+            raise ValueError(f"Expected solution_expression['name'] to be str, instead found {type(solution_expr_name)}")
+        solution_expr_type = solution_expr.get('type')
+        found_solution_expr = False
         has_imports = False
+        top_level_nodes = list(ast.iter_child_nodes(code_tree))
         for node in top_level_nodes:
-            if isinstance(node, ast.FunctionDef) and node.name == solution_func_name:
-                found_solution_func = True
+            # Check root nodes (like func def)
+            if isinstance(node, solution_expr_type) and node.name == solution_expr_name:
+                found_solution_expr = True
+            # Check assigned nodes (like answer variable)
+            if isinstance(node, ast.Assign):
+                for target_node in node.targets:
+                    if isinstance(target_node, solution_expr_type) and target_node.id == solution_expr_name:
+                        found_solution_expr = True
             if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom):
                 has_imports = True
 
-        if not found_solution_func:
-            raise ValueError(f"Generated code is missing the solution function: {code}")
+        if not found_solution_expr:
+            raise ValueError(f"Generated code is missing the solution expression: {solution_expr}")
         
         if code_validations.get('allow_imports') is False and has_imports:
             raise ValueError(f"Generated code has disallowed imports: {code}")
         
-        if code_validations.get('allow_non_math_operations') is False:
+        if code_validations.get('allow_command_exec') is False:
             for node in ast.walk(code_tree):
-                #if type(node) not in (ast.Assign, ast.FunctionDef, ast., ast.Add)
-                pass
+                if isinstance(node, ast.Call) and node.func.id in COMMAND_EXECUTION_FUNCTIONS:
+                    raise ValueError(f"Found illegal command execution function {node.func.id} in code {code}")
 
     @classmethod
     def from_math_prompt(cls, llm: BaseLanguageModel, **kwargs: Any) -> PALChain:
         """Load PAL from math prompt."""
         llm_chain = LLMChain(llm=llm, prompt=MATH_PROMPT)
         code_validations = DEFAULT_CODE_VALIDATIONS
-        disallow_non_math_operations = kwargs.get('disallow_non_math_operations')
-        if disallow_non_math_operations is True:
-            code_validations.update({'allow_non_math_operations': False})
+        code_validations.update({'solution_expression': {'type': ast.FunctionDef, 'name': 'solution'}})
         return cls(
             llm_chain=llm_chain,
             stop="\n\n",
@@ -152,6 +158,8 @@ class PALChain(Chain):
     ) -> PALChain:
         """Load PAL from colored object prompt."""
         llm_chain = LLMChain(llm=llm, prompt=COLORED_OBJECT_PROMPT)
+        code_validations = DEFAULT_CODE_VALIDATIONS
+        code_validations['solution_expression'] = {'type': ast.Name, 'name': 'answer'}
         return cls(
             llm_chain=llm_chain,
             stop="\n\n\n",
