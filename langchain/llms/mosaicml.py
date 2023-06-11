@@ -169,7 +169,10 @@ class MosaicML(LLM):
                 f"Error raised by inference API: {e}.\nResponse: {response.text}"
             )
 
-        text = generated_text[0][len(prompt) :]
+        if isinstance(generated_text, list):
+            text = generated_text[0][len(prompt) :]
+        else:
+            text = generated_text[len(prompt) :]
 
         # TODO: replace when MosaicML supports custom stop tokens natively
         if stop is not None:
