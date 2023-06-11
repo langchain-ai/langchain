@@ -10,6 +10,7 @@ from langchain.embeddings.bedrock import BedrockEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.embeddings.deepinfra import DeepInfraEmbeddings
 from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
+from langchain.embeddings.embaas import EmbaasEmbeddings
 from langchain.embeddings.fake import FakeEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.huggingface import (
@@ -32,7 +33,6 @@ from langchain.embeddings.self_hosted_hugging_face import (
 from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain.embeddings.vertexai import VertexAIEmbeddings
-from langchain.embeddings.embaas import EmbaasEmbeddings
 
 logger = logging.getLogger(__name__)
 

@@ -1,9 +1,9 @@
 """Wrapper around embaas embeddings API."""
 from typing import Any, Dict, List, Mapping, Optional
-from typing_extensions import TypedDict, NotRequired
 
 import requests
 from pydantic import BaseModel, Extra, root_validator
+from typing_extensions import NotRequired, TypedDict
 
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -56,6 +56,7 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
 
     class Config:
         """Configuration for this pydantic object."""
+
         extra = Extra.forbid
 
     @root_validator()
@@ -120,8 +121,9 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        batches = [texts[i:i + MAX_BATCH_SIZE]
-                   for i in range(0, len(texts), MAX_BATCH_SIZE)]
+        batches = [
+            texts[i : i + MAX_BATCH_SIZE] for i in range(0, len(texts), MAX_BATCH_SIZE)
+        ]
         embeddings = [self._generate_embeddings(batch) for batch in batches]
         # flatten the list of lists into a single list
         return [embedding for batch in embeddings for embedding in batch]

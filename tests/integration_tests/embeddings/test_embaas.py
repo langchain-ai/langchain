@@ -1,7 +1,7 @@
 """Test embaas embeddings."""
 import responses
 
-from langchain.embeddings.embaas import EmbaasEmbeddings, EMBAAS_API_URL
+from langchain.embeddings.embaas import EMBAAS_API_URL, EmbaasEmbeddings
 
 
 def test_embaas_embed_documents() -> None:
@@ -45,14 +45,12 @@ def test_embaas_embed_query_model() -> None:
 @responses.activate
 def test_embaas_embed_documents_response() -> None:
     """Test embaas embeddings with multiple texts."""
-    responses.add(responses.POST, EMBAAS_API_URL,
-                  json={
-                      "data": [
-                          {
-                              'embedding': [0.0] * 1024
-                          }
-                      ]
-                  }, status=200)
+    responses.add(
+        responses.POST,
+        EMBAAS_API_URL,
+        json={"data": [{"embedding": [0.0] * 1024}]},
+        status=200,
+    )
 
     text = "asd"
     embeddings = EmbaasEmbeddings()
