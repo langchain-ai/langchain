@@ -50,7 +50,8 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
     """The model used for embeddings."""
     instruction: Optional[str] = None
     """Instruction used for domain-specific embeddings."""
-
+    api_url: str = EMBAAS_API_URL
+    """The URL for the embaas embeddings API."""
     embaas_api_key: Optional[str] = None
 
     class Config:
@@ -85,7 +86,7 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
             "Content-Type": "application/json",
         }
 
-        response = requests.post(EMBAAS_API_URL, headers=headers, json=payload)
+        response = requests.post(self.api_url, headers=headers, json=payload)
         response.raise_for_status()
 
         parsed_response = response.json()
