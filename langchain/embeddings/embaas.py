@@ -1,5 +1,6 @@
-"""Wrapper around Embaas embeddings API."""
+"""Wrapper around embaas embeddings API."""
 from typing import Any, Dict, List, Mapping, Optional
+from typing_extensions import TypedDict, NotRequired
 
 import requests
 from pydantic import BaseModel, Extra, root_validator
@@ -12,8 +13,16 @@ MAX_BATCH_SIZE = 256
 EMBAAS_API_URL = "https://api.embaas.io/v1/embeddings/"
 
 
+class EmbaasEmbeddingsPayload(TypedDict):
+    """Payload for the embaas embeddings API."""
+
+    model: str
+    texts: List[str]
+    instruction: NotRequired[str]
+
+
 class EmbaasEmbeddings(BaseModel, Embeddings):
-    """Wrapper around Embaas's embedding service.
+    """Wrapper around embaas's embedding service.
 
     To use, you should have the
     environment variable ``EMBAAS_API_KEY`` set with your API key, or pass
@@ -21,6 +30,7 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
 
     Example:
         .. code-block:: python
+
             # Initialise with default model and instruction
             from langchain.llms import EmbaasEmbeddings
             emb = EmbaasEmbeddings()
@@ -45,7 +55,6 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
 
     class Config:
         """Configuration for this pydantic object."""
-
         extra = Extra.forbid
 
     @root_validator()
@@ -62,14 +71,14 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
         """Get the identifying params."""
         return {"model": self.model, "instruction": self.instruction}
 
-    def _generate_payload(self, texts: List[str]) -> Dict[str, Any]:
+    def _generate_payload(self, texts: List[str]) -> EmbaasEmbeddingsPayload:
         """Generates payload for the API request."""
-        payload = {"texts": texts, "model": self.model}
+        payload = EmbaasEmbeddingsPayload(texts=texts, model=self.model)
         if self.instruction:
             payload["instruction"] = self.instruction
         return payload
 
-    def _handle_request(self, payload: Dict[str, Any]) -> List[List[float]]:
+    def _handle_request(self, payload: EmbaasEmbeddingsPayload) -> List[List[float]]:
         """Sends a request to the Embaas API and handles the response."""
         headers = {
             "Authorization": f"Bearer {self.embaas_api_key}",
@@ -114,8 +123,7 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
                    for i in range(0, len(texts), MAX_BATCH_SIZE)]
         embeddings = [self._generate_embeddings(batch) for batch in batches]
         # flatten the list of lists into a single list
-        embeddings = [embedding for batch in embeddings for embedding in batch]
-        return embeddings
+        return [embedding for batch in embeddings for embedding in batch]
 
     def embed_query(self, text: str) -> List[float]:
         """Get embeddings for a single text.
