@@ -3,7 +3,17 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    Tuple,
+    Union,
+)
 
 from pydantic import Extra, root_validator
 
@@ -16,7 +26,7 @@ from langchain.docstore.document import Document
 class CombineDocsProtocol(Protocol):
     """Interface for the combine_docs method."""
 
-    def __call__(self, docs: List[Document], **kwargs: Any) -> str:
+    def __call__(self, docs: List[Document], **kwargs: Any) -> str:  # type: ignore
         """Interface for the combine_docs method."""
 
 
@@ -153,19 +163,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 callbacks=callbacks,
             )
 
-        try:
-            import nest_asyncio
-
-            nest_asyncio.apply()
-            return asyncio.run(
-                self._aprocess_results(results, docs, callbacks=callbacks, **kwargs)
-            )
-        except ImportError:
-            raise ImportError(
-                """`nest_asyncio` package not found.
-                please install with `pip install nest_asyncio`
-                """
-            )
+        return self._reduce_results(results, docs, callbacks=callbacks, **kwargs)
 
     async def acombine_docs(
         self,
@@ -179,6 +177,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         This reducing is done recursively for many documents.
         """
         if len(docs) == 1:
+            # Skip mapping if only a single document is provided.
             results = [
                 {**{self.document_variable_name: docs[0].page_content}, **kwargs}
             ]
@@ -192,22 +191,20 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 ],
                 callbacks=callbacks,
             )
-        return await self._aprocess_results(
-            results, docs, callbacks=callbacks, **kwargs
-        )
+        return await self._areduce_results(results, docs, callbacks=callbacks, **kwargs)
 
-    async def _aprocess_results(
+    def _split_collapse(
         self,
         results: List[Dict],
         docs: List[Document],
         token_max: int = 3000,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[str, dict]:
+    ) -> Tuple[List, dict]:
+        """Splits and collapses docs later reduced by `_reduce_results` or async `_areduce_results`"""
         question_result_key = self.llm_chain.output_key
         result_docs = [
             Document(page_content=r[question_result_key], metadata=docs[i].metadata)
-            # This uses metadata from the docs, and the textual results from `results`
             for i, r in enumerate(results)
         ]
         length_func = self.combine_document_chain.prompt_length
@@ -222,16 +219,51 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             new_result_doc_list = _split_list_of_docs(
                 result_docs, length_func, token_max, **kwargs
             )
-            result_docs = []
-            for docs in new_result_doc_list:
-                new_doc = _collapse_docs(docs, _collapse_docs_func, **kwargs)
-                result_docs.append(new_doc)
+            result_docs = [
+                _collapse_docs(docs, _collapse_docs_func, **kwargs)
+                for docs in new_result_doc_list
+            ]
             num_tokens = length_func(result_docs, **kwargs)
+
         if self.return_intermediate_steps:
             _results = [r[self.llm_chain.output_key] for r in results]
             extra_return_dict = {"intermediate_steps": _results}
         else:
             extra_return_dict = {}
+
+        return result_docs, extra_return_dict
+
+    def _reduce_results(
+        self,
+        results: List[Dict],
+        docs: List[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
+    ) -> Tuple[str, dict]:
+        result_docs, extra_return_dict = self._split_collapse(
+            results,
+            docs,
+            callbacks=callbacks,
+            **kwargs,
+        )
+        output = self.combine_document_chain.run(
+            input_documents=result_docs, callbacks=callbacks, **kwargs
+        )
+        return output, extra_return_dict
+
+    async def _areduce_results(
+        self,
+        results: List[Dict],
+        docs: List[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
+    ) -> Tuple[str, dict]:
+        result_docs, extra_return_dict = self._split_collapse(
+            results,
+            docs,
+            callbacks=callbacks,
+            **kwargs,
+        )
         output = await self.combine_document_chain.arun(
             input_documents=result_docs, callbacks=callbacks, **kwargs
         )
