@@ -18,6 +18,7 @@ _LANGCHAIN_DEFAULT_TABLE_NAME = "langchain_pg_embedding"
 class HologresWrapper:
     def __init__(self, connection_string: str, ndims: int, table_name: str) -> None:
         import psycopg2
+
         self.table_name = table_name
         self.conn = psycopg2.connect(connection_string)
         self.cursor = self.conn.cursor()
@@ -54,7 +55,7 @@ class HologresWrapper:
     def get_by_id(self, id: str) -> List[Tuple]:
         self.cursor.execute(
             f"select id, embedding, metadata, document from {self.table_name} where id = %s;",
-            (id)
+            (id),
         )
         self.conn.commit()
         return self.cursor.fetchall()
@@ -68,7 +69,7 @@ class HologresWrapper:
     ) -> None:
         self.cursor.execute(
             f'insert into "{self.table_name}" values (%s, array{json.dumps(embedding)}::float4[], %s, %s)',
-            (id if id is not None else "null", json.dumps(metadata), document)
+            (id if id is not None else "null", json.dumps(metadata), document),
         )
         self.conn.commit()
 
