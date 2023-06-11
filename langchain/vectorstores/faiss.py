@@ -183,7 +183,7 @@ class FAISS(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        filter: Optional[Dict[str, str]] = None,
+        filter: Optional[Dict[str, Any]] = None,
         fetch_k: int = 20,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
@@ -192,7 +192,8 @@ class FAISS(VectorStore):
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
-            fetch_k: Number of Documents to fetch after filtering
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
 
         Returns:
             List of documents most similar to the query text and L2 distance
@@ -220,52 +221,88 @@ class FAISS(VectorStore):
         return docs[:k]
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
 
         Returns:
             List of documents most similar to the query text with
             L2 distance in float. Lower score represents more similarity.
         """
         embedding = self.embedding_function(query)
-        docs = self.similarity_search_with_score_by_vector(embedding, k, **kwargs)
+        docs = self.similarity_search_with_score_by_vector(
+            embedding,
+            k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
         return docs
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
 
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
 
         Returns:
             List of Documents most similar to the embedding.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding, k, **kwargs
+            embedding,
+            k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
         )
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter: (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
 
         Returns:
             List of Documents most similar to the query.
         """
-        docs_and_scores = self.similarity_search_with_score(query, k, **kwargs)
+        docs_and_scores = self.similarity_search_with_score(
+            query, k, filter=filter, fetch_k=fetch_k, **kwargs
+        )
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_by_vector(
@@ -274,7 +311,7 @@ class FAISS(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, str]] = None,
+        filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -285,7 +322,7 @@ class FAISS(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch after filtering to
+            fetch_k: Number of Documents to fetch before filtering to
                      pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
@@ -338,6 +375,7 @@ class FAISS(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -348,7 +386,8 @@ class FAISS(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            fetch_k: Number of Documents to fetch before filtering (if needed) to
+                     pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
@@ -358,7 +397,12 @@ class FAISS(VectorStore):
         """
         embedding = self.embedding_function(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mult=lambda_mult, **kwargs
+            embedding,
+            k,
+            fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
         )
         return docs
 
@@ -552,6 +596,8 @@ class FAISS(VectorStore):
         self,
         query: str,
         k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
@@ -560,5 +606,11 @@ class FAISS(VectorStore):
                 "normalize_score_fn must be provided to"
                 " FAISS constructor to normalize scores"
             )
-        docs_and_scores = self.similarity_search_with_score(query, k=k, **kwargs)
+        docs_and_scores = self.similarity_search_with_score(
+            query,
+            k=k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
         return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
