@@ -571,6 +571,26 @@ docs = ["sphinx-copybutton (>=0.4,<0.5)", "sphinx-rtd-theme (>=1.0,<2.0)", "sphi
 test = ["coverage (>=5,<6)", "pytest (>=6,<7)"]
 
 [[package]]
+name = "awadb"
+version = "0.3.2"
+description = "The AI Native database for embedding vectors"
+category = "main"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "awadb-0.3.2-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:f3ce3b066198782fa413f452c56001c58ebec71a1e1dca0eee68f73321ba15a9"},
+    {file = "awadb-0.3.2-cp311-cp311-macosx_10_13_universal2.whl", hash = "sha256:c96b5e263c32b2563b1fa027035bdcf50540808ad303071cc1aed3471c3c39b7"},
+    {file = "awadb-0.3.2-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:3e43b5a74753261857d0b146543a4620e00938833181259f138f07457fa84812"},
+    {file = "awadb-0.3.2-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:6330b4d18a814c1562113b3b7897db629c2ac9b5818236ead0fc5f3445b6b7fb"},
+    {file = "awadb-0.3.2-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:82b4e61cc905339868a9f833d0988098f56411b42e0f8dd571aec7c8d6a3f1fa"},
+    {file = "awadb-0.3.2-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:5efaa93d69c467f16ec4f65ed250ec26015781826c0d059c8a54613a5d3e2c3e"},
+    {file = "awadb-0.3.2-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:7be0811550d72f49018e4790d290cf521f92ffa84d65ef1073e621f225d142ec"},
+]
+
+[package.extras]
+test = ["pytest (>=6.0)"]
+
+[[package]]
 name = "azure-ai-formrecognizer"
 version = "3.2.1"
 description = "Microsoft Azure Form Recognizer Client Library for Python"

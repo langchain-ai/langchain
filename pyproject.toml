@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.195"
+version = "0.0.196"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -108,6 +108,7 @@ nebula3-python = {version = "^3.4.0", optional = true}
 langchainplus-sdk = ">=0.0.7"
 mwparserfromhell = {version = "^0.6.4", optional = true}
 mwxml = {version = "^0.3.3", optional = true}
+awadb = {version = "^0.3.2", optional = true}
 
 
 [tool.poetry.group.docs.dependencies]
@@ -288,6 +289,7 @@ all = [
     "singlestoredb",
     "tigrisdb",
     "nebula3-python",
+    "awadb",
 ]
 
 # An extra used to be able to add extended testing.
