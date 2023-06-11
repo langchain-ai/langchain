@@ -1,5 +1,6 @@
 from abc import ABC
 from typing import Any, Dict, Optional, Tuple
+import warnings
 
 from pydantic import Field
 
@@ -25,6 +26,19 @@ class BaseChatMemory(BaseMemory, ABC):
             if len(outputs) != 1:
                 raise ValueError(f"One output key expected, got {outputs.keys()}")
             output_key = list(outputs.keys())[0]
+            if isinstance(outputs[output_key], Dict):
+                outputs = outputs[output_key]
+                if "result" in outputs:
+                    output_key = "result"
+                elif "answer" in outputs:
+                    output_key = "answer"
+                elif "output" in outputs:
+                    output_key = "output"
+                else:
+                    output_key = list(outputs.keys())[0]
+                warnings.warn(
+                    f"Extract the text from the nested output with the key `{output_key}`"
+                )
         else:
             output_key = self.output_key
         return inputs[prompt_input_key], outputs[output_key]
