@@ -1,6 +1,10 @@
 # LangChain Decorators ✨
 
-lanchchain decorators is a layer on the top op LangChain that provides syntactic sugar 🍭 for writing custom langchain prompts and chains
+lanchchain decorators is a layer on the top of LangChain that provides syntactic sugar 🍭 for writing custom langchain prompts and chains
+
+For Feedback, Issues, Contributions - please raise an issue here: 
+[ju-bezdek/langchain-decorators](https://github.com/ju-bezdek/langchain-decorators)
+
 
 
 Main principles and benefits:
