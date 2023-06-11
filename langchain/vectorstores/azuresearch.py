@@ -1,49 +1,57 @@
 """Wrapper around Azure Cognitive Search."""
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import uuid
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
-import base64
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 import numpy as np
-from azure.core.credentials import AzureKeyCredential
-from azure.core.exceptions import ResourceNotFoundError
-from azure.identity import DefaultAzureCredential
-from azure.search.documents import SearchClient
-from azure.search.documents.indexes import SearchIndexClient
-from azure.search.documents.indexes.models import (
-    PrioritizedFields,
-    SearchableField,
-    SearchField,
-    SearchFieldDataType,
-    SearchIndex,
-    SemanticConfiguration,
-    SemanticField,
-    SemanticSettings,
-    SimpleField,
-    VectorSearch,
-    VectorSearchAlgorithmConfiguration,
-)
-from azure.search.documents.models import Vector
 from pydantic import BaseModel, root_validator
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever
-from langchain.vectorstores.base import VectorStore
 from langchain.utils import get_from_env
+from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()
 
+if TYPE_CHECKING:
+    from azure.search.documents import SearchClient
+
+
 # Allow overriding field names for Azure Search
-FIELDS_ID = get_from_env(key="AZURESEARCH_FIELDS_ID",env_key="AZURESEARCH_FIELDS_ID", default="id")
-FIELDS_CONTENT = get_from_env(key="AZURESEARCH_FIELDS_CONTENT",env_key="AZURESEARCH_FIELDS_CONTENT", default="content")
-FIELDS_CONTENT_VECTOR = get_from_env(key="AZURESEARCH_FIELDS_CONTENT_VECTOR",env_key="AZURESEARCH_FIELDS_CONTENT_VECTOR", default="content_vector")
-FIELDS_METADATA = get_from_env(key="AZURESEARCH_FIELDS_TAG",env_key="AZURESEARCH_FIELDS_TAG", default="metadata")
+FIELDS_ID = get_from_env(
+    key="AZURESEARCH_FIELDS_ID", env_key="AZURESEARCH_FIELDS_ID", default="id"
+)
+FIELDS_CONTENT = get_from_env(
+    key="AZURESEARCH_FIELDS_CONTENT",
+    env_key="AZURESEARCH_FIELDS_CONTENT",
+    default="content",
+)
+FIELDS_CONTENT_VECTOR = get_from_env(
+    key="AZURESEARCH_FIELDS_CONTENT_VECTOR",
+    env_key="AZURESEARCH_FIELDS_CONTENT_VECTOR",
+    default="content_vector",
+)
+FIELDS_METADATA = get_from_env(
+    key="AZURESEARCH_FIELDS_TAG", env_key="AZURESEARCH_FIELDS_TAG", default="metadata"
+)
 
 MAX_UPLOAD_BATCH_SIZE = 1000
+
 
 def _get_search_client(
     endpoint: str,
@@ -52,6 +60,25 @@ def _get_search_client(
     embedding_function: Callable,
     semantic_configuration_name: Optional[str] = None,
 ) -> SearchClient:
+    from azure.core.credentials import AzureKeyCredential
+    from azure.core.exceptions import ResourceNotFoundError
+    from azure.identity import DefaultAzureCredential
+    from azure.search.documents import SearchClient
+    from azure.search.documents.indexes import SearchIndexClient
+    from azure.search.documents.indexes.models import (
+        PrioritizedFields,
+        SearchableField,
+        SearchField,
+        SearchFieldDataType,
+        SearchIndex,
+        SemanticConfiguration,
+        SemanticField,
+        SemanticSettings,
+        SimpleField,
+        VectorSearch,
+        VectorSearchAlgorithmConfiguration,
+    )
+
     if key is None:
         credential = DefaultAzureCredential()
     else:
@@ -131,9 +158,7 @@ def _get_search_client(
         )
         index_client.create_index(index)
     # Create the search client
-    return SearchClient(
-        endpoint=endpoint, index_name=index_name, credential=credential
-    )
+    return SearchClient(endpoint=endpoint, index_name=index_name, credential=credential)
 
 
 class AzureSearch(VectorStore):
@@ -200,7 +225,7 @@ class AzureSearch(VectorStore):
                     raise Exception(response)
                 # Reset data
                 data = []
-        
+
         # Considering case where data is an exact multiple of batch-size entries
         if len(data) == 0:
             return ids
@@ -213,7 +238,9 @@ class AzureSearch(VectorStore):
         else:
             raise Exception(response)
 
-    def similarity_search(self, query: str, k: int = 4, **kwargs: Any):
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
         search_type = kwargs.get("search_type", self.search_type)
         if search_type == "similarity":
             docs = self.vector_search(query, k=k)
@@ -225,9 +252,7 @@ class AzureSearch(VectorStore):
             raise ValueError(f"search_type of {search_type} not allowed.")
         return docs
 
-    def vector_search(
-        self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    def vector_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
 
@@ -255,6 +280,8 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        from azure.search.documents.models import Vector
+
         results = self.client.search(
             search_text="",
             vector=Vector(
@@ -308,6 +335,8 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        from azure.search.documents.models import Vector
+
         results = self.client.search(
             search_text=query,
             vector=Vector(
@@ -364,13 +393,15 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        from azure.search.documents.models import Vector
+
         results = self.client.search(
             search_text=query,
             vector=Vector(
                 value=np.array(
                     self.embedding_function(query), dtype=np.float32
                 ).tolist(),
-                k=50, # Hardcoded value to maximize L2 retrieval
+                k=50,  # Hardcoded value to maximize L2 retrieval
                 fields=FIELDS_CONTENT_VECTOR,
             ),
             select=[f"{FIELDS_ID},{FIELDS_CONTENT},{FIELDS_METADATA}"],
@@ -426,7 +457,7 @@ class AzureSearch(VectorStore):
         metadatas: Optional[List[dict]] = None,
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
-        index_name: Optional[str] = "langchain-index",
+        index_name: str = "langchain-index",
         **kwargs: Any,
     ) -> AzureSearch:
         # Creating a new Azure Search instance
