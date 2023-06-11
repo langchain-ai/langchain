@@ -28,8 +28,10 @@ from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
+from langchain.vectorstores.azuresearch import AzureSearch
 
 __all__ = [
+    "AzureSearch",
     "Redis",
     "ElasticVectorSearch",
     "FAISS",
