@@ -160,3 +160,9 @@ Below is a list of all supported tools and relevant information:
 - Notes: A connection to the OpenWeatherMap API (https://api.openweathermap.org), specifically the `/data/2.5/weather` endpoint.
 - Requires LLM: No
 - Extra Parameters: `openweathermap_api_key` (your API key to access this endpoint)
+
+**sleep**
+
+- Tool Name: Sleep
+- Tool Description: Make agent sleep for some time.
+- Requires LLM: No

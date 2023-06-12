@@ -113,6 +113,7 @@ class HuggingFaceTextGenInference(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         if stop is None:
             stop = self.stop_sequences
@@ -130,6 +131,7 @@ class HuggingFaceTextGenInference(LLM):
                 temperature=self.temperature,
                 repetition_penalty=self.repetition_penalty,
                 seed=self.seed,
+                **kwargs,
             )
             # remove stop sequences from the end of the generated text
             for stop_seq in stop:

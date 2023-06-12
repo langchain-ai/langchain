@@ -1,7 +1,7 @@
 """Load Data from a Confluence Space"""
 import logging
 from io import BytesIO
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from tenacity import (
     before_sleep_log,
@@ -180,6 +180,7 @@ class ConfluenceLoader(BaseLoader):
         include_comments: bool = False,
         limit: Optional[int] = 50,
         max_pages: Optional[int] = 1000,
+        ocr_languages: Optional[str] = None,
     ) -> List[Document]:
         """
         :param space_key: Space key retrieved from a confluence URL, defaults to None
@@ -203,6 +204,10 @@ class ConfluenceLoader(BaseLoader):
         :type limit: int, optional
         :param max_pages: Maximum number of pages to retrieve in total, defaults 1000
         :type max_pages: int, optional
+        :param ocr_languages: The languages to use for the Tesseract agent. To use a
+                              language, you'll first need to install the appropriate
+                              Tesseract language pack.
+        :type ocr_languages: str, optional
         :raises ValueError: _description_
         :raises ImportError: _description_
         :return: _description_
@@ -226,7 +231,11 @@ class ConfluenceLoader(BaseLoader):
                 expand="body.storage.value",
             )
             docs += self.process_pages(
-                pages, include_restricted_content, include_attachments, include_comments
+                pages,
+                include_restricted_content,
+                include_attachments,
+                include_comments,
+                ocr_languages,
             )
 
         if label:
@@ -244,7 +253,7 @@ class ConfluenceLoader(BaseLoader):
 
         if cql:
             pages = self.paginate_request(
-                self.confluence.cql,
+                self._search_content_by_cql,
                 cql=cql,
                 limit=limit,
                 max_pages=max_pages,
@@ -252,7 +261,11 @@ class ConfluenceLoader(BaseLoader):
                 expand="body.storage.value",
             )
             docs += self.process_pages(
-                pages, include_restricted_content, include_attachments, include_comments
+                pages,
+                include_restricted_content,
+                include_attachments,
+                include_comments,
+                ocr_languages,
             )
 
         if page_ids:
@@ -272,10 +285,25 @@ class ConfluenceLoader(BaseLoader):
                 page = get_page(page_id=page_id, expand="body.storage.value")
                 if not include_restricted_content and not self.is_public_page(page):
                     continue
-                doc = self.process_page(page, include_attachments, include_comments)
+                doc = self.process_page(
+                    page, include_attachments, include_comments, ocr_languages
+                )
                 docs.append(doc)
 
         return docs
+
+    def _search_content_by_cql(
+        self, cql: str, include_archived_spaces: Optional[bool] = None, **kwargs: Any
+    ) -> List[dict]:
+        url = "rest/api/content/search"
+
+        params: Dict[str, Any] = {"cql": cql}
+        params.update(kwargs)
+        if include_archived_spaces is not None:
+            params["includeArchivedSpaces"] = include_archived_spaces
+
+        response = self.confluence.get(url, params=params)
+        return response.get("results", [])
 
     def paginate_request(self, retrieval_method: Callable, **kwargs: Any) -> List:
         """Paginate the various methods to retrieve groups of pages.
@@ -335,13 +363,16 @@ class ConfluenceLoader(BaseLoader):
         include_restricted_content: bool,
         include_attachments: bool,
         include_comments: bool,
+        ocr_languages: Optional[str] = None,
     ) -> List[Document]:
         """Process a list of pages into a list of documents."""
         docs = []
         for page in pages:
             if not include_restricted_content and not self.is_public_page(page):
                 continue
-            doc = self.process_page(page, include_attachments, include_comments)
+            doc = self.process_page(
+                page, include_attachments, include_comments, ocr_languages
+            )
             docs.append(doc)
 
         return docs
@@ -351,6 +382,7 @@ class ConfluenceLoader(BaseLoader):
         page: dict,
         include_attachments: bool,
         include_comments: bool,
+        ocr_languages: Optional[str] = None,
     ) -> Document:
         try:
             from bs4 import BeautifulSoup  # type: ignore
@@ -361,7 +393,7 @@ class ConfluenceLoader(BaseLoader):
             )
 
         if include_attachments:
-            attachment_texts = self.process_attachment(page["id"])
+            attachment_texts = self.process_attachment(page["id"], ocr_languages)
         else:
             attachment_texts = []
         text = BeautifulSoup(page["body"]["storage"]["value"], "lxml").get_text(
@@ -388,7 +420,11 @@ class ConfluenceLoader(BaseLoader):
             },
         )
 
-    def process_attachment(self, page_id: str) -> List[str]:
+    def process_attachment(
+        self,
+        page_id: str,
+        ocr_languages: Optional[str] = None,
+    ) -> List[str]:
         try:
             from PIL import Image  # noqa: F401
         except ImportError:
@@ -405,13 +441,13 @@ class ConfluenceLoader(BaseLoader):
             absolute_url = self.base_url + attachment["_links"]["download"]
             title = attachment["title"]
             if media_type == "application/pdf":
-                text = title + self.process_pdf(absolute_url)
+                text = title + self.process_pdf(absolute_url, ocr_languages)
             elif (
                 media_type == "image/png"
                 or media_type == "image/jpg"
                 or media_type == "image/jpeg"
             ):
-                text = title + self.process_image(absolute_url)
+                text = title + self.process_image(absolute_url, ocr_languages)
             elif (
                 media_type == "application/vnd.openxmlformats-officedocument"
                 ".wordprocessingml.document"
@@ -420,14 +456,18 @@ class ConfluenceLoader(BaseLoader):
             elif media_type == "application/vnd.ms-excel":
                 text = title + self.process_xls(absolute_url)
             elif media_type == "image/svg+xml":
-                text = title + self.process_svg(absolute_url)
+                text = title + self.process_svg(absolute_url, ocr_languages)
             else:
                 continue
             texts.append(text)
 
         return texts
 
-    def process_pdf(self, link: str) -> str:
+    def process_pdf(
+        self,
+        link: str,
+        ocr_languages: Optional[str] = None,
+    ) -> str:
         try:
             import pytesseract  # noqa: F401
             from pdf2image import convert_from_bytes  # noqa: F401
@@ -452,12 +492,16 @@ class ConfluenceLoader(BaseLoader):
             return text
 
         for i, image in enumerate(images):
-            image_text = pytesseract.image_to_string(image)
+            image_text = pytesseract.image_to_string(image, lang=ocr_languages)
             text += f"Page {i + 1}:\n{image_text}\n\n"
 
         return text
 
-    def process_image(self, link: str) -> str:
+    def process_image(
+        self,
+        link: str,
+        ocr_languages: Optional[str] = None,
+    ) -> str:
         try:
             import pytesseract  # noqa: F401
             from PIL import Image  # noqa: F401
@@ -481,7 +525,7 @@ class ConfluenceLoader(BaseLoader):
         except OSError:
             return text
 
-        return pytesseract.image_to_string(image)
+        return pytesseract.image_to_string(image, lang=ocr_languages)
 
     def process_doc(self, link: str) -> str:
         try:
@@ -531,7 +575,11 @@ class ConfluenceLoader(BaseLoader):
 
         return text
 
-    def process_svg(self, link: str) -> str:
+    def process_svg(
+        self,
+        link: str,
+        ocr_languages: Optional[str] = None,
+    ) -> str:
         try:
             import pytesseract  # noqa: F401
             from PIL import Image  # noqa: F401
@@ -560,4 +608,4 @@ class ConfluenceLoader(BaseLoader):
         img_data.seek(0)
         image = Image.open(img_data)
 
-        return pytesseract.image_to_string(image)
+        return pytesseract.image_to_string(image, lang=ocr_languages)

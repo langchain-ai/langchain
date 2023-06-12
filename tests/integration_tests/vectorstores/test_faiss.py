@@ -74,6 +74,28 @@ def test_faiss_with_metadatas() -> None:
     assert output == [Document(page_content="foo", metadata={"page": 0})]
 
 
+def test_faiss_with_metadatas_and_filter() -> None:
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
+    expected_docstore = InMemoryDocstore(
+        {
+            docsearch.index_to_docstore_id[0]: Document(
+                page_content="foo", metadata={"page": 0}
+            ),
+            docsearch.index_to_docstore_id[1]: Document(
+                page_content="bar", metadata={"page": 1}
+            ),
+            docsearch.index_to_docstore_id[2]: Document(
+                page_content="baz", metadata={"page": 2}
+            ),
+        }
+    )
+    assert docsearch.docstore.__dict__ == expected_docstore.__dict__
+    output = docsearch.similarity_search("foo", k=1, filter={"page": 1})
+    assert output == []
+
+
 def test_faiss_search_not_found() -> None:
     """Test what happens when document is not found."""
     texts = ["foo", "bar", "baz"]

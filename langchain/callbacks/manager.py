@@ -133,15 +133,11 @@ def trace_as_chain_group(
     *,
     session_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
-    tenant_id: Optional[str] = None,
-    session_extra: Optional[Dict[str, Any]] = None,
 ) -> Generator[CallbackManager, None, None]:
     """Get a callback manager for a chain group in a context manager."""
     cb = LangChainTracer(
-        tenant_id=tenant_id,
         session_name=session_name,
         example_id=example_id,
-        session_extra=session_extra,
     )
     cm = CallbackManager.configure(
         inheritable_callbacks=[cb],
@@ -158,15 +154,11 @@ async def atrace_as_chain_group(
     *,
     session_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
-    tenant_id: Optional[str] = None,
-    session_extra: Optional[Dict[str, Any]] = None,
 ) -> AsyncGenerator[AsyncCallbackManager, None]:
     """Get a callback manager for a chain group in a context manager."""
     cb = LangChainTracer(
-        tenant_id=tenant_id,
         session_name=session_name,
         example_id=example_id,
-        session_extra=session_extra,
     )
     cm = AsyncCallbackManager.configure(
         inheritable_callbacks=[cb],
@@ -212,7 +204,7 @@ def _handle_event(
         except Exception as e:
             if handler.raise_error:
                 raise e
-            logging.warning(f"Error in {event_name} callback: {e}")
+            logger.warning(f"Error in {event_name} callback: {e}")
 
 
 async def _ahandle_event_for_handler(
@@ -246,6 +238,8 @@ async def _ahandle_event_for_handler(
         else:
             logger.warning(f"Error in {event_name} callback: {e}")
     except Exception as e:
+        if handler.raise_error:
+            raise e
         logger.warning(f"Error in {event_name} callback: {e}")
 
 
