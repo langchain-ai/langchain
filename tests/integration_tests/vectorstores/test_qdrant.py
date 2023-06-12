@@ -131,6 +131,78 @@ def test_qdrant_similarity_search_filters(batch_size: int) -> None:
     ]
 
 
+def test_qdrant_similarity_search_with_relevance_score_no_threshold() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [
+        {"page": i, "metadata": {"page": i + 1, "pages": [i + 2, -1]}}
+        for i in range(len(texts))
+    ]
+    docsearch = Qdrant.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        metadatas=metadatas,
+        location=":memory:",
+    )
+    output = docsearch.similarity_search_with_relevance_scores(
+        "foo", k=3, score_threshold=None
+    )
+    assert len(output) == 3
+    for i in range(len(output)):
+        assert round(output[i][1], 2) >= 0
+        assert round(output[i][1], 2) <= 1
+
+
+def test_qdrant_similarity_search_with_relevance_score_with_threshold() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [
+        {"page": i, "metadata": {"page": i + 1, "pages": [i + 2, -1]}}
+        for i in range(len(texts))
+    ]
+    docsearch = Qdrant.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        metadatas=metadatas,
+        location=":memory:",
+    )
+
+    score_threshold = 0.98
+    kwargs = {"score_threshold": score_threshold}
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3, **kwargs)
+    assert len(output) == 1
+    assert all([score >= score_threshold for _, score in output])
+
+
+def test_qdrant_similarity_search_with_relevance_score_with_threshold_and_filter() -> (
+    None
+):
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [
+        {"page": i, "metadata": {"page": i + 1, "pages": [i + 2, -1]}}
+        for i in range(len(texts))
+    ]
+    docsearch = Qdrant.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        metadatas=metadatas,
+        location=":memory:",
+    )
+    score_threshold = 0.99  # for almost exact match
+    # test negative filter condition
+    negative_filter = {"page": 1, "metadata": {"page": 2, "pages": [3]}}
+    kwargs = {"filter": negative_filter, "score_threshold": score_threshold}
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3, **kwargs)
+    assert len(output) == 0
+    # test positive filter condition
+    positive_filter = {"page": 0, "metadata": {"page": 1, "pages": [2]}}
+    kwargs = {"filter": positive_filter, "score_threshold": score_threshold}
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3, **kwargs)
+    assert len(output) == 1
+    assert all([score >= score_threshold for _, score in output])
+
+
 def test_qdrant_similarity_search_filters_with_qdrant_filters() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]

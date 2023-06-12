@@ -8,7 +8,7 @@ from langchain.input import get_bolded_text, get_colored_text
 
 def try_json_stringify(obj: Any, fallback: str) -> str:
     try:
-        return json.dumps(obj, indent=2)
+        return json.dumps(obj, indent=2, ensure_ascii=False)
     except Exception:
         return fallback
 

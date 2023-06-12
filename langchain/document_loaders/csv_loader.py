@@ -1,8 +1,12 @@
 import csv
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.unstructured import (
+    UnstructuredFileLoader,
+    validate_unstructured_version,
+)
 
 
 class CSVLoader(BaseLoader):
@@ -61,3 +65,18 @@ class CSVLoader(BaseLoader):
                 docs.append(doc)
 
         return docs
+
+
+class UnstructuredCSVLoader(UnstructuredFileLoader):
+    """Loader that uses unstructured to load CSV files."""
+
+    def __init__(
+        self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
+    ):
+        validate_unstructured_version(min_unstructured_version="0.6.8")
+        super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
+
+    def _get_elements(self) -> List:
+        from unstructured.partition.csv import partition_csv
+
+        return partition_csv(filename=self.file_path, **self.unstructured_kwargs)

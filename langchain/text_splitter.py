@@ -20,6 +20,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 from langchain.docstore.document import Document
@@ -59,7 +60,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         length_function: Callable[[str], int] = len,
         batched_length_function: Optional[Callable[[List[str]], List[int]]] = None,
         keep_separator: bool = False,
-    ):
+        add_start_index: bool = False,
+    ) -> None:
         """Create a new TextSplitter.
 
         Args:
@@ -68,6 +70,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             length_function: Function that measures the length of given chunks
             batched_length_function: Function that measures chunk lengths in batches
             keep_separator: Whether or not to keep the separator in the chunks
+            add_start_index: If `True`, includes chunk's start index in metadata
         """
         if chunk_overlap > chunk_size:
             raise ValueError(
@@ -79,6 +82,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._length_function = length_function
         self._batched_length_function = batched_length_function
         self._keep_separator = keep_separator
+        self._add_start_index = add_start_index
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
@@ -91,10 +95,13 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
+            index = -1
             for chunk in self.split_text(text):
-                new_doc = Document(
-                    page_content=chunk, metadata=copy.deepcopy(_metadatas[i])
-                )
+                metadata = copy.deepcopy(_metadatas[i])
+                if self._add_start_index:
+                    index = text.find(chunk, index + 1)
+                    metadata["start_index"] = index
+                new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
         return documents
 
@@ -274,7 +281,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 class CharacterTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at characters."""
 
-    def __init__(self, separator: str = "\n\n", **kwargs: Any):
+    def __init__(self, separator: str = "\n\n", **kwargs: Any) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
         self._separator = separator
@@ -299,7 +306,7 @@ class Tokenizer:
 
 def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
     """Split incoming text and return chunks."""
-    splits = []
+    splits: List[str] = []
     input_ids = tokenizer.encode(text)
     start_idx = 0
     cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
@@ -322,7 +329,7 @@ class TokenTextSplitter(TextSplitter):
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
-    ):
+    ) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
         try:
@@ -369,19 +376,28 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         model_name: str = "sentence-transformers/all-mpnet-base-v2",
         tokens_per_chunk: Optional[int] = None,
         **kwargs: Any,
-    ):
+    ) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
-        from transformers import AutoTokenizer
+
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError:
+            raise ImportError(
+                "Could not import sentence_transformer python package. "
+                "This is needed in order to for SentenceTransformersTokenTextSplitter. "
+                "Please install it with `pip install sentence-transformers`."
+            )
 
         self.model_name = model_name
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self._model = SentenceTransformer(self.model_name)
+        self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 
     def _initialize_chunk_configuration(
         self, *, tokens_per_chunk: Optional[int]
     ) -> None:
-        self.maximum_tokens_per_chunk = self.tokenizer.max_len_single_sentence
+        self.maximum_tokens_per_chunk = cast(int, self._model.max_seq_length)
 
         if tokens_per_chunk is None:
             self.tokens_per_chunk = self.maximum_tokens_per_chunk
@@ -453,7 +469,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         separators: Optional[List[str]] = None,
         keep_separator: bool = True,
         **kwargs: Any,
-    ):
+    ) -> None:
         """Create a new TextSplitter."""
         super().__init__(keep_separator=keep_separator, **kwargs)
         self._separators = separators or ["\n\n", "\n", " ", ""]
@@ -463,7 +479,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         final_chunks = []
         # Get appropriate separator to use
         separator = separators[-1]
-        new_separators = None
+        new_separators = []
         for i, _s in enumerate(separators):
             if _s == "":
                 separator = _s
@@ -491,7 +507,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                     final_chunks.extend(merged_text)
                     _good_splits = []
                     _good_split_lengths = []
-                if new_separators is None:
+                if not new_separators:
                     final_chunks.append(s)
                 else:
                     other_info = self._split_text(s, new_separators)
@@ -764,21 +780,21 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         elif language == Language.LATEX:
             return [
                 # First, try to split along Latex sections
-                "\n\\chapter{",
-                "\n\\section{",
-                "\n\\subsection{",
-                "\n\\subsubsection{",
+                "\n\\\chapter{",
+                "\n\\\section{",
+                "\n\\\subsection{",
+                "\n\\\subsubsection{",
                 # Now split by environments
-                "\n\\begin{enumerate}",
-                "\n\\begin{itemize}",
-                "\n\\begin{description}",
-                "\n\\begin{list}",
-                "\n\\begin{quote}",
-                "\n\\begin{quotation}",
-                "\n\\begin{verse}",
-                "\n\\begin{verbatim}",
+                "\n\\\begin{enumerate}",
+                "\n\\\begin{itemize}",
+                "\n\\\begin{description}",
+                "\n\\\begin{list}",
+                "\n\\\begin{quote}",
+                "\n\\\begin{quotation}",
+                "\n\\\begin{verse}",
+                "\n\\\begin{verbatim}",
                 ## Now split by math environments
-                "\n\\begin{align}",
+                "\n\\\begin{align}",
                 "$$",
                 "$",
                 # Now split by the normal type of lines
@@ -788,33 +804,33 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         elif language == Language.HTML:
             return [
                 # First, try to split along HTML tags
-                "<body>",
-                "<div>",
-                "<p>",
-                "<br>",
-                "<li>",
-                "<h1>",
-                "<h2>",
-                "<h3>",
-                "<h4>",
-                "<h5>",
-                "<h6>",
-                "<span>",
-                "<table>",
-                "<tr>",
-                "<td>",
-                "<th>",
-                "<ul>",
-                "<ol>",
-                "<header>",
-                "<footer>",
-                "<nav>",
+                "<body",
+                "<div",
+                "<p",
+                "<br",
+                "<li",
+                "<h1",
+                "<h2",
+                "<h3",
+                "<h4",
+                "<h5",
+                "<h6",
+                "<span",
+                "<table",
+                "<tr",
+                "<td",
+                "<th",
+                "<ul",
+                "<ol",
+                "<header",
+                "<footer",
+                "<nav",
                 # Head
-                "<head>",
-                "<style>",
-                "<script>",
-                "<meta>",
-                "<title>",
+                "<head",
+                "<style",
+                "<script",
+                "<meta",
+                "<title",
                 "",
             ]
         else:
@@ -827,7 +843,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 class NLTKTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at sentences using NLTK."""
 
-    def __init__(self, separator: str = "\n\n", **kwargs: Any):
+    def __init__(self, separator: str = "\n\n", **kwargs: Any) -> None:
         """Initialize the NLTK splitter."""
         super().__init__(**kwargs)
         try:
@@ -852,7 +868,7 @@ class SpacyTextSplitter(TextSplitter):
 
     def __init__(
         self, separator: str = "\n\n", pipeline: str = "en_core_web_sm", **kwargs: Any
-    ):
+    ) -> None:
         """Initialize the spacy text splitter."""
         super().__init__(**kwargs)
         try:
@@ -874,7 +890,7 @@ class SpacyTextSplitter(TextSplitter):
 class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Python syntax."""
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize a PythonCodeTextSplitter."""
         separators = self.get_separators_for_language(Language.PYTHON)
         super().__init__(separators=separators, **kwargs)
@@ -883,7 +899,7 @@ class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
 class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Markdown-formatted headings."""
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize a MarkdownTextSplitter."""
         separators = self.get_separators_for_language(Language.MARKDOWN)
         super().__init__(separators=separators, **kwargs)
@@ -892,7 +908,7 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
 class LatexTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Latex-formatted layout elements."""
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize a LatexTextSplitter."""
         separators = self.get_separators_for_language(Language.LATEX)
         super().__init__(separators=separators, **kwargs)

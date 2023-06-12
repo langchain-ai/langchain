@@ -120,6 +120,21 @@ def test_create_documents_with_metadata() -> None:
     assert docs == expected_docs
 
 
+def test_create_documents_with_start_index() -> None:
+    """Test create documents method."""
+    texts = ["foo bar baz 123"]
+    splitter = CharacterTextSplitter(
+        separator=" ", chunk_size=7, chunk_overlap=3, add_start_index=True
+    )
+    docs = splitter.create_documents(texts)
+    expected_docs = [
+        Document(page_content="foo bar", metadata={"start_index": 0}),
+        Document(page_content="bar baz", metadata={"start_index": 4}),
+        Document(page_content="baz 123", metadata={"start_index": 8}),
+    ]
+    assert docs == expected_docs
+
+
 def test_metadata_not_shallow() -> None:
     """Test that metadatas are not shallow."""
     texts = ["foo bar"]
@@ -133,6 +148,48 @@ def test_metadata_not_shallow() -> None:
     docs[0].metadata["foo"] = 1
     assert docs[0].metadata == {"source": "1", "foo": 1}
     assert docs[1].metadata == {"source": "1"}
+
+
+def test_iterative_text_splitter_keep_separator() -> None:
+    chunk_size = 5
+    output = __test_iterative_text_splitter(chunk_size=chunk_size, keep_separator=True)
+
+    assert output == [
+        "....5",
+        "X..3",
+        "Y...4",
+        "X....5",
+        "Y...",
+    ]
+
+
+def test_iterative_text_splitter_discard_separator() -> None:
+    chunk_size = 5
+    output = __test_iterative_text_splitter(chunk_size=chunk_size, keep_separator=False)
+
+    assert output == [
+        "....5",
+        "..3",
+        "...4",
+        "....5",
+        "...",
+    ]
+
+
+def __test_iterative_text_splitter(chunk_size: int, keep_separator: bool) -> List[str]:
+    chunk_size += 1 if keep_separator else 0
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=0,
+        separators=["X", "Y"],
+        keep_separator=keep_separator,
+    )
+    text = "....5X..3Y...4X....5Y..."
+    output = splitter.split_text(text)
+    for chunk in output:
+        assert len(chunk) <= chunk_size, f"Chunk is larger than {chunk_size}"
+    return output
 
 
 def test_iterative_text_splitter() -> None:
@@ -614,4 +671,40 @@ This is a code block
         "This is a code",
         "block",
         "```",
+    ]
+
+
+def test_html_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.HTML, chunk_size=60, chunk_overlap=0
+    )
+    code = """
+<h1>Sample Document</h1>
+    <h2>Section</h2>
+        <p id="1234">Reference content.</p>
+
+    <h2>Lists</h2>
+        <ul>
+            <li>Item 1</li>
+            <li>Item 2</li>
+            <li>Item 3</li>
+        </ul>
+
+        <h3>A block</h3>
+            <div class="amazing">
+                <p>Some text</p>
+                <p>Some more text</p>
+            </div>
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "<h1>Sample Document</h1>\n    <h2>Section</h2>",
+        '<p id="1234">Reference content.</p>',
+        "<h2>Lists</h2>\n        <ul>",
+        "<li>Item 1</li>\n            <li>Item 2</li>",
+        "<li>Item 3</li>\n        </ul>",
+        "<h3>A block</h3>",
+        '<div class="amazing">',
+        "<p>Some text</p>",
+        "<p>Some more text</p>\n            </div>",
     ]
