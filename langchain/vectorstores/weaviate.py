@@ -129,9 +129,11 @@ class Weaviate(VectorStore):
         Pass "uuids" list to set custom IDs or overwrite existing texts
         """
         ids = []
-        if not isinstance(texts, list):
-            texts = list(texts)
-        embeddings = self._embedding.embed_documents(texts) if self._embedding else None
+        embeddings: Optional[List[List[float]]] = None
+        if self._embedding:
+            if not isinstance(texts, list):
+                texts = list(texts)
+            embeddings = self._embedding.embed_documents(texts)
 
         with self._client.batch as batch:
             for i, text in enumerate(texts):
