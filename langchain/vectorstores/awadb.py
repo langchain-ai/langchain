@@ -302,6 +302,8 @@ class AwaDB(VectorStore):
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             table_name (str): Name of the collection to create.
             logging_and_data_dir (Optional[str]): Directory to persist the table.
+            client (Optional[awadb.Client]): AwaDB client
+
         Returns:
             AwaDB: AwaDB vectorstore.
         """
