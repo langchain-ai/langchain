@@ -1,6 +1,8 @@
 """Test functionality related to combining documents."""
 
 from typing import Any, List
+from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -10,6 +12,7 @@ from langchain.chains.combine_documents.map_reduce import (
     _collapse_docs,
     _split_list_of_docs,
 )
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.summarize import load_summarize_chain
 from langchain.docstore.document import Document
 
@@ -163,8 +166,12 @@ def test_single_llm_call_on_one_document(fake_llm: FakeLLM):
         chain_type="map_reduce",
         return_intermediate_steps=False,
     )
-    output = chain.run({"input_documents": [Document(page_content="foo")]})
-    assert output == "first"
+    with mock.patch.object(
+        StuffDocumentsChain, "prompt_length", MagicMock(return_value=3000)
+    ):
+        # prompt_length imports transformers, to be avoided in a unittest
+        output = chain.run({"input_documents": [Document(page_content="foo")]})
+        assert output == "first"
 
 
 @pytest.mark.asyncio
@@ -174,5 +181,9 @@ async def test_single_llm_acall_on_one_document(fake_llm: FakeLLM):
         chain_type="map_reduce",
         return_intermediate_steps=False,
     )
-    output = await chain.arun({"input_documents": [Document(page_content="foo")]})
-    assert output == "first"
+    with mock.patch.object(
+        StuffDocumentsChain, "prompt_length", MagicMock(return_value=3000)
+    ):
+        # prompt_length imports transformers, to be avoided in a unittest
+        output = await chain.arun({"input_documents": [Document(page_content="foo")]})
+        assert output == "first"
