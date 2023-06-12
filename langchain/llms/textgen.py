@@ -164,6 +164,7 @@ class TextGen(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call the textgen web API and return the output.
 
