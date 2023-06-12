@@ -671,3 +671,31 @@ def test_html_code_splitter() -> None:
         "<p>Some text</p>",
         "<p>Some more text</p>\n            </div>",
     ]
+
+
+def test_solidity_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.SOL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """pragma solidity ^0.8.20;
+  contract HelloWorld {
+    function add(uint a, uint b) pure public returns(uint) {
+      return  a + b;
+    }
+  }
+  """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "pragma solidity",
+        "^0.8.20;",
+        "contract",
+        "HelloWorld {",
+        "function",
+        "add(uint a,",
+        "uint b) pure",
+        "public",
+        "returns(uint) {",
+        "return  a",
+        "+ b;",
+        "}\n  }",
+    ]
