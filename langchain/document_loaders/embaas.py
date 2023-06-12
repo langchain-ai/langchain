@@ -1,6 +1,6 @@
 import base64
 import warnings
-from typing import Any, Dict, Iterator, List, Optional, cast
+from typing import Any, Dict, Iterator, List, Optional
 
 import requests
 from pydantic import BaseModel, root_validator, validator
@@ -159,7 +159,8 @@ class EmbaasBlobLoader(BaseEmbaasLoader, BaseBlobParser):
             parsed_response = e.response.json()
             if "message" in parsed_response:
                 raise ValueError(
-                    f"Validation Error raised by embaas document text extraction API: {parsed_response['message']}"
+                    f"Validation Error raised by embaas document text extraction API:"
+                    f" {parsed_response['message']}"
                 )
             raise
 
