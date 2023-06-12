@@ -45,6 +45,14 @@ def get_json_segment(
 
 
 def validate_sql(sql_cmd: str, dialect: str, sql_validation: SQLValidation) -> None:
+    """Parse an SQL query from a given dialect and determine if it passes validations.
+
+    Args:
+        sql_cmd (str): SQL query to validate.
+        dialect (str): Dialect of the SQL query.
+        sql_validation (SQLValidation): Determines which validations need to be performed
+
+    """
     try:
         parse_result = sqlfluff.parse(sql=sql_cmd, dialect=dialect)
         print(parse_result)
