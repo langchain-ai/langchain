@@ -703,6 +703,28 @@ msal-extensions = ">=0.3.0,<2.0.0"
 six = ">=1.12.0"
 
 [[package]]
+name = "azure-search-documents"
+version = "11.4.0a20230509004"
+description = "Microsoft Azure Cognitive Search Client Library for Python"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "azure-search-documents-11.4.0a20230509004.zip", hash = "sha256:6cca144573161a10aa0fcd13927264453e79c63be6a53cf2ec241c9c8c22f6b5"},
+    {file = "azure_search_documents-11.4.0a20230509004-py3-none-any.whl", hash = "sha256:6215e9a4f9e935ff3eac1b7d5519c6c0789b4497eb11242d376911aaefbb0359"},
+]
+
+[package.dependencies]
+azure-common = ">=1.1,<2.0"
+azure-core = ">=1.24.0,<2.0.0"
+isodate = ">=0.6.0"
+
+[package.source]
+type = "legacy"
+url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple"
+reference = "azure-sdk-dev"
+
+[[package]]
 name = "babel"
 version = "2.12.1"
 description = "Internationalization utilities"
@@ -11451,7 +11473,7 @@ cffi = ["cffi (>=1.11)"]
 
 [extras]
 all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "pymongo", "weaviate-client", "redis", "google-api-python-client", "google-auth", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "langkit", "lark", "pexpect", "pyvespa", "O365", "jq", "docarray", "steamship", "pdfminer-six", "lxml", "requests-toolbelt", "neo4j", "openlm", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "momento", "singlestoredb", "tigrisdb", "nebula3-python", "awadb"]
-azure = ["azure-identity", "azure-cosmos", "openai", "azure-core", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech"]
+azure = ["azure-identity", "azure-cosmos", "openai", "azure-core", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-search-documents"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
@@ -11464,4 +11486,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "7a39130af070d4a4fe6b0af5d6b70615c868ab0b1867e404060ff00eacd10f5f"
+content-hash = "17e9c7a2ae2d0ef7cf45bc232ebeb7fd3eee2760bb2a19b34a63dcddafd3e4ad"
