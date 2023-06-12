@@ -49,8 +49,7 @@ class AwaDB(VectorStore):
                 self.awadb_client = awadb.Client()
 
         self.awadb_client.Create(table_name)
-        if embedding_model is not None:
-            self.embedding_model = embedding_model
+        self.embedding_model = embedding_model
 
         self.added_doc_count = 0
 
@@ -121,6 +120,11 @@ class AwaDB(VectorStore):
         embedding = None
         if self.embedding_model is not None:
             embedding = self.embedding_model.embed_query(query)
+        else:
+            from awadb import llm_embedding
+
+            llm = llm_embedding.LLMEmbedding()
+            embedding = llm.Embedding(query)
 
         return self.similarity_search_by_vector(embedding, k)
 
@@ -141,13 +145,18 @@ class AwaDB(VectorStore):
         embedding = None
         if self.embedding_model is not None:
             embedding = self.embedding_model.embed_query(query)
+        else:
+            from awadb import llm_embedding
 
-        show_results = self.awadb_client.Search(embedding, k)
+            llm = llm_embedding.LLMEmbedding()
+            embedding = llm.Embedding(query)
+
+        # show_results = self.awadb_client.Search(embedding, k)
 
         results: List[Tuple[Document, float]] = []
 
-        if show_results.__len__() == 0:
-            return results
+        # if show_results.__len__() == 0:
+        #    return results
 
         scores: List[float] = []
         retrieval_docs = self.similarity_search_by_vector(embedding, k, scores)
@@ -159,7 +168,7 @@ class AwaDB(VectorStore):
         L2_Norm = pow(L2_Norm, 0.5)
         doc_no = 0
         for doc in retrieval_docs:
-            doc_tuple = (doc, 1 - scores[doc_no] / L2_Norm)
+            doc_tuple = (doc, 1 - (scores[doc_no] / L2_Norm))
             results.append(doc_tuple)
             doc_no = doc_no + 1
 
@@ -208,7 +217,7 @@ class AwaDB(VectorStore):
 
     def similarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: Optional[List[float]] = None,
         k: int = DEFAULT_TOPN,
         scores: Optional[list] = None,
         **kwargs: Any,
@@ -226,9 +235,12 @@ class AwaDB(VectorStore):
         if self.awadb_client is None:
             raise ValueError("AwaDB client is None!!!")
 
-        show_results = self.awadb_client.Search(embedding, k)
-
         results: List[Document] = []
+
+        if embedding is None:
+            return results
+
+        show_results = self.awadb_client.Search(embedding, k)
 
         if show_results.__len__() == 0:
             return results
@@ -237,7 +249,11 @@ class AwaDB(VectorStore):
             content = ""
             meta_data = {}
             for item_key in item_detail:
-                if item_key == "Field@0":  # text for the document
+                if (
+                    item_key == "Field@0" and self.embedding_model is not None
+                ):  # text for the document
+                    content = item_detail[item_key]
+                elif self.embedding_model is None and item_key == "embedding_text":
                     content = item_detail[item_key]
                 elif item_key == "Field@1":  # embedding field for the document
                     continue
@@ -282,3 +298,38 @@ class AwaDB(VectorStore):
         )
         awadb_client.add_texts(texts=texts, metadatas=metadatas)
         return awadb_client
+
+    @classmethod
+    def from_documents(
+        cls: Type[AwaDB],
+        documents: List[Document],
+        embedding: Optional[Embeddings] = None,
+        table_name: str = _DEFAULT_TABLE_NAME,
+        logging_and_data_dir: Optional[str] = None,
+        client: Optional[awadb.Client] = None,
+        **kwargs: Any,
+    ) -> AwaDB:
+        """Create an AwaDB vectorstore from a list of documents.
+
+        If a logging_and_data_dir specified, the table will be persisted there.
+
+        Args:
+            documents (List[Document]): List of documents to add to the vectorstore.
+            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
+            table_name (str): Name of the collection to create.
+            logging_and_data_dir (Optional[str]): Directory to persist the table.
+            client (Optional[awadb.Client]): AwaDB client
+
+        Returns:
+            AwaDB: AwaDB vectorstore.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return cls.from_texts(
+            texts=texts,
+            embedding=embedding,
+            metadatas=metadatas,
+            table_name=table_name,
+            logging_and_data_dir=logging_and_data_dir,
+            client=client,
+        )
