@@ -10,6 +10,6 @@ LangChain provides an assortment of chains specifically tailored for dealing wit
 - `RefineDocumentsChain`: This chain iterates over the input documents one by one, updating an intermediate answer with each iteration. It uses the previous version of the answer and the next document as context. It is suitable for QA tasks over a large number of documents.
 - `MapRerankDocumentsChain`: This chain runs an initial prompt on each chunk of data, that not only tries to complete a task but also gives a score for how certain it is in its answer. The responses are then ranked according to this score, and the highest score is returned.
 
-import Example from "@snippets/modules/chains/index_examples/question_answering.mdx"
+import Example from "@snippets/modules/chains/popular/question_answering.mdx"
 
 <Example/>
