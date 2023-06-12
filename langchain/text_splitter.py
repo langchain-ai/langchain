@@ -46,6 +46,43 @@ def _split_text(text: str, separator: str, keep_separator: bool) -> List[str]:
         splits = list(text)
     return [s for s in splits if s != ""]
 
+class TextCombiner(BaseDocumentTransformer, ABC):
+    def __init__(
+        self,
+        chunk_size: int = 4000,
+        chunk_overlap: int = 200,
+        length_function: Callable[[str], int] = len,
+        keep_separator: bool = False,
+    ):
+        """Create a new TextSplitter.
+
+        Args:
+            chunk_size: Maximum size of chunks to return
+            chunk_overlap: Overlap in characters between chunks
+            length_function: Function that measures the length of given chunks
+            keep_separator: Whether or not to keep the separator in the chunks
+        """
+        if chunk_overlap > chunk_size:
+            raise ValueError(
+                f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
+                f"({chunk_size}), should be smaller."
+            )
+        self._chunk_size = chunk_size
+        self._chunk_overlap = chunk_overlap
+        self._length_function = length_function
+        self._keep_separator = keep_separator
+
+    def combine_documents(self, documents: Iterable[Document]) -> List[Document]:
+        combined = []
+        for doc in documents:
+
+
+
+    def combine_texts(self, texts: Iterable[str], metadatas: Optional[Iterable[dict]] = None) -> List[Document]:
+        _metadatas = metadatas or ({} for _ in texts)
+        documents = (Document(page_content=t, metadata=m) for t, m in zip(texts, _metadatas))
+        return self.combine_documents(documents)
+
 
 class TextSplitter(BaseDocumentTransformer, ABC):
     """Interface for splitting text into chunks."""

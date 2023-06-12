@@ -1,8 +1,9 @@
-# VectorStore
+# Vector store-backed retriever
 
-The index - and therefore the retriever - that LangChain has the most support for is the `VectorStoreRetriever`. As the name suggests, this retriever is backed heavily by a VectorStore.
+A vector store retriever is a retriever that uses a vector store to retrieve documents. It is a lightweight wrapper around the Vector Store class to make it conform to the Retriever interface.
+It uses the search methods implemented by a vector store, like similarity search and MMR, to query the texts in the vector store.
 
-Once you construct a VectorStore, its very easy to construct a retriever. Let's walk through an example.
+Once you construct a Vector store, it's very easy to construct a retriever. Let's walk through an example.
 
 import Example from "@snippets/modules/data_io/retrievers/how_to/vectorstore.mdx"
 

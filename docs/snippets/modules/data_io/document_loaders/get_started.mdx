@@ -16,22 +16,3 @@ loader.load()
 ```
 
 </CodeOutputBlock>
-
-```python
-from langchain.text_splitter import CharacterTextSplitter
-loader.load_and_split(text_splitter=CharacterTextSplitter(chunk_size=10, chunk_overlap=0))
-```
-
-<CodeOutputBlock language="python">
-
-```
-[
-    Document(page_content='---\nsidebar_position: 0\n---\n# Document loaders', metadata={'source': '../docs/docs_skeleton/docs/modules/data_io/document_loaders/index.md'}),
-    Document(page_content="Use document loaders to load data from a source as `Document`'s. A `Document` is a piece of text\nand associated metadata. For example, there are document loaders for loading a simple `.txt` file, for loading the text\ncontents of any web page, or even for loading a transcript of a YouTube video.", metadata={'source': '../docs/docs_skeleton/docs/modules/data_io/document_loaders/index.md'}),
-    Document(page_content='Every document loader exposes two methods:\n1. "Load": load documents from the configured source\n2. "Load and split": load documents from the configured source and split them using the passed in text splitter', metadata={'source': '../docs/docs_skeleton/docs/modules/data_io/document_loaders/index.md'}),
-    Document(page_content='They optionally implement:', metadata={'source': '../docs/docs_skeleton/docs/modules/data_io/document_loaders/index.md'}),
-    Document(page_content='3. "Lazy load": load documents into memory lazily', metadata={'source': '../docs/docs_skeleton/docs/modules/data_io/document_loaders/index.md'})
-]
-```
-
-</CodeOutputBlock>
