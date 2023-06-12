@@ -258,7 +258,8 @@ class ConfluenceLoader(BaseLoader):
                 include_restricted_content,
                 include_attachments,
                 include_comments,
-                ocr_languages=ocr_languages,
+                content_format,
+                ocr_languages,
             )
 
         if label:
@@ -288,7 +289,8 @@ class ConfluenceLoader(BaseLoader):
                 include_restricted_content,
                 include_attachments,
                 include_comments,
-                ocr_languages=ocr_languages,
+                content_format,
+                ocr_languages,
             )
 
         if page_ids:
@@ -309,7 +311,11 @@ class ConfluenceLoader(BaseLoader):
                 if not include_restricted_content and not self.is_public_page(page):
                     continue
                 doc = self.process_page(
-                    page, include_attachments, include_comments, content_format, ocr_languages=ocr_languages
+                    page,
+                    include_attachments,
+                    include_comments,
+                    content_format,
+                    ocr_languages,
                 )
                 docs.append(doc)
 
@@ -382,7 +388,11 @@ class ConfluenceLoader(BaseLoader):
             if not include_restricted_content and not self.is_public_page(page):
                 continue
             doc = self.process_page(
-                page, include_attachments, include_comments, content_format, ocr_languages=ocr_languages
+                page,
+                include_attachments,
+                include_comments,
+                content_format,
+                ocr_languages,
             )
             docs.append(doc)
 
