@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
+from langchain.callbacks.tracers.schemas import Run, RunTypeEnum, get_run_name
 from langchain.schema import LLMResult
 
 
@@ -93,6 +93,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         execution_order = self._get_execution_order(parent_run_id_)
         llm_run = Run(
             id=run_id,
+            name=get_run_name(serialized),
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"prompts": prompts},
@@ -153,6 +154,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         execution_order = self._get_execution_order(parent_run_id_)
         chain_run = Run(
             id=run_id,
+            name=get_run_name(serialized),
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs=inputs,
@@ -214,6 +216,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         execution_order = self._get_execution_order(parent_run_id_)
         tool_run = Run(
             id=run_id,
+            name=get_run_name(serialized),
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"input": input_str},
