@@ -164,7 +164,10 @@ class DeepLake(VectorStore):
                 kwargs["ids"] = ids
             else:
                 kwargs["id"] = ids
-
+        
+        if metadatas is None:
+            metadatas = [{}]*len(texts)
+        
         return self.vectorstore.add(
             text=texts,
             metadata=metadatas,
@@ -304,7 +307,9 @@ class DeepLake(VectorStore):
                     "Either `embedding` or `embedding_function` needs to be specified."
                 )
 
-            embedding = embedding_function.embed_query(query)  # type: ignore
+            embedding = None
+            if query:
+                embedding = embedding_function.embed_query(query)  # type: ignore
 
         if isinstance(embedding, list):
             embedding = np.array(embedding, dtype=np.float32)
@@ -510,7 +515,6 @@ class DeepLake(VectorStore):
         return self._search(
             query=query,
             k=k,
-            filter=filter,
             return_score=True,
             **kwargs,
         )
@@ -624,7 +628,7 @@ class DeepLake(VectorStore):
             ValueError: when MRR search is turned on while embedding function is
             not specified.
         """
-        embedding_function = kwargs["embedding"] or self._embedding_function
+        embedding_function = kwargs.get("embedding") or self._embedding_function
         if embedding_function is None:
             raise ValueError(
                 "For MMR search, you must specify an embedding function on `creation` "
