@@ -20,6 +20,7 @@ from typing import (
     Sequence,
     Tuple,
     Type,
+    TypedDict,
     TypeVar,
     Union,
     cast,
@@ -256,6 +257,17 @@ class CharacterTextSplitter(TextSplitter):
         return self._merge_splits(splits, _separator)
 
 
+class LineType(TypedDict):
+    metadata: Dict[str, str]
+    content: str
+
+
+class HeaderType(TypedDict):
+    level: int
+    name: str
+    data: str
+
+
 class MarkdownHeaderTextSplitter:
     """Implementation of splitting markdown files based on specified headers."""
 
@@ -270,34 +282,34 @@ class MarkdownHeaderTextSplitter:
         """
         # Output line-by-line or aggregated into chunks w/ common headers
         self.return_each_line = return_each_line
-        # Given the headers we want to split on (e.g., "#, ##, etc", order them by length
+        # Given the headers we want to split on,
+        # (e.g., "#, ##, etc") order by length
         self.headers_to_split_on = sorted(
             headers_to_split_on, key=lambda split: len(split[0]), reverse=True
         )
 
-    def aggregate_lines_to_chunks(
-        self, lines: List[Dict[str, Union[str, Dict[str, str]]]]
-    ) -> List[Dict[str, Union[str, Dict[str, str]]]]:
+    def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[LineType]:
         """Combine lines with common metadata into chunks
         Args:
             lines: Line of text / associated header metadata
         """
-        aggregated_chunks: List[Dict[str, Union[str, Dict[str, str]]]] = []
+        aggregated_chunks: List[LineType] = []
 
         for line in lines:
             if (
                 aggregated_chunks
                 and aggregated_chunks[-1]["metadata"] == line["metadata"]
             ):
-                # If the last line in the aggregated list has the same metadata as the current line,
+                # If the last line in the aggregated list
+                # has the same metadata as the current line,
                 # append the current content to the last lines's content
-                aggregated_chunks[-1]["content"] += "\n" + line["content"]
+                aggregated_chunks[-1]["content"] += "  \n" + line["content"]
             else:
                 # Otherwise, append the current line to the aggregated list
                 aggregated_chunks.append(line)
         return aggregated_chunks
 
-    def split_text(self, text: str) -> List[Dict[str, Union[str, Dict[str, str]]]]:
+    def split_text(self, text: str) -> List[LineType]:
         """Split markdown file
         Args:
             text: Markdown file"""
@@ -305,12 +317,13 @@ class MarkdownHeaderTextSplitter:
         # Split the input text by newline character ("\n").
         lines = text.split("\n")
         # Final output
-        lines_with_metadata: List[Dict[str, Union[int, str]]] = []
+        lines_with_metadata: List[LineType] = []
         # Content and metadata of the chunk currently being processed
         current_content: List[str] = []
         current_metadata: Dict[str, str] = {}
         # Keep track of the nested header structure
-        header_stack: List[Dict[str, Union[int, str]]] = []
+        # header_stack: List[Dict[str, Union[int, str]]] = []
+        header_stack: List[HeaderType] = []
         initial_metadata: Dict[str, str] = {}
 
         for line in lines:
@@ -330,17 +343,20 @@ class MarkdownHeaderTextSplitter:
                         current_header_level = sep.count("#")
 
                         # Pop out headers of lower or same level from the stack
-                        while header_stack:
-                            assert isinstance(header_stack[-1]["level"], int), "Expected int"
-                            if header_stack[-1]["level"] >= current_header_level:
-                                # We have encountered a new header at the same or higher level
-                                popped_header = header_stack.pop()
-                                # Clear the metadata for the popped header in initial_metadata
-                                if popped_header["name"] in initial_metadata:
-                                    initial_metadata.pop(popped_header["name"])
+                        while (
+                            header_stack
+                            and header_stack[-1]["level"] >= current_header_level
+                        ):
+                            # We have encountered a new header
+                            # at the same or higher level
+                            popped_header = header_stack.pop()
+                            # Clear the metadata for the
+                            # popped header in initial_metadata
+                            if popped_header["name"] in initial_metadata:
+                                initial_metadata.pop(popped_header["name"])
 
                         # Push the current header to the stack
-                        header = {
+                        header: HeaderType = {
                             "level": current_header_level,
                             "name": name,
                             "data": stripped_line[len(sep) :].strip(),
@@ -349,7 +365,8 @@ class MarkdownHeaderTextSplitter:
                         # Update initial_metadata with the current header
                         initial_metadata[name] = header["data"]
 
-                    # Add the previous line to the lines_with_metadata only if current_content is not empty
+                    # Add the previous line to the lines_with_metadata
+                    # only if current_content is not empty
                     if current_content:
                         lines_with_metadata.append(
                             {
@@ -381,7 +398,7 @@ class MarkdownHeaderTextSplitter:
 
         # lines_with_metadata has each line with associated header metadata
         # aggregate these into chunks based on common metadata
-        if self.return_each_line == False:
+        if not self.return_each_line:
             return self.aggregate_lines_to_chunks(lines_with_metadata)
         else:
             return lines_with_metadata
