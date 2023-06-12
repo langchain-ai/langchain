@@ -55,7 +55,6 @@ def validate_sql(sql_cmd: str, dialect: str, sql_validation: SQLValidation) -> N
     """
     try:
         parse_result = sqlfluff.parse(sql=sql_cmd, dialect=dialect)
-        print(parse_result)
     except sqlfluff.api.simple.APIParsingError as e:
         raise ValueError(f"Parsing of SQL query `{sql_cmd}` failed: {e.msg}")
     except sqlfluff.core.errors.SQLFluffUserError as e:

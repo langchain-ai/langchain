@@ -1,6 +1,4 @@
 """Test SQL functionality."""
-import sqlite3
-
 import pytest
 
 from langchain import SQLDatabase
@@ -78,7 +76,7 @@ def in_memory_db() -> SQLDatabase:
 
     return database
 
-
+@pytest.mark.requires("sqlfluff")
 def test_simple_question(in_memory_db: SQLDatabase) -> None:
     question = "What is the price of an iphone?"
     prompt = SQLITE_PROMPT.format(top_k=5, input=question, table_info="")
@@ -91,7 +89,7 @@ def test_simple_question(in_memory_db: SQLDatabase) -> None:
     output = fake_llm_db_chain.run(question)
     assert output == "999.99"
 
-
+@pytest.mark.requires("sqlfluff")
 def test_malformed_sql_query() -> None:
     with pytest.raises(ValueError):
         validate_sql(
@@ -100,7 +98,7 @@ def test_malformed_sql_query() -> None:
             SQLValidation(),
         )
 
-
+@pytest.mark.requires("sqlfluff")
 def test_invalid_sql_dialect() -> None:
     with pytest.warns(
         match="Dialect xxxxxxxxxxxxxx unsupported for SQL validation. No validation will be done. Go to https://docs.sqlfluff.com/en/stable/dialects.html to see supported dialects"
@@ -117,7 +115,7 @@ def test_invalid_sql_dialect() -> None:
             SQLValidation(allow_unsupported_dialect=False),
         )
 
-
+@pytest.mark.requires("sqlfluff")
 def test_non_select_sql_query() -> None:
     validate_sql(
         "DROP TABLE products", "sqlite", SQLValidation(allow_non_select_statements=True)
@@ -136,7 +134,7 @@ def test_non_select_sql_query() -> None:
             SQLValidation(allow_non_select_statements=False),
         )
 
-
+@pytest.mark.requires("sqlfluff")
 def test_select_all_sql_query() -> None:
     validate_sql(
         "SELECT * FROM users;",
@@ -150,7 +148,7 @@ def test_select_all_sql_query() -> None:
             SQLValidation(allow_select_all_statements=False),
         )
 
-
+@pytest.mark.requires("sqlfluff")
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_parsing_all_supported_dialects():
     sql_statements = [
