@@ -1,6 +1,6 @@
+import warnings
 from abc import ABC
 from typing import Any, Dict, Optional, Tuple
-import warnings
 
 from pydantic import Field
 
@@ -37,7 +37,7 @@ class BaseChatMemory(BaseMemory, ABC):
                 else:
                     output_key = list(outputs.keys())[0]
                 warnings.warn(
-                    f"Extract the text from the nested output with the key `{output_key}`"
+                   f"Extract the text from the nested output with key `{output_key}`"
                 )
         else:
             output_key = self.output_key
