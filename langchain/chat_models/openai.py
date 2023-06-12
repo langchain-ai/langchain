@@ -136,6 +136,10 @@ class ChatOpenAI(BaseChatModel):
             openai = ChatOpenAI(model_name="gpt-3.5-turbo")
     """
 
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     client: Any  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""

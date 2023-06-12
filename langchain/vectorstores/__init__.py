@@ -11,6 +11,7 @@ from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
 from langchain.vectorstores.faiss import FAISS
+from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
 from langchain.vectorstores.matching_engine import MatchingEngine
 from langchain.vectorstores.milvus import Milvus
@@ -59,6 +60,7 @@ __all__ = [
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "Typesense",
+    "Hologres",
     "Clickhouse",
     "ClickhouseSettings",
     "Tigris",

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import Field, root_validator, validator
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
@@ -18,6 +18,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain.load.dump import dumpd
+from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, BaseMemory, RunInfo
 
 
@@ -25,7 +27,7 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class Chain(BaseModel, ABC):
+class Chain(Serializable, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[BaseMemory] = None
@@ -131,7 +133,7 @@ class Chain(BaseModel, ABC):
         )
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
         run_manager = callback_manager.on_chain_start(
-            {"name": self.__class__.__name__},
+            dumpd(self),
             inputs,
         )
         try:
@@ -179,7 +181,7 @@ class Chain(BaseModel, ABC):
         )
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         run_manager = await callback_manager.on_chain_start(
-            {"name": self.__class__.__name__},
+            dumpd(self),
             inputs,
         )
         try:

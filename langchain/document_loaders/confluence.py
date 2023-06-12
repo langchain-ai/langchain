@@ -1,7 +1,7 @@
 """Load Data from a Confluence Space"""
 import logging
 from io import BytesIO
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from tenacity import (
     before_sleep_log,
@@ -253,7 +253,7 @@ class ConfluenceLoader(BaseLoader):
 
         if cql:
             pages = self.paginate_request(
-                self.confluence.cql,
+                self._search_content_by_cql,
                 cql=cql,
                 limit=limit,
                 max_pages=max_pages,
@@ -291,6 +291,19 @@ class ConfluenceLoader(BaseLoader):
                 docs.append(doc)
 
         return docs
+
+    def _search_content_by_cql(
+        self, cql: str, include_archived_spaces: Optional[bool] = None, **kwargs: Any
+    ) -> List[dict]:
+        url = "rest/api/content/search"
+
+        params: Dict[str, Any] = {"cql": cql}
+        params.update(kwargs)
+        if include_archived_spaces is not None:
+            params["includeArchivedSpaces"] = include_archived_spaces
+
+        response = self.confluence.get(url, params=params)
+        return response.get("results", [])
 
     def paginate_request(self, retrieval_method: Callable, **kwargs: Any) -> List:
         """Paginate the various methods to retrieve groups of pages.

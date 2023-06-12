@@ -139,6 +139,7 @@ pytest-asyncio = "^0.20.3"
 lark = "^1.1.5"
 pytest-mock  = "^3.10.0"
 pytest-socket = "^0.6.0"
+syrupy = "^4.0.2"
 
 [tool.poetry.group.test_integration]
 optional = true
@@ -324,7 +325,8 @@ extended_testing = [
  "html2text",
  "py-trello",
  "scikit-learn",
- "pyspark"
+ "pyspark",
+ "openai"
 ]
 
 [[tool.poetry.source]]
@@ -363,7 +365,10 @@ build-backend = "poetry.core.masonry.api"
 # https://docs.pytest.org/en/7.1.x/reference/reference.html
 # --strict-config       any warnings encountered while parsing the `pytest`
 #                       section of the configuration file raise errors.
-addopts = "--strict-markers --strict-config --durations=5"
+#
+# https://github.com/tophat/syrupy
+# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused"
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
