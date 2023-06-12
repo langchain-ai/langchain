@@ -123,7 +123,7 @@ class DeepLake(VectorStore):
             )
 
         version = deeplake.__version__
-        if version != "3.6.3":
+        if version != "3.6.2":
             raise ValueError(
                 f"deeplake version should be = 3.6.3, but you've installed {version}. "
                  "Consider changing deeplake version to 3.6.3 ."
