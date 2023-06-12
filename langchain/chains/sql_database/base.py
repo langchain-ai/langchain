@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Union
 
+import sqlfluff
 from pydantic import Extra, Field, root_validator
 
 from langchain.base_language import BaseLanguageModel
@@ -17,6 +18,83 @@ from langchain.sql_database import SQLDatabase
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
+
+
+def get_json_segment(
+    parse_result: Dict[str, Any], segment_type: str
+) -> Iterator[Union[str, Dict[str, Any], List[Dict[str, Any]]]]:
+    """Recursively search JSON parse result for specified segment type.
+
+    Args:
+        parse_result (Dict[str, Any]): JSON parse result from `sqlfluff.fix`.
+        segment_type (str): The segment type to search for.
+
+    Yields:
+        Iterator[Union[str, Dict[str, Any], List[Dict[str, Any]]]]:
+        Retrieves children of specified segment type as either a string for a raw
+        segment or as JSON or an array of JSON for non-raw segments.
+    """
+    for k, v in parse_result.items():
+        if k == segment_type:
+            yield v
+        elif isinstance(v, dict):
+            yield from get_json_segment(v, segment_type)
+        elif isinstance(v, list):
+            for s in v:
+                yield from get_json_segment(s, segment_type)
+
+
+def validate_sql(sql_cmd: str, dialect: str, sql_validation: SQLValidation) -> None:
+    try:
+        parse_result = sqlfluff.parse(sql=sql_cmd, dialect=dialect)
+        print(parse_result)
+    except sqlfluff.api.simple.APIParsingError as e:
+        raise ValueError(f"Parsing of SQL query `{sql_cmd}` failed: {e.msg}")
+    except sqlfluff.core.errors.SQLFluffUserError as e:
+        unsupported_dialect_message = f"Dialect {dialect} unsupported for SQL validation. No validation will be done. Go to https://docs.sqlfluff.com/en/stable/dialects.html to see supported dialects"
+        if sql_validation.allow_unsupported_dialect is False:
+            raise ValueError(unsupported_dialect_message)
+        warnings.warn(unsupported_dialect_message)
+        return
+
+    if sql_validation.allow_non_select_statements is False:
+        statements = get_json_segment(parse_result, "statement")
+        for statement in statements:
+            if list(statement.keys())[0] != "select_statement":
+                raise ValueError(
+                    f"Found disallowed non select statement `{statement}` in SQL query `{sql_cmd}`"
+                )
+
+    if sql_validation.allow_select_all_statements is False:
+        select_statements = get_json_segment(parse_result, "select_statement")
+        for select_statement in select_statements:
+            wildcard_expressions = get_json_segment(
+                select_statement, "wildcard_expression"
+            )
+            found_wildcard_expressions = list(wildcard_expressions)
+            if len(found_wildcard_expressions) > 0:
+                raise ValueError(
+                    f"Found disallowed wildcard select statement(s) `{found_wildcard_expressions}` in query `{sql_cmd}`"
+                )
+
+
+class SQLValidation(object):
+    def __init__(
+        self,
+        allow_unsupported_dialect: bool = True,
+        allow_non_select_statements: bool = False,
+        allow_select_all_statements: bool = True,
+    ):
+        """Initialize an SQLValidation instance
+
+        Args:
+            allow_unsupported_dialect (bool): If unsupported dialects are allowed, no validations will be done on them.
+            allow_non_select_statements (bool): Allow statments that are non select ones, such as DROP.
+            allow_select_all_statements (bool): Allow statments that are selecting all columns (SELECT *).
+        """
+        self.allow_unsupported_dialect = allow_unsupported_dialect
+        self.allow_non_select_statements = allow_non_select_statements
+        self.allow_select_all_statements = allow_select_all_statements
 
 
 class SQLDatabaseChain(Chain):
@@ -50,6 +128,7 @@ class SQLDatabaseChain(Chain):
     to fix the initial SQL from the LLM."""
     query_checker_prompt: Optional[BasePromptTemplate] = None
     """The prompt template that should be used by the query checker"""
+    sql_validation: SQLValidation = SQLValidation()
 
     class Config:
         """Configuration for this pydantic object."""
@@ -117,6 +196,9 @@ class SQLDatabaseChain(Chain):
                 callbacks=_run_manager.get_child(),
                 **llm_inputs,
             ).strip()
+
+            validate_sql(sql_cmd, self.database.dialect, self.sql_validation)
+
             if not self.use_query_checker:
                 _run_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
                 intermediate_steps.append(
