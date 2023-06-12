@@ -292,7 +292,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             loader = self.file_loader_cls(file=fh, **self.file_loader_kwargs)
             docs = loader.load()
             for doc in docs:
-                doc.metadata["id"] = id
+                doc.metadata["source"] = f"https://drive.google.com/file/d/{id}/view"
             return docs
 
         else:
