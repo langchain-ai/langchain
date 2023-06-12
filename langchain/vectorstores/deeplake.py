@@ -5,6 +5,12 @@ import logging
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
+try:
+    import deeplake
+    from deeplake.core.vectorstore import DeepLakeVectorStore
+    _DEEPLAKE_INSTALLED = True
+except ImportError:
+    _DEEPLAKE_INSTALLED = False
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -110,14 +116,18 @@ class DeepLake(VectorStore):
         self.num_workers = num_workers
         self.verbose = verbose
 
-        try:
-            from deeplake.core.vectorstore import DeepLakeVectorStore
-        except ImportError:
+        if _DEEPLAKE_INSTALLED is False:
             raise ValueError(
                 "Could not import deeplake python package. "
                 "Please install it with `pip install deeplake`."
             )
 
+        version = deeplake.__version__
+        if version != "3.6.3":
+            raise ValueError(
+                f"deeplake version should be = 3.6.3, but you've installed {version}. "
+                 "Consider changing deeplake version to 3.6.3 ."
+             )
         self.dataset_path = dataset_path
 
         self.vectorstore = DeepLakeVectorStore(
