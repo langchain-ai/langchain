@@ -53,7 +53,6 @@ class LangChainTracer(BaseTracer):
         execution_order = self._get_execution_order(parent_run_id_)
         chat_model_run = Run(
             id=run_id,
-            name=serialized.get("name"),
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"messages": [messages_to_dict(batch) for batch in messages]},

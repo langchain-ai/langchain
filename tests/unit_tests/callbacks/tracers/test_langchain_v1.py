@@ -22,6 +22,9 @@ from langchain.schema import LLMResult
 
 TEST_SESSION_ID = 2023
 
+SERIALIZED = {"id": ["llm"]}
+SERIALIZED_CHAT = {"id": ["chat_model"]}
+
 
 def load_session(session_name: str) -> TracerSessionV1:
     """Load a tracing session."""
@@ -107,7 +110,7 @@ def test_tracer_llm_run() -> None:
         extra={},
         execution_order=1,
         child_execution_order=1,
-        serialized={"name": "llm"},
+        serialized=SERIALIZED,
         prompts=[],
         response=LLMResult(generations=[[]]),
         session_id=TEST_SESSION_ID,
@@ -116,7 +119,7 @@ def test_tracer_llm_run() -> None:
     tracer = FakeTracer()
 
     tracer.new_session()
-    tracer.on_llm_start(serialized={"name": "llm"}, prompts=[], run_id=uuid)
+    tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
     tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=uuid)
     assert tracer.runs == [compare_run]
 
@@ -133,7 +136,7 @@ def test_tracer_chat_model_run() -> None:
         extra={},
         execution_order=1,
         child_execution_order=1,
-        serialized={"name": "chat_model"},
+        serialized=SERIALIZED_CHAT,
         prompts=[""],
         response=LLMResult(generations=[[]]),
         session_id=TEST_SESSION_ID,
@@ -144,7 +147,7 @@ def test_tracer_chat_model_run() -> None:
     tracer.new_session()
     manager = CallbackManager(handlers=[tracer])
     run_manager = manager.on_chat_model_start(
-        serialized={"name": "chat_model"}, messages=[[]], run_id=uuid
+        serialized=SERIALIZED_CHAT, messages=[[]], run_id=uuid
     )
     run_manager.on_llm_end(response=LLMResult(generations=[[]]))
     assert tracer.runs == [compare_run]
@@ -172,7 +175,7 @@ def test_tracer_multiple_llm_runs() -> None:
         extra={},
         execution_order=1,
         child_execution_order=1,
-        serialized={"name": "llm"},
+        serialized=SERIALIZED,
         prompts=[],
         response=LLMResult(generations=[[]]),
         session_id=TEST_SESSION_ID,
@@ -183,7 +186,7 @@ def test_tracer_multiple_llm_runs() -> None:
     tracer.new_session()
     num_runs = 10
     for _ in range(num_runs):
-        tracer.on_llm_start(serialized={"name": "llm"}, prompts=[], run_id=uuid)
+        tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
         tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=uuid)
 
     assert tracer.runs == [compare_run] * num_runs
@@ -263,7 +266,7 @@ def test_tracer_nested_run() -> None:
             parent_run_id=chain_uuid,
         )
         tracer.on_llm_start(
-            serialized={"name": "llm"},
+            serialized=SERIALIZED,
             prompts=[],
             run_id=llm_uuid1,
             parent_run_id=tool_uuid,
@@ -271,7 +274,7 @@ def test_tracer_nested_run() -> None:
         tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=llm_uuid1)
         tracer.on_tool_end("test", run_id=tool_uuid)
         tracer.on_llm_start(
-            serialized={"name": "llm"},
+            serialized=SERIALIZED,
             prompts=[],
             run_id=llm_uuid2,
             parent_run_id=chain_uuid,
@@ -319,7 +322,7 @@ def test_tracer_nested_run() -> None:
                         extra={},
                         execution_order=3,
                         child_execution_order=3,
-                        serialized={"name": "llm"},
+                        serialized=SERIALIZED,
                         prompts=[],
                         response=LLMResult(generations=[[]]),
                         session_id=TEST_SESSION_ID,
@@ -337,7 +340,7 @@ def test_tracer_nested_run() -> None:
                 extra={},
                 execution_order=4,
                 child_execution_order=4,
-                serialized={"name": "llm"},
+                serialized=SERIALIZED,
                 prompts=[],
                 response=LLMResult(generations=[[]]),
                 session_id=TEST_SESSION_ID,
@@ -362,7 +365,7 @@ def test_tracer_llm_run_on_error() -> None:
         extra={},
         execution_order=1,
         child_execution_order=1,
-        serialized={"name": "llm"},
+        serialized=SERIALIZED,
         prompts=[],
         response=None,
         session_id=TEST_SESSION_ID,
@@ -371,7 +374,7 @@ def test_tracer_llm_run_on_error() -> None:
     tracer = FakeTracer()
 
     tracer.new_session()
-    tracer.on_llm_start(serialized={"name": "llm"}, prompts=[], run_id=uuid)
+    tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
     tracer.on_llm_error(exception, run_id=uuid)
     assert tracer.runs == [compare_run]
 
@@ -451,14 +454,14 @@ def test_tracer_nested_runs_on_error() -> None:
             serialized={"name": "chain"}, inputs={}, run_id=chain_uuid
         )
         tracer.on_llm_start(
-            serialized={"name": "llm"},
+            serialized=SERIALIZED,
             prompts=[],
             run_id=llm_uuid1,
             parent_run_id=chain_uuid,
         )
         tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=llm_uuid1)
         tracer.on_llm_start(
-            serialized={"name": "llm"},
+            serialized=SERIALIZED,
             prompts=[],
             run_id=llm_uuid2,
             parent_run_id=chain_uuid,
@@ -471,7 +474,7 @@ def test_tracer_nested_runs_on_error() -> None:
             parent_run_id=chain_uuid,
         )
         tracer.on_llm_start(
-            serialized={"name": "llm"},
+            serialized=SERIALIZED,
             prompts=[],
             run_id=llm_uuid3,
             parent_run_id=tool_uuid,
@@ -501,7 +504,7 @@ def test_tracer_nested_runs_on_error() -> None:
                 extra={},
                 execution_order=2,
                 child_execution_order=2,
-                serialized={"name": "llm"},
+                serialized=SERIALIZED,
                 session_id=TEST_SESSION_ID,
                 error=None,
                 prompts=[],
@@ -515,7 +518,7 @@ def test_tracer_nested_runs_on_error() -> None:
                 extra={},
                 execution_order=3,
                 child_execution_order=3,
-                serialized={"name": "llm"},
+                serialized=SERIALIZED,
                 session_id=TEST_SESSION_ID,
                 error=None,
                 prompts=[],
@@ -547,7 +550,7 @@ def test_tracer_nested_runs_on_error() -> None:
                         extra={},
                         execution_order=5,
                         child_execution_order=5,
-                        serialized={"name": "llm"},
+                        serialized=SERIALIZED,
                         session_id=TEST_SESSION_ID,
                         error=repr(exception),
                         prompts=[],

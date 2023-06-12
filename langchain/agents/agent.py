@@ -864,7 +864,11 @@ class AgentExecutor(Chain):
                 raise e
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
-                observation = "Invalid or incomplete response"
+                if e.send_to_llm:
+                    observation = str(e.observation)
+                    text = str(e.llm_output)
+                else:
+                    observation = "Invalid or incomplete response"
             elif isinstance(self.handle_parsing_errors, str):
                 observation = self.handle_parsing_errors
             elif callable(self.handle_parsing_errors):

@@ -24,6 +24,7 @@ class FakeListLLM(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Return next response"""
         response = self.responses[self.i]
@@ -35,6 +36,7 @@ class FakeListLLM(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Return next response"""
         response = self.responses[self.i]
