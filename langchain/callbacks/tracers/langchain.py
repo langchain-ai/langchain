@@ -92,7 +92,12 @@ class LangChainTracer(BaseTracer):
 
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
-        self.client.update_run(run.id, **run.dict())
+        try:
+            self.client.update_run(run.id, **run.dict())
+        except Exception as e:
+            # Errors are swallowed by the thread executor so we need to log them here
+            log_error_once(str(e))
+            raise
 
     def _on_llm_start(self, run: Run) -> None:
         """Persist an LLM run."""
