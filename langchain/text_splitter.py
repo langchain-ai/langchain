@@ -484,12 +484,10 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         self,
         chunk_overlap: int = 50,
         model_name: str = "sentence-transformers/all-mpnet-base-v2",
+        relative_chunk_overlap: Optional[float] = None,
         tokens_per_chunk: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
-        """Create a new TextSplitter."""
-        super().__init__(**kwargs, chunk_overlap=chunk_overlap)
-
         try:
             from sentence_transformers import SentenceTransformer
         except ImportError:
@@ -502,10 +500,18 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         self.model_name = model_name
         self._model = SentenceTransformer(self.model_name)
         self.tokenizer = self._model.tokenizer
-        self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
+        self._calculate_tokens_per_chunk(tokens_per_chunk=tokens_per_chunk)
+        calculated_chunk_overlap = self._calculate_chunk_overlap(
+            chunk_overlap=chunk_overlap, relative_chunk_overlap=relative_chunk_overlap
+        )
 
-    def _initialize_chunk_configuration(
-        self, *, tokens_per_chunk: Optional[int]
+        """Create a new TextSplitter."""
+        super().__init__(**kwargs, chunk_overlap=calculated_chunk_overlap)
+
+    def _calculate_tokens_per_chunk(
+        self,
+        *,
+        tokens_per_chunk: Optional[int],
     ) -> None:
         self.maximum_tokens_per_chunk = cast(int, self._model.max_seq_length)
 
@@ -521,6 +527,26 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
                 f" Argument tokens_per_chunk={self.tokens_per_chunk}"
                 f" > maximum token limit."
             )
+
+    def _calculate_chunk_overlap(
+        self,
+        *,
+        chunk_overlap: int,
+        relative_chunk_overlap: Optional[float],
+    ) -> int:
+        chunk_overlap_from_relative_chunk_overlap: Optional[int] = None
+        if relative_chunk_overlap is None:
+            return chunk_overlap
+        if relative_chunk_overlap > 1.0 or relative_chunk_overlap < 0.0:
+            raise ValueError(
+                'parameter "relative_chunk_overlap" must be in the range: [0.0; 1.0]'
+            )
+
+        logger.info(
+            f"chunk_overlap={chunk_overlap_from_relative_chunk_overlap}\
+                calculated from relative_chunk_overlap={relative_chunk_overlap}"
+        )
+        return round(self.maximum_tokens_per_chunk * relative_chunk_overlap)
 
     def split_text(self, text: str) -> List[str]:
         def encode_strip_start_and_stop_token_ids(text: str) -> List[int]:

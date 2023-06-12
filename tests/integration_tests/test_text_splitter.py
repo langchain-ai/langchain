@@ -105,3 +105,29 @@ def test_sentence_transformers_multiple_tokens() -> None:
         - splitter.maximum_tokens_per_chunk
     )
     assert expected == actual
+
+
+def test_relative_chunk_overlap_parameter_must_be_in_the_zero_to_one_range() -> None:
+    with pytest.raises(ValueError):
+        SentenceTransformersTokenTextSplitter(relative_chunk_overlap=2.0)
+
+
+def test_relative_chunk_overlap_yields_a_single_chunk() -> None:
+    relative_chunk_overlap = 0.5
+    splitter = SentenceTransformersTokenTextSplitter(
+        relative_chunk_overlap=relative_chunk_overlap
+    )
+    text = "is "  # one token
+
+    count_start_and_end_tokens = 2
+    text_multiplication_factor = round(
+        relative_chunk_overlap
+        * (splitter.maximum_tokens_per_chunk - count_start_and_end_tokens)
+    )
+    text_to_embed_becomes_a_single_chunk = text_multiplication_factor * text
+    text_to_embed_becomes_two_chunks = (
+        splitter.maximum_tokens_per_chunk - count_start_and_end_tokens + 1
+    ) * text
+
+    assert len(splitter.split_text(text=text_to_embed_becomes_a_single_chunk)) == 1
+    assert len(splitter.split_text(text=text_to_embed_becomes_two_chunks)) == 2
