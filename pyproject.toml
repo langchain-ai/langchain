@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.197"
+version = "0.0.198"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -107,7 +107,7 @@ tigrisdb = {version = "^1.0.0b6", optional = true}
 nebula3-python = {version = "^3.4.0", optional = true}
 langchainplus-sdk = ">=0.0.7"
 awadb = {version = "^0.3.2", optional = true}
-
+azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -218,7 +218,16 @@ text_helpers = ["chardet"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-azure = ["azure-identity", "azure-cosmos", "openai", "azure-core", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech"]
+azure = [
+    "azure-identity",
+    "azure-cosmos",
+    "openai",
+    "azure-core",
+    "azure-ai-formrecognizer",
+    "azure-ai-vision",
+    "azure-cognitiveservices-speech",
+    "azure-search-documents",
+]
 all = [
     "anthropic",
     "cohere",
@@ -319,6 +328,11 @@ extended_testing = [
  "pyspark",
  "openai"
 ]
+
+[[tool.poetry.source]]
+name = "azure-sdk-dev"
+url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/"
+secondary = true
 
 [tool.ruff]
 select = [
