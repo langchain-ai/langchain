@@ -51,7 +51,9 @@ class MatchingEngine(VectorStore):
         """Vertex Matching Engine implementation of the vector store.
 
         While the embeddings are stored in the Matching Engine, the embedded
-        documents will be stored in GCS.
+        documents will be stored either in GCS or Firestore. Note that the
+        Firestore collection must have a field "content" which holds the
+        text content of the document.
 
         An existing Index and corresponding Endpoint are preconditions for
         using this module.
@@ -74,6 +76,8 @@ class MatchingEngine(VectorStore):
                 multilingual Tensorflow Universal Sentence Encoder will be used.
             gcs_client: The GCS client.
             gcs_bucket_name: The GCS bucket name.
+            firestore_client: The Firestore client.
+            firestore_collection_name: The Firestore collection name 
             credentials (Optional): Created GCP credentials.
         """
         super().__init__()
