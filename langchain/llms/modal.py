@@ -76,9 +76,11 @@ class Modal(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call to Modal endpoint."""
         params = self.model_kwargs or {}
+        params = {**params, **kwargs}
         response = requests.post(
             url=self.endpoint_url,
             headers={
