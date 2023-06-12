@@ -124,7 +124,6 @@ class RdfGraph:
         # Set schema
         self.schema = ""
         self.load_schema()
-        print(self.schema)
 
     @property
     def get_schema(self) -> str:
