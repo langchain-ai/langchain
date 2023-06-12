@@ -610,12 +610,13 @@ def test_structured_tool_from_function() -> None:
     }
 
     assert structured_tool.args_schema.schema() == {
+        "title": "fooSchemaSchema",
+        "type": "object",
         "properties": {
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
         },
-        "title": "fooSchemaSchema",
-        "type": "object",
+        "required": ["bar", "baz"],
     }
 
     prefix = "foo(bar: int, baz: str) -> str - "
