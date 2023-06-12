@@ -7,6 +7,7 @@ from langchain.docstore.document import Document
 from langchain.text_splitter import (
     CharacterTextSplitter,
     Language,
+    MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
 )
@@ -671,3 +672,34 @@ def test_html_code_splitter() -> None:
         "<p>Some text</p>",
         "<p>Some more text</p>\n            </div>",
     ]
+
+
+def test_md_header_text_splitter() -> None:
+    """Test markdown splitter by header."""
+    markdown_document = (
+        "# Foo\n\n"
+        "    ## Bar\n\n"
+        "Hi this is Jim\n\n"
+        "Hi this is Joe\n\n"
+        " ## Baz\n\n"
+        " Hi this is Molly"
+    )
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+    expected_output = [
+        {
+            "content": "Hi this is Jim  \nHi this is Joe",
+            "metadata": {"Header 1": "Foo", "Header 2": "Bar"},
+        },
+        {
+            "content": "Hi this is Molly",
+            "metadata": {"Header 1": "Foo", "Header 2": "Baz"},
+        },
+    ]
+    assert output == expected_output
