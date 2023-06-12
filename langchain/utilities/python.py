@@ -1,11 +1,11 @@
+import multiprocessing
 import sys
 from io import StringIO
+from multiprocessing import Pool
 from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
-import multiprocessing
-from multiprocessing import Pool
 
 class PythonREPL(BaseModel):
     """Simulates a standalone Python REPL."""
@@ -14,7 +14,7 @@ class PythonREPL(BaseModel):
     locals: Optional[Dict] = Field(default_factory=dict, alias="_locals")
 
     @classmethod
-    def worker(cls, command, globals, locals, queue):
+    def worker(cls, command: str, globals: Optional[Dict], locals: Optional[Dict], queue: multiprocessing.Queue) -> None:
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
         try:
@@ -25,15 +25,17 @@ class PythonREPL(BaseModel):
             sys.stdout = old_stdout
             queue.put(repr(e))
 
-    def run(self, command: str, timeout: int = None) -> str:
+    def run(self, command: str, timeout: Optional[int] = None) -> str:
         """Run command with own globals/locals and returns anything printed. Timeout after the specified number of seconds."""
-    
-        queue = multiprocessing.Queue()
+
+        queue: multiprocessing.Queue = multiprocessing.Queue()
 
         # Only use multiprocessing if we are enforcing a timeout
         if timeout is not None:
             # create a Process
-            p = multiprocessing.Process(target=self.worker, args=(command, self.globals, self.locals, queue))
+            p = multiprocessing.Process(
+                target=self.worker, args=(command, self.globals, self.locals, queue)
+            )
 
             # start it
             p.start()

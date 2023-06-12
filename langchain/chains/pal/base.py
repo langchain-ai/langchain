@@ -4,8 +4,8 @@ As in https://arxiv.org/pdf/2211.10435.pdf.
 """
 from __future__ import annotations
 
-import warnings
 import ast
+import warnings
 from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, root_validator
@@ -19,8 +19,14 @@ from langchain.chains.pal.math_prompt import MATH_PROMPT
 from langchain.prompts.base import BasePromptTemplate
 from langchain.utilities import PythonREPL
 
-DEFAULT_CODE_VALIDATIONS = {'solution_expression': None, 'allow_imports': False, 'allow_non_math_operations': True, 'allow_command_exec': False}
-COMMAND_EXECUTION_FUNCTIONS = ['system', 'exec']
+DEFAULT_CODE_VALIDATIONS = {
+    "solution_expression": {},
+    "allow_imports": False,
+    "allow_non_math_operations": True,
+    "allow_command_exec": False,
+}
+COMMAND_EXECUTION_FUNCTIONS = ["system", "exec"]
+
 
 class PALChain(Chain):
     """Implements Program-Aided Language Models."""
@@ -36,7 +42,7 @@ class PALChain(Chain):
     python_locals: Optional[Dict[str, Any]] = None
     output_key: str = "result"  #: :meta private:
     return_intermediate_steps: bool = False
-    code_validations: Optional[Dict[str, Any]] = DEFAULT_CODE_VALIDATIONS
+    code_validations: Dict[str, Any] = DEFAULT_CODE_VALIDATIONS
 
     class Config:
         """Configuration for this pydantic object."""
@@ -95,23 +101,31 @@ class PALChain(Chain):
         return output
 
     @classmethod
-    def validate_code(cls, code, code_validations: Dict[str, Any]):
+    def validate_code(cls, code: str, code_validations: Dict[str, Any]) -> None:
         try:
             code_tree = ast.parse(code)
         except (SyntaxError, UnicodeDecodeError):
             raise ValueError(f"Generated code is not valid python code: {code}")
         except TypeError:
-            raise ValueError(f"Generated code is expected to be a string, instead found {type(code)}")
+            raise ValueError(
+                f"Generated code is expected to be a string, instead found {type(code)}"
+            )
         except OverflowError:
-            raise ValueError(f"Generated code too long / complex to be parsed by ast: {code}")
+            raise ValueError(
+                f"Generated code too long / complex to be parsed by ast: {code}"
+            )
 
-        solution_expr = code_validations.get('solution_expression')
+        solution_expr = code_validations.get("solution_expression")
         if solution_expr is None:
-            raise ValueError(f"Expected solution_expression to be {type(Dict[str, Any])} instead found None")
-        solution_expr_name = solution_expr.get('name')
+            raise ValueError(
+                f"Expected solution_expression to be {type(Dict[str, Any])} instead found None"
+            )
+        solution_expr_name = solution_expr.get("name")
         if not isinstance(solution_expr_name, str):
-            raise ValueError(f"Expected solution_expression['name'] to be str, instead found {type(solution_expr_name)}")
-        solution_expr_type = solution_expr.get('type')
+            raise ValueError(
+                f"Expected solution_expression['name'] to be str, instead found {type(solution_expr_name)}"
+            )
+        solution_expr_type = solution_expr.get("type")
         found_solution_expr = False
         has_imports = False
         top_level_nodes = list(ast.iter_child_nodes(code_tree))
@@ -122,33 +136,46 @@ class PALChain(Chain):
             # Check assigned nodes (like answer variable)
             if isinstance(node, ast.Assign):
                 for target_node in node.targets:
-                    if isinstance(target_node, solution_expr_type) and target_node.id == solution_expr_name:
+                    if (
+                        isinstance(target_node, solution_expr_type)
+                        and target_node.id == solution_expr_name
+                    ):
                         found_solution_expr = True
             if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom):
                 has_imports = True
 
         if not found_solution_expr:
-            raise ValueError(f"Generated code is missing the solution expression: {solution_expr}")
-        
-        if code_validations.get('allow_imports') is False and has_imports:
+            raise ValueError(
+                f"Generated code is missing the solution expression: {solution_expr}"
+            )
+
+        if code_validations.get("allow_imports") is False and has_imports:
             raise ValueError(f"Generated code has disallowed imports: {code}")
-        
-        if code_validations.get('allow_command_exec') is False:
+
+        if code_validations.get("allow_command_exec") is False:
             for node in ast.walk(code_tree):
-                if isinstance(node, ast.Call) and node.func.id in COMMAND_EXECUTION_FUNCTIONS:
-                    raise ValueError(f"Found illegal command execution function {node.func.id} in code {code}")
+                if (
+                    isinstance(node, ast.Call)
+                    and hasattr(node.func, "id")
+                    and node.func.id in COMMAND_EXECUTION_FUNCTIONS
+                ):
+                    raise ValueError(
+                        f"Found illegal command execution function {node.func.id} in code {code}"
+                    )
 
     @classmethod
     def from_math_prompt(cls, llm: BaseLanguageModel, **kwargs: Any) -> PALChain:
         """Load PAL from math prompt."""
         llm_chain = LLMChain(llm=llm, prompt=MATH_PROMPT)
         code_validations = DEFAULT_CODE_VALIDATIONS
-        code_validations.update({'solution_expression': {'type': ast.FunctionDef, 'name': 'solution'}})
+        code_validations.update(
+            {"solution_expression": {"type": ast.FunctionDef, "name": "solution"}}
+        )
         return cls(
             llm_chain=llm_chain,
             stop="\n\n",
             get_answer_expr="print(solution())",
-            code_validations = code_validations,
+            code_validations=code_validations,
             **kwargs,
         )
 
@@ -159,7 +186,7 @@ class PALChain(Chain):
         """Load PAL from colored object prompt."""
         llm_chain = LLMChain(llm=llm, prompt=COLORED_OBJECT_PROMPT)
         code_validations = DEFAULT_CODE_VALIDATIONS
-        code_validations['solution_expression'] = {'type': ast.Name, 'name': 'answer'}
+        code_validations["solution_expression"] = {"type": ast.Name, "name": "answer"}
         return cls(
             llm_chain=llm_chain,
             stop="\n\n\n",

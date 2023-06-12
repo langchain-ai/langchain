@@ -1,13 +1,12 @@
 """Test LLM PAL functionality."""
-import sys
 import ast
-sys.path.append(r"C:\projects\langchain")
+import sys
 
 import pytest
 
 from langchain.chains.pal.base import PALChain
-from langchain.chains.pal.math_prompt import MATH_PROMPT
 from langchain.chains.pal.colored_object_prompt import COLORED_OBJECT_PROMPT
+from langchain.chains.pal.math_prompt import MATH_PROMPT
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 _MATH_SOLUTION_1 = """
@@ -140,13 +139,30 @@ def solution():
     return random.choice()
 """
 
-_FULL_CODE_VALIDATIONS = {'solution_expression': {'type': ast.FunctionDef, 'name': 'solution'}, 'allow_imports': False, 'allow_command_exec': False}
+_FULL_CODE_VALIDATIONS = {
+    "solution_expression": {"type": ast.FunctionDef, "name": "solution"},
+    "allow_imports": False,
+    "allow_command_exec": False,
+}
 
-_ILLEGAL_COMMAND_EXEC_VALIDATIONS = {'solution_expression': {'type': ast.FunctionDef, 'name': 'solution'}, 'allow_imports': True, 'allow_command_exec': False}
+_ILLEGAL_COMMAND_EXEC_VALIDATIONS = {
+    "solution_expression": {"type": ast.FunctionDef, "name": "solution"},
+    "allow_imports": True,
+    "allow_command_exec": False,
+}
 
-_MINIMAL_VALIDATIONS = {'solution_expression': {'type': ast.FunctionDef, 'name': 'solution'}, 'allow_imports': True, 'allow_command_exec': True}
+_MINIMAL_VALIDATIONS = {
+    "solution_expression": {"type": ast.FunctionDef, "name": "solution"},
+    "allow_imports": True,
+    "allow_command_exec": True,
+}
 
-_NO_IMPORTS_VALIDATIONS = {'solution_expression': {'type': ast.FunctionDef, 'name': 'solution'}, 'allow_imports': False, 'allow_command_exec': True}
+_NO_IMPORTS_VALIDATIONS = {
+    "solution_expression": {"type": ast.FunctionDef, "name": "solution"},
+    "allow_imports": False,
+    "allow_command_exec": True,
+}
+
 
 def test_math_question_1() -> None:
     """Test simple question."""
@@ -158,6 +174,7 @@ def test_math_question_1() -> None:
     output = fake_pal_chain.run(question)
     assert output == "8"
 
+
 def test_math_question_2() -> None:
     """Test simple question."""
     question = "Michael had 58 golf balls. On tuesday, he lost 23 golf balls. On wednesday, he lost 2 more. How many golf balls did he have at the end of wednesday?"
@@ -167,6 +184,7 @@ def test_math_question_2() -> None:
     fake_pal_chain = PALChain.from_math_prompt(fake_llm)
     output = fake_pal_chain.run(question)
     assert output == "33"
+
 
 def test_math_question_infinite_loop() -> None:
     """Test simple question."""
@@ -178,6 +196,7 @@ def test_math_question_infinite_loop() -> None:
     output = fake_pal_chain.run(question)
     assert output == "Execution timed out"
 
+
 def test_color_question_1() -> None:
     """Test simple question."""
     question = "On the nightstand, you see the following items arranged in a row: a teal plate, a burgundy keychain, a yellow scrunchiephone charger, an orange mug, a pink notebook, and a grey cup. How many non-orange items do you see to the left of the teal item?"
@@ -187,6 +206,7 @@ def test_color_question_1() -> None:
     fake_pal_chain = PALChain.from_colored_object_prompt(fake_llm)
     output = fake_pal_chain.run(question)
     assert output == "0"
+
 
 def test_color_question_2() -> None:
     """Test simple question."""
@@ -198,27 +218,33 @@ def test_color_question_2() -> None:
     output = fake_pal_chain.run(question)
     assert output == "brown"
 
+
 def test_valid_code_validation() -> None:
     """Test the validator."""
     PALChain.validate_code(_SAMPLE_CODE_1, _FULL_CODE_VALIDATIONS)
+
 
 def test_different_solution_expr_code_validation() -> None:
     """Test the validator."""
     with pytest.raises(ValueError):
         PALChain.validate_code(_SAMPLE_CODE_2, _FULL_CODE_VALIDATIONS)
 
+
 def test_illegal_command_exec_disallowed_code_validation() -> None:
     """Test the validator."""
     with pytest.raises(ValueError):
         PALChain.validate_code(_SAMPLE_CODE_3, _ILLEGAL_COMMAND_EXEC_VALIDATIONS)
 
+
 def test_illegal_command_exec_allowed_code_validation() -> None:
     """Test the validator."""
     PALChain.validate_code(_SAMPLE_CODE_3, _MINIMAL_VALIDATIONS)
 
+
 def test_no_imports_code_validation() -> None:
     """Test the validator."""
     PALChain.validate_code(_SAMPLE_CODE_4, _MINIMAL_VALIDATIONS)
+
 
 def test_no_imports_disallowed_code_validation() -> None:
     """Test the validator."""
