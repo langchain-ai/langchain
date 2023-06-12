@@ -282,3 +282,36 @@ class AwaDB(VectorStore):
         )
         awadb_client.add_texts(texts=texts, metadatas=metadatas)
         return awadb_client
+
+    @classmethod
+    def from_documents(
+        cls: Type[AwaDB],
+        documents: List[Document],
+        embedding: Optional[Embeddings] = None,
+        table_name: str = _DEFAULT_TABLE_NAME,
+        logging_and_data_dir: Optional[str] = None,
+        client: Optional[awadb.Client] = None,
+        **kwargs: Any,
+    ) -> AwaDB:
+        """Create an AwaDB vectorstore from a list of documents.
+
+        If a logging_and_data_dir specified, the table will be persisted there.
+
+        Args:
+            documents (List[Document]): List of documents to add to the vectorstore.
+            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
+            table_name (str): Name of the collection to create.
+            logging_and_data_dir (Optional[str]): Directory to persist the table.
+        Returns:
+            AwaDB: AwaDB vectorstore.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return cls.from_texts(
+            texts=texts,
+            embedding=embedding,
+            metadatas=metadatas,
+            table_name=table_name,
+            logging_and_data_dir=logging_and_data_dir,
+            client=client,
+        )
