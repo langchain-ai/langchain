@@ -67,7 +67,7 @@ def validate_sql(sql_cmd: str, dialect: str, sql_validation: SQLValidation) -> N
     if sql_validation.allow_non_select_statements is False:
         statements = get_json_segment(parse_result, "statement")
         for statement in statements:
-            if list(statement.keys())[0] != "select_statement":
+            if hasattr(statement, "keys") and list(statement.keys())[0] != "select_statement":
                 raise ValueError(
                     f"Found disallowed non select statement `{statement}` in SQL query `{sql_cmd}`"
                 )
@@ -75,6 +75,8 @@ def validate_sql(sql_cmd: str, dialect: str, sql_validation: SQLValidation) -> N
     if sql_validation.allow_select_all_statements is False:
         select_statements = get_json_segment(parse_result, "select_statement")
         for select_statement in select_statements:
+            if not isinstance(select_statement, dict):
+                continue
             wildcard_expressions = get_json_segment(
                 select_statement, "wildcard_expression"
             )

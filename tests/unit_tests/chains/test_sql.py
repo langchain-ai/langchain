@@ -12,6 +12,7 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 _SQLITE_IN_MEMORY_DB_URI = "sqlite://"
 
+
 # Arrange
 @pytest.fixture
 def in_memory_db() -> SQLDatabase:
@@ -76,6 +77,7 @@ def in_memory_db() -> SQLDatabase:
 
     return database
 
+
 @pytest.mark.requires("sqlfluff")
 def test_simple_question(in_memory_db: SQLDatabase) -> None:
     question = "What is the price of an iphone?"
@@ -89,6 +91,7 @@ def test_simple_question(in_memory_db: SQLDatabase) -> None:
     output = fake_llm_db_chain.run(question)
     assert output == "999.99"
 
+
 @pytest.mark.requires("sqlfluff")
 def test_malformed_sql_query() -> None:
     with pytest.raises(ValueError):
@@ -97,6 +100,7 @@ def test_malformed_sql_query() -> None:
             "sqlite",
             SQLValidation(),
         )
+
 
 @pytest.mark.requires("sqlfluff")
 def test_invalid_sql_dialect() -> None:
@@ -114,6 +118,7 @@ def test_invalid_sql_dialect() -> None:
             "xxxxxxxxxxxxxx",
             SQLValidation(allow_unsupported_dialect=False),
         )
+
 
 @pytest.mark.requires("sqlfluff")
 def test_non_select_sql_query() -> None:
@@ -134,6 +139,7 @@ def test_non_select_sql_query() -> None:
             SQLValidation(allow_non_select_statements=False),
         )
 
+
 @pytest.mark.requires("sqlfluff")
 def test_select_all_sql_query() -> None:
     validate_sql(
@@ -148,9 +154,10 @@ def test_select_all_sql_query() -> None:
             SQLValidation(allow_select_all_statements=False),
         )
 
+
 @pytest.mark.requires("sqlfluff")
 @pytest.mark.filterwarnings("ignore::UserWarning")
-def test_parsing_all_supported_dialects():
+def test_parsing_all_supported_dialects() -> None:
     sql_statements = [
         "SELECT * FROM users;",
         "SELECT user_id, user_name FROM users;",
