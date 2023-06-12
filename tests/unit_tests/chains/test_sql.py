@@ -6,35 +6,13 @@ import pytest
 from langchain import SQLDatabase
 from langchain.chains.sql_database.base import (
     SQLDatabaseChain,
-    SQLDatabaseSequentialChain,
     SQLValidation,
     validate_sql,
 )
 from langchain.chains.sql_database.prompt import SQL_PROMPTS, SQLITE_PROMPT
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
-_SQLITE_IN_MEMORY_DB_NAME = ":memory:"
 _SQLITE_IN_MEMORY_DB_URI = "sqlite://"
-
-_SAMPLE_CODE = """
-Unrelated text
-```bash
-echo hello
-```
-Unrelated text
-"""
-
-
-_SAMPLE_CODE_2_LINES = """
-Unrelated text
-```bash
-echo hello
-
-echo world
-```
-Unrelated text
-"""
-
 
 # Arrange
 @pytest.fixture
