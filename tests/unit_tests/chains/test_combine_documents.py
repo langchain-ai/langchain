@@ -148,7 +148,7 @@ def test_format_doc_missing_metadata() -> None:
 
 
 @pytest.fixture
-def fake_llm():
+def fake_llm() -> FakeLLM:
     return FakeLLM(
         queries={
             0: "first",
@@ -160,7 +160,7 @@ def fake_llm():
     )
 
 
-def test_single_llm_call_on_one_document(fake_llm: FakeLLM):
+def test_single_llm_call_on_one_document(fake_llm: FakeLLM) -> None:
     chain = load_summarize_chain(
         llm=fake_llm,
         chain_type="map_reduce",
@@ -175,7 +175,7 @@ def test_single_llm_call_on_one_document(fake_llm: FakeLLM):
 
 
 @pytest.mark.asyncio
-async def test_single_llm_acall_on_one_document(fake_llm: FakeLLM):
+async def test_single_llm_acall_on_one_document(fake_llm: FakeLLM) -> None:
     chain = load_summarize_chain(
         llm=fake_llm,
         chain_type="map_reduce",
