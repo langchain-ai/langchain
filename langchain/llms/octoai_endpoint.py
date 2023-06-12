@@ -21,14 +21,20 @@ class OctoAIEndpoint(LLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms import OctoAIEndpoint
-            endpoint_url = (
-                "https://endpoint_name-account_id.octoai.cloud"
+            from langchain.llms.octoai_endpoint  import OctoAIEndpoint
+            OctoAIEndpoint(
+                octoai_api_token="octoai-api-key",                
+                endpoint_url="https://mpt-7b-demo-kk0powt97tmb.octoai.cloud/generate",
+                model_kwargs={
+                    "max_new_tokens": 200,
+                    "temperature": 0.75,
+                    "top_p": 0.95,
+                    "repetition_penalty": 1,
+                    "seed": None,
+                    "stop": [],
+                },
             )
-            endpoint = OctoAIEndpoint(
-                endpoint_url=endpoint_url,
-                octoai_api_token="octoai-api-key"
-            )
+            
     """
 
     endpoint_url: Optional[str] = None
@@ -45,7 +51,7 @@ class OctoAIEndpoint(LLM):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         octoai_api_token = get_from_dict_or_env(
@@ -90,26 +96,23 @@ class OctoAIEndpoint(LLM):
         """
         _model_kwargs = self.model_kwargs or {}
 
-        # payload json
+        # Prepare the payload JSON
         parameter_payload = {"inputs": prompt, "parameters": _model_kwargs}
 
-        # HTTP headers for authorization
-        headers = {
-            "Authorization": f"Bearer {self.octoai_api_token}",
-            "Content-Type": "application/json",
-        }
-
-        # send request using octaoai sdk
         try:
+            # Initialize the OctoAI client            
             octoai_client = client.Client(token=self.octoai_api_token)
+            
+            # Send the request using the OctoAI client            
             resp_json = octoai_client.infer(self.endpoint_url, parameter_payload)
             text = resp_json["generated_text"]
 
         except Exception as e:
-            raise ValueError(f"Error raised by inference endpoint: {e}") from e
+            # Handle any errors raised by the inference endpoint        
+            raise ValueError(f"Error raised by the inference endpoint: {e}") from e
 
         if stop is not None:
-            # stop tokens when making calls to octoai.
+            # Apply stop tokens when making calls to OctoAI
             text = enforce_stop_tokens(text, stop)
 
         return text
