@@ -15,7 +15,6 @@ from langchain.chains.combine_documents.map_reduce import (
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.summarize import load_summarize_chain
 from langchain.docstore.document import Document
-
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
