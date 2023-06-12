@@ -37,7 +37,7 @@ class BaseChatMemory(BaseMemory, ABC):
                 else:
                     output_key = list(outputs.keys())[0]
                 warnings.warn(
-                   f"Extract the text from the nested output with key `{output_key}`"
+                    f"Extract the text from the nested output with key `{output_key}`"
                 )
         else:
             output_key = self.output_key
