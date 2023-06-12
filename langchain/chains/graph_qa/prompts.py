@@ -109,3 +109,35 @@ Helpful Answer:"""
 CYPHER_QA_PROMPT = PromptTemplate(
     input_variables=["context", "question"], template=CYPHER_QA_TEMPLATE
 )
+
+SPARQL_GENERATION_TEMPLATE = """Task: Generate a SPARQL statement for querying a graph database.
+Instructions:
+Use only the node types and properties provided in the schema.
+Do not use any node types and properties that are not explicitly provided.
+Include all necessary prefixes.
+Schema:
+{schema}
+Note: Be as concise as possible.
+Do not include any explanations or apologies in your responses.
+Do not respond to any questions that ask for anything else than for you to construct a SPARQL query.
+Do not include any text except the SPARQL query generated.
+
+The question is:
+{question}"""
+SPARQL_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "question"], template=SPARQL_GENERATION_TEMPLATE
+)
+
+SPARQL_QA_TEMPLATE = """Task: Generate a natural language response from the results of a SPARQL query.
+You are an assistant that creates well-written and human understandable answers.
+The information part contains the information provided, which you can use to construct an answer.
+The information provided is authoritative, you must never doubt it or try to use your internal knowledge to correct it.
+Make your response sound like the information is coming from an AI assistant, but don't add any information.
+Information:
+{context}
+
+Question: {question}
+Helpful Answer:"""
+SPARQL_QA_PROMPT = PromptTemplate(
+    input_variables=["context", "question"], template=SPARQL_QA_TEMPLATE
+)
