@@ -1,7 +1,6 @@
 """A Tracer implementation that records to LangChain endpoint."""
 from __future__ import annotations
 
-import functools
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
@@ -17,12 +16,16 @@ from langchain.env import get_runtime_environment
 from langchain.schema import BaseMessage, messages_to_dict
 
 logger = logging.getLogger(__name__)
+_LOGGED = set()
 
 
-@functools.lru_cache(None)
-def log_error_once(message: str) -> None:
+def log_error_once(method: str, exception: Exception) -> None:
     """Log an error once."""
-    logger.error(message)
+    global _LOGGED
+    if (method, type(exception)) in _LOGGED:
+        return
+    _LOGGED.add((method, type(exception)))
+    logger.error(exception)
 
 
 class LangChainTracer(BaseTracer):
@@ -87,7 +90,7 @@ class LangChainTracer(BaseTracer):
             run = self.client.create_run(**run_dict, session_name=self.session_name)
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
-            log_error_once(str(e))
+            log_error_once("post", e)
             raise
 
     def _update_run_single(self, run: Run) -> None:
@@ -96,7 +99,7 @@ class LangChainTracer(BaseTracer):
             self.client.update_run(run.id, **run.dict())
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
-            log_error_once(str(e))
+            log_error_once("patch", e)
             raise
 
     def _on_llm_start(self, run: Run) -> None:
