@@ -500,7 +500,8 @@ class BaseOpenAI(BaseLLM):
             disallowed_special=self.disallowed_special,
         )
 
-    def modelname_to_contextsize(self, modelname: str) -> int:
+    @staticmethod
+    def modelname_to_contextsize(modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
 
         Args:
