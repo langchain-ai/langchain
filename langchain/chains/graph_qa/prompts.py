@@ -85,3 +85,39 @@ Helpful Answer:"""
 CYPHER_QA_PROMPT = PromptTemplate(
     input_variables=["context", "question"], template=CYPHER_QA_TEMPLATE
 )
+
+RDF_QA_TEMPLATE = """You are an assistant that helps to form nice and human understandable answers.
+The information part contains the provided information that you must use to construct an answer.
+The provided information is authorative, you must never doubt it or try to use your internal knowledge to correct it.
+Make the answer sound as a response to the question. Do not mention that you based the result on the given information.
+If the provided information is empty, say that you don't know the answer.
+Information:
+{context}
+
+Question: {question}
+Helpful Answer:"""
+
+RDF_QA_PROMPT = PromptTemplate(
+    input_variables=["context", "question"], template=RDF_QA_TEMPLATE
+)
+
+RDF_SPARQL_GENERATION_TEMPLATE = """Task:Generate SPARQL query to query an RDF graph database.
+Instructions:
+Use only the provided classes, properties and relations in the schema. Explanation:
+- An object is a class if there is a statement "<object> a rdfs:Class".
+- A property is an rdf:property whose range is a literal.
+- A relation is an rdf:property whose range is a class.
+
+Do not use any other classes, properties or relations that are not provided.
+If the URI of an entity is not provided, you should locate the entity by its schema:name property in your SPARQL query.
+Schema:
+{schema}
+Note: Do not include any explanations or apologies in your responses.
+Do not respond to any questions that might ask anything else than for you to construct a SPARQL query.
+Do not include any text except the generated SPARQL statement.
+
+The question is:
+{question}"""
+RDF_SPARQL_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "question"], template=RDF_SPARQL_GENERATION_TEMPLATE
+)
