@@ -31,6 +31,7 @@ from langchain.document_loaders.email import (
     OutlookMessageLoader,
     UnstructuredEmailLoader,
 )
+from langchain.document_loaders.embaas import EmbaasBlobLoader, EmbaasLoader
 from langchain.document_loaders.epub import UnstructuredEPubLoader
 from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.excel import UnstructuredExcelLoader
@@ -127,7 +128,6 @@ from langchain.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
-from langchain.document_loaders.embaas import EmbaasLoader, EmbaasBlobLoader
 
 # Legacy: only for backwards compat. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
@@ -252,5 +252,5 @@ __all__ = [
     "YoutubeLoader",
     "SnowflakeLoader",
     "EmbaasLoader",
-    "EmabasBlobLoader",
+    "EmbaasBlobLoader",
 ]
