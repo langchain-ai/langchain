@@ -8,7 +8,7 @@ Databricks embraces the LangChain ecosystem in various ways:
 1. Databricks connector for the SQLDatabase Chain: SQLDatabase.from_databricks() provides an easy way to query your data on Databricks through LangChain
 2. Databricks-managed MLflow integrates with LangChain: Tracking and serving LangChain applications with fewer steps
 3. Databricks as an LLM provider: Deploy your fine-tuned LLMs on Databricks via serving endpoints or cluster driver proxy apps, and query it as langchain.llms.Databricks
-4. Databricks Dolly: Databricks open-sourced Dolly which allows for commercial use, and can be accessed through the HuggingFace Hub
+4. Databricks Dolly: Databricks open-sourced Dolly which allows for commercial use, and can be accessed through the Hugging Face Hub
 
 Databricks connector for the SQLDatabase Chain
 ----------------------------------------------
@@ -28,9 +28,9 @@ Databricks as an LLM provider
 
 The notebook [Wrap Databricks endpoints as LLMs](../modules/models/llms/integrations/databricks.html) illustrates the method to wrap Databricks endpoints as LLMs in LangChain. It supports two types of endpoints: the serving endpoint, which is recommended for both production and development, and the cluster driver proxy app, which is recommended for interactive development. 
 
-Databricks endpoints support Dolly, but are also great for hosting models like MPT-7B or any other models from the HuggingFace ecosystem. Databricks endpoints can also be used with proprietary models like OpenAI to provide a governance layer for enterprises.
+Databricks endpoints support Dolly, but are also great for hosting models like MPT-7B or any other models from the Hugging Face ecosystem. Databricks endpoints can also be used with proprietary models like OpenAI to provide a governance layer for enterprises.
 
 Databricks Dolly
 ----------------
 
-Databricks’ Dolly is an instruction-following large language model trained on the Databricks machine learning platform that is licensed for commercial use. The model is available on Hugging Face Hub as databricks/dolly-v2-12b. See the notebook [HuggingFace Hub](../modules/models/llms/integrations/huggingface_hub.html) for instructions to access it through the HuggingFace Hub integration with LangChain. 
+Databricks’ Dolly is an instruction-following large language model trained on the Databricks machine learning platform that is licensed for commercial use. The model is available on Hugging Face Hub as databricks/dolly-v2-12b. See the notebook [Hugging Face Hub](../modules/models/llms/integrations/huggingface_hub.html) for instructions to access it through the Hugging Face Hub integration with LangChain. 

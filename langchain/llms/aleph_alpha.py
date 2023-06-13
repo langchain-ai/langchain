@@ -206,6 +206,7 @@ class AlephAlpha(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Aleph Alpha's completion endpoint.
 
@@ -232,6 +233,7 @@ class AlephAlpha(LLM):
             params["stop_sequences"] = self.stop_sequences
         else:
             params["stop_sequences"] = stop
+        params = {**params, **kwargs}
         request = CompletionRequest(prompt=Prompt.from_text(prompt), **params)
         response = self.client.complete(model=self.model, request=request)
         text = response.completions[0].completion
