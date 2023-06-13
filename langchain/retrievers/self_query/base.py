@@ -62,6 +62,8 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
     structured_query_translator: Visitor
     """Translator for turning internal query language into vectorstore search params."""
     verbose: bool = False
+    """Use original query instead of the revised new query from LLM"""
+    use_original_query: bool = False
 
     class Config:
         """Configuration for this pydantic object."""
@@ -100,6 +102,9 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         )
         if structured_query.limit is not None:
             new_kwargs["k"] = structured_query.limit
+                        
+        if self.use_original_query:
+            new_query = query
 
         search_kwargs = {**self.search_kwargs, **new_kwargs}
         docs = self.vectorstore.search(new_query, self.search_type, **search_kwargs)
@@ -118,6 +123,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         structured_query_translator: Optional[Visitor] = None,
         chain_kwargs: Optional[Dict] = None,
         enable_limit: bool = False,
+        use_original_query: bool = False,
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
         if structured_query_translator is None:
@@ -142,6 +148,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         return cls(
             llm_chain=llm_chain,
             vectorstore=vectorstore,
+            use_original_query=use_original_query,
             structured_query_translator=structured_query_translator,
             **kwargs,
         )
