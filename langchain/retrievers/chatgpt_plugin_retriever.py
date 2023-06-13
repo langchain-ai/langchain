@@ -29,7 +29,7 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
         for d in results:
             content = d.pop("text")
             metadata = d.pop("metadata", d)
-            if(metadata.get("source_id")):
+            if metadata.get("source_id"):
                 metadata["source"] = metadata.pop("source_id")
             docs.append(Document(page_content=content, metadata=metadata))
         return docs
@@ -52,7 +52,7 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
         for d in results:
             content = d.pop("text")
             metadata = d.pop("metadata", d)
-            if(metadata.get("source_id")):
+            if metadata.get("source_id"):
                 metadata["source"] = metadata.pop("source_id")
             docs.append(Document(page_content=content, metadata=metadata))
         return docs
