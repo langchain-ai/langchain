@@ -10,7 +10,6 @@ def test_public_api() -> None:
         "LLMRun",
         "Run",
         "RunTypeEnum",
-        "RunUpdate",
         "ToolRun",
         "TracerSession",
         "TracerSessionBase",

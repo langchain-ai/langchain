@@ -5,7 +5,8 @@ import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from langchainplus_sdk.schemas import Run, RunTypeEnum, RunUpdate
+from langchainplus_sdk.schemas import RunBase as BaseRunV2
+from langchainplus_sdk.schemas import RunTypeEnum
 from pydantic import BaseModel, Field
 
 from langchain.schema import LLMResult
@@ -87,6 +88,14 @@ class ToolRun(BaseRun):
 # Begin V2 API Schemas
 
 
+class Run(BaseRunV2):
+    """Run schema for the V2 API in the Tracer."""
+
+    execution_order: int
+    child_execution_order: int
+    child_runs: List[Run] = Field(default_factory=list)
+
+
 def get_run_name(serialized: dict) -> str:
     if "name" in serialized:
         return serialized["name"]
@@ -104,7 +113,6 @@ __all__ = [
     "LLMRun",
     "Run",
     "RunTypeEnum",
-    "RunUpdate",
     "ToolRun",
     "TracerSession",
     "TracerSessionBase",
