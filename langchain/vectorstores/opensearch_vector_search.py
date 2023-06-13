@@ -527,12 +527,12 @@ class OpenSearchVectorSearch(VectorStore):
         return [hit for hit in response["hits"]["hits"][:k]]
 
     def max_marginal_relevance_search(
-            self,
-            query: str,
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -562,7 +562,7 @@ class OpenSearchVectorSearch(VectorStore):
         # Do ANN/KNN search to get top fetch_k results where fetch_k >= k
         results = self._raw_similarity_search_with_score(query, fetch_k, **kwargs)
 
-        embeddings = [result['_source'][vector_field] for result in results]
+        embeddings = [result["_source"][vector_field] for result in results]
 
         # Rerank top k results using MMR, (mmr_selected is a list of indices)
         mmr_selected = maximal_marginal_relevance(
@@ -572,7 +572,7 @@ class OpenSearchVectorSearch(VectorStore):
         return [
             Document(
                 page_content=results[i]["_source"][text_field],
-                metadata=results[i]["_source"][metadata_field]
+                metadata=results[i]["_source"][metadata_field],
             )
             for i in mmr_selected
         ]
