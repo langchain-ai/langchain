@@ -2,19 +2,23 @@
 from langchain import PromptTemplate
 
 
-template = """
-I want you to act as a naming consultant for new companies.
+template = """/
+You are a naming consultant for new companies.
 What is a good name for a company that makes {product}?
 """
 
-prompt = PromptTemplate(
-    input_variables=["product"],
-    template=template,
-)
+prompt = PromptTemplate.from_template(template)
 prompt.format(product="colorful socks")
-# -> I want you to act as a naming consultant for new companies.
-# -> What is a good name for a company that makes colorful socks?
 ```
+
+<CodeOutputBlock lang="python">
+
+```
+    I want you to act as a naming consultant for new companies.
+    What is a good name for a company that makes colorful socks?
+```
+
+</CodeOutputBlock>
 
 
 ## Create a prompt template
@@ -60,36 +64,6 @@ You can create custom prompt templates that format the prompt in any way you wan
 
 
 <!-- TODO(shreya): Add link to Jinja -->
-
-## Template formats
-
-By default, `PromptTemplate` will treat the provided template as a Python f-string. You can specify other template format through `template_format` argument:
-
-```python
-# Make sure jinja2 is installed before running this
-
-jinja2_template = "Tell me a {{ adjective }} joke about {{ content }}"
-prompt_template = PromptTemplate.from_template(template=jinja2_template, template_format="jinja2")
-
-prompt_template.format(adjective="funny", content="chickens")
-# -> Tell me a funny joke about chickens.
-```
-
-Currently, `PromptTemplate` only supports `jinja2` and `f-string` templating format. If there is any other templating format that you would like to use, feel free to open an issue in the [Github](https://github.com/hwchase17/langchain/issues) page.
-
-## Validate template
-
-By default, `PromptTemplate` will validate the `template` string by checking whether the `input_variables` match the variables defined in `template`. You can disable this behavior by setting `validate_template` to `False`
-
-```python
-template = "I am learning langchain because {reason}."
-
-prompt_template = PromptTemplate(template=template, 
-                                 input_variables=["reason", "foo"]) # ValueError due to extra variables
-prompt_template = PromptTemplate(template=template, 
-                                 input_variables=["reason", "foo"], 
-                                 validate_template=False) # No error
-```
 
 ## Chat prompt template
 
@@ -159,125 +133,6 @@ chat_prompt.format_prompt(input_language="English", output_language="French", te
 ```
     [SystemMessage(content='You are a helpful assistant that translates English to French.', additional_kwargs={}),
      HumanMessage(content='I love programming.', additional_kwargs={})]
-```
-
-</CodeOutputBlock>
-
-## Format output
-
-The output of the format method is available as string, list of messages and `ChatPromptValue`
-
-As string:
-
-
-```python
-output = chat_prompt.format(input_language="English", output_language="French", text="I love programming.")
-output
-```
-
-<CodeOutputBlock lang="python">
-
-```
-    'System: You are a helpful assistant that translates English to French.\nHuman: I love programming.'
-```
-
-</CodeOutputBlock>
-
-
-```python
-# or alternatively 
-output_2 = chat_prompt.format_prompt(input_language="English", output_language="French", text="I love programming.").to_string()
-
-assert output == output_2
-```
-
-As `ChatPromptValue`
-
-
-```python
-chat_prompt.format_prompt(input_language="English", output_language="French", text="I love programming.")
-```
-
-<CodeOutputBlock lang="python">
-
-```
-    ChatPromptValue(messages=[SystemMessage(content='You are a helpful assistant that translates English to French.', additional_kwargs={}), HumanMessage(content='I love programming.', additional_kwargs={})])
-```
-
-</CodeOutputBlock>
-
-As list of Message objects
-
-
-```python
-chat_prompt.format_prompt(input_language="English", output_language="French", text="I love programming.").to_messages()
-```
-
-<CodeOutputBlock lang="python">
-
-```
-    [SystemMessage(content='You are a helpful assistant that translates English to French.', additional_kwargs={}),
-     HumanMessage(content='I love programming.', additional_kwargs={})]
-```
-
-</CodeOutputBlock>
-
-## Different types of `MessagePromptTemplate`
-
-LangChain provides different types of `MessagePromptTemplate`. The most commonly used are `AIMessagePromptTemplate`, `SystemMessagePromptTemplate` and `HumanMessagePromptTemplate`, which create an AI message, system message and human message respectively.
-
-However, in cases where the chat model supports taking chat message with arbitrary role, you can use `ChatMessagePromptTemplate`, which allows user to specify the role name.
-
-
-```python
-from langchain.prompts import ChatMessagePromptTemplate
-
-prompt = "May the {subject} be with you"
-
-chat_message_prompt = ChatMessagePromptTemplate.from_template(role="Jedi", template=prompt)
-chat_message_prompt.format(subject="force")
-```
-
-<CodeOutputBlock lang="python">
-
-```
-    ChatMessage(content='May the force be with you', additional_kwargs={}, role='Jedi')
-```
-
-</CodeOutputBlock>
-
-LangChain also provides `MessagesPlaceholder`, which gives you full control of what messages to be rendered during formatting. This can be useful when you are uncertain of what role you should be using for your message prompt templates or when you wish to insert a list of messages during formatting.
-
-
-```python
-from langchain.prompts import MessagesPlaceholder
-
-human_prompt = "Summarize our conversation so far in {word_count} words."
-human_message_template = HumanMessagePromptTemplate.from_template(human_prompt)
-
-chat_prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder(variable_name="conversation"), human_message_template])
-```
-
-
-```python
-human_message = HumanMessage(content="What is the best way to learn programming?")
-ai_message = AIMessage(content="""\
-1. Choose a programming language: Decide on a programming language that you want to learn. 
-
-2. Start with the basics: Familiarize yourself with the basic programming concepts such as variables, data types and control structures.
-
-3. Practice, practice, practice: The best way to learn programming is through hands-on experience\
-""")
-
-chat_prompt.format_prompt(conversation=[human_message, ai_message], word_count="10").to_messages()
-```
-
-<CodeOutputBlock lang="python">
-
-```
-    [HumanMessage(content='What is the best way to learn programming?', additional_kwargs={}),
-     AIMessage(content='1. Choose a programming language: Decide on a programming language that you want to learn. \n\n2. Start with the basics: Familiarize yourself with the basic programming concepts such as variables, data types and control structures.\n\n3. Practice, practice, practice: The best way to learn programming is through hands-on experience', additional_kwargs={}),
-     HumanMessage(content='Summarize our conversation so far in 10 words.', additional_kwargs={})]
 ```
 
 </CodeOutputBlock>
