@@ -1,6 +1,7 @@
-import re
 import datetime
-from typing import Dict, Tuple, Union
+import re
+from typing import Dict, Tuple, Union, Callable, Any
+
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
@@ -10,17 +11,19 @@ from langchain.chains.query_constructor.ir import (
     Visitor,
 )
 
-def DEFAULT_COMPOSER(op):
-    def f(*args):
+
+def DEFAULT_COMPOSER(op: Union[Comparator, Operator]) -> Callable:
+    def f(*args: Any) -> str:
         args = map(str, args)
-        return f' {op} '.join(args)
+        return f" {op} ".join(args)
     return f
 
 
-def FUNCTION_COMPOSER(op):
-    def f(*args):
+def FUNCTION_COMPOSER(op: Union[Comparator, Operator]) -> Callable:
+    def f(*args: Any) -> str:
         args = map(str, args)
         return f"{op}({','.join(args)})"
+
     return f
 
 
@@ -30,27 +33,30 @@ class MyScaleTranslator(Visitor):
     allowed_operators = [Operator.AND, Operator.OR, Operator.NOT]
     """Subset of allowed logical operators."""
 
-    allowed_comparators = [Comparator.EQ,
-                           Comparator.GT,
-                           Comparator.GTE,
-                           Comparator.LT,
-                           Comparator.LTE,
-                           Comparator.CONTAIN,
-                           Comparator.LIKE]
+    allowed_comparators = [
+        Comparator.EQ,
+        Comparator.GT,
+        Comparator.GTE,
+        Comparator.LT,
+        Comparator.LTE,
+        Comparator.CONTAIN,
+        Comparator.LIKE,
+    ]
 
-    map_dict = {Operator.AND: DEFAULT_COMPOSER("AND"),
-                Operator.OR: DEFAULT_COMPOSER("OR"),
-                Operator.NOT: DEFAULT_COMPOSER("NOT"),
-                Comparator.EQ: DEFAULT_COMPOSER('='),
-                Comparator.GT: DEFAULT_COMPOSER('>'),
-                Comparator.GTE: DEFAULT_COMPOSER('>='),
-                Comparator.LT: DEFAULT_COMPOSER('<='),
-                Comparator.LTE: DEFAULT_COMPOSER('<'),
-                Comparator.CONTAIN: FUNCTION_COMPOSER('has'),
-                Comparator.LIKE: DEFAULT_COMPOSER("ILIKE"),
-                }
+    map_dict = {
+        Operator.AND: DEFAULT_COMPOSER("AND"),
+        Operator.OR: DEFAULT_COMPOSER("OR"),
+        Operator.NOT: DEFAULT_COMPOSER("NOT"),
+        Comparator.EQ: DEFAULT_COMPOSER("="),
+        Comparator.GT: DEFAULT_COMPOSER(">"),
+        Comparator.GTE: DEFAULT_COMPOSER(">="),
+        Comparator.LT: DEFAULT_COMPOSER("<="),
+        Comparator.LTE: DEFAULT_COMPOSER("<"),
+        Comparator.CONTAIN: FUNCTION_COMPOSER("has"),
+        Comparator.LIKE: DEFAULT_COMPOSER("ILIKE"),
+    }
 
-    def __init__(self, metadata_key: str = 'metadata') -> None:
+    def __init__(self, metadata_key: str = "metadata") -> None:
         super().__init__()
         self.metadata_key = metadata_key
 
@@ -61,14 +67,18 @@ class MyScaleTranslator(Visitor):
         return self.map_dict[func](*args)
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
-        regex = '\((.*?)\)'
-        matched = re.search('\(\w+\)', comparison.attribute)
-        
+        regex = "\((.*?)\)"
+        matched = re.search("\(\w+\)", comparison.attribute)
+
         # If arbitrary function is applied to an attribute
         if matched:
-            attr = re.sub(regex, f'({self.metadata_key}.{matched.group(0)[1:-1]})', comparison.attribute)
+            attr = re.sub(
+                regex,
+                f"({self.metadata_key}.{matched.group(0)[1:-1]})",
+                comparison.attribute,
+            )
         else:
-            attr = f'{self.metadata_key}.{comparison.attribute}'
+            attr = f"{self.metadata_key}.{comparison.attribute}"
         value = comparison.value
         comp = comparison.comparator
 

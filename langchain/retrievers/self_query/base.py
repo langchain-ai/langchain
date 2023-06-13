@@ -5,16 +5,24 @@ from pydantic import BaseModel, Field, root_validator
 
 from langchain import LLMChain
 from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.query_constructor.base import load_query_constructor_chain
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers.self_query.chroma import ChromaTranslator
+from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
-from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.schema import BaseRetriever, Document
-from langchain.vectorstores import Chroma, Pinecone, Qdrant, VectorStore, Weaviate, MyScale
+from langchain.vectorstores import (
+    Chroma,
+    MyScale,
+    Pinecone,
+    Qdrant,
+    VectorStore,
+    Weaviate,
+)
 
 
 def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
@@ -69,7 +77,9 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
             )
         return values
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def get_relevant_documents(
+        self, query: str, callbacks: Callbacks = None
+    ) -> List[Document]:
         """Get documents relevant for a query.
 
         Args:
@@ -80,7 +90,8 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         """
         inputs = self.llm_chain.prep_inputs({"query": query})
         structured_query = cast(
-            StructuredQuery, self.llm_chain.predict_and_parse(callbacks=None, **inputs)
+            StructuredQuery,
+            self.llm_chain.predict_and_parse(callbacks=callbacks, **inputs),
         )
         if self.verbose:
             print(structured_query)

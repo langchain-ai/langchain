@@ -1,5 +1,5 @@
-from typing import Any, Optional, Sequence, Union
 import datetime
+from typing import Any, Optional, Sequence, Union
 
 try:
     import lark
@@ -122,8 +122,8 @@ class QueryTransformer(Transformer):
 
     def float(self, item: Any) -> float:
         return float(item)
-    
-    def timestamp(self, item: Any):
+
+    def timestamp(self, item: Any) -> datetime.date:
         item = item.replace("'", '"')
         return datetime.datetime.strptime(item, '"%Y-%m-%d"').date()
 

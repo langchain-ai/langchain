@@ -71,7 +71,7 @@ class Comparator(str, Enum):
     GTE = "gte"
     LT = "lt"
     LTE = "lte"
-    CONTAIN = 'contain'
+    CONTAIN = "contain"
     LIKE = "like"
 
 
