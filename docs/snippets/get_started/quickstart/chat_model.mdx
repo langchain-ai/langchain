@@ -7,42 +7,15 @@ from langchain.schema import (
 )
 
 chat = ChatOpenAI(temperature=0)
-chat([HumanMessage(content="Translate this sentence from English to French. I love programming.")])
+chat.predict_messages([HumanMessage(content="Translate this sentence from English to French. I love programming.")])
 # >> AIMessage(content="J'aime programmer.", additional_kwargs={})
 ```
 
-You can also pass in multiple messages for OpenAI's `gpt-3.5-turbo` and `gpt-4` models.
+It is useful to understand how chat models are different from a normal LLM, but it can often be handy to just be able to treat them the same.
+LangChain makes that easy by also exposing an interface through which you can interact with a chat model as you would a normal LLM.
+You can access this through the `predict` interface.
 
 ```python
-messages = [
-    SystemMessage(content="You are a helpful assistant that translates English to French."),
-    HumanMessage(content="I love programming.")
-]
-chat(messages)
-# >> AIMessage(content="J'aime programmer.", additional_kwargs={})
-```
-
-You can go one step further and generate completions for multiple sets of messages using `generate`. This returns an `LLMResult` with an additional `message` parameter:
-
-```python
-batch_messages = [
-    [
-        SystemMessage(content="You are a helpful assistant that translates English to French."),
-        HumanMessage(content="I love programming.")
-    ],
-    [
-        SystemMessage(content="You are a helpful assistant that translates English to French."),
-        HumanMessage(content="I love artificial intelligence.")
-    ],
-]
-result = chat.generate(batch_messages)
-result
-# >> LLMResult(generations=[[ChatGeneration(text="J'aime programmer.", generation_info=None, message=AIMessage(content="J'aime programmer.", additional_kwargs={}))], [ChatGeneration(text="J'aime l'intelligence artificielle.", generation_info=None, message=AIMessage(content="J'aime l'intelligence artificielle.", additional_kwargs={}))]], llm_output={'token_usage': {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}})
-```
-
-You can recover things like token usage from this LLMResult:
-
-```python
-result.llm_output['token_usage']
-# >> {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}
+chat.predict("Translate this sentence from English to French. I love programming.")
+# >> J'aime programmer
 ```
