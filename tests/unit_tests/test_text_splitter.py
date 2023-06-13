@@ -674,9 +674,9 @@ def test_html_code_splitter() -> None:
     ]
 
 
-def test_md_header_text_splitter() -> None:
-    """Test markdown splitter by header."""
-    # Case 1
+def test_md_header_text_splitter_1() -> None:
+    """Test markdown splitter by header: Case 1."""
+
     markdown_document = (
         "# Foo\n\n"
         "    ## Bar\n\n"
@@ -705,7 +705,9 @@ def test_md_header_text_splitter() -> None:
     ]
     assert output == expected_output
 
-    # Case 2
+
+def test_md_header_text_splitter_2() -> None:
+    """Test markdown splitter by header: Case 2."""
     markdown_document = (
         "# Foo\n\n"
         "    ## Bar\n\n"
@@ -742,7 +744,10 @@ def test_md_header_text_splitter() -> None:
     ]
     assert output == expected_output
 
-    # Case 3
+
+def test_md_header_text_splitter_3() -> None:
+    """Test markdown splitter by header: Case 3."""
+
     markdown_document = (
         "# Foo\n\n"
         "    ## Bar\n\n"
