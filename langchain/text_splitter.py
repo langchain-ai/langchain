@@ -597,7 +597,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 break
             if re.search(_s, text):
                 separator = _s
-                new_separators = separators[i + 1:]
+                new_separators = separators[i + 1 :]
                 break
 
         splits = _split_text_with_regex(text, separator, self._keep_separator)

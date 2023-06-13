@@ -673,6 +673,7 @@ def test_html_code_splitter() -> None:
         "<p>Some more text</p>\n            </div>",
     ]
 
+
 def test_md_header_text_splitter_1() -> None:
     """Test markdown splitter by header: Case 1."""
 
@@ -797,6 +798,7 @@ def test_md_header_text_splitter_3() -> None:
     ]
 
     assert output == expected_output
+
 
 def test_solidity_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
