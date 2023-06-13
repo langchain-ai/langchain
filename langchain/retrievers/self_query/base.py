@@ -12,8 +12,9 @@ from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
+from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.schema import BaseRetriever, Document
-from langchain.vectorstores import Chroma, Pinecone, Qdrant, VectorStore, Weaviate
+from langchain.vectorstores import Chroma, Pinecone, Qdrant, VectorStore, Weaviate, MyScale
 
 
 def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
@@ -24,6 +25,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Chroma: ChromaTranslator,
         Weaviate: WeaviateTranslator,
         Qdrant: QdrantTranslator,
+        MyScale: MyScaleTranslator,
     }
     if vectorstore_cls not in BUILTIN_TRANSLATORS:
         raise ValueError(
@@ -32,6 +34,8 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         )
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
+    elif isinstance(vectorstore, MyScale):
+        return MyScaleTranslator(metadata_key=vectorstore.metadata_column)
     return BUILTIN_TRANSLATORS[vectorstore_cls]()
 
 
