@@ -19,7 +19,7 @@ class VectorStoreRetrieverMemory(BaseMemory):
     memory_key: str = "history"  #: :meta private:
     """Key name to locate the memories in the result of load_memory_variables."""
 
-    input_key: Optional[str] = None
+    input_key: str = "input"
     """Key name to index the inputs to load_memory_variables."""
 
     return_docs: bool = False
@@ -54,8 +54,8 @@ class VectorStoreRetrieverMemory(BaseMemory):
         self, inputs: Dict[str, Any], outputs: Dict[str, str]
     ) -> List[Document]:
         """Format context from this conversation to buffer."""
-        # Each document should only include the current turn, not the chat history
-        filtered_inputs = {k: v for k, v in inputs.items() if k != self.memory_key}
+        # Each document should only include the current turn, not the chat history, and not the other memory input
+        filtered_inputs = {k: v for k, v in inputs.items() if k != self.memory_key and k == self.input_key}
         texts = [
             f"{k}: {v}"
             for k, v in list(filtered_inputs.items()) + list(outputs.items())
