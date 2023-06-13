@@ -94,7 +94,7 @@ class Run(BaseRunV2):
     execution_order: int
     child_execution_order: int
     child_runs: List[Run] = Field(default_factory=list)
-    tags: Optional[List[str]]
+    tags: Optional[List[str]] = Field(default_factory=list)
 
     @root_validator(pre=True)
     def assign_name(cls, values: dict) -> dict:
