@@ -92,12 +92,17 @@ async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
     return await _completion_with_retry(**kwargs)
 
 
-def _convert_dict_to_message(_dict: dict) -> BaseMessage:
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict["role"]
     if role == "user":
         return HumanMessage(content=_dict["content"])
     elif role == "assistant":
-        return AIMessage(content=_dict["content"])
+        content = _dict["content"] or ""  # OpenAI returns None for tool invocations
+        if _dict.get("function_call"):
+            additional_kwargs = {"function_call": dict(_dict["function_call"])}
+        else:
+            additional_kwargs = {}
+        return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
     else:
@@ -111,6 +116,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+        if "function_call" in message.additional_kwargs:
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     else:
