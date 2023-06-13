@@ -201,4 +201,4 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             ]
             for uuid_ in uuids
         }
-        assert results == expected
+        assert results["results"] == expected
