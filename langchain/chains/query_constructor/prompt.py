@@ -142,6 +142,7 @@ Make sure that you only use the comparators and logical operators listed above a
 no others.
 Make sure that filters only refer to attributes that exist in the data source.
 Make sure that filters only use the attributed names with its function names if there are functions applied on them.
+Make sure that filters only use format `YYYY-MM-DD` when handling timestamp data typed values.
 Make sure that filters take into account the descriptions of attributes and only make \
 comparisons that are feasible given the type of data being stored.
 Make sure that filters are only used as needed. If there are no filters that should be \
