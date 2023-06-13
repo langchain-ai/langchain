@@ -6,6 +6,7 @@ from langchain.retrievers.contextual_compression import ContextualCompressionRet
 from langchain.retrievers.databerry import DataberryRetriever
 from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
 from langchain.retrievers.knn import KNNRetriever
+from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetriever
 from langchain.retrievers.pupmed import PubMedRetriever
@@ -31,6 +32,7 @@ __all__ = [
     "DataberryRetriever",
     "ElasticSearchBM25Retriever",
     "KNNRetriever",
+    "MergerRetriever",
     "MetalRetriever",
     "PineconeHybridSearchRetriever",
     "RemoteLangChainRetriever",
