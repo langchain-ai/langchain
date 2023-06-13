@@ -59,6 +59,7 @@ class LangChainTracer(BaseTracer):
         messages: List[List[BaseMessage]],
         *,
         run_id: UUID,
+        tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
@@ -75,6 +76,7 @@ class LangChainTracer(BaseTracer):
             execution_order=execution_order,
             child_execution_order=execution_order,
             run_type=RunTypeEnum.llm,
+            tags=tags,
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
