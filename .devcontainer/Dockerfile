@@ -2,7 +2,7 @@
 
 # Use the Python base image
 ARG VARIANT="3.11-bullseye"
-FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT} AS langchain-dev-base
+FROM mcr.microsoft.com/devcontainers/python:0-${VARIANT} AS langchain-dev-base
 
 USER vscode
 
