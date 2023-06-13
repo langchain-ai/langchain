@@ -4,7 +4,6 @@ import asyncio
 import functools
 import logging
 import os
-from re import L
 import warnings
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
@@ -289,7 +288,13 @@ class BaseRunManager(RunManagerMixin):
     @classmethod
     def get_noop_manager(cls: Type[BRM]) -> BRM:
         """Return a manager that doesn't perform any operations."""
-        return cls(run_id=uuid4(), handlers=[], inheritable_handlers=[])
+        return cls(
+            run_id=uuid4(),
+            handlers=[],
+            inheritable_handlers=[],
+            tags=[],
+            inheritable_tags=[],
+        )
 
 
 class RunManager(BaseRunManager):

@@ -371,12 +371,12 @@ class BaseCallbackManager(CallbackManagerMixin):
 
     def __init__(
         self,
-        *,
         handlers: List[BaseCallbackHandler],
         inheritable_handlers: Optional[List[BaseCallbackHandler]] = None,
         parent_run_id: Optional[UUID] = None,
-        tags: List[str] = None,
-        inheritable_tags: List[str] = None,
+        *,
+        tags: Optional[List[str]] = None,
+        inheritable_tags: Optional[List[str]] = None,
     ) -> None:
         """Initialize callback manager."""
         self.handlers: List[BaseCallbackHandler] = handlers
