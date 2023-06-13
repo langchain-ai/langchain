@@ -5744,13 +5744,13 @@ pydantic = ">=1.8.2"
 
 [[package]]
 name = "openllm"
-version = "0.1.1"
+version = "0.1.2"
 description = "OpenLLM: REST/gRPC API server for running any open Large-Language Model - StableLM, Llama, Alpaca, Dolly, Flan-T5, Custom"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "openllm-0.1.1-py3-none-any.whl", hash = "sha256:d8656df56d63941f93600636acccb7d214c6968f8d7ce948ae3ef7d8af31ca83"},
-    {file = "openllm-0.1.1.tar.gz", hash = "sha256:482500a1495c73ddc27bff2ac980babe163e980048031d7f378da2218fc1bf41"},
+    {file = "openllm-0.1.2-py3-none-any.whl", hash = "sha256:7a343b44dc1d6c560b2ed62b65056c0fbd80ce35883f52324971e6b1bf15b1f7"},
+    {file = "openllm-0.1.2.tar.gz", hash = "sha256:26c9d26094faa7c81f94768d4d56083290a34f0ed230e5864f44c9bb483c2593"},
 ]
 
 [package.dependencies]
@@ -11419,4 +11419,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "42e49b8a657465416430d20375a27d08c9909435bbe9857ef28f710792a040cc"
+content-hash = "07e909e6cca212ab391b77be759d5c4ac2ffb5ca0b44f2acb158f47fecab2781"

@@ -114,15 +114,17 @@ class OpenLLM(LLM):
             "server_url": self.server_url,
             "server_type": self.server_type,
         }
+        if self.llm_kwargs is None:
+            self.llm_kwargs = {}
         if self._llm_type == "openllm_client":
-            return res
-        assert self.llm_kwargs is not None
-        try:
-            self.llm_kwargs.update(
-                json.loads(self.llm.identifying_params["configuration"])
-            )
-        except (TypeError, json.JSONDecodeError):
-            pass
+            self.llm_kwargs.update(self.llm.configuration)
+        else:
+            try:
+                self.llm_kwargs.update(
+                    json.loads(self.llm.identifying_params["configuration"])
+                )
+            except (TypeError, json.JSONDecodeError):
+                pass
         res["llm_kwargs"] = self.llm_kwargs
         return res
 

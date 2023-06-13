@@ -24,12 +24,6 @@ It implements a chatbot interface, with a "Bring-Your-Own-Token" approach (nice 
 It also contains instructions for how to deploy this app on the Hugging Face platform.
 This is heavily influenced by James Weaver's [excellent examples](https://huggingface.co/JavaFXpert).
 
-## [OpenLLM](https://github.com/bentoml/OpenLLM)
-
-OpenLLM is an universal platform for operating large language models (LLMs) in production.
-With OpenLLM, you can run inference with any open-source LLM, deploy to the cloud or on-premises, and build powerful AI apps. It supports a wide range of open-source LLMs, offers flexible APIs, and first-class support for LangChain and BentoML.
-See OpenLLM's [integration doc](https://github.com/bentoml/OpenLLM#%EF%B8%8F-integrations) for usage with LangChain.
-
 ## [Chainlit](https://github.com/Chainlit/cookbook)
 
 This repo is a cookbook explaining how to visualize and deploy LangChain agents with Chainlit.
@@ -77,6 +71,12 @@ This repository allows users to serve local chains and agents as RESTful, gRPC, 
 ## [BentoML](https://github.com/ssheng/BentoChain)
 
 This repository provides an example of how to deploy a LangChain application with [BentoML](https://github.com/bentoml/BentoML). BentoML is a framework that enables the containerization of machine learning applications as standard OCI images. BentoML also allows for the automatic generation of OpenAPI and gRPC endpoints. With BentoML, you can integrate models from all popular ML frameworks and deploy them as microservices running on the most optimal hardware and scaling independently.
+
+## [OpenLLM](https://github.com/bentoml/OpenLLM)
+
+OpenLLM is an universal platform for operating large language models (LLMs) in production.
+With OpenLLM, you can run inference with any open-source LLM, deploy to the cloud or on-premises, and build powerful AI apps. It supports a wide range of open-source LLMs, offers flexible APIs, and first-class support for LangChain and BentoML.
+See OpenLLM's [integration doc](https://github.com/bentoml/OpenLLM#%EF%B8%8F-integrations) for usage with LangChain.
 
 ## [Databutton](https://databutton.com/home?new-data-app=true)
 
