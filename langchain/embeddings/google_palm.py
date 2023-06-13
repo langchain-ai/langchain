@@ -80,7 +80,13 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         return [self.embed_query(text) for text in texts]
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
         embedding = embed_with_retry(self, self.model_name, text)
         return embedding["embedding"]
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()

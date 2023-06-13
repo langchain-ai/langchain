@@ -21,9 +21,15 @@ class FakeEmbeddings(Embeddings):
         """Return random floats."""
         return [list(np.random.uniform(0, 1, 10)) for _ in range(10)]
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def embed_query(self, text: str) -> List[float]:
         """Return random floats."""
         return list(np.random.uniform(0, 1, 10))
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()
 
 
 class FakeLLM(BaseLLM):

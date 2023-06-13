@@ -46,6 +46,9 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         """Call the base embeddings."""
         return self.base_embeddings.embed_documents(texts)
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def combine_embeddings(self, embeddings: List[List[float]]) -> List[float]:
         """Combine embeddings into final embeddings."""
         return list(np.array(embeddings).mean(axis=0))
@@ -57,6 +60,9 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         documents = [generation.text for generation in result.generations[0]]
         embeddings = self.embed_documents(documents)
         return self.combine_embeddings(embeddings)
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()
 
     def _call(
         self,

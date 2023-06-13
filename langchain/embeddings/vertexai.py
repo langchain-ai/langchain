@@ -42,6 +42,9 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
             embeddings.extend([el.values for el in embeddings_batch])
         return embeddings
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def embed_query(self, text: str) -> List[float]:
         """Embed a text.
 
@@ -53,3 +56,6 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         """
         embeddings = self.client.get_embeddings([text])
         return embeddings[0].values
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()

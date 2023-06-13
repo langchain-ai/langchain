@@ -140,6 +140,9 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
         embedding_list = [item["embedding"] for item in embeddings]
         return embedding_list
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def embed_query(self, text: str) -> List[float]:
         """Call out to DashScope's embedding endpoint for embedding query text.
 
@@ -153,3 +156,6 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
             self, input=text, text_type="query", model=self.model
         )[0]["embedding"]
         return embedding
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()

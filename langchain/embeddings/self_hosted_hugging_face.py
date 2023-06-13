@@ -155,6 +155,9 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
         embeddings = self.client(self.pipeline_ref, instruction_pairs)
         return embeddings.tolist()
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace instruct model.
 
@@ -167,3 +170,6 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
         instruction_pair = [self.query_instruction, text]
         embedding = self.client(self.pipeline_ref, [instruction_pair])[0]
         return embedding.tolist()
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()

@@ -63,6 +63,9 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
         embeddings = self.embed(texts).numpy()
         return embeddings.tolist()
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a TensorflowHub embedding model.
 
@@ -75,3 +78,6 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
         text = text.replace("\n", " ")
         embedding = self.embed([text]).numpy()[0]
         return embedding.tolist()
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()

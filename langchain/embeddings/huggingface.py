@@ -78,6 +78,9 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.encode(texts, **self.encode_kwargs)
         return embeddings.tolist()
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
 
@@ -90,6 +93,9 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         text = text.replace("\n", " ")
         embedding = self.client.encode(text, **self.encode_kwargs)
         return embedding.tolist()
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()
 
 
 class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
@@ -158,6 +164,9 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.encode(instruction_pairs, **self.encode_kwargs)
         return embeddings.tolist()
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace instruct model.
 
@@ -170,3 +179,6 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         instruction_pair = [self.query_instruction, text]
         embedding = self.client.encode([instruction_pair], **self.encode_kwargs)[0]
         return embedding.tolist()
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()

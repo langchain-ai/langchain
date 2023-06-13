@@ -87,6 +87,9 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
             return embeddings.tolist()
         return embeddings
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
 
@@ -101,3 +104,6 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
         if not isinstance(embeddings, list):
             return embeddings.tolist()
         return embeddings
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()

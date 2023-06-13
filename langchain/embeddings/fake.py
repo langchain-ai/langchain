@@ -15,5 +15,11 @@ class FakeEmbeddings(Embeddings, BaseModel):
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         return [self._get_embedding() for _ in texts]
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def embed_query(self, text: str) -> List[float]:
         return self._get_embedding()
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()

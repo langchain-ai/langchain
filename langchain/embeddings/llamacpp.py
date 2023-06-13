@@ -111,6 +111,9 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
         embeddings = [self.client.embed(text) for text in texts]
         return [list(map(float, e)) for e in embeddings]
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using the Llama model.
 
@@ -122,3 +125,6 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
         """
         embedding = self.client.embed(text)
         return list(map(float, embedding))
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()

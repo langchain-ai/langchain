@@ -123,6 +123,9 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         embeddings = self._embed(instruction_pairs)
         return embeddings
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        raise NotImplementedError()
+
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using a MosaicML deployed instructor embedding model.
 
@@ -135,3 +138,6 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         instruction_pair = (self.query_instruction, text)
         embedding = self._embed([instruction_pair])[0]
         return embedding
+
+    async def aembed_query(self, text: str) -> List[float]:
+        raise NotImplementedError()
