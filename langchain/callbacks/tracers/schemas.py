@@ -123,8 +123,11 @@ class Run(RunBase):
     @root_validator(pre=True)
     def assign_name(cls, values: dict) -> dict:
         """Assign name to the run."""
-        if "name" not in values:
-            values["name"] = values["serialized"]["name"]
+        if values.get("name") is None:
+            if "name" in values["serialized"]:
+                values["name"] = values["serialized"]["name"]
+            elif "id" in values["serialized"]:
+                values["name"] = values["serialized"]["id"][-1]
         return values
 
 
