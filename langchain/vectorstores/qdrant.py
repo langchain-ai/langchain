@@ -282,7 +282,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[common_types.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Document]:
         """Return docs most similar to embedding vector.
 
         Args:

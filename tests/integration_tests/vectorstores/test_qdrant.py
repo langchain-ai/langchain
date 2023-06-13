@@ -39,6 +39,7 @@ def test_qdrant_similarity_search(
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
+
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize(
     ["content_payload_key", "metadata_payload_key"],
@@ -65,6 +66,7 @@ def test_qdrant_similarity_search_by_vector(
     embeddings = ConsistentFakeEmbeddings().embed_query("foo")
     output = docsearch.similarity_search_by_vector(embeddings, k=1)
     assert output == [Document(page_content="foo")]
+
 
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize(
@@ -95,7 +97,6 @@ def test_qdrant_similarity_search_with_score_by_vector(
     document, score = output[0]
     assert document == Document(page_content="foo")
     assert score >= 0
-
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
