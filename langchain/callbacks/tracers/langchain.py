@@ -15,7 +15,6 @@ from langchain.callbacks.tracers.schemas import (
     Run,
     RunTypeEnum,
     TracerSession,
-    get_run_name,
 )
 from langchain.env import get_runtime_environment
 from langchain.schema import BaseMessage, messages_to_dict
@@ -58,7 +57,6 @@ class LangChainTracer(BaseTracer):
         execution_order = self._get_execution_order(parent_run_id_)
         chat_model_run = Run(
             id=run_id,
-            name=get_run_name(serialized),
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"messages": [messages_to_dict(batch) for batch in messages]},

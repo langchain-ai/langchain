@@ -7,7 +7,7 @@ from uuid import UUID
 
 from langchainplus_sdk.schemas import RunBase as BaseRunV2
 from langchainplus_sdk.schemas import RunTypeEnum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
 
 from langchain.schema import LLMResult
 
@@ -95,13 +95,15 @@ class Run(BaseRunV2):
     child_execution_order: int
     child_runs: List[Run] = Field(default_factory=list)
 
-
-def get_run_name(serialized: dict) -> str:
-    if "name" in serialized:
-        return serialized["name"]
-    if "id" in serialized:
-        return serialized["id"][-1]
-    raise ValueError("Could not find name in serialized run.")
+    @root_validator(pre=True)
+    def assign_name(cls, values: dict) -> dict:
+        """Assign name to the run."""
+        if values.get("name") is None:
+            if "name" in values["serialized"]:
+                values["name"] = values["serialized"]["name"]
+            elif "id" in values["serialized"]:
+                values["name"] = values["serialized"]["id"][-1]
+        return values
 
 
 ChainRun.update_forward_refs()
@@ -119,5 +121,4 @@ __all__ = [
     "TracerSessionV1",
     "TracerSessionV1Base",
     "TracerSessionV1Create",
-    "get_run_name",
 ]

@@ -16,7 +16,6 @@ def test_public_api() -> None:
         "TracerSessionV1",
         "TracerSessionV1Base",
         "TracerSessionV1Create",
-        "get_run_name",
     ]
 
     assert sorted(schemas_all) == expected_all

@@ -10,7 +10,7 @@ from freezegun import freeze_time
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.tracers.base import BaseTracer, TracerException
-from langchain.callbacks.tracers.schemas import Run, get_run_name
+from langchain.callbacks.tracers.schemas import Run
 from langchain.schema import LLMResult
 
 SERIALIZED = {"id": ["llm"]}
@@ -37,7 +37,6 @@ def test_tracer_llm_run() -> None:
     compare_run = Run(
         id=uuid,
         parent_run_id=None,
-        name=get_run_name(SERIALIZED),
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
         extra={},
@@ -126,7 +125,6 @@ def test_tracer_chain_run() -> None:
     uuid = uuid4()
     compare_run = Run(
         id=str(uuid),
-        name="chain",
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
         extra={},
@@ -151,7 +149,6 @@ def test_tracer_tool_run() -> None:
     uuid = uuid4()
     compare_run = Run(
         id=str(uuid),
-        name="tool",
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
         extra={},
@@ -208,7 +205,6 @@ def test_tracer_nested_run() -> None:
     compare_run = Run(
         id=str(chain_uuid),
         error=None,
-        name="chain",
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
         extra={},
@@ -221,7 +217,6 @@ def test_tracer_nested_run() -> None:
         child_runs=[
             Run(
                 id=tool_uuid,
-                name=get_run_name({"name": "tool"}),
                 parent_run_id=chain_uuid,
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
@@ -236,7 +231,6 @@ def test_tracer_nested_run() -> None:
                 child_runs=[
                     Run(
                         id=str(llm_uuid1),
-                        name=get_run_name(SERIALIZED),
                         parent_run_id=str(tool_uuid),
                         error=None,
                         start_time=datetime.utcnow(),
@@ -253,7 +247,6 @@ def test_tracer_nested_run() -> None:
             ),
             Run(
                 id=str(llm_uuid2),
-                name=get_run_name(SERIALIZED),
                 parent_run_id=str(chain_uuid),
                 error=None,
                 start_time=datetime.utcnow(),
@@ -280,7 +273,6 @@ def test_tracer_llm_run_on_error() -> None:
 
     compare_run = Run(
         id=str(uuid),
-        name=get_run_name(SERIALIZED),
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
         extra={},
@@ -307,7 +299,6 @@ def test_tracer_chain_run_on_error() -> None:
 
     compare_run = Run(
         id=str(uuid),
-        name="chain",
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
         extra={},
@@ -334,7 +325,6 @@ def test_tracer_tool_run_on_error() -> None:
 
     compare_run = Run(
         id=str(uuid),
-        name="tool",
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
         extra={},
@@ -402,7 +392,6 @@ def test_tracer_nested_runs_on_error() -> None:
 
     compare_run = Run(
         id=str(chain_uuid),
-        name=get_run_name({"name": "chain"}),
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
         extra={},
@@ -416,7 +405,6 @@ def test_tracer_nested_runs_on_error() -> None:
         child_runs=[
             Run(
                 id=str(llm_uuid1),
-                name=get_run_name(SERIALIZED),
                 parent_run_id=str(chain_uuid),
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
@@ -431,7 +419,6 @@ def test_tracer_nested_runs_on_error() -> None:
             ),
             Run(
                 id=str(llm_uuid2),
-                name=get_run_name(SERIALIZED),
                 parent_run_id=str(chain_uuid),
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
@@ -446,7 +433,6 @@ def test_tracer_nested_runs_on_error() -> None:
             ),
             Run(
                 id=str(tool_uuid),
-                name=get_run_name({"name": "tool"}),
                 parent_run_id=str(chain_uuid),
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
@@ -461,7 +447,6 @@ def test_tracer_nested_runs_on_error() -> None:
                 child_runs=[
                     Run(
                         id=str(llm_uuid3),
-                        name=get_run_name(SERIALIZED),
                         parent_run_id=str(tool_uuid),
                         start_time=datetime.utcnow(),
                         end_time=datetime.utcnow(),
