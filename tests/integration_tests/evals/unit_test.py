@@ -3,7 +3,6 @@ from uuid import uuid4
 
 import pytest
 from langchainplus_sdk import LangChainPlusClient
-from langchainplus_sdk.schemas import Example
 
 from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.chains.sql_database.base import SQLDatabaseChain
@@ -15,8 +14,6 @@ from langchain.evaluation.run_evaluators.implementations import (
 from langchain.schema import RUN_KEY
 from langchain.sql_database import SQLDatabase
 
-from langchain.client.runner_utils import run_on_dataset
-
 _DIR = Path(__file__).parent.resolve()
 _TEST_RUN_ID = uuid4().hex
 _CLIENT = LangChainPlusClient()
@@ -24,10 +21,10 @@ _EVAL_LLM = ChatOpenAI(temperature=0)
 _DATASET_NAME = "sql-qa-chinook"
 _EVALUATORS = [
     get_qa_evaluator(
-        _EVAL_LLM, input_key="query", prediction_key="response", answer_key="answer"
+        _EVAL_LLM, input_key="query", prediction_key="result", answer_key="answer"
     ),
     get_criteria_evaluator(
-        _EVAL_LLM, "helpfulness", input_key="query", prediction_key="response"
+        _EVAL_LLM, "helpfulness", input_key="query", prediction_key="result"
     ),
 ]
 
@@ -43,32 +40,25 @@ def chain_to_test(database: SQLDatabase) -> SQLDatabaseChain:
     return SQLDatabaseChain.from_llm(llm, database)
 
 
-@pytest.fixture(scope="module")
-def chain_run_results(chain_to_test: SQLDatabaseChain) -> dict:
-    results = run_on_dataset(
-        lambda: chain_to_test,
-        dataset_name=_DATASET_NAME,
-        session_name=f"test_chain_on_example-{_TEST_RUN_ID}",
-    )
-    return results
-
-
-@pytest.fixture(scope="module")
-def chain_run_individual_results(chain_run_results: dict):
-    return chain_run_results["results"]
-
-
-@pytest.mark.parametrize("result", chain_run_individual_results, indirect=True)
-def test_chain_run(result) -> None:
-    assert result is not None, "Chain run failed"
-
-
-@pytest.mark.parametrize("evaluator", _EVALUATORS)
-def test_evaluators(chain_run_results: dict, evaluator) -> None:
-    session_name = chain_run_results["session_name"]
-    for run in _CLIENT.list_runs(session_name):
-        evaluation_result = _CLIENT.evaluate_run(run, evaluator)
-        if evaluation_result.score != 1:
-            raise ValueError(
-                f"My Chain failed evaluation {evaluation_result.key} for run: {run}\n\n{evaluation_result}"
-            )
+def test_chain_on_example(chain_to_test: SQLDatabaseChain) -> None:
+    run_ids = []
+    for example in _CLIENT.list_examples(dataset_name=_DATASET_NAME):
+        with tracing_v2_enabled(
+            session_name=f"test_chain_on_example-{_TEST_RUN_ID}", example_id=example.id
+        ):
+            result = chain_to_test(example.inputs, include_run_info=True)
+            run_ids.append(result[RUN_KEY].run_id)
+    failures = []
+    for run_id in run_ids:
+        for evaluator in _EVALUATORS:
+            evaluation_result = _CLIENT.evaluate_run(run_id, evaluator)
+            if evaluation_result.score != 1:
+                failures.append(
+                    ValueError(
+                        f"My Chain failed evaluation {evaluation_result.key}\n\n{evaluation_result}"
+                    )
+                )
+    if failures:
+        raise ValueError(
+            f"Chain failed {len(failures)} out of {len(run_ids)} evaluations"
+        )
