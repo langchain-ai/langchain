@@ -463,7 +463,8 @@ class OpenSearchVectorSearch(VectorStore):
     def _raw_similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[dict]:
-        """Return raw opensearch documents (dict) including vectors, scores most similar to query.
+        """Return raw opensearch documents (dict) including vectors,
+        scores most similar to query.
 
         By default, supports Approximate Search.
         Also supports Script Scoring and Painless Scripting.
