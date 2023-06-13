@@ -33,19 +33,6 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         Returns:
             Sequence of relevant documents
         """
-        if self.base_retriever.search_type == "similarity_score_threshold":
-            docs_and_similarities = (
-                self.base_retriever.vectorstore.similarity_search_with_relevance_scores(
-                    query, **self.base_retriever.search_kwargs
-                )
-            )
-            docs = [doc for doc, score in docs_and_similarities]
-            compressed_docs = self.base_compressor.compress_documents(docs, query)
-            compressed_docs_with_scores = zip(
-                compressed_docs, [score for doc, score in docs_and_similarities]
-            )
-            return list(compressed_docs_with_scores)
-
         docs = self.base_retriever.get_relevant_documents(query)
         if docs:
             compressed_docs = self.base_compressor.compress_documents(docs, query)
@@ -62,19 +49,6 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         Returns:
             List of relevant documents
         """
-        if self.base_retriever.search_type == "similarity_score_threshold":
-            docs_and_similarities = await self.base_retriever.vectorstore.asimilarity_search_with_relevance_scores(
-                query, **self.base_retriever.search_kwargs
-            )
-            docs = [doc for doc, score in docs_and_similarities]
-            compressed_docs = await self.base_compressor.acompress_documents(
-                docs, query
-            )
-            compressed_docs_with_scores = zip(
-                compressed_docs, [score for doc, score in docs_and_similarities]
-            )
-            return list(compressed_docs_with_scores)
-
         docs = await self.base_retriever.aget_relevant_documents(query)
         if docs:
             compressed_docs = await self.base_compressor.acompress_documents(
