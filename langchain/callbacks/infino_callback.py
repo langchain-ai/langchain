@@ -1,8 +1,7 @@
 """Callback Handler that logs to infino."""
-from typing import Any, Dict, List, Optional, Union
-
-import time
 import datetime as dt
+import time
+from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -10,21 +9,21 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 def import_infino() -> Any:
     try:
-        from infinopy.client import InfinoClient
+        from infinopy import InfinoClient
     except ImportError:
         raise ImportError(
             "To use the Infino callbacks manager you need to have the"
             " `infino` python package installed."
             "Please install it with from Infino's repo."
         )
-    return InfinoClient
+    return InfinoClient()
 
 
 class InfinoCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs to infino."""
 
     def __init__(self) -> None:
-        # Set infino client 
+        # Set infino client
         self.client = import_infino()
 
     def on_llm_start(
@@ -42,7 +41,10 @@ class InfinoCallbackHandler(BaseCallbackHandler):
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Log the response to infino."""
-        payload = {"date": int(time.time()), "prompt_response": self.tokens_stream.join(' ')}
+        payload = {
+            "date": int(time.time()),
+            "prompt_response": self.tokens_stream.join(" "),
+        }
         self.client.append_log(payload)
         pass
 
@@ -50,9 +52,13 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Need to log the error."""
-        payload = {"date": int(time.time()), "error": error, "labels": {"model": self.chain_name }}
+        payload = {
+            "date": int(time.time()),
+            "error": error,
+            "labels": {"model": self.chain_name},
+        }
         self.client.append_ts(payload)
-        
+
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
@@ -92,7 +98,6 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
-
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
@@ -103,8 +108,6 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
-
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Do nothing."""
         pass
-
