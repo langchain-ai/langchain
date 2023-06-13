@@ -25,7 +25,7 @@ class MatchingEngine(VectorStore):
     """Vertex Matching Engine implementation of the vector store.
 
     While the embeddings are stored in the Matching Engine, the embedded
-    documents will be stored in GCS.
+    documents will be stored either in GCS or Firestore.
 
     An existing Index and corresponding Endpoint are preconditions for
     using this module.
@@ -118,7 +118,7 @@ class MatchingEngine(VectorStore):
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
+            metadatas: Optional list of metadatas associated with the texts. This metadata is stored as fields in firestore if specified.
             kwargs: vectorstore specific parameters.
 
         Returns:
@@ -129,7 +129,19 @@ class MatchingEngine(VectorStore):
         jsons = []
         ids = []
         # Could be improved with async.
-        if self.gcs_client:
+        if self.firestore_client:
+            for i, (embedding, text) in enumerate(zip(embeddings, texts)):
+                id = str(uuid.uuid4())
+                ids.append(id)
+                jsons.append({"id": id, "embedding": embedding})
+                if metadatas:
+                    self._upload_to_firestore(text, id, metadatas[i])
+                else:
+                    self._upload_to_firestore(text, id)
+
+            logger.debug(f"Uploaded {len(ids)} documents to Firestore.")
+        
+        else:
             for embedding, text in zip(embeddings, texts):
                 id = str(uuid.uuid4())
                 ids.append(id)
@@ -137,21 +149,14 @@ class MatchingEngine(VectorStore):
                 self._upload_to_gcs(text, f"documents/{id}")
 
             logger.debug(f"Uploaded {len(ids)} documents to GCS.")
-        
-        else:
-            for embedding, text in zip(embeddings, texts):
-                id = str(uuid.uuid4())
-                ids.append(id)
-                jsons.append({"id": id, "embedding": embedding})
-                self._upload_to_firestore(text, id)
-
-            logger.debug(f"Uploaded {len(ids)} documents to Firestore.")
 
         # Creating json lines from the embedded documents.
         result_str = "\n".join([json.dumps(x) for x in jsons])
 
         filename_prefix = f"indexes/{uuid.uuid4()}"
         filename = f"{filename_prefix}/{time.time()}.json"
+        if not self.gcs_client:
+            raise ValueError("For indexing new data and updating the matching engine, a gcs client or bucket name must be supplied upon initalization!")
         self._upload_to_gcs(result_str, filename)
         logger.debug(
             f"Uploaded updated json with embeddings to "
@@ -177,7 +182,7 @@ class MatchingEngine(VectorStore):
         blob = bucket.blob(gcs_location)
         blob.upload_from_string(data)
 
-    def _upload_to_firestore(self, data: str, id) -> None:
+    def _upload_to_firestore(self, data: str, id, metadata: Optional[dict]) -> None:
         """Uploads data to firestore_collection.
 
         Args:
@@ -185,8 +190,10 @@ class MatchingEngine(VectorStore):
             id: The id for the data record.
         """
         data_load = {
-            'content': data
+            'content': data,
+            
         }
+        data_load.update(metadata)
         self.firestore_client.collection(self.firestore_collection_name).document(id).set(data_load)
         
     def similarity_search(
