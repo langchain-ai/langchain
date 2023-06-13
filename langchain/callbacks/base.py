@@ -124,6 +124,7 @@ class CallbackManagerMixin:
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when LLM starts running."""
@@ -135,6 +136,7 @@ class CallbackManagerMixin:
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when a chat model starts running."""
@@ -149,6 +151,7 @@ class CallbackManagerMixin:
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when chain starts running."""
@@ -160,6 +163,7 @@ class CallbackManagerMixin:
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when tool starts running."""
