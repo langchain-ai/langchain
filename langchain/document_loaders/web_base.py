@@ -51,7 +51,7 @@ class WebBaseLoader(BaseLoader):
     """kwargs for requests"""
 
     def __init__(
-        self, web_path: Union[str, List[str]], header_template: Optional[dict] = None
+        self, web_path: Union[str, List[str]], header_template: Optional[dict] = None, verify: Optional[bool] = True
     ):
         """Initialize with webpage path."""
 
