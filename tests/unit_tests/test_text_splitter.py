@@ -676,6 +676,7 @@ def test_html_code_splitter() -> None:
 
 def test_md_header_text_splitter() -> None:
     """Test markdown splitter by header."""
+    # Case 1
     markdown_document = (
         "# Foo\n\n"
         "    ## Bar\n\n"
@@ -702,4 +703,93 @@ def test_md_header_text_splitter() -> None:
             "metadata": {"Header 1": "Foo", "Header 2": "Baz"},
         },
     ]
+    assert output == expected_output
+
+    # Case 2
+    markdown_document = (
+        "# Foo\n\n"
+        "    ## Bar\n\n"
+        "Hi this is Jim\n\n"
+        "Hi this is Joe\n\n"
+        " ### Boo \n\n"
+        " Hi this is Lance \n\n"
+        " ## Baz\n\n"
+        " Hi this is Molly"
+    )
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("###", "Header 3"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+    expected_output = [
+        {
+            "content": "Hi this is Jim  \nHi this is Joe",
+            "metadata": {"Header 1": "Foo", "Header 2": "Bar"},
+        },
+        {
+            "content": "Hi this is Lance",
+            "metadata": {"Header 1": "Foo", "Header 2": "Bar", "Header 3": "Boo"},
+        },
+        {
+            "content": "Hi this is Molly",
+            "metadata": {"Header 1": "Foo", "Header 2": "Baz"},
+        },
+    ]
+    assert output == expected_output
+
+    # Case 3
+    markdown_document = (
+        "# Foo\n\n"
+        "    ## Bar\n\n"
+        "Hi this is Jim\n\n"
+        "Hi this is Joe\n\n"
+        " ### Boo \n\n"
+        " Hi this is Lance \n\n"
+        " #### Bim \n\n"
+        " Hi this is John \n\n"
+        " ## Baz\n\n"
+        " Hi this is Molly"
+    )
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("###", "Header 3"),
+        ("####", "Header 4"),
+    ]
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        {
+            "content": "Hi this is Jim  \nHi this is Joe",
+            "metadata": {"Header 1": "Foo", "Header 2": "Bar"},
+        },
+        {
+            "content": "Hi this is Lance",
+            "metadata": {"Header 1": "Foo", "Header 2": "Bar", "Header 3": "Boo"},
+        },
+        {
+            "content": "Hi this is John",
+            "metadata": {
+                "Header 1": "Foo",
+                "Header 2": "Bar",
+                "Header 3": "Boo",
+                "Header 4": "Bim",
+            },
+        },
+        {
+            "content": "Hi this is Molly",
+            "metadata": {"Header 1": "Foo", "Header 2": "Baz"},
+        },
+    ]
+
     assert output == expected_output
