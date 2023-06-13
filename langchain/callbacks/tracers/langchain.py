@@ -11,7 +11,11 @@ from uuid import UUID
 from langchainplus_sdk import LangChainPlusClient
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run, RunTypeEnum, TracerSession
+from langchain.callbacks.tracers.schemas import (
+    Run,
+    RunTypeEnum,
+    TracerSession,
+)
 from langchain.env import get_runtime_environment
 from langchain.schema import BaseMessage, messages_to_dict
 
