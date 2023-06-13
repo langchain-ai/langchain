@@ -27,6 +27,7 @@ from tenacity import (
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
+    StreamInterruption,
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
@@ -314,14 +315,18 @@ class ChatOpenAI(BaseChatModel):
             inner_completion = ""
             role = "assistant"
             params["stream"] = True
-            for stream_resp in self.completion_with_retry(
-                messages=message_dicts, **params
-            ):
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content", "")
-                inner_completion += token
-                if run_manager:
-                    run_manager.on_llm_new_token(token)
+            response = self.completion_with_retry(messages=message_dicts, **params)
+            try:
+                for stream_resp in response:
+                    role = stream_resp["choices"][0]["delta"].get("role", role)
+                    token = stream_resp["choices"][0]["delta"].get("content", "")
+                    inner_completion += token
+                    if run_manager:
+                        run_manager.on_llm_new_token(token)
+            except StreamInterruption as e:
+                logger.warning(e)
+            finally:
+                response.close()
             message = _convert_dict_to_message(
                 {"content": inner_completion, "role": role}
             )

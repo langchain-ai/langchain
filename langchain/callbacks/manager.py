@@ -71,6 +71,9 @@ tracing_v2_callback_var: ContextVar[
 def _get_debug() -> bool:
     return langchain.debug
 
+class StreamInterruption(Exception):
+    """Exception to signal an interruption to a streaming response."""
+    pass
 
 @contextmanager
 def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
@@ -186,6 +189,8 @@ def _handle_event(
                 handler, ignore_condition_name
             ):
                 getattr(handler, event_name)(*args, **kwargs)
+        except StreamInterruption as e:
+            raise StreamInterruption(e)
         except NotImplementedError as e:
             if event_name == "on_chat_model_start":
                 if message_strings is None:
