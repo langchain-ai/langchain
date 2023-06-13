@@ -1,50 +1,11 @@
-```bash
-pip install langchain
-pip install google-search-results
-pip install openai
-```
-
+The `chat-conversational-react-description` agent type lets us create a conversational agent using a chat model instead of an LLM.
 
 ```python
-from langchain.agents import Tool
 from langchain.memory import ConversationBufferMemory
 from langchain.chat_models import ChatOpenAI
-from langchain.utilities import SerpAPIWrapper
-from langchain.agents import initialize_agent
-from langchain.agents import AgentType
-from getpass import getpass
-```
 
-
-```python
-SERPAPI_API_KEY = getpass()
-```
-
-
-```python
-search = SerpAPIWrapper(serpapi_api_key=SERPAPI_API_KEY)
-tools = [
-    Tool(
-        name = "Current Search",
-        func=search.run,
-        description="useful for when you need to answer questions about current events or the current state of the world. the input to this should be a single search term."
-    ),
-]
-```
-
-
-```python
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-```
-
-
-```python
-OPENAI_API_KEY = getpass()
-```
-
-
-```python
-llm=ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0)
+llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0)
 agent_chain = initialize_agent(tools, llm, agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION, verbose=True, memory=memory)
 ```
 
@@ -56,8 +17,6 @@ agent_chain.run(input="hi, i am bob")
 <CodeOutputBlock lang="python">
 
 ```
-    
-    
     > Entering new AgentExecutor chain...
     {
         "action": "Final Answer",
@@ -65,9 +24,6 @@ agent_chain.run(input="hi, i am bob")
     }
     
     > Finished chain.
-
-
-
 
 
     'Hello Bob! How can I assist you today?'
@@ -83,8 +39,6 @@ agent_chain.run(input="what's my name?")
 <CodeOutputBlock lang="python">
 
 ```
-    
-    
     > Entering new AgentExecutor chain...
     {
         "action": "Final Answer",
@@ -92,9 +46,6 @@ agent_chain.run(input="what's my name?")
     }
     
     > Finished chain.
-
-
-
 
 
     'Your name is Bob.'
@@ -110,8 +61,6 @@ agent_chain.run("what are some good dinners to make this week, if i like thai fo
 <CodeOutputBlock lang="python">
 
 ```
-    
-    
     > Entering new AgentExecutor chain...
     {
         "action": "Current Search",
@@ -124,9 +73,6 @@ agent_chain.run("what are some good dinners to make this week, if i like thai fo
     }
     
     > Finished chain.
-
-
-
 
 
     'Here are some Thai food dinner recipes you can try this week: Thai curry noodle soup, Thai yellow cauliflower, snake bean and tofu curry, Thai-spiced chicken hand pies, and many more. You can find the full list of recipes at the source I found earlier.'
@@ -142,8 +88,6 @@ agent_chain.run(input="tell me the last letter in my name, and also tell me who 
 <CodeOutputBlock lang="python">
 
 ```
-    
-    
     > Entering new AgentExecutor chain...
     {
         "action": "Final Answer",
@@ -151,9 +95,6 @@ agent_chain.run(input="tell me the last letter in my name, and also tell me who 
     }
     
     > Finished chain.
-
-
-
 
 
     "The last letter in your name is 'b'. Argentina won the World Cup in 1978."
@@ -169,8 +110,6 @@ agent_chain.run(input="whats the weather like in pomfret?")
 <CodeOutputBlock lang="python">
 
 ```
-    
-    
     > Entering new AgentExecutor chain...
     {
         "action": "Current Search",
@@ -183,9 +122,6 @@ agent_chain.run(input="whats the weather like in pomfret?")
     }
     
     > Finished chain.
-
-
-
 
 
     'Cloudy with showers. Low around 55F. Winds S at 5 to 10 mph. Chance of rain 60%. Humidity76%.'

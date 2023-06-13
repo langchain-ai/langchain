@@ -1,12 +1,6 @@
 ```python
-from langchain import OpenAI, LLMMathChain, SerpAPIWrapper, SQLDatabase, SQLDatabaseChain
-from langchain.agents import initialize_agent, Tool
-from langchain.agents import AgentType
 from langchain.chat_models import ChatOpenAI
-```
 
-
-```python
 llm = ChatOpenAI(temperature=0)
 llm1 = OpenAI(temperature=0)
 search = SerpAPIWrapper()
@@ -45,8 +39,6 @@ mrkl.run("Who is Leo DiCaprio's girlfriend? What is her current age raised to th
 <CodeOutputBlock lang="python">
 
 ```
-    
-    
     > Entering new AgentExecutor chain...
     Thought: The first question requires a search, while the second question requires a calculator.
     Action:
@@ -85,9 +77,6 @@ mrkl.run("Who is Leo DiCaprio's girlfriend? What is her current age raised to th
     > Finished chain.
 
 
-
-
-
     "Gigi Hadid is Leo DiCaprio's girlfriend and her current age raised to the 0.43 power is approximately 4.13."
 ```
 
@@ -101,8 +90,6 @@ mrkl.run("What is the full name of the artist who recently released an album cal
 <CodeOutputBlock lang="python">
 
 ```
-    
-    
     > Entering new AgentExecutor chain...
     Question: What is the full name of the artist who recently released an album called 'The Storm Before the Calm' and are they in the FooBar database? If so, what albums of theirs are in the FooBar database?
     Thought: I should use the Search tool to find the answer to the first part of the question and then use the FooBar DB tool to find the answer to the second part.
@@ -123,8 +110,7 @@ mrkl.run("What is the full name of the artist who recently released an album cal
       "action_input": "What albums does Alanis Morissette have in the database?"
     }
     ```
-    
-    
+
     
     > Entering new SQLDatabaseChain chain...
     What albums does Alanis Morissette have in the database?
@@ -144,9 +130,6 @@ mrkl.run("What is the full name of the artist who recently released an album cal
     Final Answer: Alanis Morissette is in the FooBar database and has the album Jagged Little Pill in it.
     
     > Finished chain.
-
-
-
 
 
     'Alanis Morissette is in the FooBar database and has the album Jagged Little Pill in it.'
