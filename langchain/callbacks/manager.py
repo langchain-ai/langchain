@@ -436,7 +436,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
     """Callback manager for chain run."""
 
-    def get_child(self, tag: str | None = None) -> CallbackManager:
+    def get_child(self, tag: Optional[str] = None) -> CallbackManager:
         """Get a child callback manager."""
         manager = CallbackManager(handlers=[], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
@@ -501,7 +501,7 @@ class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
 class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
     """Async callback manager for chain run."""
 
-    def get_child(self, tag: str | None = None) -> AsyncCallbackManager:
+    def get_child(self, tag: Optional[str] = None) -> AsyncCallbackManager:
         """Get a child callback manager."""
         manager = AsyncCallbackManager(handlers=[], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
@@ -566,7 +566,7 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
 class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
     """Callback manager for tool run."""
 
-    def get_child(self, tag: str | None = None) -> CallbackManager:
+    def get_child(self, tag: Optional[str] = None) -> CallbackManager:
         """Get a child callback manager."""
         manager = CallbackManager(handlers=[], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
@@ -611,7 +611,7 @@ class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
 class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
     """Async callback manager for tool run."""
 
-    def get_child(self, tag: str | None = None) -> AsyncCallbackManager:
+    def get_child(self, tag: Optional[str] = None) -> AsyncCallbackManager:
         """Get a child callback manager."""
         manager = AsyncCallbackManager(handlers=[], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
