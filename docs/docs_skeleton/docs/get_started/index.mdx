@@ -8,6 +8,10 @@ The main value props of LangChain are:
 1. **Components**: abstractions for working with language models, along with a collection of implementations for each abstraction. The components are easy to use whether you are using the rest of the LangChain framework or not.
 2. **Off-the-shelf chains**: a chain is a structured assembly of components for accomplishing specific higher level tasks. LangChain comes with built-in chains that can be extended or used as-is.
 
+These value props are related but not completely dependent.
+For example, we intend **Off-the-shelf chains** to make it easy to get started, but as you dive deep into a use case it is very reasonable to want to customize them in more detail than the chain is built for.
+In that case, it makes sense to build your own customized system while still enjoying the collections and interoptability of individual components.
+
 ## Get started
 
 Head to our [Quickstart](/docs/get_started/quickstart.html) guide to familiarize yourself with the framework.
@@ -19,8 +23,8 @@ LangChain provides standard, extendable interfaces and external integrations for
 - [Model I/O](/docs/modules/model_io.html): Interface with language models
 - [Data connection](/docs/modules/data_io.html): Interface with application-specific data
 - [Chains](/docs/modules/chains.html): Construct sequences of calls
-- [Memory](/docs/modules/memory.html): Persist application state between runs of a chain
 - [Agents](/docs/modules/agents.html): Let chains choose which tools to use given high-level directives
+- [Memory](/docs/modules/memory.html): Persist application state between runs of a chain
 - [Callbacks](/docs/modules/callbacks/getting_started.html): Log and stream intermediate steps of any chain
 
 ![](https://drive.google.com/uc?id=1PNAJIGic9Axzr3GJbnydUj7zzthsU8PY)
@@ -49,3 +53,4 @@ LangChain is part of a rich ecosystem of tools integrated with the framework and
 - [Deployments](/docs/ecosystem/deployments.html): Instructions, code snippets, and template repositories for deploying LangChain apps
 - [YouTube tutorials](/docs/examples/ecosystem/youtube.html): Tutorials by folks in the community
 - [Gallery](https://github.com/kyrolabs/awesome-langchain): Awesome LangChain projects, compiled by the folks at [KyroLabs](https://kyrolabs.com)
+- [Discord](https://discord.gg/6adMQxSpJS): The official LangChain discord server
