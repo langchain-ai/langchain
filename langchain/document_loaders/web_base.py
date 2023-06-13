@@ -176,7 +176,7 @@ class WebBaseLoader(BaseLoader):
 
         self._check_parser(parser)
 
-        html_doc = self.session.get(url, **self.requests_kwargs)
+        html_doc = self.session.get(url, verify=self.verify, **self.requests_kwargs)
         html_doc.encoding = html_doc.apparent_encoding
         return BeautifulSoup(html_doc.text, parser)
 
