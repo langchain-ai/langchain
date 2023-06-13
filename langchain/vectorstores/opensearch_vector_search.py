@@ -79,7 +79,7 @@ def _bulk_ingest_embeddings(
     metadatas: Optional[List[dict]] = None,
     vector_field: str = "vector_field",
     text_field: str = "text",
-    mapping: Dict = None,
+    mapping: Optional[Dict] = None,
 ) -> List[str]:
     """Bulk Ingest Embeddings into given index."""
     if not mapping:
@@ -207,7 +207,7 @@ def _approximate_search_query_with_lucene_filter(
 def _default_script_query(
     query_vector: List[float],
     space_type: str = "l2",
-    pre_filter: Dict = None,
+    pre_filter: Optional[Dict] = None,
     vector_field: str = "vector_field",
 ) -> Dict:
     """For Script Scoring Search, this is the default query."""
@@ -255,7 +255,7 @@ def __get_painless_scripting_source(
 def _default_painless_scripting_query(
     query_vector: List[float],
     space_type: str = "l2Squared",
-    pre_filter: Dict = None,
+    pre_filter: Optional[Dict] = None,
     vector_field: str = "vector_field",
 ) -> Dict:
     """For Painless Scripting Search, this is the default query."""
