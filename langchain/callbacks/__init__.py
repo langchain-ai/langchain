@@ -17,6 +17,7 @@ from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
+from langchain.callbacks.streamlit import StreamlitCallbackHandler
 
 __all__ = [
     "ArgillaCallbackHandler",
@@ -34,4 +35,5 @@ __all__ = [
     "tracing_enabled",
     "wandb_tracing_enabled",
     "HumanApprovalCallbackHandler",
+    "StreamlitCallbackHandler",
 ]
