@@ -70,7 +70,10 @@ class WebBaseLoader(BaseLoader):
             raise ValueError(
                 "bs4 package not found, please install it with " "`pip install bs4`"
             )
-
+        
+        # Choose to verify
+        self.verify = verify
+        
         headers = header_template or default_header_template
         if not headers.get("User-Agent"):
             try:
@@ -98,7 +101,7 @@ class WebBaseLoader(BaseLoader):
             for i in range(retries):
                 try:
                     async with session.get(
-                        url, headers=self.session.headers
+                        url, headers=self.session.headers, verify=self.verify
                     ) as response:
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:
