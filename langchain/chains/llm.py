@@ -283,7 +283,7 @@ class LLMChain(Chain):
         return "llm_chain"
 
     @classmethod
-    def from_string(cls, llm: BaseLanguageModel, template: str) -> Chain:
+    def from_string(cls, llm: BaseLanguageModel, template: str) -> LLMChain:
         """Create LLMChain from LLM and template."""
         prompt_template = PromptTemplate.from_template(template)
         return cls(llm=llm, prompt=prompt_template)
