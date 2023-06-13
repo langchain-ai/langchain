@@ -26,6 +26,7 @@ Understanding these components is crucial when assessing serving systems. LangCh
 
 - `Ray Serve <../integrations/ray_serve.html>`_
 - `BentoML <https://github.com/ssheng/BentoChain>`_
+- `OpenLLM <../integrations/openllm.html>`_
 - `Modal <../integrations/modal.html>`_
 
 These links will provide further information on each ecosystem, assisting you in finding the best fit for your LLM deployment needs.
