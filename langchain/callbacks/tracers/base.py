@@ -102,7 +102,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             execution_order=execution_order,
             child_execution_order=execution_order,
             run_type=RunTypeEnum.llm,
-            tags=tags,
+            tags=tags or [],
         )
         self._start_trace(llm_run)
         self._on_llm_start(llm_run)
@@ -165,7 +165,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             child_runs=[],
             run_type=RunTypeEnum.chain,
-            tags=tags,
+            tags=tags or [],
         )
         self._start_trace(chain_run)
         self._on_chain_start(chain_run)
@@ -228,7 +228,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             child_runs=[],
             run_type=RunTypeEnum.tool,
-            tags=tags,
+            tags=tags or [],
         )
         self._start_trace(tool_run)
         self._on_tool_start(tool_run)
