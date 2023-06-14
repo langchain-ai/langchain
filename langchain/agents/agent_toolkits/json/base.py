@@ -2,7 +2,11 @@
 from typing import Any, Dict, List, Optional
 
 from langchain.agents.agent import AgentExecutor
-from langchain.agents.agent_toolkits.json.prompt import JSON_PREFIX, JSON_SUFFIX
+from langchain.agents.agent_toolkits.json.prompt import (
+    JSON_PREFIX,
+    JSON_SUFFIX,
+    JSON_SUFFIX_FUNCTIONS,
+)
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
@@ -17,10 +21,10 @@ from langchain.schema import SystemMessage
 def create_json_agent(
     llm: BaseLanguageModel,
     toolkit: JsonToolkit,
+    prefix: str = None,
+    suffix: str = None,
     agent_type:AgentType = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     callback_manager: Optional[BaseCallbackManager] = None,
-    prefix: str = JSON_PREFIX,
-    suffix: str = JSON_SUFFIX,
     format_instructions: str = FORMAT_INSTRUCTIONS,
     input_variables: Optional[List[str]] = None,
     verbose: bool = False,
@@ -29,8 +33,10 @@ def create_json_agent(
 ) -> AgentExecutor:
     """Construct a json agent from an LLM and tools."""
     tools = toolkit.get_tools()
+    prefix = prefix or JSON_PREFIX
 
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
+        suffix = suffix or JSON_SUFFIX
         prompt = ZeroShotAgent.create_prompt(
             tools,
             prefix=prefix,
@@ -46,7 +52,10 @@ def create_json_agent(
         tool_names = [tool.name for tool in tools]
         agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
-        system_message = SystemMessage(content=prefix)
+        suffix = suffix or JSON_SUFFIX_FUNCTIONS
+
+        system_message = SystemMessage(content=prefix+suffix)
+        print(system_message)
         prompt = OpenAIFunctionsAgent.create_prompt(
         system_message=system_message
     )

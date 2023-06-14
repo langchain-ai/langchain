@@ -6,7 +6,6 @@ You have access to the following tools which help you learn more about the JSON 
 Only use the below tools. Only use the information returned by the below tools to construct your final answer.
 Do not make up any information that is not contained in the JSON.
 Your input to the tools should be in the form of `data["key"][0]` where `data` is the JSON blob you are interacting with, and the syntax used is Python.
-Be careful to always use double quotes to surround your keys, as in the previous example. 
 You should only use keys that you know for a fact exist. You must validate that a key exists by seeing it previously when calling `json_spec_list_keys`. 
 If you have not seen a key in one of those responses, you cannot use it.
 You should only add one key at a time to the path. You cannot add multiple keys at once.
@@ -24,3 +23,7 @@ JSON_SUFFIX = """Begin!"
 Question: {input}
 Thought: I should look at the keys that exist in data to see what I have access to
 {agent_scratchpad}"""
+
+JSON_SUFFIX_FUNCTIONS = """
+You should always start by looking at the keys that exist in data to see what you have access to.
+"""
