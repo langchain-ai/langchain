@@ -60,7 +60,7 @@ class Anyscale(LLM):
             values, "anyscale_service_token", "ANYSCALE_SERVICE_TOKEN"
         )
         try:
-            anyscale_service_endpoint = f"{anyscale_service_url}/-/route"
+            anyscale_service_endpoint = f"{anyscale_service_url}/-/routes"
             headers = {"Authorization": f"Bearer {anyscale_service_token}"}
             requests.get(anyscale_service_endpoint, headers=headers)
         except requests.exceptions.RequestException as e:
@@ -102,7 +102,7 @@ class Anyscale(LLM):
         """
 
         anyscale_service_endpoint = (
-            f"{self.anyscale_service_url}/{self.anyscale_service_route}"
+            f"{self.anyscale_service_url}{self.anyscale_service_route}"
         )
         headers = {"Authorization": f"Bearer {self.anyscale_service_token}"}
         body = {"prompt": prompt}
