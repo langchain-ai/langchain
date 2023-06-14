@@ -61,7 +61,10 @@ def _create_function_message(
         FunctionMessage that corresponds to the original tool invocation
     """
     if not isinstance(observation, str):
-        content = json.dumps(observation)
+        try:
+            content = json.dumps(observation)
+        except Exception:
+            content = str(observation)
     else:
         content = observation
     return FunctionMessage(
@@ -202,12 +205,16 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         return agent_decision
 
     @classmethod
-    def create_prompt(cls) -> BasePromptTemplate:
-        messages = [
-            SystemMessage(content="You are a helpful AI assistant."),
+    def create_prompt(cls, system_message: Optional[SystemMessage] = SystemMessage(content="You are a helpful AI assistant.")) -> BasePromptTemplate:
+        if system_message:
+            messages = [system_message]
+        else:
+            messages = []
+
+        messages.extend([
             HumanMessagePromptTemplate.from_template("{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ]
+        ])
         input_variables = ["input", "agent_scratchpad"]
         return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
