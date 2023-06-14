@@ -195,7 +195,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         """
         user_input = kwargs["input"]
         agent_scratchpad = _format_intermediate_steps(intermediate_steps)
-        # print(agent_scratchpad)
         prompt = self.prompt.format_prompt(
             input=user_input, agent_scratchpad=agent_scratchpad
         )
@@ -204,7 +203,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             messages, functions=self.functions
         )
         agent_decision = _parse_ai_message(predicted_message)
-        # print(agent_decision)
         return agent_decision
 
     @classmethod
