@@ -15,6 +15,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 logger = logging.getLogger()
 DEBUG = False
 
+
 def has_mul_sub_str(s: str, *args: Any) -> bool:
     for a in args:
         if a not in s:
@@ -327,7 +328,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         q_str = f"""
             SELECT {self.config.column_map['document']}, 
                 {self.config.column_map['metadata']}, 
-                cosine_similarity(array<float>[{q_emb_str}],{self.config.column_map['embedding']}) as dist 
+                cosine_similarity_norm(array<float>[{q_emb_str}],{self.config.column_map['embedding']}) as dist
             FROM {self.config.database}.{self.config.table}
             {where_str}
             ORDER BY dist {self.dist_order}
