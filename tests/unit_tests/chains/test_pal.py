@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from langchain.chains.pal.base import PALChain
+from langchain.chains.pal.base import PALChain, PALValidation
 from langchain.chains.pal.colored_object_prompt import COLORED_OBJECT_PROMPT
 from langchain.chains.pal.math_prompt import MATH_PROMPT
 from tests.unit_tests.llms.fake_llm import FakeLLM
@@ -139,29 +139,30 @@ def solution():
     return random.choice()
 """
 
-_FULL_CODE_VALIDATIONS = {
-    "solution_expression": {"type": ast.FunctionDef, "name": "solution"},
-    "allow_imports": False,
-    "allow_command_exec": False,
-}
-
-_ILLEGAL_COMMAND_EXEC_VALIDATIONS = {
-    "solution_expression": {"type": ast.FunctionDef, "name": "solution"},
-    "allow_imports": True,
-    "allow_command_exec": False,
-}
-
-_MINIMAL_VALIDATIONS = {
-    "solution_expression": {"type": ast.FunctionDef, "name": "solution"},
-    "allow_imports": True,
-    "allow_command_exec": True,
-}
-
-_NO_IMPORTS_VALIDATIONS = {
-    "solution_expression": {"type": ast.FunctionDef, "name": "solution"},
-    "allow_imports": False,
-    "allow_command_exec": True,
-}
+_FULL_CODE_VALIDATIONS = PALValidation(
+    solution_expression_name="solution",
+    solution_expression_type=PALValidation.SOLUTION_EXPRESSION_TYPE_FUNCTION,
+    allow_imports=False,
+    allow_command_exec=False,
+)
+_ILLEGAL_COMMAND_EXEC_VALIDATIONS = PALValidation(
+    solution_expression_name="solution",
+    solution_expression_type=PALValidation.SOLUTION_EXPRESSION_TYPE_FUNCTION,
+    allow_imports=True,
+    allow_command_exec=False,
+)
+_MINIMAL_VALIDATIONS = PALValidation(
+    solution_expression_name="solution",
+    solution_expression_type=PALValidation.SOLUTION_EXPRESSION_TYPE_FUNCTION,
+    allow_imports=True,
+    allow_command_exec=True,
+)
+_NO_IMPORTS_VALIDATIONS = PALValidation(
+    solution_expression_name="solution",
+    solution_expression_type=PALValidation.SOLUTION_EXPRESSION_TYPE_FUNCTION,
+    allow_imports=False,
+    allow_command_exec=True,
+)
 
 
 def test_math_question_1() -> None:

@@ -1,3 +1,5 @@
+import functools
+import logging
 import multiprocessing
 import sys
 from io import StringIO
@@ -5,6 +7,14 @@ from multiprocessing import Pool
 from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
+
+
+@functools.cache
+def warn_once() -> None:
+    # Warn that the PythonREPL
+    logger.warning("Python REPL can execute arbitrary code. Use with caution.")
 
 
 class PythonREPL(BaseModel):
@@ -14,7 +24,13 @@ class PythonREPL(BaseModel):
     locals: Optional[Dict] = Field(default_factory=dict, alias="_locals")
 
     @classmethod
-    def worker(cls, command: str, globals: Optional[Dict], locals: Optional[Dict], queue: multiprocessing.Queue) -> None:
+    def worker(
+        cls,
+        command: str,
+        globals: Optional[Dict],
+        locals: Optional[Dict],
+        queue: multiprocessing.Queue,
+    ) -> None:
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
         try:
@@ -27,6 +43,9 @@ class PythonREPL(BaseModel):
 
     def run(self, command: str, timeout: Optional[int] = None) -> str:
         """Run command with own globals/locals and returns anything printed. Timeout after the specified number of seconds."""
+
+        # Warn against dangers of PythonREPL
+        warn_once()
 
         queue: multiprocessing.Queue = multiprocessing.Queue()
 
