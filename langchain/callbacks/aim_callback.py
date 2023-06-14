@@ -269,7 +269,11 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         inputs_res = deepcopy(inputs)
 
         self._run.track(
-            aim.Text(inputs_res["input"]), name="on_chain_start", context=resp
+            aim.Text(
+                ", ".join((f"{key}: {value}" for key, value in inputs_res.items()))
+            ),
+            name="on_chain_start",
+            context=resp,
         )
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
@@ -285,7 +289,11 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         outputs_res = deepcopy(outputs)
 
         self._run.track(
-            aim.Text(outputs_res["output"]), name="on_chain_end", context=resp
+            aim.Text(
+                ", ".join((f"{key}: {value}" for key, value in outputs_res.items()))
+            ),
+            name="on_chain_end",
+            context=resp,
         )
 
     def on_chain_error(
