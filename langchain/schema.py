@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import (
     Any,
     Dict,
@@ -34,15 +35,22 @@ def get_buffer_string(
             role = ai_prefix
         elif isinstance(m, SystemMessage):
             role = "System"
+        elif isinstance(m, FunctionMessage):
+            role = "Function"
         elif isinstance(m, ChatMessage):
             role = m.role
         else:
             raise ValueError(f"Got unsupported message type: {m}")
-        string_messages.append(f"{role}: {m.content}")
+        message = f"{role}: {m.content}"
+        if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
+            message += f"{m.additional_kwargs['function_call']}"
+        string_messages.append(message)
+
     return "\n".join(string_messages)
 
 
-class AgentAction(NamedTuple):
+@dataclass
+class AgentAction:
     """Agent's action to take."""
 
     tool: str
@@ -110,6 +118,15 @@ class SystemMessage(BaseMessage):
     def type(self) -> str:
         """Type of the message, used for serialization."""
         return "system"
+
+
+class FunctionMessage(BaseMessage):
+    name: str
+
+    @property
+    def type(self) -> str:
+        """Type of the message, used for serialization."""
+        return "function"
 
 
 class ChatMessage(BaseMessage):
