@@ -34,7 +34,7 @@ class _FunctionsAgentAction(AgentAction):
     message_log: List[BaseMessage]
 
 
-def _convert_agent_action_to_messages(agent_action: AgentAction) -> List[BaseMessage]:
+def _convert_agent_action_to_messages(agent_action: AgentAction, observation: str) -> List[BaseMessage]:
     """Convert an agent action to a message.
 
     This code is used to reconstruct the original AI message from the agent action.
@@ -46,7 +46,7 @@ def _convert_agent_action_to_messages(agent_action: AgentAction) -> List[BaseMes
         AIMessage that corresponds to the original tool invocation.
     """
     if isinstance(agent_action, _FunctionsAgentAction):
-        return agent_action.message_log
+        return agent_action.message_log + [_create_function_message(agent_action, observation)]
     else:
         return [AIMessage(content=agent_action.log)]
 
@@ -87,8 +87,7 @@ def _format_intermediate_steps(
 
     for intermediate_step in intermediate_steps:
         agent_action, observation = intermediate_step
-        messages.extend(_convert_agent_action_to_messages(agent_action))
-        messages.append(_create_function_message(agent_action, observation))
+        messages.extend(_convert_agent_action_to_messages(agent_action, observation))
 
     return messages
 
