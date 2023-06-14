@@ -35,6 +35,7 @@ from langchain.schema import (
     ChatGeneration,
     ChatMessage,
     ChatResult,
+    FunctionMessage,
     HumanMessage,
     SystemMessage,
 )
@@ -92,12 +93,17 @@ async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
     return await _completion_with_retry(**kwargs)
 
 
-def _convert_dict_to_message(_dict: dict) -> BaseMessage:
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict["role"]
     if role == "user":
         return HumanMessage(content=_dict["content"])
     elif role == "assistant":
-        return AIMessage(content=_dict["content"])
+        content = _dict["content"] or ""  # OpenAI returns None for tool invocations
+        if _dict.get("function_call"):
+            additional_kwargs = {"function_call": dict(_dict["function_call"])}
+        else:
+            additional_kwargs = {}
+        return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
     else:
@@ -111,8 +117,16 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+        if "function_call" in message.additional_kwargs:
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, FunctionMessage):
+        message_dict = {
+            "role": "function",
+            "content": message.content,
+            "name": message.name,
+        }
     else:
         raise ValueError(f"Got unknown type {message}")
     if "name" in message.additional_kwargs:
@@ -314,16 +328,27 @@ class ChatOpenAI(BaseChatModel):
             inner_completion = ""
             role = "assistant"
             params["stream"] = True
+            function_call: Optional[dict] = None
             for stream_resp in self.completion_with_retry(
                 messages=message_dicts, **params
             ):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content", "")
+                token = stream_resp["choices"][0]["delta"].get("content") or ""
                 inner_completion += token
+                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
+                if _function_call:
+                    if function_call is None:
+                        function_call = _function_call
+                    else:
+                        function_call["arguments"] += _function_call["arguments"]
                 if run_manager:
                     run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
-                {"content": inner_completion, "role": role}
+                {
+                    "content": inner_completion,
+                    "role": role,
+                    "function_call": function_call,
+                }
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
         response = self.completion_with_retry(messages=message_dicts, **params)

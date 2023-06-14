@@ -44,6 +44,10 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         """Return type of chat model."""
         return "anthropic-chat"
 
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     def _convert_one_message_to_text(self, message: BaseMessage) -> str:
         if isinstance(message, ChatMessage):
             message_text = f"\n\n{message.role.capitalize()}: {message.content}"

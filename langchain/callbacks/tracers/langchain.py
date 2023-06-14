@@ -11,11 +11,25 @@ from uuid import UUID
 from langchainplus_sdk import LangChainPlusClient
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run, RunTypeEnum, TracerSession
+from langchain.callbacks.tracers.schemas import (
+    Run,
+    RunTypeEnum,
+    TracerSession,
+)
 from langchain.env import get_runtime_environment
 from langchain.schema import BaseMessage, messages_to_dict
 
 logger = logging.getLogger(__name__)
+_LOGGED = set()
+
+
+def log_error_once(method: str, exception: Exception) -> None:
+    """Log an error once."""
+    global _LOGGED
+    if (method, type(exception)) in _LOGGED:
+        return
+    _LOGGED.add((method, type(exception)))
+    logger.error(exception)
 
 
 class LangChainTracer(BaseTracer):
@@ -45,6 +59,7 @@ class LangChainTracer(BaseTracer):
         messages: List[List[BaseMessage]],
         *,
         run_id: UUID,
+        tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
@@ -61,6 +76,7 @@ class LangChainTracer(BaseTracer):
             execution_order=execution_order,
             child_execution_order=execution_order,
             run_type=RunTypeEnum.llm,
+            tags=tags,
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
@@ -76,11 +92,21 @@ class LangChainTracer(BaseTracer):
         extra = run_dict.get("extra", {})
         extra["runtime"] = get_runtime_environment()
         run_dict["extra"] = extra
-        run = self.client.create_run(**run_dict, session_name=self.session_name)
+        try:
+            run = self.client.create_run(**run_dict, session_name=self.session_name)
+        except Exception as e:
+            # Errors are swallowed by the thread executor so we need to log them here
+            log_error_once("post", e)
+            raise
 
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
-        self.client.update_run(run.id, **run.dict())
+        try:
+            self.client.update_run(run.id, **run.dict())
+        except Exception as e:
+            # Errors are swallowed by the thread executor so we need to log them here
+            log_error_once("patch", e)
+            raise
 
     def _on_llm_start(self, run: Run) -> None:
         """Persist an LLM run."""
