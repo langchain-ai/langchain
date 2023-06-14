@@ -1,4 +1,5 @@
 """Zilliz Retriever"""
+import warnings
 from typing import Any, Dict, List, Optional
 
 from langchain.embeddings.base import Embeddings
@@ -8,7 +9,7 @@ from langchain.vectorstores.zilliz import Zilliz
 # TODO: Update to ZillizClient + Hybrid Search when available
 
 
-class ZillizRetreiver(BaseRetriever):
+class ZillizRetriever(BaseRetriever):
     def __init__(
         self,
         embedding_function: Embeddings,
@@ -41,3 +42,12 @@ class ZillizRetreiver(BaseRetriever):
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
         raise NotImplementedError
+
+
+def ZillizRetreiver(*args: Any, **kwargs: Any) -> ZillizRetriever:
+    warnings.warn(
+        "ZillizRetreiver will be deprecated in the future. "
+        "Please use ZillizRetriever ('i' before 'e') instead.",
+        DeprecationWarning,
+    )
+    return ZillizRetriever(*args, **kwargs)
