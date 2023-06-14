@@ -54,7 +54,7 @@ You can also use it to count tokens when splitting documents with
 from langchain.text_splitter import CharacterTextSplitter
 CharacterTextSplitter.from_tiktoken_encoder(...)
 ```
-For a more detailed walkthrough of this, see [this notebook](/docs/modules/indexes/text_splitters/examples/tiktoken.ipynb)
+For a more detailed walkthrough of this, see [this notebook](/docs/modules/data_io/text_splitters/examples/tiktoken.ipynb)
 
 ## Chain
 
@@ -66,7 +66,7 @@ from langchain.chains import OpenAIModerationChain
 
 ## Document Loader
 
-See a [usage example](/docs/modules/indexes/document_loaders/examples/chatgpt_loader.ipynb).
+See a [usage example](/docs/modules/data_io/document_loaders/integrations/chatgpt_loader.ipynb).
 
 ```python
 from langchain.document_loaders.chatgpt import ChatGPTLoader
@@ -74,7 +74,7 @@ from langchain.document_loaders.chatgpt import ChatGPTLoader
 
 ## Retriever
 
-See a [usage example](/docs/modules/indexes/retrievers/examples/chatgpt-plugin.ipynb).
+See a [usage example](/docs/modules/data_io/retrievers/integrations/chatgpt-plugin.ipynb).
 
 ```python
 from langchain.retrievers import ChatGPTPluginRetriever
