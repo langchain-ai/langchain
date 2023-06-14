@@ -1,14 +1,9 @@
 ---
 sidebar_position: 5
 ---
-You can subscribe to these events by using the `callbacks` argument available throughout the API. This argument is list of handler objects, which are expected to implement one or more of the methods described below in more detail. There are two main callbacks mechanisms:
+You can subscribe to these events by using the `callbacks` argument available throughout the API. This argument is list of handler objects, which are expected to implement one or more of the methods described below in more detail.
 
-* *Constructor callbacks* will be used for all calls made on that object, and will be scoped to that object only, i.e. if you pass a handler to the `LLMChain` constructor, it will not be used by the model attached to that chain. 
-* *Request callbacks* will be used for that specific request only, and all sub-requests that it contains (eg. a call to an `LLMChain` triggers a call to a Model, which uses the same handler passed through). These are explicitly passed through.
-
-
-**Advanced:** When you create a custom chain you can easily set it up to use the same callback system as all the built-in chains. 
-`_call`, `_generate`, `_run`, and equivalent async methods on Chains / LLMs / Chat Models / Agents / Tools now receive a 2nd argument called `run_manager` which is bound to that run, and contains the logging methods that can be used by that object (i.e. `on_llm_new_token`). This is useful when constructing a custom chain. See this guide for more information on how to [create custom chains and use callbacks inside them.](https://python.langchain.com/en/latest/modules/chains/generic/custom_chain.html)
+## Callback handlers
 
 `CallbackHandlers` are objects that implement the `CallbackHandler` interface, which has a method for each event that can be subscribed to. The `CallbackManager` will call the appropriate method on each handler when the event is triggered.
 
@@ -68,7 +63,65 @@ class BaseCallbackHandler:
         """Run on agent end."""
 ```
 
-## How to use callbacks
+## Get started
+
+LangChain provides a few built-in handlers that you can use to get started. These are available in the `langchain/callbacks` module. The most basic handler is the `StdOutCallbackHandler`, which simply logs all events to `stdout`.
+
+**Note** when the `verbose` flag on the object is set to true, the `StdOutCallbackHandler` will be invoked even without being explicitly passed in.
+
+```python
+from langchain.callbacks import StdOutCallbackHandler
+from langchain.chains import LLMChain
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
+
+handler = StdOutCallbackHandler()
+llm = OpenAI()
+prompt = PromptTemplate.from_template("1 + {number} = ")
+
+# Constructor callback: First, let's explicitly set the StdOutCallbackHandler when initializing our chain
+chain = LLMChain(llm=llm, prompt=prompt, callbacks=[handler])
+chain.run(number=2)
+
+# Use verbose flag: Then, let's use the `verbose` flag to achieve the same result
+chain = LLMChain(llm=llm, prompt=prompt, verbose=True)
+chain.run(number=2)
+
+# Request callbacks: Finally, let's use the request `callbacks` to achieve the same result
+chain = LLMChain(llm=llm, prompt=prompt)
+chain.run(number=2, callbacks=[handler])
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    > Entering new LLMChain chain...
+    Prompt after formatting:
+    1 + 2 = 
+    
+    > Finished chain.
+    
+    
+    > Entering new LLMChain chain...
+    Prompt after formatting:
+    1 + 2 = 
+    
+    > Finished chain.
+    
+    
+    > Entering new LLMChain chain...
+    Prompt after formatting:
+    1 + 2 = 
+    
+    > Finished chain.
+
+
+    '\n\n3'
+```
+
+</CodeOutputBlock>
+
+## Where to pass in callbacks
 
 The `callbacks` argument is available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) in two different places:
 
@@ -82,66 +135,3 @@ The `verbose` argument is available on most objects throughout the API (Chains, 
 - Constructor callbacks are most useful for use cases such as logging, monitoring, etc., which are _not specific to a single request_, but rather to the entire chain. For example, if you want to log all the requests made to an LLMChain, you would pass a handler to the constructor.
 - Request callbacks are most useful for use cases such as streaming, where you want to stream the output of a single request to a specific websocket connection, or other similar use cases. For example, if you want to stream the output of a single request to a websocket, you would pass a handler to the `call()` method
 
-## Using an existing handler
-
-LangChain provides a few built-in handlers that you can use to get started. These are available in the `langchain/callbacks` module. The most basic handler is the `StdOutCallbackHandler`, which simply logs all events to `stdout`. In the future we will add more default handlers to the library. 
-
-**Note** when the `verbose` flag on the object is set to true, the `StdOutCallbackHandler` will be invoked even without being explicitly passed in.
-
-
-```python
-from langchain.callbacks import StdOutCallbackHandler
-from langchain.chains import LLMChain
-from langchain.llms import OpenAI
-from langchain.prompts import PromptTemplate
-
-handler = StdOutCallbackHandler()
-llm = OpenAI()
-prompt = PromptTemplate.from_template("1 + {number} = ")
-
-# First, let's explicitly set the StdOutCallbackHandler in `callbacks`
-chain = LLMChain(llm=llm, prompt=prompt, callbacks=[handler])
-chain.run(number=2)
-
-# Then, let's use the `verbose` flag to achieve the same result
-chain = LLMChain(llm=llm, prompt=prompt, verbose=True)
-chain.run(number=2)
-
-# Finally, let's use the request `callbacks` to achieve the same result
-chain = LLMChain(llm=llm, prompt=prompt)
-chain.run(number=2, callbacks=[handler])
-```
-
-<CodeOutputBlock lang="python">
-
-```
-    
-    
-    > Entering new LLMChain chain...
-    Prompt after formatting:
-    1 + 2 = 
-    
-    > Finished chain.
-    
-    
-    > Entering new LLMChain chain...
-    Prompt after formatting:
-    1 + 2 = 
-    
-    > Finished chain.
-    
-    
-    > Entering new LLMChain chain...
-    Prompt after formatting:
-    1 + 2 = 
-    
-    > Finished chain.
-
-
-
-
-
-    '\n\n3'
-```
-
-</CodeOutputBlock>
