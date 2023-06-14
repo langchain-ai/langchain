@@ -150,7 +150,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         resp.update({"prompts": prompt_responses})
 
-        print(prompt_responses)
         self.deck(
             "LLM Start",
             self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp)),
@@ -173,7 +172,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         all_complexity_metrics = []
 
-        print(response.generations)
         for generations in response.generations:
             for generation in generations:
                 generation_resp = deepcopy(resp)
@@ -184,6 +182,8 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                         nlp=self.nlp,
                     )
                 )
+
+                print(generation_resp)
                 complexity_metrics: Dict[str, float] = generation_resp.pop("text_complexity_metrics")  # type: ignore  # noqa: E501
                 all_complexity_metrics.append(complexity_metrics)
 
@@ -193,6 +193,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 # self.deck("LLM End: Dependency Tree", dependency_tree)
                 # self.deck("LLM End: Entities", entities)
 
+        print(all_complexity_metrics)
         deck_one = self.deck(
             "LLM End",
             self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp)),
