@@ -14,7 +14,7 @@ from langchain.evaluation.run_evaluators.implementations import (
     get_qa_evaluator,
 )
 from langchain.sql_database import SQLDatabase
-from langchain.callbacks.tracers.run_stack import RunStackCallbackHandler
+from langchain.callbacks.tracers.run_collector import RunCollectorCallbackHandler
 from langchain.callbacks.tracers.schemas import Run
 
 _DIR = Path(__file__).parent.resolve()
@@ -47,7 +47,8 @@ def chain_to_test(database: SQLDatabase) -> SQLDatabaseChain:
 )
 def run_example_pair(request, chain_to_test: SQLDatabaseChain) -> Tuple[Run, Example]:
     example: Example = request.param
-    run_stack = RunStackCallbackHandler()
+    # TODO: Add context manager for this
+    run_stack = RunCollectorCallbackHandler()
     with tracing_v2_enabled(
         session_name=f"test_chain_on_example-{_TEST_RUN_ID}", example_id=example.id
     ):
