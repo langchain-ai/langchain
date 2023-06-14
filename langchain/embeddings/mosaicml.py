@@ -109,7 +109,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
                     raise ValueError(
                         f"No key data or output in response: {parsed_response}"
                     )
-                
+
                 if isinstance(output_item, list) and isinstance(output_item[0], list):
                     embeddings = output_item
                 else:
@@ -119,18 +119,18 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
                 if isinstance(first_item, list):
                     embeddings = parsed_response
                 elif isinstance(first_item, dict):
-                    if 'output' in first_item:
-                        embeddings = [item['output'] for item in parsed_response]
+                    if "output" in first_item:
+                        embeddings = [item["output"] for item in parsed_response]
                     else:
                         raise ValueError(
                             f"No key data or output in response: {parsed_response}"
                         )
                 else:
-                    raise ValueError(
-                        f"Unexpected response format: {parsed_response}"
-                    )
+                    raise ValueError(f"Unexpected response format: {parsed_response}")
             else:
-                raise ValueError(f"Unexpected response type {type(parsed_response)}: {parsed_response}")
+                raise ValueError(
+                    f"Unexpected response type {type(parsed_response)}: {parsed_response}"
+                )
 
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(
