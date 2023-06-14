@@ -104,7 +104,7 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
         raise NotImplementedError("ListTablesSqlDbTool does not support async")
 
 
-class QueryCheckerTool(BaseSQLDatabaseTool, BaseTool):
+class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     """Use an LLM to check if a query is correct.
     Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
 
