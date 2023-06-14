@@ -155,8 +155,8 @@ class MosaicML(LLM):
                     f"Error raised by inference API: {parsed_response['error']}"
                 )
 
-            # The inference API has changed a couple of times, so we add some handling to be robust
-            # to multiple response formats.
+            # The inference API has changed a couple of times, so we add some handling
+            # to be robust to multiple response formats.
             if isinstance(parsed_response, dict):
                 if "data" in parsed_response:
                     output_item = parsed_response["data"]
@@ -185,9 +185,7 @@ class MosaicML(LLM):
                 else:
                     raise ValueError(f"Unexpected response format: {parsed_response}")
             else:
-                raise ValueError(
-                    f"Unexpected response type {type(parsed_response)}: {parsed_response}"
-                )
+                raise ValueError(f"Unexpected response type: {parsed_response}")
 
             text = text[len(prompt) :]
 
