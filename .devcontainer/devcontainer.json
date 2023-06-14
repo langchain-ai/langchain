@@ -14,7 +14,7 @@
 	"workspaceFolder": "/workspaces/langchain",
 
 	// Prevent the container from shutting down
-	"overrideCommand": true,
+	"overrideCommand": true
 
 	// Features to add to the dev container. More info: https://containers.dev/features
 	// "features": {

@@ -2,8 +2,8 @@ version: '3'
 services:
   langchain:
     build:
-      dockerfile: Dockerfile
-      context: .
+      dockerfile: dev.Dockerfile
+      context: ..
     volumes:
       - ../:/workspaces/langchain
     networks:
