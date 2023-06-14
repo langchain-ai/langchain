@@ -1,19 +1,23 @@
 # Prediction Guard
 
-This page covers how to use the Prediction Guard ecosystem within LangChain.
-It is broken into two parts: installation and setup, and then references to specific Prediction Guard wrappers.
+>[Prediction Guard](https://docs.predictionguard.com/) gives a quick and easy access to state-of-the-art open and closed access LLMs, without  needing to spend days and weeks figuring out all of the implementation details, managing a bunch of different API specs, and setting up the infrastructure for model deployments.
+
 
 ## Installation and Setup
-- Install the Python SDK with `pip install predictionguard`
+- Install the Python SDK:
+```bash
+pip install predictionguard
+```
+
 - Get an Prediction Guard access token (as described [here](https://docs.predictionguard.com/)) and set it as an environment variable (`PREDICTIONGUARD_TOKEN`)
 
-## LLM Wrapper
+## LLM 
 
-There exists a Prediction Guard LLM wrapper, which you can access with 
 ```python
 from langchain.llms import PredictionGuard
 ```
 
+### Example
 You can provide the name of the Prediction Guard model as an argument when initializing the LLM:
 ```python
 pgllm = PredictionGuard(model="MPT-7B-Instruct")
@@ -24,14 +28,12 @@ You can also provide your access token directly as an argument:
 pgllm = PredictionGuard(model="MPT-7B-Instruct", token="<your access token>")
 ```
 
-Finally, you can provide an "output" argument that is used to structure/ control the output of the LLM:
+Also, you can provide an "output" argument that is used to structure/ control the output of the LLM:
 ```python
 pgllm = PredictionGuard(model="MPT-7B-Instruct", output={"type": "boolean"})
 ```
 
-## Example usage
-
-Basic usage of the controlled or guarded LLM wrapper:
+#### Basic usage of the controlled or guarded LLM:
 ```python
 import os
 
@@ -72,7 +74,7 @@ pgllm = PredictionGuard(model="MPT-7B-Instruct",
 pgllm(prompt.format(query="What kind of post is this?"))
 ```
 
-Basic LLM Chaining with the Prediction Guard wrapper:
+#### Basic LLM Chaining with the Prediction Guard:
 ```python
 import os
 

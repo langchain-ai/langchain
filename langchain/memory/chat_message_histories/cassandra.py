@@ -20,6 +20,7 @@ DEFAULT_PORT = 9042
 
 class CassandraChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in Cassandra.
+
     Args:
         contact_points: list of ips to connect to Cassandra cluster
         session_id: arbitrary key that is used to store the messages

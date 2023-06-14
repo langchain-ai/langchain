@@ -19,8 +19,10 @@ class PredictionGuard(LLM):
     it as a named parameter to the constructor. To use Prediction Guard's API along
     with OpenAI models, set the environment variable ``OPENAI_API_KEY`` with your
     OpenAI API key as well.
+
     Example:
         .. code-block:: python
+
             pgllm = PredictionGuard(model="MPT-7B-Instruct",
                                     token="my-access-token",
                                     output={
@@ -89,6 +91,7 @@ class PredictionGuard(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Prediction Guard's model API.
         Args:
@@ -115,6 +118,7 @@ class PredictionGuard(LLM):
             output=self.output,
             temperature=params["temperature"],
             max_tokens=params["max_tokens"],
+            **kwargs,
         )
         text = response["choices"][0]["text"]
 

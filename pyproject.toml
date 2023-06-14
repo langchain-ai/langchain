@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.187"
+version = "0.0.200"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -9,7 +9,6 @@ repository = "https://www.github.com/hwchase17/langchain"
 
 [tool.poetry.scripts]
 langchain-server = "langchain.server:main"
-langchain = "langchain.cli.main:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -90,7 +89,7 @@ pandas = {version = "^2.0.1", optional = true}
 telethon = {version = "^1.28.5", optional = true}
 neo4j = {version = "^5.8.1", optional = true}
 psychicapi = {version = "^0.5", optional = true}
-zep-python = {version="^0.30", optional=true}
+zep-python = {version=">=0.31", optional=true}
 langkit = {version = ">=0.0.1.dev3, <0.1.0", optional = true}
 chardet = {version="^5.1.0", optional=true}
 requests-toolbelt = {version = "^1.0.0", optional = true}
@@ -102,7 +101,13 @@ azure-cognitiveservices-speech = {version = "^1.28.0", optional = true}
 py-trello = {version = "^0.19.0", optional = true}
 momento = {version = "^1.5.0", optional = true}
 bibtexparser = {version = "^1.4.0", optional = true}
+singlestoredb = {version = "^0.6.1", optional = true}
 pyspark = {version = "^3.4.0", optional = true}
+tigrisdb = {version = "^1.0.0b6", optional = true}
+nebula3-python = {version = "^3.4.0", optional = true}
+langchainplus-sdk = ">=0.0.9"
+awadb = {version = "^0.3.2", optional = true}
+azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -134,6 +139,7 @@ pytest-asyncio = "^0.20.3"
 lark = "^1.1.5"
 pytest-mock  = "^3.10.0"
 pytest-socket = "^0.6.0"
+syrupy = "^4.0.2"
 
 [tool.poetry.group.test_integration]
 optional = true
@@ -212,7 +218,16 @@ text_helpers = ["chardet"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-azure = ["azure-identity", "azure-cosmos", "openai", "azure-core", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech"]
+azure = [
+    "azure-identity",
+    "azure-cosmos",
+    "openai",
+    "azure-core",
+    "azure-ai-formrecognizer",
+    "azure-ai-vision",
+    "azure-cognitiveservices-speech",
+    "azure-search-documents",
+]
 all = [
     "anthropic",
     "cohere",
@@ -278,7 +293,11 @@ all = [
     "azure-ai-formrecognizer",
     "azure-ai-vision",
     "azure-cognitiveservices-speech",
-    "momento"
+    "momento",
+    "singlestoredb",
+    "tigrisdb",
+    "nebula3-python",
+    "awadb",
 ]
 
 # An extra used to be able to add extended testing.
@@ -306,8 +325,14 @@ extended_testing = [
  "html2text",
  "py-trello",
  "scikit-learn",
- "pyspark"
+ "pyspark",
+ "openai"
 ]
+
+[[tool.poetry.source]]
+name = "azure-sdk-dev"
+url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/"
+secondary = true
 
 [tool.ruff]
 select = [
@@ -340,7 +365,10 @@ build-backend = "poetry.core.masonry.api"
 # https://docs.pytest.org/en/7.1.x/reference/reference.html
 # --strict-config       any warnings encountered while parsing the `pytest`
 #                       section of the configuration file raise errors.
-addopts = "--strict-markers --strict-config --durations=5"
+#
+# https://github.com/tophat/syrupy
+# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused"
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [

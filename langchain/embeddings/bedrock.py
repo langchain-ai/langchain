@@ -68,6 +68,10 @@ class BedrockEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that AWS credentials to and python package exists in environment."""
+
+        if values["client"] is not None:
+            return values
+
         try:
             import boto3
 

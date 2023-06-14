@@ -60,6 +60,9 @@ _EXPECTED = [
     "ZapierNLARunAction",
     "tool",
     "YouTubeSearchTool",
+    "BraveSearch",
+    "PubmedQueryRun",
+    "format_tool_to_openai_function",
 ]
 
 
