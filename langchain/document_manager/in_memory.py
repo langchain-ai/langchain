@@ -26,6 +26,7 @@ class _DocumentWithState:
     document_id: str
     hash: str
     chunk_hashes: List[str]
+    document: Document  
 
 
 class InMemoryDocumentManager(DocumentManager):
@@ -35,6 +36,16 @@ class InMemoryDocumentManager(DocumentManager):
         self._documents_with_state = {}
         self.text_splitter = text_splitter
 
+    def add_documents_to_vectorstore(self,vectorstore) -> None:
+        """Add documents to the vectorstore given their ids."""
+        for doc,doc_hash in self.lazy_load_all_docs():
+            vectorstore.add_texts(texts=[doc.page_content],metadatas=[doc.metadata],ids=[doc_hash])
+
+    def lazy_load_all_docs(self,):     
+        """Retrieve all documents."""
+        for doc_id in self._documents_with_state:
+            yield (self._documents_with_state[doc_id].document,
+                   self._documents_with_state[doc_id].hash)
 
     def add(self, documents: List[Document], ids: List[str]) -> List[DocumentWithOperation]:
         """Adds documents to the document manager.
@@ -56,7 +67,9 @@ class InMemoryDocumentManager(DocumentManager):
         for document, id in zip(documents, ids):
             chunks = self.text_splitter.create_documents(document.page_content)
             chunk_hashes = [_get_hash(chunk) for chunk in chunks]
-            doc_with_state = _DocumentWithState(id, self.get_document_hash(document), chunk_hashes)
+            # Store document in memory (for now)
+            # As discussed, this would ideally be in a local key-value store
+            doc_with_state = _DocumentWithState(id, self.get_document_hash(document), chunk_hashes, document)
             self._documents_with_state[id] = doc_with_state
             for i, chunk in enumerate(chunks):
                 chunks_to_add.append(DocumentWithOperation(
