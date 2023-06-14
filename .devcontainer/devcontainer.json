@@ -5,7 +5,7 @@
 	"name": "langchain",
 
 	// Point to a Docker Compose file
-	"dockerComposeFile": "docker-compose.yaml",
+	"dockerComposeFile": "./docker-compose.yaml",
 
 	// Required when using Docker Compose. The name of the service to connect to once running
 	"service": "langchain",
@@ -17,9 +17,9 @@
 	"overrideCommand": true,
 
 	// Features to add to the dev container. More info: https://containers.dev/features
-	"features": {
-		"ghcr.io/devcontainers-contrib/features/poetry:2": {}
-	}
+	// "features": {
+	// 	"ghcr.io/devcontainers-contrib/features/poetry:2": {}
+	// }
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],

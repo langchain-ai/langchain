@@ -3,7 +3,7 @@ services:
   langchain:
     build:
       dockerfile: Dockerfile
-      context: ../ 
+      context: .
     volumes:
       - ../:/workspaces/langchain
     networks:
