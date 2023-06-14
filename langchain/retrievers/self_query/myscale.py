@@ -1,6 +1,6 @@
 import datetime
 import re
-from typing import Dict, Tuple, Union, Callable, Any
+from typing import Any, Callable, Dict, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -16,6 +16,7 @@ def DEFAULT_COMPOSER(op_name: str) -> Callable:
     def f(*args: Any) -> str:
         args_: map[str] = map(str, args)
         return f" {op_name} ".join(args_)
+
     return f
 
 
@@ -23,6 +24,7 @@ def FUNCTION_COMPOSER(op_name: str) -> Callable:
     def f(*args: Any) -> str:
         args_: map[str] = map(str, args)
         return f"{op_name}({','.join(args_)})"
+
     return f
 
 

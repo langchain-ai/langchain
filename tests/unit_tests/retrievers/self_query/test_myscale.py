@@ -1,6 +1,7 @@
+from typing import Any, Tuple
+
 import pytest
 
-from typing import Tuple, Any
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,

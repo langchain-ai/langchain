@@ -8,8 +8,8 @@ from typing import (
     Generator,
     Iterable,
     List,
-    Optional,
     Mapping,
+    Optional,
     Tuple,
     Union,
 )

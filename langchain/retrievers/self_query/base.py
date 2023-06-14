@@ -102,7 +102,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         )
         if structured_query.limit is not None:
             new_kwargs["k"] = structured_query.limit
-                        
+
         if self.use_original_query:
             new_query = query
 
