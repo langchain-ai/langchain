@@ -12,7 +12,7 @@ from langchain.callbacks.utils import (
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-def import_flytekit() -> Any:
+def import_flytekit():
     try:
         import flytekit  # noqa: F401
     except ImportError:
@@ -20,7 +20,6 @@ def import_flytekit() -> Any:
             "To use the flyte callback manager you need to have the `flytekit`"
             "package installed. Please install it with `pip install flytekit`"
         )
-    return flytekit
 
 
 def analyze_text(
@@ -82,17 +81,13 @@ def analyze_text(
 
 
 class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
-    """
-    Callback Handler that logs to Flyte.
-
-    This callback handler can only be used within a Flyte task.
-    """
+    """This callback handler is designed specifically for usage within a Flyte task."""
 
     def __init__(self) -> None:
         """Initialize callback handler."""
 
         import_flytekit()
-        import_pandas()
+        self.pandas = import_pandas()
         spacy = import_spacy()
         super().__init__()
 
@@ -129,19 +124,16 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             "action_records": [],
         }
 
-    def _reset(self) -> None:
-        for k, v in self.metrics.items():
-            self.metrics[k] = 0
-        for k, v in self.records.items():
-            self.records[k] = []
+        from flytekit import Deck
+        from flytekitplugins.deck.renderer import TableRenderer
+
+        self.deck = Deck
+        self.table_renderer = TableRenderer
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Run when LLM starts."""
-        from flytekit import Deck
-        from flytekitplugins.deck.renderer import TableRenderer
-        import pandas as pd
 
         self.metrics["step"] += 1
         self.metrics["llm_starts"] += 1
@@ -152,46 +144,24 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(flatten_dict(serialized))
         resp.update(self.metrics)
 
+        prompt_responses = []
         for prompt in prompts:
-            prompt_resp = deepcopy(resp)
-            prompt_resp["prompt"] = prompt
-            self.records["on_llm_start_records"].append(prompt_resp)
-            self.records["action_records"].append(prompt_resp)
-            Deck(
-                "LLM Start",
-                TableRenderer().to_html(pd.DataFrame.from_dict(prompt_resp)),
-            )
+            prompt_responses.append(prompt)
+
+        resp.update({"prompts": prompt_responses})
+
+        print(prompt_responses)
+        self.deck(
+            "LLM Start",
+            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp)),
+        )
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run when LLM generates a new token."""
-        from flytekit import Deck
-        from flytekitplugins.deck.renderer import TableRenderer
-        import pandas as pd
-
-        self.metrics["step"] += 1
-        self.metrics["llm_streams"] += 1
-
-        resp: Dict[str, Any] = {}
-        resp.update({"action": "on_llm_new_token", "token": token})
-        resp.update(self.metrics)
-
-        self.records["on_llm_token_records"].append(resp)
-        self.records["action_records"].append(resp)
-        Deck(
-            "LLM New Token: Prompt Response",
-            TableRenderer().to_html(pd.DataFrame.from_dict(resp)),
-        )
-        Deck(
-            "LLM New Token: Log Metrics",
-            TableRenderer().to_html(pd.DataFrame.from_dict(resp)),
-        )
+        pass
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
-        from flytekit import Deck
-        from flytekitplugins.deck.renderer import TableRenderer
-        import pandas as pd
-
         self.metrics["step"] += 1
         self.metrics["llm_ends"] += 1
         self.metrics["ends"] += 1
@@ -201,6 +171,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(flatten_dict(response.llm_output or {}))
         resp.update(self.metrics)
 
+        all_complexity_metrics = []
+
+        print(response.generations)
         for generations in response.generations:
             for generation in generations:
                 generation_resp = deepcopy(resp)
@@ -212,23 +185,23 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                     )
                 )
                 complexity_metrics: Dict[str, float] = generation_resp.pop("text_complexity_metrics")  # type: ignore  # noqa: E501
+                all_complexity_metrics.append(complexity_metrics)
 
-                Deck(
-                    "LLM End: Complexity Metrics",
-                    TableRenderer().to_html(pd.DataFrame.from_dict(complexity_metrics)),
-                )
-                self.records["on_llm_end_records"].append(generation_resp)
-                self.records["action_records"].append(generation_resp)
+                # dependency_tree = generation_resp["dependency_tree"]
+                # entities = generation_resp["entities"]
 
-                Deck(
-                    "LLM End: Response",
-                    TableRenderer().to_html(pd.DataFrame.from_dict(resp)),
-                )
-                dependency_tree = generation_resp["dependency_tree"]
-                entities = generation_resp["entities"]
+                # self.deck("LLM End: Dependency Tree", dependency_tree)
+                # self.deck("LLM End: Entities", entities)
 
-                Deck("LLM End: Dependency Tree", dependency_tree)
-                Deck("LLM End: Entities", entities)
+        deck_one = self.deck(
+            "LLM End",
+            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp)),
+        )
+        deck_one.append(
+            self.table_renderer().to_html(
+                self.pandas.DataFrame.from_records(all_complexity_metrics)
+            ),
+        )
 
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -257,8 +230,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         chain_input = ",".join([f"{k}={v}" for k, v in inputs.items()])
         input_resp = deepcopy(resp)
         input_resp["inputs"] = chain_input
-        self.records["on_chain_start_records"].append(input_resp)
-        self.records["action_records"].append(input_resp)
 
         Deck(
             "LLM Chain Start",
@@ -279,9 +250,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         chain_output = ",".join([f"{k}={v}" for k, v in outputs.items()])
         resp.update({"action": "on_chain_end", "outputs": chain_output})
         resp.update(self.metrics)
-
-        self.records["on_chain_end_records"].append(resp)
-        self.records["action_records"].append(resp)
 
         Deck(
             "LLM Chain End",
@@ -312,9 +280,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(flatten_dict(serialized))
         resp.update(self.metrics)
 
-        self.records["on_tool_start_records"].append(resp)
-        self.records["action_records"].append(resp)
-
         Deck(
             "LLM Tool Start",
             TableRenderer().to_html(pd.DataFrame.from_dict(resp)),
@@ -333,9 +298,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp: Dict[str, Any] = {}
         resp.update({"action": "on_tool_end", "output": output})
         resp.update(self.metrics)
-
-        self.records["on_tool_end_records"].append(resp)
-        self.records["action_records"].append(resp)
 
         Deck(
             "LLM Tool End",
@@ -364,9 +326,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update({"action": "on_text", "text": text})
         resp.update(self.metrics)
 
-        self.records["on_text_records"].append(resp)
-        self.records["action_records"].append(resp)
-
         Deck(
             "LLM Text",
             TableRenderer().to_html(pd.DataFrame.from_dict(resp)),
@@ -391,9 +350,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             }
         )
         resp.update(self.metrics)
-
-        self.records["on_agent_finish_records"].append(resp)
-        self.records["action_records"].append(resp)
 
         Deck(
             "LLM Agent Finish",
@@ -420,8 +376,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             }
         )
         resp.update(self.metrics)
-        self.records["on_agent_action_records"].append(resp)
-        self.records["action_records"].append(resp)
 
         Deck(
             "LLM Agent Action",
