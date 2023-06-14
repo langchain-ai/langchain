@@ -163,11 +163,12 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        user_input = kwargs["input"]
         agent_scratchpad = _format_intermediate_steps(intermediate_steps)
-        prompt = self.prompt.format_prompt(
-            input=user_input, agent_scratchpad=agent_scratchpad
-        )
+        selected_inputs = {
+            k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"
+        }
+        full_inputs = dict(**selected_inputs, agent_scratchpad=agent_scratchpad)
+        prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = self.llm.predict_messages(
             messages, functions=self.functions, callbacks=callbacks
@@ -189,11 +190,12 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        user_input = kwargs["input"]
         agent_scratchpad = _format_intermediate_steps(intermediate_steps)
-        prompt = self.prompt.format_prompt(
-            input=user_input, agent_scratchpad=agent_scratchpad
-        )
+        selected_inputs = {
+            k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"
+        }
+        full_inputs = dict(**selected_inputs, agent_scratchpad=agent_scratchpad)
+        prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = await self.llm.apredict_messages(
             messages, functions=self.functions
@@ -202,13 +204,20 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         return agent_decision
 
     @classmethod
-    def create_prompt(cls) -> BasePromptTemplate:
+    def create_prompt(
+        cls,
+        input_variables: Optional[List[str]] = None,
+        memory_prompts: Optional[List[BasePromptTemplate]] = None,
+    ) -> BasePromptTemplate:
+        if input_variables is None:
+            input_variables = ["input", "agent_scratchpad"]
+        _memory_prompts = memory_prompts or []
         messages = [
             SystemMessage(content="You are a helpful AI assistant."),
+            *_memory_prompts,
             HumanMessagePromptTemplate.from_template("{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
-        input_variables = ["input", "agent_scratchpad"]
         return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
     @classmethod
@@ -217,12 +226,17 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
+        input_variables: Optional[List[str]] = None,
+        memory_prompts: Optional[List[BasePromptTemplate]] = None,
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools."""
         if not isinstance(llm, ChatOpenAI):
             raise ValueError("Only supported with OpenAI models.")
-        prompt = cls.create_prompt()
+        prompt = cls.create_prompt(
+            input_variables=input_variables,
+            memory_prompts=memory_prompts,
+        )
         return cls(
             llm=llm,
             prompt=prompt,
