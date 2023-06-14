@@ -24,6 +24,7 @@ from langchain.schema import (
     SystemMessage,
 )
 from langchain.tools import BaseTool
+from langchain.schema import OutputParserException
 from langchain.tools.convert_to_openai import format_tool_to_openai_function
 
 
@@ -43,9 +44,10 @@ def _convert_agent_action_to_messages(agent_action: AgentAction) -> List[BaseMes
     Returns:
         AIMessage that corresponds to the original tool invocation.
     """
-    if not isinstance(agent_action, _FunctionsAgentAction):
-        raise ValueError("This agent type only works with _FunctionsAgentAction")
-    return agent_action.message_log
+    if isinstance(agent_action, _FunctionsAgentAction):
+        return agent_action.message_log
+    else:
+        return [AIMessage(content=agent_action.log)]
 
 
 def _create_function_message(
@@ -105,7 +107,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
             _tool_input = {k:v.replace('\'', '\"') for k,v in _tool_input.items()}
             # print(_tool_input)
         except JSONDecodeError:
-            raise ValueError(
+            raise OutputParserException(
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` is not valid JSON."
             )
