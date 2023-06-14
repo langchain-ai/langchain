@@ -7,7 +7,10 @@ from langchain.retrievers.databerry import DataberryRetriever
 from langchain.retrievers.docarray import DocArrayRetriever
 from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
 from langchain.retrievers.knn import KNNRetriever
-from langchain.retrievers.llama_index import LlamaIndexGraphRetriever, LlamaIndexRetriever
+from langchain.retrievers.llama_index import (
+    LlamaIndexGraphRetriever,
+    LlamaIndexRetriever,
+)
 from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.milvus import MilvusRetriever

@@ -17,7 +17,9 @@ from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.callbacks.streaming_stdout_final_only import FinalStreamingStdOutCallbackHandler
+from langchain.callbacks.streaming_stdout_final_only import (
+    FinalStreamingStdOutCallbackHandler,
+)
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
