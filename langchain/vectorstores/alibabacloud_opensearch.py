@@ -1,14 +1,15 @@
-from typing import Iterable, Optional, List, Any, Dict, Tuple
-
-from langchain.embeddings.base import Embeddings
-from langchain.schema import Document
-from langchain.vectorstores import VectorStore
-from alibabacloud_ha3engine import models, client
-from alibabacloud_tea_util import models as util_models
-from hashlib import sha1
 import json
 import logging
 import numbers
+from hashlib import sha1
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+
+from alibabacloud_ha3engine import client, models
+from alibabacloud_tea_util import models as util_models
+
+from langchain.embeddings.base import Embeddings
+from langchain.schema import Document
+from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()
 
@@ -30,12 +31,14 @@ class AlibabaCloudOpenSearchSettings:
                                 {
                                     'id': 'The id field name map of index document.',
                                     'document': 'The text field name map of index document.',
-                                    'embedding': 'In the embedding field of the opensearch instance, the values must be in float16 multivalue type and separated by commas.',
+                                    'embedding': 'In the embedding field of the opensearch instance, the values must be
+                                                in float16 multivalue type and separated by commas.',
                                     'metadata_field_x': 'Metadata field mapping includes the mapped field name and
                                     operator in the mapping value, separated by a comma between the mapped field name
                                     and the operator.',
                                 }
     """
+
     endpoint: str
     instance_id: str
     username: str
@@ -46,18 +49,19 @@ class AlibabaCloudOpenSearchSettings:
         "id": "id",
         "document": "document",
         "embedding": "embedding",
-        "metadata_field_x": "metadata_field_x,operator"
+        "metadata_field_x": "metadata_field_x,operator",
     }
 
-    def __init__(self,
-                 endpoint: str,
-                 instance_id: str,
-                 username: str,
-                 password: str,
-                 datasource_name: str,
-                 embedding_index_name: str,
-                 field_name_mapping: Dict[str, str]
-                 ) -> None:
+    def __init__(
+            self,
+            endpoint: str,
+            instance_id: str,
+            username: str,
+            password: str,
+            datasource_name: str,
+            embedding_index_name: str,
+            field_name_mapping: Dict[str, str],
+    ) -> None:
         self.endpoint = endpoint
         self.instance_id = instance_id
         self.username = username
@@ -70,13 +74,22 @@ class AlibabaCloudOpenSearchSettings:
         return getattr(self, item)
 
 
-class AlibabaCloudOpenSearch(VectorStore):
+def create_metadata(fields: Dict[str, Any]) -> Dict[str, Any]:
+    metadata: Dict[str, Any] = {}
+    for key, value in fields.items():
+        if key == "id" or key == "document" or key == "embedding":
+            continue
+        metadata[key] = value
+    return metadata
 
-    def __init__(self,
-                 embedding: Embeddings,
-                 config: AlibabaCloudOpenSearchSettings,
-                 **kwargs: Any,
-                 ) -> None:
+
+class AlibabaCloudOpenSearch(VectorStore):
+    def __init__(
+            self,
+            embedding: Embeddings,
+            config: AlibabaCloudOpenSearchSettings,
+            **kwargs: Any,
+    ) -> None:
         self.config = config
         self.embedding = embedding
 
@@ -85,23 +98,23 @@ class AlibabaCloudOpenSearch(VectorStore):
             read_timeout=10000,
             autoretry=False,
             ignore_ssl=False,
-            max_idle_conns=50
+            max_idle_conns=50,
+        )
+        self.ha3EngineClient = client.Client(
+            models.Config(
+                endpoint=config.endpoint,
+                instance_id=config.instance_id,
+                protocol="http",
+                access_user_name=config.username,
+                access_pass_word=config.password,
+            )
         )
 
-        self.ha3EngineClient = client.Client(models.Config(
-            endpoint=config.endpoint,
-            instance_id=config.instance_id,
-            protocol="http",
-            access_user_name=config.username,
-            access_pass_word=config.password
-        ))
-
-        self.options_headers = []
+        self.options_headers: Dict[str, str] = {}
 
     def add_texts(
             self,
             texts: Iterable[str],
-            ids: List[str] = None,
             metadatas: Optional[List[dict]] = None,
             **kwargs: Any,
     ) -> List[str]:
@@ -109,35 +122,50 @@ class AlibabaCloudOpenSearch(VectorStore):
             if push_doc_list is None or len(push_doc_list) == 0:
                 return []
             try:
-                push_request = models.PushDocumentsRequestModel(self.options_headers, push_doc_list)
-                push_response = self.ha3EngineClient.push_documents(self.config.datasource_name, field_name_map["id"],
-                                                                    push_request)
+                push_request = models.PushDocumentsRequestModel(
+                    self.options_headers, push_doc_list
+                )
+                push_response = self.ha3EngineClient.push_documents(
+                    self.config.datasource_name, field_name_map["id"], push_request
+                )
                 json_response = json.loads(push_response.body)
-                if json_response["status"] == 'OK':
-                    return [push_doc["fields"][field_name_map["id"]] for push_doc in push_doc_list]
+                if json_response["status"] == "OK":
+                    return [
+                        push_doc["fields"][field_name_map["id"]]
+                        for push_doc in push_doc_list
+                    ]
                 return []
             except Exception as e:
                 logger.error(
-                    f"add doc to alibaba cloud opensearch endpoint:{self.config.endpoint} instance_id:{self.config.instance_id} failed.",
-                    e)
+                    f"add doc to endpoint:{self.config.endpoint} instance_id:{self.config.instance_id} failed.",
+                    e,
+                )
                 raise e
 
-        ids = ids if ids is not None else [sha1(t.encode("utf-8")).hexdigest() for t in texts]
+        ids = [sha1(t.encode("utf-8")).hexdigest() for t in texts]
         embeddings = self.embedding.embed_documents(list(texts))
         metadatas = metadatas or [{} for _ in texts]
         field_name_map = self.config.field_name_mapping
         add_doc_list = []
+        text_list = list(texts)
         for idx, doc_id in enumerate(ids):
             embedding = embeddings[idx] if idx < len(embeddings) else None
             metadata = metadatas[idx] if idx < len(metadatas) else None
-            text = texts[idx] if idx < len(texts) else None
-            add_doc = dict()
-            add_doc_fields = dict()
+            text = text_list[idx] if idx < len(text_list) else None
+            add_doc: Dict[str, Any] = dict()
+            add_doc_fields: Dict[str, Any] = dict()
             add_doc_fields.__setitem__(field_name_map["id"], doc_id)
             add_doc_fields.__setitem__(field_name_map["document"], text)
-            add_doc_fields.__setitem__(field_name_map["embedding"], ",".join(str(unit) for unit in embedding))
-            for md_key, md_value in metadata.items():
-                add_doc_fields.__setitem__(field_name_map[md_key].split(',')[0], md_value)
+            if embedding is not None:
+                add_doc_fields.__setitem__(
+                    field_name_map["embedding"],
+                    ",".join(str(unit) for unit in embedding),
+                )
+            if metadata is not None:
+                for md_key, md_value in metadata.items():
+                    add_doc_fields.__setitem__(
+                        field_name_map[md_key].split(",")[0], md_value
+                    )
             add_doc.__setitem__("fields", add_doc_fields)
             add_doc.__setitem__("cmd", "add")
             add_doc_list.append(add_doc)
@@ -146,129 +174,156 @@ class AlibabaCloudOpenSearch(VectorStore):
     def similarity_search(
             self,
             query: str,
-            filter: Optional[dict] = None,
             k: int = 4,
+            search_filter: Optional[Dict[str, Any]] = None,
             **kwargs: Any,
     ) -> List[Document]:
-        return self.inner_search(query=query, filter=filter, k=k, with_score=False, kwargs=kwargs)
+        embedding = self.embedding.embed_query(query)
+        return self.create_results(
+            self.inner_embedding_query(
+                embedding=embedding, search_filter=search_filter, k=k
+            )
+        )
 
     def similarity_search_with_relevance_scores(
             self,
             query: str,
-            filter: Optional[dict] = None,
             k: int = 4,
+            search_filter: Optional[dict] = None,
             **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        return self.inner_search(query=query, filter=filter, k=k, with_score=True, kwargs=kwargs)
+        embedding: List[float] = self.embedding.embed_query(query)
+        return self.create_results_with_score(
+            self.inner_embedding_query(
+                embedding=embedding, search_filter=search_filter, k=k
+            )
+        )
 
     def similarity_search_by_vector(
             self,
-            query: str,
-            filter: Optional[dict] = None,
+            embedding: List[float],
             k: int = 4,
+            search_filter: Optional[dict] = None,
             **kwargs: Any,
     ) -> List[Document]:
-        return self.inner_search(query=query, filter=filter, k=k, with_score=False, kwargs=kwargs)
+        return self.create_results(
+            self.inner_embedding_query(
+                embedding=embedding, search_filter=search_filter, k=k
+            )
+        )
 
-    def inner_search(
+    def inner_embedding_query(
             self,
-            query: str,
-            filter: Optional[dict] = None,
+            embedding: List[float],
+            search_filter: Optional[Dict[str, Any]] = None,
             k: int = 4,
-            with_score: bool = False,
-            **kwargs: Any,
-    ):
-        def generate_query(document: str) -> str:
-            embedding = self.embedding.embed_query(document)
-            tmp_search_config_str = f"config=start:0,hit:{k},format:json&&cluster=general&&kvpairs=first_formula:proxima_score({self.config.embedding_index_name})&&sort=+RANK"
-            tmp_query_str = f"&&query={self.config.embedding_index_name}:" + "'" + ",".join(
-                str(x) for x in embedding) + "'"
-
-            if filter is not None:
+    ) -> Dict[str, Any]:
+        def generate_embedding_query() -> str:
+            tmp_search_config_str = (
+                f"config=start:0,hit:{k},format:json&&cluster=general&&kvpairs="
+                f"first_formula:proxima_score({self.config.embedding_index_name})&&sort=+RANK"
+            )
+            tmp_query_str = (
+                    f"&&query={self.config.embedding_index_name}:"
+                    + "'"
+                    + ",".join(str(x) for x in embedding)
+                    + "'"
+            )
+            if search_filter is not None:
                 filter_clause = "&&filter=" + " AND ".join(
-                    [create_filter(md_key, md_value) for md_key, md_value in filter.items()]
+                    [
+                        create_filter(md_key, md_value)
+                        for md_key, md_value in search_filter.items()
+                    ]
                 )
                 tmp_query_str += filter_clause
 
             return tmp_search_config_str + tmp_query_str
 
-        def create_filter(md_key, md_value) -> str:
+        def create_filter(md_key: str, md_value: Any) -> str:
             md_filter_expr = self.config.field_name_mapping[md_key]
             if md_filter_expr is None:
-                return None
-            exprs = md_filter_expr.split(",")
-            if len(exprs) != 2:
+                return ""
+            expr = md_filter_expr.split(",")
+            if len(expr) != 2:
                 logger.error(
-                    f"filter {md_filter_expr} express is not correct, must contain mapping field and operator.")
-                return None
-            md_filter_key = exprs[0].strip()
-            md_filter_operator = exprs[1].strip()
+                    f"filter {md_filter_expr} express is not correct, must contain mapping field and operator."
+                )
+                return ""
+            md_filter_key = expr[0].strip()
+            md_filter_operator = expr[1].strip()
             if isinstance(md_value, numbers.Number):
                 return f"{md_filter_key} {md_filter_operator} {md_value}"
-            return f"{md_filter_key}{md_filter_operator}\"{md_value}\""
+            return f'{md_filter_key}{md_filter_operator}"{md_value}"'
 
-        def search_data(single_query_str: str):
+        def search_data(single_query_str: str) -> Dict[str, Any]:
             search_query = models.SearchQuery(query=single_query_str)
-            search_request = models.SearchRequestModel(self.options_headers, search_query)
-            return self.ha3EngineClient.search(search_request)
+            search_request = models.SearchRequestModel(
+                self.options_headers, search_query
+            )
+            return json.loads(self.ha3EngineClient.search(search_request).body)
 
-        def create_results(json_result) -> List[Document]:
-            items = json_result['result']['items']
-            query_result_list: List[Document] = []
-            for item in items:
-                fields = item["fields"]
-                query_result_list.append(Document(page_content=fields[self.config.field_name_mapping["document"]],
-                                                  metadata=create_metadata(fields)))
-            return query_result_list
-
-        def create_results_with_score(json_result) -> List[Tuple[Document, float]]:
-            items = json_result['result']['items']
-            query_result_list: List[Tuple[Document, float]] = []
-            for item in items:
-                fields = item["fields"]
-                query_result_list.append((Document(page_content=fields[self.config.field_name_mapping["document"]],
-                                                   metadata=create_metadata(fields)), float(item["sortExprValues"][0])))
-            return query_result_list
-
-        def create_metadata(fields: dict) -> dict:
-            metadata: dict = {}
-            for key, value in fields.items():
-                if key == "id" or key == "document" or key == "embedding":
-                    continue
-                metadata[key] = value
-            return metadata
-
-        def single_query(query: str, with_score: bool) -> List[Document]:
-            config = self.config
-            try:
-                query_str = generate_query(query)
-                search_response = search_data(query_str)
-                json_response = json.loads(search_response.body)
-                if len(json_response["errors"]) != 0:
-                    logger.error(
-                        f"query {config.endpoint} {config.instance_id} errors:{json_response['errors']} failed.")
-                else:
-                    return create_results_with_score(json_response) if with_score else create_results(json_response)
-            except Exception as e:
+        try:
+            query_str = generate_embedding_query()
+            json_response = search_data(query_str)
+            if len(json_response["errors"]) != 0:
                 logger.error(
-                    f"query alibaba cloud opensearch endpoint:{config.endpoint} instance_id:{config.instance_id} failed.",
-                    e)
-            return []
+                    f"query {self.config.endpoint} {self.config.instance_id} errors:{json_response['errors']} failed."
+                )
+            else:
+                return json_response
+        except Exception as e:
+            logger.error(
+                f"query instance endpoint:{self.config.endpoint} instance_id:{self.config.instance_id} failed.",
+                e,
+            )
+        return {}
 
-        return single_query(query, with_score)
+    def create_results(self, json_result: Dict[str, Any]) -> List[Document]:
+        items = json_result["result"]["items"]
+        query_result_list: List[Document] = []
+        for item in items:
+            fields = item["fields"]
+            query_result_list.append(
+                Document(
+                    page_content=fields[self.config.field_name_mapping["document"]],
+                    metadata=create_metadata(fields),
+                )
+            )
+        return query_result_list
+
+    def create_results_with_score(
+            self, json_result: Dict[str, Any]
+    ) -> List[Tuple[Document, float]]:
+        items = json_result["result"]["items"]
+        query_result_list: List[Tuple[Document, float]] = []
+        for item in items:
+            fields = item["fields"]
+            query_result_list.append(
+                (
+                    Document(
+                        page_content=fields[self.config.field_name_mapping["document"]],
+                        metadata=create_metadata(fields),
+                    ),
+                    float(item["sortExprValues"][0]),
+                )
+            )
+        return query_result_list
 
     @classmethod
     def from_texts(
             cls,
             texts: List[str],
             embedding: Embeddings,
-            metadatas: Optional[List[Dict[Any, Any]]],
-            config: Optional[AlibabaCloudOpenSearchSettings],
-            text_ids: Optional[Iterable[str]] = None,
-            **kwargs: Any
-    ):
+            metadatas: Optional[List[dict]] = None,
+            config: Optional[AlibabaCloudOpenSearchSettings] = None,
+            **kwargs: Any,
+    ) -> 'AlibabaCloudOpenSearch':
+        if config is None:
+            raise Exception("config can't be none")
+
         ctx = cls(embedding, config, **kwargs)
-        ctx.add_texts(texts, ids=text_ids, metadatas=metadatas)
+        ctx.add_texts(texts=texts, metadatas=metadatas)
         return ctx
 
     @classmethod
@@ -277,15 +332,18 @@ class AlibabaCloudOpenSearch(VectorStore):
             documents: List[Document],
             embedding: Embeddings,
             ids: Optional[List[str]] = None,
+            config: Optional[AlibabaCloudOpenSearchSettings] = None,
             **kwargs: Any,
-    ):
+    ) -> 'AlibabaCloudOpenSearch':
+        if config is None:
+            raise Exception("config can't be none")
+
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
-
         return cls.from_texts(
             texts=texts,
             embedding=embedding,
             metadatas=metadatas,
-            ids=ids,
+            config=config,
             **kwargs,
         )

@@ -1,4 +1,8 @@
 """Wrappers on top of vector stores."""
+from langchain.vectorstores.alibabacloud_opensearch import (
+    AlibabaCloudOpenSearch,
+    AlibabaCloudOpenSearchSettings,
+)
 from langchain.vectorstores.analyticdb import AnalyticDB
 from langchain.vectorstores.annoy import Annoy
 from langchain.vectorstores.atlas import AtlasDB
@@ -30,7 +34,6 @@ from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
-from langchain.vectorstores.alibabacloud_opensearch import AlibabaCloudOpenSearch,AlibabaCloudOpenSearchSettings
 
 __all__ = [
     "AlibabaCloudOpenSearch",
