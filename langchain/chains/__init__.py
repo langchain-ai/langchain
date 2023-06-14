@@ -22,6 +22,7 @@ from langchain.chains.llm_summarization_checker.base import LLMSummarizationChec
 from langchain.chains.loading import load_chain
 from langchain.chains.mapreduce import MapReduceChain
 from langchain.chains.moderation import OpenAIModerationChain
+from langchain.chains.natbot.base import NatBotChain
 from langchain.chains.openai_functions import (
     create_extraction_chain,
     create_extraction_chain_pydantic,
@@ -34,6 +35,7 @@ from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
+from langchain.chains.router import MultiRouteChain, RouterChain, LLMRouterChain, MultiPromptChain, MultiRetrievalQAChain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.chains.sql_database.base import (
     SQLDatabaseChain,
@@ -42,17 +44,42 @@ from langchain.chains.sql_database.base import (
 from langchain.chains.transform import TransformChain
 
 __all__ = [
+    "APIChain",
+    "AnalyzeDocumentChain",
+    "ChatVectorDBChain",
+    "ConstitutionalChain",
     "ConversationChain",
-    "LLMChain",
+    "ConversationalRetrievalChain",
+    "FlareChain",
+    "GraphCypherQAChain",
+    "GraphQAChain",
+    "HypotheticalDocumentEmbedder",
     "LLMBashChain",
+    "LLMChain",
     "LLMCheckerChain",
-    "LLMSummarizationCheckerChain",
     "LLMMathChain",
+    "LLMRequestsChain",
+    "LLMRouterChain",
+    "LLMSummarizationCheckerChain",
+    "MapReduceChain",
+    "MultiPromptChain",
+    "MultiRetrievalQAChain",
+    "MultiRouteChain",
+    "NatBotChain",
+    "NebulaGraphQAChain",
+    "OpenAIModerationChain",
+    "OpenAPIEndpointChain",
     "PALChain",
+    "QAGenerationChain",
     "QAWithSourcesChain",
+    "RetrievalQA",
+    "RetrievalQAWithSourcesChain",
+    "RouterChain",
     "SQLDatabaseChain",
+    "SQLDatabaseSequentialChain",
     "SequentialChain",
     "SimpleSequentialChain",
+    "TransformChain",
     "VectorDBQA",
     "VectorDBQAWithSourcesChain",
     "APIChain",
