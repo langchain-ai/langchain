@@ -9,10 +9,8 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Sequence,
     Mapping,
     Tuple,
-    TypeVar,
     Union,
 )
 
@@ -22,8 +20,6 @@ from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
     from pymongo.collection import Collection
-
-MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +49,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def __init__(
         self,
-        collection: Collection[MongoDBDocumentType],
+        collection: Collection[Dict[str, Any]],
         embedding: Embeddings,
         *,
         index_name: str = "default",
@@ -131,7 +127,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             return []
         # Embed and create the documents
         embeddings = self._embedding.embed_documents(texts)
-        to_insert: List[MongoDBDocumentType] = [
+        to_insert: List[Dict[str, Any]] = [
             {self._text_key: t, self._embedding_key: embedding, **m}
             for t, m, embedding in zip(texts, metadatas, embeddings)
         ]
@@ -174,7 +170,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         }
         if pre_filter:
             knn_beta["filter"] = pre_filter
-        pipeline: Sequence[Mapping[str, Any]] = [
+        pipeline: List[Mapping[str, Any]] = [
             {
                 "$search": {
                     "index": self._index_name,
@@ -235,7 +231,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        collection: Optional[Collection[MongoDBDocumentType]] = None,
+        collection: Optional[Collection[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
         """Construct MongoDBAtlasVectorSearch wrapper from raw documents.
