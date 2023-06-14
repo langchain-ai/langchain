@@ -130,7 +130,7 @@ const config = {
         title: "🦜️🔗 LangChain",
         items: [
           {
-            href: "/docs/get_started",
+            href: "/docs/get_started/introduction.html",
             label: "Docs",
             position: "left",
           },
