@@ -220,7 +220,11 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
-        """Do nothing when LLM chain starts."""
+        """If the key `input` is in `inputs`, then save it in `self.prompts` using 
+        either the `parent_run_id` or the `run_id` as the key. This is done so that 
+        we don't log the same input prompt twice, once when the LLM starts and once 
+        when the chain starts.
+        """
         if "input" in inputs:
             self.prompts.update(
                 {
@@ -233,6 +237,10 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             )
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+        """If either the `parent_run_id` or the `run_id` is in `self.prompts`, then
+        log the outputs to Argilla, and pop the run from `self.prompts`. The behavior
+        differs if the output is a list or not.
+        """
         if not any(key in self.prompts for key in [str(kwargs["parent_run_id"]), str(kwargs["run_id"])]):
             return
         prompts = self.prompts.get(str(kwargs["parent_run_id"])) or self.prompts.get(str(kwargs["run_id"]))
