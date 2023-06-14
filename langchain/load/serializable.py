@@ -55,7 +55,7 @@ class Serializable(BaseModel, ABC):
         """
         return {}
 
-    lc_kwargs: Dict[str, Any] = Field(default_factory=dict, exclude=True)
+    lc_kwargs: Dict[str, Any] = Field(default_factory=dict, exclude=True, repr=False)
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
