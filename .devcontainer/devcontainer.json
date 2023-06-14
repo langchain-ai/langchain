@@ -1,13 +1,22 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose
 {
-	"dockerComposeFile": "./docker-compose.yaml",
-	"service": "langchain",
-	"workspaceFolder": "/workspaces/langchain",
+	// Name for the dev container
 	"name": "langchain",
 
+	// Point to a Docker Compose file
+	"dockerComposeFile": "docker-compose.yaml",
 
-	// Features to add to the dev container. More info: https://containers.dev/features.
+	// Required when using Docker Compose. The name of the service to connect to once running
+	"service": "langchain",
+
+	// Sets the default path to open when connecting to the container
+	"workspaceFolder": "/workspaces/langchain",
+
+	// Prevent the container from shutting down
+	"overrideCommand": true,
+
+	// Features to add to the dev container. More info: https://containers.dev/features
 	"features": {
 		"ghcr.io/devcontainers-contrib/features/poetry:2": {}
 	}

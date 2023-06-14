@@ -2,7 +2,7 @@ version: '3'
 services:
   langchain:
     build:
-      dockerfile: .devcontainer/Dockerfile
+      dockerfile: Dockerfile
       context: ../ 
     volumes:
       - ../:/workspaces/langchain
