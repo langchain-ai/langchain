@@ -12,9 +12,9 @@ There are two main types of agents:
 
 Action agents are suitable for small tasks, while plan-and-execute agents are better for complex or long-running tasks that require maintaining long-term objectives and focus. Often the best approach is to combine the dynamism of an action agent with the planning abilities of a plan-and-execute agent by letting the plan-and-execute agent use action agents as tools.
 
-Additional abstractions involved in agents are:
-- **Tools**: The actions an agent can take. What tools you give an agent highly depend on what you want the agent to do
-- **Toolkits**: Groups of tools designed for a specific use case. For example, in order for an agent to
+For a full list of agent types see [Agent types](./agent_types.html). Additional abstractions involved in agents are:
+- [**Tools**](./tools.html): The actions an agent can take. What tools you give an agent highly depend on what you want the agent to do
+- [**Toolkits**](./toolkits.html): Groups of tools designed for a specific use case. For example, in order for an agent to
   interact with a SQL database in the best way it may need access to one tool to execute queries and another tool to inspect tables.
 - **Agent executors**: Wrapper around an action agent and a list of tools. This is responsible for the loop of running the agent
   iteratively until the stopping criteria is met.
@@ -42,36 +42,9 @@ At a high-level a plan-and-execute agent:
 2. Plans the full sequence of steps to take
 3. Executes the steps in order, passing the outputs of past steps as inputs to future steps
 
-The most typical implementation is to have the planner be a language model, and the executor be an action agent.
-
-- [Plan-and-Execute Agents](./agent_types/plan_and_execute.html)
-
-## Additional documentation
-
-- [Tools](./tools.html): Different types of **tools** LangChain supports natively. We also cover how to add your own tools.
-
-- [Agent types](./agent_types.html): Different types of **agents** LangChain supports natively. We also cover how to
-  modify and create your own agents.
-
-- [Toolkits](./toolkits.html): Various **toolkits** that LangChain supports out of the box, and how to
-  create an agent from them.
+The most typical implementation is to have the planner be a language model, and the executor be an action agent. Read more [here](./agent_types/plan_and_execute.html).
 
 ## Get started
-
-Agents use an LLM to determine which actions to take and in what order.
-An action can either be using a tool and observing its output, or returning to the user.
-
-When used correctly agents can be extremely powerful. The purpose of this notebook is to show you how to easily use agents through the simplest, highest level API.
-
-In order to load agents, you should understand the following concepts:
-
-- Tool: A function that performs a specific duty. This can be things like: Google Search, Database lookup, Python REPL, other chains. The interface for a tool is currently a function that is expected to have a string as an input, with a string as an output.
-- LLM: The language model powering the agent.
-- Agent: The agent to use. This should be a string that references a support agent class. Because this notebook focuses on the simplest, highest level API, this only covers using the standard supported agents. If you want to implement a custom agent, see the documentation for [custom agents](agents/how_to/custom_agent.ipynb).
-
-**Agents**: For a list of supported agents and their specifications, see [here](./agent_types.html).
-
-**Tools**: For a list of predefined tools and their specifications, see [here](./tools.html).
 
 import GetStarted from "@snippets/modules/agents/get_started.mdx"
 
