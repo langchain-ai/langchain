@@ -1,8 +1,7 @@
 import os
 import datetime
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 
-import promptlayer
 from promptlayer.utils import get_api_key, promptlayer_api_request
 
 from langchain.llms import OpenAI, Replicate
