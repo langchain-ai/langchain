@@ -7,9 +7,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 from langchain.agents import BaseSingleActionAgent
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import (
-    Callbacks,
-)
+from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
@@ -104,6 +102,8 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
         function_name = function_call["name"]
         try:
             _tool_input = json.loads(function_call["arguments"])
+            _tool_input = {k:v.replace('\'', '\"') for k,v in _tool_input.items()}
+            # print(_tool_input)
         except JSONDecodeError:
             raise ValueError(
                 f"Could not parse tool input: {function_call} because "
@@ -171,11 +171,13 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         prompt = self.prompt.format_prompt(
             input=user_input, agent_scratchpad=agent_scratchpad
         )
+        # print('Prompt ' + str(prompt.messages))
         messages = prompt.to_messages()
         predicted_message = self.llm.predict_messages(
             messages, functions=self.functions, callbacks=callbacks
         )
         agent_decision = _parse_ai_message(predicted_message)
+        # print('Agent decision ' + str(agent_decision))
         return agent_decision
 
     async def aplan(
@@ -194,6 +196,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         """
         user_input = kwargs["input"]
         agent_scratchpad = _format_intermediate_steps(intermediate_steps)
+        # print(agent_scratchpad)
         prompt = self.prompt.format_prompt(
             input=user_input, agent_scratchpad=agent_scratchpad
         )
@@ -202,6 +205,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             messages, functions=self.functions
         )
         agent_decision = _parse_ai_message(predicted_message)
+        # print(agent_decision)
         return agent_decision
 
     @classmethod
