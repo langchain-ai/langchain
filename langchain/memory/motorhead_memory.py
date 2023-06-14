@@ -21,11 +21,13 @@ class MotorheadMemory(BaseChatMemory):
     client_id: Optional[str] = None
 
     def __get_headers(self) -> Dict[str, str]:
+        is_managed = self.url == MANAGED_URL
+
         headers = {
             "Content-Type": "application/json",
         }
 
-        if self.is_managed and not (self.api_key and self.client_id):
+        if is_managed and not (self.api_key and self.client_id):
             raise ValueError(
                 """
                 You must provide an API key or a client ID to use the managed
@@ -33,15 +35,11 @@ class MotorheadMemory(BaseChatMemory):
                 """
             )
 
-        if self.is_managed and self.api_key and self.client_id:
+        if is_managed and self.api_key and self.client_id:
             headers["x-metal-api-key"] = self.api_key
             headers["x-metal-client-id"] = self.client_id
 
         return headers
-
-    @property
-    def is_managed(self) -> bool:
-        return self.url == MANAGED_URL
 
     async def init(self) -> None:
         res = requests.get(
