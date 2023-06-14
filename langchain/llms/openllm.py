@@ -2,126 +2,232 @@
 from __future__ import annotations
 
 import json
+import copy
 import logging
-import typing as t
+from typing import (
+    Optional,
+    Any,
+    List,
+    Literal,
+    TYPE_CHECKING,
+    Literal,
+    Dict,
+    TypedDict,
+    Union,
+    overload,
+)
+from pydantic import PrivateAttr
+from langchain.callbacks.manager import (
+    CallbackManagerForLLMRun,
+    AsyncCallbackManagerForLLMRun,
+)
 
 from langchain.llms.base import LLM
 
-if t.TYPE_CHECKING:
-    ServerType = t.Literal["http", "grpc"]
-    from langchain.callbacks.manager import CallbackManagerForLLMRun
-else:
-    ServerType = str
+if TYPE_CHECKING:
+    import openllm
+
+
+ServerType = Literal["http", "grpc"]
+
+
+class IdentifyingParams(TypedDict):
+    model_name: str
+    model_id: Optional[str]
+    server_url: Optional[str]
+    server_type: Optional[ServerType]
+    embedded: bool
+    llm_kwargs: Dict[str, Any]
+
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL_NAME = "flan-t5"
-
 
 class OpenLLM(LLM):
-    """Wrapper around the OpenLLM model.
+    """Wrapper for accessing OpenLLM, supporting both in-process model
+    instance and remote OpenLLM servers.
 
-    To use, you should have the openllm library installed, and
-    provide the model name that you want to run as named parameter.
+    To use, you should have the openllm library installed:
+
+    .. code-block:: bash
+
+        pip install openllm
+
+    Learn more at: https://github.com/bentoml/openllm
+
+    Example running an LLM model locally managed by OpenLLM:
+        .. code-block:: python
+
+            from langchain.llms import OpenLLM
+            llm = OpenLLM(
+                model_name='flan-t5',
+                model_id='google/flan-t5-large',
+            )
+            llm("What is the difference between a duck and a goose?")
 
     For all available supported models, you can run 'openllm models'.
 
-    Checkout: https://github.com/llmsys/openllm
-
-    Example:
+    If you have a OpenLLM server running, you can also use it remotely:
         .. code-block:: python
 
             from langchain.llms import OpenLLM
-            llm = OpenLLM.for_model(model_name='flan-t5', **llm_kwargs)
-            llm("What is the difference between a duck and a goose?")
-
-    If you have a OpenLLM server running somewhere, you can also do
-    the following:
-
-    Example:
-        .. code-block:: python
-
-            from langchain.llms import OpenLLM
-            llm = OpenLLM.for_model(server_url='http://localhost:8000', server_type='http')
+            llm = OpenLLM(server_url='http://localhost:3000')
             llm("What is the difference between a duck and a goose?")
     """
 
-    llm: t.Any  #: :meta private:
-    model_name: str = DEFAULT_MODEL_NAME
-    """Model name that use OpenLLM to run. Check 'openllm models' for list of supported models."""
-    llm_kwargs: t.Optional[t.Dict[str, t.Any]] = None
-    """Key word arguments to be passed to openllm.LLM"""
-    server_url: t.Optional[str] = None
+    model_name: Optional[str] = None
+    """Model name to use. See 'openllm models' for all available models."""
+    model_id: Optional[str] = None
+    """Model Id to use. If not provided, will use the default model for the model name.See 'openllm models' for all available model variants."""
+    server_url: Optional[str] = None
     """Optional server URL that currently runs a LLMServer with 'openllm start'."""
     server_type: ServerType = "http"
     """Optional server type. Either 'http' or 'grpc'."""
+    embedded: bool = True
+    """Initialize this LLM instance in current process by default. Should only set to False when using in conjunction with BentoML Service."""
+    llm_kwargs: Dict[str, Any]
+    """Key word arguments to be passed to openllm.LLM"""
+
+    _runner: Optional[openllm.LLMRunner] = PrivateAttr(default=None)
+    _client: Union[
+        openllm.client.HTTPClient, openllm.client.GrpcClient, None
+    ] = PrivateAttr(default=None)
 
     class Config:
         extra = "forbid"
 
-    @classmethod
-    def for_model(
-        cls,
-        model_name: str = DEFAULT_MODEL_NAME,
-        model_id: str | None = None,
-        **llm_kwargs: t.Any,
-    ) -> LLM:
-        """Construct the pipeline object from model_id and task."""
+    @overload
+    def __init__(
+        self,
+        model_name: Optional[str] = ...,
+        *,
+        model_id: Optional[str] = ...,
+        embedded: Literal[True, False] = ...,
+        **llm_kwargs: Any,
+    ):
+        ...
+
+    @overload
+    def __init__(
+        self,
+        *,
+        server_url: str = ...,
+        server_type: Literal["grpc", "http"] = ...,
+        **llm_kwargs: Any,
+    ):
+        ...
+
+    def __init__(
+        self,
+        model_name: Optional[str] = None,
+        *,
+        model_id: Optional[str] = None,
+        server_url: Optional[str] = None,
+        server_type: Literal["grpc", "http"] = "http",
+        embedded: bool = True,
+        **llm_kwargs: Any,
+    ):
         try:
             import openllm
         except ImportError:
             raise ValueError(
                 "Could not import openllm. Make sure to install it with 'pip install openllm.'"
             )
-        # pop out init_local, since we will handle it ourselves
-        llm_kwargs.pop("init_local")
-        server_url = llm_kwargs.pop("server_url", None)
-        server_type: t.Literal["http", "grpc"] = llm_kwargs.pop("server_type", "http")
+
+        llm_kwargs = llm_kwargs or {}
+
         if server_url is not None:
-            logger.debug("'server_url' is provided, returning a Client.")
-            server_cls = (
+            logger.debug("'server_url' is provided, returning a openllm.Client")
+            assert (
+                model_id is None and model_name is None
+            ), "'server_url' and {'model_id', 'model_name'} are mutually exclusive"
+            client_cls = (
                 openllm.client.HTTPClient
                 if server_type == "http"
                 else openllm.client.GrpcClient
             )
-            llm = server_cls(server_url)
+            client = client_cls(server_url)
 
-            return cls(
-                llm=llm,
-                model_name=llm.model_name,
-                server_type=server_type,
-                server_url=server_url,
-                llm_kwargs=llm_kwargs,
+            super().__init__(
+                **{
+                    "server_url": server_url,
+                    "server_type": server_type,
+                    "llm_kwargs": llm_kwargs,
+                }
             )
-
-        return cls(
-            llm=openllm.Runner(
-                model_name,
+            self._runner = None  # type: ignore
+            self._client = client
+        else:
+            assert model_name is not None, "Must provide 'model_name' or 'server_url'"
+            # since the LLM are relatively huge, we don't actually want to convert the Runner
+            # with embedded when running the server. Instead, we will only set the init_local here
+            # so that LangChain users can still use the LLM in-process.
+            # Wrt to BentoML users, setting embedded=False is the expected behaviour to invoke
+            # the runners remotely
+            runner = openllm.Runner(
+                model_name=model_name,
                 model_id=model_id,
-                init_local=True,
+                init_local=embedded,
                 **llm_kwargs,
-            ),
-            model_name=model_name,
-            llm_kwargs=llm_kwargs,
-        )
+            )
+            super().__init__(
+                **{
+                    "model_name": model_name,
+                    "model_id": model_id,
+                    "embedded": embedded,
+                    "llm_kwargs": llm_kwargs,
+                }
+            )
+            self._client = None  # type: ignore
+            self._runner = runner
 
     @property
-    def _identifying_params(self) -> t.Mapping[str, t.Any]:
+    def runner(self) -> openllm.LLMRunner:
+        """
+        Get the underlying openllm.LLMRunner instance for integration with BentoML.
+
+        Example:
+        .. code-block:: python
+
+            llm = OpenLLM(
+                model_name='flan-t5',
+                model_id='google/flan-t5-large',
+                embedded=False,
+            )
+            tools = load_tools(["serpapi", "llm-math"], llm=llm)
+            agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION)
+            svc = bentoml.Service("langchain-openllm", runners=[llm.runner])
+
+            @svc.api(input=Text(), output=Text())
+            def chat(input_text: str):
+                return agent.run(input_text)
+        """
+        if self._runner is None:
+            raise ValueError("OpenLLM must be initialized locally with 'model_name'")
+        return self._runner
+
+    @property
+    def _identifying_params(self) -> IdentifyingParams:
         """Get the identifying parameters."""
-        res = {
-            "model_name": self.model_name,
-            "llm_kwargs": self.llm_kwargs,
-            "server_url": self.server_url,
-            "server_type": self.server_type,
-        }
-        if self.llm_kwargs is None:
-            self.llm_kwargs = {}
-        if self._llm_type == "openllm_client":
-            self.llm_kwargs.update(self.llm.configuration)
+
+        res = IdentifyingParams(
+            **{
+                "model_name": self.model_name,
+                "model_id": self.model_id,
+                "server_url": self.server_url,
+                "server_type": self.server_type,
+            }
+        )
+
+        if self._client is not None:
+            self.llm_kwargs.update(self._client.configuration)
+            res["model_name"] = self._client.model_name
+            res["model_id"] = self._client.model_id
         else:
+            assert self._runner is not None, "Runner must be initialized"
             try:
                 self.llm_kwargs.update(
-                    json.loads(self.llm.identifying_params["configuration"])
+                    json.loads(self._runner.identifying_params["configuration"])
                 )
             except (TypeError, json.JSONDecodeError):
                 pass
@@ -130,24 +236,66 @@ class OpenLLM(LLM):
 
     @property
     def _llm_type(self) -> str:
-        return "openllm_client" if self.server_url is not None else "openllm"
+        return "openllm_client" if self._client else "openllm"
 
     def _call(
         self,
         prompt: str,
-        stop: list[str] | None = None,
+        stop: Optional[List[str]] = None,
         run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
     ) -> str:
-        import openllm
+        try:
+            import openllm
+        except ImportError:
+            raise ValueError(
+                "Could not import openllm. Make sure to install it with 'pip install openllm.'"
+            )
 
-        if self.server_url is not None:
-            config = openllm.AutoConfig.for_model(
-                self.llm.model_name, **(self.llm_kwargs or {})
+        copied = copy.deepcopy(self.llm_kwargs)
+        copied.update(kwargs)
+        config = openllm.AutoConfig.for_model(
+            self._identifying_params["model_name"], **copied
+        )
+        if self._client:
+            return self._client.query(prompt, **config.model_dump(flatten=True))
+        else:
+            assert self._runner is not None
+            return self._runner(prompt, **config.model_dump(flatten=True))
+
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        try:
+            import openllm
+        except ImportError:
+            raise ValueError(
+                "Could not import openllm. Make sure to install it with 'pip install openllm.'"
+            )
+
+        copied = copy.deepcopy(self.llm_kwargs)
+        copied.update(kwargs)
+        config = openllm.AutoConfig.for_model(
+            self._identifying_params["model_name"], **copied
+        )
+        if self._client:
+            return await self._client.acall(
+                "generate", prompt, **config.model_dump(flatten=True)
             )
         else:
-            config = self.llm.config.model_construct_env(**(self.llm_kwargs or {}))
-
-        if self.server_url is not None:
-            return self.llm.query(prompt, **config.model_dump(flatten=True))
-        else:
-            return self.llm(prompt, **config.model_dump(flatten=True))
+            assert self._runner is not None
+            (
+                prompt,
+                generate_kwargs,
+                postprocess_kwargs,
+            ) = self._runner.llm.sanitize_parameters(prompt, **kwargs)
+            generated_result = await self._runner.generate.async_run(
+                prompt, **generate_kwargs
+            )
+            return self._runner.llm.postprocess_generate(
+                prompt, generated_result, **postprocess_kwargs
+            )

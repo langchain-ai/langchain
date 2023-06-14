@@ -74,8 +74,7 @@ This repository provides an example of how to deploy a LangChain application wit
 
 ## [OpenLLM](https://github.com/bentoml/OpenLLM)
 
-OpenLLM is an universal platform for operating large language models (LLMs) in production.
-With OpenLLM, you can run inference with any open-source LLM, deploy to the cloud or on-premises, and build powerful AI apps. It supports a wide range of open-source LLMs, offers flexible APIs, and first-class support for LangChain and BentoML.
+OpenLLM is a platform for operating large language models (LLMs) in production. With OpenLLM, you can run inference with any open-source LLM, deploy to the cloud or on-premises, and build powerful AI apps. It supports a wide range of open-source LLMs, offers flexible APIs, and first-class support for LangChain and BentoML.
 See OpenLLM's [integration doc](https://github.com/bentoml/OpenLLM#%EF%B8%8F-integrations) for usage with LangChain.
 
 ## [Databutton](https://databutton.com/home?new-data-app=true)
