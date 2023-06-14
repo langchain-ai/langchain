@@ -11,6 +11,7 @@ from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
+    BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
@@ -21,10 +22,10 @@ from langchain.schema import (
     AIMessage,
     BaseMessage,
     FunctionMessage,
+    OutputParserException,
     SystemMessage,
 )
 from langchain.tools import BaseTool
-from langchain.schema import OutputParserException
 from langchain.tools.convert_to_openai import format_tool_to_openai_function
 
 
@@ -104,8 +105,6 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
         function_name = function_call["name"]
         try:
             _tool_input = json.loads(function_call["arguments"])
-            _tool_input = {k:v.replace('\'', '\"') for k,v in _tool_input.items()}
-            # print(_tool_input)
         except JSONDecodeError:
             raise OutputParserException(
                 f"Could not parse tool input: {function_call} because "
@@ -173,13 +172,11 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         prompt = self.prompt.format_prompt(
             input=user_input, agent_scratchpad=agent_scratchpad
         )
-        # print('Prompt ' + str(prompt.messages))
         messages = prompt.to_messages()
         predicted_message = self.llm.predict_messages(
             messages, functions=self.functions, callbacks=callbacks
         )
         agent_decision = _parse_ai_message(predicted_message)
-        # print('Agent decision ' + str(agent_decision))
         return agent_decision
 
     async def aplan(
@@ -211,16 +208,24 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         return agent_decision
 
     @classmethod
-    def create_prompt(cls, system_message: Optional[SystemMessage] = SystemMessage(content="You are a helpful AI assistant.")) -> BasePromptTemplate:
+    def create_prompt(
+        cls,
+        system_message: Optional[SystemMessage] = SystemMessage(
+            content="You are a helpful AI assistant."
+        ),
+    ) -> BasePromptTemplate:
+        messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
         if system_message:
             messages = [system_message]
         else:
             messages = []
 
-        messages.extend([
-            HumanMessagePromptTemplate.from_template("{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ])
+        messages.extend(
+            [
+                HumanMessagePromptTemplate.from_template("{input}"),
+                MessagesPlaceholder(variable_name="agent_scratchpad"),
+            ]
+        )
         input_variables = ["input", "agent_scratchpad"]
         return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 

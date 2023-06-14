@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, Optional
 
-from langchain.agents.agent import AgentExecutor
+from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.agent_toolkits.python.prompt import PREFIX
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
@@ -17,7 +17,7 @@ from langchain.tools.python.tool import PythonREPLTool
 def create_python_agent(
     llm: BaseLanguageModel,
     tool: PythonREPLTool,
-    agent_type:AgentType = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    agent_type: AgentType = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = False,
     prefix: str = PREFIX,
@@ -26,6 +26,7 @@ def create_python_agent(
 ) -> AgentExecutor:
     """Construct a python agent from an LLM and tool."""
     tools = [tool]
+    agent: BaseSingleActionAgent
 
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
         prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
@@ -38,12 +39,10 @@ def create_python_agent(
         agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
         system_message = SystemMessage(content=prefix)
-        prompt = OpenAIFunctionsAgent.create_prompt(
-        system_message=system_message
-    )
+        _prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
         agent = OpenAIFunctionsAgent(
             llm=llm,
-            prompt=prompt,
+            prompt=_prompt,
             tools=tools,
             callback_manager=callback_manager,
             **kwargs,

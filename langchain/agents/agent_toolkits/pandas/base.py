@@ -1,27 +1,27 @@
 """Agent for working with pandas objects."""
 from typing import Any, Dict, List, Optional, Tuple
 
-from langchain.agents.agent import AgentExecutor
+from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.agent_toolkits.pandas.prompt import (
+    FUNCTIONS_WITH_DF,
+    FUNCTIONS_WITH_MULTI_DF,
     MULTI_DF_PREFIX,
+    MULTI_DF_PREFIX_FUNCTIONS,
     PREFIX,
+    PREFIX_FUNCTIONS,
     SUFFIX_NO_DF,
     SUFFIX_WITH_DF,
     SUFFIX_WITH_MULTI_DF,
-    PREFIX_FUNCTIONS,
-    MULTI_DF_PREFIX_FUNCTIONS,
-    FUNCTIONS_WITH_DF,
-    FUNCTIONS_WITH_MULTI_DF
 )
-from langchain.agents.types import AgentType
-from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
 from langchain.agents.mrkl.base import ZeroShotAgent
+from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
+from langchain.agents.types import AgentType
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.tools.python.tool import PythonAstREPLTool
 from langchain.schema import SystemMessage
+from langchain.tools.python.tool import PythonAstREPLTool
 
 
 def _get_multi_prompt(
@@ -143,6 +143,7 @@ def _get_prompt_and_tools(
             include_df_in_prompt=include_df_in_prompt,
         )
 
+
 def _get_functions_single_prompt(
     df: Any,
     prefix: Optional[str] = None,
@@ -163,9 +164,7 @@ def _get_functions_single_prompt(
 
     tools = [PythonAstREPLTool(locals={"df": df})]
     system_message = SystemMessage(content=prefix + suffix_to_use)
-    prompt = OpenAIFunctionsAgent.create_prompt(
-        system_message=system_message
-    )
+    prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
     return prompt, tools
 
 
@@ -179,11 +178,14 @@ def _get_functions_multi_prompt(
         suffix_to_use = suffix
         if include_df_in_prompt:
             dfs_head = "\n\n".join([d.head().to_markdown() for d in dfs])
-            suffix_to_use = suffix_to_use.format(dfs_head=dfs_head,)
+            suffix_to_use = suffix_to_use.format(
+                dfs_head=dfs_head,
+            )
     elif include_df_in_prompt:
-
         dfs_head = "\n\n".join([d.head().to_markdown() for d in dfs])
-        suffix_to_use = FUNCTIONS_WITH_MULTI_DF.format(dfs_head=dfs_head, )
+        suffix_to_use = FUNCTIONS_WITH_MULTI_DF.format(
+            dfs_head=dfs_head,
+        )
     else:
         suffix_to_use = ""
 
@@ -196,10 +198,9 @@ def _get_functions_multi_prompt(
         df_locals[f"df{i + 1}"] = dataframe
     tools = [PythonAstREPLTool(locals=df_locals)]
     system_message = SystemMessage(content=prefix + suffix_to_use)
-    prompt = OpenAIFunctionsAgent.create_prompt(
-        system_message=system_message
-    )
+    prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
     return prompt, tools
+
 
 def _get_functions_prompt_and_tools(
     df: Any,
@@ -244,7 +245,7 @@ def _get_functions_prompt_and_tools(
 def create_pandas_dataframe_agent(
     llm: BaseLanguageModel,
     df: Any,
-    agent_type:AgentType = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    agent_type: AgentType = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
@@ -259,6 +260,7 @@ def create_pandas_dataframe_agent(
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pandas agent from an LLM and dataframe."""
+    agent: BaseSingleActionAgent
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
         prompt, tools = _get_prompt_and_tools(
             df,
@@ -280,7 +282,7 @@ def create_pandas_dataframe_agent(
             **kwargs,
         )
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
-        prompt, tools = _get_functions_prompt_and_tools(
+        _prompt, tools = _get_functions_prompt_and_tools(
             df,
             prefix=prefix,
             suffix=suffix,
@@ -289,7 +291,7 @@ def create_pandas_dataframe_agent(
         )
         agent = OpenAIFunctionsAgent(
             llm=llm,
-            prompt=prompt,
+            prompt=_prompt,
             tools=tools,
             callback_manager=callback_manager,
             **kwargs,
