@@ -14,15 +14,15 @@ from langchain.chains.query_constructor.ir import (
 
 def DEFAULT_COMPOSER(op_name: str) -> Callable:
     def f(*args: Any) -> str:
-        args: Tuple[str] = map(str, args)
-        return f" {op_name} ".join(args)
+        args_: map[str] = map(str, args)
+        return f" {op_name} ".join(args_)
     return f
 
 
 def FUNCTION_COMPOSER(op_name: str) -> Callable:
     def f(*args: Any) -> str:
-        args: Tuple[str] = map(str, args)
-        return f"{op_name}({','.join(args)})"
+        args_: map[str] = map(str, args)
+        return f"{op_name}({','.join(args_)})"
     return f
 
 
