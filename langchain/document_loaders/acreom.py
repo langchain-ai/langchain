@@ -1,14 +1,13 @@
 """Loader that loads acreom vault from a directory."""
 
 import re
-import string
 from pathlib import Path
 from typing import List
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-class acreomLoader(BaseLoader):
+class AcreomLoader(BaseLoader):
     FRONT_MATTER_REGEX = re.compile(r"^---\n(.*?)\n---\n", re.MULTILINE | re.DOTALL)
 
     def __init__(

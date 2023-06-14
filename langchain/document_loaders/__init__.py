@@ -123,7 +123,7 @@ from langchain.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
-from langchain.document_loaders.acreom import acreomLoader
+from langchain.document_loaders.acreom import AcreomLoader
 
 # Legacy: only for backwards compat. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
@@ -132,7 +132,7 @@ PagedPDFSplitter = PyPDFLoader
 TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
-    "acreomLoader",
+    "AcreomLoader",
     "AZLyricsLoader",
     "AirbyteJSONLoader",
     "ApifyDatasetLoader",
