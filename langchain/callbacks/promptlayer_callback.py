@@ -17,13 +17,6 @@ from langchain.schema import (
 
 
 class PromptLayerHandler(BaseCallbackHandler):
-    def _default_params(self):
-        # TODO: Should I be setting defaults here for PL?
-        return {
-            "model_name": "gpt-4",
-            "temperature": 0,
-        }
-
     def _convert_message_to_dict(self, message):
         if isinstance(message, HumanMessage):
             message_dict = {"role": "user", "content": message.content}
@@ -38,7 +31,7 @@ class PromptLayerHandler(BaseCallbackHandler):
         return message_dict
 
     def _create_message_dicts(self, messages):
-        params: Dict[str, Any] = self._default_params()
+        params: Dict[str, Any] = {}
         message_dicts = [self._convert_message_to_dict(m) for m in messages[0]]
         return message_dicts, params
 
@@ -89,7 +82,7 @@ class PromptLayerHandler(BaseCallbackHandler):
             }
 
             if self.name == "openai-chat":
-                function_name = f"openai.ChatCompletion.create"
+                function_name = f"langchain.chat.{self.name}"
                 message_dicts, model_params = self._create_message_dicts(self.messages)
                 model_input = []
                 model_response, model_params = self._create_message_dicts(
@@ -106,14 +99,11 @@ class PromptLayerHandler(BaseCallbackHandler):
                             },
                         }
                     ],
-                    "usage": response.llm_output.get(
-                        "token_usage",
-                        {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
-                    ),
+                    "usage": response.llm_output.get("token_usage", {}),
                 }
                 model_params["messages"] = message_dicts
             else:
-                function_name = f"langchain.OpenAI"
+                function_name = f"langchain.{self.name}"
                 model_input = [self.prompts[i]]
                 model_params = self.invocation_params
                 model_response = resp
