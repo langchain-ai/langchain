@@ -41,7 +41,7 @@ class AcreomLoader(BaseLoader):
             return content
         return self.FRONT_MATTER_REGEX.sub("", content)
 
-    def _process_acreom_content(self, content: str):
+    def _process_acreom_content(self, content: str) -> str:
         # remove acreom specific elements from content that do not contribute to the context of current document
         content = re.sub('\s*-\s\[\s\]\s.*|\s*\[\s\]\s.*', "", content)  # rm tasks
         content = re.sub('#', "", content)  # rm hashtags
