@@ -9,6 +9,8 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
+    Mapping,
     Tuple,
     TypeVar,
     Union,
@@ -129,7 +131,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             return []
         # Embed and create the documents
         embeddings = self._embedding.embed_documents(texts)
-        to_insert = [
+        to_insert: List[MongoDBDocumentType] = [
             {self._text_key: t, self._embedding_key: embedding, **m}
             for t, m, embedding in zip(texts, metadatas, embeddings)
         ]
@@ -172,7 +174,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         }
         if pre_filter:
             knn_beta["filter"] = pre_filter
-        pipeline = [
+        pipeline: Sequence[Mapping[str, Any]] = [
             {
                 "$search": {
                     "index": self._index_name,

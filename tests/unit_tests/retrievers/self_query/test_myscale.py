@@ -15,29 +15,29 @@ DEFAULT_TRANSLATOR = MyScaleTranslator()
 @pytest.mark.parametrize(
     "triplet",
     [
-        (Comparator.LT, 2, "foo < 2"),
-        (Comparator.LTE, 2, "foo <= 2"),
-        (Comparator.GT, 2, "foo > 2"),
-        (Comparator.GTE, 2, "foo >= 2"),
-        (Comparator.CONTAIN, 2, "has(foo, 2)"),
-        (Comparator.LIKE, "bar", "foo ILKE 'bar'"),
+        (Comparator.LT, 2, "metadata.foo < 2"),
+        (Comparator.LTE, 2, "metadata.foo <= 2"),
+        (Comparator.GT, 2, "metadata.foo > 2"),
+        (Comparator.GTE, 2, "metadata.foo >= 2"),
+        (Comparator.CONTAIN, 2, "has(metadata.foo,2)"),
+        (Comparator.LIKE, "bar", "metadata.foo ILIKE '%bar%'"),
     ],
 )
 def test_visit_comparison(triplet: Tuple[Comparator, Any, str]) -> None:
     comparator, value, expected = triplet
-    comp = Comparison(comparator=Comparator.LT, attribute="foo", value=2)
+    comp = Comparison(comparator=comparator, attribute="foo", value=value)
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
 
-# def test_visit_operation() -> None:
-#     op = Operation(
-#         operator=Operator.AND,
-#         arguments=[
-#             Comparison(comparator=Comparator.LT, attribute="foo", value=2),
-#             Comparison(comparator=Comparator.EQ, attribute="bar", value="baz"),
-#         ],
-#     )
-#     expected = {"$and": [{"foo": {"$lt": 2}}, {"bar": {"$eq": "baz"}}]}
-#     actual = DEFAULT_TRANSLATOR.visit_operation(op)
-#     assert expected == actual
+def test_visit_operation() -> None:
+    op = Operation(
+        operator=Operator.AND,
+        arguments=[
+            Comparison(comparator=Comparator.LT, attribute="foo", value=2),
+            Comparison(comparator=Comparator.EQ, attribute="bar", value="baz"),
+        ],
+    )
+    expected = "metadata.foo < 2 AND metadata.bar = 'baz'"
+    actual = DEFAULT_TRANSLATOR.visit_operation(op)
+    assert expected == actual

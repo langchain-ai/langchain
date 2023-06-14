@@ -12,18 +12,17 @@ from langchain.chains.query_constructor.ir import (
 )
 
 
-def DEFAULT_COMPOSER(op: Union[Comparator, Operator]) -> Callable:
+def DEFAULT_COMPOSER(op_name: str) -> Callable:
     def f(*args: Any) -> str:
-        args = map(str, args)
-        return f" {op} ".join(args)
+        args: Tuple[str] = map(str, args)
+        return f" {op_name} ".join(args)
     return f
 
 
-def FUNCTION_COMPOSER(op: Union[Comparator, Operator]) -> Callable:
+def FUNCTION_COMPOSER(op_name: str) -> Callable:
     def f(*args: Any) -> str:
-        args = map(str, args)
-        return f"{op}({','.join(args)})"
-
+        args: Tuple[str] = map(str, args)
+        return f"{op_name}({','.join(args)})"
     return f
 
 
@@ -50,8 +49,8 @@ class MyScaleTranslator(Visitor):
         Comparator.EQ: DEFAULT_COMPOSER("="),
         Comparator.GT: DEFAULT_COMPOSER(">"),
         Comparator.GTE: DEFAULT_COMPOSER(">="),
-        Comparator.LT: DEFAULT_COMPOSER("<="),
-        Comparator.LTE: DEFAULT_COMPOSER("<"),
+        Comparator.LT: DEFAULT_COMPOSER("<"),
+        Comparator.LTE: DEFAULT_COMPOSER("<="),
         Comparator.CONTAIN: FUNCTION_COMPOSER("has"),
         Comparator.LIKE: DEFAULT_COMPOSER("ILIKE"),
     }
