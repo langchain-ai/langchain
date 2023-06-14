@@ -72,12 +72,6 @@ class TextCombiner(BaseDocumentTransformer, ABC):
         self._length_function = length_function
         self._keep_separator = keep_separator
 
-    def combine_documents(self, documents: Iterable[Document]) -> List[Document]:
-        combined = []
-        for doc in documents:
-
-
-
     def combine_texts(self, texts: Iterable[str], metadatas: Optional[Iterable[dict]] = None) -> List[Document]:
         _metadatas = metadatas or ({} for _ in texts)
         documents = (Document(page_content=t, metadata=m) for t, m in zip(texts, _metadatas))

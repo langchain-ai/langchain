@@ -13,9 +13,9 @@ There are two main types of agents:
 Action agents are suitable for small tasks, while plan-and-execute agents are better for complex or long-running tasks that require maintaining long-term objectives and focus. Often the best approach is to combine the dynamism of an action agent with the planning abilities of a plan-and-execute agent by letting the plan-and-execute agent use action agents as tools.
 
 For a full list of agent types see [Agent types](./agent_types.html). Additional abstractions involved in agents are:
-- [**Tools**](./tools.html): The actions an agent can take. What tools you give an agent highly depend on what you want the agent to do
-- [**Toolkits**](./toolkits.html): Groups of tools designed for a specific use case. For example, in order for an agent to
-  interact with a SQL database in the best way it may need access to one tool to execute queries and another tool to inspect tables.
+- [**Tools**](./tools): The actions an agent can take. What tools you give an agent highly depend on what you want the agent to do
+- [**Toolkits**](./toolkits): Wrappers around collections of tools that can be used together a specific use case. For example, in order for an agent to
+  interact with a SQL database it will likely need one tool to execute queries and another to inspect tables.
 - **Agent executors**: Wrapper around an action agent and a list of tools. This is responsible for the loop of running the agent
   iteratively until the stopping criteria is met.
 

@@ -9,4 +9,3 @@ LangChain provides interfaces and integrations for a number of different types o
 
    modules/llms
    modules/chat_models
-   modules/embeddings

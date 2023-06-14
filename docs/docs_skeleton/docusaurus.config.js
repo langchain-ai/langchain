@@ -84,7 +84,7 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
-          editUrl: "https://github.com/hwchase17/langchainjs/edit/main/docs/",
+          editUrl: "https://github.com/hwchase17/langchain/edit/master/docs/",
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           ],
@@ -135,7 +135,7 @@ const config = {
             position: "left",
           },
           {
-            href: "pathname:///../api_reference/html/index.html",
+            href: "pathname:///api_reference/html/index.html",
             label: "API Reference",
             position: "left",
           },

@@ -7,11 +7,10 @@ API Reference
 .. toctree::
    :maxdepth: 1
 
-   ./models.rst
-   ./prompts.rst
-   ./indexes.rst
-   ./modules/memory.rst
+   ./model_io.rst
+   ./data_connection.rst
    ./modules/chains.rst
    ./agents.rst
+   ./modules/memory.rst
    ./modules/utilities.rst
    ./modules/experimental.rst
