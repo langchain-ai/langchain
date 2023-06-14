@@ -21,6 +21,7 @@ class FakeListChatModel(SimpleChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """First try to lookup in queries, else return 'foo' or 'bar'."""
         response = self.responses[self.i]
