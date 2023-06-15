@@ -174,7 +174,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         token_max: int = 3000,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[str, dict]:
+    ) -> Tuple[List[Document], dict]:
         question_result_key = self.llm_chain.output_key
         result_docs = [
             Document(page_content=r[question_result_key], metadata=docs[i].metadata)
@@ -209,11 +209,12 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         self,
         results: List[Dict],
         docs: List[Document],
+        token_max: int = 3000,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[str, dict]:
         result_docs, extra_return_dict = self._process_results_common(
-            results, docs, callbacks=callbacks, **kwargs
+            results, docs, token_max, callbacks=callbacks, **kwargs
         )
         output = self.combine_document_chain.run(
             input_documents=result_docs, callbacks=callbacks, **kwargs
