@@ -12,33 +12,42 @@ from langchain.prompts.base import BasePromptTemplate
 class OpenAIFunctionsChain(Chain):
     prompt: BasePromptTemplate
     llm: BaseLanguageModel
+    entity_schema: Dict[Any, Any]
+    tagging: bool = True
 
     @property
     def input_keys(self) -> List[str]:
-        return self.prompt.input_variables + ["entity_schema"]
+        return self.prompt.input_variables
 
     @property
     def output_keys(self) -> List[str]:
         return ["output"]
 
-    def _get_functions(self, entity_schema):
-        entity_name = entity_schema["entity_name"]
-        properties = entity_schema["properties"]
-        # required = entity_schema["required"]
+    def _get_functions(self):
+        properties = self.entity_schema["properties"]
+        required = self.entity_schema["required"]
 
         func = {}
-        # func["name"] = f"get_{entity_name}_info"
-        func["name"] = "relevant_entity_extractor"
+        if self.tagging:
+            func["name"] = "entity_tagging"
+            func[
+                "description"
+            ] = "Saves the relevant information for each entity that was mentioned in the passage."
+        else:
+            func["name"] = "information_extraction"
+            func["description"] = "Extracts the relevant information from the passage."
 
-        func[
-            "description"
-        ] = f"Save the relevant entity information for each {entity_name} that was mentioned in the passage, every property should be a list"
         parameters = {"type": "object"}
-        # parameters["required"] = required
+        parameters["required"] = required
         parameters["properties"] = {}
 
         for k, v in properties.items():
-            parameters["properties"][k] = {"title": k, "type": v}
+            if self.tagging and not isinstance(v, list):
+                # tag all the ocurrences it finds
+                parameters["properties"][k] = {"title": k, "type": [v]}
+            else:
+                # extract only one occurrence
+                parameters["properties"][k] = {"title": k, "type": v}
 
         func["parameters"] = parameters
 
@@ -54,7 +63,7 @@ class OpenAIFunctionsChain(Chain):
         messages = prompt.to_messages()
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
-        function = self._get_functions(inputs["entity_schema"])
+        function = self._get_functions()
         predicted_message = self.llm.predict_messages(
             messages, functions=[function], callbacks=callbacks
         )
@@ -70,7 +79,7 @@ class OpenAIFunctionsChain(Chain):
         messages = prompt.to_messages()
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
-        function = self._get_functions(inputs["entity_schema"])
+        function = self._get_functions()
         predicted_message = await self.llm.apredict_messages(
             messages, functions=[function], callbacks=callbacks
         )
