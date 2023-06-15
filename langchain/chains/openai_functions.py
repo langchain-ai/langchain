@@ -1,6 +1,6 @@
 import json
 from functools import partial
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -14,13 +14,6 @@ from langchain.chains.sequential import SimpleSequentialChain
 from langchain.chains.transform import TransformChain
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate
-
-
-def _get_extraction_schema(item_class: Type[BaseModel]) -> Type[BaseModel]:
-    class PydanticSchema(BaseModel):
-        info: List[item_class]
-
-    return PydanticSchema
 
 
 def _resolve_schema_references(schema: Any, definitions: Dict[str, Any]) -> Any:
@@ -41,7 +34,7 @@ def _resolve_schema_references(schema: Any, definitions: Dict[str, Any]) -> Any:
     return schema
 
 
-def _get_function_arguments(inputs: dict) -> dict:
+def _get_function_arguments(inputs: dict) -> str:
     message = inputs["input"]
     try:
         func_call = message.additional_kwargs["function_call"]
@@ -69,8 +62,8 @@ def _parse_entities(inputs: dict) -> dict:
 
 def _parse_entities_pydantic(inputs: dict, pydantic_schema: Any) -> dict:
     args = _get_function_arguments(inputs)
-    args = pydantic_schema.parse_raw(args)
-    return {"output": args.info}
+    pydantic_args = pydantic_schema.parse_raw(args)
+    return {"output": pydantic_args.info}
 
 
 class OpenAIFunctionsChain(Chain):
@@ -175,19 +168,19 @@ def create_extraction_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
 def create_extraction_chain_pydantic(
     pydantic_schema: Any, llm: BaseLanguageModel
 ) -> Chain:
-    pydantic_schema = _get_extraction_schema(pydantic_schema)
+    class PydanticSchema(BaseModel):
+        info: List[pydantic_schema]  # type: ignore
 
-    openai_schema = pydantic_schema.schema()
+    openai_schema = PydanticSchema.schema()
     openai_schema = _resolve_schema_references(
         openai_schema, openai_schema["definitions"]
     )
 
     functions = _get_extraction_functions(openai_schema)
-    print(functions)
     prompt = ChatPromptTemplate.from_template(_EXTRACTION_TEMPLATE)
     chain = OpenAIFunctionsChain(llm=llm, prompt=prompt, functions=functions)
     pydantic_parsing_chain = TransformChain(
-        transform=partial(_parse_entities_pydantic, pydantic_schema=pydantic_schema),
+        transform=partial(_parse_entities_pydantic, pydantic_schema=PydanticSchema),
         input_variables=["input"],
         output_variables=["output"],
     )
