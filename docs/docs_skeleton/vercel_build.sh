@@ -1,12 +1,16 @@
 #!/bin/bash
 
-echo "In custom script!"
 cd ..
-python3 --version
-pip3 --version
-python3 -m venv .venv
+
+curl https://pyenv.run | bash
+eval "$(pyenv init -)"
+exec $SHELL
+pyenv install 3.10
+pyenv global 3.10
+python --version
+python -m venv .venv
 source .venv/bin/activate
-pip3 install -r requirements.txt
+python -m pip install -r requirements.txt
 mkdir -p docs_skeleton/static/api_reference
 cd api_reference
 make html
