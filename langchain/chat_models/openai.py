@@ -223,6 +223,11 @@ class ChatOpenAI(BaseChatModel):
             "OPENAI_ORGANIZATION",
             default="",
         )
+        values["openai_api_version"] = get_from_dict_or_env(
+            values,
+            "openai_api_version",
+            "OPENAI_API_VERSION",
+        )
         values["openai_api_base"] = get_from_dict_or_env(
             values,
             "openai_api_base",
@@ -237,6 +242,10 @@ class ChatOpenAI(BaseChatModel):
         )
         try:
             import openai
+
+            openai.api_type = "open_ai"
+            openai.api_base = values["openai_api_base"]
+            openai.api_version = values["openai_api_version"]
 
         except ImportError:
             raise ValueError(
