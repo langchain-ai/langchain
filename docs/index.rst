@@ -5,7 +5,7 @@ Welcome to LangChain
 1. *Data-aware*: connect a language model to other sources of data
 2. *Agentic*: allow a language model to interact with its environment
 
-| The LangChain framework is designed around these principles.
+| The LangChain framework is designed around these principles. Note that LangChain is, by design, independent of any LLM provider. While some examples use a specific LLM, from OpenAI, for example, the user is free to choose the LLM of their choice.
 
 | This is the Python specific portion of the documentation. For a purely conceptual guide to LangChain, see `here <https://docs.langchain.com/docs/>`_. For the JavaScript documentation, see `here <https://js.langchain.com/docs/>`_.
 
