@@ -11,12 +11,10 @@ possible solutions to a problem.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from enum import Enum
 from textwrap import indent
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Type
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import Extra
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -24,129 +22,14 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from langchain.chains.llm import LLMChain
-from langchain.chains.tot.prompts import FIRST_STEP_PROMPT, NEXT_STEP_PROMPT
-from langchain.prompts.base import BasePromptTemplate
-
-
-class SolutionType(Enum):
-    VALID_INTERMEDIATE = 0
-    VALID_FINAL = 1
-    INVALID = 2
-
-
-class Result(BaseModel):
-    solution: str
-    solution_type: SolutionType
-    children: Set[Result] = Field(default_factory=set)
-
-    def __hash__(self) -> int:
-        return id(self)
-
-
-class ToTMemory:
-    """
-    Memory for the Tree of Thought (ToT) chain.
-    """
-
-    def __init__(self, stack: Optional[List[Result]] = None):
-        self.stack: list[Result] = stack or []
-
-    def top(self) -> Optional[Result]:
-        "Get the top of the stack without popping it."
-        return self.stack[-1] if len(self.stack) > 0 else None
-
-    def pop(self, n: int = 1) -> Optional[Result]:
-        "Pop the top n elements of the stack and return the last one."
-        if len(self.stack) < n:
-            return None
-        for _ in range(n):
-            node = self.stack.pop()
-        return node
-
-    def top_parent(self) -> Optional[Result]:
-        "Get the parent of the top of the stack without popping it."
-        return self.stack[-2] if len(self.stack) > 1 else None
-
-    def store(self, node: Result) -> None:
-        "Add a node on the top of the stack."
-        if len(self.stack) > 0:
-            self.stack[-1].children.add(node)
-        self.stack.append(node)
-
-    @property
-    def level(self) -> int:
-        "Return the current level of the stack."
-        return len(self.stack)
-
-
-class ToTController:
-    """
-    Tree of Thought (ToT) controller.
-
-    This is a version of a ToT controller, dubbed in the paper as a "Simple
-    Controller".
-
-    It has one parameter `c` which is the number of children to explore at each
-    node.
-    """
-
-    def __init__(self, c: int = 3):
-        """
-        Initialize the controller.
-
-        Args:
-            c: The number of children to explore at each node.
-        """
-        self.c = c
-
-    def __call__(self, memory: ToTMemory) -> Optional[str]:
-        next_node = memory.top()
-        parent_node = memory.top_parent()
-        solution_type = (
-            SolutionType.VALID_INTERMEDIATE
-            if next_node is None
-            else next_node.solution_type
-        )
-
-        # 1 if the current partial solution is invalid, backtrack to the parent node.
-        if solution_type == SolutionType.INVALID:
-            memory.pop()
-            next_node = memory.top()
-
-        # 2 if the current partial solution is valid but C children were
-        # explored and yet failed to find a final solution, backtrack to the
-        # parent node.
-        elif (
-            solution_type == SolutionType.VALID_INTERMEDIATE
-            and parent_node is not None
-            and len(parent_node.children) >= self.c
-        ):
-            memory.pop(2)
-            next_node = memory.top()
-        return next_node.solution if next_node is not None else None
-
-
-class ToTChecker(ABC):
-    """
-    Tree of Thought (ToT) checker.
-
-    This is an abstract ToT checker that must be implemented by the user. You
-    can implement a simple rule-based checker or a more sophisticated
-    neural network based classifier.
-    """
-
-    @abstractmethod
-    def evaluate(self, problem_description: str, response: str) -> SolutionType:
-        """
-        Evaluate the response to the problem description and return the solution type.
-        """
-
-    def __call__(self, problem_description: str, response: str) -> Result:
-        return Result(
-            solution=response,
-            solution_type=self.evaluate(problem_description, response),
-        )
+from langchain.chains.tot.checker import ToTChecker
+from langchain.chains.tot.controller import ToTController
+from langchain.chains.tot.memory import ToTDFSMemory
+from langchain.chains.tot.thought import Thought, ThoughtValidity
+from langchain.chains.tot.thought_generation import (
+    BaseThoughtGenerationStrategy,
+    ProposePromptStrategy,
+)
 
 
 class ToTChain(Chain):
@@ -157,20 +40,19 @@ class ToTChain(Chain):
     llm: BaseLanguageModel
     """
     Language model to use. It must be set to produce different variations for
-    the same prompt. The paper states that authors used the temperature
-    parmaeter set to 1.
+    the same prompt.
     """
     checker: ToTChecker
     """ToT Checker to use."""
-    first_step_prompt: BasePromptTemplate = FIRST_STEP_PROMPT
-    """Prompt object to use for the first step."""
-    next_step_prompt: BasePromptTemplate = NEXT_STEP_PROMPT
-    """Prompt object to use for the next steps."""
     output_key: str = "response"  #: :meta private:
     k: int = 10
     """The maximmum number of conversation rounds"""
-    tot_memory: ToTMemory = ToTMemory()
+    c: int = 3
+    """The number of children to explore at each node"""
+    tot_memory: ToTDFSMemory = ToTDFSMemory()
     tot_controller: ToTController = ToTController()
+    tot_strategy_class: Type[BaseThoughtGenerationStrategy] = ProposePromptStrategy
+    verbose_llm: bool = False
 
     class Config:
         """Configuration for this pydantic object."""
@@ -178,13 +60,27 @@ class ToTChain(Chain):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
+    @classmethod
+    def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> ToTChain:
+        """
+        Create a ToTChain from a language model.
+
+        :param llm: The language model to use.
+        :param kwargs: Additional arguments to pass to the ToTChain constructor.
+        """
+        return cls(llm=llm, **kwargs)
+
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
+        self.tot_controller.c = self.c
+
     @property
     def input_keys(self) -> List[str]:
         """Will be whatever keys the prompt expects.
 
         :meta private:
         """
-        return self.first_step_prompt.input_variables
+        return ["problem_description"]
 
     @property
     def output_keys(self) -> List[str]:
@@ -194,40 +90,22 @@ class ToTChain(Chain):
         """
         return [self.output_key]
 
-    @property
-    def current_level(self) -> int:
-        return len(self.tot_memory.stack)
-
-    def predict(
-        self, problem_description: str, partial_solution_summary: Optional[str] = None
-    ) -> str:
-        if partial_solution_summary is None:
-            prompt = self.first_step_prompt
-            inputs = {"problem_description": problem_description}
-
-        else:
-            prompt = self.next_step_prompt
-            inputs = {
-                "problem_description": problem_description,
-                "partial_solution_summary": partial_solution_summary,
+    def log_thought(
+        self,
+        thought: Thought,
+        level: int,
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> None:
+        if run_manager:
+            colors = {
+                ThoughtValidity.VALID_FINAL: "green",
+                ThoughtValidity.VALID_INTERMEDIATE: "yellow",
+                ThoughtValidity.INVALID: "red",
             }
-        llm_chain = LLMChain(llm=self.llm, prompt=prompt, verbose=self.verbose)
-        response_text = llm_chain.predict_and_parse(callbacks=None, **inputs)
-        if not isinstance(response_text, str):
-            response_text = ""
-        return response_text
-
-    def solve(self, problem_description: str) -> Optional[str]:
-        """Algorithm 2 from the ToT paper."""
-        ctrl_signal = None
-        for _ in range(self.k):
-            response = self.predict(problem_description, ctrl_signal)
-            result = self.checker(problem_description, response)
-            if result.solution_type == SolutionType.VALID_FINAL:
-                return result.solution
-            self.tot_memory.store(result)
-            ctrl_signal = self.tot_controller(self.tot_memory)
-        return None
+            text = indent(f"Thought: {thought.text}\n", prefix="    " * level)
+            run_manager.on_text(
+                text=text, color=colors[thought.validity], verbose=self.verbose
+            )
 
     def _call(
         self,
@@ -238,14 +116,27 @@ class ToTChain(Chain):
             run_manager.on_text(text="Starting the ToT solve procedure.\n")
 
         problem_description = inputs["problem_description"]
-        ctrl_signal = None
+        checker_inputs = {"problem_description": problem_description}
+        thoughts_path: tuple[str, ...] = ()
+        thought_generator = self.tot_strategy_class(
+            llm=self.llm, c=self.c, verbose=self.verbose_llm
+        )
+
+        level = 0
         for _ in range(self.k):
-            response = self.predict(problem_description, ctrl_signal)
-            result = self.checker(problem_description, response)
-            if result.solution_type == SolutionType.VALID_FINAL:
-                return {self.output_key: result.solution}
-            self.tot_memory.store(result)
-            ctrl_signal = self.tot_controller(self.tot_memory)
+            level = self.tot_memory.level
+            thought_text = thought_generator.next_thought(
+                problem_description, thoughts_path
+            )
+            checker_inputs["thoughts"] = thoughts_path + (thought_text,)
+            thought_validity = self.checker(checker_inputs)["validity"]
+            thought = Thought(text=thought_text, validity=thought_validity)
+            if thought.validity == ThoughtValidity.VALID_FINAL:
+                self.log_thought(thought, level, run_manager)
+                return {self.output_key: thought.text}
+            self.tot_memory.store(thought)
+            self.log_thought(thought, level, run_manager)
+            thoughts_path = self.tot_controller(self.tot_memory)
 
         return {self.output_key: "No solution found"}
 
