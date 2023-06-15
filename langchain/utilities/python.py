@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger(__name__)
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def warn_once() -> None:
     # Warn that the PythonREPL
     logger.warning("Python REPL can execute arbitrary code. Use with caution.")
