@@ -479,7 +479,7 @@ class ChatOpenAI(BaseChatModel):
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model == "gpt-4-0314" or "gpt-4-32k-0613":
+        elif model == "gpt-4-0613" or "gpt-4-32k-0613":
             tokens_per_message = 3
             tokens_per_name = 1
         else:
