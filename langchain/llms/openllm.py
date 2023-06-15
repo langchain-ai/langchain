@@ -1,27 +1,16 @@
 """Wrapper around OpenLLM APIs."""
 from __future__ import annotations
 
-import json
 import copy
+import json
 import logging
-from typing import (
-    Optional,
-    Any,
-    List,
-    Literal,
-    TYPE_CHECKING,
-    Literal,
-    Dict,
-    TypedDict,
-    Union,
-    overload,
-)
-from pydantic import PrivateAttr
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-    AsyncCallbackManagerForLLMRun,
-)
+from typing import (TYPE_CHECKING, Any, Dict, List, Literal, Optional,
+                    TypedDict, Union, overload)
 
+from pydantic import PrivateAttr
+
+from langchain.callbacks.manager import (AsyncCallbackManagerForLLMRun,
+                                         CallbackManagerForLLMRun)
 from langchain.llms.base import LLM
 
 if TYPE_CHECKING:
@@ -131,7 +120,8 @@ class OpenLLM(LLM):
             import openllm
         except ImportError:
             raise ValueError(
-                "Could not import openllm. Make sure to install it with 'pip install openllm.'"
+                "Could not import openllm. Make sure to install it with "
+                "'pip install openllm.'"
             )
 
         llm_kwargs = llm_kwargs or {}
@@ -159,11 +149,11 @@ class OpenLLM(LLM):
             self._client = client
         else:
             assert model_name is not None, "Must provide 'model_name' or 'server_url'"
-            # since the LLM are relatively huge, we don't actually want to convert the Runner
-            # with embedded when running the server. Instead, we will only set the init_local here
-            # so that LangChain users can still use the LLM in-process.
-            # Wrt to BentoML users, setting embedded=False is the expected behaviour to invoke
-            # the runners remotely
+            # since the LLM are relatively huge, we don't actually want to convert the
+            # Runner with embedded when running the server. Instead, we will only set
+            # the init_local here so that LangChain users can still use the LLM
+            # in-process. Wrt to BentoML users, setting embedded=False is the expected
+            # behaviour to invoke the runners remotely
             runner = openllm.Runner(
                 model_name=model_name,
                 model_id=model_id,
