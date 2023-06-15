@@ -1,3 +1,4 @@
+echo "In custom script!"
 cd ..
 python -m venv .venv
 source .venv/bin/activate
