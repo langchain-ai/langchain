@@ -96,7 +96,7 @@ class WebBaseLoader(BaseLoader):
     ) -> str:
         
         # For SiteMap SSL verification
-        if not self.requests_kwargs['verify']:
+        if not self.requests_kwargs.get('verify', True):
             connector = aiohttp.TCPConnector(ssl=False)
         else:
             connector = None
