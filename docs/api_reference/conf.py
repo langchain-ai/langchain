@@ -58,11 +58,17 @@ autodoc_pydantic_field_list_validators = False
 autodoc_pydantic_config_members = False
 autodoc_pydantic_model_show_config_summary = False
 autodoc_pydantic_model_show_validator_members = False
+autodoc_pydantic_model_show_validator_summary = False
 autodoc_pydantic_model_show_field_summary = False
 autodoc_pydantic_model_members = False
 autodoc_pydantic_model_undoc_members = False
-# autodoc_typehints = "signature"
-# autodoc_typehints = "description"
+autodoc_pydantic_model_hide_paramlist = False
+autodoc_pydantic_model_signature_prefix = "class"
+autodoc_pydantic_field_signature_prefix = "attribute"
+autodoc_pydantic_model_summary_list_order = "bysource"
+autodoc_member_order = "bysource"
+autodoc_default_options = {"members": True, "show-inheritance": True, "undoc_members": True, "inherited_members": "BaseModel"}
+autodoc_typehints = "description"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -78,12 +84,13 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_book_theme"
+html_theme = "sphinx_rtd_theme"
 
 html_theme_options = {
     "path_to_docs": "docs",
     "repository_url": "https://github.com/hwchase17/langchain",
     "use_repository_button": True,
+    # "style_nav_header_background": "white"
 }
 
 html_context = {

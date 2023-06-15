@@ -1,10 +1,10 @@
 ====================
-Experimental Modules
+Experimental
 ====================
 
 This module contains experimental modules and reproductions of existing work using LangChain primitives.
 
-Autonomous Agents
+Autonomous agents
 ------------------
 
 Here, we document the BabyAGI and AutoGPT classes from the langchain.experimental module.
@@ -16,7 +16,7 @@ Here, we document the BabyAGI and AutoGPT classes from the langchain.experimenta
    :members:
 
 
-Generative Agents
+Generative agents
 ------------------
 
 Here, we document the GenerativeAgent and GenerativeAgentMemory classes from the langchain.experimental module.

@@ -113,14 +113,14 @@
 }
 
 .markdown > h2 {
-  margin-top: 3rem;
+  margin-top: 2rem;
   border-bottom-color: var(--ifm-color-primary);
   border-bottom-width: 2px;
   padding-bottom: 1rem;
 }
 
 .markdown > :not(h2) +  h3 {
-  margin-top: 4rem;
+  margin-top: 1rem;
 }
 
 .markdown > h4 {
@@ -135,4 +135,8 @@
 .markdown > h5 {
   margin-bottom: 0.2rem;
   font-weight: 600;
+}
+
+.hidden {
+    display: none !important;
 }

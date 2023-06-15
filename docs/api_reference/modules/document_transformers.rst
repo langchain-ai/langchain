@@ -5,3 +5,9 @@ Document Transformers
    :members:
    :undoc-members:
 
+Text Splitters
+------------------------------
+
+.. automodule:: langchain.text_splitter
+   :members:
+   :undoc-members:
