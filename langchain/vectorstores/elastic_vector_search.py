@@ -292,7 +292,8 @@ class ElasticVectorSearch(VectorStore, ABC):
         )
         index_name = index_name or uuid.uuid4().hex
         vectorsearch = ElasticVectorSearch(
-            elasticsearch_url, index_name, embedding, **kwargs)
+            elasticsearch_url, index_name, embedding, **kwargs
+        )
         vectorsearch.add_texts(
             texts, metadatas=metadatas, refresh_indices=refresh_indices
         )
