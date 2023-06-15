@@ -94,7 +94,14 @@ class WebBaseLoader(BaseLoader):
     async def _fetch(
         self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
     ) -> str:
-        async with aiohttp.ClientSession() as session:
+        
+        # For SiteMap SSL verification
+        if not self.request_kwargs['verify']:
+            connector = aiohttp.TCPConnector(ssl=False)
+        else:
+            connector = None
+            
+        async with aiohttp.ClientSession(connector=connector) as session:
             for i in range(retries):
                 try:
                     async with session.get(
