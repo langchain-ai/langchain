@@ -15,6 +15,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts import BasePromptTemplate
 from langchain.requests import TextRequestsWrapper
+import re
 
 
 class APIChain(Chain):
@@ -24,6 +25,7 @@ class APIChain(Chain):
     api_answer_chain: LLMChain
     requests_wrapper: TextRequestsWrapper = Field(exclude=True)
     api_docs: str
+    allow_unverified_urls: bool = False
     question_key: str = "question"  #: :meta private:
     output_key: str = "output"  #: :meta private:
 
@@ -64,6 +66,19 @@ class APIChain(Chain):
                 f"Input variables should be {expected_vars}, got {input_vars}"
             )
         return values
+    
+    def verify_api_url_is_legit(self, parsed_url: str):
+        """Verify that the parsed URL corresponds to one of the URLs in the API spec"""
+        
+        base_url_re = re.compile('http[s]?://((?:[-\w.]|(?:%[\da-fA-F]{2}))+)')
+        base_parsed_url = base_url_re.findall(parsed_url)[0].strip().lower()
+        api_doc_allowed_urls = base_url_re.findall(self.api_docs)
+        for url in api_doc_allowed_urls:
+            if base_parsed_url == url.strip().lower():
+                return
+        raise ValueError(
+            f"Parsed URL {parsed_url} is not covered by the API specification"
+        )
 
     def _call(
         self,
@@ -79,6 +94,8 @@ class APIChain(Chain):
         )
         _run_manager.on_text(api_url, color="green", end="\n", verbose=self.verbose)
         api_url = api_url.strip()
+        if self.allow_unverified_urls == False:
+            self.verify_api_url_is_legit(api_url)
         api_response = self.requests_wrapper.get(api_url)
         _run_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose
@@ -90,6 +107,7 @@ class APIChain(Chain):
             api_response=api_response,
             callbacks=_run_manager.get_child(),
         )
+        
         return {self.output_key: answer}
 
     async def _acall(
@@ -127,6 +145,7 @@ class APIChain(Chain):
         llm: BaseLanguageModel,
         api_docs: str,
         headers: Optional[dict] = None,
+        allow_unverified_urls: bool = False,
         api_url_prompt: BasePromptTemplate = API_URL_PROMPT,
         api_response_prompt: BasePromptTemplate = API_RESPONSE_PROMPT,
         **kwargs: Any,
@@ -140,6 +159,7 @@ class APIChain(Chain):
             api_answer_chain=get_answer_chain,
             requests_wrapper=requests_wrapper,
             api_docs=api_docs,
+            allow_unverified_urls=allow_unverified_urls,
             **kwargs,
         )
 
