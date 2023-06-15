@@ -1,19 +1,20 @@
 # Zilliz
 
-This page covers how to use the Zilliz Cloud ecosystem within LangChain.
-Zilliz uses the Milvus integration. 
-It is broken into two parts: installation and setup, and then references to specific Milvus wrappers.
+>[Zilliz Cloud](https://zilliz.com/doc/quick_start) is a fully managed service on cloud for `LF AI Milvus®`,
+
 
 ## Installation and Setup
-- Install the Python SDK with `pip install pymilvus`
-## Wrappers
 
-### VectorStore
+Install the Python SDK:
+```bash
+pip install pymilvus
+```
 
-There exists a wrapper around Zilliz indexes, allowing you to use it as a vectorstore,
+## Vectorstore
+
+A wrapper around Zilliz indexes allows you to use it as a vectorstore,
 whether for semantic search or example selection.
 
-To import this vectorstore:
 ```python
 from langchain.vectorstores import Milvus
 ```

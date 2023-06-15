@@ -96,6 +96,7 @@ class HuggingFaceEndpoint(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
 
@@ -114,7 +115,8 @@ class HuggingFaceEndpoint(LLM):
         _model_kwargs = self.model_kwargs or {}
 
         # payload samples
-        parameter_payload = {"inputs": prompt, "parameters": _model_kwargs}
+        params = {**_model_kwargs, **kwargs}
+        parameter_payload = {"inputs": prompt, "parameters": params}
 
         # HTTP headers for authorization
         headers = {

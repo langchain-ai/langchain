@@ -5,7 +5,7 @@ then combines the results with another one.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra
 
@@ -38,15 +38,22 @@ class MapReduceChain(Chain):
         prompt: BasePromptTemplate,
         text_splitter: TextSplitter,
         callbacks: Callbacks = None,
+        combine_chain_kwargs: Optional[Mapping[str, Any]] = None,
+        reduce_chain_kwargs: Optional[Mapping[str, Any]] = None,
         **kwargs: Any,
     ) -> MapReduceChain:
         """Construct a map-reduce chain that uses the chain for map and reduce."""
         llm_chain = LLMChain(llm=llm, prompt=prompt, callbacks=callbacks)
-        reduce_chain = StuffDocumentsChain(llm_chain=llm_chain, callbacks=callbacks)
+        reduce_chain = StuffDocumentsChain(
+            llm_chain=llm_chain,
+            callbacks=callbacks,
+            **(reduce_chain_kwargs if reduce_chain_kwargs else {}),
+        )
         combine_documents_chain = MapReduceDocumentsChain(
             llm_chain=llm_chain,
             combine_document_chain=reduce_chain,
             callbacks=callbacks,
+            **(combine_chain_kwargs if combine_chain_kwargs else {}),
         )
         return cls(
             combine_documents_chain=combine_documents_chain,
@@ -84,9 +91,14 @@ class MapReduceChain(Chain):
     ) -> Dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         # Split the larger text into smaller chunks.
-        texts = self.text_splitter.split_text(inputs[self.input_key])
+        doc_text = inputs.pop(self.input_key)
+        texts = self.text_splitter.split_text(doc_text)
         docs = [Document(page_content=text) for text in texts]
+        _inputs: Dict[str, Any] = {
+            **inputs,
+            self.combine_documents_chain.input_key: docs,
+        }
         outputs = self.combine_documents_chain.run(
-            input_documents=docs, callbacks=_run_manager.get_child()
+            _inputs, callbacks=_run_manager.get_child()
         )
         return {self.output_key: outputs}

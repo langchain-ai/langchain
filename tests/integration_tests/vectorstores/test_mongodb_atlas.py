@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from time import sleep
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -19,37 +19,27 @@ NAMESPACE = "langchain_test_db.langchain_test_collection"
 CONNECTION_STRING = os.environ.get("MONGODB_ATLAS_URI")
 DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
 
-
-def get_test_client() -> Optional[MongoClient]:
-    try:
-        from pymongo import MongoClient
-
-        client: MongoClient = MongoClient(CONNECTION_STRING)
-        return client
-    except:  # noqa: E722
-        return None
-
-
 # Instantiate as constant instead of pytest fixture to prevent needing to make multiple
 # connections.
-TEST_CLIENT = get_test_client()
+TEST_CLIENT = MongoClient(CONNECTION_STRING)
+collection = TEST_CLIENT[DB_NAME][COLLECTION_NAME]
 
 
 class TestMongoDBAtlasVectorSearch:
     @classmethod
     def setup_class(cls) -> None:
         # insure the test collection is empty
-        assert TEST_CLIENT[DB_NAME][COLLECTION_NAME].count_documents({}) == 0  # type: ignore[index]  # noqa: E501
+        assert collection.count_documents({}) == 0  # type: ignore[index]  # noqa: E501
 
     @classmethod
     def teardown_class(cls) -> None:
         # delete all the documents in the collection
-        TEST_CLIENT[DB_NAME][COLLECTION_NAME].delete_many({})  # type: ignore[index]
+        collection.delete_many({})  # type: ignore[index]
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # delete all the documents in the collection
-        TEST_CLIENT[DB_NAME][COLLECTION_NAME].delete_many({})  # type: ignore[index]
+        collection.delete_many({})  # type: ignore[index]
 
     def test_from_documents(self, embedding_openai: Embeddings) -> None:
         """Test end to end construction and search."""
@@ -62,8 +52,7 @@ class TestMongoDBAtlasVectorSearch:
         vectorstore = MongoDBAtlasVectorSearch.from_documents(
             documents,
             embedding_openai,
-            client=TEST_CLIENT,
-            namespace=NAMESPACE,
+            collection=collection,
             index_name=INDEX_NAME,
         )
         sleep(1)  # waits for mongot to update Lucene's index
@@ -81,8 +70,7 @@ class TestMongoDBAtlasVectorSearch:
         vectorstore = MongoDBAtlasVectorSearch.from_texts(
             texts,
             embedding_openai,
-            client=TEST_CLIENT,
-            namespace=NAMESPACE,
+            collection=collection,
             index_name=INDEX_NAME,
         )
         sleep(1)  # waits for mongot to update Lucene's index
@@ -101,8 +89,7 @@ class TestMongoDBAtlasVectorSearch:
             texts,
             embedding_openai,
             metadatas=metadatas,
-            client=TEST_CLIENT,
-            namespace=NAMESPACE,
+            collection=collection,
             index_name=INDEX_NAME,
         )
         sleep(1)  # waits for mongot to update Lucene's index
@@ -124,8 +111,7 @@ class TestMongoDBAtlasVectorSearch:
             texts,
             embedding_openai,
             metadatas=metadatas,
-            client=TEST_CLIENT,
-            namespace=NAMESPACE,
+            collection=collection,
             index_name=INDEX_NAME,
         )
         sleep(1)  # waits for mongot to update Lucene's index
