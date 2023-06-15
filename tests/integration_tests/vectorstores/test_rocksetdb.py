@@ -1,7 +1,5 @@
 import logging
 import os
-import sys
-from typing import List
 
 import rockset
 import rockset.models
@@ -21,7 +19,8 @@ logger = logging.getLogger(__name__)
 #
 #   SELECT
 #       _input.* EXCEPT(_meta),
-#       VECTOR_ENFORCE(_input.description_embedding, 10, 'float') as description_embedding
+#       VECTOR_ENFORCE(_input.description_embedding, 10, 'float') as
+#           description_embedding
 #   FROM
 #       _input
 #
