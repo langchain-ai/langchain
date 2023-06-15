@@ -80,7 +80,7 @@ class Banana(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "banana"
+        return "bananadev"
 
     def _call(
         self,
