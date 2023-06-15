@@ -62,7 +62,7 @@ prompt_template.format(adjective="funny", content="chickens")
 # -> Tell me a funny joke about chickens.
 ```
 
-You can create custom prompt templates that format the prompt in any way you want. For more information, see [Custom Prompt Templates](examples/custom_prompt_template.html).
+You can create custom prompt templates that format the prompt in any way you want. For more information, see [Custom Prompt Templates](./custom_prompt_template.html).
 
 
 <!-- TODO(shreya): Add link to Jinja -->
@@ -70,7 +70,7 @@ You can create custom prompt templates that format the prompt in any way you wan
 ## Chat prompt template
 
 [Chat Models](../models/chat) take a list of `chat messages as` input - this list commonly referred to as a `prompt`.
-These chat messages differ from raw string (which you would pass into a [LLM](../models/llms.rst) model) in that every message is associated with a `role`.
+These chat messages differ from raw string (which you would pass into a [LLM](/docs/modules/model_io/models/llms) model) in that every message is associated with a `role`.
 
 For example, in OpenAI [Chat Completion API](https://platform.openai.com/docs/guides/chat/introduction), a chat message can be associated with the AI, human or system role. The model is supposed to follow instruction from system chat message more closely.
 
