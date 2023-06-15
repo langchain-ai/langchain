@@ -70,7 +70,7 @@ class OpenAIFunctionsChain(Chain):
 
 
 def _convert_schema(schema: dict) -> dict:
-    props = {k: {"title": k, "type": v} for k, v in schema["properties"].items()}
+    props = {k: {"title": k, **v} for k, v in schema["properties"].items()}
     return {
         "type": "object",
         "properties": props,
