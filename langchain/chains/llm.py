@@ -186,11 +186,18 @@ class LLMChain(Chain):
 
     def create_outputs(self, response: LLMResult) -> List[Dict[str, str]]:
         """Create outputs from response."""
-        return [
+        outputs = [
             # Get the text of the top generated string.
             {self.output_key: generation[0].text}
             for generation in response.generations
         ]
+
+        if response.final_prompts is not None:
+            # Get the final prompts as lists of prompts(system, user, etc.)
+            for output_dict, final_prompts in zip(outputs, response.final_prompts):
+                output_dict["final_prompts"] = final_prompts
+
+        return outputs
 
     async def _acall(
         self,
