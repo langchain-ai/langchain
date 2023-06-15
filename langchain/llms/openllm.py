@@ -78,13 +78,15 @@ class OpenLLM(LLM):
     model_name: Optional[str] = None
     """Model name to use. See 'openllm models' for all available models."""
     model_id: Optional[str] = None
-    """Model Id to use. If not provided, will use the default model for the model name.See 'openllm models' for all available model variants."""
+    """Model Id to use. If not provided, will use the default model for the model name.
+    See 'openllm models' for all available model variants."""
     server_url: Optional[str] = None
     """Optional server URL that currently runs a LLMServer with 'openllm start'."""
     server_type: ServerType = "http"
     """Optional server type. Either 'http' or 'grpc'."""
     embedded: bool = True
-    """Initialize this LLM instance in current process by default. Should only set to False when using in conjunction with BentoML Service."""
+    """Initialize this LLM instance in current process by default. Should 
+    only set to False when using in conjunction with BentoML Service."""
     llm_kwargs: Dict[str, Any]
     """Key word arguments to be passed to openllm.LLM"""
 
@@ -104,7 +106,7 @@ class OpenLLM(LLM):
         model_id: Optional[str] = ...,
         embedded: Literal[True, False] = ...,
         **llm_kwargs: Any,
-    ):
+    ) -> None:
         ...
 
     @overload
@@ -114,7 +116,7 @@ class OpenLLM(LLM):
         server_url: str = ...,
         server_type: Literal["grpc", "http"] = ...,
         **llm_kwargs: Any,
-    ):
+    ) -> None:
         ...
 
     def __init__(
@@ -210,22 +212,19 @@ class OpenLLM(LLM):
     @property
     def _identifying_params(self) -> IdentifyingParams:
         """Get the identifying parameters."""
-
-        res = IdentifyingParams(
-            **{
-                "model_name": self.model_name,
-                "model_id": self.model_id,
-                "server_url": self.server_url,
-                "server_type": self.server_type,
-            }
-        )
-
+        res: Dict[str, Any] = {
+            "server_url": self.server_url,
+            "server_type": self.server_type,
+            "embedded": self.embedded,
+        }
         if self._client is not None:
             self.llm_kwargs.update(self._client.configuration)
             res["model_name"] = self._client.model_name
             res["model_id"] = self._client.model_id
         else:
             assert self._runner is not None, "Runner must be initialized"
+            res["model_name"] = self.model_name
+            res["model_id"] = self.model_id
             try:
                 self.llm_kwargs.update(
                     json.loads(self._runner.identifying_params["configuration"])
@@ -233,7 +232,7 @@ class OpenLLM(LLM):
             except (TypeError, json.JSONDecodeError):
                 pass
         res["llm_kwargs"] = self.llm_kwargs
-        return res
+        return IdentifyingParams(**res)
 
     @property
     def _llm_type(self) -> str:
