@@ -108,7 +108,8 @@ nebula3-python = {version = "^3.4.0", optional = true}
 langchainplus-sdk = ">=0.0.9"
 awadb = {version = "^0.3.3", optional = true}
 azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
-streamlit = {version = "^1.10.1", optional = true}
+# now streamlit requires Python >=3.7, !=3.9.7 So, it is commented out.
+#streamlit = {version = "^1.18.0", optional = true}
 
 
 [tool.poetry.group.docs.dependencies]
@@ -328,7 +329,8 @@ extended_testing = [
  "html2text",
  "py-trello",
  "scikit-learn",
- "streamlit",
+# now streamlit requires Python >=3.7, !=3.9.7 So, it is commented out.
+# "streamlit",
  "pyspark",
  "openai"
 ]

@@ -20,7 +20,8 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.callbacks.streaming_stdout_final_only import (
     FinalStreamingStdOutCallbackHandler,
 )
-from langchain.callbacks.streamlit import StreamlitCallbackHandler
+# now streamlit requires Python >=3.7, !=3.9.7 So, it is commented out here.
+# from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
 
@@ -38,7 +39,8 @@ __all__ = [
     "OpenAICallbackHandler",
     "StdOutCallbackHandler",
     "StreamingStdOutCallbackHandler",
-    "StreamlitCallbackHandler",
+    # now streamlit requires Python >=3.7, !=3.9.7 So, it is commented out here.
+    # "StreamlitCallbackHandler",
     "WandbCallbackHandler",
     "WhyLabsCallbackHandler",
     "get_openai_callback",
