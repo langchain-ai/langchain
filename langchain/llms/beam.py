@@ -251,10 +251,12 @@ class Beam(LLM):
         prompt: str,
         stop: Optional[list] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call to Beam."""
         url = "https://apps.beam.cloud/" + self.app_id if self.app_id else self.url
         payload = {"prompt": prompt, "max_length": self.max_length}
+        payload.update(kwargs)
         headers = {
             "Accept": "*/*",
             "Accept-Encoding": "gzip, deflate",

@@ -60,6 +60,7 @@ class HumanInputLLM(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """
         Displays the prompt to the user and returns their input as a response.
