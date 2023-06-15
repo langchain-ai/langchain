@@ -435,12 +435,20 @@ class ChatOpenAI(BaseChatModel):
         model = self.model_name
         if model == "gpt-3.5-turbo":
             # gpt-3.5-turbo may change over time.
-            # Returning num tokens assuming gpt-3.5-turbo-0301.
-            model = "gpt-3.5-turbo-0301"
+            # Returning num tokens assuming gpt-3.5-turbo-0613.
+            model = "gpt-3.5-turbo-0613"
+        elif model == "gpt-3.5-turbo-16k":
+            # gpt-3.5-turbo-16k may change over time.
+            # Returning num tokens assuming gpt-3.5-turbo-16k-0613.
+            model = "gpt-3.5-turbo-16k-0613"
         elif model == "gpt-4":
             # gpt-4 may change over time.
-            # Returning num tokens assuming gpt-4-0314.
-            model = "gpt-4-0314"
+            # Returning num tokens assuming gpt-4-0613.
+            model = "gpt-4-0613"
+        elif model == "gpt-4-32k":
+            # gpt-4-32k may change over time.
+            # Returning num tokens assuming gpt-4-32k-0613.
+            model = "gpt-4-32k-0613"
         # Returns the number of tokens used by a list of messages.
         try:
             encoding = tiktoken_.encoding_for_model(model)
@@ -466,12 +474,12 @@ class ChatOpenAI(BaseChatModel):
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
-        if model == "gpt-3.5-turbo-0301":
+        if model == "gpt-3.5-turbo-0613" or "gpt-3.5-turbo-16k-0613":
             # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model == "gpt-4-0314":
+        elif model == "gpt-4-0314" or "gpt-4-32k-0613":
             tokens_per_message = 3
             tokens_per_name = 1
         else:
