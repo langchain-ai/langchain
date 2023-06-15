@@ -18,7 +18,7 @@ class SendMessageSchema(BaseModel):
         ...,
         description="The message to send.",
     )
-    to: List[str] = Field(
+    to: str | List[str] = Field(
         ...,
         description="The list of recipients.",
     )
@@ -45,7 +45,7 @@ class GmailSendMessage(GmailBaseTool):
     def _prepare_message(
         self,
         message: str,
-        to: List[str],
+        to: str | List[str],
         subject: str,
         cc: Optional[List[str]] = None,
         bcc: Optional[List[str]] = None,
@@ -54,7 +54,7 @@ class GmailSendMessage(GmailBaseTool):
         mime_message = MIMEMultipart()
         mime_message.attach(MIMEText(message, "html"))
 
-        mime_message["To"] = ", ".join(to)
+        mime_message["To"] = ", ".join(to if isinstance(to, list) else [to])
         mime_message["Subject"] = subject
         if cc is not None:
             mime_message["Cc"] = ", ".join(cc)
