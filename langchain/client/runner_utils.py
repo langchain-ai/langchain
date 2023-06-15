@@ -422,14 +422,14 @@ async def arun_on_dataset(
             client will be created using the credentials in the environment.
 
     Returns:
-        A dictionary mapping example ids to the model outputs.
+        A dictionary containing the run's session name and the resulting model outputs.
     """
     client_ = client or LangChainPlusClient()
     session_name = _get_session_name(session_name, llm_or_chain_factory, dataset_name)
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))
 
-    return await arun_on_examples(
+    results = await arun_on_examples(
         examples,
         llm_or_chain_factory,
         concurrency_level=concurrency_level,
@@ -437,6 +437,10 @@ async def arun_on_dataset(
         session_name=session_name,
         verbose=verbose,
     )
+    return {
+        "session_name": session_name,
+        "results": results,
+    }
 
 
 def run_on_dataset(
@@ -466,16 +470,20 @@ def run_on_dataset(
             will be created using the credentials in the environment.
 
     Returns:
-        A dictionary mapping example ids to the model outputs.
+        A dictionary containing the run's session name and the resulting model outputs.
     """
     client_ = client or LangChainPlusClient()
     session_name = _get_session_name(session_name, llm_or_chain_factory, dataset_name)
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))
-    return run_on_examples(
+    results = run_on_examples(
         examples,
         llm_or_chain_factory,
         num_repetitions=num_repetitions,
         session_name=session_name,
         verbose=verbose,
     )
+    return {
+        "session_name": session_name,
+        "results": results,
+    }
