@@ -50,7 +50,7 @@ You can also use the OpenLLM wrapper to load LLM in current Python process for r
 ```python
 from langchain.llms import OpenLLM
 
-llm = OpenLLM("dolly-v2", model_id='databricks/dolly-v2-7b', device_map='auto')
+llm = OpenLLM(model_name="dolly-v2", model_id='databricks/dolly-v2-7b')
 
 llm("What is the difference between a duck and a goose? And why there are so many Goose in Canada?")
 ```
