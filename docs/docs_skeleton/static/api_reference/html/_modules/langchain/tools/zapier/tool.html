@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.tools.zapier.tool &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/clipboard.min.js"></script>
+        <script src="../../../../_static/copybutton.js"></script>
+        <script src="../../../../_static/tabs.js"></script>
+        <script src="../../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.tools.zapier.tool</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.tools.zapier.tool</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;## Zapier Natural Language Actions API</span>
+<span class="sd">\</span>
+<span class="sd">Full docs here: https://nla.zapier.com/api/v1/docs</span>
+
+<span class="sd">**Zapier Natural Language Actions** gives you access to the 5k+ apps, 20k+ actions</span>
+<span class="sd">on Zapier&#39;s platform through a natural language API interface.</span>
+
+<span class="sd">NLA supports apps like Gmail, Salesforce, Trello, Slack, Asana, HubSpot, Google Sheets,</span>
+<span class="sd">Microsoft Teams, and thousands more apps: https://zapier.com/apps</span>
+
+<span class="sd">Zapier NLA handles ALL the underlying API auth and translation from</span>
+<span class="sd">natural language --&gt; underlying API call --&gt; return simplified output for LLMs</span>
+<span class="sd">The key idea is you, or your users, expose a set of actions via an oauth-like setup</span>
+<span class="sd">window, which you can then query and execute via a REST API.</span>
+
+<span class="sd">NLA offers both API Key and OAuth for signing NLA API requests.</span>
+
+<span class="sd">1. Server-side (API Key): for quickly getting started, testing, and production scenarios</span>
+<span class="sd">    where LangChain will only use actions exposed in the developer&#39;s Zapier account</span>
+<span class="sd">    (and will use the developer&#39;s connected accounts on Zapier.com)</span>
+
+<span class="sd">2. User-facing (Oauth): for production scenarios where you are deploying an end-user</span>
+<span class="sd">    facing application and LangChain needs access to end-user&#39;s exposed actions and</span>
+<span class="sd">    connected accounts on Zapier.com</span>
+
+<span class="sd">This quick start will focus on the server-side use case for brevity.</span>
+<span class="sd">Review [full docs](https://nla.zapier.com/api/v1/docs) or reach out to</span>
+<span class="sd">nla@zapier.com for user-facing oauth developer support.</span>
+
+<span class="sd">Typically, you&#39;d use SequentialChain, here&#39;s a basic example:</span>
+
+<span class="sd">    1. Use NLA to find an email in Gmail</span>
+<span class="sd">    2. Use LLMChain to generate a draft reply to (1)</span>
+<span class="sd">    3. Use NLA to send the draft reply (2) to someone in Slack via direct message</span>
+
+<span class="sd">In code, below:</span>
+
+<span class="sd">```python</span>
+
+<span class="sd">import os</span>
+
+<span class="sd"># get from https://platform.openai.com/</span>
+<span class="sd">os.environ[&quot;OPENAI_API_KEY&quot;] = os.environ.get(&quot;OPENAI_API_KEY&quot;, &quot;&quot;)</span>
+
+<span class="sd"># get from https://nla.zapier.com/demo/provider/debug</span>
+<span class="sd"># (under User Information, after logging in):</span>
+<span class="sd">os.environ[&quot;ZAPIER_NLA_API_KEY&quot;] = os.environ.get(&quot;ZAPIER_NLA_API_KEY&quot;, &quot;&quot;)</span>
+
+<span class="sd">from langchain.llms import OpenAI</span>
+<span class="sd">from langchain.agents import initialize_agent</span>
+<span class="sd">from langchain.agents.agent_toolkits import ZapierToolkit</span>
+<span class="sd">from langchain.utilities.zapier import ZapierNLAWrapper</span>
+
+<span class="sd">## step 0. expose gmail &#39;find email&#39; and slack &#39;send channel message&#39; actions</span>
+
+<span class="sd"># first go here, log in, expose (enable) the two actions:</span>
+<span class="sd">#    https://nla.zapier.com/demo/start</span>
+<span class="sd">#    -- for this example, can leave all fields &quot;Have AI guess&quot;</span>
+<span class="sd"># in an oauth scenario, you&#39;d get your own &lt;provider&gt; id (instead of &#39;demo&#39;)</span>
+<span class="sd"># which you route your users through first</span>
+
+<span class="sd">llm = OpenAI(temperature=0)</span>
+<span class="sd">zapier = ZapierNLAWrapper()</span>
+<span class="sd">## To leverage a nla_oauth_access_token you may pass the value to the ZapierNLAWrapper</span>
+<span class="sd">## If you do this there is no need to initialize the ZAPIER_NLA_API_KEY env variable</span>
+<span class="sd"># zapier = ZapierNLAWrapper(zapier_nla_oauth_access_token=&quot;TOKEN_HERE&quot;)</span>
+<span class="sd">toolkit = ZapierToolkit.from_zapier_nla_wrapper(zapier)</span>
+<span class="sd">agent = initialize_agent(</span>
+<span class="sd">    toolkit.get_tools(),</span>
+<span class="sd">    llm,</span>
+<span class="sd">    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,</span>
+<span class="sd">    verbose=True</span>
+<span class="sd">)</span>
+
+<span class="sd">agent.run((&quot;Summarize the last email I received regarding Silicon Valley Bank. &quot;</span>
+<span class="sd">    &quot;Send the summary to the #test-zapier channel in slack.&quot;))</span>
+<span class="sd">```</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">root_validator</span>
+
+<span class="kn">from</span> <span class="nn">langchain.callbacks.manager</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AsyncCallbackManagerForToolRun</span><span class="p">,</span>
+    <span class="n">CallbackManagerForToolRun</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">langchain.tools.base</span> <span class="kn">import</span> <span class="n">BaseTool</span>
+<span class="kn">from</span> <span class="nn">langchain.tools.zapier.prompt</span> <span class="kn">import</span> <span class="n">BASE_ZAPIER_TOOL_PROMPT</span>
+<span class="kn">from</span> <span class="nn">langchain.utilities.zapier</span> <span class="kn">import</span> <span class="n">ZapierNLAWrapper</span>
+
+
+<div class="viewcode-block" id="ZapierNLARunAction"><a class="viewcode-back" href="../../../../modules/tools.html#langchain.tools.ZapierNLARunAction">[docs]</a><span class="k">class</span> <span class="nc">ZapierNLARunAction</span><span class="p">(</span><span class="n">BaseTool</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        action_id: a specific action ID (from list actions) of the action to execute</span>
+<span class="sd">            (the set api_key must be associated with the action owner)</span>
+<span class="sd">        instructions: a natural language instruction string for using the action</span>
+<span class="sd">            (eg. &quot;get the latest email from Mike Knoop&quot; for &quot;Gmail: find email&quot; action)</span>
+<span class="sd">        params: a dict, optional. Any params provided will *override* AI guesses</span>
+<span class="sd">            from `instructions` (see &quot;understanding the AI guessing flow&quot; here:</span>
+<span class="sd">            https://nla.zapier.com/api/v1/docs)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">api_wrapper</span><span class="p">:</span> <span class="n">ZapierNLAWrapper</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">ZapierNLAWrapper</span><span class="p">)</span>
+    <span class="n">action_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">base_prompt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">BASE_ZAPIER_TOOL_PROMPT</span>
+    <span class="n">zapier_description</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">params_schema</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@root_validator</span>
+    <span class="k">def</span> <span class="nf">set_name_description</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">zapier_description</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;zapier_description&quot;</span><span class="p">]</span>
+        <span class="n">params_schema</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;params_schema&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;instructions&quot;</span> <span class="ow">in</span> <span class="n">params_schema</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">params_schema</span><span class="p">[</span><span class="s2">&quot;instructions&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Ensure base prompt (if overrided) contains necessary input fields</span>
+        <span class="n">necessary_fields</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;</span><span class="si">{zapier_description}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{params}</span><span class="s2">&quot;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">field</span> <span class="ow">in</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;base_prompt&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">necessary_fields</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Your custom base Zapier prompt must contain input fields for &quot;</span>
+                <span class="s2">&quot;</span><span class="si">{zapier_description}</span><span class="s2"> and </span><span class="si">{params}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">values</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">zapier_description</span>
+        <span class="n">values</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;base_prompt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">zapier_description</span><span class="o">=</span><span class="n">zapier_description</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">params_schema</span><span class="o">.</span><span class="n">keys</span><span class="p">())),</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">values</span>
+
+    <span class="k">def</span> <span class="nf">_run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">instructions</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">run_manager</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">CallbackManagerForToolRun</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use the Zapier NLA tool to return a list of all exposed user actions.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_wrapper</span><span class="o">.</span><span class="n">run_as_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">action_id</span><span class="p">,</span> <span class="n">instructions</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_arun</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">_</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">run_manager</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AsyncCallbackManagerForToolRun</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use the Zapier NLA tool to return a list of all exposed user actions.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;ZapierNLAListActions does not support async&quot;</span><span class="p">)</span></div>
+
+
+<span class="n">ZapierNLARunAction</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">ZapierNLAWrapper</span><span class="o">.</span><span class="n">run</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">+</span> <span class="n">ZapierNLARunAction</span><span class="o">.</span><span class="vm">__doc__</span>  <span class="c1"># type: ignore</span>
+<span class="p">)</span>
+
+
+<span class="c1"># other useful actions</span>
+
+
+<div class="viewcode-block" id="ZapierNLAListActions"><a class="viewcode-back" href="../../../../modules/tools.html#langchain.tools.ZapierNLAListActions">[docs]</a><span class="k">class</span> <span class="nc">ZapierNLAListActions</span><span class="p">(</span><span class="n">BaseTool</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        None</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Zapier NLA: List Actions&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">BASE_ZAPIER_TOOL_PROMPT</span> <span class="o">+</span> <span class="p">(</span>
+        <span class="s2">&quot;This tool returns a list of the user&#39;s exposed actions.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">api_wrapper</span><span class="p">:</span> <span class="n">ZapierNLAWrapper</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">ZapierNLAWrapper</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">_</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">run_manager</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">CallbackManagerForToolRun</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use the Zapier NLA tool to return a list of all exposed user actions.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_wrapper</span><span class="o">.</span><span class="n">list_as_str</span><span class="p">()</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_arun</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">_</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">run_manager</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AsyncCallbackManagerForToolRun</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use the Zapier NLA tool to return a list of all exposed user actions.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;ZapierNLAListActions does not support async&quot;</span><span class="p">)</span></div>
+
+
+<span class="n">ZapierNLAListActions</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">ZapierNLAWrapper</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">+</span> <span class="n">ZapierNLAListActions</span><span class="o">.</span><span class="vm">__doc__</span>  <span class="c1"># type: ignore</span>
+<span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

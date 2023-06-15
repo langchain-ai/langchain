@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.prompts.loading &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script src="../../../_static/tabs.js"></script>
+        <script src="../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.prompts.loading</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.prompts.loading</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Load prompts from disk.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">yaml</span>
+
+<span class="kn">from</span> <span class="nn">langchain.output_parsers.regex</span> <span class="kn">import</span> <span class="n">RegexParser</span>
+<span class="kn">from</span> <span class="nn">langchain.prompts.base</span> <span class="kn">import</span> <span class="n">BasePromptTemplate</span>
+<span class="kn">from</span> <span class="nn">langchain.prompts.few_shot</span> <span class="kn">import</span> <span class="n">FewShotPromptTemplate</span>
+<span class="kn">from</span> <span class="nn">langchain.prompts.prompt</span> <span class="kn">import</span> <span class="n">PromptTemplate</span>
+<span class="kn">from</span> <span class="nn">langchain.utilities.loading</span> <span class="kn">import</span> <span class="n">try_load_from_hub</span>
+
+<span class="n">URL_BASE</span> <span class="o">=</span> <span class="s2">&quot;https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/&quot;</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">load_prompt_from_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BasePromptTemplate</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load prompt from Config Dict.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;_type&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No `_type` key found, defaulting to `prompt`.&quot;</span><span class="p">)</span>
+    <span class="n">config_type</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;_type&quot;</span><span class="p">,</span> <span class="s2">&quot;prompt&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">type_to_loader_dict</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading </span><span class="si">{</span><span class="n">config_type</span><span class="si">}</span><span class="s2"> prompt not supported&quot;</span><span class="p">)</span>
+
+    <span class="n">prompt_loader</span> <span class="o">=</span> <span class="n">type_to_loader_dict</span><span class="p">[</span><span class="n">config_type</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">prompt_loader</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_load_template</span><span class="p">(</span><span class="n">var_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load template from disk if applicable.&quot;&quot;&quot;</span>
+    <span class="c1"># Check if template_path exists in config.</span>
+    <span class="k">if</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">_path&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+        <span class="c1"># If it does, make sure template variable doesn&#39;t also exist.</span>
+        <span class="k">if</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Both `</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">_path` and `</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">` cannot be provided.&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># Pop the template path from the config.</span>
+        <span class="n">template_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">_path&quot;</span><span class="p">))</span>
+        <span class="c1"># Load the template.</span>
+        <span class="k">if</span> <span class="n">template_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.txt&quot;</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">template_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">template</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="c1"># Set the template variable to the extracted variable.</span>
+        <span class="n">config</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">template</span>
+    <span class="k">return</span> <span class="n">config</span>
+
+
+<span class="k">def</span> <span class="nf">_load_examples</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load examples if necessary.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;examples&quot;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;examples&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;examples&quot;</span><span class="p">])</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;examples&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">):</span>
+                <span class="n">examples</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;examples&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s2">&quot;.yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;.yml&quot;</span><span class="p">)):</span>
+                <span class="n">examples</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Invalid file format. Only json or yaml formats are supported.&quot;</span>
+                <span class="p">)</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;examples&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">examples</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid examples format. Only list or string are supported.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">config</span>
+
+
+<span class="k">def</span> <span class="nf">_load_output_parser</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load output parser.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;output_parser&quot;</span> <span class="ow">in</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;output_parser&quot;</span><span class="p">]:</span>
+        <span class="n">_config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;output_parser&quot;</span><span class="p">)</span>
+        <span class="n">output_parser_type</span> <span class="o">=</span> <span class="n">_config</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;_type&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output_parser_type</span> <span class="o">==</span> <span class="s2">&quot;regex_parser&quot;</span><span class="p">:</span>
+            <span class="n">output_parser</span> <span class="o">=</span> <span class="n">RegexParser</span><span class="p">(</span><span class="o">**</span><span class="n">_config</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported output parser </span><span class="si">{</span><span class="n">output_parser_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;output_parser&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_parser</span>
+    <span class="k">return</span> <span class="n">config</span>
+
+
+<span class="k">def</span> <span class="nf">_load_few_shot_prompt</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FewShotPromptTemplate</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load the few shot prompt from the config.&quot;&quot;&quot;</span>
+    <span class="c1"># Load the suffix and prefix templates.</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">_load_template</span><span class="p">(</span><span class="s2">&quot;suffix&quot;</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">_load_template</span><span class="p">(</span><span class="s2">&quot;prefix&quot;</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    <span class="c1"># Load the example prompt.</span>
+    <span class="k">if</span> <span class="s2">&quot;example_prompt_path&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;example_prompt&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Only one of example_prompt and example_prompt_path should &quot;</span>
+                <span class="s2">&quot;be specified.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;example_prompt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">load_prompt</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;example_prompt_path&quot;</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;example_prompt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">load_prompt_from_config</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;example_prompt&quot;</span><span class="p">])</span>
+    <span class="c1"># Load the examples.</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">_load_examples</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">_load_output_parser</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">FewShotPromptTemplate</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_load_prompt</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PromptTemplate</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load the prompt template from config.&quot;&quot;&quot;</span>
+    <span class="c1"># Load the template from disk if necessary.</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">_load_template</span><span class="p">(</span><span class="s2">&quot;template&quot;</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">_load_output_parser</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">PromptTemplate</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="load_prompt"><a class="viewcode-back" href="../../../modules/prompts.html#langchain.prompts.load_prompt">[docs]</a><span class="k">def</span> <span class="nf">load_prompt</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">BasePromptTemplate</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unified method for loading a prompt from LangChainHub or local fs.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">hub_result</span> <span class="o">:=</span> <span class="n">try_load_from_hub</span><span class="p">(</span>
+        <span class="n">path</span><span class="p">,</span> <span class="n">_load_prompt_from_file</span><span class="p">,</span> <span class="s2">&quot;prompts&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;py&quot;</span><span class="p">,</span> <span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="s2">&quot;yaml&quot;</span><span class="p">}</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="n">hub_result</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_load_prompt_from_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_load_prompt_from_file</span><span class="p">(</span><span class="n">file</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">BasePromptTemplate</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load prompt from file.&quot;&quot;&quot;</span>
+    <span class="c1"># Convert file to Path object.</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">file</span>
+    <span class="c1"># Load from either json or yaml.</span>
+    <span class="k">if</span> <span class="n">file_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.json&quot;</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">file_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.yaml&quot;</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">file_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.py&quot;</span><span class="p">:</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_loader</span><span class="p">(</span>
+            <span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="n">loader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;could not load spec&quot;</span><span class="p">)</span>
+        <span class="n">helper</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">exec</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">helper</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">helper</span><span class="o">.</span><span class="n">PROMPT</span><span class="p">,</span> <span class="n">BasePromptTemplate</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Did not get object of type BasePromptTemplate.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">helper</span><span class="o">.</span><span class="n">PROMPT</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got unsupported file type </span><span class="si">{</span><span class="n">file_path</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># Load the prompt from the config now.</span>
+    <span class="k">return</span> <span class="n">load_prompt_from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+
+<span class="n">type_to_loader_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="n">_load_prompt</span><span class="p">,</span>
+    <span class="s2">&quot;few_shot&quot;</span><span class="p">:</span> <span class="n">_load_few_shot_prompt</span><span class="p">,</span>
+    <span class="c1"># &quot;few_shot_with_templates&quot;: _load_few_shot_with_templates_prompt,</span>
+<span class="p">}</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.embeddings.openai &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script src="../../../_static/tabs.js"></script>
+        <script src="../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.embeddings.openai</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.embeddings.openai</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Wrapper around OpenAI embedding models.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Literal</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">Set</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Extra</span><span class="p">,</span> <span class="n">root_validator</span>
+<span class="kn">from</span> <span class="nn">tenacity</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">before_sleep_log</span><span class="p">,</span>
+    <span class="n">retry</span><span class="p">,</span>
+    <span class="n">retry_if_exception_type</span><span class="p">,</span>
+    <span class="n">stop_after_attempt</span><span class="p">,</span>
+    <span class="n">wait_exponential</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">langchain.embeddings.base</span> <span class="kn">import</span> <span class="n">Embeddings</span>
+<span class="kn">from</span> <span class="nn">langchain.utils</span> <span class="kn">import</span> <span class="n">get_from_dict_or_env</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_create_retry_decorator</span><span class="p">(</span><span class="n">embeddings</span><span class="p">:</span> <span class="n">OpenAIEmbeddings</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="kn">import</span> <span class="nn">openai</span>
+
+    <span class="n">min_seconds</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">max_seconds</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="c1"># Wait 2^x * 1 second between each retry starting with</span>
+    <span class="c1"># 4 seconds, then up to 10 seconds, then 10 seconds afterwards</span>
+    <span class="k">return</span> <span class="n">retry</span><span class="p">(</span>
+        <span class="n">reraise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">stop</span><span class="o">=</span><span class="n">stop_after_attempt</span><span class="p">(</span><span class="n">embeddings</span><span class="o">.</span><span class="n">max_retries</span><span class="p">),</span>
+        <span class="n">wait</span><span class="o">=</span><span class="n">wait_exponential</span><span class="p">(</span><span class="n">multiplier</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="n">min_seconds</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">max_seconds</span><span class="p">),</span>
+        <span class="n">retry</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">retry_if_exception_type</span><span class="p">(</span><span class="n">openai</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">Timeout</span><span class="p">)</span>
+            <span class="o">|</span> <span class="n">retry_if_exception_type</span><span class="p">(</span><span class="n">openai</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">APIError</span><span class="p">)</span>
+            <span class="o">|</span> <span class="n">retry_if_exception_type</span><span class="p">(</span><span class="n">openai</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">APIConnectionError</span><span class="p">)</span>
+            <span class="o">|</span> <span class="n">retry_if_exception_type</span><span class="p">(</span><span class="n">openai</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">RateLimitError</span><span class="p">)</span>
+            <span class="o">|</span> <span class="n">retry_if_exception_type</span><span class="p">(</span><span class="n">openai</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">ServiceUnavailableError</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">before_sleep</span><span class="o">=</span><span class="n">before_sleep_log</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">embed_with_retry</span><span class="p">(</span><span class="n">embeddings</span><span class="p">:</span> <span class="n">OpenAIEmbeddings</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Use tenacity to retry the embedding call.&quot;&quot;&quot;</span>
+    <span class="n">retry_decorator</span> <span class="o">=</span> <span class="n">_create_retry_decorator</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)</span>
+
+    <span class="nd">@retry_decorator</span>
+    <span class="k">def</span> <span class="nf">_embed_with_retry</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">embeddings</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_embed_with_retry</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="OpenAIEmbeddings"><a class="viewcode-back" href="../../../modules/embeddings.html#langchain.embeddings.OpenAIEmbeddings">[docs]</a><span class="k">class</span> <span class="nc">OpenAIEmbeddings</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Embeddings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper around OpenAI embedding models.</span>
+
+<span class="sd">    To use, you should have the ``openai`` python package installed, and the</span>
+<span class="sd">    environment variable ``OPENAI_API_KEY`` set with your API key or pass it</span>
+<span class="sd">    as a named parameter to the constructor.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            from langchain.embeddings import OpenAIEmbeddings</span>
+<span class="sd">            openai = OpenAIEmbeddings(openai_api_key=&quot;my-api-key&quot;)</span>
+
+<span class="sd">    In order to use the library with Microsoft Azure endpoints, you need to set</span>
+<span class="sd">    the OPENAI_API_TYPE, OPENAI_API_BASE, OPENAI_API_KEY and OPENAI_API_VERSION.</span>
+<span class="sd">    The OPENAI_API_TYPE must be set to &#39;azure&#39; and the others correspond to</span>
+<span class="sd">    the properties of your endpoint.</span>
+<span class="sd">    In addition, the deployment name must be passed as the model parameter.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import os</span>
+<span class="sd">            os.environ[&quot;OPENAI_API_TYPE&quot;] = &quot;azure&quot;</span>
+<span class="sd">            os.environ[&quot;OPENAI_API_BASE&quot;] = &quot;https://&lt;your-endpoint.openai.azure.com/&quot;</span>
+<span class="sd">            os.environ[&quot;OPENAI_API_KEY&quot;] = &quot;your AzureOpenAI key&quot;</span>
+<span class="sd">            os.environ[&quot;OPENAI_API_VERSION&quot;] = &quot;2023-03-15-preview&quot;</span>
+<span class="sd">            os.environ[&quot;OPENAI_PROXY&quot;] = &quot;http://your-corporate-proxy:8080&quot;</span>
+
+<span class="sd">            from langchain.embeddings.openai import OpenAIEmbeddings</span>
+<span class="sd">            embeddings = OpenAIEmbeddings(</span>
+<span class="sd">                deployment=&quot;your-embeddings-deployment-name&quot;,</span>
+<span class="sd">                model=&quot;your-embeddings-model-name&quot;,</span>
+<span class="sd">                api_base=&quot;https://your-endpoint.openai.azure.com/&quot;,</span>
+<span class="sd">                api_type=&quot;azure&quot;,</span>
+<span class="sd">            )</span>
+<span class="sd">            text = &quot;This is a test query.&quot;</span>
+<span class="sd">            query_result = embeddings.embed_query(text)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">client</span><span class="p">:</span> <span class="n">Any</span>  <span class="c1">#: :meta private:</span>
+    <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;text-embedding-ada-002&quot;</span>
+    <span class="n">deployment</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">model</span>  <span class="c1"># to support Azure OpenAI Service custom deployment names</span>
+    <span class="n">openai_api_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># to support Azure OpenAI Service custom endpoints</span>
+    <span class="n">openai_api_base</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># to support Azure OpenAI Service custom endpoints</span>
+    <span class="n">openai_api_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># to support explicit proxy for OpenAI</span>
+    <span class="n">openai_proxy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">embedding_ctx_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8191</span>
+    <span class="n">openai_api_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">openai_organization</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">allowed_special</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">],</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">disallowed_special</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">],</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+    <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Maximum number of texts to embed in each batch&quot;&quot;&quot;</span>
+    <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Maximum number of retries to make when generating.&quot;&quot;&quot;</span>
+    <span class="n">request_timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Timeout in seconds for the OpenAPI request.&quot;&quot;&quot;</span>
+    <span class="n">headers</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configuration for this pydantic object.&quot;&quot;&quot;</span>
+
+        <span class="n">extra</span> <span class="o">=</span> <span class="n">Extra</span><span class="o">.</span><span class="n">forbid</span>
+
+    <span class="nd">@root_validator</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">validate_environment</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate that api key and python package exists in environment.&quot;&quot;&quot;</span>
+        <span class="n">openai_api_key</span> <span class="o">=</span> <span class="n">get_from_dict_or_env</span><span class="p">(</span>
+            <span class="n">values</span><span class="p">,</span> <span class="s2">&quot;openai_api_key&quot;</span><span class="p">,</span> <span class="s2">&quot;OPENAI_API_KEY&quot;</span>
+        <span class="p">)</span>
+        <span class="n">openai_api_base</span> <span class="o">=</span> <span class="n">get_from_dict_or_env</span><span class="p">(</span>
+            <span class="n">values</span><span class="p">,</span>
+            <span class="s2">&quot;openai_api_base&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;OPENAI_API_BASE&quot;</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">openai_api_type</span> <span class="o">=</span> <span class="n">get_from_dict_or_env</span><span class="p">(</span>
+            <span class="n">values</span><span class="p">,</span>
+            <span class="s2">&quot;openai_api_type&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;OPENAI_API_TYPE&quot;</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">openai_proxy</span> <span class="o">=</span> <span class="n">get_from_dict_or_env</span><span class="p">(</span>
+            <span class="n">values</span><span class="p">,</span>
+            <span class="s2">&quot;openai_proxy&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;OPENAI_PROXY&quot;</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">openai_api_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;azure&quot;</span><span class="p">,</span> <span class="s2">&quot;azure_ad&quot;</span><span class="p">,</span> <span class="s2">&quot;azuread&quot;</span><span class="p">):</span>
+            <span class="n">default_api_version</span> <span class="o">=</span> <span class="s2">&quot;2022-12-01&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">default_api_version</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">openai_api_version</span> <span class="o">=</span> <span class="n">get_from_dict_or_env</span><span class="p">(</span>
+            <span class="n">values</span><span class="p">,</span>
+            <span class="s2">&quot;openai_api_version&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;OPENAI_API_VERSION&quot;</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="n">default_api_version</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">openai_organization</span> <span class="o">=</span> <span class="n">get_from_dict_or_env</span><span class="p">(</span>
+            <span class="n">values</span><span class="p">,</span>
+            <span class="s2">&quot;openai_organization&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;OPENAI_ORGANIZATION&quot;</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">openai</span>
+
+            <span class="n">openai</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">openai_api_key</span>
+            <span class="k">if</span> <span class="n">openai_organization</span><span class="p">:</span>
+                <span class="n">openai</span><span class="o">.</span><span class="n">organization</span> <span class="o">=</span> <span class="n">openai_organization</span>
+            <span class="k">if</span> <span class="n">openai_api_base</span><span class="p">:</span>
+                <span class="n">openai</span><span class="o">.</span><span class="n">api_base</span> <span class="o">=</span> <span class="n">openai_api_base</span>
+            <span class="k">if</span> <span class="n">openai_api_type</span><span class="p">:</span>
+                <span class="n">openai</span><span class="o">.</span><span class="n">api_version</span> <span class="o">=</span> <span class="n">openai_api_version</span>
+            <span class="k">if</span> <span class="n">openai_api_type</span><span class="p">:</span>
+                <span class="n">openai</span><span class="o">.</span><span class="n">api_type</span> <span class="o">=</span> <span class="n">openai_api_type</span>
+            <span class="k">if</span> <span class="n">openai_proxy</span><span class="p">:</span>
+                <span class="n">openai</span><span class="o">.</span><span class="n">proxy</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;http&quot;</span><span class="p">:</span> <span class="n">openai_proxy</span><span class="p">,</span> <span class="s2">&quot;https&quot;</span><span class="p">:</span> <span class="n">openai_proxy</span><span class="p">}</span>  <span class="c1"># type: ignore[assignment]  # noqa: E501</span>
+            <span class="n">values</span><span class="p">[</span><span class="s2">&quot;client&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">openai</span><span class="o">.</span><span class="n">Embedding</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="s2">&quot;Could not import openai python package. &quot;</span>
+                <span class="s2">&quot;Please install it with `pip install openai`.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">values</span>
+
+    <span class="c1"># please refer to</span>
+    <span class="c1"># https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb</span>
+    <span class="k">def</span> <span class="nf">_get_len_safe_embeddings</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">texts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">engine</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+        <span class="n">embeddings</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">texts</span><span class="p">))]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">tiktoken</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="s2">&quot;Could not import tiktoken python package. &quot;</span>
+                <span class="s2">&quot;This is needed in order to for OpenAIEmbeddings. &quot;</span>
+                <span class="s2">&quot;Please install it with `pip install tiktoken`.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">tokens</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">encoding</span> <span class="o">=</span> <span class="n">tiktoken</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">encoding_for_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">texts</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;001&quot;</span><span class="p">):</span>
+                <span class="c1"># See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500</span>
+                <span class="c1"># replace newlines, which can negatively affect performance.</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="n">token</span> <span class="o">=</span> <span class="n">encoding</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span>
+                <span class="n">text</span><span class="p">,</span>
+                <span class="n">allowed_special</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">allowed_special</span><span class="p">,</span>
+                <span class="n">disallowed_special</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">disallowed_special</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">token</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_ctx_length</span><span class="p">):</span>
+                <span class="n">tokens</span> <span class="o">+=</span> <span class="p">[</span><span class="n">token</span><span class="p">[</span><span class="n">j</span> <span class="p">:</span> <span class="n">j</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_ctx_length</span><span class="p">]]</span>
+                <span class="n">indices</span> <span class="o">+=</span> <span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="n">batched_embeddings</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">_chunk_size</span> <span class="o">=</span> <span class="n">chunk_size</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">),</span> <span class="n">_chunk_size</span><span class="p">):</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">embed_with_retry</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="nb">input</span><span class="o">=</span><span class="n">tokens</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">_chunk_size</span><span class="p">],</span>
+                <span class="n">engine</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">deployment</span><span class="p">,</span>
+                <span class="n">request_timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">request_timeout</span><span class="p">,</span>
+                <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">batched_embeddings</span> <span class="o">+=</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;embedding&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]]</span>
+
+        <span class="n">results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">texts</span><span class="p">))]</span>
+        <span class="n">num_tokens_in_batch</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">texts</span><span class="p">))]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)):</span>
+            <span class="n">results</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batched_embeddings</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">num_tokens_in_batch</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">texts</span><span class="p">)):</span>
+            <span class="n">_result</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">average</span> <span class="o">=</span> <span class="n">embed_with_retry</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="p">,</span>
+                    <span class="nb">input</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                    <span class="n">engine</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">deployment</span><span class="p">,</span>
+                    <span class="n">request_timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">request_timeout</span><span class="p">,</span>
+                    <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span>
+                <span class="p">)[</span><span class="s2">&quot;data&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;embedding&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">average</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">_result</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">num_tokens_in_batch</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">embeddings</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">average</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">average</span><span class="p">))</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">embeddings</span>
+
+    <span class="k">def</span> <span class="nf">_embedding_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">engine</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Call out to OpenAI&#39;s embedding endpoint.&quot;&quot;&quot;</span>
+        <span class="c1"># handle large input text</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_ctx_length</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_len_safe_embeddings</span><span class="p">([</span><span class="n">text</span><span class="p">],</span> <span class="n">engine</span><span class="o">=</span><span class="n">engine</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;001&quot;</span><span class="p">):</span>
+                <span class="c1"># See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500</span>
+                <span class="c1"># replace newlines, which can negatively affect performance.</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">embed_with_retry</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="nb">input</span><span class="o">=</span><span class="p">[</span><span class="n">text</span><span class="p">],</span>
+                <span class="n">engine</span><span class="o">=</span><span class="n">engine</span><span class="p">,</span>
+                <span class="n">request_timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">request_timeout</span><span class="p">,</span>
+                <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span>
+            <span class="p">)[</span><span class="s2">&quot;data&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;embedding&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="OpenAIEmbeddings.embed_documents"><a class="viewcode-back" href="../../../modules/embeddings.html#langchain.embeddings.OpenAIEmbeddings.embed_documents">[docs]</a>    <span class="k">def</span> <span class="nf">embed_documents</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">texts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">chunk_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Call out to OpenAI&#39;s embedding endpoint for embedding search docs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            texts: The list of texts to embed.</span>
+<span class="sd">            chunk_size: The chunk size of embeddings. If None, will use the chunk size</span>
+<span class="sd">                specified by the class.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of embeddings, one for each text.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># NOTE: to keep things simple, we assume the list may contain texts longer</span>
+        <span class="c1">#       than the maximum context and use length-safe embedding function.</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_len_safe_embeddings</span><span class="p">(</span><span class="n">texts</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">deployment</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OpenAIEmbeddings.embed_query"><a class="viewcode-back" href="../../../modules/embeddings.html#langchain.embeddings.OpenAIEmbeddings.embed_query">[docs]</a>    <span class="k">def</span> <span class="nf">embed_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Call out to OpenAI&#39;s embedding endpoint for embedding query text.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text: The text to embed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Embedding for the text.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_func</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">deployment</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">embedding</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

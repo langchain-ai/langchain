@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.utilities.pupmed &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script src="../../../_static/tabs.js"></script>
+        <script src="../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.utilities.pupmed</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.utilities.pupmed</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">urllib.error</span>
+<span class="kn">import</span> <span class="nn">urllib.request</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Extra</span>
+
+<span class="kn">from</span> <span class="nn">langchain.schema</span> <span class="kn">import</span> <span class="n">Document</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="PubMedAPIWrapper"><a class="viewcode-back" href="../../../modules/utilities.html#langchain.utilities.PubMedAPIWrapper">[docs]</a><span class="k">class</span> <span class="nc">PubMedAPIWrapper</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper around PubMed API.</span>
+
+<span class="sd">    This wrapper will use the PubMed API to conduct searches and fetch</span>
+<span class="sd">    document summaries. By default, it will return the document summaries</span>
+<span class="sd">    of the top-k results of an input search.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        top_k_results: number of the top-scored document used for the PubMed tool</span>
+<span class="sd">        load_max_docs: a limit to the number of loaded documents</span>
+<span class="sd">        load_all_available_meta:</span>
+<span class="sd">          if True: the `metadata` of the loaded Documents gets all available meta info</span>
+<span class="sd">            (see https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter4.ESearch)</span>
+<span class="sd">          if False: the `metadata` gets only the most informative fields.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">base_url_esearch</span> <span class="o">=</span> <span class="s2">&quot;https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?&quot;</span>
+    <span class="n">base_url_efetch</span> <span class="o">=</span> <span class="s2">&quot;https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?&quot;</span>
+    <span class="n">max_retry</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">sleep_time</span> <span class="o">=</span> <span class="mf">0.2</span>
+
+    <span class="c1"># Default values for the parameters</span>
+    <span class="n">top_k_results</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">load_max_docs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span>
+    <span class="n">ARXIV_MAX_QUERY_LENGTH</span> <span class="o">=</span> <span class="mi">300</span>
+    <span class="n">doc_content_chars_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2000</span>
+    <span class="n">load_all_available_meta</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;your_email@example.com&quot;</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configuration for this pydantic object.&quot;&quot;&quot;</span>
+
+        <span class="n">extra</span> <span class="o">=</span> <span class="n">Extra</span><span class="o">.</span><span class="n">forbid</span>
+
+<div class="viewcode-block" id="PubMedAPIWrapper.run"><a class="viewcode-back" href="../../../modules/utilities.html#langchain.utilities.PubMedAPIWrapper.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run PubMed search and get the article meta information.</span>
+<span class="sd">        See https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter4.ESearch</span>
+<span class="sd">        It uses only the most informative fields of article meta information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Retrieve the top-k results for the query</span>
+            <span class="n">docs</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="sa">f</span><span class="s2">&quot;Published: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;pub_date&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">Title: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Summary: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;summary&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">query</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARXIV_MAX_QUERY_LENGTH</span><span class="p">])</span>
+            <span class="p">]</span>
+
+            <span class="c1"># Join the results and limit the character count</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">docs</span><span class="p">)[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">doc_content_chars_max</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">docs</span>
+                <span class="k">else</span> <span class="s2">&quot;No good PubMed Result was found&quot;</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;PubMed exception: </span><span class="si">{</span><span class="n">ex</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+<div class="viewcode-block" id="PubMedAPIWrapper.load"><a class="viewcode-back" href="../../../modules/utilities.html#langchain.utilities.PubMedAPIWrapper.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Search PubMed for documents matching the query.</span>
+<span class="sd">        Return a list of dictionaries containing the document metadata.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">url</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">base_url_esearch</span>
+            <span class="o">+</span> <span class="s2">&quot;db=pubmed&amp;term=&quot;</span>
+            <span class="o">+</span> <span class="nb">str</span><span class="p">({</span><span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">quote</span><span class="p">(</span><span class="n">query</span><span class="p">)})</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;&amp;retmode=json&amp;retmax=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">top_k_results</span><span class="si">}</span><span class="s2">&amp;usehistory=y&quot;</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="n">json_text</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+        <span class="n">articles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">webenv</span> <span class="o">=</span> <span class="n">json_text</span><span class="p">[</span><span class="s2">&quot;esearchresult&quot;</span><span class="p">][</span><span class="s2">&quot;webenv&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">uid</span> <span class="ow">in</span> <span class="n">json_text</span><span class="p">[</span><span class="s2">&quot;esearchresult&quot;</span><span class="p">][</span><span class="s2">&quot;idlist&quot;</span><span class="p">]:</span>
+            <span class="n">article</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_article</span><span class="p">(</span><span class="n">uid</span><span class="p">,</span> <span class="n">webenv</span><span class="p">)</span>
+            <span class="n">articles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">article</span><span class="p">)</span>
+
+        <span class="c1"># Convert the list of articles to a JSON string</span>
+        <span class="k">return</span> <span class="n">articles</span></div>
+
+    <span class="k">def</span> <span class="nf">_transform_doc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Document</span><span class="p">:</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;summary&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Document</span><span class="p">(</span><span class="n">page_content</span><span class="o">=</span><span class="n">summary</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">doc</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PubMedAPIWrapper.load_docs"><a class="viewcode-back" href="../../../modules/utilities.html#langchain.utilities.PubMedAPIWrapper.load_docs">[docs]</a>    <span class="k">def</span> <span class="nf">load_docs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">]:</span>
+        <span class="n">document_dicts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_transform_doc</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">document_dicts</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="PubMedAPIWrapper.retrieve_article"><a class="viewcode-back" href="../../../modules/utilities.html#langchain.utilities.PubMedAPIWrapper.retrieve_article">[docs]</a>    <span class="k">def</span> <span class="nf">retrieve_article</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">webenv</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">base_url_efetch</span>
+            <span class="o">+</span> <span class="s2">&quot;db=pubmed&amp;retmode=xml&amp;id=&quot;</span>
+            <span class="o">+</span> <span class="n">uid</span>
+            <span class="o">+</span> <span class="s2">&quot;&amp;webenv=&quot;</span>
+            <span class="o">+</span> <span class="n">webenv</span>
+        <span class="p">)</span>
+
+        <span class="n">retry</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">except</span> <span class="n">urllib</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">HTTPError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="mi">429</span> <span class="ow">and</span> <span class="n">retry</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry</span><span class="p">:</span>
+                    <span class="c1"># Too Many Requests error</span>
+                    <span class="c1"># wait for an exponentially increasing amount of time</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Too Many Requests, &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;waiting for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sleep_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds...&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sleep_time</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sleep_time</span> <span class="o">*=</span> <span class="mi">2</span>
+                    <span class="n">retry</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">e</span>
+
+        <span class="n">xml_text</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get title</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;&lt;ArticleTitle&gt;&quot;</span> <span class="ow">in</span> <span class="n">xml_text</span> <span class="ow">and</span> <span class="s2">&quot;&lt;/ArticleTitle&gt;&quot;</span> <span class="ow">in</span> <span class="n">xml_text</span><span class="p">:</span>
+            <span class="n">start_tag</span> <span class="o">=</span> <span class="s2">&quot;&lt;ArticleTitle&gt;&quot;</span>
+            <span class="n">end_tag</span> <span class="o">=</span> <span class="s2">&quot;&lt;/ArticleTitle&gt;&quot;</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">xml_text</span><span class="p">[</span>
+                <span class="n">xml_text</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span> <span class="p">:</span> <span class="n">xml_text</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">end_tag</span><span class="p">)</span>
+            <span class="p">]</span>
+
+        <span class="c1"># Get abstract</span>
+        <span class="n">abstract</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;&lt;AbstractText&gt;&quot;</span> <span class="ow">in</span> <span class="n">xml_text</span> <span class="ow">and</span> <span class="s2">&quot;&lt;/AbstractText&gt;&quot;</span> <span class="ow">in</span> <span class="n">xml_text</span><span class="p">:</span>
+            <span class="n">start_tag</span> <span class="o">=</span> <span class="s2">&quot;&lt;AbstractText&gt;&quot;</span>
+            <span class="n">end_tag</span> <span class="o">=</span> <span class="s2">&quot;&lt;/AbstractText&gt;&quot;</span>
+            <span class="n">abstract</span> <span class="o">=</span> <span class="n">xml_text</span><span class="p">[</span>
+                <span class="n">xml_text</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span> <span class="p">:</span> <span class="n">xml_text</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">end_tag</span><span class="p">)</span>
+            <span class="p">]</span>
+
+        <span class="c1"># Get publication date</span>
+        <span class="n">pub_date</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;&lt;PubDate&gt;&quot;</span> <span class="ow">in</span> <span class="n">xml_text</span> <span class="ow">and</span> <span class="s2">&quot;&lt;/PubDate&gt;&quot;</span> <span class="ow">in</span> <span class="n">xml_text</span><span class="p">:</span>
+            <span class="n">start_tag</span> <span class="o">=</span> <span class="s2">&quot;&lt;PubDate&gt;&quot;</span>
+            <span class="n">end_tag</span> <span class="o">=</span> <span class="s2">&quot;&lt;/PubDate&gt;&quot;</span>
+            <span class="n">pub_date</span> <span class="o">=</span> <span class="n">xml_text</span><span class="p">[</span>
+                <span class="n">xml_text</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span> <span class="p">:</span> <span class="n">xml_text</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">end_tag</span><span class="p">)</span>
+            <span class="p">]</span>
+
+        <span class="c1"># Return article as dictionary</span>
+        <span class="n">article</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;uid&quot;</span><span class="p">:</span> <span class="n">uid</span><span class="p">,</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+            <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="n">abstract</span><span class="p">,</span>
+            <span class="s2">&quot;pub_date&quot;</span><span class="p">:</span> <span class="n">pub_date</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">article</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

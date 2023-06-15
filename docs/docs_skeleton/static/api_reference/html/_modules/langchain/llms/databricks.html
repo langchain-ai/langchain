@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.llms.databricks &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script src="../../../_static/tabs.js"></script>
+        <script src="../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.llms.databricks</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.llms.databricks</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Extra</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PrivateAttr</span><span class="p">,</span> <span class="n">root_validator</span><span class="p">,</span> <span class="n">validator</span>
+
+<span class="kn">from</span> <span class="nn">langchain.callbacks.manager</span> <span class="kn">import</span> <span class="n">CallbackManagerForLLMRun</span>
+<span class="kn">from</span> <span class="nn">langchain.llms.base</span> <span class="kn">import</span> <span class="n">LLM</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Databricks&quot;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">_DatabricksClientBase</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A base JSON API client that talks to Databricks.&quot;&quot;&quot;</span>
+
+    <span class="n">api_url</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">api_token</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="k">def</span> <span class="nf">post_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">api_token</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">request</span><span class="p">)</span>
+        <span class="c1"># TODO: error handling and automatic retries</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;HTTP </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2"> error: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="o">...</span>
+
+
+<span class="k">class</span> <span class="nc">_DatabricksServingEndpointClient</span><span class="p">(</span><span class="n">_DatabricksClientBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An API client that talks to a Databricks serving endpoint.&quot;&quot;&quot;</span>
+
+    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">endpoint_name</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@root_validator</span><span class="p">(</span><span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">set_api_url</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="s2">&quot;api_url&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;host&quot;</span><span class="p">]</span>
+            <span class="n">endpoint_name</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;endpoint_name&quot;</span><span class="p">]</span>
+            <span class="n">api_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">/serving-endpoints/</span><span class="si">{</span><span class="n">endpoint_name</span><span class="si">}</span><span class="s2">/invocations&quot;</span>
+            <span class="n">values</span><span class="p">[</span><span class="s2">&quot;api_url&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">api_url</span>
+        <span class="k">return</span> <span class="n">values</span>
+
+    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="c1"># See https://docs.databricks.com/machine-learning/model-serving/score-model-serving-endpoints.html</span>
+        <span class="n">wrapped_request</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;dataframe_records&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">request</span><span class="p">]}</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_raw</span><span class="p">(</span><span class="n">wrapped_request</span><span class="p">)[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span>
+        <span class="c1"># For a single-record query, the result is not a list.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">response</span>
+
+
+<span class="k">class</span> <span class="nc">_DatabricksClusterDriverProxyClient</span><span class="p">(</span><span class="n">_DatabricksClientBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An API client that talks to a Databricks cluster driver proxy app.&quot;&quot;&quot;</span>
+
+    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">cluster_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">cluster_driver_port</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@root_validator</span><span class="p">(</span><span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">set_api_url</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="s2">&quot;api_url&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;host&quot;</span><span class="p">]</span>
+            <span class="n">cluster_id</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;cluster_id&quot;</span><span class="p">]</span>
+            <span class="n">port</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;cluster_driver_port&quot;</span><span class="p">]</span>
+            <span class="n">api_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">/driver-proxy-api/o/0/</span><span class="si">{</span><span class="n">cluster_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">values</span><span class="p">[</span><span class="s2">&quot;api_url&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">api_url</span>
+        <span class="k">return</span> <span class="n">values</span>
+
+    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_raw</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_repl_context</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets the notebook REPL context if running inside a Databricks notebook.</span>
+<span class="sd">    Returns None otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">dbruntime.databricks_repl_context</span> <span class="kn">import</span> <span class="n">get_context</span>
+
+        <span class="k">return</span> <span class="n">get_context</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Cannot access dbruntime, not running inside a Databricks notebook.&quot;</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_default_host</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets the default Databricks workspace hostname.</span>
+<span class="sd">    Raises an error if the hostname cannot be automatically determined.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">host</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DATABRICKS_HOST&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">host</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="n">get_repl_context</span><span class="p">()</span><span class="o">.</span><span class="n">browserHostName</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">host</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;context doesn&#39;t contain browserHostName.&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;host was not set and cannot be automatically inferred. Set &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;environment variable &#39;DATABRICKS_HOST&#39;. Received error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+    <span class="c1"># TODO: support Databricks CLI profile</span>
+    <span class="n">host</span> <span class="o">=</span> <span class="n">host</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;https://&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;http://&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">host</span>
+
+
+<span class="k">def</span> <span class="nf">get_default_api_token</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets the default Databricks personal access token.</span>
+<span class="sd">    Raises an error if the token cannot be automatically determined.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">api_token</span> <span class="o">:=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DATABRICKS_API_TOKEN&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">api_token</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">api_token</span> <span class="o">=</span> <span class="n">get_repl_context</span><span class="p">()</span><span class="o">.</span><span class="n">apiToken</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">api_token</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;context doesn&#39;t contain apiToken.&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;api_token was not set and cannot be automatically inferred. Set &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;environment variable &#39;DATABRICKS_API_TOKEN&#39;. Received error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="c1"># TODO: support Databricks CLI profile</span>
+    <span class="k">return</span> <span class="n">api_token</span>
+
+
+<div class="viewcode-block" id="Databricks"><a class="viewcode-back" href="../../../modules/llms.html#langchain.llms.Databricks">[docs]</a><span class="k">class</span> <span class="nc">Databricks</span><span class="p">(</span><span class="n">LLM</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;LLM wrapper around a Databricks serving endpoint or a cluster driver proxy app.</span>
+<span class="sd">    It supports two endpoint types:</span>
+
+<span class="sd">    * **Serving endpoint** (recommended for both production and development).</span>
+<span class="sd">      We assume that an LLM was registered and deployed to a serving endpoint.</span>
+<span class="sd">      To wrap it as an LLM you must have &quot;Can Query&quot; permission to the endpoint.</span>
+<span class="sd">      Set ``endpoint_name`` accordingly and do not set ``cluster_id`` and</span>
+<span class="sd">      ``cluster_driver_port``.</span>
+<span class="sd">      The expected model signature is:</span>
+
+<span class="sd">      * inputs::</span>
+
+<span class="sd">          [{&quot;name&quot;: &quot;prompt&quot;, &quot;type&quot;: &quot;string&quot;},</span>
+<span class="sd">           {&quot;name&quot;: &quot;stop&quot;, &quot;type&quot;: &quot;list[string]&quot;}]</span>
+
+<span class="sd">      * outputs: ``[{&quot;type&quot;: &quot;string&quot;}]``</span>
+
+<span class="sd">    * **Cluster driver proxy app** (recommended for interactive development).</span>
+<span class="sd">      One can load an LLM on a Databricks interactive cluster and start a local HTTP</span>
+<span class="sd">      server on the driver node to serve the model at ``/`` using HTTP POST method</span>
+<span class="sd">      with JSON input/output.</span>
+<span class="sd">      Please use a port number between ``[3000, 8000]`` and let the server listen to</span>
+<span class="sd">      the driver IP address or simply ``0.0.0.0`` instead of localhost only.</span>
+<span class="sd">      To wrap it as an LLM you must have &quot;Can Attach To&quot; permission to the cluster.</span>
+<span class="sd">      Set ``cluster_id`` and ``cluster_driver_port`` and do not set ``endpoint_name``.</span>
+<span class="sd">      The expected server schema (using JSON schema) is:</span>
+
+<span class="sd">      * inputs::</span>
+
+<span class="sd">          {&quot;type&quot;: &quot;object&quot;,</span>
+<span class="sd">           &quot;properties&quot;: {</span>
+<span class="sd">              &quot;prompt&quot;: {&quot;type&quot;: &quot;string&quot;},</span>
+<span class="sd">              &quot;stop&quot;: {&quot;type&quot;: &quot;array&quot;, &quot;items&quot;: {&quot;type&quot;: &quot;string&quot;}}},</span>
+<span class="sd">           &quot;required&quot;: [&quot;prompt&quot;]}`</span>
+
+<span class="sd">      * outputs: ``{&quot;type&quot;: &quot;string&quot;}``</span>
+
+<span class="sd">    If the endpoint model signature is different or you want to set extra params,</span>
+<span class="sd">    you can use `transform_input_fn` and `transform_output_fn` to apply necessary</span>
+<span class="sd">    transformations before and after the query.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">get_default_host</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Databricks workspace hostname.</span>
+<span class="sd">    If not provided, the default value is determined by</span>
+
+<span class="sd">    * the ``DATABRICKS_HOST`` environment variable if present, or</span>
+<span class="sd">    * the hostname of the current Databricks workspace if running inside</span>
+<span class="sd">      a Databricks notebook attached to an interactive cluster in &quot;single user&quot;</span>
+<span class="sd">      or &quot;no isolation shared&quot; mode.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">api_token</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">get_default_api_token</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Databricks personal access token.</span>
+<span class="sd">    If not provided, the default value is determined by</span>
+
+<span class="sd">    * the ``DATABRICKS_API_TOKEN`` environment variable if present, or</span>
+<span class="sd">    * an automatically generated temporary token if running inside a Databricks</span>
+<span class="sd">      notebook attached to an interactive cluster in &quot;single user&quot; or</span>
+<span class="sd">      &quot;no isolation shared&quot; mode.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">endpoint_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of the model serving endpont.</span>
+<span class="sd">    You must specify the endpoint name to connect to a model serving endpoint.</span>
+<span class="sd">    You must not set both ``endpoint_name`` and ``cluster_id``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cluster_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ID of the cluster if connecting to a cluster driver proxy app.</span>
+<span class="sd">    If neither ``endpoint_name`` nor ``cluster_id`` is not provided and the code runs</span>
+<span class="sd">    inside a Databricks notebook attached to an interactive cluster in &quot;single user&quot;</span>
+<span class="sd">    or &quot;no isolation shared&quot; mode, the current cluster ID is used as default.</span>
+<span class="sd">    You must not set both ``endpoint_name`` and ``cluster_id``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cluster_driver_port</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The port number used by the HTTP server running on the cluster driver node.</span>
+<span class="sd">    The server should listen on the driver IP address or simply ``0.0.0.0`` to connect.</span>
+<span class="sd">    We recommend the server using a port number between ``[3000, 8000]``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">model_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extra parameters to pass to the endpoint.&quot;&quot;&quot;</span>
+
+    <span class="n">transform_input_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A function that transforms ``{prompt, stop, **kwargs}`` into a JSON-compatible</span>
+<span class="sd">    request object that the endpoint accepts.</span>
+<span class="sd">    For example, you can apply a prompt template to the input prompt.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">transform_output_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A function that transforms the output from the endpoint to the generated text.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_client</span><span class="p">:</span> <span class="n">_DatabricksClientBase</span> <span class="o">=</span> <span class="n">PrivateAttr</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="n">extra</span> <span class="o">=</span> <span class="n">Extra</span><span class="o">.</span><span class="n">forbid</span>
+        <span class="n">underscore_attrs_are_private</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="nd">@validator</span><span class="p">(</span><span class="s2">&quot;cluster_id&quot;</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">set_cluster_id</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">and</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;endpoint_name&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot set both endpoint_name and cluster_id.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;endpoint_name&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">v</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">v</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="o">:=</span> <span class="n">get_repl_context</span><span class="p">()</span><span class="o">.</span><span class="n">clusterId</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">v</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Context doesn&#39;t contain clusterId.&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Neither endpoint_name nor cluster_id was set. &quot;</span>
+                    <span class="s2">&quot;And the cluster_id cannot be automatically determined. Received&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+    <span class="nd">@validator</span><span class="p">(</span><span class="s2">&quot;cluster_driver_port&quot;</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">set_cluster_driver_port</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">and</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;endpoint_name&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot set both endpoint_name and cluster_driver_port.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;endpoint_name&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Must set cluster_driver_port to connect to a cluster driver.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid cluster_driver_port: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+    <span class="nd">@validator</span><span class="p">(</span><span class="s2">&quot;model_kwargs&quot;</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">set_model_kwargs</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+        <span class="k">if</span> <span class="n">v</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="s2">&quot;prompt&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;model_kwargs must not contain key &#39;prompt&#39;&quot;</span>
+            <span class="k">assert</span> <span class="s2">&quot;stop&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;model_kwargs must not contain key &#39;stop&#39;&quot;</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">endpoint_name</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_client</span> <span class="o">=</span> <span class="n">_DatabricksServingEndpointClient</span><span class="p">(</span>
+                <span class="n">host</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">host</span><span class="p">,</span>
+                <span class="n">api_token</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">api_token</span><span class="p">,</span>
+                <span class="n">endpoint_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">endpoint_name</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_id</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_driver_port</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_client</span> <span class="o">=</span> <span class="n">_DatabricksClusterDriverProxyClient</span><span class="p">(</span>
+                <span class="n">host</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">host</span><span class="p">,</span>
+                <span class="n">api_token</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">api_token</span><span class="p">,</span>
+                <span class="n">cluster_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_id</span><span class="p">,</span>
+                <span class="n">cluster_driver_port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_driver_port</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Must specify either endpoint_name or cluster_id/cluster_driver_port.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_llm_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return type of llm.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;databricks&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_call</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">run_manager</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">CallbackManagerForLLMRun</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Queries the LLM endpoint with the given prompt and stop sequence.&quot;&quot;&quot;</span>
+
+        <span class="c1"># TODO: support callbacks</span>
+
+        <span class="n">request</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">,</span> <span class="s2">&quot;stop&quot;</span><span class="p">:</span> <span class="n">stop</span><span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">:</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_input_fn</span><span class="p">:</span>
+            <span class="n">request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_input_fn</span><span class="p">(</span><span class="o">**</span><span class="n">request</span><span class="p">)</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_output_fn</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_output_fn</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">response</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

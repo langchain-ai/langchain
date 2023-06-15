@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.document_loaders.github &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script src="../../../_static/tabs.js"></script>
+        <script src="../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.document_loaders.github</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.document_loaders.github</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">root_validator</span><span class="p">,</span> <span class="n">validator</span>
+
+<span class="kn">from</span> <span class="nn">langchain.docstore.document</span> <span class="kn">import</span> <span class="n">Document</span>
+<span class="kn">from</span> <span class="nn">langchain.document_loaders.base</span> <span class="kn">import</span> <span class="n">BaseLoader</span>
+<span class="kn">from</span> <span class="nn">langchain.utils</span> <span class="kn">import</span> <span class="n">get_from_dict_or_env</span>
+
+
+<span class="k">class</span> <span class="nc">BaseGitHubLoader</span><span class="p">(</span><span class="n">BaseLoader</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load issues of a GitHub repository.&quot;&quot;&quot;</span>
+
+    <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of repository&quot;&quot;&quot;</span>
+    <span class="n">access_token</span><span class="p">:</span> <span class="nb">str</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Personal access token - see https://github.com/settings/tokens?type=beta&quot;&quot;&quot;</span>
+
+    <span class="nd">@root_validator</span><span class="p">(</span><span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">validate_environment</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate that access token exists in environment.&quot;&quot;&quot;</span>
+        <span class="n">values</span><span class="p">[</span><span class="s2">&quot;access_token&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_from_dict_or_env</span><span class="p">(</span>
+            <span class="n">values</span><span class="p">,</span> <span class="s2">&quot;access_token&quot;</span><span class="p">,</span> <span class="s2">&quot;GITHUB_PERSONAL_ACCESS_TOKEN&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">values</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">headers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/vnd.github+json&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+
+<div class="viewcode-block" id="GitHubIssuesLoader"><a class="viewcode-back" href="../../../modules/document_loaders.html#langchain.document_loaders.GitHubIssuesLoader">[docs]</a><span class="k">class</span> <span class="nc">GitHubIssuesLoader</span><span class="p">(</span><span class="n">BaseGitHubLoader</span><span class="p">):</span>
+    <span class="n">include_prs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;If True include Pull Requests in results, otherwise ignore them.&quot;&quot;&quot;</span>
+    <span class="n">milestone</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;If integer is passed, it should be a milestone&#39;s number field.</span>
+<span class="sd">        If the string &#39;*&#39; is passed, issues with any milestone are accepted.</span>
+<span class="sd">        If the string &#39;none&#39; is passed, issues without milestones are returned.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;open&quot;</span><span class="p">,</span> <span class="s2">&quot;closed&quot;</span><span class="p">,</span> <span class="s2">&quot;all&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter on issue state. Can be one of: &#39;open&#39;, &#39;closed&#39;, &#39;all&#39;.&quot;&quot;&quot;</span>
+    <span class="n">assignee</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter on assigned user. Pass &#39;none&#39; for no user and &#39;*&#39; for any user.&quot;&quot;&quot;</span>
+    <span class="n">creator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter on the user that created the issue.&quot;&quot;&quot;</span>
+    <span class="n">mentioned</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter on a user that&#39;s mentioned in the issue.&quot;&quot;&quot;</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Label names to filter one. Example: bug,ui,@high.&quot;&quot;&quot;</span>
+    <span class="n">sort</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;created&quot;</span><span class="p">,</span> <span class="s2">&quot;updated&quot;</span><span class="p">,</span> <span class="s2">&quot;comments&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;What to sort results by. Can be one of: &#39;created&#39;, &#39;updated&#39;, &#39;comments&#39;.</span>
+<span class="sd">        Default is &#39;created&#39;.&quot;&quot;&quot;</span>
+    <span class="n">direction</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;asc&quot;</span><span class="p">,</span> <span class="s2">&quot;desc&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The direction to sort the results by. Can be one of: &#39;asc&#39;, &#39;desc&#39;.&quot;&quot;&quot;</span>
+    <span class="n">since</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Only show notifications updated after the given time.</span>
+<span class="sd">        This is a timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ.&quot;&quot;&quot;</span>
+
+    <span class="nd">@validator</span><span class="p">(</span><span class="s2">&quot;since&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">validate_since</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">v</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%SZ&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Invalid value for &#39;since&#39;. Expected a date string in &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;YYYY-MM-DDTHH:MM:SSZ format. Received: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+<div class="viewcode-block" id="GitHubIssuesLoader.lazy_load"><a class="viewcode-back" href="../../../modules/document_loaders.html#langchain.document_loaders.GitHubIssuesLoader.lazy_load">[docs]</a>    <span class="k">def</span> <span class="nf">lazy_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Document</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get issues of a GitHub repository.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of Documents with attributes:</span>
+<span class="sd">                - page_content</span>
+<span class="sd">                - metadata</span>
+<span class="sd">                    - url</span>
+<span class="sd">                    - title</span>
+<span class="sd">                    - creator</span>
+<span class="sd">                    - created_at</span>
+<span class="sd">                    - last_update_time</span>
+<span class="sd">                    - closed_time</span>
+<span class="sd">                    - number of comments</span>
+<span class="sd">                    - state</span>
+<span class="sd">                    - labels</span>
+<span class="sd">                    - assignee</span>
+<span class="sd">                    - assignees</span>
+<span class="sd">                    - milestone</span>
+<span class="sd">                    - locked</span>
+<span class="sd">                    - number</span>
+<span class="sd">                    - is_pull_request</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">url</span>
+        <span class="k">while</span> <span class="n">url</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">)</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+            <span class="n">issues</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="n">issues</span><span class="p">:</span>
+                <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_issue</span><span class="p">(</span><span class="n">issue</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_prs</span> <span class="ow">and</span> <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;is_pull_request&quot;</span><span class="p">]:</span>
+                    <span class="k">continue</span>
+                <span class="k">yield</span> <span class="n">doc</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">links</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;next&quot;</span><span class="p">):</span>
+                <span class="n">url</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">][</span><span class="s2">&quot;url&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">url</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="GitHubIssuesLoader.load"><a class="viewcode-back" href="../../../modules/document_loaders.html#langchain.document_loaders.GitHubIssuesLoader.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get issues of a GitHub repository.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of Documents with attributes:</span>
+<span class="sd">                - page_content</span>
+<span class="sd">                - metadata</span>
+<span class="sd">                    - url</span>
+<span class="sd">                    - title</span>
+<span class="sd">                    - creator</span>
+<span class="sd">                    - created_at</span>
+<span class="sd">                    - last_update_time</span>
+<span class="sd">                    - closed_time</span>
+<span class="sd">                    - number of comments</span>
+<span class="sd">                    - state</span>
+<span class="sd">                    - labels</span>
+<span class="sd">                    - assignee</span>
+<span class="sd">                    - assignees</span>
+<span class="sd">                    - milestone</span>
+<span class="sd">                    - locked</span>
+<span class="sd">                    - number</span>
+<span class="sd">                    - is_pull_request</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lazy_load</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="GitHubIssuesLoader.parse_issue"><a class="viewcode-back" href="../../../modules/document_loaders.html#langchain.document_loaders.GitHubIssuesLoader.parse_issue">[docs]</a>    <span class="k">def</span> <span class="nf">parse_issue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Document</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create Document objects from a list of GitHub issues.&quot;&quot;&quot;</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;html_url&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;creator&quot;</span><span class="p">:</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">][</span><span class="s2">&quot;login&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;created_at&quot;</span><span class="p">:</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;created_at&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;comments&quot;</span><span class="p">:</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;comments&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;state&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;labels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">label</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]],</span>
+            <span class="s2">&quot;assignee&quot;</span><span class="p">:</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;assignee&quot;</span><span class="p">][</span><span class="s2">&quot;login&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;assignee&quot;</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;milestone&quot;</span><span class="p">:</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;milestone&quot;</span><span class="p">][</span><span class="s2">&quot;title&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;milestone&quot;</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;locked&quot;</span><span class="p">:</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;locked&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;number&quot;</span><span class="p">:</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;number&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;is_pull_request&quot;</span><span class="p">:</span> <span class="s2">&quot;pull_request&quot;</span> <span class="ow">in</span> <span class="n">issue</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;body&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">issue</span><span class="p">[</span><span class="s2">&quot;body&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Document</span><span class="p">(</span><span class="n">page_content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">query_params</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span>
+        <span class="n">query_params_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;milestone&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">milestone</span><span class="p">,</span>
+            <span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="s2">&quot;assignee&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">assignee</span><span class="p">,</span>
+            <span class="s2">&quot;creator&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">creator</span><span class="p">,</span>
+            <span class="s2">&quot;mentioned&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">mentioned</span><span class="p">,</span>
+            <span class="s2">&quot;labels&quot;</span><span class="p">:</span> <span class="n">labels</span><span class="p">,</span>
+            <span class="s2">&quot;sort&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sort</span><span class="p">,</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span><span class="p">,</span>
+            <span class="s2">&quot;since&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">since</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">query_params_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">query_params_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">]</span>
+        <span class="n">query_params</span> <span class="o">=</span> <span class="s2">&quot;&amp;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">query_params_list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">query_params</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">url</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;https://api.github.com/repos/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">repo</span><span class="si">}</span><span class="s2">/issues?</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">query_params</span><span class="si">}</span><span class="s2">&quot;</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

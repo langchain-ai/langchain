@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.vectorstores.myscale &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script src="../../../_static/tabs.js"></script>
+        <script src="../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.vectorstores.myscale</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.vectorstores.myscale</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Wrapper around MyScale vector database.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">sha1</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+
+<span class="kn">from</span> <span class="nn">langchain.docstore.document</span> <span class="kn">import</span> <span class="n">Document</span>
+<span class="kn">from</span> <span class="nn">langchain.embeddings.base</span> <span class="kn">import</span> <span class="n">Embeddings</span>
+<span class="kn">from</span> <span class="nn">langchain.vectorstores.base</span> <span class="kn">import</span> <span class="n">VectorStore</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">has_mul_sub_str</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">a</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+
+<div class="viewcode-block" id="MyScaleSettings"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MyScaleSettings">[docs]</a><span class="k">class</span> <span class="nc">MyScaleSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MyScale Client Configuration</span>
+
+<span class="sd">    Attribute:</span>
+<span class="sd">        myscale_host (str) : An URL to connect to MyScale backend.</span>
+<span class="sd">                             Defaults to &#39;localhost&#39;.</span>
+<span class="sd">        myscale_port (int) : URL port to connect with HTTP. Defaults to 8443.</span>
+<span class="sd">        username (str) : Username to login. Defaults to None.</span>
+<span class="sd">        password (str) : Password to login. Defaults to None.</span>
+<span class="sd">        index_type (str): index type string.</span>
+<span class="sd">        index_param (dict): index build parameter.</span>
+<span class="sd">        database (str) : Database name to find the table. Defaults to &#39;default&#39;.</span>
+<span class="sd">        table (str) : Table name to operate on.</span>
+<span class="sd">                      Defaults to &#39;vector_table&#39;.</span>
+<span class="sd">        metric (str) : Metric to compute distance,</span>
+<span class="sd">                       supported are (&#39;l2&#39;, &#39;cosine&#39;, &#39;ip&#39;). Defaults to &#39;cosine&#39;.</span>
+<span class="sd">        column_map (Dict) : Column type map to project column name onto langchain</span>
+<span class="sd">                            semantics. Must have keys: `text`, `id`, `vector`,</span>
+<span class="sd">                            must be same size to number of columns. For example:</span>
+<span class="sd">                            .. code-block:: python</span>
+
+<span class="sd">                                {</span>
+<span class="sd">                                    &#39;id&#39;: &#39;text_id&#39;,</span>
+<span class="sd">                                    &#39;vector&#39;: &#39;text_embedding&#39;,</span>
+<span class="sd">                                    &#39;text&#39;: &#39;text_plain&#39;,</span>
+<span class="sd">                                    &#39;metadata&#39;: &#39;metadata_dictionary_in_json&#39;,</span>
+<span class="sd">                                }</span>
+
+<span class="sd">                            Defaults to identity map.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;localhost&quot;</span>
+    <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8443</span>
+
+    <span class="n">username</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">password</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">index_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;IVFFLAT&quot;</span>
+    <span class="n">index_param</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">column_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vector&quot;</span><span class="p">:</span> <span class="s2">&quot;vector&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="s2">&quot;metadata&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">database</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
+    <span class="n">table</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;langchain&quot;</span>
+    <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cosine&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="n">env_file</span> <span class="o">=</span> <span class="s2">&quot;.env&quot;</span>
+        <span class="n">env_prefix</span> <span class="o">=</span> <span class="s2">&quot;myscale_&quot;</span>
+        <span class="n">env_file_encoding</span> <span class="o">=</span> <span class="s2">&quot;utf-8&quot;</span></div>
+
+
+<div class="viewcode-block" id="MyScale"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MyScale">[docs]</a><span class="k">class</span> <span class="nc">MyScale</span><span class="p">(</span><span class="n">VectorStore</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper around MyScale vector database</span>
+
+<span class="sd">    You need a `clickhouse-connect` python package, and a valid account</span>
+<span class="sd">    to connect to MyScale.</span>
+
+<span class="sd">    MyScale can not only search with simple vector indexes,</span>
+<span class="sd">    it also supports complex query with multiple conditions,</span>
+<span class="sd">    constraints and even sub-queries.</span>
+
+<span class="sd">    For more information, please visit</span>
+<span class="sd">        [myscale official site](https://docs.myscale.com/en/overview/)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">embedding</span><span class="p">:</span> <span class="n">Embeddings</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MyScaleSettings</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;MyScale Wrapper to LangChain</span>
+
+<span class="sd">        embedding_function (Embeddings):</span>
+<span class="sd">        config (MyScaleSettings): Configuration to MyScale Client</span>
+<span class="sd">        Other keyword arguments will pass into</span>
+<span class="sd">            [clickhouse-connect](https://docs.myscale.com/)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">clickhouse_connect</span> <span class="kn">import</span> <span class="n">get_client</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Could not import clickhouse connect python package. &quot;</span>
+                <span class="s2">&quot;Please install it with `pip install clickhouse-connect`.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">pgbar</span> <span class="o">=</span> <span class="n">tqdm</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="c1"># Just in case if tqdm is not installed</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pgbar</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">MyScaleSettings</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">host</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">port</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">database</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">table</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">metric</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;vector&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">]:</span>
+            <span class="k">assert</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">metric</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;ip&quot;</span><span class="p">,</span> <span class="s2">&quot;cosine&quot;</span><span class="p">,</span> <span class="s2">&quot;l2&quot;</span><span class="p">]</span>
+
+        <span class="c1"># initialize the schema</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">embedding</span><span class="o">.</span><span class="n">embed_query</span><span class="p">(</span><span class="s2">&quot;try this out&quot;</span><span class="p">))</span>
+
+        <span class="n">index_params</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;, &quot;</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&#39;&quot;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">index_param</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">index_param</span>
+            <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="p">)</span>
+        <span class="n">schema_</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            CREATE TABLE IF NOT EXISTS </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">database</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">(</span>
+<span class="s2">                </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> String,</span>
+<span class="s2">                </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> String,</span>
+<span class="s2">                </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s1">&#39;vector&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> Array(Float32),</span>
+<span class="s2">                </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> JSON,</span>
+<span class="s2">                CONSTRAINT cons_vec_len CHECK length(</span><span class="se">\</span>
+<span class="s2">                    </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s1">&#39;vector&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">) = </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                VECTOR INDEX vidx </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s1">&#39;vector&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="se">\</span>
+<span class="s2">                    TYPE </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">index_type</span><span class="si">}</span><span class="s2">(</span><span class="se">\</span>
+<span class="s2">                        &#39;metric_type=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">metric</span><span class="si">}</span><span class="s2">&#39;</span><span class="si">{</span><span class="n">index_params</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">            ) ENGINE = MergeTree ORDER BY </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BS</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">must_escape</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_function</span> <span class="o">=</span> <span class="n">embedding</span><span class="o">.</span><span class="n">embed_query</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dist_order</span> <span class="o">=</span> <span class="s2">&quot;ASC&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">metric</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;cosine&quot;</span><span class="p">,</span> <span class="s2">&quot;l2&quot;</span><span class="p">]</span> <span class="k">else</span> <span class="s2">&quot;DESC&quot;</span>
+
+        <span class="c1"># Create a connection to myscale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">get_client</span><span class="p">(</span>
+            <span class="n">host</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">host</span><span class="p">,</span>
+            <span class="n">port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">port</span><span class="p">,</span>
+            <span class="n">username</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+            <span class="n">password</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">password</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="s2">&quot;SET allow_experimental_object_type=1&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">schema_</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MyScale.escape_str"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MyScale.escape_str">[docs]</a>    <span class="k">def</span> <span class="nf">escape_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">BS</span><span class="si">}{</span><span class="n">c</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">must_escape</span> <span class="k">else</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">value</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_build_istr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transac</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">column_names</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">ks</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">column_names</span><span class="p">)</span>
+        <span class="n">_data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">transac</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">escape_str</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">_n</span><span class="p">))</span><span class="si">}</span><span class="s2">&#39;&quot;</span> <span class="k">for</span> <span class="n">_n</span> <span class="ow">in</span> <span class="n">n</span><span class="p">])</span>
+            <span class="n">_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="n">i_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                INSERT INTO TABLE </span>
+<span class="s2">                    </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">database</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">ks</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">                VALUES</span>
+<span class="s2">                </span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_data</span><span class="p">)</span><span class="si">}</span>
+<span class="s2">                &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">i_str</span>
+
+    <span class="k">def</span> <span class="nf">_insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transac</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">column_names</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_i_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_istr</span><span class="p">(</span><span class="n">transac</span><span class="p">,</span> <span class="n">column_names</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">_i_str</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MyScale.add_texts"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MyScale.add_texts">[docs]</a>    <span class="k">def</span> <span class="nf">add_texts</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">texts</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">metadatas</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+        <span class="n">ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run more texts through the embeddings and add to the vectorstore.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            texts: Iterable of strings to add to the vectorstore.</span>
+<span class="sd">            ids: Optional list of ids to associate with the texts.</span>
+<span class="sd">            batch_size: Batch size of insertion</span>
+<span class="sd">            metadata: Optional column data to be inserted</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of ids from adding the texts into the vectorstore.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Embed and create the documents</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="n">ids</span> <span class="ow">or</span> <span class="p">[</span><span class="n">sha1</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">]</span>
+        <span class="n">colmap_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span>
+
+        <span class="n">transac</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">column_names</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">colmap_</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]:</span> <span class="n">ids</span><span class="p">,</span>
+            <span class="n">colmap_</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]:</span> <span class="n">texts</span><span class="p">,</span>
+            <span class="n">colmap_</span><span class="p">[</span><span class="s2">&quot;vector&quot;</span><span class="p">]:</span> <span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_function</span><span class="p">,</span> <span class="n">texts</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="n">metadatas</span> <span class="o">=</span> <span class="n">metadatas</span> <span class="ow">or</span> <span class="p">[{}</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">]</span>
+        <span class="n">column_names</span><span class="p">[</span><span class="n">colmap_</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">,</span> <span class="n">metadatas</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">colmap_</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">column_names</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+        <span class="n">keys</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">column_names</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pgbar</span><span class="p">(</span>
+                <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Inserting data...&quot;</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">metadatas</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">keys</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s2">&quot;vector&quot;</span><span class="p">])])</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
+                <span class="n">transac</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">transac</span><span class="p">)</span> <span class="o">==</span> <span class="n">batch_size</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">t</span><span class="p">:</span>
+                        <span class="n">t</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_insert</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">transac</span><span class="p">,</span> <span class="n">keys</span><span class="p">])</span>
+                    <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+                    <span class="n">transac</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">transac</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">t</span><span class="p">:</span>
+                    <span class="n">t</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_insert</span><span class="p">(</span><span class="n">transac</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[91m</span><span class="se">\033</span><span class="s2">[1m</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="se">\033</span><span class="s2">[0m </span><span class="se">\033</span><span class="s2">[95m</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="se">\033</span><span class="s2">[0m&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="MyScale.from_texts"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MyScale.from_texts">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_texts</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">texts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">embedding</span><span class="p">:</span> <span class="n">Embeddings</span><span class="p">,</span>
+        <span class="n">metadatas</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MyScaleSettings</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">text_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MyScale</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create Myscale wrapper with existing texts</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            embedding_function (Embeddings): Function to extract text embedding</span>
+<span class="sd">            texts (Iterable[str]): List or tuple of strings to be added</span>
+<span class="sd">            config (MyScaleSettings, Optional): Myscale configuration</span>
+<span class="sd">            text_ids (Optional[Iterable], optional): IDs for the texts.</span>
+<span class="sd">                                                     Defaults to None.</span>
+<span class="sd">            batch_size (int, optional): Batchsize when transmitting data to MyScale.</span>
+<span class="sd">                                        Defaults to 32.</span>
+<span class="sd">            metadata (List[dict], optional): metadata to texts. Defaults to None.</span>
+<span class="sd">            Other keyword arguments will pass into</span>
+<span class="sd">                [clickhouse-connect](https://clickhouse.com/docs/en/integrations/python#clickhouse-connect-driver-api)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            MyScale Index</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">embedding</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">add_texts</span><span class="p">(</span><span class="n">texts</span><span class="p">,</span> <span class="n">ids</span><span class="o">=</span><span class="n">text_ids</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">metadatas</span><span class="o">=</span><span class="n">metadatas</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ctx</span></div>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Text representation for myscale, prints backends, username and schemas.</span>
+<span class="sd">            Easy to use with `str(Myscale())`</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            repr: string to show connection info and data schema</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_repr</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[92m</span><span class="se">\033</span><span class="s2">[1m</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">database</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2"> @ &quot;</span>
+        <span class="n">_repr</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">port</span><span class="si">}</span><span class="se">\033</span><span class="s2">[0m</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="n">_repr</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1musername: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="se">\033</span><span class="s2">[0m</span><span class="se">\n\n</span><span class="s2">Table Schema:</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">_repr</span> <span class="o">+=</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">51</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;DESC </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">database</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">named_results</span><span class="p">():</span>
+            <span class="n">_repr</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;|</span><span class="se">\033</span><span class="s2">[94m</span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">24s</span><span class="si">}</span><span class="se">\033</span><span class="s2">[0m|</span><span class="se">\033</span><span class="s2">[96m</span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">24s</span><span class="si">}</span><span class="se">\033</span><span class="s2">[0m|</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">_repr</span> <span class="o">+=</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">51</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">_repr</span>
+
+    <span class="k">def</span> <span class="nf">_build_qstr</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">q_emb</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">topk</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">where_str</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">q_emb_str</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">q_emb</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">where_str</span><span class="p">:</span>
+            <span class="n">where_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;PREWHERE </span><span class="si">{</span><span class="n">where_str</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">where_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="n">q_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span>
+<span class="s2">                </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, dist</span>
+<span class="s2">            FROM </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">database</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">table</span><span class="si">}</span>
+<span class="s2">            </span><span class="si">{</span><span class="n">where_str</span><span class="si">}</span>
+<span class="s2">            ORDER BY distance(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s1">&#39;vector&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, [</span><span class="si">{</span><span class="n">q_emb_str</span><span class="si">}</span><span class="s2">]) </span>
+<span class="s2">                AS dist </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_order</span><span class="si">}</span>
+<span class="s2">            LIMIT </span><span class="si">{</span><span class="n">topk</span><span class="si">}</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">q_str</span>
+
+<div class="viewcode-block" id="MyScale.similarity_search"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MyScale.similarity_search">[docs]</a>    <span class="k">def</span> <span class="nf">similarity_search</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">where_str</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a similarity search with MyScale</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): query string</span>
+<span class="sd">            k (int, optional): Top K neighbors to retrieve. Defaults to 4.</span>
+<span class="sd">            where_str (Optional[str], optional): where condition string.</span>
+<span class="sd">                                                 Defaults to None.</span>
+
+<span class="sd">            NOTE: Please do not let end-user to fill this and always be aware</span>
+<span class="sd">                  of SQL injection. When dealing with metadatas, remember to</span>
+<span class="sd">                  use `{self.metadata_column}.attribute` instead of `attribute`</span>
+<span class="sd">                  alone. The default name for it is `metadata`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Document]: List of Documents</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">similarity_search_by_vector</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">embedding_function</span><span class="p">(</span><span class="n">query</span><span class="p">),</span> <span class="n">k</span><span class="p">,</span> <span class="n">where_str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="MyScale.similarity_search_by_vector"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MyScale.similarity_search_by_vector">[docs]</a>    <span class="k">def</span> <span class="nf">similarity_search_by_vector</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">embedding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="n">where_str</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a similarity search with MyScale by vectors</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): query string</span>
+<span class="sd">            k (int, optional): Top K neighbors to retrieve. Defaults to 4.</span>
+<span class="sd">            where_str (Optional[str], optional): where condition string.</span>
+<span class="sd">                                                 Defaults to None.</span>
+
+<span class="sd">            NOTE: Please do not let end-user to fill this and always be aware</span>
+<span class="sd">                  of SQL injection. When dealing with metadatas, remember to</span>
+<span class="sd">                  use `{self.metadata_column}.attribute` instead of `attribute`</span>
+<span class="sd">                  alone. The default name for it is `metadata`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Document]: List of (Document, similarity)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">q_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_qstr</span><span class="p">(</span><span class="n">embedding</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">where_str</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="n">Document</span><span class="p">(</span>
+                    <span class="n">page_content</span><span class="o">=</span><span class="n">r</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]],</span>
+                    <span class="n">metadata</span><span class="o">=</span><span class="n">r</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">]],</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">q_str</span><span class="p">)</span><span class="o">.</span><span class="n">named_results</span><span class="p">()</span>
+            <span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[91m</span><span class="se">\033</span><span class="s2">[1m</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="se">\033</span><span class="s2">[0m </span><span class="se">\033</span><span class="s2">[95m</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="se">\033</span><span class="s2">[0m&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="MyScale.similarity_search_with_relevance_scores"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MyScale.similarity_search_with_relevance_scores">[docs]</a>    <span class="k">def</span> <span class="nf">similarity_search_with_relevance_scores</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">where_str</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Document</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a similarity search with MyScale</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): query string</span>
+<span class="sd">            k (int, optional): Top K neighbors to retrieve. Defaults to 4.</span>
+<span class="sd">            where_str (Optional[str], optional): where condition string.</span>
+<span class="sd">                                                 Defaults to None.</span>
+
+<span class="sd">            NOTE: Please do not let end-user to fill this and always be aware</span>
+<span class="sd">                  of SQL injection. When dealing with metadatas, remember to</span>
+<span class="sd">                  use `{self.metadata_column}.attribute` instead of `attribute`</span>
+<span class="sd">                  alone. The default name for it is `metadata`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Document]: List of documents</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">q_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_qstr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_function</span><span class="p">(</span><span class="n">query</span><span class="p">),</span> <span class="n">k</span><span class="p">,</span> <span class="n">where_str</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="p">(</span>
+                    <span class="n">Document</span><span class="p">(</span>
+                        <span class="n">page_content</span><span class="o">=</span><span class="n">r</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]],</span>
+                        <span class="n">metadata</span><span class="o">=</span><span class="n">r</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">]],</span>
+                    <span class="p">),</span>
+                    <span class="n">r</span><span class="p">[</span><span class="s2">&quot;dist&quot;</span><span class="p">],</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">q_str</span><span class="p">)</span><span class="o">.</span><span class="n">named_results</span><span class="p">()</span>
+            <span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[91m</span><span class="se">\033</span><span class="s2">[1m</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="se">\033</span><span class="s2">[0m </span><span class="se">\033</span><span class="s2">[95m</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="se">\033</span><span class="s2">[0m&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="MyScale.drop"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MyScale.drop">[docs]</a>    <span class="k">def</span> <span class="nf">drop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper function: Drop data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">command</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;DROP TABLE IF EXISTS </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">database</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">metadata_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">column_map</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">]</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

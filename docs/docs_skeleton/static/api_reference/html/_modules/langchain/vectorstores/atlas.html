@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.vectorstores.atlas &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script src="../../../_static/tabs.js"></script>
+        <script src="../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.vectorstores.atlas</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.vectorstores.atlas</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Wrapper around Atlas by Nomic.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">langchain.docstore.document</span> <span class="kn">import</span> <span class="n">Document</span>
+<span class="kn">from</span> <span class="nn">langchain.embeddings.base</span> <span class="kn">import</span> <span class="n">Embeddings</span>
+<span class="kn">from</span> <span class="nn">langchain.vectorstores.base</span> <span class="kn">import</span> <span class="n">VectorStore</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="AtlasDB"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.AtlasDB">[docs]</a><span class="k">class</span> <span class="nc">AtlasDB</span><span class="p">(</span><span class="n">VectorStore</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper around Atlas: Nomic&#39;s neural database and rhizomatic instrument.</span>
+
+<span class="sd">    To use, you should have the ``nomic`` python package installed.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">                from langchain.vectorstores import AtlasDB</span>
+<span class="sd">                from langchain.embeddings.openai import OpenAIEmbeddings</span>
+
+<span class="sd">                embeddings = OpenAIEmbeddings()</span>
+<span class="sd">                vectorstore = AtlasDB(&quot;my_project&quot;, embeddings.embed_query)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_ATLAS_DEFAULT_ID_FIELD</span> <span class="o">=</span> <span class="s2">&quot;atlas_id&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">embedding_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Embeddings</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">api_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;A description for your project&quot;</span><span class="p">,</span>
+        <span class="n">is_public</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">reset_project_if_exists</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the Atlas Client</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of your project. If the project already exists,</span>
+<span class="sd">                it will be loaded.</span>
+<span class="sd">            embedding_function (Optional[Callable]): An optional function used for</span>
+<span class="sd">                embedding your data. If None, data will be embedded with</span>
+<span class="sd">                Nomic&#39;s embed model.</span>
+<span class="sd">            api_key (str): Your nomic API key</span>
+<span class="sd">            description (str): A description for your project.</span>
+<span class="sd">            is_public (bool): Whether your project is publicly accessible.</span>
+<span class="sd">                True by default.</span>
+<span class="sd">            reset_project_if_exists (bool): Whether to reset this project if it</span>
+<span class="sd">                already exists. Default False.</span>
+<span class="sd">                Generally userful during development and testing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">nomic</span>
+            <span class="kn">from</span> <span class="nn">nomic</span> <span class="kn">import</span> <span class="n">AtlasProject</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Could not import nomic python package. &quot;</span>
+                <span class="s2">&quot;Please install it with `pip install nomic`.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">api_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No API key provided. Sign up at atlas.nomic.ai!&quot;</span><span class="p">)</span>
+        <span class="n">nomic</span><span class="o">.</span><span class="n">login</span><span class="p">(</span><span class="n">api_key</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_function</span> <span class="o">=</span> <span class="n">embedding_function</span>
+        <span class="n">modality</span> <span class="o">=</span> <span class="s2">&quot;text&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">modality</span> <span class="o">=</span> <span class="s2">&quot;embedding&quot;</span>
+
+        <span class="c1"># Check if the project exists, create it if not</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">=</span> <span class="n">AtlasProject</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span>
+            <span class="n">modality</span><span class="o">=</span><span class="n">modality</span><span class="p">,</span>
+            <span class="n">is_public</span><span class="o">=</span><span class="n">is_public</span><span class="p">,</span>
+            <span class="n">reset_project_if_exists</span><span class="o">=</span><span class="n">reset_project_if_exists</span><span class="p">,</span>
+            <span class="n">unique_id_field</span><span class="o">=</span><span class="n">AtlasDB</span><span class="o">.</span><span class="n">_ATLAS_DEFAULT_ID_FIELD</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_latest_project_state</span><span class="p">()</span>
+
+<div class="viewcode-block" id="AtlasDB.add_texts"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.AtlasDB.add_texts">[docs]</a>    <span class="k">def</span> <span class="nf">add_texts</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">texts</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">metadatas</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">refresh</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run more texts through the embeddings and add to the vectorstore.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            texts (Iterable[str]): Texts to add to the vectorstore.</span>
+<span class="sd">            metadatas (Optional[List[dict]], optional): Optional list of metadatas.</span>
+<span class="sd">            ids (Optional[List[str]]): An optional list of ids.</span>
+<span class="sd">            refresh(bool): Whether or not to refresh indices with the updated data.</span>
+<span class="sd">                Default True.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: List of IDs of the added texts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">metadatas</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">metadatas</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="s2">&quot;text&quot;</span> <span class="ow">in</span> <span class="n">metadatas</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot accept key text in metadata!&quot;</span><span class="p">)</span>
+
+        <span class="n">texts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid1</span><span class="p">())</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">]</span>
+
+        <span class="c1"># Embedding upload case</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_embeddings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_function</span><span class="o">.</span><span class="n">embed_documents</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+            <span class="n">embeddings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">_embeddings</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">metadatas</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="n">AtlasDB</span><span class="o">.</span><span class="n">_ATLAS_DEFAULT_ID_FIELD</span><span class="p">:</span> <span class="n">ids</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">texts</span><span class="p">[</span><span class="n">i</span><span class="p">]}</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+                <span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">metadatas</span><span class="p">)):</span>
+                    <span class="n">metadatas</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">AtlasDB</span><span class="o">.</span><span class="n">_ATLAS_DEFAULT_ID_FIELD</span><span class="p">]</span> <span class="o">=</span> <span class="n">ids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">metadatas</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">texts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">metadatas</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_validate_map_data_inputs</span><span class="p">(</span>
+                <span class="p">[],</span> <span class="n">id_field</span><span class="o">=</span><span class="n">AtlasDB</span><span class="o">.</span><span class="n">_ATLAS_DEFAULT_ID_FIELD</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span>
+            <span class="p">)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">wait_for_project_lock</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">add_embeddings</span><span class="p">(</span><span class="n">embeddings</span><span class="o">=</span><span class="n">embeddings</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="c1"># Text upload case</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">metadatas</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span> <span class="n">AtlasDB</span><span class="o">.</span><span class="n">_ATLAS_DEFAULT_ID_FIELD</span><span class="p">:</span> <span class="n">ids</span><span class="p">[</span><span class="n">i</span><span class="p">]}</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+                <span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">texts</span><span class="p">):</span>
+                    <span class="n">metadatas</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">texts</span>
+                    <span class="n">metadatas</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">AtlasDB</span><span class="o">.</span><span class="n">_ATLAS_DEFAULT_ID_FIELD</span><span class="p">]</span> <span class="o">=</span> <span class="n">ids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">metadatas</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_validate_map_data_inputs</span><span class="p">(</span>
+                <span class="p">[],</span> <span class="n">id_field</span><span class="o">=</span><span class="n">AtlasDB</span><span class="o">.</span><span class="n">_ATLAS_DEFAULT_ID_FIELD</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span>
+            <span class="p">)</span>
+
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">wait_for_project_lock</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">add_text</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">refresh</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">wait_for_project_lock</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">rebuild_maps</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">ids</span></div>
+
+<div class="viewcode-block" id="AtlasDB.create_index"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.AtlasDB.create_index">[docs]</a>    <span class="k">def</span> <span class="nf">create_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates an index in your project.</span>
+
+<span class="sd">        See</span>
+<span class="sd">        https://docs.nomic.ai/atlas_api.html#nomic.project.AtlasProject.create_index</span>
+<span class="sd">        for full detail.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">wait_for_project_lock</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">create_index</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AtlasDB.similarity_search"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.AtlasDB.similarity_search">[docs]</a>    <span class="k">def</span> <span class="nf">similarity_search</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run similarity search with AtlasDB</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): Query text to search for.</span>
+<span class="sd">            k (int): Number of results to return. Defaults to 4.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Document]: List of documents most similar to the query text.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;AtlasDB requires an embedding_function for text similarity search!&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">_embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_function</span><span class="o">.</span><span class="n">embed_documents</span><span class="p">([</span><span class="n">query</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">embedding</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">_embedding</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">wait_for_project_lock</span><span class="p">():</span>
+            <span class="n">neighbors</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">projections</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">vector_search</span><span class="p">(</span>
+                <span class="n">queries</span><span class="o">=</span><span class="n">embedding</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span>
+            <span class="p">)</span>
+            <span class="n">datas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">ids</span><span class="o">=</span><span class="n">neighbors</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">docs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Document</span><span class="p">(</span><span class="n">page_content</span><span class="o">=</span><span class="n">datas</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;text&quot;</span><span class="p">],</span> <span class="n">metadata</span><span class="o">=</span><span class="n">datas</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">neighbor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">neighbors</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">docs</span></div>
+
+<div class="viewcode-block" id="AtlasDB.from_texts"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.AtlasDB.from_texts">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_texts</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">AtlasDB</span><span class="p">],</span>
+        <span class="n">texts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">embedding</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Embeddings</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadatas</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">api_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;A description for your project&quot;</span><span class="p">,</span>
+        <span class="n">is_public</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">reset_project_if_exists</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">index_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AtlasDB</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an AtlasDB vectorstore from a raw documents.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            texts (List[str]): The list of texts to ingest.</span>
+<span class="sd">            name (str): Name of the project to create.</span>
+<span class="sd">            api_key (str): Your nomic API key,</span>
+<span class="sd">            embedding (Optional[Embeddings]): Embedding function. Defaults to None.</span>
+<span class="sd">            metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.</span>
+<span class="sd">            ids (Optional[List[str]]): Optional list of document IDs. If None,</span>
+<span class="sd">                ids will be auto created</span>
+<span class="sd">            description (str): A description for your project.</span>
+<span class="sd">            is_public (bool): Whether your project is publicly accessible.</span>
+<span class="sd">                True by default.</span>
+<span class="sd">            reset_project_if_exists (bool): Whether to reset this project if it</span>
+<span class="sd">                already exists. Default False.</span>
+<span class="sd">                Generally userful during development and testing.</span>
+<span class="sd">            index_kwargs (Optional[dict]): Dict of kwargs for index creation.</span>
+<span class="sd">                See https://docs.nomic.ai/atlas_api.html</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            AtlasDB: Nomic&#39;s neural database and finest rhizomatic instrument</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">api_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`name` and `api_key` cannot be None.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Inject relevant kwargs</span>
+        <span class="n">all_index_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_index&quot;</span><span class="p">,</span> <span class="s2">&quot;indexed_field&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">index_kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">index_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">all_index_kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+        <span class="c1"># Build project</span>
+        <span class="n">atlasDB</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">embedding_function</span><span class="o">=</span><span class="n">embedding</span><span class="p">,</span>
+            <span class="n">api_key</span><span class="o">=</span><span class="n">api_key</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A description for your project&quot;</span><span class="p">,</span>
+            <span class="n">is_public</span><span class="o">=</span><span class="n">is_public</span><span class="p">,</span>
+            <span class="n">reset_project_if_exists</span><span class="o">=</span><span class="n">reset_project_if_exists</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">with</span> <span class="n">atlasDB</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">wait_for_project_lock</span><span class="p">():</span>
+            <span class="n">atlasDB</span><span class="o">.</span><span class="n">add_texts</span><span class="p">(</span><span class="n">texts</span><span class="o">=</span><span class="n">texts</span><span class="p">,</span> <span class="n">metadatas</span><span class="o">=</span><span class="n">metadatas</span><span class="p">,</span> <span class="n">ids</span><span class="o">=</span><span class="n">ids</span><span class="p">)</span>
+            <span class="n">atlasDB</span><span class="o">.</span><span class="n">create_index</span><span class="p">(</span><span class="o">**</span><span class="n">all_index_kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">atlasDB</span></div>
+
+<div class="viewcode-block" id="AtlasDB.from_documents"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.AtlasDB.from_documents">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_documents</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">AtlasDB</span><span class="p">],</span>
+        <span class="n">documents</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">],</span>
+        <span class="n">embedding</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Embeddings</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">api_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">persist_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;A description for your project&quot;</span><span class="p">,</span>
+        <span class="n">is_public</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">reset_project_if_exists</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">index_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AtlasDB</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an AtlasDB vectorstore from a list of documents.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): Name of the collection to create.</span>
+<span class="sd">            api_key (str): Your nomic API key,</span>
+<span class="sd">            documents (List[Document]): List of documents to add to the vectorstore.</span>
+<span class="sd">            embedding (Optional[Embeddings]): Embedding function. Defaults to None.</span>
+<span class="sd">            ids (Optional[List[str]]): Optional list of document IDs. If None,</span>
+<span class="sd">                ids will be auto created</span>
+<span class="sd">            description (str): A description for your project.</span>
+<span class="sd">            is_public (bool): Whether your project is publicly accessible.</span>
+<span class="sd">                True by default.</span>
+<span class="sd">            reset_project_if_exists (bool): Whether to reset this project if</span>
+<span class="sd">                it already exists. Default False.</span>
+<span class="sd">                Generally userful during development and testing.</span>
+<span class="sd">            index_kwargs (Optional[dict]): Dict of kwargs for index creation.</span>
+<span class="sd">                See https://docs.nomic.ai/atlas_api.html</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            AtlasDB: Nomic&#39;s neural database and finest rhizomatic instrument</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">api_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`name` and `api_key` cannot be None.&quot;</span><span class="p">)</span>
+        <span class="n">texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">doc</span><span class="o">.</span><span class="n">page_content</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">documents</span><span class="p">]</span>
+        <span class="n">metadatas</span> <span class="o">=</span> <span class="p">[</span><span class="n">doc</span><span class="o">.</span><span class="n">metadata</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">documents</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_texts</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">api_key</span><span class="o">=</span><span class="n">api_key</span><span class="p">,</span>
+            <span class="n">texts</span><span class="o">=</span><span class="n">texts</span><span class="p">,</span>
+            <span class="n">embedding</span><span class="o">=</span><span class="n">embedding</span><span class="p">,</span>
+            <span class="n">metadatas</span><span class="o">=</span><span class="n">metadatas</span><span class="p">,</span>
+            <span class="n">ids</span><span class="o">=</span><span class="n">ids</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span>
+            <span class="n">is_public</span><span class="o">=</span><span class="n">is_public</span><span class="p">,</span>
+            <span class="n">reset_project_if_exists</span><span class="o">=</span><span class="n">reset_project_if_exists</span><span class="p">,</span>
+            <span class="n">index_kwargs</span><span class="o">=</span><span class="n">index_kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

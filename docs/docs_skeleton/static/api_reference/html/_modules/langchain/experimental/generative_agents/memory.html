@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.experimental.generative_agents.memory &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/clipboard.min.js"></script>
+        <script src="../../../../_static/copybutton.js"></script>
+        <script src="../../../../_static/tabs.js"></script>
+        <script src="../../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.experimental.generative_agents.memory</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.experimental.generative_agents.memory</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">langchain</span> <span class="kn">import</span> <span class="n">LLMChain</span>
+<span class="kn">from</span> <span class="nn">langchain.base_language</span> <span class="kn">import</span> <span class="n">BaseLanguageModel</span>
+<span class="kn">from</span> <span class="nn">langchain.prompts</span> <span class="kn">import</span> <span class="n">PromptTemplate</span>
+<span class="kn">from</span> <span class="nn">langchain.retrievers</span> <span class="kn">import</span> <span class="n">TimeWeightedVectorStoreRetriever</span>
+<span class="kn">from</span> <span class="nn">langchain.schema</span> <span class="kn">import</span> <span class="n">BaseMemory</span><span class="p">,</span> <span class="n">Document</span>
+<span class="kn">from</span> <span class="nn">langchain.utils</span> <span class="kn">import</span> <span class="n">mock_now</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="GenerativeAgentMemory"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgentMemory">[docs]</a><span class="k">class</span> <span class="nc">GenerativeAgentMemory</span><span class="p">(</span><span class="n">BaseMemory</span><span class="p">):</span>
+    <span class="n">llm</span><span class="p">:</span> <span class="n">BaseLanguageModel</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The core language model.&quot;&quot;&quot;</span>
+
+    <span class="n">memory_retriever</span><span class="p">:</span> <span class="n">TimeWeightedVectorStoreRetriever</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The retriever to fetch related memories.&quot;&quot;&quot;</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">reflection_threshold</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;When aggregate_importance exceeds reflection_threshold, stop to reflect.&quot;&quot;&quot;</span>
+
+    <span class="n">current_plan</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The current plan of the agent.&quot;&quot;&quot;</span>
+
+    <span class="c1"># A weight of 0.15 makes this less important than it</span>
+    <span class="c1"># would be otherwise, relative to salience and time</span>
+    <span class="n">importance_weight</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.15</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;How much weight to assign the memory importance.&quot;&quot;&quot;</span>
+
+    <span class="n">aggregate_importance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># : :meta private:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Track the sum of the &#39;importance&#39; of recent memories.</span>
+
+<span class="sd">    Triggers reflection when it reaches reflection_threshold.&quot;&quot;&quot;</span>
+
+    <span class="n">max_tokens_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1200</span>  <span class="c1"># : :meta private:</span>
+    <span class="c1"># input keys</span>
+    <span class="n">queries_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;queries&quot;</span>
+    <span class="n">most_recent_memories_token_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;recent_memories_token&quot;</span>
+    <span class="n">add_memory_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add_memory&quot;</span>
+    <span class="c1"># output keys</span>
+    <span class="n">relevant_memories_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;relevant_memories&quot;</span>
+    <span class="n">relevant_memories_simple_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;relevant_memories_simple&quot;</span>
+    <span class="n">most_recent_memories_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;most_recent_memories&quot;</span>
+    <span class="n">now_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;now&quot;</span>
+    <span class="n">reflecting</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">chain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="n">PromptTemplate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LLMChain</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">LLMChain</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_parse_list</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse a newline-separated string into a list of strings.&quot;&quot;&quot;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\n&quot;</span><span class="p">,</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span> <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>  <span class="c1"># remove empty lines</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^\s*\d+\.\s*&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_get_topics_of_reflection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">last_k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the 3 most salient high-level questions about recent observations.&quot;&quot;&quot;</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="si">{observations}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;Given only the information above, what are the 3 most salient &quot;</span>
+            <span class="s2">&quot;high-level questions we can answer about the subjects in the statements?</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;Provide each question on a new line.&quot;</span>
+        <span class="p">)</span>
+        <span class="n">observations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_retriever</span><span class="o">.</span><span class="n">memory_stream</span><span class="p">[</span><span class="o">-</span><span class="n">last_k</span><span class="p">:]</span>
+        <span class="n">observation_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_format_memory_detail</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">observations</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">observations</span><span class="o">=</span><span class="n">observation_str</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_list</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_insights_on_topic</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate &#39;insights&#39; on a topic of reflection, based on pertinent memories.&quot;&quot;&quot;</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span>
+            <span class="s2">&quot;Statements relevant to: &#39;</span><span class="si">{topic}</span><span class="s2">&#39;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;---</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="si">{related_statements}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;---</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;What 5 high-level novel insights can you infer from the above statements &quot;</span>
+            <span class="s2">&quot;that are relevant for answering the following question?</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;Do not include any insights that are not relevant to the question.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;Do not repeat any insights that have already been made.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;Question: </span><span class="si">{topic}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;(example format: insight (because of 1, 5, 3))</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">related_memories</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch_memories</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+        <span class="n">related_statements</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_format_memory_detail</span><span class="p">(</span><span class="n">memory</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">. &quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">memory</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">related_memories</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="n">topic</span><span class="o">=</span><span class="n">topic</span><span class="p">,</span> <span class="n">related_statements</span><span class="o">=</span><span class="n">related_statements</span>
+        <span class="p">)</span>
+        <span class="c1"># TODO: Parse the connections between memories and insights</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_list</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GenerativeAgentMemory.pause_to_reflect"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgentMemory.pause_to_reflect">[docs]</a>    <span class="k">def</span> <span class="nf">pause_to_reflect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reflect on recent observations and generate &#39;insights&#39;.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Character is reflecting&quot;</span><span class="p">)</span>
+        <span class="n">new_insights</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">topics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_topics_of_reflection</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">topic</span> <span class="ow">in</span> <span class="n">topics</span><span class="p">:</span>
+            <span class="n">insights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_insights_on_topic</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">insight</span> <span class="ow">in</span> <span class="n">insights</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_memory</span><span class="p">(</span><span class="n">insight</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+            <span class="n">new_insights</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">insights</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_insights</span></div>
+
+    <span class="k">def</span> <span class="nf">_score_memory_importance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score the absolute importance of the given memory.&quot;&quot;&quot;</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span>
+            <span class="s2">&quot;On the scale of 1 to 10, where 1 is purely mundane&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; (e.g., brushing teeth, making bed) and 10 is&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; extremely poignant (e.g., a break up, college&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; acceptance), rate the likely poignancy of the&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; following piece of memory. Respond with a single integer.&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Memory: </span><span class="si">{memory_content}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Rating: &quot;</span>
+        <span class="p">)</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">memory_content</span><span class="o">=</span><span class="n">memory_content</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Importance score: </span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^\D*(\d+)&quot;</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="mi">10</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">importance_weight</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="k">def</span> <span class="nf">_score_memories_importance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score the absolute importance of the given memory.&quot;&quot;&quot;</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span>
+            <span class="s2">&quot;On the scale of 1 to 10, where 1 is purely mundane&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; (e.g., brushing teeth, making bed) and 10 is&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; extremely poignant (e.g., a break up, college&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; acceptance), rate the likely poignancy of the&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; following piece of memory. Always answer with only a list of numbers.&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; If just given one memory still respond in a list.&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; Memories are separated by semi colans (;)&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;\Memories: </span><span class="si">{memory_content}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Rating: &quot;</span>
+        <span class="p">)</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">memory_content</span><span class="o">=</span><span class="n">memory_content</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Importance scores: </span><span class="si">{</span><span class="n">scores</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Split into list of strings and convert to floats</span>
+        <span class="n">scores_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">scores</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">)]</span>
+
+        <span class="k">return</span> <span class="n">scores_list</span>
+
+<div class="viewcode-block" id="GenerativeAgentMemory.add_memories"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgentMemory.add_memories">[docs]</a>    <span class="k">def</span> <span class="nf">add_memories</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">memory_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add an observations or memories to the agent&#39;s memory.&quot;&quot;&quot;</span>
+        <span class="n">importance_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_memories_importance</span><span class="p">(</span><span class="n">memory_content</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">aggregate_importance</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="n">importance_scores</span><span class="p">)</span>
+        <span class="n">memory_list</span> <span class="o">=</span> <span class="n">memory_content</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">)</span>
+        <span class="n">documents</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">memory_list</span><span class="p">)):</span>
+            <span class="n">documents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">Document</span><span class="p">(</span>
+                    <span class="n">page_content</span><span class="o">=</span><span class="n">memory_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;importance&quot;</span><span class="p">:</span> <span class="n">importance_scores</span><span class="p">[</span><span class="n">i</span><span class="p">]},</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_retriever</span><span class="o">.</span><span class="n">add_documents</span><span class="p">(</span><span class="n">documents</span><span class="p">,</span> <span class="n">current_time</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+
+        <span class="c1"># After an agent has processed a certain amount of memories (as measured by</span>
+        <span class="c1"># aggregate importance), it is time to reflect on recent events to add</span>
+        <span class="c1"># more synthesized memories to the agent&#39;s memory stream.</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reflection_threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregate_importance</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">reflection_threshold</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reflecting</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reflecting</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pause_to_reflect</span><span class="p">(</span><span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+            <span class="c1"># Hack to clear the importance from reflection</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aggregate_importance</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reflecting</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="GenerativeAgentMemory.add_memory"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgentMemory.add_memory">[docs]</a>    <span class="k">def</span> <span class="nf">add_memory</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">memory_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add an observation or memory to the agent&#39;s memory.&quot;&quot;&quot;</span>
+        <span class="n">importance_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_memory_importance</span><span class="p">(</span><span class="n">memory_content</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aggregate_importance</span> <span class="o">+=</span> <span class="n">importance_score</span>
+        <span class="n">document</span> <span class="o">=</span> <span class="n">Document</span><span class="p">(</span>
+            <span class="n">page_content</span><span class="o">=</span><span class="n">memory_content</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;importance&quot;</span><span class="p">:</span> <span class="n">importance_score</span><span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_retriever</span><span class="o">.</span><span class="n">add_documents</span><span class="p">([</span><span class="n">document</span><span class="p">],</span> <span class="n">current_time</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+
+        <span class="c1"># After an agent has processed a certain amount of memories (as measured by</span>
+        <span class="c1"># aggregate importance), it is time to reflect on recent events to add</span>
+        <span class="c1"># more synthesized memories to the agent&#39;s memory stream.</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reflection_threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregate_importance</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">reflection_threshold</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reflecting</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reflecting</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pause_to_reflect</span><span class="p">(</span><span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+            <span class="c1"># Hack to clear the importance from reflection</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aggregate_importance</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reflecting</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="GenerativeAgentMemory.fetch_memories"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgentMemory.fetch_memories">[docs]</a>    <span class="k">def</span> <span class="nf">fetch_memories</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fetch related memories.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">mock_now</span><span class="p">(</span><span class="n">now</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_retriever</span><span class="o">.</span><span class="n">get_relevant_documents</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_retriever</span><span class="o">.</span><span class="n">get_relevant_documents</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">format_memories_detail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relevant_memories</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">mem</span> <span class="ow">in</span> <span class="n">relevant_memories</span><span class="p">:</span>
+            <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_format_memory_detail</span><span class="p">(</span><span class="n">mem</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;- &quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mem</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">mem</span> <span class="ow">in</span> <span class="n">content</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_format_memory_detail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">:</span> <span class="n">Document</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">created_time</span> <span class="o">=</span> <span class="n">memory</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;created_at&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%B </span><span class="si">%d</span><span class="s2">, %Y, %I:%M %p&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">[</span><span class="si">{</span><span class="n">created_time</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">memory</span><span class="o">.</span><span class="n">page_content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="nf">format_memories_simple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relevant_memories</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mem</span><span class="o">.</span><span class="n">page_content</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">mem</span> <span class="ow">in</span> <span class="n">relevant_memories</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_get_memories_until_limit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">consumed_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reduce the number of tokens in the documents.&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_retriever</span><span class="o">.</span><span class="n">memory_stream</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">consumed_tokens</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_tokens_limit</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">consumed_tokens</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">get_num_tokens</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">page_content</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">consumed_tokens</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_tokens_limit</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_memories_simple</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">memory_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Input keys this memory class will load dynamically.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="GenerativeAgentMemory.load_memory_variables"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgentMemory.load_memory_variables">[docs]</a>    <span class="k">def</span> <span class="nf">load_memory_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return key-value pairs given the text input to the chain.&quot;&quot;&quot;</span>
+        <span class="n">queries</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queries_key</span><span class="p">)</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">now_key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">queries</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">relevant_memories</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">mem</span> <span class="k">for</span> <span class="n">query</span> <span class="ow">in</span> <span class="n">queries</span> <span class="k">for</span> <span class="n">mem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch_memories</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">relevant_memories_key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_memories_detail</span><span class="p">(</span>
+                    <span class="n">relevant_memories</span>
+                <span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">relevant_memories_simple_key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_memories_simple</span><span class="p">(</span>
+                    <span class="n">relevant_memories</span>
+                <span class="p">),</span>
+            <span class="p">}</span>
+
+        <span class="n">most_recent_memories_token</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">most_recent_memories_token_key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">most_recent_memories_token</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">most_recent_memories_key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_memories_until_limit</span><span class="p">(</span>
+                    <span class="n">most_recent_memories_token</span>
+                <span class="p">)</span>
+            <span class="p">}</span>
+        <span class="k">return</span> <span class="p">{}</span></div>
+
+<div class="viewcode-block" id="GenerativeAgentMemory.save_context"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgentMemory.save_context">[docs]</a>    <span class="k">def</span> <span class="nf">save_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">outputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the context of this model run to memory.&quot;&quot;&quot;</span>
+        <span class="c1"># TODO: fix the save memory key</span>
+        <span class="n">mem</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">add_memory_key</span><span class="p">)</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">now_key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mem</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_memory</span><span class="p">(</span><span class="n">mem</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GenerativeAgentMemory.clear"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgentMemory.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear memory contents.&quot;&quot;&quot;</span></div></div>
+        <span class="c1"># TODO</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

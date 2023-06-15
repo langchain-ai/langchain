@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.vectorstores.mongodb_atlas &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script src="../../../_static/tabs.js"></script>
+        <script src="../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.vectorstores.mongodb_atlas</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.vectorstores.mongodb_atlas</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">Generator</span><span class="p">,</span>
+    <span class="n">Iterable</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">TypeVar</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">langchain.docstore.document</span> <span class="kn">import</span> <span class="n">Document</span>
+<span class="kn">from</span> <span class="nn">langchain.embeddings.base</span> <span class="kn">import</span> <span class="n">Embeddings</span>
+<span class="kn">from</span> <span class="nn">langchain.vectorstores.base</span> <span class="kn">import</span> <span class="n">VectorStore</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">pymongo.collection</span> <span class="kn">import</span> <span class="n">Collection</span>
+
+<span class="n">MongoDBDocumentType</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;MongoDBDocumentType&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">DEFAULT_INSERT_BATCH_SIZE</span> <span class="o">=</span> <span class="mi">100</span>
+
+
+<div class="viewcode-block" id="MongoDBAtlasVectorSearch"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MongoDBAtlasVectorSearch">[docs]</a><span class="k">class</span> <span class="nc">MongoDBAtlasVectorSearch</span><span class="p">(</span><span class="n">VectorStore</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper around MongoDB Atlas Vector Search.</span>
+
+<span class="sd">    To use, you should have both:</span>
+<span class="sd">    - the ``pymongo`` python package installed</span>
+<span class="sd">    - a connection string associated with a MongoDB Atlas Cluster having deployed an</span>
+<span class="sd">        Atlas Search index</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            from langchain.vectorstores import MongoDBAtlasVectorSearch</span>
+<span class="sd">            from langchain.embeddings.openai import OpenAIEmbeddings</span>
+<span class="sd">            from pymongo import MongoClient</span>
+
+<span class="sd">            mongo_client = MongoClient(&quot;&lt;YOUR-CONNECTION-STRING&gt;&quot;)</span>
+<span class="sd">            collection = mongo_client[&quot;&lt;db_name&gt;&quot;][&quot;&lt;collection_name&gt;&quot;]</span>
+<span class="sd">            embeddings = OpenAIEmbeddings()</span>
+<span class="sd">            vectorstore = MongoDBAtlasVectorSearch(collection, embeddings)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">Collection</span><span class="p">[</span><span class="n">MongoDBDocumentType</span><span class="p">],</span>
+        <span class="n">embedding</span><span class="p">:</span> <span class="n">Embeddings</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">index_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="n">text_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+        <span class="n">embedding_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;embedding&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            collection: MongoDB collection to add the texts to.</span>
+<span class="sd">            embedding: Text embedding model to use.</span>
+<span class="sd">            text_key: MongoDB field that will contain the text for each</span>
+<span class="sd">                document.</span>
+<span class="sd">            embedding_key: MongoDB field that will contain the embedding for</span>
+<span class="sd">                each document.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span> <span class="o">=</span> <span class="n">collection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_embedding</span> <span class="o">=</span> <span class="n">embedding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index_name</span> <span class="o">=</span> <span class="n">index_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_text_key</span> <span class="o">=</span> <span class="n">text_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_key</span> <span class="o">=</span> <span class="n">embedding_key</span>
+
+<div class="viewcode-block" id="MongoDBAtlasVectorSearch.from_connection_string"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MongoDBAtlasVectorSearch.from_connection_string">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_connection_string</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">connection_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">embedding</span><span class="p">:</span> <span class="n">Embeddings</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MongoDBAtlasVectorSearch</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">pymongo</span> <span class="kn">import</span> <span class="n">MongoClient</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="s2">&quot;Could not import pymongo, please install it with &quot;</span>
+                <span class="s2">&quot;`pip install pymongo`.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">client</span><span class="p">:</span> <span class="n">MongoClient</span> <span class="o">=</span> <span class="n">MongoClient</span><span class="p">(</span><span class="n">connection_string</span><span class="p">)</span>
+        <span class="n">db_name</span><span class="p">,</span> <span class="n">collection_name</span> <span class="o">=</span> <span class="n">namespace</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+        <span class="n">collection</span> <span class="o">=</span> <span class="n">client</span><span class="p">[</span><span class="n">db_name</span><span class="p">][</span><span class="n">collection_name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">embedding</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MongoDBAtlasVectorSearch.add_texts"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MongoDBAtlasVectorSearch.add_texts">[docs]</a>    <span class="k">def</span> <span class="nf">add_texts</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">texts</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">metadatas</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run more texts through the embeddings and add to the vectorstore.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            texts: Iterable of strings to add to the vectorstore.</span>
+<span class="sd">            metadatas: Optional list of metadatas associated with the texts.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of ids from adding the texts into the vectorstore.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;batch_size&quot;</span><span class="p">,</span> <span class="n">DEFAULT_INSERT_BATCH_SIZE</span><span class="p">)</span>
+        <span class="n">_metadatas</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Generator</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadatas</span> <span class="ow">or</span> <span class="p">({}</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">)</span>
+        <span class="n">texts_batch</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">metadatas_batch</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">result_ids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">texts</span><span class="p">,</span> <span class="n">_metadatas</span><span class="p">)):</span>
+            <span class="n">texts_batch</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">metadatas_batch</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">batch_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">result_ids</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_insert_texts</span><span class="p">(</span><span class="n">texts_batch</span><span class="p">,</span> <span class="n">metadatas_batch</span><span class="p">))</span>
+                <span class="n">texts_batch</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">metadatas_batch</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">texts_batch</span><span class="p">:</span>
+            <span class="n">result_ids</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_insert_texts</span><span class="p">(</span><span class="n">texts_batch</span><span class="p">,</span> <span class="n">metadatas_batch</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">result_ids</span></div>
+
+    <span class="k">def</span> <span class="nf">_insert_texts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">texts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">metadatas</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">texts</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="c1"># Embed and create the documents</span>
+        <span class="n">embeddings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding</span><span class="o">.</span><span class="n">embed_documents</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+        <span class="n">to_insert</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_text_key</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_key</span><span class="p">:</span> <span class="n">embedding</span><span class="p">,</span> <span class="o">**</span><span class="n">m</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">embedding</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">texts</span><span class="p">,</span> <span class="n">metadatas</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="c1"># insert the documents in MongoDB Atlas</span>
+        <span class="n">insert_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span><span class="o">.</span><span class="n">insert_many</span><span class="p">(</span><span class="n">to_insert</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">insert_result</span><span class="o">.</span><span class="n">inserted_ids</span>
+
+<div class="viewcode-block" id="MongoDBAtlasVectorSearch.similarity_search_with_score"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MongoDBAtlasVectorSearch.similarity_search_with_score">[docs]</a>    <span class="k">def</span> <span class="nf">similarity_search_with_score</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="n">pre_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">post_filter_pipeline</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Document</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return MongoDB documents most similar to query, along with scores.</span>
+
+<span class="sd">        Use the knnBeta Operator available in MongoDB Atlas Search</span>
+<span class="sd">        This feature is in early access and available only for evaluation purposes, to</span>
+<span class="sd">        validate functionality, and to gather feedback from a small closed group of</span>
+<span class="sd">        early access users. It is not recommended for production deployments as we</span>
+<span class="sd">        may introduce breaking changes.</span>
+<span class="sd">        For more: https://www.mongodb.com/docs/atlas/atlas-search/knn-beta</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query: Text to look up documents similar to.</span>
+<span class="sd">            k: Optional Number of Documents to return. Defaults to 4.</span>
+<span class="sd">            pre_filter: Optional Dictionary of argument(s) to prefilter on document</span>
+<span class="sd">                fields.</span>
+<span class="sd">            post_filter_pipeline: Optional Pipeline of MongoDB aggregation stages</span>
+<span class="sd">                following the knnBeta search.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of Documents most similar to the query and score for each</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">knn_beta</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;vector&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding</span><span class="o">.</span><span class="n">embed_query</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_key</span><span class="p">,</span>
+            <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">pre_filter</span><span class="p">:</span>
+            <span class="n">knn_beta</span><span class="p">[</span><span class="s2">&quot;filter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pre_filter</span>
+        <span class="n">pipeline</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;$search&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index_name</span><span class="p">,</span>
+                    <span class="s2">&quot;knnBeta&quot;</span><span class="p">:</span> <span class="n">knn_beta</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;$project&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;$meta&quot;</span><span class="p">:</span> <span class="s2">&quot;searchScore&quot;</span><span class="p">},</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_key</span><span class="p">:</span> <span class="mi">0</span><span class="p">}},</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">post_filter_pipeline</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">post_filter_pipeline</span><span class="p">)</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
+        <span class="n">docs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">cursor</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text_key</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;score&quot;</span><span class="p">)</span>
+            <span class="n">docs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">Document</span><span class="p">(</span><span class="n">page_content</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">res</span><span class="p">),</span> <span class="n">score</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">docs</span></div>
+
+<div class="viewcode-block" id="MongoDBAtlasVectorSearch.similarity_search"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MongoDBAtlasVectorSearch.similarity_search">[docs]</a>    <span class="k">def</span> <span class="nf">similarity_search</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="n">pre_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">post_filter_pipeline</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return MongoDB documents most similar to query.</span>
+
+<span class="sd">        Use the knnBeta Operator available in MongoDB Atlas Search</span>
+<span class="sd">        This feature is in early access and available only for evaluation purposes, to</span>
+<span class="sd">        validate functionality, and to gather feedback from a small closed group of</span>
+<span class="sd">        early access users. It is not recommended for production deployments as we may</span>
+<span class="sd">        introduce breaking changes.</span>
+<span class="sd">        For more: https://www.mongodb.com/docs/atlas/atlas-search/knn-beta</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query: Text to look up documents similar to.</span>
+<span class="sd">            k: Optional Number of Documents to return. Defaults to 4.</span>
+<span class="sd">            pre_filter: Optional Dictionary of argument(s) to prefilter on document</span>
+<span class="sd">                fields.</span>
+<span class="sd">            post_filter_pipeline: Optional Pipeline of MongoDB aggregation stages</span>
+<span class="sd">                following the knnBeta search.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of Documents most similar to the query and score for each</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">docs_and_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">similarity_search_with_score</span><span class="p">(</span>
+            <span class="n">query</span><span class="p">,</span>
+            <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span>
+            <span class="n">pre_filter</span><span class="o">=</span><span class="n">pre_filter</span><span class="p">,</span>
+            <span class="n">post_filter_pipeline</span><span class="o">=</span><span class="n">post_filter_pipeline</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">doc</span> <span class="k">for</span> <span class="n">doc</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">docs_and_scores</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="MongoDBAtlasVectorSearch.from_texts"><a class="viewcode-back" href="../../../modules/vectorstores.html#langchain.vectorstores.MongoDBAtlasVectorSearch.from_texts">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_texts</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">texts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">embedding</span><span class="p">:</span> <span class="n">Embeddings</span><span class="p">,</span>
+        <span class="n">metadatas</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Collection</span><span class="p">[</span><span class="n">MongoDBDocumentType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MongoDBAtlasVectorSearch</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct MongoDBAtlasVectorSearch wrapper from raw documents.</span>
+
+<span class="sd">        This is a user-friendly interface that:</span>
+<span class="sd">            1. Embeds documents.</span>
+<span class="sd">            2. Adds the documents to a provided MongoDB Atlas Vector Search index</span>
+<span class="sd">                (Lucene)</span>
+
+<span class="sd">        This is intended to be a quick way to get started.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from pymongo import MongoClient</span>
+
+<span class="sd">                from langchain.vectorstores import MongoDBAtlasVectorSearch</span>
+<span class="sd">                from langchain.embeddings import OpenAIEmbeddings</span>
+
+<span class="sd">                client = MongoClient(&quot;&lt;YOUR-CONNECTION-STRING&gt;&quot;)</span>
+<span class="sd">                collection = mongo_client[&quot;&lt;db_name&gt;&quot;][&quot;&lt;collection_name&gt;&quot;]</span>
+<span class="sd">                embeddings = OpenAIEmbeddings()</span>
+<span class="sd">                vectorstore = MongoDBAtlasVectorSearch.from_texts(</span>
+<span class="sd">                    texts,</span>
+<span class="sd">                    embeddings,</span>
+<span class="sd">                    metadatas=metadatas,</span>
+<span class="sd">                    collection=collection</span>
+<span class="sd">                )</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">collection</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must provide &#39;collection&#39; named parameter.&quot;</span><span class="p">)</span>
+        <span class="n">vecstore</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">embedding</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">vecstore</span><span class="o">.</span><span class="n">add_texts</span><span class="p">(</span><span class="n">texts</span><span class="p">,</span> <span class="n">metadatas</span><span class="o">=</span><span class="n">metadatas</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">vecstore</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

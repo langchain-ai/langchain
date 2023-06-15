@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.utilities.google_search &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script src="../../../_static/tabs.js"></script>
+        <script src="../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.utilities.google_search</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.utilities.google_search</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Util that calls Google Search.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Extra</span><span class="p">,</span> <span class="n">root_validator</span>
+
+<span class="kn">from</span> <span class="nn">langchain.utils</span> <span class="kn">import</span> <span class="n">get_from_dict_or_env</span>
+
+
+<div class="viewcode-block" id="GoogleSearchAPIWrapper"><a class="viewcode-back" href="../../../modules/utilities.html#langchain.utilities.GoogleSearchAPIWrapper">[docs]</a><span class="k">class</span> <span class="nc">GoogleSearchAPIWrapper</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for Google Search API.</span>
+
+<span class="sd">    Adapted from: Instructions adapted from https://stackoverflow.com/questions/</span>
+<span class="sd">    37083058/</span>
+<span class="sd">    programmatically-searching-google-in-python-using-custom-search</span>
+
+<span class="sd">    TODO: DOCS for using it</span>
+<span class="sd">    1. Install google-api-python-client</span>
+<span class="sd">    - If you don&#39;t already have a Google account, sign up.</span>
+<span class="sd">    - If you have never created a Google APIs Console project,</span>
+<span class="sd">    read the Managing Projects page and create a project in the Google API Console.</span>
+<span class="sd">    - Install the library using pip install google-api-python-client</span>
+<span class="sd">    The current version of the library is 2.70.0 at this time</span>
+
+<span class="sd">    2. To create an API key:</span>
+<span class="sd">    - Navigate to the APIs &amp; Services→Credentials panel in Cloud Console.</span>
+<span class="sd">    - Select Create credentials, then select API key from the drop-down menu.</span>
+<span class="sd">    - The API key created dialog box displays your newly created key.</span>
+<span class="sd">    - You now have an API_KEY</span>
+
+<span class="sd">    3. Setup Custom Search Engine so you can search the entire web</span>
+<span class="sd">    - Create a custom search engine in this link.</span>
+<span class="sd">    - In Sites to search, add any valid URL (i.e. www.stackoverflow.com).</span>
+<span class="sd">    - That’s all you have to fill up, the rest doesn’t matter.</span>
+<span class="sd">    In the left-side menu, click Edit search engine → {your search engine name}</span>
+<span class="sd">    → Setup Set Search the entire web to ON. Remove the URL you added from</span>
+<span class="sd">    the list of Sites to search.</span>
+<span class="sd">    - Under Search engine ID you’ll find the search-engine-ID.</span>
+
+<span class="sd">    4. Enable the Custom Search API</span>
+<span class="sd">    - Navigate to the APIs &amp; Services→Dashboard panel in Cloud Console.</span>
+<span class="sd">    - Click Enable APIs and Services.</span>
+<span class="sd">    - Search for Custom Search API and click on it.</span>
+<span class="sd">    - Click Enable.</span>
+<span class="sd">    URL for it: https://console.cloud.google.com/apis/library/customsearch.googleapis</span>
+<span class="sd">    .com</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">search_engine</span><span class="p">:</span> <span class="n">Any</span>  <span class="c1">#: :meta private:</span>
+    <span class="n">google_api_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">google_cse_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">siterestrict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configuration for this pydantic object.&quot;&quot;&quot;</span>
+
+        <span class="n">extra</span> <span class="o">=</span> <span class="n">Extra</span><span class="o">.</span><span class="n">forbid</span>
+
+    <span class="k">def</span> <span class="nf">_google_search_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">search_term</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+        <span class="n">cse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_engine</span><span class="o">.</span><span class="n">cse</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">siterestrict</span><span class="p">:</span>
+            <span class="n">cse</span> <span class="o">=</span> <span class="n">cse</span><span class="o">.</span><span class="n">siterestrict</span><span class="p">()</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">cse</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="n">search_term</span><span class="p">,</span> <span class="n">cx</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">google_cse_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;items&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="nd">@root_validator</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">validate_environment</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate that api key and python package exists in environment.&quot;&quot;&quot;</span>
+        <span class="n">google_api_key</span> <span class="o">=</span> <span class="n">get_from_dict_or_env</span><span class="p">(</span>
+            <span class="n">values</span><span class="p">,</span> <span class="s2">&quot;google_api_key&quot;</span><span class="p">,</span> <span class="s2">&quot;GOOGLE_API_KEY&quot;</span>
+        <span class="p">)</span>
+        <span class="n">values</span><span class="p">[</span><span class="s2">&quot;google_api_key&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">google_api_key</span>
+
+        <span class="n">google_cse_id</span> <span class="o">=</span> <span class="n">get_from_dict_or_env</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="s2">&quot;google_cse_id&quot;</span><span class="p">,</span> <span class="s2">&quot;GOOGLE_CSE_ID&quot;</span><span class="p">)</span>
+        <span class="n">values</span><span class="p">[</span><span class="s2">&quot;google_cse_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">google_cse_id</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">googleapiclient.discovery</span> <span class="kn">import</span> <span class="n">build</span>
+
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="s2">&quot;google-api-python-client is not installed. &quot;</span>
+                <span class="s2">&quot;Please install it with `pip install google-api-python-client`&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">service</span> <span class="o">=</span> <span class="n">build</span><span class="p">(</span><span class="s2">&quot;customsearch&quot;</span><span class="p">,</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="n">developerKey</span><span class="o">=</span><span class="n">google_api_key</span><span class="p">)</span>
+        <span class="n">values</span><span class="p">[</span><span class="s2">&quot;search_engine&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">service</span>
+
+        <span class="k">return</span> <span class="n">values</span>
+
+<div class="viewcode-block" id="GoogleSearchAPIWrapper.run"><a class="viewcode-back" href="../../../modules/utilities.html#langchain.utilities.GoogleSearchAPIWrapper.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run query through GoogleSearch and parse result.&quot;&quot;&quot;</span>
+        <span class="n">snippets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_google_search_results</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;No good Google Search Result was found&quot;</span>
+        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;snippet&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                <span class="n">snippets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;snippet&quot;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">snippets</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GoogleSearchAPIWrapper.results"><a class="viewcode-back" href="../../../modules/utilities.html#langchain.utilities.GoogleSearchAPIWrapper.results">[docs]</a>    <span class="k">def</span> <span class="nf">results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">num_results</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run query through GoogleSearch and return metadata.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query: The query to search for.</span>
+<span class="sd">            num_results: The number of results to return.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of dictionaries with the following keys:</span>
+<span class="sd">                snippet - The description of the result.</span>
+<span class="sd">                title - The title of the result.</span>
+<span class="sd">                link - The link to the result.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">metadata_results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_google_search_results</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">num_results</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[{</span><span class="s2">&quot;Result&quot;</span><span class="p">:</span> <span class="s2">&quot;No good Google Search Result was found&quot;</span><span class="p">}]</span>
+        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+            <span class="n">metadata_result</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;link&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;link&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="s2">&quot;snippet&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                <span class="n">metadata_result</span><span class="p">[</span><span class="s2">&quot;snippet&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;snippet&quot;</span><span class="p">]</span>
+            <span class="n">metadata_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metadata_result</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">metadata_results</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

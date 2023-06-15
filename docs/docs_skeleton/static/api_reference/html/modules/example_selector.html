@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Example Selector &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
+        <script src="../_static/js/mendablesearch.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Models" href="../models.html" />
+    <link rel="prev" title="Prompt Templates" href="prompts.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../model_io.html">Model I/O</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../prompts.html">Prompts</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="prompts.html">Prompt Templates</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Example Selector</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_parsers.html">Output Parsers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../model_io.html">Model I/O</a></li>
+          <li class="breadcrumb-item"><a href="../prompts.html">Prompts</a></li>
+      <li class="breadcrumb-item active">Example Selector</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/hwchase17/langchain/blob/master/docs/api_referencemodules/example_selector.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-langchain.prompts.example_selector">
+<span id="example-selector"></span><h1>Example Selector<a class="headerlink" href="#module-langchain.prompts.example_selector" title="Permalink to this headline"></a></h1>
+<p>Logic for selecting examples to include in prompts.</p>
+<dl class="py class pydantic_model">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.LengthBasedExampleSelector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.prompts.example_selector.</span></span><span class="sig-name descname"><span class="pre">LengthBasedExampleSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_prompt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">get_text_length=&lt;function</span> <span class="pre">_get_length_based&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length=2048</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_text_lengths=[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/prompts/example_selector/length_based.html#LengthBasedExampleSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.prompts.example_selector.LengthBasedExampleSelector" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.prompts.example_selector.base.BaseExampleSelector</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">pydantic.main.BaseModel</span></code></p>
+<p>Select examples based on length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>examples</strong> (<em>List</em><em>[</em><em>dict</em><em>]</em>) – </p></li>
+<li><p><strong>example_prompt</strong> (<a class="reference internal" href="prompts.html#langchain.prompts.PromptTemplate" title="langchain.prompts.prompt.PromptTemplate"><em>langchain.prompts.prompt.PromptTemplate</em></a>) – </p></li>
+<li><p><strong>get_text_length</strong> (<em>Callable</em><em>[</em><em>[</em><em>str</em><em>]</em><em>, </em><em>int</em><em>]</em>) – </p></li>
+<li><p><strong>max_length</strong> (<em>int</em>) – </p></li>
+<li><p><strong>example_text_lengths</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.LengthBasedExampleSelector.example_prompt">
+<em class="property"><span class="pre">attribute</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">example_prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="prompts.html#langchain.prompts.PromptTemplate" title="langchain.prompts.prompt.PromptTemplate"><span class="pre">langchain.prompts.prompt.PromptTemplate</span></a></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#langchain.prompts.example_selector.LengthBasedExampleSelector.example_prompt" title="Permalink to this definition"></a></dt>
+<dd><p>Prompt template used to format the examples.</p>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.LengthBasedExampleSelector.examples">
+<em class="property"><span class="pre">attribute</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">examples</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#langchain.prompts.example_selector.LengthBasedExampleSelector.examples" title="Permalink to this definition"></a></dt>
+<dd><p>A list of the examples that the prompt template expects.</p>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.LengthBasedExampleSelector.get_text_length">
+<em class="property"><span class="pre">attribute</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_text_length</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;function</span> <span class="pre">_get_length_based&gt;</span></em><a class="headerlink" href="#langchain.prompts.example_selector.LengthBasedExampleSelector.get_text_length" title="Permalink to this definition"></a></dt>
+<dd><p>Function to measure prompt length. Defaults to word count.</p>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.LengthBasedExampleSelector.max_length">
+<em class="property"><span class="pre">attribute</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_length</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2048</span></em><a class="headerlink" href="#langchain.prompts.example_selector.LengthBasedExampleSelector.max_length" title="Permalink to this definition"></a></dt>
+<dd><p>Max length for the prompt, beyond which examples are cut.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.LengthBasedExampleSelector.add_example">
+<span class="sig-name descname"><span class="pre">add_example</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">example</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/prompts/example_selector/length_based.html#LengthBasedExampleSelector.add_example"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.prompts.example_selector.LengthBasedExampleSelector.add_example" title="Permalink to this definition"></a></dt>
+<dd><p>Add new example to list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>example</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.LengthBasedExampleSelector.select_examples">
+<span class="sig-name descname"><span class="pre">select_examples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variables</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/prompts/example_selector/length_based.html#LengthBasedExampleSelector.select_examples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.prompts.example_selector.LengthBasedExampleSelector.select_examples" title="Permalink to this definition"></a></dt>
+<dd><p>Select which examples to use based on the input lengths.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>input_variables</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class pydantic_model">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.SemanticSimilarityExampleSelector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.prompts.example_selector.</span></span><span class="sig-name descname"><span class="pre">SemanticSimilarityExampleSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorstore</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/prompts/example_selector/semantic_similarity.html#SemanticSimilarityExampleSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.prompts.example_selector.SemanticSimilarityExampleSelector" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.prompts.example_selector.base.BaseExampleSelector</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">pydantic.main.BaseModel</span></code></p>
+<p>Example selector that selects examples based on SemanticSimilarity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vectorstore</strong> (<a class="reference internal" href="vectorstores.html#langchain.vectorstores.VectorStore" title="langchain.vectorstores.base.VectorStore"><em>langchain.vectorstores.base.VectorStore</em></a>) – </p></li>
+<li><p><strong>k</strong> (<em>int</em>) – </p></li>
+<li><p><strong>example_keys</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>input_keys</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.SemanticSimilarityExampleSelector.example_keys">
+<em class="property"><span class="pre">attribute</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">example_keys</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#langchain.prompts.example_selector.SemanticSimilarityExampleSelector.example_keys" title="Permalink to this definition"></a></dt>
+<dd><p>Optional keys to filter examples to.</p>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.SemanticSimilarityExampleSelector.input_keys">
+<em class="property"><span class="pre">attribute</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_keys</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#langchain.prompts.example_selector.SemanticSimilarityExampleSelector.input_keys" title="Permalink to this definition"></a></dt>
+<dd><p>Optional keys to filter input to. If provided, the search is based on
+the input variables instead of all variables.</p>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.SemanticSimilarityExampleSelector.k">
+<em class="property"><span class="pre">attribute</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">k</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#langchain.prompts.example_selector.SemanticSimilarityExampleSelector.k" title="Permalink to this definition"></a></dt>
+<dd><p>Number of examples to select.</p>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.SemanticSimilarityExampleSelector.vectorstore">
+<em class="property"><span class="pre">attribute</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vectorstore</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="vectorstores.html#langchain.vectorstores.VectorStore" title="langchain.vectorstores.base.VectorStore"><span class="pre">langchain.vectorstores.base.VectorStore</span></a></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#langchain.prompts.example_selector.SemanticSimilarityExampleSelector.vectorstore" title="Permalink to this definition"></a></dt>
+<dd><p>VectorStore than contains information about examples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.SemanticSimilarityExampleSelector.add_example">
+<span class="sig-name descname"><span class="pre">add_example</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">example</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/prompts/example_selector/semantic_similarity.html#SemanticSimilarityExampleSelector.add_example"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.prompts.example_selector.SemanticSimilarityExampleSelector.add_example" title="Permalink to this definition"></a></dt>
+<dd><p>Add new example to vectorstore.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>example</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.SemanticSimilarityExampleSelector.from_examples">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_examples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embeddings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorstore_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">vectorstore_cls_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/prompts/example_selector/semantic_similarity.html#SemanticSimilarityExampleSelector.from_examples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.prompts.example_selector.SemanticSimilarityExampleSelector.from_examples" title="Permalink to this definition"></a></dt>
+<dd><p>Create k-shot example selector using example list and embeddings.</p>
+<p>Reshuffles examples dynamically based on query similarity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>examples</strong> (<em>List</em><em>[</em><em>dict</em><em>]</em>) – List of examples to use in the prompt.</p></li>
+<li><p><strong>embeddings</strong> (<em>langchain.embeddings.base.Embeddings</em>) – An initialized embedding API interface, e.g. OpenAIEmbeddings().</p></li>
+<li><p><strong>vectorstore_cls</strong> (<em>Type</em><em>[</em><a class="reference internal" href="vectorstores.html#langchain.vectorstores.VectorStore" title="langchain.vectorstores.base.VectorStore"><em>langchain.vectorstores.base.VectorStore</em></a><em>]</em>) – A vector store DB interface class, e.g. FAISS.</p></li>
+<li><p><strong>k</strong> (<em>int</em>) – Number of examples to select</p></li>
+<li><p><strong>input_keys</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – If provided, the search is based on the input variables
+instead of all variables.</p></li>
+<li><p><strong>vectorstore_cls_kwargs</strong> (<em>Any</em>) – optional kwargs containing url for vector store</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The ExampleSelector instantiated, backed by a vector store.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#langchain.prompts.example_selector.SemanticSimilarityExampleSelector" title="langchain.prompts.example_selector.semantic_similarity.SemanticSimilarityExampleSelector">langchain.prompts.example_selector.semantic_similarity.SemanticSimilarityExampleSelector</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.SemanticSimilarityExampleSelector.select_examples">
+<span class="sig-name descname"><span class="pre">select_examples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variables</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/prompts/example_selector/semantic_similarity.html#SemanticSimilarityExampleSelector.select_examples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.prompts.example_selector.SemanticSimilarityExampleSelector.select_examples" title="Permalink to this definition"></a></dt>
+<dd><p>Select which examples to use based on semantic similarity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>input_variables</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class pydantic_model">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.MaxMarginalRelevanceExampleSelector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.prompts.example_selector.</span></span><span class="sig-name descname"><span class="pre">MaxMarginalRelevanceExampleSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorstore</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch_k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/prompts/example_selector/semantic_similarity.html#MaxMarginalRelevanceExampleSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.prompts.example_selector.MaxMarginalRelevanceExampleSelector" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#langchain.prompts.example_selector.SemanticSimilarityExampleSelector" title="langchain.prompts.example_selector.semantic_similarity.SemanticSimilarityExampleSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.prompts.example_selector.semantic_similarity.SemanticSimilarityExampleSelector</span></code></a></p>
+<p>ExampleSelector that selects examples based on Max Marginal Relevance.</p>
+<p>This was shown to improve performance in this paper:
+<a class="reference external" href="https://arxiv.org/pdf/2211.13892.pdf">https://arxiv.org/pdf/2211.13892.pdf</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vectorstore</strong> (<a class="reference internal" href="vectorstores.html#langchain.vectorstores.VectorStore" title="langchain.vectorstores.base.VectorStore"><em>langchain.vectorstores.base.VectorStore</em></a>) – </p></li>
+<li><p><strong>k</strong> (<em>int</em>) – </p></li>
+<li><p><strong>example_keys</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>input_keys</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>fetch_k</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.MaxMarginalRelevanceExampleSelector.fetch_k">
+<em class="property"><span class="pre">attribute</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fetch_k</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">20</span></em><a class="headerlink" href="#langchain.prompts.example_selector.MaxMarginalRelevanceExampleSelector.fetch_k" title="Permalink to this definition"></a></dt>
+<dd><p>Number of examples to fetch to rerank.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.MaxMarginalRelevanceExampleSelector.from_examples">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_examples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embeddings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorstore_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch_k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">vectorstore_cls_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/prompts/example_selector/semantic_similarity.html#MaxMarginalRelevanceExampleSelector.from_examples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.prompts.example_selector.MaxMarginalRelevanceExampleSelector.from_examples" title="Permalink to this definition"></a></dt>
+<dd><p>Create k-shot example selector using example list and embeddings.</p>
+<p>Reshuffles examples dynamically based on query similarity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>examples</strong> (<em>List</em><em>[</em><em>dict</em><em>]</em>) – List of examples to use in the prompt.</p></li>
+<li><p><strong>embeddings</strong> (<em>langchain.embeddings.base.Embeddings</em>) – An iniialized embedding API interface, e.g. OpenAIEmbeddings().</p></li>
+<li><p><strong>vectorstore_cls</strong> (<em>Type</em><em>[</em><a class="reference internal" href="vectorstores.html#langchain.vectorstores.VectorStore" title="langchain.vectorstores.base.VectorStore"><em>langchain.vectorstores.base.VectorStore</em></a><em>]</em>) – A vector store DB interface class, e.g. FAISS.</p></li>
+<li><p><strong>k</strong> (<em>int</em>) – Number of examples to select</p></li>
+<li><p><strong>input_keys</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – If provided, the search is based on the input variables
+instead of all variables.</p></li>
+<li><p><strong>vectorstore_cls_kwargs</strong> (<em>Any</em>) – optional kwargs containing url for vector store</p></li>
+<li><p><strong>fetch_k</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The ExampleSelector instantiated, backed by a vector store.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#langchain.prompts.example_selector.MaxMarginalRelevanceExampleSelector" title="langchain.prompts.example_selector.semantic_similarity.MaxMarginalRelevanceExampleSelector">langchain.prompts.example_selector.semantic_similarity.MaxMarginalRelevanceExampleSelector</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.prompts.example_selector.MaxMarginalRelevanceExampleSelector.select_examples">
+<span class="sig-name descname"><span class="pre">select_examples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variables</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/prompts/example_selector/semantic_similarity.html#MaxMarginalRelevanceExampleSelector.select_examples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.prompts.example_selector.MaxMarginalRelevanceExampleSelector.select_examples" title="Permalink to this definition"></a></dt>
+<dd><p>Select which examples to use based on semantic similarity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>input_variables</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="prompts.html" class="btn btn-neutral float-left" title="Prompt Templates" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../models.html" class="btn btn-neutral float-right" title="Models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

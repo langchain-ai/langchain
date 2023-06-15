@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.experimental.generative_agents.generative_agent &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/clipboard.min.js"></script>
+        <script src="../../../../_static/copybutton.js"></script>
+        <script src="../../../../_static/tabs.js"></script>
+        <script src="../../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.experimental.generative_agents.generative_agent</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.experimental.generative_agents.generative_agent</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span> <span class="nn">langchain</span> <span class="kn">import</span> <span class="n">LLMChain</span>
+<span class="kn">from</span> <span class="nn">langchain.base_language</span> <span class="kn">import</span> <span class="n">BaseLanguageModel</span>
+<span class="kn">from</span> <span class="nn">langchain.experimental.generative_agents.memory</span> <span class="kn">import</span> <span class="n">GenerativeAgentMemory</span>
+<span class="kn">from</span> <span class="nn">langchain.prompts</span> <span class="kn">import</span> <span class="n">PromptTemplate</span>
+
+
+<div class="viewcode-block" id="GenerativeAgent"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgent">[docs]</a><span class="k">class</span> <span class="nc">GenerativeAgent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A character with memory and innate characteristics.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The character&#39;s name.&quot;&quot;&quot;</span>
+
+    <span class="n">age</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The optional age of the character.&quot;&quot;&quot;</span>
+    <span class="n">traits</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;N/A&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Permanent traits to ascribe to the character.&quot;&quot;&quot;</span>
+    <span class="n">status</span><span class="p">:</span> <span class="nb">str</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The traits of the character you wish not to change.&quot;&quot;&quot;</span>
+    <span class="n">memory</span><span class="p">:</span> <span class="n">GenerativeAgentMemory</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The memory object that combines relevance, recency, and &#39;importance&#39;.&quot;&quot;&quot;</span>
+    <span class="n">llm</span><span class="p">:</span> <span class="n">BaseLanguageModel</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The underlying language model.&quot;&quot;&quot;</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">summary</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>  <span class="c1">#: :meta private:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stateful self-summary generated via reflection on the character&#39;s memory.&quot;&quot;&quot;</span>
+
+    <span class="n">summary_refresh_seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3600</span>  <span class="c1">#: :meta private:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;How frequently to re-generate the summary.&quot;&quot;&quot;</span>
+
+    <span class="n">last_refreshed</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>  <span class="c1"># : :meta private:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The last time the character&#39;s summary was regenerated.&quot;&quot;&quot;</span>
+
+    <span class="n">daily_summaries</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>  <span class="c1"># : :meta private:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Summary of the events in the plan that the agent took.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GenerativeAgent.Config"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgent.Config">[docs]</a>    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configuration for this pydantic object.&quot;&quot;&quot;</span>
+
+        <span class="n">arbitrary_types_allowed</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+    <span class="c1"># LLM-related methods</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_parse_list</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse a newline-separated string into a list of strings.&quot;&quot;&quot;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\n&quot;</span><span class="p">,</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^\s*\d+\.\s*&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">chain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="n">PromptTemplate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LLMChain</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">LLMChain</span><span class="p">(</span>
+            <span class="n">llm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span> <span class="n">memory</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_entity_from_observation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span>
+            <span class="s2">&quot;What is the observed entity in the following observation? </span><span class="si">{observation}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Entity=&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">observation</span><span class="o">=</span><span class="n">observation</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_entity_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span>
+            <span class="s2">&quot;What is the </span><span class="si">{entity}</span><span class="s2"> doing in the following observation? </span><span class="si">{observation}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The </span><span class="si">{entity}</span><span class="s2"> is&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">entity</span><span class="o">=</span><span class="n">entity_name</span><span class="p">,</span> <span class="n">observation</span><span class="o">=</span><span class="n">observation</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="GenerativeAgent.summarize_related_memories"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgent.summarize_related_memories">[docs]</a>    <span class="k">def</span> <span class="nf">summarize_related_memories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Summarize memories that are most relevant to an observation.&quot;&quot;&quot;</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{q1}?</span>
+<span class="sd">Context from memory:</span>
+<span class="sd">{relevant_memories}</span>
+<span class="sd">Relevant context: </span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="p">)</span>
+        <span class="n">entity_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_entity_from_observation</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span>
+        <span class="n">entity_action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_entity_action</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">)</span>
+        <span class="n">q1</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;What is the relationship between </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">entity_name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">q2</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">entity_name</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">entity_action</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">q1</span><span class="o">=</span><span class="n">q1</span><span class="p">,</span> <span class="n">queries</span><span class="o">=</span><span class="p">[</span><span class="n">q1</span><span class="p">,</span> <span class="n">q2</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_generate_reaction</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">suffix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;React to a given observation or dialogue act.&quot;&quot;&quot;</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="si">{agent_summary_description}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">It is </span><span class="si">{current_time}</span><span class="s2">.&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="si">{agent_name}</span><span class="s2">&#39;s status: </span><span class="si">{agent_status}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Summary of relevant context from </span><span class="si">{agent_name}</span><span class="s2">&#39;s memory:&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="si">{relevant_memories}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Most recent observations: </span><span class="si">{most_recent_memories}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Observation: </span><span class="si">{observation}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="n">suffix</span>
+        <span class="p">)</span>
+        <span class="n">agent_summary_description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_summary</span><span class="p">(</span><span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+        <span class="n">relevant_memories_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summarize_related_memories</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span>
+        <span class="n">current_time_str</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%B </span><span class="si">%d</span><span class="s2">, %Y, %I:%M %p&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%B </span><span class="si">%d</span><span class="s2">, %Y, %I:%M %p&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">agent_summary_description</span><span class="o">=</span><span class="n">agent_summary_description</span><span class="p">,</span>
+            <span class="n">current_time</span><span class="o">=</span><span class="n">current_time_str</span><span class="p">,</span>
+            <span class="n">relevant_memories</span><span class="o">=</span><span class="n">relevant_memories_str</span><span class="p">,</span>
+            <span class="n">agent_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">observation</span><span class="o">=</span><span class="n">observation</span><span class="p">,</span>
+            <span class="n">agent_status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">consumed_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">get_num_tokens</span><span class="p">(</span>
+            <span class="n">prompt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">most_recent_memories</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">most_recent_memories_token_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">consumed_tokens</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_clean_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;^</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+<div class="viewcode-block" id="GenerativeAgent.generate_reaction"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgent.generate_reaction">[docs]</a>    <span class="k">def</span> <span class="nf">generate_reaction</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;React to a given observation.&quot;&quot;&quot;</span>
+        <span class="n">call_to_action_template</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;Should </span><span class="si">{agent_name}</span><span class="s2"> react to the observation, and if so,&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; what would be an appropriate reaction? Respond in one line.&quot;</span>
+            <span class="o">+</span> <span class="s1">&#39; If the action is to engage in dialogue, write:</span><span class="se">\n</span><span class="s1">SAY: &quot;what to say&quot;&#39;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">otherwise, write:</span><span class="se">\n</span><span class="s2">REACT: </span><span class="si">{agent_name}</span><span class="s2">&#39;s reaction (if anything).&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Either do nothing, react, or say something but not both.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">full_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_reaction</span><span class="p">(</span>
+            <span class="n">observation</span><span class="p">,</span> <span class="n">call_to_action_template</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">full_result</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># AAA</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">save_context</span><span class="p">(</span>
+            <span class="p">{},</span>
+            <span class="p">{</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">add_memory_key</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> observed &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">observation</span><span class="si">}</span><span class="s2"> and reacted by </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">now_key</span><span class="p">:</span> <span class="n">now</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;REACT:&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">reaction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clean_response</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;REACT:&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">reaction</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;SAY:&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">said_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clean_response</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;SAY:&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> said </span><span class="si">{</span><span class="n">said_value</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="GenerativeAgent.generate_dialogue_response"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgent.generate_dialogue_response">[docs]</a>    <span class="k">def</span> <span class="nf">generate_dialogue_response</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;React to a given observation.&quot;&quot;&quot;</span>
+        <span class="n">call_to_action_template</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;What would </span><span class="si">{agent_name}</span><span class="s2"> say? To end the conversation, write:&quot;</span>
+            <span class="s1">&#39; GOODBYE: &quot;what to say&quot;. Otherwise to continue the conversation,&#39;</span>
+            <span class="s1">&#39; write: SAY: &quot;what to say next&quot;</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+        <span class="n">full_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_reaction</span><span class="p">(</span>
+            <span class="n">observation</span><span class="p">,</span> <span class="n">call_to_action_template</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">full_result</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;GOODBYE:&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">farewell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clean_response</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;GOODBYE:&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">save_context</span><span class="p">(</span>
+                <span class="p">{},</span>
+                <span class="p">{</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">add_memory_key</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> observed &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">observation</span><span class="si">}</span><span class="s2"> and said </span><span class="si">{</span><span class="n">farewell</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">now_key</span><span class="p">:</span> <span class="n">now</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> said </span><span class="si">{</span><span class="n">farewell</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;SAY:&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">response_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clean_response</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;SAY:&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">save_context</span><span class="p">(</span>
+                <span class="p">{},</span>
+                <span class="p">{</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">add_memory_key</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> observed &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">observation</span><span class="si">}</span><span class="s2"> and said </span><span class="si">{</span><span class="n">response_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">now_key</span><span class="p">:</span> <span class="n">now</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> said </span><span class="si">{</span><span class="n">response_text</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">result</span></div>
+
+    <span class="c1">######################################################</span>
+    <span class="c1"># Agent stateful&#39; summary methods.                   #</span>
+    <span class="c1"># Each dialog or response prompt includes a header   #</span>
+    <span class="c1"># summarizing the agent&#39;s self-description. This is  #</span>
+    <span class="c1"># updated periodically through probing its memories  #</span>
+    <span class="c1">######################################################</span>
+    <span class="k">def</span> <span class="nf">_compute_agent_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span>
+            <span class="s2">&quot;How would you summarize </span><span class="si">{name}</span><span class="s2">&#39;s core characteristics given the&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; following statements:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{relevant_memories}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;Do not embellish.&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Summary: &quot;</span>
+        <span class="p">)</span>
+        <span class="c1"># The agent seeks to think about their core characteristics.</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">queries</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;s core characteristics&quot;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="GenerativeAgent.get_summary"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgent.get_summary">[docs]</a>    <span class="k">def</span> <span class="nf">get_summary</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">force_refresh</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a descriptive summary of the agent.&quot;&quot;&quot;</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">now</span>
+        <span class="n">since_refresh</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_refreshed</span><span class="p">)</span><span class="o">.</span><span class="n">seconds</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary</span>
+            <span class="ow">or</span> <span class="n">since_refresh</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_refresh_seconds</span>
+            <span class="ow">or</span> <span class="n">force_refresh</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_agent_summary</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_refreshed</span> <span class="o">=</span> <span class="n">current_time</span>
+        <span class="n">age</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Name: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (age: </span><span class="si">{</span><span class="n">age</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Innate traits: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="GenerativeAgent.get_full_header"><a class="viewcode-back" href="../../../../modules/experimental.html#langchain.experimental.GenerativeAgent.get_full_header">[docs]</a>    <span class="k">def</span> <span class="nf">get_full_header</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">force_refresh</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a full header of the agent&#39;s status, summary, and current time.&quot;&quot;&quot;</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">now</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_summary</span><span class="p">(</span><span class="n">force_refresh</span><span class="o">=</span><span class="n">force_refresh</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+        <span class="n">current_time_str</span> <span class="o">=</span> <span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%B </span><span class="si">%d</span><span class="s2">, %Y, %I:%M %p&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="se">\n</span><span class="s2">It is </span><span class="si">{</span><span class="n">current_time_str</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;s status: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

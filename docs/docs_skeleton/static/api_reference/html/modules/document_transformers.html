@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document Transformers &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
+        <script src="../_static/js/mendablesearch.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Embeddings" href="embeddings.html" />
+    <link rel="prev" title="Document Loaders" href="document_loaders.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../model_io.html">Model I/O</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../data_connection.html">Data connection</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="document_loaders.html">Document Loaders</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Document Transformers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-langchain.text_splitter">Text Splitters</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="embeddings.html">Embeddings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vectorstores.html">Vector Stores</a></li>
+<li class="toctree-l2"><a class="reference internal" href="retrievers.html">Retrievers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../data_connection.html">Data connection</a></li>
+      <li class="breadcrumb-item active">Document Transformers</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/hwchase17/langchain/blob/master/docs/api_referencemodules/document_transformers.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-langchain.document_transformers">
+<span id="document-transformers"></span><h1>Document Transformers<a class="headerlink" href="#module-langchain.document_transformers" title="Permalink to this headline"></a></h1>
+<p>Transform documents</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="langchain.document_transformers.get_stateful_documents">
+<span class="sig-prename descclassname"><span class="pre">langchain.document_transformers.</span></span><span class="sig-name descname"><span class="pre">get_stateful_documents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">documents</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/document_transformers.html#get_stateful_documents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.document_transformers.get_stateful_documents" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>documents</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document"><em>langchain.schema.Document</em></a><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>Sequence</em>[langchain.document_transformers._DocumentWithState]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class pydantic_model">
+<dt class="sig sig-object py" id="langchain.document_transformers.EmbeddingsRedundantFilter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.document_transformers.</span></span><span class="sig-name descname"><span class="pre">EmbeddingsRedundantFilter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embeddings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">similarity_fn=&lt;function</span> <span class="pre">cosine_similarity&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">similarity_threshold=0.95</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/document_transformers.html#EmbeddingsRedundantFilter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.document_transformers.EmbeddingsRedundantFilter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="base_classes.html#langchain.schema.BaseDocumentTransformer" title="langchain.schema.BaseDocumentTransformer"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.schema.BaseDocumentTransformer</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">pydantic.main.BaseModel</span></code></p>
+<p>Filter that drops redundant documents by comparing their embeddings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>embeddings</strong> (<em>langchain.embeddings.base.Embeddings</em>) – </p></li>
+<li><p><strong>similarity_fn</strong> (<em>Callable</em>) – </p></li>
+<li><p><strong>similarity_threshold</strong> (<em>float</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="langchain.document_transformers.EmbeddingsRedundantFilter.embeddings">
+<em class="property"><span class="pre">attribute</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">embeddings</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">langchain.embeddings.base.Embeddings</span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#langchain.document_transformers.EmbeddingsRedundantFilter.embeddings" title="Permalink to this definition"></a></dt>
+<dd><p>Embeddings to use for embedding document contents.</p>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="langchain.document_transformers.EmbeddingsRedundantFilter.similarity_fn">
+<em class="property"><span class="pre">attribute</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">similarity_fn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Callable</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;function</span> <span class="pre">cosine_similarity&gt;</span></em><a class="headerlink" href="#langchain.document_transformers.EmbeddingsRedundantFilter.similarity_fn" title="Permalink to this definition"></a></dt>
+<dd><p>Similarity function for comparing documents. Function expected to take as input
+two matrices (List[List[float]]) and return a matrix of scores where higher values
+indicate greater similarity.</p>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="langchain.document_transformers.EmbeddingsRedundantFilter.similarity_threshold">
+<em class="property"><span class="pre">attribute</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">similarity_threshold</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.95</span></em><a class="headerlink" href="#langchain.document_transformers.EmbeddingsRedundantFilter.similarity_threshold" title="Permalink to this definition"></a></dt>
+<dd><p>Threshold for determining when two documents are similar enough
+to be considered redundant.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.document_transformers.EmbeddingsRedundantFilter.atransform_documents">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">atransform_documents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">documents</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/document_transformers.html#EmbeddingsRedundantFilter.atransform_documents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.document_transformers.EmbeddingsRedundantFilter.atransform_documents" title="Permalink to this definition"></a></dt>
+<dd><p>Asynchronously transform a list of documents.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>documents</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document"><em>langchain.schema.Document</em></a><em>]</em>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>Sequence</em>[<a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document">langchain.schema.Document</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.document_transformers.EmbeddingsRedundantFilter.transform_documents">
+<span class="sig-name descname"><span class="pre">transform_documents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">documents</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/document_transformers.html#EmbeddingsRedundantFilter.transform_documents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.document_transformers.EmbeddingsRedundantFilter.transform_documents" title="Permalink to this definition"></a></dt>
+<dd><p>Filter down documents.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>documents</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document"><em>langchain.schema.Document</em></a><em>]</em>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>Sequence</em>[<a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document">langchain.schema.Document</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="module-langchain.text_splitter">
+<span id="text-splitters"></span><h2>Text Splitters<a class="headerlink" href="#module-langchain.text_splitter" title="Permalink to this headline"></a></h2>
+<p>Functionality for splitting text.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.TextCombiner">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">TextCombiner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chunk_size=4000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_overlap=200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_function=&lt;built-in</span> <span class="pre">function</span> <span class="pre">len&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_separator=False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#TextCombiner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.TextCombiner" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="base_classes.html#langchain.schema.BaseDocumentTransformer" title="langchain.schema.BaseDocumentTransformer"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.schema.BaseDocumentTransformer</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chunk_size</strong> (<em>int</em>) – </p></li>
+<li><p><strong>chunk_overlap</strong> (<em>int</em>) – </p></li>
+<li><p><strong>length_function</strong> (<em>Callable</em><em>[</em><em>[</em><em>str</em><em>]</em><em>, </em><em>int</em><em>]</em>) – </p></li>
+<li><p><strong>keep_separator</strong> (<em>bool</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.TextCombiner.combine_texts">
+<span class="sig-name descname"><span class="pre">combine_texts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadatas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#TextCombiner.combine_texts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.TextCombiner.combine_texts" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>texts</strong> (<em>Iterable</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>metadatas</strong> (<em>Optional</em><em>[</em><em>Iterable</em><em>[</em><em>dict</em><em>]</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[<a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document">langchain.schema.Document</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.TextSplitter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">TextSplitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chunk_size=4000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_overlap=200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_function=&lt;built-in</span> <span class="pre">function</span> <span class="pre">len&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_separator=False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#TextSplitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.TextSplitter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="base_classes.html#langchain.schema.BaseDocumentTransformer" title="langchain.schema.BaseDocumentTransformer"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.schema.BaseDocumentTransformer</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>Interface for splitting text into chunks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chunk_size</strong> (<em>int</em>) – </p></li>
+<li><p><strong>chunk_overlap</strong> (<em>int</em>) – </p></li>
+<li><p><strong>length_function</strong> (<em>Callable</em><em>[</em><em>[</em><em>str</em><em>]</em><em>, </em><em>int</em><em>]</em>) – </p></li>
+<li><p><strong>keep_separator</strong> (<em>bool</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.TextSplitter.split_text">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">split_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#TextSplitter.split_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.TextSplitter.split_text" title="Permalink to this definition"></a></dt>
+<dd><p>Split text into multiple components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text</strong> (<em>str</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.TextSplitter.create_documents">
+<span class="sig-name descname"><span class="pre">create_documents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadatas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#TextSplitter.create_documents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.TextSplitter.create_documents" title="Permalink to this definition"></a></dt>
+<dd><p>Create documents from a list of texts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>texts</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>metadatas</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>dict</em><em>]</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[<a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document">langchain.schema.Document</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.TextSplitter.split_documents">
+<span class="sig-name descname"><span class="pre">split_documents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">documents</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#TextSplitter.split_documents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.TextSplitter.split_documents" title="Permalink to this definition"></a></dt>
+<dd><p>Split documents.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>documents</strong> (<em>Iterable</em><em>[</em><a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document"><em>langchain.schema.Document</em></a><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[<a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document">langchain.schema.Document</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.TextSplitter.from_huggingface_tokenizer">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_huggingface_tokenizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#TextSplitter.from_huggingface_tokenizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.TextSplitter.from_huggingface_tokenizer" title="Permalink to this definition"></a></dt>
+<dd><p>Text splitter that uses HuggingFace tokenizer to count length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tokenizer</strong> (<em>Any</em>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#langchain.text_splitter.TextSplitter" title="langchain.text_splitter.TextSplitter">langchain.text_splitter.TextSplitter</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.TextSplitter.from_tiktoken_encoder">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_tiktoken_encoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoding_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gpt2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_special</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disallowed_special</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#TextSplitter.from_tiktoken_encoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.TextSplitter.from_tiktoken_encoder" title="Permalink to this definition"></a></dt>
+<dd><p>Text splitter that uses tiktoken encoder to count length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>encoding_name</strong> (<em>str</em>) – </p></li>
+<li><p><strong>model_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>allowed_special</strong> (<em>Union</em><em>[</em><em>Literal</em><em>[</em><em>'all'</em><em>]</em><em>, </em><em>typing.AbstractSet</em><em>[</em><em>str</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>disallowed_special</strong> (<em>Union</em><em>[</em><em>Literal</em><em>[</em><em>'all'</em><em>]</em><em>, </em><em>typing.Collection</em><em>[</em><em>str</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>langchain.text_splitter.TS</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.TextSplitter.transform_documents">
+<span class="sig-name descname"><span class="pre">transform_documents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">documents</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#TextSplitter.transform_documents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.TextSplitter.transform_documents" title="Permalink to this definition"></a></dt>
+<dd><p>Transform sequence of documents by splitting them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>documents</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document"><em>langchain.schema.Document</em></a><em>]</em>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>Sequence</em>[<a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document">langchain.schema.Document</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.TextSplitter.atransform_documents">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">atransform_documents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">documents</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#TextSplitter.atransform_documents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.TextSplitter.atransform_documents" title="Permalink to this definition"></a></dt>
+<dd><p>Asynchronously transform a sequence of documents by splitting them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>documents</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document"><em>langchain.schema.Document</em></a><em>]</em>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>Sequence</em>[<a class="reference internal" href="base_classes.html#langchain.schema.Document" title="langchain.schema.Document">langchain.schema.Document</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.CharacterTextSplitter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">CharacterTextSplitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\n\n'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#CharacterTextSplitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.CharacterTextSplitter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#langchain.text_splitter.TextSplitter" title="langchain.text_splitter.TextSplitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.text_splitter.TextSplitter</span></code></a></p>
+<p>Implementation of splitting text that looks at characters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>separator</strong> (<em>str</em>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.CharacterTextSplitter.split_text">
+<span class="sig-name descname"><span class="pre">split_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#CharacterTextSplitter.split_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.CharacterTextSplitter.split_text" title="Permalink to this definition"></a></dt>
+<dd><p>Split incoming text and return chunks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text</strong> (<em>str</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.Tokenizer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">Tokenizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chunk_overlap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'int'</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokens_per_chunk</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'int'</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'Callable[[list[int]],</span> <span class="pre">str]'</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'Callable[[str],</span> <span class="pre">List[int]]'</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#Tokenizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.Tokenizer" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chunk_overlap</strong> (<em>int</em>) – </p></li>
+<li><p><strong>tokens_per_chunk</strong> (<em>int</em>) – </p></li>
+<li><p><strong>decode</strong> (<em>Callable</em><em>[</em><em>[</em><em>list</em><em>[</em><em>int</em><em>]</em><em>]</em><em>, </em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>encode</strong> (<em>Callable</em><em>[</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Tokenizer.chunk_overlap">
+<span class="sig-name descname"><span class="pre">chunk_overlap</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#langchain.text_splitter.Tokenizer.chunk_overlap" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Tokenizer.tokens_per_chunk">
+<span class="sig-name descname"><span class="pre">tokens_per_chunk</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#langchain.text_splitter.Tokenizer.tokens_per_chunk" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Tokenizer.decode">
+<span class="sig-name descname"><span class="pre">decode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#langchain.text_splitter.Tokenizer.decode" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Tokenizer.encode">
+<span class="sig-name descname"><span class="pre">encode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#langchain.text_splitter.Tokenizer.encode" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="langchain.text_splitter.split_text_on_tokens">
+<span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">split_text_on_tokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#split_text_on_tokens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.split_text_on_tokens" title="Permalink to this definition"></a></dt>
+<dd><p>Split incoming text and return chunks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<em>str</em>) – </p></li>
+<li><p><strong>tokenizer</strong> (<a class="reference internal" href="#langchain.text_splitter.Tokenizer" title="langchain.text_splitter.Tokenizer"><em>langchain.text_splitter.Tokenizer</em></a>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.TokenTextSplitter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">TokenTextSplitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoding_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gpt2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_special</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disallowed_special</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#TokenTextSplitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.TokenTextSplitter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#langchain.text_splitter.TextSplitter" title="langchain.text_splitter.TextSplitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.text_splitter.TextSplitter</span></code></a></p>
+<p>Implementation of splitting text that looks at tokens.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>encoding_name</strong> (<em>str</em>) – </p></li>
+<li><p><strong>model_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>allowed_special</strong> (<em>Union</em><em>[</em><em>Literal</em><em>[</em><em>'all'</em><em>]</em><em>, </em><em>AbstractSet</em><em>[</em><em>str</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>disallowed_special</strong> (<em>Union</em><em>[</em><em>Literal</em><em>[</em><em>'all'</em><em>]</em><em>, </em><em>Collection</em><em>[</em><em>str</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.TokenTextSplitter.split_text">
+<span class="sig-name descname"><span class="pre">split_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#TokenTextSplitter.split_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.TokenTextSplitter.split_text" title="Permalink to this definition"></a></dt>
+<dd><p>Split text into multiple components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text</strong> (<em>str</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.SentenceTransformersTokenTextSplitter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">SentenceTransformersTokenTextSplitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chunk_overlap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sentence-transformers/all-mpnet-base-v2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokens_per_chunk</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#SentenceTransformersTokenTextSplitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.SentenceTransformersTokenTextSplitter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#langchain.text_splitter.TextSplitter" title="langchain.text_splitter.TextSplitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.text_splitter.TextSplitter</span></code></a></p>
+<p>Implementation of splitting text that looks at tokens.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chunk_overlap</strong> (<em>int</em>) – </p></li>
+<li><p><strong>model_name</strong> (<em>str</em>) – </p></li>
+<li><p><strong>tokens_per_chunk</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.SentenceTransformersTokenTextSplitter.split_text">
+<span class="sig-name descname"><span class="pre">split_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#SentenceTransformersTokenTextSplitter.split_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.SentenceTransformersTokenTextSplitter.split_text" title="Permalink to this definition"></a></dt>
+<dd><p>Split text into multiple components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text</strong> (<em>str</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.SentenceTransformersTokenTextSplitter.count_tokens">
+<span class="sig-name descname"><span class="pre">count_tokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#SentenceTransformersTokenTextSplitter.count_tokens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.SentenceTransformersTokenTextSplitter.count_tokens" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text</strong> (<em>str</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">Language</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#Language"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.Language" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.CPP">
+<span class="sig-name descname"><span class="pre">CPP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cpp'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.CPP" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.GO">
+<span class="sig-name descname"><span class="pre">GO</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'go'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.GO" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.JAVA">
+<span class="sig-name descname"><span class="pre">JAVA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'java'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.JAVA" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.JS">
+<span class="sig-name descname"><span class="pre">JS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'js'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.JS" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.PHP">
+<span class="sig-name descname"><span class="pre">PHP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'php'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.PHP" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.PROTO">
+<span class="sig-name descname"><span class="pre">PROTO</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'proto'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.PROTO" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.PYTHON">
+<span class="sig-name descname"><span class="pre">PYTHON</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'python'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.PYTHON" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.RST">
+<span class="sig-name descname"><span class="pre">RST</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'rst'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.RST" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.RUBY">
+<span class="sig-name descname"><span class="pre">RUBY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ruby'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.RUBY" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.RUST">
+<span class="sig-name descname"><span class="pre">RUST</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'rust'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.RUST" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.SCALA">
+<span class="sig-name descname"><span class="pre">SCALA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'scala'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.SCALA" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.SWIFT">
+<span class="sig-name descname"><span class="pre">SWIFT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'swift'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.SWIFT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.MARKDOWN">
+<span class="sig-name descname"><span class="pre">MARKDOWN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'markdown'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.MARKDOWN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.LATEX">
+<span class="sig-name descname"><span class="pre">LATEX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'latex'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.LATEX" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="langchain.text_splitter.Language.HTML">
+<span class="sig-name descname"><span class="pre">HTML</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'html'</span></em><a class="headerlink" href="#langchain.text_splitter.Language.HTML" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.RecursiveCharacterTextSplitter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">RecursiveCharacterTextSplitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">separators</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#RecursiveCharacterTextSplitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.RecursiveCharacterTextSplitter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#langchain.text_splitter.TextSplitter" title="langchain.text_splitter.TextSplitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.text_splitter.TextSplitter</span></code></a></p>
+<p>Implementation of splitting text that looks at characters.</p>
+<p>Recursively tries to split by different characters to find one
+that works.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>separators</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>keep_separator</strong> (<em>bool</em>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.RecursiveCharacterTextSplitter.split_text">
+<span class="sig-name descname"><span class="pre">split_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#RecursiveCharacterTextSplitter.split_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.RecursiveCharacterTextSplitter.split_text" title="Permalink to this definition"></a></dt>
+<dd><p>Split text into multiple components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text</strong> (<em>str</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.RecursiveCharacterTextSplitter.from_language">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_language</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">language</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#RecursiveCharacterTextSplitter.from_language"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.RecursiveCharacterTextSplitter.from_language" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>language</strong> (<a class="reference internal" href="#langchain.text_splitter.Language" title="langchain.text_splitter.Language"><em>langchain.text_splitter.Language</em></a>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#langchain.text_splitter.RecursiveCharacterTextSplitter" title="langchain.text_splitter.RecursiveCharacterTextSplitter">langchain.text_splitter.RecursiveCharacterTextSplitter</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.RecursiveCharacterTextSplitter.get_separators_for_language">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_separators_for_language</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">language</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#RecursiveCharacterTextSplitter.get_separators_for_language"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.RecursiveCharacterTextSplitter.get_separators_for_language" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>language</strong> (<a class="reference internal" href="#langchain.text_splitter.Language" title="langchain.text_splitter.Language"><em>langchain.text_splitter.Language</em></a>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.NLTKTextSplitter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">NLTKTextSplitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\n\n'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#NLTKTextSplitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.NLTKTextSplitter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#langchain.text_splitter.TextSplitter" title="langchain.text_splitter.TextSplitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.text_splitter.TextSplitter</span></code></a></p>
+<p>Implementation of splitting text that looks at sentences using NLTK.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>separator</strong> (<em>str</em>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.NLTKTextSplitter.split_text">
+<span class="sig-name descname"><span class="pre">split_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#NLTKTextSplitter.split_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.NLTKTextSplitter.split_text" title="Permalink to this definition"></a></dt>
+<dd><p>Split incoming text and return chunks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text</strong> (<em>str</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.SpacyTextSplitter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">SpacyTextSplitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\n\n'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pipeline</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'en_core_web_sm'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#SpacyTextSplitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.SpacyTextSplitter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#langchain.text_splitter.TextSplitter" title="langchain.text_splitter.TextSplitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.text_splitter.TextSplitter</span></code></a></p>
+<p>Implementation of splitting text that looks at sentences using Spacy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>separator</strong> (<em>str</em>) – </p></li>
+<li><p><strong>pipeline</strong> (<em>str</em>) – </p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="langchain.text_splitter.SpacyTextSplitter.split_text">
+<span class="sig-name descname"><span class="pre">split_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#SpacyTextSplitter.split_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.SpacyTextSplitter.split_text" title="Permalink to this definition"></a></dt>
+<dd><p>Split incoming text and return chunks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text</strong> (<em>str</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>List</em>[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.PythonCodeTextSplitter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">PythonCodeTextSplitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#PythonCodeTextSplitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.PythonCodeTextSplitter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#langchain.text_splitter.RecursiveCharacterTextSplitter" title="langchain.text_splitter.RecursiveCharacterTextSplitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.text_splitter.RecursiveCharacterTextSplitter</span></code></a></p>
+<p>Attempts to split the text along Python syntax.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kwargs</strong> (<em>Any</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.MarkdownTextSplitter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">MarkdownTextSplitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#MarkdownTextSplitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.MarkdownTextSplitter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#langchain.text_splitter.RecursiveCharacterTextSplitter" title="langchain.text_splitter.RecursiveCharacterTextSplitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.text_splitter.RecursiveCharacterTextSplitter</span></code></a></p>
+<p>Attempts to split the text along Markdown-formatted headings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kwargs</strong> (<em>Any</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="langchain.text_splitter.LatexTextSplitter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">langchain.text_splitter.</span></span><span class="sig-name descname"><span class="pre">LatexTextSplitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/langchain/text_splitter.html#LatexTextSplitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#langchain.text_splitter.LatexTextSplitter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#langchain.text_splitter.RecursiveCharacterTextSplitter" title="langchain.text_splitter.RecursiveCharacterTextSplitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">langchain.text_splitter.RecursiveCharacterTextSplitter</span></code></a></p>
+<p>Attempts to split the text along Latex-formatted layout elements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kwargs</strong> (<em>Any</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="document_loaders.html" class="btn btn-neutral float-left" title="Document Loaders" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="embeddings.html" class="btn btn-neutral float-right" title="Embeddings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

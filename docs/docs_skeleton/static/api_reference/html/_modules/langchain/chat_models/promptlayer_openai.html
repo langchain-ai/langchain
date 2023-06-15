@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.chat_models.promptlayer_openai &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script src="../../../_static/tabs.js"></script>
+        <script src="../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.chat_models.promptlayer_openai</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.chat_models.promptlayer_openai</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;PromptLayer wrapper.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">langchain.callbacks.manager</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AsyncCallbackManagerForLLMRun</span><span class="p">,</span>
+    <span class="n">CallbackManagerForLLMRun</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">langchain.chat_models</span> <span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span> <span class="nn">langchain.schema</span> <span class="kn">import</span> <span class="n">BaseMessage</span><span class="p">,</span> <span class="n">ChatResult</span>
+
+
+<div class="viewcode-block" id="PromptLayerChatOpenAI"><a class="viewcode-back" href="../../../modules/chat_models.html#langchain.chat_models.PromptLayerChatOpenAI">[docs]</a><span class="k">class</span> <span class="nc">PromptLayerChatOpenAI</span><span class="p">(</span><span class="n">ChatOpenAI</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper around OpenAI Chat large language models and PromptLayer.</span>
+
+<span class="sd">    To use, you should have the ``openai`` and ``promptlayer`` python</span>
+<span class="sd">    package installed, and the environment variable ``OPENAI_API_KEY``</span>
+<span class="sd">    and ``PROMPTLAYER_API_KEY`` set with your openAI API key and</span>
+<span class="sd">    promptlayer key respectively.</span>
+
+<span class="sd">    All parameters that can be passed to the OpenAI LLM can also</span>
+<span class="sd">    be passed here. The PromptLayerChatOpenAI adds to optional</span>
+
+<span class="sd">    parameters:</span>
+<span class="sd">        ``pl_tags``: List of strings to tag the request with.</span>
+<span class="sd">        ``return_pl_id``: If True, the PromptLayer request ID will be</span>
+<span class="sd">            returned in the ``generation_info`` field of the</span>
+<span class="sd">            ``Generation`` object.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            from langchain.chat_models import PromptLayerChatOpenAI</span>
+<span class="sd">            openai = PromptLayerChatOpenAI(model_name=&quot;gpt-3.5-turbo&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">pl_tags</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
+    <span class="n">return_pl_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_generate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">],</span>
+        <span class="n">stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">run_manager</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">CallbackManagerForLLMRun</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChatResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Call ChatOpenAI generate and then call PromptLayer API to log the request.&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">promptlayer.utils</span> <span class="kn">import</span> <span class="n">get_api_key</span><span class="p">,</span> <span class="n">promptlayer_api_request</span>
+
+        <span class="n">request_start_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+        <span class="n">generated_responses</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_generate</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">run_manager</span><span class="p">)</span>
+        <span class="n">request_end_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+        <span class="n">message_dicts</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_create_message_dicts</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">generation</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">generated_responses</span><span class="o">.</span><span class="n">generations</span><span class="p">):</span>
+            <span class="n">response_dict</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_create_message_dicts</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">generation</span><span class="o">.</span><span class="n">message</span><span class="p">],</span> <span class="n">stop</span>
+            <span class="p">)</span>
+            <span class="n">pl_request_id</span> <span class="o">=</span> <span class="n">promptlayer_api_request</span><span class="p">(</span>
+                <span class="s2">&quot;langchain.PromptLayerChatOpenAI&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;langchain&quot;</span><span class="p">,</span>
+                <span class="n">message_dicts</span><span class="p">,</span>
+                <span class="n">params</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pl_tags</span><span class="p">,</span>
+                <span class="n">response_dict</span><span class="p">,</span>
+                <span class="n">request_start_time</span><span class="p">,</span>
+                <span class="n">request_end_time</span><span class="p">,</span>
+                <span class="n">get_api_key</span><span class="p">(),</span>
+                <span class="n">return_pl_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">return_pl_id</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_pl_id</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">generation</span><span class="o">.</span><span class="n">generation_info</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">generation</span><span class="o">.</span><span class="n">generation_info</span><span class="p">,</span> <span class="nb">dict</span>
+                <span class="p">):</span>
+                    <span class="n">generation</span><span class="o">.</span><span class="n">generation_info</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">generation</span><span class="o">.</span><span class="n">generation_info</span><span class="p">[</span><span class="s2">&quot;pl_request_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pl_request_id</span>
+        <span class="k">return</span> <span class="n">generated_responses</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_agenerate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">],</span>
+        <span class="n">stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">run_manager</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AsyncCallbackManagerForLLMRun</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChatResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Call ChatOpenAI agenerate and then call PromptLayer to log.&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">promptlayer.utils</span> <span class="kn">import</span> <span class="n">get_api_key</span><span class="p">,</span> <span class="n">promptlayer_api_request_async</span>
+
+        <span class="n">request_start_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+        <span class="n">generated_responses</span> <span class="o">=</span> <span class="k">await</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_agenerate</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">run_manager</span><span class="p">)</span>
+        <span class="n">request_end_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+        <span class="n">message_dicts</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_create_message_dicts</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">generation</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">generated_responses</span><span class="o">.</span><span class="n">generations</span><span class="p">):</span>
+            <span class="n">response_dict</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_create_message_dicts</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">generation</span><span class="o">.</span><span class="n">message</span><span class="p">],</span> <span class="n">stop</span>
+            <span class="p">)</span>
+            <span class="n">pl_request_id</span> <span class="o">=</span> <span class="k">await</span> <span class="n">promptlayer_api_request_async</span><span class="p">(</span>
+                <span class="s2">&quot;langchain.PromptLayerChatOpenAI.async&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;langchain&quot;</span><span class="p">,</span>
+                <span class="n">message_dicts</span><span class="p">,</span>
+                <span class="n">params</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pl_tags</span><span class="p">,</span>
+                <span class="n">response_dict</span><span class="p">,</span>
+                <span class="n">request_start_time</span><span class="p">,</span>
+                <span class="n">request_end_time</span><span class="p">,</span>
+                <span class="n">get_api_key</span><span class="p">(),</span>
+                <span class="n">return_pl_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">return_pl_id</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_pl_id</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">generation</span><span class="o">.</span><span class="n">generation_info</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">generation</span><span class="o">.</span><span class="n">generation_info</span><span class="p">,</span> <span class="nb">dict</span>
+                <span class="p">):</span>
+                    <span class="n">generation</span><span class="o">.</span><span class="n">generation_info</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">generation</span><span class="o">.</span><span class="n">generation_info</span><span class="p">[</span><span class="s2">&quot;pl_request_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pl_request_id</span>
+        <span class="k">return</span> <span class="n">generated_responses</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_llm_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;promptlayer-openai-chat&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_identifying_params</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="o">**</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_identifying_params</span><span class="p">,</span>
+            <span class="s2">&quot;pl_tags&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pl_tags</span><span class="p">,</span>
+            <span class="s2">&quot;return_pl_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_pl_id</span><span class="p">,</span>
+        <span class="p">}</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

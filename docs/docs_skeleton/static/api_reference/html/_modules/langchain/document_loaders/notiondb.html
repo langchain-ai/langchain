@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.document_loaders.notiondb &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script src="../../../_static/tabs.js"></script>
+        <script src="../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.document_loaders.notiondb</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.document_loaders.notiondb</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Notion DB loader for langchain&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="kn">from</span> <span class="nn">langchain.docstore.document</span> <span class="kn">import</span> <span class="n">Document</span>
+<span class="kn">from</span> <span class="nn">langchain.document_loaders.base</span> <span class="kn">import</span> <span class="n">BaseLoader</span>
+
+<span class="n">NOTION_BASE_URL</span> <span class="o">=</span> <span class="s2">&quot;https://api.notion.com/v1&quot;</span>
+<span class="n">DATABASE_URL</span> <span class="o">=</span> <span class="n">NOTION_BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;/databases/</span><span class="si">{database_id}</span><span class="s2">/query&quot;</span>
+<span class="n">PAGE_URL</span> <span class="o">=</span> <span class="n">NOTION_BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;/pages/</span><span class="si">{page_id}</span><span class="s2">&quot;</span>
+<span class="n">BLOCK_URL</span> <span class="o">=</span> <span class="n">NOTION_BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;/blocks/</span><span class="si">{block_id}</span><span class="s2">/children&quot;</span>
+
+
+<div class="viewcode-block" id="NotionDBLoader"><a class="viewcode-back" href="../../../modules/document_loaders.html#langchain.document_loaders.NotionDBLoader">[docs]</a><span class="k">class</span> <span class="nc">NotionDBLoader</span><span class="p">(</span><span class="n">BaseLoader</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Notion DB Loader.</span>
+<span class="sd">    Reads content from pages within a Noton Database.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        integration_token (str): Notion integration token.</span>
+<span class="sd">        database_id (str): Notion database id.</span>
+<span class="sd">        request_timeout_sec (int): Timeout for Notion requests in seconds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">integration_token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">database_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">request_timeout_sec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize with parameters.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">integration_token</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;integration_token must be provided&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">database_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;database_id must be provided&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="n">integration_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database_id</span> <span class="o">=</span> <span class="n">database_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="s2">&quot;Bearer &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="p">,</span>
+            <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Notion-Version&quot;</span><span class="p">:</span> <span class="s2">&quot;2022-06-28&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request_timeout_sec</span> <span class="o">=</span> <span class="n">request_timeout_sec</span>
+
+<div class="viewcode-block" id="NotionDBLoader.load"><a class="viewcode-back" href="../../../modules/document_loaders.html#langchain.document_loaders.NotionDBLoader.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load documents from the Notion database.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Document]: List of documents.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">page_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_page_ids</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_page</span><span class="p">(</span><span class="n">page_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">page_id</span> <span class="ow">in</span> <span class="n">page_ids</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_retrieve_page_ids</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">query_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;page_size&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all the pages from a Notion database.&quot;&quot;&quot;</span>
+        <span class="n">pages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span>
+                <span class="n">DATABASE_URL</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">database_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">database_id</span><span class="p">),</span>
+                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span>
+                <span class="n">query_dict</span><span class="o">=</span><span class="n">query_dict</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">pages</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;results&quot;</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;has_more&quot;</span><span class="p">):</span>
+                <span class="k">break</span>
+
+            <span class="n">query_dict</span><span class="p">[</span><span class="s2">&quot;start_cursor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;next_cursor&quot;</span><span class="p">)</span>
+
+        <span class="n">page_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">page</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="n">pages</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">page_ids</span>
+
+<div class="viewcode-block" id="NotionDBLoader.load_page"><a class="viewcode-back" href="../../../modules/document_loaders.html#langchain.document_loaders.NotionDBLoader.load_page">[docs]</a>    <span class="k">def</span> <span class="nf">load_page</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">page_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Document</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a page.&quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="n">PAGE_URL</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">page_id</span><span class="o">=</span><span class="n">page_id</span><span class="p">))</span>
+
+        <span class="c1"># load properties as metadata</span>
+        <span class="n">metadata</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">prop_name</span><span class="p">,</span> <span class="n">prop_data</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">prop_type</span> <span class="o">=</span> <span class="n">prop_data</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">prop_type</span> <span class="o">==</span> <span class="s2">&quot;rich_text&quot;</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">prop_data</span><span class="p">[</span><span class="s2">&quot;rich_text&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;plain_text&quot;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">prop_data</span><span class="p">[</span><span class="s2">&quot;rich_text&quot;</span><span class="p">]</span>
+                    <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">prop_type</span> <span class="o">==</span> <span class="s2">&quot;title&quot;</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">prop_data</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;plain_text&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">prop_data</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">prop_type</span> <span class="o">==</span> <span class="s2">&quot;multi_select&quot;</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">prop_data</span><span class="p">[</span><span class="s2">&quot;multi_select&quot;</span><span class="p">]]</span>
+                    <span class="k">if</span> <span class="n">prop_data</span><span class="p">[</span><span class="s2">&quot;multi_select&quot;</span><span class="p">]</span>
+                    <span class="k">else</span> <span class="p">[]</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">prop_type</span> <span class="o">==</span> <span class="s2">&quot;url&quot;</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">prop_data</span><span class="p">[</span><span class="s2">&quot;url&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">metadata</span><span class="p">[</span><span class="n">prop_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">page_id</span>
+
+        <span class="k">return</span> <span class="n">Document</span><span class="p">(</span><span class="n">page_content</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_load_blocks</span><span class="p">(</span><span class="n">page_id</span><span class="p">),</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_load_blocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">num_tabs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a block and its children.&quot;&quot;&quot;</span>
+        <span class="n">result_lines_arr</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cur_block_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">block_id</span>
+
+        <span class="k">while</span> <span class="n">cur_block_id</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="n">BLOCK_URL</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">block_id</span><span class="o">=</span><span class="n">cur_block_id</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;results&quot;</span><span class="p">]:</span>
+                <span class="n">result_obj</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]]</span>
+
+                <span class="k">if</span> <span class="s2">&quot;rich_text&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result_obj</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="n">cur_result_text_arr</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+                <span class="k">for</span> <span class="n">rich_text</span> <span class="ow">in</span> <span class="n">result_obj</span><span class="p">[</span><span class="s2">&quot;rich_text&quot;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="s2">&quot;text&quot;</span> <span class="ow">in</span> <span class="n">rich_text</span><span class="p">:</span>
+                        <span class="n">cur_result_text_arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="n">num_tabs</span> <span class="o">+</span> <span class="n">rich_text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
+                        <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;has_children&quot;</span><span class="p">]:</span>
+                    <span class="n">children_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_blocks</span><span class="p">(</span>
+                        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="n">num_tabs</span><span class="o">=</span><span class="n">num_tabs</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="p">)</span>
+                    <span class="n">cur_result_text_arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">children_text</span><span class="p">)</span>
+
+                <span class="n">result_lines_arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cur_result_text_arr</span><span class="p">))</span>
+
+            <span class="n">cur_block_id</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;next_cursor&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result_lines_arr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_request</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="n">query_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">request</span><span class="p">(</span>
+            <span class="n">method</span><span class="p">,</span>
+            <span class="n">url</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span>
+            <span class="n">json</span><span class="o">=</span><span class="n">query_dict</span><span class="p">,</span>
+            <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">request_timeout_sec</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

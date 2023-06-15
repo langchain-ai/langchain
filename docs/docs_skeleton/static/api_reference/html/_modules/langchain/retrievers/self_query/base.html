@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.retrievers.self_query.base &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/clipboard.min.js"></script>
+        <script src="../../../../_static/copybutton.js"></script>
+        <script src="../../../../_static/tabs.js"></script>
+        <script src="../../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.retrievers.self_query.base</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.retrievers.self_query.base</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Retriever that generates and executes structured queries over its own data source.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">root_validator</span>
+
+<span class="kn">from</span> <span class="nn">langchain</span> <span class="kn">import</span> <span class="n">LLMChain</span>
+<span class="kn">from</span> <span class="nn">langchain.base_language</span> <span class="kn">import</span> <span class="n">BaseLanguageModel</span>
+<span class="kn">from</span> <span class="nn">langchain.chains.query_constructor.base</span> <span class="kn">import</span> <span class="n">load_query_constructor_chain</span>
+<span class="kn">from</span> <span class="nn">langchain.chains.query_constructor.ir</span> <span class="kn">import</span> <span class="n">StructuredQuery</span><span class="p">,</span> <span class="n">Visitor</span>
+<span class="kn">from</span> <span class="nn">langchain.chains.query_constructor.schema</span> <span class="kn">import</span> <span class="n">AttributeInfo</span>
+<span class="kn">from</span> <span class="nn">langchain.retrievers.self_query.chroma</span> <span class="kn">import</span> <span class="n">ChromaTranslator</span>
+<span class="kn">from</span> <span class="nn">langchain.retrievers.self_query.pinecone</span> <span class="kn">import</span> <span class="n">PineconeTranslator</span>
+<span class="kn">from</span> <span class="nn">langchain.retrievers.self_query.qdrant</span> <span class="kn">import</span> <span class="n">QdrantTranslator</span>
+<span class="kn">from</span> <span class="nn">langchain.retrievers.self_query.weaviate</span> <span class="kn">import</span> <span class="n">WeaviateTranslator</span>
+<span class="kn">from</span> <span class="nn">langchain.schema</span> <span class="kn">import</span> <span class="n">BaseRetriever</span><span class="p">,</span> <span class="n">Document</span>
+<span class="kn">from</span> <span class="nn">langchain.vectorstores</span> <span class="kn">import</span> <span class="n">Chroma</span><span class="p">,</span> <span class="n">Pinecone</span><span class="p">,</span> <span class="n">Qdrant</span><span class="p">,</span> <span class="n">VectorStore</span><span class="p">,</span> <span class="n">Weaviate</span>
+
+
+<span class="k">def</span> <span class="nf">_get_builtin_translator</span><span class="p">(</span><span class="n">vectorstore</span><span class="p">:</span> <span class="n">VectorStore</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Visitor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the translator class corresponding to the vector store class.&quot;&quot;&quot;</span>
+    <span class="n">vectorstore_cls</span> <span class="o">=</span> <span class="n">vectorstore</span><span class="o">.</span><span class="vm">__class__</span>
+    <span class="n">BUILTIN_TRANSLATORS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">VectorStore</span><span class="p">],</span> <span class="n">Type</span><span class="p">[</span><span class="n">Visitor</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">Pinecone</span><span class="p">:</span> <span class="n">PineconeTranslator</span><span class="p">,</span>
+        <span class="n">Chroma</span><span class="p">:</span> <span class="n">ChromaTranslator</span><span class="p">,</span>
+        <span class="n">Weaviate</span><span class="p">:</span> <span class="n">WeaviateTranslator</span><span class="p">,</span>
+        <span class="n">Qdrant</span><span class="p">:</span> <span class="n">QdrantTranslator</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">vectorstore_cls</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">BUILTIN_TRANSLATORS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Self query retriever with Vector Store type </span><span class="si">{</span><span class="n">vectorstore_cls</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; not supported.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vectorstore</span><span class="p">,</span> <span class="n">Qdrant</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">QdrantTranslator</span><span class="p">(</span><span class="n">metadata_key</span><span class="o">=</span><span class="n">vectorstore</span><span class="o">.</span><span class="n">metadata_payload_key</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">BUILTIN_TRANSLATORS</span><span class="p">[</span><span class="n">vectorstore_cls</span><span class="p">]()</span>
+
+
+<div class="viewcode-block" id="SelfQueryRetriever"><a class="viewcode-back" href="../../../../modules/retrievers.html#langchain.retrievers.SelfQueryRetriever">[docs]</a><span class="k">class</span> <span class="nc">SelfQueryRetriever</span><span class="p">(</span><span class="n">BaseRetriever</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retriever that wraps around a vector store and uses an LLM to generate</span>
+<span class="sd">    the vector store queries.&quot;&quot;&quot;</span>
+
+    <span class="n">vectorstore</span><span class="p">:</span> <span class="n">VectorStore</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The underlying vector store from which documents will be retrieved.&quot;&quot;&quot;</span>
+    <span class="n">llm_chain</span><span class="p">:</span> <span class="n">LLMChain</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The LLMChain for generating the vector store queries.&quot;&quot;&quot;</span>
+    <span class="n">search_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;similarity&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The search type to perform on the vector store.&quot;&quot;&quot;</span>
+    <span class="n">search_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Keyword arguments to pass in to the vector store search.&quot;&quot;&quot;</span>
+    <span class="n">structured_query_translator</span><span class="p">:</span> <span class="n">Visitor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Translator for turning internal query language into vectorstore search params.&quot;&quot;&quot;</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configuration for this pydantic object.&quot;&quot;&quot;</span>
+
+        <span class="n">arbitrary_types_allowed</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="nd">@root_validator</span><span class="p">(</span><span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">validate_translator</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate translator.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;structured_query_translator&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="n">values</span><span class="p">[</span><span class="s2">&quot;structured_query_translator&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_builtin_translator</span><span class="p">(</span>
+                <span class="n">values</span><span class="p">[</span><span class="s2">&quot;vectorstore&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">values</span>
+
+<div class="viewcode-block" id="SelfQueryRetriever.get_relevant_documents"><a class="viewcode-back" href="../../../../modules/retrievers.html#langchain.retrievers.SelfQueryRetriever.get_relevant_documents">[docs]</a>    <span class="k">def</span> <span class="nf">get_relevant_documents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get documents relevant for a query.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query: string to find relevant documents for</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of relevant documents</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_chain</span><span class="o">.</span><span class="n">prep_inputs</span><span class="p">({</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
+        <span class="n">structured_query</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">StructuredQuery</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_chain</span><span class="o">.</span><span class="n">predict_and_parse</span><span class="p">(</span><span class="n">callbacks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">inputs</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">structured_query</span><span class="p">)</span>
+        <span class="n">new_query</span><span class="p">,</span> <span class="n">new_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structured_query_translator</span><span class="o">.</span><span class="n">visit_structured_query</span><span class="p">(</span>
+            <span class="n">structured_query</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">structured_query</span><span class="o">.</span><span class="n">limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_kwargs</span><span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">structured_query</span><span class="o">.</span><span class="n">limit</span>
+
+        <span class="n">search_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">search_kwargs</span><span class="p">,</span> <span class="o">**</span><span class="n">new_kwargs</span><span class="p">}</span>
+        <span class="n">docs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vectorstore</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">new_query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_type</span><span class="p">,</span> <span class="o">**</span><span class="n">search_kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">docs</span></div>
+
+<div class="viewcode-block" id="SelfQueryRetriever.aget_relevant_documents"><a class="viewcode-back" href="../../../../modules/retrievers.html#langchain.retrievers.SelfQueryRetriever.aget_relevant_documents">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">aget_relevant_documents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Document</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="SelfQueryRetriever.from_llm"><a class="viewcode-back" href="../../../../modules/retrievers.html#langchain.retrievers.SelfQueryRetriever.from_llm">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_llm</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">llm</span><span class="p">:</span> <span class="n">BaseLanguageModel</span><span class="p">,</span>
+        <span class="n">vectorstore</span><span class="p">:</span> <span class="n">VectorStore</span><span class="p">,</span>
+        <span class="n">document_contents</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">metadata_field_info</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">AttributeInfo</span><span class="p">],</span>
+        <span class="n">structured_query_translator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Visitor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">chain_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">enable_limit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SelfQueryRetriever&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">structured_query_translator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">structured_query_translator</span> <span class="o">=</span> <span class="n">_get_builtin_translator</span><span class="p">(</span><span class="n">vectorstore</span><span class="p">)</span>
+        <span class="n">chain_kwargs</span> <span class="o">=</span> <span class="n">chain_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="s2">&quot;allowed_comparators&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">chain_kwargs</span><span class="p">:</span>
+            <span class="n">chain_kwargs</span><span class="p">[</span>
+                <span class="s2">&quot;allowed_comparators&quot;</span>
+            <span class="p">]</span> <span class="o">=</span> <span class="n">structured_query_translator</span><span class="o">.</span><span class="n">allowed_comparators</span>
+        <span class="k">if</span> <span class="s2">&quot;allowed_operators&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">chain_kwargs</span><span class="p">:</span>
+            <span class="n">chain_kwargs</span><span class="p">[</span>
+                <span class="s2">&quot;allowed_operators&quot;</span>
+            <span class="p">]</span> <span class="o">=</span> <span class="n">structured_query_translator</span><span class="o">.</span><span class="n">allowed_operators</span>
+        <span class="n">llm_chain</span> <span class="o">=</span> <span class="n">load_query_constructor_chain</span><span class="p">(</span>
+            <span class="n">llm</span><span class="p">,</span>
+            <span class="n">document_contents</span><span class="p">,</span>
+            <span class="n">metadata_field_info</span><span class="p">,</span>
+            <span class="n">enable_limit</span><span class="o">=</span><span class="n">enable_limit</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">chain_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">llm_chain</span><span class="o">=</span><span class="n">llm_chain</span><span class="p">,</span>
+            <span class="n">vectorstore</span><span class="o">=</span><span class="n">vectorstore</span><span class="p">,</span>
+            <span class="n">structured_query_translator</span><span class="o">=</span><span class="n">structured_query_translator</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

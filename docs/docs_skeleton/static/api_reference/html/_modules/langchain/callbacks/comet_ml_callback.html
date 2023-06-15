@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>langchain.callbacks.comet_ml_callback &mdash; 🦜🔗 LangChain 0.0.190</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/autodoc_pydantic.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/tabs.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-bootstrap.5fd3999ee7762ccc51105388f4a9d115.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script src="../../../_static/tabs.js"></script>
+        <script src="../../../_static/js/mendablesearch.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            🦜🔗 LangChain
+          </a>
+              <div class="version">
+                0.0.190
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Abstractions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/base_classes.html">Base classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_io.html">Model I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_connection.html">Data connection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/chains.html">Chains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/callbacks.html">Callbacks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/experimental.html">Experimental</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">🦜🔗 LangChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">langchain.callbacks.comet_ml_callback</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for langchain.callbacks.comet_ml_callback</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">langchain</span>
+<span class="kn">from</span> <span class="nn">langchain.callbacks.base</span> <span class="kn">import</span> <span class="n">BaseCallbackHandler</span>
+<span class="kn">from</span> <span class="nn">langchain.callbacks.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseMetadataCallbackHandler</span><span class="p">,</span>
+    <span class="n">flatten_dict</span><span class="p">,</span>
+    <span class="n">import_pandas</span><span class="p">,</span>
+    <span class="n">import_spacy</span><span class="p">,</span>
+    <span class="n">import_textstat</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">langchain.schema</span> <span class="kn">import</span> <span class="n">AgentAction</span><span class="p">,</span> <span class="n">AgentFinish</span><span class="p">,</span> <span class="n">Generation</span><span class="p">,</span> <span class="n">LLMResult</span>
+
+<span class="n">LANGCHAIN_MODEL_NAME</span> <span class="o">=</span> <span class="s2">&quot;langchain-model&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">import_comet_ml</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">comet_ml</span>  <span class="c1"># noqa: F401</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s2">&quot;To use the comet_ml callback manager you need to have the &quot;</span>
+            <span class="s2">&quot;`comet_ml` python package installed. Please install it with&quot;</span>
+            <span class="s2">&quot; `pip install comet_ml`&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">comet_ml</span>
+
+
+<span class="k">def</span> <span class="nf">_get_experiment</span><span class="p">(</span>
+    <span class="n">workspace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">project_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="n">comet_ml</span> <span class="o">=</span> <span class="n">import_comet_ml</span><span class="p">()</span>
+
+    <span class="n">experiment</span> <span class="o">=</span> <span class="n">comet_ml</span><span class="o">.</span><span class="n">Experiment</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+        <span class="n">workspace</span><span class="o">=</span><span class="n">workspace</span><span class="p">,</span>
+        <span class="n">project_name</span><span class="o">=</span><span class="n">project_name</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">experiment</span>
+
+
+<span class="k">def</span> <span class="nf">_fetch_text_complexity_metrics</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">textstat</span> <span class="o">=</span> <span class="n">import_textstat</span><span class="p">()</span>
+    <span class="n">text_complexity_metrics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;flesch_reading_ease&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">flesch_reading_ease</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;flesch_kincaid_grade&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">flesch_kincaid_grade</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;smog_index&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">smog_index</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;coleman_liau_index&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">coleman_liau_index</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;automated_readability_index&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">automated_readability_index</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;dale_chall_readability_score&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">dale_chall_readability_score</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;difficult_words&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">difficult_words</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;linsear_write_formula&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">linsear_write_formula</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;gunning_fog&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">gunning_fog</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;text_standard&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">text_standard</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;fernandez_huerta&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">fernandez_huerta</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;szigriszt_pazos&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">szigriszt_pazos</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;gutierrez_polini&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">gutierrez_polini</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;crawford&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">crawford</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;gulpease_index&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">gulpease_index</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;osman&quot;</span><span class="p">:</span> <span class="n">textstat</span><span class="o">.</span><span class="n">osman</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">text_complexity_metrics</span>
+
+
+<span class="k">def</span> <span class="nf">_summarize_metrics_for_generated_outputs</span><span class="p">(</span><span class="n">metrics</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">pd</span> <span class="o">=</span> <span class="n">import_pandas</span><span class="p">()</span>
+    <span class="n">metrics_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
+    <span class="n">metrics_summary</span> <span class="o">=</span> <span class="n">metrics_df</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">metrics_summary</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="CometCallbackHandler"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler">[docs]</a><span class="k">class</span> <span class="nc">CometCallbackHandler</span><span class="p">(</span><span class="n">BaseMetadataCallbackHandler</span><span class="p">,</span> <span class="n">BaseCallbackHandler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Callback Handler that logs to Comet.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        job_type (str): The type of comet_ml task such as &quot;inference&quot;,</span>
+<span class="sd">            &quot;testing&quot; or &quot;qc&quot;</span>
+<span class="sd">        project_name (str): The comet_ml project name</span>
+<span class="sd">        tags (list): Tags to add to the task</span>
+<span class="sd">        task_name (str): Name of the comet_ml task</span>
+<span class="sd">        visualize (bool): Whether to visualize the run.</span>
+<span class="sd">        complexity_metrics (bool): Whether to log complexity metrics</span>
+<span class="sd">        stream_logs (bool): Whether to stream callback actions to Comet</span>
+
+<span class="sd">    This handler will utilize the associated callback method and formats</span>
+<span class="sd">    the input of each callback function with metadata regarding the state of LLM run,</span>
+<span class="sd">    and adds the response to the list of records for both the {method}_records and</span>
+<span class="sd">    action. It then logs the response to Comet.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">task_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;inference&quot;</span><span class="p">,</span>
+        <span class="n">workspace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">project_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">visualizations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">complexity_metrics</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">custom_metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">stream_logs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize callback handler.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">comet_ml</span> <span class="o">=</span> <span class="n">import_comet_ml</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">task_type</span> <span class="o">=</span> <span class="n">task_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workspace</span> <span class="o">=</span> <span class="n">workspace</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project_name</span> <span class="o">=</span> <span class="n">project_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="n">tags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visualizations</span> <span class="o">=</span> <span class="n">visualizations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">complexity_metrics</span> <span class="o">=</span> <span class="n">complexity_metrics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom_metrics</span> <span class="o">=</span> <span class="n">custom_metrics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream_logs</span> <span class="o">=</span> <span class="n">stream_logs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span> <span class="o">=</span> <span class="n">_get_experiment</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="n">project_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">log_other</span><span class="p">(</span><span class="s2">&quot;Created from&quot;</span><span class="p">,</span> <span class="s2">&quot;langchain&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tags</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">add_tags</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="n">warning</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;The comet_ml callback is currently in beta and is subject to change &quot;</span>
+            <span class="s2">&quot;based on updates to `langchain`. Please report any issues to &quot;</span>
+            <span class="s2">&quot;https://github.com/comet-ml/issue-tracking/issues with the tag &quot;</span>
+            <span class="s2">&quot;`langchain`.&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comet_ml</span><span class="o">.</span><span class="n">LOGGER</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warning</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_columns</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_records</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">complexity_metrics</span> <span class="o">=</span> <span class="n">complexity_metrics</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">visualizations</span><span class="p">:</span>
+            <span class="n">spacy</span> <span class="o">=</span> <span class="n">import_spacy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nlp</span> <span class="o">=</span> <span class="n">spacy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;en_core_web_sm&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nlp</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_init_resp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback_columns</span><span class="p">}</span>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_llm_start"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_llm_start">[docs]</a>    <span class="k">def</span> <span class="nf">on_llm_start</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">serialized</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prompts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when LLM starts.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">llm_starts</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_resp</span><span class="p">()</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;on_llm_start&quot;</span><span class="p">})</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">flatten_dict</span><span class="p">(</span><span class="n">serialized</span><span class="p">))</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_custom_callback_meta</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">prompt</span> <span class="ow">in</span> <span class="n">prompts</span><span class="p">:</span>
+            <span class="n">prompt_resp</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+            <span class="n">prompt_resp</span><span class="p">[</span><span class="s2">&quot;prompts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prompt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">on_llm_start_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prompt_resp</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">action_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prompt_resp</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_logs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_log_stream</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_llm_new_token"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_llm_new_token">[docs]</a>    <span class="k">def</span> <span class="nf">on_llm_new_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when LLM generates a new token.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">llm_streams</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_resp</span><span class="p">()</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;on_llm_new_token&quot;</span><span class="p">,</span> <span class="s2">&quot;token&quot;</span><span class="p">:</span> <span class="n">token</span><span class="p">})</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_custom_callback_meta</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_llm_end"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_llm_end">[docs]</a>    <span class="k">def</span> <span class="nf">on_llm_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">LLMResult</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when LLM ends running.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">llm_ends</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ends</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_resp</span><span class="p">()</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;on_llm_end&quot;</span><span class="p">})</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">flatten_dict</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">llm_output</span> <span class="ow">or</span> <span class="p">{}))</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_custom_callback_meta</span><span class="p">())</span>
+
+        <span class="n">output_complexity_metrics</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">output_custom_metrics</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">prompt_idx</span><span class="p">,</span> <span class="n">generations</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">generations</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">gen_idx</span><span class="p">,</span> <span class="n">generation</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">generations</span><span class="p">):</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">generation</span><span class="o">.</span><span class="n">text</span>
+
+                <span class="n">generation_resp</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+                <span class="n">generation_resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">flatten_dict</span><span class="p">(</span><span class="n">generation</span><span class="o">.</span><span class="n">dict</span><span class="p">()))</span>
+
+                <span class="n">complexity_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_complexity_metrics</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">complexity_metrics</span><span class="p">:</span>
+                    <span class="n">output_complexity_metrics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">complexity_metrics</span><span class="p">)</span>
+                    <span class="n">generation_resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">complexity_metrics</span><span class="p">)</span>
+
+                <span class="n">custom_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_custom_metrics</span><span class="p">(</span>
+                    <span class="n">generation</span><span class="p">,</span> <span class="n">prompt_idx</span><span class="p">,</span> <span class="n">gen_idx</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">custom_metrics</span><span class="p">:</span>
+                    <span class="n">output_custom_metrics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">custom_metrics</span><span class="p">)</span>
+                    <span class="n">generation_resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">custom_metrics</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_logs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_log_stream</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">action_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">generation_resp</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">on_llm_end_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">generation_resp</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_text_metrics</span><span class="p">(</span><span class="n">output_complexity_metrics</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_text_metrics</span><span class="p">(</span><span class="n">output_custom_metrics</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_llm_error"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_llm_error">[docs]</a>    <span class="k">def</span> <span class="nf">on_llm_error</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="ne">Exception</span><span class="p">,</span> <span class="ne">KeyboardInterrupt</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when LLM errors.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_chain_start"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_chain_start">[docs]</a>    <span class="k">def</span> <span class="nf">on_chain_start</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">serialized</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when chain starts running.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chain_starts</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_resp</span><span class="p">()</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;on_chain_start&quot;</span><span class="p">})</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">flatten_dict</span><span class="p">(</span><span class="n">serialized</span><span class="p">))</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_custom_callback_meta</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">chain_input_key</span><span class="p">,</span> <span class="n">chain_input_val</span> <span class="ow">in</span> <span class="n">inputs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chain_input_val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">input_resp</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_logs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_log_stream</span><span class="p">(</span><span class="n">chain_input_val</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+                <span class="n">input_resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">chain_input_key</span><span class="p">:</span> <span class="n">chain_input_val</span><span class="p">})</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">action_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">input_resp</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">comet_ml</span><span class="o">.</span><span class="n">LOGGER</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Unexpected data format provided! &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Input Value for </span><span class="si">{</span><span class="n">chain_input_key</span><span class="si">}</span><span class="s2"> will not be logged&quot;</span>
+                <span class="p">)</span></div>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_chain_end"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_chain_end">[docs]</a>    <span class="k">def</span> <span class="nf">on_chain_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when chain ends running.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chain_ends</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ends</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_resp</span><span class="p">()</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;on_chain_end&quot;</span><span class="p">})</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_custom_callback_meta</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">chain_output_key</span><span class="p">,</span> <span class="n">chain_output_val</span> <span class="ow">in</span> <span class="n">outputs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chain_output_val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">output_resp</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_logs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_log_stream</span><span class="p">(</span><span class="n">chain_output_val</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+                <span class="n">output_resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">chain_output_key</span><span class="p">:</span> <span class="n">chain_output_val</span><span class="p">})</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">action_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">output_resp</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">comet_ml</span><span class="o">.</span><span class="n">LOGGER</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Unexpected data format provided! &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Output Value for </span><span class="si">{</span><span class="n">chain_output_key</span><span class="si">}</span><span class="s2"> will not be logged&quot;</span>
+                <span class="p">)</span></div>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_chain_error"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_chain_error">[docs]</a>    <span class="k">def</span> <span class="nf">on_chain_error</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="ne">Exception</span><span class="p">,</span> <span class="ne">KeyboardInterrupt</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when chain errors.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_tool_start"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_tool_start">[docs]</a>    <span class="k">def</span> <span class="nf">on_tool_start</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">serialized</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">input_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when tool starts running.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tool_starts</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_resp</span><span class="p">()</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;on_tool_start&quot;</span><span class="p">})</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">flatten_dict</span><span class="p">(</span><span class="n">serialized</span><span class="p">))</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_custom_callback_meta</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_logs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log_stream</span><span class="p">(</span><span class="n">input_str</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;input_str&quot;</span><span class="p">:</span> <span class="n">input_str</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_tool_end"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_tool_end">[docs]</a>    <span class="k">def</span> <span class="nf">on_tool_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when tool ends running.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tool_ends</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ends</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_resp</span><span class="p">()</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;on_tool_end&quot;</span><span class="p">})</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_custom_callback_meta</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_logs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log_stream</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_tool_error"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_tool_error">[docs]</a>    <span class="k">def</span> <span class="nf">on_tool_error</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="ne">Exception</span><span class="p">,</span> <span class="ne">KeyboardInterrupt</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when tool errors.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_text"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_text">[docs]</a>    <span class="k">def</span> <span class="nf">on_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run when agent is ending.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_ctr</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_resp</span><span class="p">()</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;on_text&quot;</span><span class="p">})</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_custom_callback_meta</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_logs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log_stream</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_agent_finish"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_agent_finish">[docs]</a>    <span class="k">def</span> <span class="nf">on_agent_finish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finish</span><span class="p">:</span> <span class="n">AgentFinish</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run when agent ends running.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">agent_ends</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ends</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_resp</span><span class="p">()</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">finish</span><span class="o">.</span><span class="n">return_values</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="n">finish</span><span class="o">.</span><span class="n">log</span>
+
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;on_agent_finish&quot;</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">:</span> <span class="n">log</span><span class="p">})</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_custom_callback_meta</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_logs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log_stream</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CometCallbackHandler.on_agent_action"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.on_agent_action">[docs]</a>    <span class="k">def</span> <span class="nf">on_agent_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">AgentAction</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run on agent action.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tool_starts</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">tool</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">tool</span>
+        <span class="n">tool_input</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">tool_input</span><span class="p">)</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">log</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_resp</span><span class="p">()</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;on_agent_action&quot;</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">:</span> <span class="n">log</span><span class="p">,</span> <span class="s2">&quot;tool&quot;</span><span class="p">:</span> <span class="n">tool</span><span class="p">})</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_custom_callback_meta</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_logs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log_stream</span><span class="p">(</span><span class="n">tool_input</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+
+        <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;tool_input&quot;</span><span class="p">:</span> <span class="n">tool_input</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_complexity_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute text complexity metrics using textstat.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            text (str): The text to analyze.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (dict): A dictionary containing the complexity metrics.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">complexity_metrics</span><span class="p">:</span>
+            <span class="n">text_complexity_metrics</span> <span class="o">=</span> <span class="n">_fetch_text_complexity_metrics</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">text_complexity_metrics</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">resp</span>
+
+    <span class="k">def</span> <span class="nf">_get_custom_metrics</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">generation</span><span class="p">:</span> <span class="n">Generation</span><span class="p">,</span> <span class="n">prompt_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">gen_idx</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Custom Metrics for an LLM Generated Output</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            generation (LLMResult): Output generation from an LLM</span>
+<span class="sd">            prompt_idx (int): List index of the input prompt</span>
+<span class="sd">            gen_idx (int): List index of the generated output</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: A dictionary containing the custom metrics.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_metrics</span><span class="p">:</span>
+            <span class="n">custom_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_metrics</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">prompt_idx</span><span class="p">,</span> <span class="n">gen_idx</span><span class="p">)</span>
+            <span class="n">resp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">custom_metrics</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">resp</span>
+
+<div class="viewcode-block" id="CometCallbackHandler.flush_tracker"><a class="viewcode-back" href="../../../modules/callbacks.html#langchain.callbacks.CometCallbackHandler.flush_tracker">[docs]</a>    <span class="k">def</span> <span class="nf">flush_tracker</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">langchain_asset</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">task_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;inference&quot;</span><span class="p">,</span>
+        <span class="n">workspace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">project_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;comet-langchain-demo&quot;</span><span class="p">,</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">visualizations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">complexity_metrics</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">custom_metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">finish</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">reset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Flush the tracker and setup the session.</span>
+
+<span class="sd">        Everything after this will be a new table.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: Name of the preformed session so far so it is identifyable</span>
+<span class="sd">            langchain_asset: The langchain asset to save.</span>
+<span class="sd">            finish: Whether to finish the run.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_session</span><span class="p">(</span><span class="n">langchain_asset</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">langchain_asset</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_log_model</span><span class="p">(</span><span class="n">langchain_asset</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">comet_ml</span><span class="o">.</span><span class="n">LOGGER</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s2">&quot;Failed to export agent or LLM to Comet&quot;</span><span class="p">,</span>
+                    <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;show_traceback&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">finish</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">end</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">reset</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reset</span><span class="p">(</span>
+                <span class="n">task_type</span><span class="p">,</span>
+                <span class="n">workspace</span><span class="p">,</span>
+                <span class="n">project_name</span><span class="p">,</span>
+                <span class="n">tags</span><span class="p">,</span>
+                <span class="n">name</span><span class="p">,</span>
+                <span class="n">visualizations</span><span class="p">,</span>
+                <span class="n">complexity_metrics</span><span class="p">,</span>
+                <span class="n">custom_metrics</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_log_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">log_text</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_log_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">langchain_asset</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model_parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_llm_parameters</span><span class="p">(</span><span class="n">langchain_asset</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">log_parameters</span><span class="p">(</span><span class="n">model_parameters</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;model&quot;</span><span class="p">)</span>
+
+        <span class="n">langchain_asset_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temp_dir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;model.json&quot;</span><span class="p">)</span>
+        <span class="n">model_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="n">LANGCHAIN_MODEL_NAME</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">langchain_asset</span><span class="p">,</span> <span class="s2">&quot;save&quot;</span><span class="p">):</span>
+                <span class="n">langchain_asset</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">langchain_asset_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">log_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">langchain_asset_path</span><span class="p">))</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">NotImplementedError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">langchain_asset</span><span class="p">,</span> <span class="s2">&quot;save_agent&quot;</span><span class="p">):</span>
+                <span class="n">langchain_asset</span><span class="o">.</span><span class="n">save_agent</span><span class="p">(</span><span class="n">langchain_asset_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">log_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">langchain_asset_path</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">comet_ml</span><span class="o">.</span><span class="n">LOGGER</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="s2">&quot; Could not save Langchain Asset &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;for </span><span class="si">{</span><span class="n">langchain_asset</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_log_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">langchain_asset</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">llm_session_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_session_analysis_dataframe</span><span class="p">(</span><span class="n">langchain_asset</span><span class="p">)</span>
+            <span class="c1"># Log the cleaned dataframe as a table</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">log_table</span><span class="p">(</span><span class="s2">&quot;langchain-llm-session.csv&quot;</span><span class="p">,</span> <span class="n">llm_session_df</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comet_ml</span><span class="o">.</span><span class="n">LOGGER</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Failed to log session data to Comet&quot;</span><span class="p">,</span>
+                <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;show_traceback&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;langchain_version&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">langchain</span><span class="o">.</span><span class="n">__version__</span><span class="p">)}</span>
+            <span class="c1"># Log the langchain low-level records as a JSON file directly</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">log_asset_data</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">action_records</span><span class="p">,</span> <span class="s2">&quot;langchain-action_records.json&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comet_ml</span><span class="o">.</span><span class="n">LOGGER</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Failed to log session data to Comet&quot;</span><span class="p">,</span>
+                <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;show_traceback&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log_visualizations</span><span class="p">(</span><span class="n">llm_session_df</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comet_ml</span><span class="o">.</span><span class="n">LOGGER</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Failed to log visualizations to Comet&quot;</span><span class="p">,</span>
+                <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;show_traceback&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_log_text_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metrics</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">metrics</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">metrics_summary</span> <span class="o">=</span> <span class="n">_summarize_metrics_for_generated_outputs</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">metrics_summary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">log_metrics</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_log_visualizations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_df</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visualizations</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">nlp</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="n">spacy</span> <span class="o">=</span> <span class="n">import_spacy</span><span class="p">()</span>
+
+        <span class="n">prompts</span> <span class="o">=</span> <span class="n">session_df</span><span class="p">[</span><span class="s2">&quot;prompts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="n">session_df</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">prompts</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)):</span>
+            <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nlp</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+            <span class="n">sentence_spans</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">sents</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">visualization</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">visualizations</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">html</span> <span class="o">=</span> <span class="n">spacy</span><span class="o">.</span><span class="n">displacy</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+                        <span class="n">sentence_spans</span><span class="p">,</span>
+                        <span class="n">style</span><span class="o">=</span><span class="n">visualization</span><span class="p">,</span>
+                        <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;compact&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                        <span class="n">jupyter</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">page</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">log_asset_data</span><span class="p">(</span>
+                        <span class="n">html</span><span class="p">,</span>
+                        <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;langchain-viz-</span><span class="si">{</span><span class="n">visualization</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">.html&quot;</span><span class="p">,</span>
+                        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">},</span>
+                        <span class="n">step</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">comet_ml</span><span class="o">.</span><span class="n">LOGGER</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="n">e</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;show_traceback&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+                    <span class="p">)</span>
+
+        <span class="k">return</span>
+
+    <span class="k">def</span> <span class="nf">_reset</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">task_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">workspace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">project_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">visualizations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">complexity_metrics</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">custom_metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_task_type</span> <span class="o">=</span> <span class="n">task_type</span> <span class="k">if</span> <span class="n">task_type</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_type</span>
+        <span class="n">_workspace</span> <span class="o">=</span> <span class="n">workspace</span> <span class="k">if</span> <span class="n">workspace</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">workspace</span>
+        <span class="n">_project_name</span> <span class="o">=</span> <span class="n">project_name</span> <span class="k">if</span> <span class="n">project_name</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_name</span>
+        <span class="n">_tags</span> <span class="o">=</span> <span class="n">tags</span> <span class="k">if</span> <span class="n">tags</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span>
+        <span class="n">_name</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">name</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">_visualizations</span> <span class="o">=</span> <span class="n">visualizations</span> <span class="k">if</span> <span class="n">visualizations</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">visualizations</span>
+        <span class="n">_complexity_metrics</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">complexity_metrics</span> <span class="k">if</span> <span class="n">complexity_metrics</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">complexity_metrics</span>
+        <span class="p">)</span>
+        <span class="n">_custom_metrics</span> <span class="o">=</span> <span class="n">custom_metrics</span> <span class="k">if</span> <span class="n">custom_metrics</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_metrics</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+            <span class="n">task_type</span><span class="o">=</span><span class="n">_task_type</span><span class="p">,</span>
+            <span class="n">workspace</span><span class="o">=</span><span class="n">_workspace</span><span class="p">,</span>
+            <span class="n">project_name</span><span class="o">=</span><span class="n">_project_name</span><span class="p">,</span>
+            <span class="n">tags</span><span class="o">=</span><span class="n">_tags</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">_name</span><span class="p">,</span>
+            <span class="n">visualizations</span><span class="o">=</span><span class="n">_visualizations</span><span class="p">,</span>
+            <span class="n">complexity_metrics</span><span class="o">=</span><span class="n">_complexity_metrics</span><span class="p">,</span>
+            <span class="n">custom_metrics</span><span class="o">=</span><span class="n">_custom_metrics</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset_callback_meta</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_create_session_analysis_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">langchain_asset</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">pd</span> <span class="o">=</span> <span class="n">import_pandas</span><span class="p">()</span>
+
+        <span class="n">llm_parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_llm_parameters</span><span class="p">(</span><span class="n">langchain_asset</span><span class="p">)</span>
+        <span class="n">num_generations_per_prompt</span> <span class="o">=</span> <span class="n">llm_parameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">llm_start_records_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">on_llm_start_records</span><span class="p">)</span>
+        <span class="c1"># Repeat each input row based on the number of outputs generated per prompt</span>
+        <span class="n">llm_start_records_df</span> <span class="o">=</span> <span class="n">llm_start_records_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+            <span class="n">llm_start_records_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">num_generations_per_prompt</span><span class="p">)</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">llm_end_records_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">on_llm_end_records</span><span class="p">)</span>
+
+        <span class="n">llm_session_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+            <span class="n">llm_start_records_df</span><span class="p">,</span>
+            <span class="n">llm_end_records_df</span><span class="p">,</span>
+            <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">suffixes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;_llm_start&quot;</span><span class="p">,</span> <span class="s2">&quot;_llm_end&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">llm_session_df</span>
+
+    <span class="k">def</span> <span class="nf">_get_llm_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">langchain_asset</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">langchain_asset</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">langchain_asset</span><span class="p">,</span> <span class="s2">&quot;agent&quot;</span><span class="p">):</span>
+                <span class="n">llm_parameters</span> <span class="o">=</span> <span class="n">langchain_asset</span><span class="o">.</span><span class="n">agent</span><span class="o">.</span><span class="n">llm_chain</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">langchain_asset</span><span class="p">,</span> <span class="s2">&quot;llm_chain&quot;</span><span class="p">):</span>
+                <span class="n">llm_parameters</span> <span class="o">=</span> <span class="n">langchain_asset</span><span class="o">.</span><span class="n">llm_chain</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">langchain_asset</span><span class="p">,</span> <span class="s2">&quot;llm&quot;</span><span class="p">):</span>
+                <span class="n">llm_parameters</span> <span class="o">=</span> <span class="n">langchain_asset</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">llm_parameters</span> <span class="o">=</span> <span class="n">langchain_asset</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+
+        <span class="k">return</span> <span class="n">llm_parameters</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Harrison Chase.
+      <span class="lastupdated">Last updated on Jun 14, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
