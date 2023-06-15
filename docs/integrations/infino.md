@@ -11,19 +11,19 @@ Key features of infino include:
 
 ## Installation and Setup
 
-First, you'll need to install the  `infino` Python package as follows:
+First, you'll need to install the  `infinopy` Python package as follows:
 
 ```bash
 pip install infinopy --upgrade
 ```
 
 If you already have an Infino Server running, then you're good to go; but if
-you don't, follow the next steps to install it:
+you don't, follow the next steps to start it:
 
 - Make sure you have Docker installed
 - Run the following in your terminal:
     ```
-    !docker run --rm --detach --name infino-example -p 3000:3000 infinohq/infino:latest
+    docker run --rm --detach --name infino-example -p 3000:3000 infinohq/infino:latest
     ```
 
 ## Using Infino
