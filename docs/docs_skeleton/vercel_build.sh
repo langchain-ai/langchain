@@ -4,20 +4,18 @@ uname -or
 uname -a
 
 cd ..
-yum install gcc make patch zlib-devel bzip2 bzip2-devel readline-devel sqlite sqlite-devel openssl11-devel tk-devel libffi-devel xz-devel
-	
-curl https://pyenv.run | bash
-echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
-echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-echo 'eval "$(pyenv init -)"' >> ~/.bashrc
-source ~/.bashrc
+sudo yum install gcc openssl-devel bzip2-devel libffi-devel 
+wget https://www.python.org/ftp/python/3.11.3/Python-3.11.3.tgz 
+sudo tar xzf Python-3.11.3.tgz 
+cd Python-3.11.3 
+sudo ./configure --enable-optimizations 
+sudo make altinstall 
+sudo rm -f /opt/Python-3.11.3.tgz 
 
-pyenv install 3.9
-pyenv global 3.9
-python3 --version
-python3 -m venv .venv
+python3.11 --version
+python3.11 -m venv .venv
 source .venv/bin/activate
-python3 -m pip install -r requirements.txt
+python3.11 -m pip install -r requirements.txt
 mkdir -p docs_skeleton/static/api_reference
 cd api_reference
 make html
