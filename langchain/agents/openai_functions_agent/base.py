@@ -151,7 +151,8 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     @property
     def input_keys(self) -> List[str]:
         """Get input keys. Input refers to user input here."""
-        return ["input"]
+        return ["input", "chat_history"]
+
 
     @property
     def functions(self) -> List[dict]:
@@ -171,9 +172,10 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         user_input = kwargs["input"]
+        chat_history = kwargs.get("chat_history", "")  # Consider chat history
         agent_scratchpad = _format_intermediate_steps(intermediate_steps)
         prompt = self.prompt.format_prompt(
-            input=user_input, agent_scratchpad=agent_scratchpad
+            input=user_input, chat_history=chat_history, agent_scratchpad=agent_scratchpad  # Update prompt format
         )
         messages = prompt.to_messages()
         predicted_message = self.llm.predict_messages(
@@ -197,9 +199,10 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         user_input = kwargs["input"]
+        chat_history = kwargs.get("chat_history", "")  # Consider chat history
         agent_scratchpad = _format_intermediate_steps(intermediate_steps)
         prompt = self.prompt.format_prompt(
-            input=user_input, agent_scratchpad=agent_scratchpad
+            input=user_input, chat_history=chat_history, agent_scratchpad=agent_scratchpad  # Update prompt format
         )
         messages = prompt.to_messages()
         predicted_message = await self.llm.apredict_messages(
@@ -207,6 +210,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         )
         agent_decision = _parse_ai_message(predicted_message)
         return agent_decision
+
 
     @classmethod
     def create_prompt(
@@ -223,7 +227,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
 
         messages.extend(
             [
-                HumanMessagePromptTemplate.from_template("{input}"),
+                HumanMessagePromptTemplate.from_template("{chat_history}\n{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
         )
