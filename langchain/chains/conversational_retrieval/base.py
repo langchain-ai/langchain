@@ -204,13 +204,15 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         chain_type: str = "stuff",
         verbose: bool = False,
         condense_question_llm: Optional[BaseLanguageModel] = None,
+        question_generator: Optional[LLMChain] = None,
+        combine_docs_chain: Optional[BaseCombineDocumentsChain] = None,
         combine_docs_chain_kwargs: Optional[Dict] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
         """Load chain from LLM."""
         combine_docs_chain_kwargs = combine_docs_chain_kwargs or {}
-        doc_chain = load_qa_chain(
+        doc_chain = combine_docs_chain or load_qa_chain(
             llm,
             chain_type=chain_type,
             verbose=verbose,
@@ -219,7 +221,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         )
 
         _llm = condense_question_llm or llm
-        condense_question_chain = LLMChain(
+        condense_question_chain = question_generator or LLMChain(
             llm=_llm,
             prompt=condense_question_prompt,
             verbose=verbose,
