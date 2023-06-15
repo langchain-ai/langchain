@@ -18,10 +18,9 @@ def _get_tool_classes(skip_tools_without_default_names: bool) -> List[Type[BaseT
         if isinstance(tool_class, type) and issubclass(tool_class, BaseTool):
             if tool_class in _EXCLUDE:
                 continue
-            if (
-                skip_tools_without_default_names
-                and tool_class.__fields__["name"].default is None
-            ):
+            if skip_tools_without_default_names and tool_class.__fields__[
+                "name"
+            ].default in [None, ""]:
                 continue
             results.append(tool_class)
     return results
