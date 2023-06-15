@@ -1,4 +1,5 @@
 import json
+from functools import partial
 from typing import Any, Dict, List, Optional
 
 from langchain.base_language import BaseLanguageModel
@@ -13,16 +14,54 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate
 
 
+def _replace_refs(schema, definitions):
+    """
+    Replaces all references in the given JSON schema with their definitions.
+    """
+    stack = [(schema, "")]
+    while stack:
+        curr_schema, path = stack.pop()
+        if isinstance(curr_schema, list):
+            for i in range(len(curr_schema)):
+                stack.append((curr_schema[i], f"{path}/{i}"))
+        elif isinstance(curr_schema, dict):
+            if "$ref" in curr_schema:
+                ref_path = curr_schema["$ref"]
+                ref_name = ref_path.replace("#/definitions/", "")
+                curr_schema.clear()
+                curr_schema.update(definitions.get(ref_name, {}))
+            else:
+                for k in list(curr_schema.keys()):
+                    stack.append((curr_schema[k], f"{path}/{k}"))
+    return schema
+
+
 def _parse_tag(inputs: dict) -> dict:
     message = inputs["input"]
     args = message.additional_kwargs["function_call"]["arguments"]
     return {"output": json.loads(args)}
 
 
+def _parse_tag_pydantic(inputs: dict, pydantic_schema: Any) -> dict:
+    message = inputs["input"]
+    args = message.additional_kwargs["function_call"]["arguments"]
+    args = pydantic_schema.parse_raw(args)
+    return {"output": args}
+
+
 def _parse_entities(inputs: dict) -> dict:
     message = inputs["input"]
     args = message.additional_kwargs["function_call"]["arguments"]
     return {"output": json.loads(args)["info"]}
+
+
+def _parse_entities_pydantic(inputs: dict, pydantic_schema: Any) -> dict:
+    message = inputs["input"]
+    args = message.additional_kwargs["function_call"]["arguments"]
+    # args = json.loads(args)["info"]  # access we need to access the 'info' key
+    print(args)
+    args = pydantic_schema.parse_raw(args)
+    return {"output": args}
 
 
 class OpenAIFunctionsChain(Chain):
@@ -124,6 +163,24 @@ def create_extraction_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
     return SimpleSequentialChain(chains=[chain, parsing_chain])
 
 
+def create_extraction_chain_pydantic(
+    pydantic_schema: Any, llm: BaseLanguageModel
+) -> Chain:
+    openai_schema = pydantic_schema.schema()
+    openai_schema = _replace_refs(openai_schema, openai_schema["definitions"])
+
+    functions = _get_extraction_functions(openai_schema)
+    print(functions)
+    prompt = ChatPromptTemplate.from_template(_EXTRACTION_TEMPLATE)
+    chain = OpenAIFunctionsChain(llm=llm, prompt=prompt, functions=functions)
+    pydantic_parsing_chain = TransformChain(
+        transform=partial(_parse_entities_pydantic, pydantic_schema=pydantic_schema),
+        input_variables=["input"],
+        output_variables=["output"],
+    )
+    return SimpleSequentialChain(chains=[chain, pydantic_parsing_chain])
+
+
 _TAGGING_TEMPLATE = """Extract the desired information from the following passage.
 
 Passage:
@@ -139,3 +196,20 @@ def create_tagging_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
         transform=_parse_tag, input_variables=["input"], output_variables=["output"]
     )
     return SimpleSequentialChain(chains=[chain, parsing_chain])
+
+
+def create_tagging_chain_pydantic(
+    pydantic_schema: Any, llm: BaseLanguageModel
+) -> Chain:
+    openai_schema = pydantic_schema.schema()
+
+    functions = _get_tagging_functions(openai_schema)
+    prompt = ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
+    chain = OpenAIFunctionsChain(llm=llm, prompt=prompt, functions=functions)
+    pydantic_parsing_chain = TransformChain(
+        transform=partial(_parse_tag_pydantic, pydantic_schema=pydantic_schema),
+        input_variables=["input"],
+        output_variables=["output"],
+    )
+
+    return SimpleSequentialChain(chains=[chain, pydantic_parsing_chain])
