@@ -1,8 +1,8 @@
 """Loader that loads acreom vault from a directory."""
-from typing import Iterator
 import re
 from pathlib import Path
-from typing import List
+from typing import Iterator, List
+
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -11,7 +11,7 @@ class AcreomLoader(BaseLoader):
     FRONT_MATTER_REGEX = re.compile(r"^---\n(.*?)\n---\n", re.MULTILINE | re.DOTALL)
 
     def __init__(
-            self, path: str, encoding: str = "UTF-8", collect_metadata: bool = True
+        self, path: str, encoding: str = "UTF-8", collect_metadata: bool = True
     ):
         """Initialize with path."""
         self.file_path = path
@@ -42,10 +42,11 @@ class AcreomLoader(BaseLoader):
         return self.FRONT_MATTER_REGEX.sub("", content)
 
     def _process_acreom_content(self, content: str) -> str:
-        # remove acreom specific elements from content that do not contribute to the context of current document
-        content = re.sub('\s*-\s\[\s\]\s.*|\s*\[\s\]\s.*', "", content)  # rm tasks
-        content = re.sub('#', "", content)  # rm hashtags
-        content = re.sub('\[\[.*?\]\]', "", content) # rm doclinks
+        # remove acreom specific elements from content that
+        # do not contribute to the context of current document
+        content = re.sub("\s*-\s\[\s\]\s.*|\s*\[\s\]\s.*", "", content)  # rm tasks
+        content = re.sub("#", "", content)  # rm hashtags
+        content = re.sub("\[\[.*?\]\]", "", content)  # rm doclinks
         return content
 
     def lazy_load(self) -> Iterator[Document]:

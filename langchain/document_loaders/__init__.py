@@ -1,5 +1,6 @@
 """All different types of document loaders."""
 
+from langchain.document_loaders.acreom import AcreomLoader
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
 from langchain.document_loaders.arxiv import ArxivLoader
@@ -123,7 +124,6 @@ from langchain.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
-from langchain.document_loaders.acreom import AcreomLoader
 
 # Legacy: only for backwards compat. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
