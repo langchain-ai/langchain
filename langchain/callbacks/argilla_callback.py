@@ -260,7 +260,9 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                                 "response": output["text"].strip(),
                             },
                         }
-                        for prompt, output in zip(prompts, chain_output_val)  # type: ignore
+                        for prompt, output in zip(
+                            prompts, chain_output_val  # type: ignore
+                        )
                     ]
                 )
             else:
