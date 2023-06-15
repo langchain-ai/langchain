@@ -1,5 +1,5 @@
 """Loader that loads acreom vault from a directory."""
-from typing import Iterable
+from typing import Iterator
 import re
 from pathlib import Path
 from typing import List
@@ -48,7 +48,7 @@ class AcreomLoader(BaseLoader):
         content = re.sub('\[\[.*?\]\]', "", content) # rm doclinks
         return content
 
-    def lazy_load(self) -> Iterable[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         ps = list(Path(self.file_path).glob("**/*.md"))
 
         for p in ps:
