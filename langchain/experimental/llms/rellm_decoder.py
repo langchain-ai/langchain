@@ -1,7 +1,7 @@
 """Experimental implementation of RELLM wrapped LLM."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional, cast
+from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 from pydantic import Field, root_validator
 
@@ -47,6 +47,7 @@ class RELLM(HuggingFacePipeline):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         rellm = import_rellm()
         from transformers import Text2TextGenerationPipeline

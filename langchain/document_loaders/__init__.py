@@ -31,6 +31,7 @@ from langchain.document_loaders.email import (
     OutlookMessageLoader,
     UnstructuredEmailLoader,
 )
+from langchain.document_loaders.embaas import EmbaasBlobLoader, EmbaasLoader
 from langchain.document_loaders.epub import UnstructuredEPubLoader
 from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.excel import UnstructuredExcelLoader
@@ -250,4 +251,6 @@ __all__ = [
     "WikipediaLoader",
     "YoutubeLoader",
     "SnowflakeLoader",
+    "EmbaasLoader",
+    "EmbaasBlobLoader",
 ]

@@ -86,7 +86,7 @@ def test_callback_manager() -> None:
     """Test the CallbackManager."""
     handler1 = FakeCallbackHandler()
     handler2 = FakeCallbackHandler()
-    manager = CallbackManager([handler1, handler2])
+    manager = CallbackManager(handlers=[handler1, handler2])
     _test_callback_manager(manager, handler1, handler2)
 
 
@@ -143,7 +143,7 @@ async def test_async_callback_manager() -> None:
     """Test the AsyncCallbackManager."""
     handler1 = FakeAsyncCallbackHandler()
     handler2 = FakeAsyncCallbackHandler()
-    manager = AsyncCallbackManager([handler1, handler2])
+    manager = AsyncCallbackManager(handlers=[handler1, handler2])
     await _test_callback_manager_async(manager, handler1, handler2)
 
 
@@ -153,7 +153,7 @@ async def test_async_callback_manager_sync_handler() -> None:
     handler1 = FakeCallbackHandler()
     handler2 = FakeAsyncCallbackHandler()
     handler3 = FakeAsyncCallbackHandler()
-    manager = AsyncCallbackManager([handler1, handler2, handler3])
+    manager = AsyncCallbackManager(handlers=[handler1, handler2, handler3])
     await _test_callback_manager_async(manager, handler1, handler2, handler3)
 
 
@@ -165,11 +165,11 @@ def test_callback_manager_inheritance() -> None:
         FakeCallbackHandler(),
     )
 
-    callback_manager1 = CallbackManager([handler1, handler2])
+    callback_manager1 = CallbackManager(handlers=[handler1, handler2])
     assert callback_manager1.handlers == [handler1, handler2]
     assert callback_manager1.inheritable_handlers == []
 
-    callback_manager2 = CallbackManager([])
+    callback_manager2 = CallbackManager(handlers=[])
     assert callback_manager2.handlers == []
     assert callback_manager2.inheritable_handlers == []
 
@@ -203,8 +203,10 @@ def test_callback_manager_inheritance() -> None:
     assert child_manager2.inheritable_handlers == [handler1]
 
 
-def test_callback_manager_configure() -> None:
+def test_callback_manager_configure(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test callback manager configuration."""
+    monkeypatch.setenv("LANGCHAIN_TRACING_V2", "false")
+    monkeypatch.setenv("LANGCHAIN_TRACING", "false")
     handler1, handler2, handler3, handler4 = (
         FakeCallbackHandler(),
         FakeCallbackHandler(),
@@ -227,7 +229,7 @@ def test_callback_manager_configure() -> None:
     assert isinstance(configured_manager.handlers[4], StdOutCallbackHandler)
     assert isinstance(configured_manager, CallbackManager)
 
-    async_local_callbacks = AsyncCallbackManager([handler3, handler4])
+    async_local_callbacks = AsyncCallbackManager(handlers=[handler3, handler4])
     async_configured_manager = AsyncCallbackManager.configure(
         inheritable_callbacks=inheritable_callbacks,
         local_callbacks=async_local_callbacks,

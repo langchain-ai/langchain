@@ -112,6 +112,7 @@ class AI21(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to AI21's complete endpoint.
 
@@ -140,10 +141,11 @@ class AI21(LLM):
                 base_url = "https://api.ai21.com/studio/v1/experimental"
             else:
                 base_url = "https://api.ai21.com/studio/v1"
+        params = {**self._default_params, **kwargs}
         response = requests.post(
             url=f"{base_url}/{self.model}/complete",
             headers={"Authorization": f"Bearer {self.ai21_api_key}"},
-            json={"prompt": prompt, "stopSequences": stop, **self._default_params},
+            json={"prompt": prompt, "stopSequences": stop, **params},
         )
         if response.status_code != 200:
             optional_detail = response.json().get("error")

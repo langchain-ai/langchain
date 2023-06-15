@@ -9,12 +9,16 @@ from pydantic import Field
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chains.graph_qa.prompts import RDF_SPARQL_GENERATION_PROMPT, RDF_QA_PROMPT
+from langchain.chains.graph_qa.prompts import (
+    RDF_QA_PROMPT,
+    RDF_SPARQL_GENERATION_PROMPT,
+)
 from langchain.chains.llm import LLMChain
 from langchain.graphs.rdf_graph import RDFGraph
 from langchain.prompts.base import BasePromptTemplate
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
+
 
 class GraphRDFQAChain(Chain):
     """Chain for question-answering against a graph by generating RDF SPARQL statements."""
