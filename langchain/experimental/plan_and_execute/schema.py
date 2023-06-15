@@ -28,7 +28,7 @@ class BaseStepContainer(BaseModel):
         """Return the final response based on steps taken."""
 
 
-class ListStepContainer(BaseModel):
+class ListStepContainer(BaseStepContainer):
     steps: List[Tuple[Step, StepResponse]] = Field(default_factory=list)
 
     def add_step(self, step: Step, step_response: StepResponse) -> None:
