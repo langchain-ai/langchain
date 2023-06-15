@@ -16,7 +16,33 @@ This agent uses the [ReAct](https://arxiv.org/pdf/2205.00445.pdf) framework to d
 based solely on the tool's description. Any number of tools can be provided.
 This agent requires that a description is provided for each tool.
 
-- **Note**: This is the most general purpose action agent.
+**Note**: This is the most general purpose action agent.
+
+### [Structured input ReAct](./structured_chat.html)
+
+The structured tool chat agent is capable of using multi-input tools.
+Older agents are configured to specify an action input as a single string, but this agent can use a tools' argument
+schema to create a structured action input. This is useful for more complex tool usage, like precisely
+navigating around a browser.
+
+### [OpenAI Functions](./openai_functions_agent.html)
+
+Certain OpenAI models (like gpt-3.5-turbo-0613 and gpt-4-0613) have been explicitly fine-tuned to detect when a
+function should to be called and respond with the inputs that should be passed to the function.
+The OpenAI Functions Agent is designed to work with these models.
+
+### [Conversational](./chat_conversation_agent.html)
+
+This agent is designed to be used in conversational settings.
+The prompt is designed to make the agent helpful and conversational.
+It uses the ReAct framework to decide which tool to use, and uses memory to remember the previous conversation interactions.
+
+### [Self ask with search](./self_ask_with_search.html)
+
+This agent utilizes a single tool that should be named `Intermediate Answer`.
+This tool should be able to lookup factual answers to questions. This agent
+is equivalent to the original [self ask with search paper](https://ofir.io/self-ask.pdf),
+where a Google search API was provided as the tool.
 
 ### [ReAct document store](./react_docstore.html)
 
@@ -26,19 +52,6 @@ The `Search` tool should search for a document, while the `Lookup` tool should l
 a term in the most recently found document.
 This agent is equivalent to the
 original [ReAct paper](https://arxiv.org/pdf/2210.03629.pdf), specifically the Wikipedia example.
-
-### [Self ask with search](./self_ask_with_search.html)
-
-This agent utilizes a single tool that should be named `Intermediate Answer`.
-This tool should be able to lookup factual answers to questions. This agent
-is equivalent to the original [self ask with search paper](https://ofir.io/self-ask.pdf),
-where a Google search API was provided as the tool.
-
-### [Conversational](./chat_conversation_agent.html)
-
-This agent is designed to be used in conversational settings.
-The prompt is designed to make the agent helpful and conversational.
-It uses the ReAct framework to decide which tool to use, and uses memory to remember the previous conversation interactions.
 
 ## [Plan-and-execute agents](./plan_and_execute.html)
 Plan and execute agents accomplish an objective by first planning what to do, then executing the sub tasks. This idea is largely inspired by [BabyAGI](https://github.com/yoheinakajima/babyagi) and then the ["Plan-and-Solve" paper](https://arxiv.org/abs/2305.04091).

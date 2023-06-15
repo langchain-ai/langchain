@@ -86,5 +86,15 @@ module.exports = {
 	    slug: "additional_resources",
       },
     },
+    {
+      type: "html",
+      value: "<hr>",
+      defaultStyle: true,
+    },
+    {
+       type: "link",
+       href: "pathname:///api_reference/html/index.html",
+       label: "API reference",
+    },
   ],
 };

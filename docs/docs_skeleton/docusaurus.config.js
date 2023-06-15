@@ -121,6 +121,11 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      docs: {
+        sidebar: {
+          hideable: true,
+        },
+      },
       prism: {
         theme: require("prism-react-renderer/themes/vsLight"),
         darkTheme: require("prism-react-renderer/themes/vsDark"),
@@ -129,16 +134,6 @@ const config = {
       navbar: {
         title: "🦜️🔗 LangChain",
         items: [
-          {
-            href: "/docs/get_started/introduction.html",
-            label: "Docs",
-            position: "left",
-          },
-          {
-            href: "pathname:///api_reference/html/index.html",
-            label: "API Reference",
-            position: "left",
-          },
           {
             to: "https://js.langchain.com/docs",
             label: "JS/TS Docs",

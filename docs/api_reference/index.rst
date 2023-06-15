@@ -1,7 +1,7 @@
 API Reference
 ==========================
 
-Full documentation on all methods, classes, and APIs in LangChain.
+| Full documentation on all methods, classes, and APIs in the LangChain Python package.
 
 .. toctree::
    :maxdepth: 1
