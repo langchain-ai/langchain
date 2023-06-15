@@ -284,18 +284,26 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         from PyPDF2 import PdfReader
 
         pdf_reader = PdfReader(BytesIO(content))
-
-        return [
-            Document(
-                page_content=page.extract_text(),
-                metadata={
-                    "source": f"https://drive.google.com/file/d/{id}/view",
-                    "title": f"{file.get('name')}",
-                    "page": i,
-                },
-            )
-            for i, page in enumerate(pdf_reader.pages)
-        ]
+        document = []
+        for i, page in enumerate(pdf_reader.pages):
+            try: 
+                page_content = page.extract_text()
+                if page_content:
+                    document.extend(
+                        Document(
+                            page_content=page_content,
+                            metadata={
+                                "source": f"https://drive.google.com/file/d/{id}/view",
+                                "title": f"{file.get('name')}",
+                                "page": i,
+                            },
+                        )
+                    )
+            except Exception as e:
+                print(f"Parsing problem in file {file.get('name')} at the {i} page")
+                pass
+        
+        return document
 
     def _load_file_from_ids(self) -> List[Document]:
         """Load files from a list of IDs."""
