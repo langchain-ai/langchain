@@ -6,6 +6,7 @@ You can use the dev container configuration in this folder to build and run the 
 
 ## GitHub Codespaces
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/hwchase17/langchain)
+
 You may use the button above, or follow these steps to open this repo in a Codespace:
 1. Click the **Code** drop-down menu at the top of https://github.com/hwchase17/langchain.
 1. Click on the **Codespaces** tab.
