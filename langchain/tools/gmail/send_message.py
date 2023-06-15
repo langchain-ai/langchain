@@ -57,10 +57,10 @@ class GmailSendMessage(GmailBaseTool):
         mime_message["To"] = ", ".join(to if isinstance(to, list) else [to])
         mime_message["Subject"] = subject
         if cc is not None:
-            mime_message["Cc"] = ", ".join(cc)
+            mime_message["Cc"] = ", ".join(cc if isinstance(cc, list) else [cc])
 
         if bcc is not None:
-            mime_message["Bcc"] = ", ".join(bcc)
+            mime_message["Bcc"] = ", ".join(bcc if isinstance(bcc, list) else [bcc])
 
         encoded_message = base64.urlsafe_b64encode(mime_message.as_bytes()).decode()
         return {"raw": encoded_message}
