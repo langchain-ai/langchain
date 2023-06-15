@@ -309,6 +309,7 @@ extended_testing = [
  "chardet",
  "jq",
  "pdfminer.six",
+ "pgvector",
  "pypdf",
  "pymupdf",
  "pypdfium2",
@@ -325,6 +326,7 @@ extended_testing = [
  "html2text",
  "py-trello",
  "scikit-learn",
+ "streamlit",
  "pyspark",
  "openai"
 ]
