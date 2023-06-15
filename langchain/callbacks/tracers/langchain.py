@@ -38,7 +38,7 @@ class LangChainTracer(BaseTracer):
     def __init__(
         self,
         example_id: Optional[Union[UUID, str]] = None,
-        session_name: Optional[str] = None,
+        project_name: Optional[str] = None,
         client: Optional[LangChainPlusClient] = None,
         **kwargs: Any,
     ) -> None:
@@ -48,7 +48,9 @@ class LangChainTracer(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.session_name = session_name or os.getenv("LANGCHAIN_SESSION", "default")
+        self.project_name = project_name or os.getenv(
+            "LANGCHAIN_PROJECT", os.getenv("LANGCHAIN_SESSION", "default")
+        )
         # set max_workers to 1 to process tasks in order
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.client = client or LangChainPlusClient()
@@ -93,7 +95,7 @@ class LangChainTracer(BaseTracer):
         extra["runtime"] = get_runtime_environment()
         run_dict["extra"] = extra
         try:
-            run = self.client.create_run(**run_dict, session_name=self.session_name)
+            run = self.client.create_run(**run_dict, project_name=self.project_name)
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
             log_error_once("post", e)

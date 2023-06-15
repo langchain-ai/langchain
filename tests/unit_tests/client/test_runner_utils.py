@@ -190,7 +190,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             dataset_name="test",
             llm_or_chain_factory=lambda: chain,
             concurrency_level=2,
-            session_name="test_session",
+            project_name="test_project",
             num_repetitions=num_repetitions,
             client=client,
         )
