@@ -215,6 +215,7 @@ setuptools = "^67.6.1"
 llms = ["anthropic", "cohere", "openai", "openllm", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
+openllm = ["openllm"]
 text_helpers = ["chardet"]
 cohere = ["cohere"]
 docarray = ["docarray"]
