@@ -12,19 +12,18 @@ from langchain.vectorstores.base import VectorStore
 logger = logging.getLogger(__name__)
 
 
-"""
-Everything below assumes `commons` Rockset workspace. TODO: Add support for workspace args.
-"""
-
-
 class Rockset(VectorStore):
     """Wrapper arpund Rockset vector database.
 
-    To use, you should have the `rockset` python package installed. Note that to use this,
-    the collection being used must already exist in your Rockset instance.
-    You must also ensure you use a Rockset ingest transformation to apply `VECTOR_ENFORCE`
-    on the column being used to store `embedding_key` in the collection.
+    To use, you should have the `rockset` python package installed. Note that to use
+    this, the collection being used must already exist in your Rockset instance.
+    You must also ensure you use a Rockset ingest transformation to apply
+    `VECTOR_ENFORCE` on the column being used to store `embedding_key` in the
+    collection.
     See: https://rockset.com/blog/introducing-vector-search-on-rockset/ for more details
+
+    Everything below assumes `commons` Rockset workspace.
+    TODO: Add support for workspace args.
 
     Example:
         .. code-block:: python
@@ -295,7 +294,8 @@ class Rockset(VectorStore):
         """Builds Rockset SQL query to query similar vectors to query_vector"""
 
         q_embedding_str = ",".join(map(str, query_embedding))
-        distance_str = f"""{distance_func.value}({self._embedding_key}, [{q_embedding_str}]) as dist"""
+        distance_str = f"""{distance_func.value}({self._embedding_key}, \
+[{q_embedding_str}]) as dist"""
         where_str = f"WHERE {where_str}\n" if where_str else ""
         return f"""\
 SELECT * EXCEPT({self._embedding_key}), {distance_str}
