@@ -1,6 +1,8 @@
 import json
 from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
+
+from pydantic import BaseModel
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -14,54 +16,61 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate
 
 
-def _replace_refs(schema, definitions):
+def _get_extraction_schema(item_class: Type[BaseModel]) -> Type[BaseModel]:
+    class PydanticSchema(BaseModel):
+        info: List[item_class]
+
+    return PydanticSchema
+
+
+def _resolve_schema_references(schema: Any, definitions: Dict[str, Any]) -> Any:
     """
-    Replaces all references in the given JSON schema with their definitions.
+    Resolves the $ref keys in a JSON schema object using the provided definitions.
     """
-    stack = [(schema, "")]
-    while stack:
-        curr_schema, path = stack.pop()
-        if isinstance(curr_schema, list):
-            for i in range(len(curr_schema)):
-                stack.append((curr_schema[i], f"{path}/{i}"))
-        elif isinstance(curr_schema, dict):
-            if "$ref" in curr_schema:
-                ref_path = curr_schema["$ref"]
-                ref_name = ref_path.replace("#/definitions/", "")
-                curr_schema.clear()
-                curr_schema.update(definitions.get(ref_name, {}))
-            else:
-                for k in list(curr_schema.keys()):
-                    stack.append((curr_schema[k], f"{path}/{k}"))
+    if isinstance(schema, list):
+        for i, item in enumerate(schema):
+            schema[i] = _resolve_schema_references(item, definitions)
+    elif isinstance(schema, dict):
+        if "$ref" in schema:
+            ref_key = schema.pop("$ref").split("/")[-1]
+            ref = definitions.get(ref_key, {})
+            schema.update(ref)
+        else:
+            for key, value in schema.items():
+                schema[key] = _resolve_schema_references(value, definitions)
     return schema
 
 
-def _parse_tag(inputs: dict) -> dict:
+def _get_function_arguments(inputs: dict) -> dict:
     message = inputs["input"]
-    args = message.additional_kwargs["function_call"]["arguments"]
+    try:
+        func_call = message.additional_kwargs["function_call"]
+    except ValueError as exc:
+        raise ValueError(f"Could not parse function call: {exc}")
+
+    return func_call["arguments"]
+
+
+def _parse_tag(inputs: dict) -> dict:
+    args = _get_function_arguments(inputs)
     return {"output": json.loads(args)}
 
 
 def _parse_tag_pydantic(inputs: dict, pydantic_schema: Any) -> dict:
-    message = inputs["input"]
-    args = message.additional_kwargs["function_call"]["arguments"]
+    args = _get_function_arguments(inputs)
     args = pydantic_schema.parse_raw(args)
     return {"output": args}
 
 
 def _parse_entities(inputs: dict) -> dict:
-    message = inputs["input"]
-    args = message.additional_kwargs["function_call"]["arguments"]
+    args = _get_function_arguments(inputs)
     return {"output": json.loads(args)["info"]}
 
 
 def _parse_entities_pydantic(inputs: dict, pydantic_schema: Any) -> dict:
-    message = inputs["input"]
-    args = message.additional_kwargs["function_call"]["arguments"]
-    # args = json.loads(args)["info"]  # access we need to access the 'info' key
-    print(args)
+    args = _get_function_arguments(inputs)
     args = pydantic_schema.parse_raw(args)
-    return {"output": args}
+    return {"output": args.info}
 
 
 class OpenAIFunctionsChain(Chain):
@@ -166,8 +175,12 @@ def create_extraction_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
 def create_extraction_chain_pydantic(
     pydantic_schema: Any, llm: BaseLanguageModel
 ) -> Chain:
+    pydantic_schema = _get_extraction_schema(pydantic_schema)
+
     openai_schema = pydantic_schema.schema()
-    openai_schema = _replace_refs(openai_schema, openai_schema["definitions"])
+    openai_schema = _resolve_schema_references(
+        openai_schema, openai_schema["definitions"]
+    )
 
     functions = _get_extraction_functions(openai_schema)
     print(functions)
