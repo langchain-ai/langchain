@@ -4130,13 +4130,13 @@ tests = ["pytest", "pytest-mock"]
 
 [[package]]
 name = "langchainplus-sdk"
-version = "0.0.7"
+version = "0.0.9"
 description = "Client library to connect to the LangChainPlus LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchainplus_sdk-0.0.7-py3-none-any.whl", hash = "sha256:aefc471058648bf9fc51f659117d33ef905d25a304d5a021f7e32c30f5921076"},
-    {file = "langchainplus_sdk-0.0.7.tar.gz", hash = "sha256:b58565bdcaf301d2e6e7dd8898f0b8ccf549a35476258e0c14d871d6de02d210"},
+    {file = "langchainplus_sdk-0.0.9-py3-none-any.whl", hash = "sha256:4fe1a60f28c93ae0e145dcd53e4dc5293374ed0a8518abcc51e201081809bf0b"},
+    {file = "langchainplus_sdk-0.0.9.tar.gz", hash = "sha256:bbfdc54c64df5ca4334068ab2d7b89d3a894f313b1285939b4c4532fea62eeb7"},
 ]
 
 [package.dependencies]
