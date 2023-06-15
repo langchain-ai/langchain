@@ -291,7 +291,8 @@ class ElasticVectorSearch(VectorStore, ABC):
             "elasticsearch_url", "ELASTICSEARCH_URL"
         )
         index_name = index_name or uuid.uuid4().hex
-        vectorsearch = cls(elasticsearch_url, index_name, embedding, **kwargs)
+        vectorsearch = ElasticVectorSearch(
+            elasticsearch_url, index_name, embedding, **kwargs)
         vectorsearch.add_texts(
             texts, metadatas=metadatas, refresh_indices=refresh_indices
         )
@@ -353,7 +354,6 @@ class ElasticKnnSearch(ElasticVectorSearch):
             es_password: The password for the Elasticsearch instance. Required if
                 creating a new connection.
         """
-
         try:
             import elasticsearch
         except ImportError:
