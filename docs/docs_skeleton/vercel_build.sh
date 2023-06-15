@@ -1,5 +1,8 @@
 #!/bin/bash
 
+uname -or
+uname -a
+
 cd ..
 
 curl https://pyenv.run | bash
