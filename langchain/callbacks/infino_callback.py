@@ -1,5 +1,4 @@
 """Callback Handler that logs to infino."""
-import datetime as dt
 import time
 from typing import Any, Dict, List, Optional, Union
 
@@ -90,13 +89,15 @@ class InfinoCallbackHandler(BaseCallbackHandler):
 
         # Track token usage.
         token_usage = response.llm_output["token_usage"]
-        total_tokens = response.llm_output["token_usage"]["total_tokens"]
-        completion_tokens = response.llm_output["token_usage"]["completion_tokens"]
-        self._send_to_infino("prompt_tokens", token_usage["prompt_tokens"])
-        self._send_to_infino("total_tokens", token_usage["total_tokens"])
-        self._send_to_infino("completion_tokens", token_usage["completion_tokens"])
 
-        # Track prompt reponse.
+        prompt_tokens = token_usage["prompt_tokens"]
+        total_tokens = token_usage["total_tokens"]
+        completion_tokens = token_usage["completion_tokens"]
+        self._send_to_infino("prompt_tokens", prompt_tokens)
+        self._send_to_infino("total_tokens", total_tokens)
+        self._send_to_infino("completion_tokens", completion_tokens)
+
+        # Track prompt response.
         for generations in response.generations:
             for generation in generations:
                 self._send_to_infino("prompt_response", generation.text, is_ts=False)
