@@ -2,9 +2,11 @@
 
 echo "In custom script!"
 cd ..
-python -m venv .venv
+python3 --version
+pip3 --version
+python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 mkdir -p docs_skeleton/static/api_reference
 cd api_reference
 make html
