@@ -10,8 +10,9 @@
 	// Required when using Docker Compose. The name of the service to connect to once running
 	"service": "langchain",
 
-	// Sets the default path to open when connecting to the container
-	"workspaceFolder": "/workspaces/langchain",
+	// The optional 'workspaceFolder' property is the path VS Code should open by default when
+	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
 
 	// Prevent the container from shutting down
 	"overrideCommand": true
