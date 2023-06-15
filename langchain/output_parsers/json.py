@@ -23,7 +23,7 @@ def parse_json_markdown(json_string: str) -> dict:
         # If match found, use the content within the backticks
         json_str = match.group(2)
         # In case we have picked some trailing backticks, get rid of them
-        json_str = json_str.rstrip("`")
+        json_str = json_str.strip().rstrip("`")
 
     # Strip whitespace and newlines from the start and end
     json_str = json_str.strip()
