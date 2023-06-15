@@ -16,7 +16,7 @@ pyenv global 3.9
 python3 --version
 python3 -m venv .venv
 source .venv/bin/activate
-python3 -m pip3 install -r requirements.txt
+python3 -m pip install -r requirements.txt
 mkdir -p docs_skeleton/static/api_reference
 cd api_reference
 make html
