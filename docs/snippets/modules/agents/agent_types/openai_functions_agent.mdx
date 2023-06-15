@@ -33,19 +33,17 @@ tools = [
 
 
 ```python
-mrkl = initialize_agent(tools, llm, agent=AgentType.OPENAI_FUNCTIONS, verbose=True)
+agent = initialize_agent(tools, llm, agent=AgentType.OPENAI_FUNCTIONS, verbose=True)
 ```
 
 
 ```python
-mrkl.run("Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?")
+agent.run("Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?")
 ```
 
 <CodeOutputBlock lang="python">
 
 ```
-    
-    
     > Entering new  chain...
     
     Invoking: `Search` with `{'query': 'Leo DiCaprio girlfriend'}`
@@ -54,9 +52,7 @@ mrkl.run("Who is Leo DiCaprio's girlfriend? What is her current age raised to th
     Amidst his casual romance with Gigi, Leo allegedly entered a relationship with 19-year old model, Eden Polani, in February 2023.
     Invoking: `Calculator` with `{'expression': '19^0.43'}`
     
-    
-    
-    
+
     > Entering new  chain...
     19^0.43```text
     19**0.43
@@ -68,9 +64,6 @@ mrkl.run("Who is Leo DiCaprio's girlfriend? What is her current age raised to th
     Answer: 3.547023357958959Leo DiCaprio's girlfriend is reportedly Eden Polani. Her current age raised to the power of 0.43 is approximately 3.55.
     
     > Finished chain.
-
-
-
 
 
     "Leo DiCaprio's girlfriend is reportedly Eden Polani. Her current age raised to the power of 0.43 is approximately 3.55."
