@@ -348,7 +348,9 @@ class SQLDatabase:
                 else:
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.execute(text(command))
-            column_names = tuple(cursor.keys()) if self._include_column_names_on_query else None
+            column_names = (
+                tuple(cursor.keys()) if self._include_column_names_on_query else None
+            )
             if cursor.returns_rows:
                 if fetch == "all":
                     result = cursor.fetchall()
@@ -361,7 +363,7 @@ class SQLDatabase:
                 # trunacating text
                 if isinstance(result, list):
                     if column_names:
-                                result.insert(0, column_names)
+                        result.insert(0, column_names)
                     return str(
                         [
                             tuple(
