@@ -9,7 +9,7 @@ from langchain.agents.tools import Tool
 
 def test_mrkl_serialization() -> None:
     agent = initialize_agent(
-        [        
+        [
             Tool(
                 name="Test tool",
                 func=lambda x: x,
