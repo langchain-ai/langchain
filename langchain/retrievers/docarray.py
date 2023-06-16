@@ -30,7 +30,7 @@ class DocArrayRetriever(BaseRetriever, BaseModel):
         content_field: Field that represents the main content in your document schema.
             Will be used as a `page_content`. Everything else will go into `metadata`.
         search_type: Type of search to perform (similarity / mmr)
-        filters: Filters applied for document retrieval
+        filters: Filters applied for document retrieval.
         top_k: Number of documents to return
     """
 
