@@ -272,6 +272,12 @@ class ConfluenceLoader(BaseLoader):
 
         docs = []
 
+        expands = [content_format.value]
+        if not include_archived_content:
+            # expand restrictions for `self.is_public_page()`
+            expands.append("restrictions.read.restrictions.user")
+            expands.append("restrictions.read.restrictions.group")
+
         if space_key:
             pages = self.paginate_request(
                 self.confluence.get_all_pages_from_space,
@@ -279,7 +285,7 @@ class ConfluenceLoader(BaseLoader):
                 limit=limit,
                 max_pages=max_pages,
                 status="any" if include_archived_content else "current",
-                expand=content_format.value,
+                expand=",".join(expands),
             )
             docs += self.process_pages(
                 pages,
@@ -312,7 +318,7 @@ class ConfluenceLoader(BaseLoader):
                 limit=limit,
                 max_pages=max_pages,
                 include_archived_spaces=include_archived_content,
-                expand=content_format.value,
+                expand=",".join(expands),
             )
             docs += self.process_pages(
                 pages,
@@ -339,7 +345,7 @@ class ConfluenceLoader(BaseLoader):
                     before_sleep=before_sleep_log(logger, logging.WARNING),
                 )(self.confluence.get_page_by_id)
                 page = get_page(
-                    page_id=page_id, expand=f"{content_format.value},version"
+                    page_id=page_id, expand=",".join([*expands, "version"])
                 )
                 if not include_restricted_content and not self.is_public_page(page):
                     continue
@@ -412,7 +418,7 @@ class ConfluenceLoader(BaseLoader):
 
     def is_public_page(self, page: dict) -> bool:
         """Check if a page is publicly accessible."""
-        restrictions = self.confluence.get_all_restrictions_for_content(page["id"])
+        restrictions = page['restrictions']
 
         return (
             page["status"] == "current"
