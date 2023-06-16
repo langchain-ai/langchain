@@ -240,7 +240,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools."""
         if not isinstance(llm, ChatOpenAI):
-            raise ValueError("Only supported with OpenAI models.")
+            raise ValueError("Only supported with ChatOpenAI models.")
         prompt = cls.create_prompt()
         return cls(
             llm=llm,
