@@ -68,7 +68,7 @@ class Rockset(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import rockset client python package. "
-                "Please isntall it with `pip install rockset`."
+                "Please install it with `pip install rockset`."
             )
 
         if not isinstance(client, RocksetClient):
@@ -318,7 +318,7 @@ LIMIT {str(k)}
         except ImportError:
             raise ImportError(
                 "Could not import rockset client python package. "
-                "Please isntall it with `pip install rockset`."
+                "Please install it with `pip install rockset`."
             )
 
         self._client.Documents.delete_documents(
