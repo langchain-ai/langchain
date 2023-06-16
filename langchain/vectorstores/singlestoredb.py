@@ -1,7 +1,9 @@
 """Wrapper around SingleStore DB."""
 from __future__ import annotations
 
+import enum
 import json
+
 from typing import (
     Any,
     ClassVar,
@@ -19,6 +21,16 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
+class DistanceStrategy(str, enum.Enum):
+    EUCLIDEAN_DISTANCE = "EUCLIDEAN_DISTANCE"
+    DOT_PRODUCT = "DOT_PRODUCT"
+
+DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.DOT_PRODUCT
+
+ORDERING_DIRECTIVE: dict = {
+    DistanceStrategy.EUCLIDEAN_DISTANCE: "",
+    DistanceStrategy.DOT_PRODUCT: "DESC"
+}
 
 class SingleStoreDB(VectorStore):
     """
@@ -45,6 +57,7 @@ class SingleStoreDB(VectorStore):
         self,
         embedding: Embeddings,
         *,
+        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         table_name: str = "embeddings",
         content_field: str = "content",
         metadata_field: str = "metadata",
@@ -58,6 +71,15 @@ class SingleStoreDB(VectorStore):
 
         Args:
             embedding (Embeddings): A text embedding model.
+
+            distance_strategy (DistanceStrategy, optional): Determines the strategy employed for calculating
+                the distance between vectors in the embedding space.
+                Defaults to DOT_PRODUCT.
+                Available options are:
+                - DOT_PRODUCT: Computes the scalar product of two vectors. This is the default behavior
+                - EUCLIDEAN_DISTANCE: Computes the Euclidean distance between two vectors. This metric
+                considers the geometric distance in the vector space, and might be more suitable for
+                embeddings that rely on spatial relationships.
 
             table_name (str, optional): Specifies the name of the table in use.
                 Defaults to "embeddings".
@@ -137,6 +159,7 @@ class SingleStoreDB(VectorStore):
 
                 vectorstore = SingleStoreDB(
                     OpenAIEmbeddings(),
+                    distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
                     host="127.0.0.1",
                     port=3306,
                     user="user",
@@ -159,6 +182,7 @@ class SingleStoreDB(VectorStore):
         """
 
         self.embedding = embedding
+        self.distance_strategy = distance_strategy
         self.table_name = table_name
         self.content_field = content_field
         self.metadata_field = metadata_field
@@ -282,12 +306,14 @@ class SingleStoreDB(VectorStore):
             cur = conn.cursor()
             try:
                 cur.execute(
-                    """SELECT {}, {}, DOT_PRODUCT({}, JSON_ARRAY_PACK(%s)) as __score 
-                    FROM {} ORDER BY __score DESC LIMIT %s""".format(
+                    """SELECT {}, {}, {}({}, JSON_ARRAY_PACK(%s)) as __score
+                    FROM {} ORDER BY __score {} LIMIT %s""".format(
                         self.content_field,
                         self.metadata_field,
+                        self.distance_strategy,
                         self.vector_field,
                         self.table_name,
+                        ORDERING_DIRECTIVE[self.distance_strategy]
                     ),
                     (
                         "[{}]".format(",".join(map(str, embedding))),
@@ -310,6 +336,7 @@ class SingleStoreDB(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         table_name: str = "embeddings",
         content_field: str = "content",
         metadata_field: str = "metadata",
@@ -338,6 +365,7 @@ class SingleStoreDB(VectorStore):
 
         instance = cls(
             embedding,
+            distance_strategy=distance_strategy,
             table_name=table_name,
             content_field=content_field,
             metadata_field=metadata_field,

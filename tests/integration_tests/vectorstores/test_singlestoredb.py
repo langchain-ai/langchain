@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from langchain.docstore.document import Document
-from langchain.vectorstores.singlestoredb import SingleStoreDB
+from langchain.vectorstores.singlestoredb import DistanceStrategy, SingleStoreDB
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 TEST_SINGLESTOREDB_URL = "root:pass@localhost:3306/db"
@@ -71,6 +71,24 @@ def test_singlestoredb_new_vector(texts: List[str]) -> None:
     docsearch = SingleStoreDB.from_texts(
         texts,
         NormilizedFakeEmbeddings(),
+        table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
+    )
+    docsearch.add_texts(["foo"])
+    output = docsearch.similarity_search("foo", k=2)
+    assert output == TEST_RESULT
+    drop(table_name)
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+def test_singlestoredb_euclidean_distance(texts: List[str]) -> None:
+    """Test adding a new document"""
+    table_name = "test_singlestoredb_euclidean_distance"
+    drop(table_name)
+    docsearch = SingleStoreDB.from_texts(
+        texts,
+        FakeEmbeddings(),
+        distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
         table_name=table_name,
         host=TEST_SINGLESTOREDB_URL,
     )
