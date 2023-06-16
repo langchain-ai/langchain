@@ -22,6 +22,12 @@ from langchain.chains.llm_summarization_checker.base import LLMSummarizationChec
 from langchain.chains.loading import load_chain
 from langchain.chains.mapreduce import MapReduceChain
 from langchain.chains.moderation import OpenAIModerationChain
+from langchain.chains.openai_functions import (
+    create_extraction_chain,
+    create_extraction_chain_pydantic,
+    create_tagging_chain,
+    create_tagging_chain_pydantic,
+)
 from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_generation.base import QAGenerationChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
@@ -69,4 +75,8 @@ __all__ = [
     "OpenAPIEndpointChain",
     "FlareChain",
     "NebulaGraphQAChain",
+    "create_extraction_chain",
+    "create_tagging_chain",
+    "create_extraction_chain_pydantic",
+    "create_tagging_chain_pydantic",
 ]

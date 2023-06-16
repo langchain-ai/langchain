@@ -5,7 +5,7 @@ from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 
 
-class RunStackCallbackHandler(BaseTracer):
+class RunCollectorCallbackHandler(BaseTracer):
     """A tracer that collects all nested runs in a list.
 
     Useful for inspection and for evaluation."""

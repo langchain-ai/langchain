@@ -1,5 +1,6 @@
 """All different types of document loaders."""
 
+from langchain.document_loaders.acreom import AcreomLoader
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
@@ -136,6 +137,7 @@ PagedPDFSplitter = PyPDFLoader
 TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
+    "AcreomLoader",
     "AZLyricsLoader",
     "AirbyteJSONLoader",
     "AirtableLoader",
