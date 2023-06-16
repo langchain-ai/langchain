@@ -302,20 +302,21 @@ class DeepLake(VectorStore):
                 return_score=return_score,
             )
 
-        embedding_function = (
-            embedding_function or self._embedding_function
-        )  # type: ignore
+        if embedding_function:
+            _embedding_function = embedding_function
+        elif self._embedding_function:
+            _embedding_function = self._embedding_function.embed_query
+        else:
+            _embedding_function = None
 
         if embedding is None:
-            if embedding_function is None:
+            if _embedding_function is None:
                 raise ValueError(
                     "Either `embedding` or `embedding_function` needs to be"
                     " specified."
                 )
 
-            embedding = None
-            if query:
-                embedding = embedding_function.embed_query(query)  # type: ignore
+            embedding = _embedding_function(query) if query else None
 
         if isinstance(embedding, list):
             embedding = np.array(embedding, dtype=np.float32)
