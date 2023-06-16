@@ -1,5 +1,5 @@
 """Tool for the SearxNG search API."""
-from typing import Optional, Any
+from typing import Optional
 
 from pydantic import Extra
 
@@ -21,7 +21,7 @@ class SearxSearchRun(BaseTool):
         "Input should be a search query."
     )
     wrapper: SearxSearchWrapper
-    kwargs: dict[Any, Any] = Field(default_factory=dict)
+    kwargs: dict = Field(default_factory=dict)
 
     def _run(
         self,
@@ -51,7 +51,7 @@ class SearxSearchResults(BaseTool):
     )
     wrapper: SearxSearchWrapper
     num_results: int = 4
-    kwargs: dict[Any, Any] = Field(default_factory=dict)
+    kwargs: dict = Field(default_factory=dict)
 
     class Config:
         """Pydantic config."""
@@ -72,4 +72,6 @@ class SearxSearchResults(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
-        return (await self.wrapper.aresults(query, self.num_results, **self.kwargs)).__str__()
+        return (
+            await self.wrapper.aresults(query, self.num_results, **self.kwargs)
+        ).__str__()
