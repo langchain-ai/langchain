@@ -29,7 +29,6 @@ from langchain.llms import (
     HuggingFaceTextGenInference,
     LlamaCpp,
     Modal,
-    OctoAIEndpoint,
     OpenAI,
     Petals,
     PipelineAI,
@@ -118,4 +117,5 @@ __all__ = [
     "PALChain",
     "LlamaCpp",
     "HuggingFaceTextGenInference",
+    "OctoAIEndpoint",
 ]
