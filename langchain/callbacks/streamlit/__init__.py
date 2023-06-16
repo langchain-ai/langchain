@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from langchain.callbacks.base import BaseCallbackHandler
 from streamlit.delta_generator import DeltaGenerator
 
+from langchain.callbacks.base import BaseCallbackHandler
+
+from .streamlit_callback_handler import LLMThoughtLabeler as LLMThoughtLabeler
 from .streamlit_callback_handler import (
     StreamlitCallbackHandler as _InternalStreamlitCallbackHandler,
-    LLMThoughtLabeler as LLMThoughtLabeler,
 )
 
 
@@ -53,7 +54,9 @@ def StreamlitCallbackHandler(
     # delegate to it instead of using our built-in handler. The official handler is
     # guaranteed to support the same set of kwargs.
     try:
-        from streamlit.external.langchain import StreamlitCallbackHandler as OfficialStreamlitCallbackHandler  # type: ignore
+        from streamlit.external.langchain import (
+            StreamlitCallbackHandler as OfficialStreamlitCallbackHandler,  # type: ignore
+        )
 
         return OfficialStreamlitCallbackHandler(
             parent_container,

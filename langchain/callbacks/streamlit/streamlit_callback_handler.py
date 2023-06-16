@@ -5,9 +5,10 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, NamedTuple
 
+from streamlit.delta_generator import DeltaGenerator
+
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
-from streamlit.delta_generator import DeltaGenerator
 
 from .mutable_expander import MutableExpander
 

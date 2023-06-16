@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import NamedTuple, Any
+from typing import Any, NamedTuple
 
 from streamlit.delta_generator import DeltaGenerator
 from streamlit.type_util import SupportsStr
