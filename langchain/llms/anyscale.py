@@ -62,7 +62,7 @@ class Anyscale(LLM):
         if anyscale_service_url.endswith("/"):
             anyscale_service_url = anyscale_service_url[:-1]
         if not anyscale_service_route.startswith("/"):
-            anyscale_service_route = "/"+anyscale_service_route
+            anyscale_service_route = "/" + anyscale_service_route
         try:
             anyscale_service_endpoint = f"{anyscale_service_url}/-/routes"
             headers = {"Authorization": f"Bearer {anyscale_service_token}"}
