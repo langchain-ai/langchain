@@ -13,7 +13,7 @@ from langchain.document_loaders import TextLoader
 loader = TextLoader('../state_of_the_union.txt')
 ```
 
-See [here](/docs/modules/data_io/document_loaders) for more information on how to get started with document loading.
+See [here](/docs/modules/data_connection/document_loaders) for more information on how to get started with document loading.
 
 **Create Your Index**
 
@@ -38,7 +38,7 @@ query = "What did the president say about Ketanji Brown Jackson"
 index.query_with_sources(query)
 ```
 
-Again, these high level interfaces obfuscate a lot of what is going on under the hood, so please see [this notebook](/docs/modules/data_io/getting_started.html) for a lower level walkthrough.
+Again, these high level interfaces obfuscate a lot of what is going on under the hood, so please see [this notebook](/docs/modules/data_connection/getting_started.html) for a lower level walkthrough.
 
 ## Document Question Answering
 
@@ -79,7 +79,7 @@ The following resources exist:
 
 Additional related resources include:
 
-- [Building blocks for working with Documents](/docs/modules/data_io): Guides on how to use several of the utilities which will prove helpful for this task, including Text Splitters (for splitting up long documents) and Embeddings & Vectorstores (useful for the above Vector DB example).
+- [Building blocks for working with Documents](/docs/modules/data_connection): Guides on how to use several of the utilities which will prove helpful for this task, including Text Splitters (for splitting up long documents) and Embeddings & Vectorstores (useful for the above Vector DB example).
 - [CombineDocuments Chains](/docs/modules/chains/documents): A conceptual overview of specific types of chains by which you can accomplish this task.
 
 ## End-to-end examples

@@ -41,7 +41,7 @@ For a more detailed walkthrough of the `Azure` wrapper, see [this notebook](/doc
 ```python
 from langchain.embeddings import OpenAIEmbeddings
 ```
-For a more detailed walkthrough of this, see [this notebook](/docs/modules/data_io/text_embedding/integrations/openai.html)
+For a more detailed walkthrough of this, see [this notebook](/docs/modules/data_connection/text_embedding/integrations/openai.html)
 
 
 ## Tokenizer
@@ -54,7 +54,7 @@ You can also use it to count tokens when splitting documents with
 from langchain.text_splitter import CharacterTextSplitter
 CharacterTextSplitter.from_tiktoken_encoder(...)
 ```
-For a more detailed walkthrough of this, see [this notebook](/docs/modules/data_io/document_transformers/text_splitters/tiktoken.html)
+For a more detailed walkthrough of this, see [this notebook](/docs/modules/data_connection/document_transformers/text_splitters/tiktoken.html)
 
 ## Chain
 
@@ -66,7 +66,7 @@ from langchain.chains import OpenAIModerationChain
 
 ## Document Loader
 
-See a [usage example](/docs/modules/data_io/document_loaders/integrations/chatgpt_loader.html).
+See a [usage example](/docs/modules/data_connection/document_loaders/integrations/chatgpt_loader.html).
 
 ```python
 from langchain.document_loaders.chatgpt import ChatGPTLoader
@@ -74,7 +74,7 @@ from langchain.document_loaders.chatgpt import ChatGPTLoader
 
 ## Retriever
 
-See a [usage example](/docs/modules/data_io/retrievers/integrations/chatgpt-plugin.html).
+See a [usage example](/docs/modules/data_connection/retrievers/integrations/chatgpt-plugin.html).
 
 ```python
 from langchain.retrievers import ChatGPTPluginRetriever
