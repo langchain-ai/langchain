@@ -38,6 +38,7 @@ Usage examples for the text splitters:
 - `Recursive Character <./text_splitters/examples/recursive_text_splitter.html>`_
 - `spaCy <./text_splitters/examples/spacy.html>`_
 - `tiktoken (OpenAI) <./text_splitters/examples/tiktoken_splitter.html>`_
+- `Header Metadata <./text_splitters/examples/markdown_header_metadata.html>`_
 
 
 .. toctree::
