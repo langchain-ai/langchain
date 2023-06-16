@@ -624,6 +624,7 @@ class AzureOpenAI(BaseOpenAI):
             values,
             "openai_api_type",
             "OPENAI_API_TYPE",
+            "azure"
         )
         return values
 
