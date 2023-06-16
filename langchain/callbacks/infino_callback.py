@@ -1,4 +1,3 @@
-"""Callback Handler that logs to infino."""
 import time
 from typing import Any, Dict, List, Optional, Union
 
@@ -19,27 +18,32 @@ def import_infino() -> Any:
 
 
 class InfinoCallbackHandler(BaseCallbackHandler):
-    """Callback Handler that logs to infino."""
+    """Callback Handler that logs to Infino."""
 
     def __init__(
         self,
         model_id: Optional[str] = None,
         model_version: Optional[str] = None,
-        verbose=False,
+        verbose: bool = False,
     ) -> None:
-        # Set infino client
+        # Set Infino client
         self.client = import_infino()
         self.model_id = model_id
         self.model_version = model_version
         self.verbose = verbose
 
-    def _send_to_infino(self, key, value, is_ts=True):
+    def _send_to_infino(
+        self,
+        key: str,
+        value: Any,
+        is_ts: bool = True,
+    ) -> None:
         """Send the key-value to Infino.
 
         Parameters:
         key (str): the key to send to Infino.
         value (Any): the value to send to Infino.
-        is_ts (bool): is True, the value is part of a time series, else it is sent as a log message.
+        is_ts (bool): if True, the value is part of a time series, else it is sent as a log message.
         """
         payload = {
             "date": int(time.time()),
@@ -59,10 +63,12 @@ class InfinoCallbackHandler(BaseCallbackHandler):
             self.client.append_log(payload)
 
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+        self,
+        serialized: Dict[str, Any],
+        prompts: List[str],
+        **kwargs: Any,
     ) -> None:
-        """Log the prompts to infino. and set start time and error flag"""
-
+        """Log the prompts to Infino, and set start time and error flag."""
         for prompt in prompts:
             self._send_to_infino("prompt", prompt, is_ts=False)
 
@@ -77,8 +83,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         pass
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        """Log the latency, error, token usage and response to Infino."""
-
+        """Log the latency, error, token usage, and response to Infino."""
         # Calculate and track the request latency.
         self.end_time = time.time()
         duration = self.end_time - self.start_time
@@ -88,14 +93,15 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         self._send_to_infino("error", self.error)
 
         # Track token usage.
-        token_usage = response.llm_output["token_usage"]
-
-        prompt_tokens = token_usage["prompt_tokens"]
-        total_tokens = token_usage["total_tokens"]
-        completion_tokens = token_usage["completion_tokens"]
-        self._send_to_infino("prompt_tokens", prompt_tokens)
-        self._send_to_infino("total_tokens", total_tokens)
-        self._send_to_infino("completion_tokens", completion_tokens)
+        if (response.llm_output != None) and isinstance(response.llm_output, Dict):
+            token_usage = response.llm_output["token_usage"]
+            if token_usage != None:
+                prompt_tokens = token_usage["prompt_tokens"]
+                total_tokens = token_usage["total_tokens"]
+                completion_tokens = token_usage["completion_tokens"]
+                self._send_to_infino("prompt_tokens", prompt_tokens)
+                self._send_to_infino("total_tokens", total_tokens)
+                self._send_to_infino("completion_tokens", completion_tokens)
 
         # Track prompt response.
         for generations in response.generations:

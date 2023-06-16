@@ -1,6 +1,6 @@
 # Infino
 
-![Infino - Open-source observability platform](https://github.com/infinohq/infino)
+[Infino - Open-source observability platform](https://github.com/infinohq/infino)
 
 >[Infino](https://github.com/infinohq/infino) is  an observability platform that stores both metrics and application logs together.
 
