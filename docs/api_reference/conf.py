@@ -51,7 +51,7 @@ extensions = [
     "IPython.sphinxext.ipython_console_highlighting",
     'sphinx_tabs.tabs'
 ]
-source_suffix = [".ipynb", ".html", ".md", ".rst"]
+source_suffix = [".rst"]
 
 autodoc_pydantic_model_show_json = False
 autodoc_pydantic_field_list_validators = False
