@@ -66,7 +66,7 @@ class Rockset(VectorStore):
         try:
             from rockset import RocksetClient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import rockset client python package. "
                 "Please isntall it with `pip install rockset`."
             )
@@ -316,7 +316,7 @@ LIMIT {str(k)}
         try:
             from rockset.models import DeleteDocumentsRequestData
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import rockset client python package. "
                 "Please isntall it with `pip install rockset`."
             )
