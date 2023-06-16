@@ -34,6 +34,7 @@ class FakeLLM(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         if self.sequential_responses:
             return self._get_next_response_in_sequence

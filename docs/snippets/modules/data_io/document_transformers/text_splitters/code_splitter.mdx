@@ -28,7 +28,8 @@ from langchain.text_splitter import (
      'swift',
      'markdown',
      'latex',
-     'html']
+     'html',
+     'sol',]
 ```
 
 </CodeOutputBlock>
@@ -278,3 +279,35 @@ html_docs
 ```
 
 </CodeOutputBlock>
+
+
+## Solidity
+Here's an example using the Solidity text splitter
+
+```python
+SOL_CODE = """
+pragma solidity ^0.8.20;
+contract HelloWorld {
+   function add(uint a, uint b) pure public returns(uint) {
+       return a + b;
+   }
+}
+"""
+
+sol_splitter = RecursiveCharacterTextSplitter.from_language(
+    language=Language.SOL, chunk_size=128, chunk_overlap=0
+)
+sol_docs = sol_splitter.create_documents([SOL_CODE])
+sol_docs
+```
+
+<CodeOutputBlock>
+
+```
+[
+    Document(page_content='pragma solidity ^0.8.20;', metadata={}),
+    Document(page_content='contract HelloWorld {\n   function add(uint a, uint b) pure public returns(uint) {\n       return a + b;\n   }\n}', metadata={})
+]
+ ```
+
+ </CodeOutputBlock>
