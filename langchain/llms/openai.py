@@ -610,7 +610,7 @@ class AzureOpenAI(BaseOpenAI):
 
     deployment_name: str = ""
     """Deployment name to use."""
-    openai_api_type: str = "azure"
+    openai_api_type: str = ""
     openai_api_version: str = ""
 
     @root_validator()
