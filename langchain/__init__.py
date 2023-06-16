@@ -118,5 +118,4 @@ __all__ = [
     "PALChain",
     "LlamaCpp",
     "HuggingFaceTextGenInference",
-    "OctoAIEndpoint",
 ]
