@@ -2,6 +2,8 @@
   "redirects": [
     {"source":  "/docs", "destination":  "/"},
     {"source":  "/docs/", "destination":  "/"},
+    {"source":  "/en/latest", "destination":  "/"},
+    {"source":  "/en/latest/", "destination":  "/"},
     {"source":  "/en/latest/index.html", "destination":  "/"},
     {"source":  "/en/latest/modules/indexes/:path*", "destination":  "/docs/modules/data_connection/:path*"},
     {"source":  "/en/latest/modules/models.html", "destination":  "/docs/modules/model_io/models/"},
