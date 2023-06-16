@@ -7,12 +7,11 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 from langchain.agents import BaseSingleActionAgent
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import (
-    Callbacks,
-)
+from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
+    BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
@@ -23,6 +22,7 @@ from langchain.schema import (
     AIMessage,
     BaseMessage,
     FunctionMessage,
+    OutputParserException,
     SystemMessage,
 )
 from langchain.tools import BaseTool
@@ -34,7 +34,9 @@ class _FunctionsAgentAction(AgentAction):
     message_log: List[BaseMessage]
 
 
-def _convert_agent_action_to_messages(agent_action: AgentAction) -> List[BaseMessage]:
+def _convert_agent_action_to_messages(
+    agent_action: AgentAction, observation: str
+) -> List[BaseMessage]:
     """Convert an agent action to a message.
 
     This code is used to reconstruct the original AI message from the agent action.
@@ -45,9 +47,12 @@ def _convert_agent_action_to_messages(agent_action: AgentAction) -> List[BaseMes
     Returns:
         AIMessage that corresponds to the original tool invocation.
     """
-    if not isinstance(agent_action, _FunctionsAgentAction):
-        raise ValueError("This agent type only works with _FunctionsAgentAction")
-    return agent_action.message_log
+    if isinstance(agent_action, _FunctionsAgentAction):
+        return agent_action.message_log + [
+            _create_function_message(agent_action, observation)
+        ]
+    else:
+        return [AIMessage(content=agent_action.log)]
 
 
 def _create_function_message(
@@ -61,7 +66,10 @@ def _create_function_message(
         FunctionMessage that corresponds to the original tool invocation
     """
     if not isinstance(observation, str):
-        content = json.dumps(observation)
+        try:
+            content = json.dumps(observation)
+        except Exception:
+            content = str(observation)
     else:
         content = observation
     return FunctionMessage(
@@ -83,8 +91,7 @@ def _format_intermediate_steps(
 
     for intermediate_step in intermediate_steps:
         agent_action, observation = intermediate_step
-        messages.extend(_convert_agent_action_to_messages(agent_action))
-        messages.append(_create_function_message(agent_action, observation))
+        messages.extend(_convert_agent_action_to_messages(agent_action, observation))
 
     return messages
 
@@ -102,7 +109,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
         try:
             _tool_input = json.loads(function_call["arguments"])
         except JSONDecodeError:
-            raise ValueError(
+            raise OutputParserException(
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` is not valid JSON."
             )
@@ -202,12 +209,24 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         return agent_decision
 
     @classmethod
-    def create_prompt(cls) -> BasePromptTemplate:
-        messages = [
-            SystemMessage(content="You are a helpful AI assistant."),
-            HumanMessagePromptTemplate.from_template("{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ]
+    def create_prompt(
+        cls,
+        system_message: Optional[SystemMessage] = SystemMessage(
+            content="You are a helpful AI assistant."
+        ),
+    ) -> BasePromptTemplate:
+        messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
+        if system_message:
+            messages = [system_message]
+        else:
+            messages = []
+
+        messages.extend(
+            [
+                HumanMessagePromptTemplate.from_template("{input}"),
+                MessagesPlaceholder(variable_name="agent_scratchpad"),
+            ]
+        )
         input_variables = ["input", "agent_scratchpad"]
         return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
