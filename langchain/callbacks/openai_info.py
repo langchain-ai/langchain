@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
+# Added gpt-35-turbo. Azure Open AI base model name is gpt-35-turbo
 MODEL_COST_PER_1K_TOKENS = {
     "gpt-4": 0.03,
     "gpt-4-0314": 0.03,
@@ -15,6 +16,7 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4-32k-0314-completion": 0.12,
     "gpt-3.5-turbo": 0.002,
     "gpt-3.5-turbo-0301": 0.002,
+    "gpt-35-turbo": 0.002,
     "text-ada-001": 0.0004,
     "ada": 0.0004,
     "text-babbage-001": 0.0005,
