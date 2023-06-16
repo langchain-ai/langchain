@@ -1,0 +1,6 @@
+{
+  "redirects": [
+    {"source":  "/docs", "destination":  "/"},
+    {"source":  "/en/latest", "destination":  "/docs"}
+  ]
+}
