@@ -25,6 +25,12 @@ class PromptTemplate(StringPromptTemplate):
             prompt = PromptTemplate(input_variables=["foo"], template="Say {foo}")
     """
 
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        return {
+            "template_format": self.template_format,
+        }
+
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
 

@@ -4,6 +4,7 @@ from langchain.callbacks.aim_callback import AimCallbackHandler
 from langchain.callbacks.argilla_callback import ArgillaCallbackHandler
 from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
+from langchain.callbacks.file import FileCallbackHandler
 from langchain.callbacks.human import HumanApprovalCallbackHandler
 from langchain.callbacks.manager import (
     get_openai_callback,
@@ -21,6 +22,7 @@ __all__ = [
     "ArgillaCallbackHandler",
     "OpenAICallbackHandler",
     "StdOutCallbackHandler",
+    "FileCallbackHandler",
     "AimCallbackHandler",
     "WandbCallbackHandler",
     "MlflowCallbackHandler",

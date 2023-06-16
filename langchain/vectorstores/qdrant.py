@@ -166,6 +166,10 @@ class Qdrant(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[MetadataFilter] = None,
+        search_params: Optional[common_types.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[common_types.ReadConsistency] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
@@ -174,15 +178,54 @@ class Qdrant(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params
+            offset:
+                Offset of the first result to return.
+                May be used to paginate results.
+                Note: large offset values may cause performance issues.
+            score_threshold:
+                Define a minimal score threshold for the result.
+                If defined, less similar results will not be returned.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
+                E.g. for cosine similarity only higher scores will be returned.
+            consistency:
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
+                Values:
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                               majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                             all of them
+                - 'all' - query all replicas, and return values present in all replicas
 
         Returns:
             List of Documents most similar to the query.
         """
-        results = self.similarity_search_with_score(query, k, filter=filter)
+        results = self.similarity_search_with_score(
+            query,
+            k,
+            filter=filter,
+            search_params=search_params,
+            offset=offset,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
         return list(map(itemgetter(0), results))
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, filter: Optional[MetadataFilter] = None
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[MetadataFilter] = None,
+        search_params: Optional[common_types.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[common_types.ReadConsistency] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -190,9 +233,33 @@ class Qdrant(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params
+            offset:
+                Offset of the first result to return.
+                May be used to paginate results.
+                Note: large offset values may cause performance issues.
+            score_threshold:
+                Define a minimal score threshold for the result.
+                If defined, less similar results will not be returned.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
+                E.g. for cosine similarity only higher scores will be returned.
+            consistency:
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
+                Values:
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                               majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                             all of them
+                - 'all' - query all replicas, and return values present in all replicas
 
         Returns:
-            List of Documents most similar to the query and score for each.
+            List of documents most similar to the query text and cosine
+            distance in float for each.
+            Lower score represents more similarity.
         """
 
         if filter is not None and isinstance(filter, dict):
@@ -209,8 +276,14 @@ class Qdrant(VectorStore):
             collection_name=self.collection_name,
             query_vector=self._embed_query(query),
             query_filter=qdrant_filter,
-            with_payload=True,
+            search_params=search_params,
             limit=k,
+            offset=offset,
+            with_payload=True,
+            with_vectors=False,  # Langchain does not expect vectors to be returned
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
         )
         return [
             (
@@ -221,6 +294,28 @@ class Qdrant(VectorStore):
             )
             for result in results
         ]
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores in the range [0, 1].
+
+        0 is dissimilar, 1 is most similar.
+
+        Args:
+            query: input text
+            k: Number of Documents to return. Defaults to 4.
+            **kwargs: kwargs to be passed to similarity search. Should include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
+
+        Returns:
+            List of Tuples of (doc, similarity_score)
+        """
+        return self.similarity_search_with_score(query, k, **kwargs)
 
     def max_marginal_relevance_search(
         self,
@@ -290,6 +385,15 @@ class Qdrant(VectorStore):
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         batch_size: int = 64,
+        shard_number: Optional[int] = None,
+        replication_factor: Optional[int] = None,
+        write_consistency_factor: Optional[int] = None,
+        on_disk_payload: Optional[bool] = None,
+        hnsw_config: Optional[common_types.HnswConfigDiff] = None,
+        optimizers_config: Optional[common_types.OptimizersConfigDiff] = None,
+        wal_config: Optional[common_types.WalConfigDiff] = None,
+        quantization_config: Optional[common_types.QuantizationConfig] = None,
+        init_from: Optional[common_types.InitFrom] = None,
         **kwargs: Any,
     ) -> Qdrant:
         """Construct Qdrant wrapper from a list of texts.
@@ -345,6 +449,32 @@ class Qdrant(VectorStore):
             batch_size:
                 How many vectors upload per-request.
                 Default: 64
+            shard_number: Number of shards in collection. Default is 1, minimum is 1.
+            replication_factor:
+                Replication factor for collection. Default is 1, minimum is 1.
+                Defines how many copies of each shard will be created.
+                Have effect only in distributed mode.
+            write_consistency_factor:
+                Write consistency factor for collection. Default is 1, minimum is 1.
+                Defines how many replicas should apply the operation for us to consider
+                it successful. Increasing this number will make the collection more
+                resilient to inconsistencies, but will also make it fail if not enough
+                replicas are available.
+                Does not have any performance impact.
+                Have effect only in distributed mode.
+            on_disk_payload:
+                If true - point`s payload will not be stored in memory.
+                It will be read from the disk every time it is requested.
+                This setting saves RAM by (slightly) increasing the response time.
+                Note: those payload values that are involved in filtering and are
+                indexed - remain in RAM.
+            hnsw_config: Params for HNSW index
+            optimizers_config: Params for optimizer
+            wal_config: Params for Write-Ahead-Log
+            quantization_config:
+                Params for quantization, if None - quantization will be disabled
+            init_from:
+                Use data stored in another collection to initialize this collection
             **kwargs:
                 Additional arguments passed directly into REST client initialization
 
@@ -402,6 +532,16 @@ class Qdrant(VectorStore):
                 size=vector_size,
                 distance=rest.Distance[distance_func],
             ),
+            shard_number=shard_number,
+            replication_factor=replication_factor,
+            write_consistency_factor=write_consistency_factor,
+            on_disk_payload=on_disk_payload,
+            hnsw_config=hnsw_config,
+            optimizers_config=optimizers_config,
+            wal_config=wal_config,
+            quantization_config=quantization_config,
+            init_from=init_from,
+            timeout=timeout,  # type: ignore[arg-type]
         )
 
         texts_iterator = iter(texts)

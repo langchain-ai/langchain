@@ -25,6 +25,15 @@ Next, we have some examples of customizing and generically working with tools
    ./tools/custom_tools.ipynb
    ./tools/multi_input_tool.ipynb
    ./tools/tool_input_validation.ipynb
+   ./tools/human_approval.ipynb
+
+Tools are also usable outside of the LangChain ecosystem! Here are examples of doing so
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   ./tools/tools_as_openai_functions.ipynb
 
 
 In this documentation we cover generic tooling functionality (eg how to create your own)

@@ -1,6 +1,8 @@
 """All different types of document loaders."""
 
+from langchain.document_loaders.acreom import AcreomLoader
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
+from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
 from langchain.document_loaders.arxiv import ArxivLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
@@ -19,7 +21,7 @@ from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
 from langchain.document_loaders.conllu import CoNLLULoader
-from langchain.document_loaders.csv_loader import CSVLoader
+from langchain.document_loaders.csv_loader import CSVLoader, UnstructuredCSVLoader
 from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
@@ -30,9 +32,12 @@ from langchain.document_loaders.email import (
     OutlookMessageLoader,
     UnstructuredEmailLoader,
 )
+from langchain.document_loaders.embaas import EmbaasBlobLoader, EmbaasLoader
 from langchain.document_loaders.epub import UnstructuredEPubLoader
 from langchain.document_loaders.evernote import EverNoteLoader
+from langchain.document_loaders.excel import UnstructuredExcelLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
+from langchain.document_loaders.fauna import FaunaLoader
 from langchain.document_loaders.figma import FigmaFileLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
@@ -88,6 +93,7 @@ from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.sitemap import SitemapLoader
 from langchain.document_loaders.slack_directory import SlackDirectoryLoader
+from langchain.document_loaders.snowflake_loader import SnowflakeLoader
 from langchain.document_loaders.spreedly import SpreedlyLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.stripe import StripeLoader
@@ -117,6 +123,7 @@ from langchain.document_loaders.word_document import (
     Docx2txtLoader,
     UnstructuredWordDocumentLoader,
 )
+from langchain.document_loaders.xml import UnstructuredXMLLoader
 from langchain.document_loaders.youtube import (
     GoogleApiClient,
     GoogleApiYoutubeLoader,
@@ -130,8 +137,10 @@ PagedPDFSplitter = PyPDFLoader
 TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
+    "AcreomLoader",
     "AZLyricsLoader",
     "AirbyteJSONLoader",
+    "AirtableLoader",
     "ApifyDatasetLoader",
     "ArxivLoader",
     "AzureBlobStorageContainerLoader",
@@ -154,6 +163,7 @@ __all__ = [
     "DocugamiLoader",
     "Docx2txtLoader",
     "DuckDBLoader",
+    "FaunaLoader",
     "EverNoteLoader",
     "FacebookChatLoader",
     "FigmaFileLoader",
@@ -221,8 +231,10 @@ __all__ = [
     "TwitterTweetLoader",
     "UnstructuredAPIFileIOLoader",
     "UnstructuredAPIFileLoader",
+    "UnstructuredCSVLoader",
     "UnstructuredEPubLoader",
     "UnstructuredEmailLoader",
+    "UnstructuredExcelLoader",
     "UnstructuredFileIOLoader",
     "UnstructuredFileLoader",
     "UnstructuredHTMLLoader",
@@ -234,9 +246,13 @@ __all__ = [
     "UnstructuredRTFLoader",
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
+    "UnstructuredXMLLoader",
     "WeatherDataLoader",
     "WebBaseLoader",
     "WhatsAppChatLoader",
     "WikipediaLoader",
     "YoutubeLoader",
+    "SnowflakeLoader",
+    "EmbaasLoader",
+    "EmbaasBlobLoader",
 ]
