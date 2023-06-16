@@ -77,12 +77,13 @@ class OctoAIEndpoint(LLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "octoai_endpoint"
-
+    
     def _call(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to OctoAI's inference endpoint.
 

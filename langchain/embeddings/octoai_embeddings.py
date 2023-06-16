@@ -70,7 +70,7 @@ class OctoAIEmbeddings(BaseModel, Embeddings):
             
         return embeddings
     
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: List[str]) -> List[float]:
         """Compute document embeddings using an OctoAI instruct model."""
         texts = list(map(lambda x: x.replace("\n", " "), texts))
         return self._compute_embeddings(texts, self.embed_instruction)
