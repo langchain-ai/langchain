@@ -22,18 +22,15 @@ class OpenCityDataLoader(BaseLoader):
         import pandas as pd
         from sodapy import Socrata
 
-        from langchain.document_loaders import DataFrameLoader
-
         client = Socrata(self.city_id, None)
         results = client.get(self.dataset_id, limit=self.limit)
-        # Use dataframe intermediate to reduce code duplication
-        results_df = pd.DataFrame.from_records(results)
-        # Define a common column, as page_content is required
-        # for Document and schemas differ per dataset. All other
-        # fields will be added to Document metadata
-        results_df["record"] = results_df.index + 1
-        loader = DataFrameLoader(results_df, page_content_column="record")
-        return loader.lazy_load()
+        for record in results:
+            yield Document(
+                page_content=str(record),
+                metadata={
+                    "source": self.city_id + "_" + self.dataset_id,
+                },
+            )
 
     def load(self) -> List[Document]:
         """Load records."""
