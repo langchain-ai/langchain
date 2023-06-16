@@ -1,6 +1,6 @@
 from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
-from langchainplus_sdk.evaluation.evaluator import EvaluationResult
+from langchainplus_sdk.evaluation import EvaluationResult
 from langchainplus_sdk.schemas import Example, Run
 from pydantic import BaseModel
 
