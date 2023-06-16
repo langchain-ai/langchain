@@ -2,30 +2,23 @@
 from __future__ import annotations
 
 import hashlib
-from typing import TypeVar, Type, Iterable, Optional, List, Any, Tuple
+import typing
+from typing import Any, Iterable, List, Optional, Tuple, Type, TypeVar
 
 import numpy as np
 
-import typing
 if typing.TYPE_CHECKING:
     from cassandra.cluster import Session
 
+from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-from langchain.docstore.document import Document
 from langchain.vectorstores.utils import maximal_marginal_relevance
-
 
 CVST = TypeVar("CVST", bound="Cassandra")
 
-# How many multiples of K are retrieved in a search
-CASSANDRA_VECTORSTORE_DEFAULT_OVERFETCH_FACTOR = 4
-# Default number of documents ultimately returned in a search
-CASSANDRA_VECTORSTORE_DEFAULT_K = 3
-#
+# a positive number of seconds to expire entries, or None for no expiration.
 CASSANDRA_VECTORSTORE_DEFAULT_TTL_SECONDS = None
-#
-CASSANDRA_VECTORSTORE_DEFAULT_MMR_LAMBDA_MULT = 0.5
 
 
 def _hash(_input: str) -> str:
@@ -48,14 +41,16 @@ class Cassandra(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 session = ...
                 keyspace = 'my_keyspace'
-                vectorstore = Cassandra(session, keyspace, 'my_doc_archive', embeddings)
+                vectorstore = Cassandra(embeddings, session, keyspace, 'my_doc_archive')
     """
 
-    def _getEmbeddingDimension(self):
+    _embedding_dimension: int | None
+
+    def _getEmbeddingDimension(self) -> int:
         if self._embedding_dimension is None:
-            self._embedding_dimension = len(self.embedding.embed_query(
-                "This is a sample sentence."
-            ))
+            self._embedding_dimension = len(
+                self.embedding.embed_query("This is a sample sentence.")
+            )
         return self._embedding_dimension
 
     def __init__(
@@ -64,13 +59,12 @@ class Cassandra(VectorStore):
         session: Session,
         keyspace: str,
         table_name: str,
-        overfetch_factor = CASSANDRA_VECTORSTORE_DEFAULT_OVERFETCH_FACTOR,
         ttl_seconds: int | None = CASSANDRA_VECTORSTORE_DEFAULT_TTL_SECONDS,
     ) -> None:
         try:
-            from cassio.vector import VectorDBTable
+            from cassio.vector import VectorTable
         except (ImportError, ModuleNotFoundError):
-            raise ValueError(
+            raise ImportError(
                 "Could not import cassio python package. "
                 "Please install it with `pip install cassio`."
             )
@@ -79,17 +73,16 @@ class Cassandra(VectorStore):
         self.session = session
         self.keyspace = keyspace
         self.table_name = table_name
-        self.overfetch_factor = overfetch_factor
-        self.ttlSeconds = ttl_seconds
+        self.ttl_seconds = ttl_seconds
         #
         self._embedding_dimension = None
         #
-        self.table = VectorDBTable(
-            session,
-            keyspace,
-            table_name,
-            self._getEmbeddingDimension(),
-            autoID=False, # the `add_texts` contract admits user-provided ids
+        self.table = VectorTable(
+            session=session,
+            keyspace=keyspace,
+            table=table_name,
+            embedding_dimension=self._getEmbeddingDimension(),
+            auto_id=False,  # the `add_texts` contract admits user-provided ids
         )
 
     def delete_collection(self) -> None:
@@ -132,16 +125,18 @@ class Cassandra(VectorStore):
         if metadatas is None:
             metadatas = [{} for _ in _texts]
         #
-        ttlSeconds = kwargs.get('ttl_seconds', self.ttlSeconds)
+        ttl_seconds = kwargs.get("ttl_seconds", self.ttl_seconds)
         #
         embedding_vectors = self.embedding.embed_documents(_texts)
-        for text, embedding_vector, text_id, metadata in zip(_texts, embedding_vectors, ids, metadatas):
+        for text, embedding_vector, text_id, metadata in zip(
+            _texts, embedding_vectors, ids, metadatas
+        ):
             self.table.put(
                 document=text,
                 embedding_vector=embedding_vector,
                 document_id=text_id,
                 metadata=metadata,
-                ttlSeconds=ttlSeconds,
+                ttl_seconds=ttl_seconds,
             )
         #
         return ids
@@ -150,7 +145,7 @@ class Cassandra(VectorStore):
     def similarity_search_with_score_id_by_vector(
         self,
         embedding: List[float],
-        k: int = CASSANDRA_VECTORSTORE_DEFAULT_K,
+        k: int = 4,
     ) -> List[Tuple[Document, float, str]]:
         """Return docs most similar to embedding vector.
 
@@ -164,21 +159,20 @@ class Cassandra(VectorStore):
         """
         hits = self.table.search(
             embedding_vector=embedding,
-            topK=k,
-            maxRowsToRetrieve=k*self.overfetch_factor,
-            metric='cos',
-            metricThreshold=None,
+            top_k=k,
+            metric="cos",
+            metric_threshold=None,
         )
         # We stick to 'cos' distance as it can be normalized on a 0-1 axis
         # (1=most relevant), as required by this class' contract.
         return [
             (
                 Document(
-                    page_content=hit['document'],
-                    metadata=hit['metadata'],
+                    page_content=hit["document"],
+                    metadata=hit["metadata"],
                 ),
-                0.5 + 0.5*hit['distance'],
-                hit['document_id'],
+                0.5 + 0.5 * hit["distance"],
+                hit["document_id"],
             )
             for hit in hits
         ]
@@ -186,7 +180,7 @@ class Cassandra(VectorStore):
     def similarity_search_with_score_id(
         self,
         query: str,
-        k: int = CASSANDRA_VECTORSTORE_DEFAULT_K,
+        k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float, str]]:
         embedding_vector = self.embedding.embed_query(query)
@@ -199,7 +193,7 @@ class Cassandra(VectorStore):
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
-        k: int = CASSANDRA_VECTORSTORE_DEFAULT_K,
+        k: int = 4,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to embedding vector.
 
@@ -222,7 +216,7 @@ class Cassandra(VectorStore):
     def similarity_search(
         self,
         query: str,
-        k: int = CASSANDRA_VECTORSTORE_DEFAULT_K,
+        k: int = 4,
         **kwargs: Any,
     ) -> List[Document]:
         #
@@ -236,7 +230,7 @@ class Cassandra(VectorStore):
     def similarity_search_by_vector(
         self,
         embedding: List[float],
-        k: int = CASSANDRA_VECTORSTORE_DEFAULT_K,
+        k: int = 4,
         **kwargs: Any,
     ) -> List[Document]:
         return [
@@ -250,7 +244,7 @@ class Cassandra(VectorStore):
     def similarity_search_with_score(
         self,
         query: str,
-        k: int = CASSANDRA_VECTORSTORE_DEFAULT_K,
+        k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         embedding_vector = self.embedding.embed_query(query)
@@ -278,9 +272,9 @@ class Cassandra(VectorStore):
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
-        k: int = CASSANDRA_VECTORSTORE_DEFAULT_K,
-        overfetch_factor: Optional[int] = CASSANDRA_VECTORSTORE_DEFAULT_OVERFETCH_FACTOR,
-        lambda_mult: float = CASSANDRA_VECTORSTORE_DEFAULT_MMR_LAMBDA_MULT,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -289,32 +283,23 @@ class Cassandra(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return.
-            overfetch_factor: this many times k is the number of
-                              Documents to fetch to pass to MMR algorithm.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        # this line is useless until better handling of default hierarchy
-        _overfetch_factor = overfetch_factor or self.overfetch_factor
-        fetch_k = k * _overfetch_factor
-        #
         prefetchHits = self.table.search(
             embedding_vector=embedding,
-            topK=fetch_k,
-            maxRowsToRetrieve=fetch_k,
-            metric='cos',
-            metricThreshold=None,
+            top_k=fetch_k,
+            metric="cos",
+            metric_threshold=None,
         )
         # let the mmr utility pick the *indices* in the above array
         mmrChosenIndices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
-            [
-                pfHit['embedding_vector']
-                for pfHit in prefetchHits
-            ],
+            [pfHit["embedding_vector"] for pfHit in prefetchHits],
             k=k,
             lambda_mult=lambda_mult,
         )
@@ -325,8 +310,8 @@ class Cassandra(VectorStore):
         ]
         return [
             Document(
-                page_content=hit['document'],
-                metadata=hit['metadata'],
+                page_content=hit["document"],
+                metadata=hit["metadata"],
             )
             for hit in mmrHits
         ]
@@ -334,9 +319,9 @@ class Cassandra(VectorStore):
     def max_marginal_relevance_search(
         self,
         query: str,
-        k: int = CASSANDRA_VECTORSTORE_DEFAULT_K,
-        overfetch_factor: Optional[int] = CASSANDRA_VECTORSTORE_DEFAULT_OVERFETCH_FACTOR,
-        lambda_mult: float = CASSANDRA_VECTORSTORE_DEFAULT_MMR_LAMBDA_MULT,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -345,8 +330,7 @@ class Cassandra(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return.
-            overfetch_factor: this many times k is the number of
-                              Documents to fetch to pass to MMR algorithm.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
@@ -354,26 +338,20 @@ class Cassandra(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        # this line is useless until better handling of default hierarchy
-        _overfetch_factor = overfetch_factor or self.overfetch_factor
         embedding_vector = self.embedding.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             embedding_vector,
             k,
-            _overfetch_factor,
-            lambda_mul=lambda_mult,
+            fetch_k,
+            lambda_mult=lambda_mult,
         )
 
     @classmethod
     def from_texts(
         cls: Type[CVST],
         texts: List[str],
-        metadatas: List[dict],
         embedding: Embeddings,
-        session: Session,
-        keyspace: str,
-        table_name: str,
-        overfetch_factor = CASSANDRA_VECTORSTORE_DEFAULT_OVERFETCH_FACTOR,
+        metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from raw texts.
@@ -383,12 +361,14 @@ class Cassandra(VectorStore):
         Returns:
             a Cassandra vectorstore.
         """
+        session: Session = kwargs["session"]
+        keyspace: str = kwargs["keyspace"]
+        table_name: str = kwargs["table_name"]
         cassandraStore = cls(
             embedding=embedding,
             session=session,
             keyspace=keyspace,
             table_name=table_name,
-            overfetch_factor=overfetch_factor,
         )
         cassandraStore.add_texts(texts=texts, metadatas=metadatas)
         return cassandraStore
@@ -398,10 +378,6 @@ class Cassandra(VectorStore):
         cls: Type[CVST],
         documents: List[Document],
         embedding: Embeddings,
-        session: Session,
-        keyspace: str,
-        table_name: str,
-        overfetch_factor = CASSANDRA_VECTORSTORE_DEFAULT_OVERFETCH_FACTOR,
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from a document list.
@@ -413,6 +389,9 @@ class Cassandra(VectorStore):
         """
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
+        session: Session = kwargs["session"]
+        keyspace: str = kwargs["keyspace"]
+        table_name: str = kwargs["table_name"]
         return cls.from_texts(
             texts=texts,
             metadatas=metadatas,
@@ -420,5 +399,4 @@ class Cassandra(VectorStore):
             session=session,
             keyspace=keyspace,
             table_name=table_name,
-            overfetch_factor=overfetch_factor,
         )
