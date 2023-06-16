@@ -96,12 +96,16 @@ class Pinecone(VectorStore):
         return ids
 
     def similarity_search_with_relevance_scores(
-            self,
-            query: str,
-            k: int = 4,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        return [a for a in self.similarity_search_with_score(query, k=k) if a[1] > kwargs["score_threshold"]]
+        return [
+            a
+            for a in self.similarity_search_with_score(query, k=k)
+            if a[1] > kwargs["score_threshold"]
+        ]
 
     def similarity_search_with_score(
         self,

@@ -207,9 +207,10 @@ class TestPinecone:
         index_stats = self.index.describe_index_stats()
         assert index_stats["namespaces"][index_name]["vector_count"] == len(texts) * 2
 
-
     @pytest.mark.vcr()
-    def test_from_texts_with_relevance_score_filtering(self, embedding_openai: OpenAIEmbeddings) -> None:
+    def test_from_texts_with_relevance_score_filtering(
+        self, embedding_openai: OpenAIEmbeddings
+    ) -> None:
         """Test end to end construction and search with scores and IDs."""
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
