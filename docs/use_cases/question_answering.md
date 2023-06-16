@@ -91,3 +91,4 @@ Additional related resources include:
 For examples to this done in an end-to-end manner, please see the following resources:
 
 - [Semantic search over a group chat with Sources Notebook](question_answering/semantic-search-over-chat.ipynb): A notebook that semantically searches over a group chat conversation.
+- [Question Answering over multiple PDFs](https://www.activeloop.ai/resources/ultimate-guide-to-lang-chain-deep-lake-build-chat-gpt-to-answer-questions-on-your-financial-data/): An intro guide for building a chat with multiple PDFs solution.
