@@ -204,11 +204,11 @@ def _handle_event(
                     f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
                 )
         except Exception as e:
-            if handler.raise_error:
-                raise e
             logger.warning(
                 f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
             )
+            if handler.raise_error:
+                raise e
 
 
 async def _ahandle_event_for_handler(
@@ -244,11 +244,11 @@ async def _ahandle_event_for_handler(
                 f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
             )
     except Exception as e:
-        if handler.raise_error:
-            raise e
         logger.warning(
             f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
         )
+        if handler.raise_error:
+            raise e
 
 
 async def _ahandle_event(
