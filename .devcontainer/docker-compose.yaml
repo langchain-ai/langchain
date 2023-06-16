@@ -2,10 +2,11 @@ version: '3'
 services:
   langchain:
     build:
-      dockerfile: .devcontainer/Dockerfile
-      context: ../ 
+      dockerfile: dev.Dockerfile
+      context: ..
     volumes:
-      - ../:/workspaces/langchain
+   # Update this to wherever you want VS Code to mount the folder of your project
+      - ..:/workspaces:cached
     networks:
       - langchain-network 
   #   environment:
