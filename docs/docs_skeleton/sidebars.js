@@ -93,7 +93,7 @@ module.exports = {
     },
     {
        type: "link",
-       href: "pathname:///api_reference/html/index.html",
+       href: "https://python.langchain.com/en/dev2049-docs_docusaurus/",
        label: "API reference",
     },
   ],
