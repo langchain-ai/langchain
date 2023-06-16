@@ -31,24 +31,28 @@ class Beam(LLM):
     The wrapper can then be called as follows, where the name, cpu, memory, gpu,
     python version, and python packages can be updated accordingly. Once deployed,
     the instance can be called.
-        llm = Beam(model_name="gpt2",
-            name="langchain-gpt2",
-            cpu=8,
-            memory="32Gi",
-            gpu="A10G",
-            python_version="python3.8",
-            python_packages=[
-                "diffusers[torch]>=0.10",
-                "transformers",
-                "torch",
-                "pillow",
-                "accelerate",
-                "safetensors",
-                "xformers",],
-            max_length=50)
 
-        llm._deploy()
-        call_result = llm._call(input)
+    Example:
+        .. code-block:: python
+
+            llm = Beam(model_name="gpt2",
+                name="langchain-gpt2",
+                cpu=8,
+                memory="32Gi",
+                gpu="A10G",
+                python_version="python3.8",
+                python_packages=[
+                    "diffusers[torch]>=0.10",
+                    "transformers",
+                    "torch",
+                    "pillow",
+                    "accelerate",
+                    "safetensors",
+                    "xformers",],
+                max_length=50)
+            llm._deploy()
+            call_result = llm._call(input)
+
     """
 
     model_name: str = ""
@@ -247,10 +251,12 @@ class Beam(LLM):
         prompt: str,
         stop: Optional[list] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call to Beam."""
         url = "https://apps.beam.cloud/" + self.app_id if self.app_id else self.url
         payload = {"prompt": prompt, "max_length": self.max_length}
+        payload.update(kwargs)
         headers = {
             "Accept": "*/*",
             "Accept-Encoding": "gzip, deflate",

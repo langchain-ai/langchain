@@ -1,6 +1,6 @@
 """Tool for the Google search API."""
 
-from typing import Optional
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
@@ -13,13 +13,13 @@ from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
 
 
 class GooglePlacesSchema(BaseModel):
-    query: str = Field(..., description="Query for goole maps")
+    query: str = Field(..., description="Query for google maps")
 
 
 class GooglePlacesTool(BaseTool):
     """Tool that adds the capability to query the Google places API."""
 
-    name = "Google Places"
+    name = "google_places"
     description = (
         "A wrapper around Google Places. "
         "Useful for when you need to validate or "
@@ -27,6 +27,7 @@ class GooglePlacesTool(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GooglePlacesAPIWrapper = Field(default_factory=GooglePlacesAPIWrapper)
+    args_schema: Type[BaseModel] = GooglePlacesSchema
 
     def _run(
         self,

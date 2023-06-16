@@ -1,7 +1,7 @@
 """Util that calls Arxiv."""
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -29,15 +29,16 @@ class ArxivAPIWrapper(BaseModel):
           if True: the `metadata` of the loaded Documents gets all available meta info
             (see https://lukasschwab.me/arxiv.py/index.html#Result),
           if False: the `metadata` gets only the most informative fields.
+
     """
 
-    arxiv_client: Any  #: :meta private:
+    arxiv_search: Any  #: :meta private:
     arxiv_exceptions: Any  # :meta private:
     top_k_results: int = 3
     ARXIV_MAX_QUERY_LENGTH = 300
     load_max_docs: int = 100
     load_all_available_meta: bool = False
-    doc_content_chars_max: int = 4000
+    doc_content_chars_max: Optional[int] = 4000
 
     class Config:
         """Configuration for this pydantic object."""
