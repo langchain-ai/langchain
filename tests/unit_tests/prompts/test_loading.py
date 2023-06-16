@@ -16,7 +16,7 @@ def change_directory() -> Iterator:
     """Change the working directory to the right folder."""
     origin = Path().absolute()
     try:
-        os.chdir("docs/modules/prompts/prompt_templates/examples")
+        os.chdir("docs/modules/prompts/prompt_templates")
         yield
     finally:
         os.chdir(origin)
@@ -25,7 +25,7 @@ def change_directory() -> Iterator:
 def test_loading_from_YAML() -> None:
     """Test loading from yaml file."""
     with change_directory():
-        prompt = load_prompt("simple_prompt.yaml")
+        prompt = load_prompt("examples/simple_prompt.yaml")
         expected_prompt = PromptTemplate(
             input_variables=["adjective", "content"],
             template="Tell me a {adjective} joke about {content}.",
@@ -36,7 +36,7 @@ def test_loading_from_YAML() -> None:
 def test_loading_from_JSON() -> None:
     """Test loading from json file."""
     with change_directory():
-        prompt = load_prompt("simple_prompt.json")
+        prompt = load_prompt("examples/simple_prompt.json")
         expected_prompt = PromptTemplate(
             input_variables=["adjective", "content"],
             template="Tell me a {adjective} joke about {content}.",
@@ -75,7 +75,7 @@ def test_saving_loading_round_trip(tmp_path: Path) -> None:
 def test_loading_with_template_as_file() -> None:
     """Test loading when the template is a file."""
     with change_directory():
-        prompt = load_prompt("simple_prompt_with_template_file.json")
+        prompt = load_prompt("examples/simple_prompt_with_template_file.json")
         expected_prompt = PromptTemplate(
             input_variables=["adjective", "content"],
             template="Tell me a {adjective} joke about {content}.",
@@ -86,7 +86,7 @@ def test_loading_with_template_as_file() -> None:
 def test_loading_few_shot_prompt_from_yaml() -> None:
     """Test loading few shot prompt from yaml."""
     with change_directory():
-        prompt = load_prompt("few_shot_prompt.yaml")
+        prompt = load_prompt("examples/few_shot_prompt.yaml")
         expected_prompt = FewShotPromptTemplate(
             input_variables=["adjective"],
             prefix="Write antonyms for the following words.",
@@ -106,7 +106,7 @@ def test_loading_few_shot_prompt_from_yaml() -> None:
 def test_loading_few_shot_prompt_from_json() -> None:
     """Test loading few shot prompt from json."""
     with change_directory():
-        prompt = load_prompt("few_shot_prompt.json")
+        prompt = load_prompt("examples/few_shot_prompt.json")
         expected_prompt = FewShotPromptTemplate(
             input_variables=["adjective"],
             prefix="Write antonyms for the following words.",
@@ -126,7 +126,7 @@ def test_loading_few_shot_prompt_from_json() -> None:
 def test_loading_few_shot_prompt_when_examples_in_config() -> None:
     """Test loading few shot prompt when the examples are in the config."""
     with change_directory():
-        prompt = load_prompt("few_shot_prompt_examples_in.json")
+        prompt = load_prompt("examples/few_shot_prompt_examples_in.json")
         expected_prompt = FewShotPromptTemplate(
             input_variables=["adjective"],
             prefix="Write antonyms for the following words.",
@@ -146,7 +146,7 @@ def test_loading_few_shot_prompt_when_examples_in_config() -> None:
 def test_loading_few_shot_prompt_example_prompt() -> None:
     """Test loading few shot when the example prompt is in its own file."""
     with change_directory():
-        prompt = load_prompt("few_shot_prompt_example_prompt.json")
+        prompt = load_prompt("examples/few_shot_prompt_example_prompt.json")
         expected_prompt = FewShotPromptTemplate(
             input_variables=["adjective"],
             prefix="Write antonyms for the following words.",
@@ -165,7 +165,7 @@ def test_loading_few_shot_prompt_example_prompt() -> None:
 
 def test_loading_with_output_parser() -> None:
     with change_directory():
-        prompt = load_prompt("prompt_with_output_parser.json")
+        prompt = load_prompt("examples/prompt_with_output_parser.json")
         expected_template = """\
 Given the following question and student answer, \
 provide a correct answer and score the student answer.
