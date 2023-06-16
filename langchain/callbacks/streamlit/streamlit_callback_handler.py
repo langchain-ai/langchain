@@ -14,7 +14,9 @@ from .mutable_expander import MutableExpander
 
 
 def _convert_newlines(text: str) -> str:
-    """Convert newline characters to markdown newline sequences (space, space, newline)"""
+    """Convert newline characters to markdown newline sequences
+    (space, space, newline).
+    """
     return text.replace("\n", "  \n")
 
 
@@ -224,12 +226,12 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
             The `st.container` that will contain all the Streamlit elements that the
             Handler creates.
         max_thought_containers
-            The max number of completed LLM thought containers to show at once. When this
-            threshold is reached, a new thought will cause the oldest thoughts to be
-            collapsed into a "History" expander. Defaults to 4.
+            The max number of completed LLM thought containers to show at once. When
+            this threshold is reached, a new thought will cause the oldest thoughts to
+            be collapsed into a "History" expander. Defaults to 4.
         expand_new_thoughts
-            Each LLM "thought" gets its own `st.expander`. This param controls whether that
-            expander is expanded by default. Defaults to True.
+            Each LLM "thought" gets its own `st.expander`. This param controls whether
+            that expander is expanded by default. Defaults to True.
         collapse_completed_thoughts
             If True, LLM thought expanders will be collapsed when completed.
             Defaults to True.
@@ -248,7 +250,9 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self._thought_labeler = thought_labeler or LLMThoughtLabeler()
 
     def _require_current_thought(self) -> LLMThought:
-        """Return our current LLMThought. Raise an error if we have no current thought."""
+        """Return our current LLMThought. Raise an error if we have no current
+        thought.
+        """
         if self._current_thought is None:
             raise RuntimeError("Current LLMThought is unexpectedly None!")
         return self._current_thought
@@ -282,15 +286,16 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self._current_thought = None
 
     def _prune_old_thought_containers(self) -> None:
-        """If we have too many thoughts onscreen, move older thoughts to
-        the 'history container.'
+        """If we have too many thoughts onscreen, move older thoughts to the
+        'history container.'
         """
         while (
             self._num_thought_containers > self._max_thought_containers
             and len(self._completed_thoughts) > 0
         ):
-            # Create our history container if it doesn't exist, and if max_thought_containers is > 1.
-            # (if max_thought_containers is 1, we don't have room to show history.)
+            # Create our history container if it doesn't exist, and if
+            # max_thought_containers is > 1. (if max_thought_containers is 1, we don't
+            # have room to show history.)
             if self._history_container is None and self._max_thought_containers > 1:
                 self._history_container = MutableExpander(
                     self._history_parent,
