@@ -12,7 +12,7 @@ from langchain.schema import Document
 logger = logging.getLogger(__name__)
 
 
-class PubMedAPIWrapper():
+class PubMedAPIWrapper(BaseModel):
     """
     Wrapper around PubMed API (https://www.ncbi.nlm.nih.gov/books/NBK25501/).
 
