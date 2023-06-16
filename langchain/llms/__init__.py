@@ -27,7 +27,6 @@ from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain.llms.human import HumanInputLLM
 from langchain.llms.llamacpp import LlamaCpp
-from langchain.llms.textgen import TextGen
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
@@ -43,6 +42,7 @@ from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
+from langchain.llms.textgen import TextGen
 from langchain.llms.vertexai import VertexAI
 from langchain.llms.writer import Writer
 

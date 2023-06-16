@@ -1,9 +1,9 @@
 """Wrapper around text-generation-webui."""
 import logging
-import requests
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import Field, root_validator
+import requests
+from pydantic import Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -40,13 +40,16 @@ class TextGen(LLM):
     """Do sample"""
 
     temperature: Optional[float] = 1.3
-    """Primary factor to control randomness of outputs. 0 = deterministic (only the most likely token is used). Higher value = more randomness."""
+    """Primary factor to control randomness of outputs. 0 = deterministic
+    (only the most likely token is used). Higher value = more randomness."""
 
     top_p: Optional[float] = 0.1
-    """If not set to 1, select tokens with probabilities adding up to less than this number. Higher value = higher range of possible random results."""
+    """If not set to 1, select tokens with probabilities adding up to less than this
+    number. Higher value = higher range of possible random results."""
 
     typical_p: Optional[float] = 1
-    """If not set to 1, select only tokens that are at least this much more likely to appear than random tokens, given the prior text."""
+    """If not set to 1, select only tokens that are at least this much more likely to
+    appear than random tokens, given the prior text."""
 
     epsilon_cutoff: Optional[float] = 0  # In units of 1e-4
     """Epsilon cutoff"""
@@ -55,16 +58,21 @@ class TextGen(LLM):
     """ETA cutoff"""
 
     repetition_penalty: Optional[float] = 1.18
-    """Exponential penalty factor for repeating prior tokens. 1 means no penalty, higher value = less repetition, lower value = more repetition."""
+    """Exponential penalty factor for repeating prior tokens. 1 means no penalty,
+    higher value = less repetition, lower value = more repetition."""
 
     top_k: Optional[float] = 40
-    """Similar to top_p, but select instead only the top_k most likely tokens. Higher value = higher range of possible random results."""
+    """Similar to top_p, but select instead only the top_k most likely tokens.
+    Higher value = higher range of possible random results."""
 
     min_length: Optional[int] = 0
     """Minimum generation length in tokens."""
 
     no_repeat_ngram_size: Optional[int] = 0
-    """If not set to 0, specifies the length of token sets that are completely blocked from repeating at all. Higher values = blocks larger phrases, lower values = blocks words or letters from repeating. Only 0 or high values are a good idea in most cases."""
+    """If not set to 0, specifies the length of token sets that are completely blocked
+    from repeating at all. Higher values = blocks larger phrases,
+    lower values = blocks words or letters from repeating.
+    Only 0 or high values are a good idea in most cases."""
 
     num_beams: Optional[int] = 1
     """Number of beams"""
@@ -82,10 +90,12 @@ class TextGen(LLM):
     """Seed (-1 for random)"""
 
     add_bos_token: bool = Field(True, alias="add_bos_token")
-    """Add the bos_token to the beginning of prompts. Disabling this can make the replies more creative."""
+    """Add the bos_token to the beginning of prompts.
+    Disabling this can make the replies more creative."""
 
     truncation_length: Optional[int] = 2048
-    """Truncate the prompt up to this length. The leftmost tokens are removed if the prompt exceeds this length. Most models require this to be at most 2048."""
+    """Truncate the prompt up to this length. The leftmost tokens are removed if
+    the prompt exceeds this length. Most models require this to be at most 2048."""
 
     ban_eos_token: bool = Field(False, alias="ban_eos_token")
     """Ban the eos_token. Forces the model to never end the generation prematurely."""
