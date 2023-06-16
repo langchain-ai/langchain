@@ -98,8 +98,8 @@ class PyPDFLoader(BasePDFLoader):
     Loader also stores page numbers in metadatas.
     """
 
-    def __init__(self, file_path: str) -> None:
-        """Initialize with file path."""
+    def __init__(self, file_path: Optional[str] = None, file_obj: Optional[BytesIO] = None) -> None:
+        """Initialize with file path or file object."""
         try:
             import pypdf  # noqa:F401
         except ImportError:
@@ -107,7 +107,12 @@ class PyPDFLoader(BasePDFLoader):
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
         self.parser = PyPDFParser()
-        super().__init__(file_path)
+        if file_obj:
+            self.blob = Blob.from_data(file_obj.getvalue())
+        elif file_path:
+            super().__init__(file_path)
+        else:
+            raise ValueError("Either file_path or file_obj must be provided.")
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
@@ -117,8 +122,11 @@ class PyPDFLoader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
-        blob = Blob.from_path(self.file_path)
-        yield from self.parser.parse(blob)
+        if self.blob:
+            yield from self.parser.parse(self.blob)
+        else:
+            blob = Blob.from_path(self.file_path)
+            yield from self.parser.parse(blob)
 
 
 class PyPDFium2Loader(BasePDFLoader):
