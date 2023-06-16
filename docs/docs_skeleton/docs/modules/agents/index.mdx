@@ -12,9 +12,9 @@ There are two main types of agents:
 
 Action agents are suitable for small tasks, while plan-and-execute agents are better for complex or long-running tasks that require maintaining long-term objectives and focus. Often the best approach is to combine the dynamism of an action agent with the planning abilities of a plan-and-execute agent by letting the plan-and-execute agent use action agents to execute plans.
 
-For a full list of agent types see [agent types](./agent_types.html). Additional abstractions involved in agents are:
-- [**Tools**](./tools): the actions an agent can take. What tools you give an agent highly depend on what you want the agent to do
-- [**Toolkits**](./toolkits): wrappers around collections of tools that can be used together a specific use case. For example, in order for an agent to
+For a full list of agent types see [agent types](/docs/modules/agents/agent_types/). Additional abstractions involved in agents are:
+- [**Tools**](/docs/modules/agents/tools/): the actions an agent can take. What tools you give an agent highly depend on what you want the agent to do
+- [**Toolkits**](/docs/modules/agents/toolkits/): wrappers around collections of tools that can be used together a specific use case. For example, in order for an agent to
   interact with a SQL database it will likely need one tool to execute queries and another to inspect tables
 
 ## Action agents
@@ -42,7 +42,7 @@ At a high-level a plan-and-execute agent:
 2. Plans the full sequence of steps to take
 3. Executes the steps in order, passing the outputs of past steps as inputs to future steps
 
-The most typical implementation is to have the planner be a language model, and the executor be an action agent. Read more [here](./agent_types/plan_and_execute.html).
+The most typical implementation is to have the planner be a language model, and the executor be an action agent. Read more [here](/docs/modules/agents/agent_types/plan_and_execute.html).
 
 ## Get started
 
