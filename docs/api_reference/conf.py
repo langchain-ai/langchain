@@ -49,7 +49,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",
-    'sphinx_tabs.tabs'
+    "sphinx_tabs.tabs",
 ]
 source_suffix = [".rst"]
 
@@ -67,7 +67,12 @@ autodoc_pydantic_model_signature_prefix = "class"
 autodoc_pydantic_field_signature_prefix = "attribute"
 autodoc_pydantic_model_summary_list_order = "bysource"
 autodoc_member_order = "bysource"
-autodoc_default_options = {"members": True, "show-inheritance": True, "undoc_members": True, "inherited_members": "BaseModel"}
+autodoc_default_options = {
+    "members": True,
+    "show-inheritance": True,
+    "undoc_members": True,
+    "inherited_members": "BaseModel",
+}
 autodoc_typehints = "description"
 
 # Add any paths that contain templates here, relative to this directory.
