@@ -135,6 +135,39 @@ class Pinecone(VectorStore):
                     f"Found document with no `{self._text_key}` key. Skipping."
                 )
         return docs
+    
+    def similarity_search_by_vector_with_relevance_scores(
+        self,
+        query: List[float],
+        k: int = 4,
+        filter: Optional[dict] = None,
+        namespace: Optional[str] = None,
+    ) -> List[Tuple[Document, float]]:
+        """
+        Uses a vector query instead of a text query to find similar documents.
+        With a pre-computed vector query we can avoid calling the embedding function, because we already have it.
+        """
+        if namespace is None:
+            namespace = self._namespace
+        docs = []
+        results = self._index.query(
+            query,
+            top_k=k,
+            include_metadata=True,
+            namespace=namespace,
+            filter=filter,
+        )
+        for res in results["matches"]:
+            metadata = res["metadata"]
+            if self._text_key in metadata:
+                text = metadata.pop(self._text_key)
+                score = res["score"]
+                docs.append((Document(page_content=text, metadata=metadata), score))
+            else:
+                logger.warning(
+                    f"Found document with no `{self._text_key}` key. Skipping."
+                )
+        return docs
 
     def similarity_search(
         self,
