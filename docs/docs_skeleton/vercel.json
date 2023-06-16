@@ -1,6 +1,8 @@
 {
   "redirects": [
     {"source":  "/docs", "destination":  "/"},
-    {"source":  "/en/latest", "destination":  "/docs"}
+    {"source":  "/en/latest/index.html", "destination":  "/"},
+    {"source":  "/en/latest/modules/indexes/:path*", "destination":  "/docs/modules/data_connection/:path*"},
+    {"source":  "/en/latest/:path*", "destination":  "/docs/:path*"}
   ]
 }
