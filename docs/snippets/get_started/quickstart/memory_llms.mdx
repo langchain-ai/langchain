@@ -1,0 +1,51 @@
+```python
+from langchain import OpenAI, ConversationChain
+
+llm = OpenAI(temperature=0)
+conversation = ConversationChain(llm=llm, verbose=True)
+
+conversation.run("Hi there!")
+```
+
+here's what's going on under the hood
+
+```pycon
+> Entering new chain...
+Prompt after formatting:
+The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+Current conversation:
+
+Human: Hi there!
+AI:
+
+> Finished chain.
+
+>> 'Hello! How are you today?'
+```
+
+Now if we run the chain again
+
+```python
+conversation.run("I'm doing well! Just having a conversation with an AI.")
+```
+
+we'll see that the full prompt that's passed to the model contains the input and output of our first interaction, along with our latest input
+
+```pycon
+> Entering new chain...
+Prompt after formatting:
+The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+Current conversation:
+
+Human: Hi there!
+AI:  Hello! How are you today?
+Human: I'm doing well! Just having a conversation with an AI.
+AI:
+
+> Finished chain.
+
+>> "That's great! What would you like to talk about?"
+```
+
