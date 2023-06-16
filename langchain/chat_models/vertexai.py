@@ -82,10 +82,13 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         """Validate that the python package exists in environment."""
         cls._try_init_vertexai(values)
         try:
-            from vertexai.preview.language_models import ChatModel
+            from vertexai.preview.language_models import ChatModel, CodeChatModel
         except ImportError:
             raise_vertex_import_error()
-        values["client"] = ChatModel.from_pretrained(values["model_name"])
+        if "code" in values["model_name"]:
+            values["client"] = CodeChatModel.from_pretrained(values["model_name"])
+        else:
+            values["client"] = ChatModel.from_pretrained(values["model_name"])
         return values
 
     def _generate(
