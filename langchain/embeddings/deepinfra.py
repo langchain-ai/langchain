@@ -115,9 +115,6 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
         embeddings = self._embed(instruction_pairs)
         return embeddings
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        raise NotImplementedError()
-
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using a Deep Infra deployed embedding model.
 
@@ -130,6 +127,3 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
         instruction_pair = f"{self.query_instruction}{text}"
         embedding = self._embed([instruction_pair])[0]
         return embedding
-
-    async def aembed_query(self, text: str) -> List[float]:
-        raise NotImplementedError()

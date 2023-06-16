@@ -68,9 +68,6 @@ class CohereEmbeddings(BaseModel, Embeddings):
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        raise NotImplementedError()
-
     def embed_query(self, text: str) -> List[float]:
         """Call out to Cohere's embedding endpoint.
 
@@ -84,6 +81,3 @@ class CohereEmbeddings(BaseModel, Embeddings):
             model=self.model, texts=[text], truncate=self.truncate
         ).embeddings[0]
         return list(map(float, embedding))
-
-    async def aembed_query(self, text: str) -> List[float]:
-        raise NotImplementedError()

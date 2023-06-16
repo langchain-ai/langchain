@@ -127,9 +127,6 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
         # flatten the list of lists into a single list
         return [embedding for batch in embeddings for embedding in batch]
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        raise NotImplementedError()
-
     def embed_query(self, text: str) -> List[float]:
         """Get embeddings for a single text.
 
@@ -140,6 +137,3 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
             List of embeddings.
         """
         return self.embed_documents([text])[0]
-
-    async def aembed_query(self, text: str) -> List[float]:
-        raise NotImplementedError()

@@ -79,7 +79,7 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
         async def wrapped_f(*args: Any, **kwargs: Any) -> Callable:
             async for _ in async_retrying:
                 return await func(*args, **kwargs)
-            assert False, "this is unreachable"
+            raise AssertionError("this is unreachable")
 
         return wrapped_f
 

@@ -57,9 +57,6 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
         embeddings = self.embed(input=inputs)["text_embedding"]
         return embeddings.tolist()
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        raise NotImplementedError()
-
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a modelscope embedding model.
 
@@ -73,6 +70,3 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
         inputs = {"source_sentence": [text]}
         embedding = self.embed(input=inputs)["text_embedding"][0]
         return embedding.tolist()
-
-    async def aembed_query(self, text: str) -> List[float]:
-        raise NotImplementedError()

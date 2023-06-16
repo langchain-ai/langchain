@@ -92,9 +92,6 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         responses = self.client(inputs=texts, params=_model_kwargs)
         return responses
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        raise NotImplementedError()
-
     def embed_query(self, text: str) -> List[float]:
         """Call out to HuggingFaceHub's embedding endpoint for embedding query text.
 
@@ -106,6 +103,3 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         """
         response = self.embed_documents([text])[0]
         return response
-
-    async def aembed_query(self, text: str) -> List[float]:
-        raise NotImplementedError()

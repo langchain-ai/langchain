@@ -85,9 +85,6 @@ class JinaEmbeddings(BaseModel, Embeddings):
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        raise NotImplementedError()
-
     def embed_query(self, text: str) -> List[float]:
         """Call out to Jina's embedding endpoint.
         Args:
@@ -99,6 +96,3 @@ class JinaEmbeddings(BaseModel, Embeddings):
 
         embedding = self._post(docs=DocumentArray([Document(text=text)])).embeddings[0]
         return list(map(float, embedding))
-
-    async def aembed_query(self, text: str) -> List[float]:
-        raise NotImplementedError()
