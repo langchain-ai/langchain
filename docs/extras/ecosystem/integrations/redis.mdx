@@ -1,0 +1,79 @@
+# Redis
+
+This page covers how to use the [Redis](https://redis.com) ecosystem within LangChain.
+It is broken into two parts: installation and setup, and then references to specific Redis wrappers.
+
+## Installation and Setup
+- Install the Redis Python SDK with `pip install redis`
+
+## Wrappers
+
+### Cache
+
+The Cache wrapper allows for [Redis](https://redis.io) to be used as a remote, low-latency, in-memory cache for LLM prompts and responses.
+
+#### Standard Cache
+The standard cache is the Redis bread & butter of use case in production for both [open source](https://redis.io) and [enterprise](https://redis.com) users globally.
+
+To import this cache:
+```python
+from langchain.cache import RedisCache
+```
+
+To use this cache with your LLMs:
+```python
+import langchain
+import redis
+
+redis_client = redis.Redis.from_url(...)
+langchain.llm_cache = RedisCache(redis_client)
+```
+
+#### Semantic Cache
+Semantic caching allows users to retrieve cached prompts based on semantic similarity between the user input and previously cached results. Under the hood it blends Redis as both a cache and a vectorstore.
+
+To import this cache:
+```python
+from langchain.cache import RedisSemanticCache
+```
+
+To use this cache with your LLMs:
+```python
+import langchain
+import redis
+
+# use any embedding provider...
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+
+redis_url = "redis://localhost:6379"
+
+langchain.llm_cache = RedisSemanticCache(
+    embedding=FakeEmbeddings(),
+    redis_url=redis_url
+)
+```
+
+### VectorStore
+
+The vectorstore wrapper turns Redis into a low-latency [vector database](https://redis.com/solutions/use-cases/vector-database/) for semantic search or LLM content retrieval.
+
+To import this vectorstore:
+```python
+from langchain.vectorstores import Redis
+```
+
+For a more detailed walkthrough of the Redis vectorstore wrapper, see [this notebook](/docs/modules/data_connection/vectorstores/integrations/redis.html).
+
+### Retriever
+
+The Redis vector store retriever wrapper generalizes the vectorstore class to perform low-latency document retrieval. To create the retriever, simply call `.as_retriever()` on the base vectorstore class.
+
+### Memory
+Redis can be used to persist LLM conversations.
+
+#### Vector Store Retriever Memory
+
+For a more detailed walkthrough of the `VectorStoreRetrieverMemory` wrapper, see [this notebook](/docs/modules/memory/integrations/vectorstore_retriever_memory.html).
+
+#### Chat Message History Memory
+For a detailed example of Redis to cache conversation message history, see [this notebook](/docs/modules/memory/integrations/redis_chat_message_history.html).

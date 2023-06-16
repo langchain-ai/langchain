@@ -167,9 +167,9 @@ def test_similarity_search_with_filter(
     """Test similarity search."""
 
     output = deeplake_datastore.similarity_search(
-        "foo", 
-        k=1, 
-        distance_metric=distance_metric, 
+        "foo",
+        k=1,
+        distance_metric=distance_metric,
         filter={"metadata": {"page": "1"}},
     )
     assert output == [Document(page_content="bar", metadata={"page": "1"})]
@@ -196,7 +196,12 @@ def test_delete_dataset_by_ids(deeplake_datastore: DeepLake) -> None:
     """Test delete dataset."""
     id = deeplake_datastore.vectorstore.dataset.id.data()["value"][0]
     deeplake_datastore.delete(ids=[id])
-    assert deeplake_datastore.similarity_search("foo", k=1, filter={"metadata": {"page": "0"}}) == []
+    assert (
+        deeplake_datastore.similarity_search(
+            "foo", k=1, filter={"metadata": {"page": "0"}}
+        )
+        == []
+    )
     assert len(deeplake_datastore.vectorstore) == 2
 
     deeplake_datastore.delete_dataset()
@@ -204,8 +209,13 @@ def test_delete_dataset_by_ids(deeplake_datastore: DeepLake) -> None:
 
 def test_delete_dataset_by_filter(deeplake_datastore: DeepLake) -> None:
     """Test delete dataset."""
-    deeplake_datastore.delete(filter={"metadata":{"page": "1"}})
-    assert deeplake_datastore.similarity_search("bar", k=1, filter={"metadata":{"page": "1"}}) == []
+    deeplake_datastore.delete(filter={"metadata": {"page": "1"}})
+    assert (
+        deeplake_datastore.similarity_search(
+            "bar", k=1, filter={"metadata": {"page": "1"}}
+        )
+        == []
+    )
     assert len(deeplake_datastore.vectorstore.dataset) == 2
 
     deeplake_datastore.delete_dataset()
