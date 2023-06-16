@@ -15,6 +15,7 @@ from langchain.callbacks.mlflow_callback import MlflowCallbackHandler
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
+from langchain.callbacks.streamlit import LLMThoughtLabeler, StreamlitCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
 
@@ -34,4 +35,6 @@ __all__ = [
     "tracing_enabled",
     "wandb_tracing_enabled",
     "HumanApprovalCallbackHandler",
+    "StreamlitCallbackHandler",
+    "LLMThoughtLabeler",
 ]
