@@ -54,7 +54,7 @@ class ContextBuilder(Serializable):
     def create_context(
         self, docs: List[Document], document_prompt: BasePromptTemplate
     ) -> str:
-        raise NotImplementedError()
+        """create a string context from the documents"""
 
 
 class DefaultContextBuilder(ContextBuilder):
