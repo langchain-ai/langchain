@@ -95,7 +95,6 @@ class Pinecone(VectorStore):
         self._index.upsert(vectors=docs, namespace=namespace, batch_size=batch_size)
         return ids
 
-
     def similarity_search_with_score(
         self,
         query: str,
