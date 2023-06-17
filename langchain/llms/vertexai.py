@@ -25,10 +25,10 @@ class _VertexAICommon(BaseModel):
     "Token limit determines the maximum amount of text output from one prompt."
     top_p: float = 0.95
     "Tokens are selected from most probable to least until the sum of their "
-    "probabilities equals the top-p value."
+    "probabilities equals the top-p value. Top-p is ignored for Codey models."
     top_k: int = 40
     "How the model selects tokens for output, the next token is selected from "
-    "among the top-k most probable tokens."
+    "among the top-k most probable tokens. Top-k is ignored for Codey models."
     stop: Optional[List[str]] = None
     "Optional list of stop words to use when generating."
     project: Optional[str] = None
@@ -50,10 +50,21 @@ class _VertexAICommon(BaseModel):
         }
         return {**base_params}
 
+    @property
+    def _code_params(self) -> Dict[str, Any]:
+        base_params = {
+            "temperature": self.temperature,
+            "max_output_tokens": self.max_output_tokens
+        }
+        return {**base_params}
+
     def _predict(
         self, prompt: str, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> str:
-        params = {**self._default_params, **kwargs}
+        if "code" in self.model_name:
+            params = {**self._code_params, **kwargs}
+        else:
+            params = {**self._default_params, **kwargs}
         res = self.client.predict(prompt, **params)
         return self._enforce_stop_words(res.text, stop)
 
@@ -88,14 +99,17 @@ class VertexAI(_VertexAICommon, LLM):
         """Validate that the python package exists in environment."""
         cls._try_init_vertexai(values)
         try:
-            from vertexai.preview.language_models import TextGenerationModel
+            from vertexai.preview.language_models import TextGenerationModel, CodeGenerationModel
         except ImportError:
             raise_vertex_import_error()
         tuned_model_name = values.get("tuned_model_name")
         if tuned_model_name:
             values["client"] = TextGenerationModel.get_tuned_model(tuned_model_name)
         else:
-            values["client"] = TextGenerationModel.from_pretrained(values["model_name"])
+            if "code" in values["model_name"]:
+                values["client"] = CodeGenerationModel.from_pretrained(values["model_name"])
+            else:
+                values["client"] = TextGenerationModel.from_pretrained(values["model_name"])
         return values
 
     def _call(

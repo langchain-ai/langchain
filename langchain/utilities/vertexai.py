@@ -11,7 +11,7 @@ def raise_vertex_import_error() -> None:
     Raises:
         ImportError: an ImportError that mentions a required version of the SDK.
     """
-    sdk = "'google-cloud-aiplatform>=1.25.0'"
+    sdk = "'google-cloud-aiplatform>=1.26.0'"
     raise ImportError(
         "Could not import VertexAI. Please, install it with " f"pip install {sdk}"
     )
