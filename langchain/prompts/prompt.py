@@ -25,6 +25,12 @@ class PromptTemplate(StringPromptTemplate):
             prompt = PromptTemplate(input_variables=["foo"], template="Say {foo}")
     """
 
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        return {
+            "template_format": self.template_format,
+        }
+
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
 
@@ -133,6 +139,12 @@ class PromptTemplate(StringPromptTemplate):
         else:
             input_variables = {
                 v for _, v, _, _ in Formatter().parse(template) if v is not None
+            }
+
+        if "partial_variables" in kwargs:
+            partial_variables = kwargs["partial_variables"]
+            input_variables = {
+                var for var in input_variables if var not in partial_variables
             }
 
         return cls(

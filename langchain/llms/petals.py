@@ -23,6 +23,7 @@ class Petals(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import petals
             petals = Petals()
 
@@ -136,9 +137,11 @@ class Petals(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call the Petals API."""
         params = self._default_params
+        params = {**params, **kwargs}
         inputs = self.tokenizer(prompt, return_tensors="pt")["input_ids"]
         outputs = self.client.generate(inputs, **params)
         text = self.tokenizer.decode(outputs[0])

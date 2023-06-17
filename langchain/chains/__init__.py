@@ -10,6 +10,8 @@ from langchain.chains.conversational_retrieval.base import (
 )
 from langchain.chains.flare.base import FlareChain
 from langchain.chains.graph_qa.base import GraphQAChain
+from langchain.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
@@ -20,6 +22,12 @@ from langchain.chains.llm_summarization_checker.base import LLMSummarizationChec
 from langchain.chains.loading import load_chain
 from langchain.chains.mapreduce import MapReduceChain
 from langchain.chains.moderation import OpenAIModerationChain
+from langchain.chains.openai_functions import (
+    create_extraction_chain,
+    create_extraction_chain_pydantic,
+    create_tagging_chain,
+    create_tagging_chain_pydantic,
+)
 from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_generation.base import QAGenerationChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
@@ -58,6 +66,7 @@ __all__ = [
     "HypotheticalDocumentEmbedder",
     "ChatVectorDBChain",
     "GraphQAChain",
+    "GraphCypherQAChain",
     "ConstitutionalChain",
     "QAGenerationChain",
     "RetrievalQA",
@@ -65,4 +74,9 @@ __all__ = [
     "ConversationalRetrievalChain",
     "OpenAPIEndpointChain",
     "FlareChain",
+    "NebulaGraphQAChain",
+    "create_extraction_chain",
+    "create_tagging_chain",
+    "create_extraction_chain_pydantic",
+    "create_tagging_chain_pydantic",
 ]

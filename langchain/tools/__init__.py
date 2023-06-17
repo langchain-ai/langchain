@@ -1,7 +1,15 @@
 """Core toolkit implementations."""
 
+from langchain.tools.azure_cognitive_services import (
+    AzureCogsFormRecognizerTool,
+    AzureCogsImageAnalysisTool,
+    AzureCogsSpeech2TextTool,
+    AzureCogsText2SpeechTool,
+)
 from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
 from langchain.tools.bing_search.tool import BingSearchResults, BingSearchRun
+from langchain.tools.brave_search.tool import BraveSearch
+from langchain.tools.convert_to_openai import format_tool_to_openai_function
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchResults, DuckDuckGoSearchRun
 from langchain.tools.file_management.copy import CopyFileTool
 from langchain.tools.file_management.delete import DeleteFileTool
@@ -22,8 +30,10 @@ from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearch
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.ifttt import IFTTTWebhook
+from langchain.tools.metaphor_search import MetaphorSearchResults
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
+from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain.tools.playwright import (
     ClickTool,
     CurrentWebPageTool,
@@ -34,6 +44,12 @@ from langchain.tools.playwright import (
     NavigateTool,
 )
 from langchain.tools.plugin import AIPluginTool
+from langchain.tools.powerbi.tool import (
+    InfoPowerBITool,
+    ListPowerBITool,
+    QueryPowerBITool,
+)
+from langchain.tools.pubmed.tool import PubmedQueryRun
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.shell.tool import ShellTool
 from langchain.tools.steamship_image_generation import SteamshipImageGenerationTool
@@ -49,6 +65,10 @@ from langchain.tools.zapier.tool import ZapierNLAListActions, ZapierNLARunAction
 __all__ = [
     "AIPluginTool",
     "APIOperation",
+    "AzureCogsFormRecognizerTool",
+    "AzureCogsImageAnalysisTool",
+    "AzureCogsSpeech2TextTool",
+    "AzureCogsText2SpeechTool",
     "BaseTool",
     "BaseTool",
     "BaseTool",
@@ -77,11 +97,16 @@ __all__ = [
     "GoogleSerperRun",
     "HumanInputRun",
     "IFTTTWebhook",
+    "InfoPowerBITool",
     "ListDirectoryTool",
+    "ListPowerBITool",
+    "MetaphorSearchResults",
     "MoveFileTool",
     "NavigateBackTool",
     "NavigateTool",
     "OpenAPISpec",
+    "OpenWeatherMapQueryRun",
+    "QueryPowerBITool",
     "ReadFileTool",
     "SceneXplainTool",
     "ShellTool",
@@ -96,4 +121,7 @@ __all__ = [
     "ZapierNLARunAction",
     "tool",
     "YouTubeSearchTool",
+    "BraveSearch",
+    "PubmedQueryRun",
+    "format_tool_to_openai_function",
 ]

@@ -130,7 +130,7 @@ class SQLDatabaseChain(Chain):
                     template=QUERY_CHECKER, input_variables=["query", "dialect"]
                 )
                 query_checker_chain = LLMChain(
-                    llm=self.llm, prompt=query_checker_prompt
+                    llm=self.llm_chain.llm, prompt=query_checker_prompt
                 )
                 query_checker_inputs = {
                     "query": sql_cmd,
@@ -223,8 +223,8 @@ class SQLDatabaseSequentialChain(Chain):
         **kwargs: Any,
     ) -> SQLDatabaseSequentialChain:
         """Load the necessary chains."""
-        sql_chain = SQLDatabaseChain(
-            llm=llm, database=database, prompt=query_prompt, **kwargs
+        sql_chain = SQLDatabaseChain.from_llm(
+            llm, database, prompt=query_prompt, **kwargs
         )
         decider_chain = LLMChain(
             llm=llm, prompt=decider_prompt, output_key="table_names"

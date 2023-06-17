@@ -10,6 +10,24 @@ from langchain.llms.base import BaseLLM
 from langchain.tools.python.tool import PythonAstREPLTool
 
 
+def _validate_spark_df(df: Any) -> bool:
+    try:
+        from pyspark.sql import DataFrame as SparkLocalDataFrame
+
+        return isinstance(df, SparkLocalDataFrame)
+    except ImportError:
+        return False
+
+
+def _validate_spark_connect_df(df: Any) -> bool:
+    try:
+        from pyspark.sql.connect.dataframe import DataFrame as SparkConnectDataFrame
+
+        return isinstance(df, SparkConnectDataFrame)
+    except ImportError:
+        return False
+
+
 def create_spark_dataframe_agent(
     llm: BaseLLM,
     df: Any,
@@ -26,15 +44,9 @@ def create_spark_dataframe_agent(
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a spark agent from an LLM and dataframe."""
-    try:
-        from pyspark.sql import DataFrame
-    except ImportError:
-        raise ValueError(
-            "spark package not found, please install with `pip install pyspark`"
-        )
 
-    if not isinstance(df, DataFrame):
-        raise ValueError(f"Expected Spark Data Frame object, got {type(df)}")
+    if not _validate_spark_df(df) and not _validate_spark_connect_df(df):
+        raise ValueError("Spark is not installed. run `pip install pyspark`.")
 
     if input_variables is None:
         input_variables = ["df", "input", "agent_scratchpad"]

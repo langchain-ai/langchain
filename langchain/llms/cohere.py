@@ -1,8 +1,17 @@
 """Wrapper around Cohere APIs."""
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from pydantic import Extra, root_validator
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -10,6 +19,33 @@ from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
+
+
+def _create_retry_decorator(llm: Cohere) -> Callable[[Any], Any]:
+    import cohere
+
+    min_seconds = 4
+    max_seconds = 10
+    # Wait 2^x * 1 second between each retry starting with
+    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(llm.max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=(retry_if_exception_type(cohere.error.CohereError)),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
+def completion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator(llm)
+
+    @retry_decorator
+    def _completion_with_retry(**kwargs: Any) -> Any:
+        return llm.client.generate(**kwargs)
+
+    return _completion_with_retry(**kwargs)
 
 
 class Cohere(LLM):
@@ -52,6 +88,9 @@ class Cohere(LLM):
     """Specify how the client handles inputs longer than the maximum token
     length: Truncate from START, END or NONE"""
 
+    max_retries: int = 10
+    """Maximum number of retries to make when generating."""
+
     cohere_api_key: Optional[str] = None
 
     stop: Optional[List[str]] = None
@@ -72,7 +111,7 @@ class Cohere(LLM):
 
             values["client"] = cohere.Client(cohere_api_key)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import cohere python package. "
                 "Please install it with `pip install cohere`."
             )
@@ -106,6 +145,7 @@ class Cohere(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Cohere's generate endpoint.
 
@@ -128,8 +168,10 @@ class Cohere(LLM):
             params["stop_sequences"] = self.stop
         else:
             params["stop_sequences"] = stop
-
-        response = self.client.generate(model=self.model, prompt=prompt, **params)
+        params = {**params, **kwargs}
+        response = completion_with_retry(
+            self, model=self.model, prompt=prompt, **params
+        )
         text = response.generations[0].text
         # If stop tokens are provided, Cohere's endpoint returns them.
         # In order to make this consistent with other endpoints, we strip them.

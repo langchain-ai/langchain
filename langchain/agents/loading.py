@@ -1,5 +1,6 @@
 """Functionality for loading agents."""
 import json
+import logging
 from pathlib import Path
 from typing import Any, List, Optional, Union
 
@@ -11,6 +12,8 @@ from langchain.agents.types import AGENT_TO_CLASS
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.loading import load_chain, load_chain_from_config
 from langchain.utilities.loading import try_load_from_hub
+
+logger = logging.getLogger(__file__)
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/agents/"
 
@@ -61,6 +64,13 @@ def load_agent_from_config(
         config["llm_chain"] = load_chain(config.pop("llm_chain_path"))
     else:
         raise ValueError("One of `llm_chain` and `llm_chain_path` should be specified.")
+    if "output_parser" in config:
+        logger.warning(
+            "Currently loading output parsers on agent is not supported, "
+            "will just use the default one."
+        )
+        del config["output_parser"]
+
     combined_config = {**config, **kwargs}
     return agent_cls(**combined_config)  # type: ignore
 

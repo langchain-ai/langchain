@@ -3,10 +3,8 @@ import logging
 from typing import List
 
 from langchain.schema import (
-    AIMessage,
     BaseChatMessageHistory,
     BaseMessage,
-    HumanMessage,
     _message_to_dict,
     messages_from_dict,
 )
@@ -49,6 +47,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
 
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
+        self.collection.create_index("SessionId")
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
@@ -68,13 +67,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         messages = messages_from_dict(items)
         return messages
 
-    def add_user_message(self, message: str) -> None:
-        self.append(HumanMessage(content=message))
-
-    def add_ai_message(self, message: str) -> None:
-        self.append(AIMessage(content=message))
-
-    def append(self, message: BaseMessage) -> None:
+    def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in MongoDB"""
         from pymongo import errors
 

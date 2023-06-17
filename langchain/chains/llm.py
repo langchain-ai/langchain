@@ -15,6 +15,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
+from langchain.load.dump import dumpd
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import LLMResult, PromptValue
@@ -33,6 +34,10 @@ class LLMChain(Chain):
             )
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
     """
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
 
     prompt: BasePromptTemplate
     """Prompt object to use."""
@@ -86,7 +91,7 @@ class LLMChain(Chain):
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> LLMResult:
         """Generate LLM result from inputs."""
-        prompts, stop = await self.aprep_prompts(input_list)
+        prompts, stop = await self.aprep_prompts(input_list, run_manager=run_manager)
         return await self.llm.agenerate_prompt(
             prompts, stop, callbacks=run_manager.get_child() if run_manager else None
         )
@@ -147,7 +152,7 @@ class LLMChain(Chain):
             callbacks, self.callbacks, self.verbose
         )
         run_manager = callback_manager.on_chain_start(
-            {"name": self.__class__.__name__},
+            dumpd(self),
             {"input_list": input_list},
         )
         try:
@@ -167,7 +172,7 @@ class LLMChain(Chain):
             callbacks, self.callbacks, self.verbose
         )
         run_manager = await callback_manager.on_chain_start(
-            {"name": self.__class__.__name__},
+            dumpd(self),
             {"input_list": input_list},
         )
         try:
@@ -278,7 +283,7 @@ class LLMChain(Chain):
         return "llm_chain"
 
     @classmethod
-    def from_string(cls, llm: BaseLanguageModel, template: str) -> Chain:
+    def from_string(cls, llm: BaseLanguageModel, template: str) -> LLMChain:
         """Create LLMChain from LLM and template."""
         prompt_template = PromptTemplate.from_template(template)
         return cls(llm=llm, prompt=prompt_template)
