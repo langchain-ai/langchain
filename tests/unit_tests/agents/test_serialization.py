@@ -3,8 +3,8 @@ from tempfile import TemporaryDirectory
 
 from langchain.agents.agent_types import AgentType
 from langchain.agents.initialize import initialize_agent, load_agent
-from langchain.llms.fake import FakeListLLM
 from langchain.agents.tools import Tool
+from langchain.llms.fake import FakeListLLM
 
 
 def test_mrkl_serialization() -> None:
