@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {"source":  "/docs", "destination":  "/"},
+    {"source":  "/docs/", "destination":  "/"},
+    {"source":  "/en/latest", "destination":  "/"},
+    {"source":  "/en/latest/", "destination":  "/"},
+    {"source":  "/en/latest/index.html", "destination":  "/"},
+    {"source":  "/en/latest/modules/indexes/:path*", "destination":  "/docs/modules/data_connection/:path*"},
+    {"source":  "/en/latest/modules/models.html", "destination":  "/docs/modules/model_io/models/"},
+    {"source":  "/en/latest/modules/models/:path*", "destination":  "/docs/modules/model_io/models/:path*"},
+    {"source":  "/en/latest/reference.html", "destination":  "https://api.python.langchain.com"},
+    {"source":  "/en/latest/reference/:path*", "destination":  "https://api.python.langchain.com/en/latest/:path*"},
+    {"source":  "/en/latest/:path*", "destination":  "/docs/:path*"}
+  ]
+}

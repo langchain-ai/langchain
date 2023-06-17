@@ -9,6 +9,7 @@
 # 4. For service accounts visit
 #   https://cloud.google.com/iam/docs/service-accounts-create
 
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
@@ -91,6 +92,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         """Load credentials."""
         # Adapted from https://developers.google.com/drive/api/v3/quickstart/python
         try:
+            from google.auth import default
             from google.auth.transport.requests import Request
             from google.oauth2 import service_account
             from google.oauth2.credentials import Credentials
@@ -116,6 +118,12 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
+            elif "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
+                creds, project = default()
+                creds = creds.with_scopes(SCOPES)
+                # no need to write to file
+                if creds:
+                    return creds
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     str(self.credentials_path), SCOPES
