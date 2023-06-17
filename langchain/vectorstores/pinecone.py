@@ -95,13 +95,6 @@ class Pinecone(VectorStore):
         self._index.upsert(vectors=docs, namespace=namespace, batch_size=batch_size)
         return ids
 
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        return self.similarity_search_with_score(query, k=k)
 
     def similarity_search_with_score(
         self,
