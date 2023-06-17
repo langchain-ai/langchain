@@ -41,6 +41,65 @@ def test_qdrant_similarity_search(
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
+@pytest.mark.parametrize(
+    ["content_payload_key", "metadata_payload_key"],
+    [
+        (Qdrant.CONTENT_KEY, Qdrant.METADATA_KEY),
+        ("foo", "bar"),
+        (Qdrant.CONTENT_KEY, "bar"),
+        ("foo", Qdrant.METADATA_KEY),
+    ],
+)
+def test_qdrant_similarity_search_by_vector(
+    batch_size: int, content_payload_key: str, metadata_payload_key: str
+) -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Qdrant.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        location=":memory:",
+        content_payload_key=content_payload_key,
+        metadata_payload_key=metadata_payload_key,
+        batch_size=batch_size,
+    )
+    embeddings = ConsistentFakeEmbeddings().embed_query("foo")
+    output = docsearch.similarity_search_by_vector(embeddings, k=1)
+    assert output == [Document(page_content="foo")]
+
+
+@pytest.mark.parametrize("batch_size", [1, 64])
+@pytest.mark.parametrize(
+    ["content_payload_key", "metadata_payload_key"],
+    [
+        (Qdrant.CONTENT_KEY, Qdrant.METADATA_KEY),
+        ("foo", "bar"),
+        (Qdrant.CONTENT_KEY, "bar"),
+        ("foo", Qdrant.METADATA_KEY),
+    ],
+)
+def test_qdrant_similarity_search_with_score_by_vector(
+    batch_size: int, content_payload_key: str, metadata_payload_key: str
+) -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Qdrant.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        location=":memory:",
+        content_payload_key=content_payload_key,
+        metadata_payload_key=metadata_payload_key,
+        batch_size=batch_size,
+    )
+    embeddings = ConsistentFakeEmbeddings().embed_query("foo")
+    output = docsearch.similarity_search_with_score_by_vector(embeddings, k=1)
+    assert len(output) == 1
+    document, score = output[0]
+    assert document == Document(page_content="foo")
+    assert score >= 0
+
+
+@pytest.mark.parametrize("batch_size", [1, 64])
 def test_qdrant_add_documents(batch_size: int) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
