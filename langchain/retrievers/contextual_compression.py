@@ -51,7 +51,9 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         """
         docs = await self.base_retriever.aget_relevant_documents(query)
         if docs:
-            compressed_docs = await self.base_compressor.acompress_documents(docs, query)
+            compressed_docs = await self.base_compressor.acompress_documents(
+                docs, query
+            )
             return list(compressed_docs)
         else:
             return []
