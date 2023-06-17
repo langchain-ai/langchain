@@ -404,10 +404,10 @@ class ChatOpenAI(BaseChatModel):
                     await run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
                 {
-                        "content": inner_completion, 
-                        "role": role,
-                        "function_call": function_call,
-                        }
+                    "content": inner_completion,
+                    "role": role,
+                    "function_call": function_call,
+                }
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:
