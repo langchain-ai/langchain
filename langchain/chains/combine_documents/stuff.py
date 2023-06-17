@@ -9,6 +9,10 @@ from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
     format_document,
 )
+from langchain.chains.combine_documents.context_builder import (
+    ContextBuilder,
+    DefaultContextBuilder,
+)
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.prompts.base import BasePromptTemplate
@@ -33,6 +37,10 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     If only one variable in the llm_chain, this need not be provided."""
     document_separator: str = "\n\n"
     """The string with which to join the formatted documents"""
+    context_builder: ContextBuilder = Field(
+        default=DefaultContextBuilder(document_separator=document_separator)
+    )
+    """Responsible for creating context from documents returned from the database"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -61,15 +69,14 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         return values
 
     def _get_inputs(self, docs: List[Document], **kwargs: Any) -> dict:
-        # Format each document according to the prompt
-        doc_strings = [format_document(doc, self.document_prompt) for doc in docs]
-        # Join the documents together to put them in the prompt.
         inputs = {
             k: v
             for k, v in kwargs.items()
             if k in self.llm_chain.prompt.input_variables
         }
-        inputs[self.document_variable_name] = self.document_separator.join(doc_strings)
+        inputs[self.document_variable_name] = self.context_builder.create_context(
+            docs, self.document_prompt
+        )
         return inputs
 
     def prompt_length(self, docs: List[Document], **kwargs: Any) -> Optional[int]:
