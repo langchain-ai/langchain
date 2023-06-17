@@ -51,7 +51,10 @@ class WebBaseLoader(BaseLoader):
     """kwargs for requests"""
 
     def __init__(
-        self, web_path: Union[str, List[str]], header_template: Optional[dict] = None, verify: Optional[bool] = True
+        self,
+        web_path: Union[str, List[str]],
+        header_template: Optional[dict] = None,
+        verify: Optional[bool] = True,
     ):
         """Initialize with webpage path."""
 
@@ -70,10 +73,10 @@ class WebBaseLoader(BaseLoader):
             raise ValueError(
                 "bs4 package not found, please install it with " "`pip install bs4`"
             )
-        
+
         # Choose to verify
         self.verify = verify
-        
+
         headers = header_template or default_header_template
         if not headers.get("User-Agent"):
             try:
