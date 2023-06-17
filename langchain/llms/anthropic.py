@@ -3,7 +3,7 @@ import re
 import warnings
 from typing import Any, Callable, Dict, Generator, List, Mapping, Optional, Tuple, Union
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -131,11 +131,6 @@ class Anthropic(LLM, _AnthropicCommon):
             "Please use `from langchain.chat_models import ChatAnthropic` instead"
         )
         return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
 
     @property
     def _llm_type(self) -> str:
