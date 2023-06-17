@@ -42,7 +42,7 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
 
     A sequence should be either (SystemMessage, HumanMessage, AIMessage,
     HumanMessage, AIMessage, ...) or (HumanMessage, AIMessage, HumanMessage,
-    AIMessage, ...).
+    AIMessage, ...). CodeChat does not support SystemMessage.
 
     Args:
         history: The list of messages to re-create the history of the chat.
@@ -101,7 +101,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         """Generate next turn in the conversation.
 
         Args:
-            messages: The history of the conversation as a list of messages.
+            messages: The history of the conversation as a list of messages. Code chat does not support context.
             stop: The list of stop words (optional).
             run_manager: The Callbackmanager for LLM run, it's not used at the moment.
 
@@ -123,11 +123,17 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
         history = _parse_chat_history(messages[:-1])
         context = history.system_message.content if history.system_message else None
-        params = {**self._default_params, **kwargs}
-        chat = self.client.start_chat(context=context, **params)
+        
+        if "code" in self.model_name:
+            params = {**self._code_params, **kwargs}
+            chat = self.client.start_chat(**params)
+        else:
+            params = {**self._default_params, **kwargs}
+            chat = self.client.start_chat(context=context, **params)
+        
         for pair in history.history:
             chat._history.append((pair.question.content, pair.answer.content))
-        response = chat.send_message(question.content, **self._default_params)
+        response = chat.send_message(question.content, **params)
         text = self._enforce_stop_words(response.text, stop)
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
 

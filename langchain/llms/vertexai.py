@@ -25,10 +25,10 @@ class _VertexAICommon(BaseModel):
     "Token limit determines the maximum amount of text output from one prompt."
     top_p: float = 0.95
     "Tokens are selected from most probable to least until the sum of their "
-    "probabilities equals the top-p value."
+    "probabilities equals the top-p value. Top-p is ignored for Codey models."
     top_k: int = 40
     "How the model selects tokens for output, the next token is selected from "
-    "among the top-k most probable tokens."
+    "among the top-k most probable tokens. Top-k is ignored for Codey models."
     stop: Optional[List[str]] = None
     "Optional list of stop words to use when generating."
     project: Optional[str] = None
