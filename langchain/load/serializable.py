@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Any, Dict, List, Literal, TypedDict, Union, cast
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, PrivateAttr
 
 
 class BaseSerialized(TypedDict):
@@ -55,11 +55,14 @@ class Serializable(BaseModel, ABC):
         """
         return {}
 
-    lc_kwargs: Dict[str, Any] = Field(default_factory=dict, exclude=True, repr=False)
+    class Config:
+        extra = "ignore"
+
+    _lc_kwargs = PrivateAttr(default_factory=dict)
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self.lc_kwargs = kwargs
+        self._lc_kwargs = kwargs
 
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
         if not self.lc_serializable:
@@ -69,8 +72,8 @@ class Serializable(BaseModel, ABC):
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {
             k: getattr(self, k, v)
-            for k, v in self.lc_kwargs.items()
-            if not self.__exclude_fields__.get(k, False)  # type: ignore
+            for k, v in self._lc_kwargs.items()
+            if not (self.__exclude_fields__ or {}).get(k, False)  # type: ignore
         }
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
