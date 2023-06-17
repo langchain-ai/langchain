@@ -20,6 +20,17 @@ def test_list_directory_with_root_dir() -> None:
         entries = tool.run({"dir_path": "."}).split("\n")
         assert set(entries) == {"file1.txt", "file2.txt"}
 
+def test_list_default_directory() -> None:
+    """Test the DirectoryListing tool when a root dir is without passing dir_path explicitly."""
+    with TemporaryDirectory() as temp_dir:
+        tool = ListDirectoryTool(root_dir=temp_dir)
+        file_1 = Path(temp_dir) / "file1.txt"
+        file_2 = Path(temp_dir) / "file2.txt"
+        file_1.write_text("File 1 content")
+        file_2.write_text("File 2 content")
+        entries = tool.run().split("\n")
+        assert set(entries) == {"file1.txt", "file2.txt"}
+
 
 def test_list_directory_errs_outside_root_dir() -> None:
     """Test the DirectoryListing tool when a root dir is specified."""
