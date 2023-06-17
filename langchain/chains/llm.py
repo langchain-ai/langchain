@@ -18,7 +18,12 @@ from langchain.input import get_colored_text
 from langchain.load.dump import dumpd
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import LLMResult, PromptValue, BaseLLMOutputParser, DefaultOutputParser
+from langchain.schema import (
+    BaseLLMOutputParser,
+    DefaultOutputParser,
+    LLMResult,
+    PromptValue,
+)
 
 
 class LLMChain(Chain):
@@ -44,6 +49,7 @@ class LLMChain(Chain):
     llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
     output_parser: BaseLLMOutputParser = Field(default_factory=DefaultOutputParser)
+    return_final_only: bool = True
 
     class Config:
         """Configuration for this pydantic object."""
@@ -65,7 +71,10 @@ class LLMChain(Chain):
 
         :meta private:
         """
-        return [self.output_key]
+        if self.return_final_only:
+            return [self.output_key]
+        else:
+            return [self.output_key, "full_generation"]
 
     def _call(
         self,
@@ -191,14 +200,17 @@ class LLMChain(Chain):
 
     def create_outputs(self, response: LLMResult) -> List[Dict[str, Any]]:
         """Create outputs from response."""
-        return [
+        result = [
             # Get the text of the top generated string.
             {
                 self.output_key: self.output_parser.parse_result(generation),
-                "result": generation,
+                "full_generation": generation,
             }
             for generation in response.generations
         ]
+        if self.return_final_only:
+            result = [{self.output_key: r[self.output_key]} for r in result]
+        return result
 
     async def _acall(
         self,

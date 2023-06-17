@@ -340,8 +340,7 @@ Memory = BaseMemory
 T = TypeVar("T")
 
 
-class BaseLLMOutputParser(Serializable, ABC,Generic[T]):
-
+class BaseLLMOutputParser(Serializable, ABC, Generic[T]):
     @abstractmethod
     def parse_result(self, result: List[Generation]) -> T:
         """Parse LLM Result."""
@@ -406,7 +405,6 @@ class BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T]):
 
 
 class DefaultOutputParser(BaseOutputParser[str]):
-
     def parse(self, text: str) -> T:
         return text
 
