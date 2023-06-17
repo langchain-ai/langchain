@@ -34,8 +34,11 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
             Sequence of relevant documents
         """
         docs = self.base_retriever.get_relevant_documents(query)
-        compressed_docs = self.base_compressor.compress_documents(docs, query)
-        return list(compressed_docs)
+        if docs:
+            compressed_docs = self.base_compressor.compress_documents(docs, query)
+            return list(compressed_docs)
+        else:
+            return []
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
         """Get documents relevant for a query.
@@ -47,5 +50,10 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
             List of relevant documents
         """
         docs = await self.base_retriever.aget_relevant_documents(query)
-        compressed_docs = await self.base_compressor.acompress_documents(docs, query)
-        return list(compressed_docs)
+        if docs:
+            compressed_docs = await self.base_compressor.acompress_documents(
+                docs, query
+            )
+            return list(compressed_docs)
+        else:
+            return []
