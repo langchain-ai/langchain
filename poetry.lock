@@ -584,18 +584,18 @@ test = ["coverage (>=5,<6)", "pytest (>=6,<7)"]
 
 [[package]]
 name = "awadb"
-version = "0.3.2"
+version = "0.3.3"
 description = "The AI Native database for embedding vectors"
 optional = true
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "awadb-0.3.2-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:f3ce3b066198782fa413f452c56001c58ebec71a1e1dca0eee68f73321ba15a9"},
-    {file = "awadb-0.3.2-cp311-cp311-macosx_10_13_universal2.whl", hash = "sha256:c96b5e263c32b2563b1fa027035bdcf50540808ad303071cc1aed3471c3c39b7"},
-    {file = "awadb-0.3.2-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:3e43b5a74753261857d0b146543a4620e00938833181259f138f07457fa84812"},
-    {file = "awadb-0.3.2-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:6330b4d18a814c1562113b3b7897db629c2ac9b5818236ead0fc5f3445b6b7fb"},
-    {file = "awadb-0.3.2-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:82b4e61cc905339868a9f833d0988098f56411b42e0f8dd571aec7c8d6a3f1fa"},
-    {file = "awadb-0.3.2-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:5efaa93d69c467f16ec4f65ed250ec26015781826c0d059c8a54613a5d3e2c3e"},
-    {file = "awadb-0.3.2-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:7be0811550d72f49018e4790d290cf521f92ffa84d65ef1073e621f225d142ec"},
+    {file = "awadb-0.3.3-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:daebc108103c8cace41dfb3235fcfdda28ea48e6cd6548b6072f7ad49b64274b"},
+    {file = "awadb-0.3.3-cp311-cp311-macosx_10_13_universal2.whl", hash = "sha256:2bb3ca2f943448060b1bba4395dd99e2218d7f2149507a8fdfa7a3fd4cfe97ec"},
+    {file = "awadb-0.3.3-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:7b99662af9f7b58e217661a70c295e40605900552bec6d8e9553d90dbf19c5c1"},
+    {file = "awadb-0.3.3-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:94be44e587f28fa26b2cade0b6f4c04689f50cb0c07183db5ee50e48fe2e9ae3"},
+    {file = "awadb-0.3.3-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:314929dc3a8d25c0f234a2b86c920543050f4eb298a6f68bd2c97c9fe3fb6224"},
+    {file = "awadb-0.3.3-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:8bfccff1c7373899153427d93d96a97ae5371e8a6f09ff4dcbd28fb9f3f63ff4"},
+    {file = "awadb-0.3.3-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:810021a90b873f668d8ab63e2c2747b2b2835bf0ae25f4223b6c94f06faffea4"},
 ]
 
 [package.extras]
@@ -934,12 +934,10 @@ files = [
 
 [package.dependencies]
 click = ">=8.0.0"
-ipython = {version = ">=7.8.0", optional = true, markers = "extra == \"jupyter\""}
 mypy-extensions = ">=0.4.3"
 packaging = ">=22.0"
 pathspec = ">=0.9.0"
 platformdirs = ">=2"
-tokenize-rt = {version = ">=3.2.0", optional = true, markers = "extra == \"jupyter\""}
 tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 typing-extensions = {version = ">=3.10.0.0", markers = "python_version < \"3.10\""}
 
@@ -1892,12 +1890,12 @@ files = [
 
 [[package]]
 name = "deeplake"
-version = "3.6.1"
+version = "3.6.4"
 description = "Activeloop Deep Lake"
 optional = false
 python-versions = "*"
 files = [
-    {file = "deeplake-3.6.1.tar.gz", hash = "sha256:78b0280e3e21c6731a96a9a2519a24e767df708c309e934ab473dfbc17b13581"},
+    {file = "deeplake-3.6.4.tar.gz", hash = "sha256:cd31e772e00012a0cfdcd9d2cfe0e7fa3eaea1de122e98ae4f54e15d2722b94f"},
 ]
 
 [package.dependencies]
@@ -1914,12 +1912,12 @@ pyjwt = "*"
 tqdm = "*"
 
 [package.extras]
-all = ["IPython", "av (>=8.1.0)", "azure-cli", "azure-identity", "azure-storage-blob", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.56)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
+all = ["IPython", "av (>=8.1.0)", "azure-cli", "azure-identity", "azure-storage-blob", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.59)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
 audio = ["av (>=8.1.0)"]
 av = ["av (>=8.1.0)"]
 azure = ["azure-cli", "azure-identity", "azure-storage-blob"]
 dicom = ["nibabel", "pydicom"]
-enterprise = ["libdeeplake (==0.0.56)", "pyjwt"]
+enterprise = ["libdeeplake (==0.0.59)", "pyjwt"]
 gcp = ["google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)"]
 gdrive = ["google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "oauth2client (>=4.1.3,<4.2.0)"]
 medical = ["nibabel", "pydicom"]
@@ -5744,20 +5742,20 @@ pydantic = ">=1.8.2"
 
 [[package]]
 name = "openllm"
-version = "0.1.2"
+version = "0.1.6"
 description = "OpenLLM: REST/gRPC API server for running any open Large-Language Model - StableLM, Llama, Alpaca, Dolly, Flan-T5, Custom"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "openllm-0.1.2-py3-none-any.whl", hash = "sha256:7a343b44dc1d6c560b2ed62b65056c0fbd80ce35883f52324971e6b1bf15b1f7"},
-    {file = "openllm-0.1.2.tar.gz", hash = "sha256:26c9d26094faa7c81f94768d4d56083290a34f0ed230e5864f44c9bb483c2593"},
+    {file = "openllm-0.1.6-py3-none-any.whl", hash = "sha256:5ad56b709a8f2e3ff5a1369b5ee6b4de176dac5f5ca1af15f4b896bd176f05a8"},
+    {file = "openllm-0.1.6.tar.gz", hash = "sha256:7583c38762ed90fba90179cf55368b4b8f10d4d5ffdb693029c3d9a7dd903ef9"},
 ]
 
 [package.dependencies]
 attrs = ">=23.1.0"
 bentoml = {version = ">=1.0.22", extras = ["grpc", "io"]}
-black = {version = "23.3.0", extras = ["jupyter"]}
 cattrs = ">=23.1.0"
+httpx = "*"
 inflection = "*"
 optimum = "*"
 orjson = "*"
@@ -5766,11 +5764,12 @@ transformers = {version = ">=4.29.0", extras = ["tokenizers", "torch"]}
 typing-extensions = "*"
 
 [package.extras]
-all = ["openllm[chatglm]", "openllm[falcon]", "openllm[fine-tune]", "openllm[flan-t5]", "openllm[starcoder]"]
+all = ["openllm[chatglm]", "openllm[falcon]", "openllm[fine-tune]", "openllm[flan-t5]", "openllm[openai]", "openllm[starcoder]"]
 chatglm = ["cpm-kernels", "sentencepiece"]
 falcon = ["einops", "safetensors", "xformers"]
-fine-tune = ["accelerate", "bitsandbytes", "datasets", "peft"]
+fine-tune = ["accelerate", "auto-gptq", "bitsandbytes", "datasets", "deepspeed", "peft"]
 flan-t5 = ["flax", "jax", "jaxlib", "keras", "tensorflow"]
+openai = ["openai", "tiktoken"]
 starcoder = ["bitsandbytes"]
 
 [[package]]
@@ -9989,17 +9988,6 @@ doc = ["sphinx", "sphinx_rtd_theme"]
 test = ["flake8", "isort", "pytest"]
 
 [[package]]
-name = "tokenize-rt"
-version = "5.1.0"
-description = "A wrapper around the stdlib `tokenize` which roundtrips."
-optional = true
-python-versions = ">=3.8"
-files = [
-    {file = "tokenize_rt-5.1.0-py2.py3-none-any.whl", hash = "sha256:9b7bb843e77dd6ed0be5564bfaaba200083911e0497841cd3e9235a6a9794d74"},
-    {file = "tokenize_rt-5.1.0.tar.gz", hash = "sha256:08f0c2daa94c4052e53c2fcaa8e32585e6ae9bdfc800974092d031401694e002"},
-]
-
-[[package]]
 name = "tokenizers"
 version = "0.13.3"
 description = "Fast and Customizable Tokenizers"
@@ -11413,10 +11401,11 @@ embeddings = ["sentence-transformers"]
 extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "chardet", "gql", "html2text", "jq", "lxml", "openai", "pandas", "pdfminer-six", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "requests-toolbelt", "scikit-learn", "telethon", "tqdm", "zep-python"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
+openllm = ["openllm"]
 qdrant = ["qdrant-client"]
 text-helpers = ["chardet"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "07e909e6cca212ab391b77be759d5c4ac2ffb5ca0b44f2acb158f47fecab2781"
+content-hash = "db5ecc830fc3752b721d0f302eaab7b45af4299dc0dc6228cafd03a7cb5c3732"

@@ -57,13 +57,15 @@ class AwaDB(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        is_duplicate_texts: Optional[bool] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-            kwargs: vectorstore specific parameters
+            is_duplicate_texts: Optional whether to duplicate texts.
+            kwargs: vectorstore specific parameters.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -74,28 +76,10 @@ class AwaDB(VectorStore):
         embeddings = None
         if self.embedding_model is not None:
             embeddings = self.embedding_model.embed_documents(list(texts))
-        added_results: List[str] = []
-        doc_no = 0
-        for text in texts:
-            doc: List[Any] = []
-            if embeddings is not None:
-                doc.append(text)
-                doc.append(embeddings[doc_no])
-            else:
-                dict_tmp = {}
-                dict_tmp["embedding_text"] = text
-                doc.append(dict_tmp)
 
-            if metadatas is not None:
-                if doc_no < metadatas.__len__():
-                    doc.append(metadatas[doc_no])
-            self.awadb_client.Add(doc)
-            added_results.append(str(self.added_doc_count))
-
-            doc_no = doc_no + 1
-            self.added_doc_count = self.added_doc_count + 1
-
-        return added_results
+        return self.awadb_client.AddTexts(
+            "text", "text_embedding", texts, embeddings, metadatas, is_duplicate_texts
+        )
 
     def load_local(
         self,

@@ -261,6 +261,118 @@ class Qdrant(VectorStore):
             distance in float for each.
             Lower score represents more similarity.
         """
+        return self.similarity_search_with_score_by_vector(
+            self._embed_query(query),
+            k,
+            filter=filter,
+            search_params=search_params,
+            offset=offset,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+
+    def similarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[MetadataFilter] = None,
+        search_params: Optional[common_types.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[common_types.ReadConsistency] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params
+            offset:
+                Offset of the first result to return.
+                May be used to paginate results.
+                Note: large offset values may cause performance issues.
+            score_threshold:
+                Define a minimal score threshold for the result.
+                If defined, less similar results will not be returned.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
+                E.g. for cosine similarity only higher scores will be returned.
+            consistency:
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
+                Values:
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                               majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                             all of them
+                - 'all' - query all replicas, and return values present in all replicas
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+
+        results = self.similarity_search_with_score_by_vector(
+            embedding,
+            k,
+            filter=filter,
+            search_params=search_params,
+            offset=offset,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+        return list(map(itemgetter(0), results))
+
+    def similarity_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[MetadataFilter] = None,
+        search_params: Optional[common_types.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[common_types.ReadConsistency] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params
+            offset:
+                Offset of the first result to return.
+                May be used to paginate results.
+                Note: large offset values may cause performance issues.
+            score_threshold:
+                Define a minimal score threshold for the result.
+                If defined, less similar results will not be returned.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
+                E.g. for cosine similarity only higher scores will be returned.
+            consistency:
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
+                Values:
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                               majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                             all of them
+                - 'all' - query all replicas, and return values present in all replicas
+
+        Returns:
+            List of documents most similar to the query text and cosine
+            distance in float for each.
+            Lower score represents more similarity.
+        """
 
         if filter is not None and isinstance(filter, dict):
             warnings.warn(
@@ -274,7 +386,7 @@ class Qdrant(VectorStore):
             qdrant_filter = filter
         results = self.client.search(
             collection_name=self.collection_name,
-            query_vector=self._embed_query(query),
+            query_vector=embedding,
             query_filter=qdrant_filter,
             search_params=search_params,
             limit=k,
