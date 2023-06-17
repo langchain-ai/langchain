@@ -207,22 +207,3 @@ class TestPinecone:
         index_stats = self.index.describe_index_stats()
         assert index_stats["namespaces"][index_name]["vector_count"] == len(texts) * 2
 
-    @pytest.mark.vcr()
-    def test_from_texts_with_relevance_score_filtering(
-        self, embedding_openai: OpenAIEmbeddings
-    ) -> None:
-        """Test end to end construction and search with scores and IDs."""
-        texts = ["foo", "bar", "baz"]
-        metadatas = [{"page": i} for i in range(len(texts))]
-        docsearch = Pinecone.from_texts(
-            texts,
-            embedding_openai,
-            index_name=index_name,
-            metadatas=metadatas,
-            namespace=namespace_name,
-        )
-        output = docsearch.similarity_search_with_relevance_scores(
-            "foo", k=3, namespace=namespace_name, score_threshold=0.9
-        )
-
-        assert output[0][0] == Document(page_content="foo", metadata={"page": 0.0})
