@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import yaml
-from pydantic import Extra, Field, root_validator, validator
+from pydantic import Field, root_validator, validator
 
 import langchain
 from langchain.base_language import BaseLanguageModel
@@ -85,7 +85,6 @@ class BaseLLM(BaseLanguageModel, ABC):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     @root_validator()
