@@ -206,4 +206,3 @@ class TestPinecone:
         )
         index_stats = self.index.describe_index_stats()
         assert index_stats["namespaces"][index_name]["vector_count"] == len(texts) * 2
-
