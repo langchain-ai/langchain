@@ -43,7 +43,7 @@ class BaseChatMemory(BaseMemory, ABC):
         self.chat_memory.add_user_message(input_str)
         self.chat_memory.add_ai_message(output_str)
         if self.intermediate_steps:
-            self.chat_memory.add_agent_message(json.dumps(self.intermediate_steps))
+            self.chat_memory.add_agent_message(json.dumps([x[0].to_dict() for x in self.intermediate_steps]))
 
     def clear(self) -> None:
         """Clear memory contents."""
