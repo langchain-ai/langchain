@@ -5,6 +5,7 @@ import enum
 import logging
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from urllib.parse import urlencode
 
 import sqlalchemy
 from pgvector.sqlalchemy import Vector
@@ -593,6 +594,9 @@ class PGVector(VectorStore):
         database: str,
         user: str,
         password: str,
+        **kwargs
     ) -> str:
         """Return connection string from database parameters."""
-        return f"postgresql+{driver}://{user}:{password}@{host}:{port}/{database}"
+        query_params = f"?{urlencode(kwargs)}" if kwargs else ""
+        driver = driver if driver == "sqlalchemy" else f"+{driver}"
+        return f"postgresql{driver}://{user}:{password}@{host}:{port}/{database}{query_params}"
