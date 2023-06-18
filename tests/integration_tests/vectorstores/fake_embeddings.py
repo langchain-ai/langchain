@@ -33,9 +33,7 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
         """Return consistent embeddings for each text seen so far."""
         out_vectors = []
         for text in texts:
-            if text not in self.known_texts:
-                self.known_texts.append(text)
-            vector = [float(1.0)] * 9 + [float(self.known_texts.index(text))]
+            vector = self.embed_query(text)
             out_vectors.append(vector)
         return out_vectors
 
@@ -43,5 +41,5 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
         """Return consistent embeddings for the text, if seen before, or a constant
         one if the text is unknown."""
         if text not in self.known_texts:
-            return [float(1.0)] * 9 + [float(0.0)]
+            self.known_texts.append(text)
         return [float(1.0)] * 9 + [float(self.known_texts.index(text))]
