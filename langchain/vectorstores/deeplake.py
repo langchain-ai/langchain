@@ -128,7 +128,8 @@ class DeepLake(VectorStore):
         if version_compare(deeplake.__version__, "3.6.2") == -1:
             raise ValueError(
                 "deeplake version should be >= 3.6.3, but you've installed"
-                f" {deeplake.__version__}. Consider upgrading deeplake version pip install --upgrade deeplake."
+                f" {deeplake.__version__}. Consider upgrading deeplake version pip \
+                    install --upgrade deeplake."
             )
         self.dataset_path = dataset_path
 
@@ -303,7 +304,10 @@ class DeepLake(VectorStore):
             )
 
         if embedding_function:
-            _embedding_function = embedding_function.embed_query
+            if isinstance(embedding_function, Embeddings):
+                _embedding_function = embedding_function.embed_query
+            else:
+                _embedding_function = embedding_function
         elif self._embedding_function:
             _embedding_function = self._embedding_function.embed_query
         else:
