@@ -1,0 +1,9 @@
+# Conversation summary memory
+Now let's take a look at using a slightly more complex type of memory - `ConversationSummaryMemory`. This type of memory creates a summary of the conversation over time. This can be useful for condensing information from the conversation over time.
+Conversation summary memory summarizes the conversation as it happens and stores the current summary in memory. This memory can then be used to inject the summary of the conversation so far into a prompt/chain. This memory is most useful for longer conversations, where keeping the past message history in the prompt verbatim would take up too many tokens.
+
+Let's first explore the basic functionality of this type of memory.
+
+import Example from "@snippets/modules/memory/how_to/summary.mdx"
+
+<Example/>

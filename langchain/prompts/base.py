@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Union
 
 import yaml
-from pydantic import Extra, Field, root_validator
+from pydantic import Field, root_validator
 
 from langchain.formatting import formatter
 from langchain.load.serializable import Serializable
@@ -119,7 +119,6 @@ class BasePromptTemplate(Serializable, ABC):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     @abstractmethod

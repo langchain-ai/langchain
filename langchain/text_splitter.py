@@ -565,6 +565,7 @@ class Language(str, Enum):
     MARKDOWN = "markdown"
     LATEX = "latex"
     HTML = "html"
+    SOL = "sol"
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
@@ -895,7 +896,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n\\\begin{quotation}",
                 "\n\\\begin{verse}",
                 "\n\\\begin{verbatim}",
-                ## Now split by math environments
+                # Now split by math environments
                 "\n\\\begin{align}",
                 "$$",
                 "$",
@@ -933,6 +934,36 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "<script",
                 "<meta",
                 "<title",
+                "",
+            ]
+        elif language == Language.SOL:
+            return [
+                # Split along compiler informations definitions
+                "\npragma ",
+                "\nusing ",
+                # Split along contract definitions
+                "\ncontract ",
+                "\ninterface ",
+                "\nlibrary ",
+                # Split along method definitions
+                "\nconstructor ",
+                "\ntype ",
+                "\nfunction ",
+                "\nevent ",
+                "\nmodifier ",
+                "\nerror ",
+                "\nstruct ",
+                "\nenum ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\ndo while ",
+                "\nassembly ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
                 "",
             ]
         else:

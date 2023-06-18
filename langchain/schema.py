@@ -16,7 +16,7 @@ from typing import (
 )
 from uuid import UUID
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 
 from langchain.load.serializable import Serializable
 
@@ -229,7 +229,6 @@ class BaseMemory(Serializable, ABC):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     @property
