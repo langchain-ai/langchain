@@ -10,13 +10,20 @@ from langchain.schema import BaseChatMessageHistory, BaseMemory
 
 class BaseChatMemory(BaseMemory, ABC):
     chat_memory: BaseChatMessageHistory = Field(default_factory=ChatMessageHistory)
-    output_key: Optional[str] = None
     input_key: Optional[str] = None
+    output_key: Optional[str] = None
+    intermediate_steps_key: Optional[str] = None
     return_messages: bool = False
 
     def _get_input_output(
         self, inputs: Dict[str, Any], outputs: Dict[str, str]
     ) -> Tuple[str, str]:
+        
+        if "intermediate_steps" in outputs.keys():
+            intermediate_steps = outputs[intermediate_steps]
+            outputs.pop("intermediate_steps")
+            self.intermediate_steps = intermediate_steps
+
         if self.input_key is None:
             prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
         else:
@@ -34,7 +41,10 @@ class BaseChatMemory(BaseMemory, ABC):
         input_str, output_str = self._get_input_output(inputs, outputs)
         self.chat_memory.add_user_message(input_str)
         self.chat_memory.add_ai_message(output_str)
+        if self.intermediate_steps:
+            self.chat_memory.add_agent_message(self.intermediate_steps)
 
     def clear(self) -> None:
         """Clear memory contents."""
         self.chat_memory.clear()
+

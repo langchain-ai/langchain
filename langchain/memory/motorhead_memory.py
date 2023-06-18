@@ -56,6 +56,8 @@ class MotorheadMemory(BaseChatMemory):
         for message in reversed(messages):
             if message["role"] == "AI":
                 self.chat_memory.add_ai_message(message["content"])
+            if message["role"] == "Agent":
+                self.chat_memory.add_agent_message(message["content"])
             else:
                 self.chat_memory.add_user_message(message["content"])
 
@@ -74,15 +76,26 @@ class MotorheadMemory(BaseChatMemory):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         input_str, output_str = self._get_input_output(inputs, outputs)
+        message = [
+                    {"role": "Human", "content": f"{input_str}"},
+                    {"role": "AI", "content": f"{output_str}"},
+                ]
+        if self.intermediate_steps:
+            message = message + {"role": "Agent", "content": f"{self.intermediate_steps}"}
+            
         requests.post(
             f"{self.url}/sessions/{self.session_id}/memory",
             timeout=self.timeout,
             json={
-                "messages": [
-                    {"role": "Human", "content": f"{input_str}"},
-                    {"role": "AI", "content": f"{output_str}"},
-                ]
+                "messages": message
             },
             headers=self.__get_headers(),
         )
         super().save_context(inputs, outputs)
+    
+    def delete_session(self):
+        """ Delete a session """
+        requests.delete(
+            f"{self.url}/sessions/{self.session_id}/memory"
+        )
+
