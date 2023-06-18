@@ -3,7 +3,6 @@ import logging
 import multiprocessing
 import sys
 from io import StringIO
-from multiprocessing import Pool
 from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
@@ -42,7 +41,8 @@ class PythonREPL(BaseModel):
             queue.put(repr(e))
 
     def run(self, command: str, timeout: Optional[int] = None) -> str:
-        """Run command with own globals/locals and returns anything printed. Timeout after the specified number of seconds."""
+        """Run command with own globals/locals and returns anything printed.
+        Timeout after the specified number of seconds."""
 
         # Warn against dangers of PythonREPL
         warn_once()

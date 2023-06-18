@@ -35,8 +35,12 @@ class PALValidation(object):
     ):
         """Initialize an PALValidation instance
         Args:
-            solution_expression_name (str): Name of the expected solution expressions. If passed, solution_expression_type must be passed as well
-            solution_expression_type (str): ast type of the expected solution expression. If passed, solution_expression_name must be passed as well. Must be one of PALValidation.SOLUTION_EXPRESSION_TYPE_FUNCTION, PALValidation.SOLUTION_EXPRESSION_TYPE_VARIABLE
+            solution_expression_name (str): Name of the expected solution expressions.
+                If passed, solution_expression_type must be passed as well
+            solution_expression_type (str): ast type of the expected solution 
+                expression. If passed, solution_expression_name must be passed as well.
+                Must be one of PALValidation.SOLUTION_EXPRESSION_TYPE_FUNCTION,
+                PALValidation.SOLUTION_EXPRESSION_TYPE_VARIABLE
             allow_imports (bool): Allow import statements
             allow_command_exec (bool): Allow using known command execution functions.
         """
@@ -46,26 +50,32 @@ class PALValidation(object):
         if solution_expression_name is not None:
             if not isinstance(self.solution_expression_name, str):
                 raise ValueError(
-                    f"Expected solution_expression_name to be str, instead found {type(self.solution_expression_name)}"
+                    f"Expected solution_expression_name to be str, 
+                    instead found {type(self.solution_expression_name)}"
                 )
         if solution_expression_type is not None:
             if (
-                not self.solution_expression_type
-                is self.SOLUTION_EXPRESSION_TYPE_FUNCTION
-                and not self.solution_expression_type
-                is self.SOLUTION_EXPRESSION_TYPE_VARIABLE
+                self.solution_expression_type
+                is not self.SOLUTION_EXPRESSION_TYPE_FUNCTION
+                and self.solution_expression_type
+                is not self.SOLUTION_EXPRESSION_TYPE_VARIABLE
             ):
                 raise ValueError(
-                    f"Expected solution_expression_type to be one of ({self.SOLUTION_EXPRESSION_TYPE_FUNCTION},{self.SOLUTION_EXPRESSION_TYPE_VARIABLE}), instead found {self.solution_expression_type}"
+                    f"Expected solution_expression_type to be one of 
+                    ({self.SOLUTION_EXPRESSION_TYPE_FUNCTION},
+                    {self.SOLUTION_EXPRESSION_TYPE_VARIABLE}),
+                    instead found {self.solution_expression_type}"
                 )
 
         if solution_expression_name is not None and solution_expression_type is None:
             raise TypeError(
-                f"solution_expression_name requires solution_expression_type to be passed as well"
+                "solution_expression_name 
+                requires solution_expression_type to be passed as well"
             )
         if solution_expression_name is None and solution_expression_type is not None:
             raise TypeError(
-                f"solution_expression_type requires solution_expression_name to be passed as well"
+                "solution_expression_type 
+                requires solution_expression_name to be passed as well"
             )
 
         self.allow_imports = allow_imports
@@ -152,7 +162,8 @@ class PALChain(Chain):
             raise ValueError(f"Generated code is not valid python code: {code}")
         except TypeError:
             raise ValueError(
-                f"Generated code is expected to be a string, instead found {type(code)}"
+                f"Generated code is expected to be a string, 
+                instead found {type(code)}"
             )
         except OverflowError:
             raise ValueError(
@@ -195,7 +206,9 @@ class PALChain(Chain):
 
         if not found_solution_expr:
             raise ValueError(
-                f"Generated code is missing the solution expression: {code_validations.solution_expression_name} of type: {code_validations.solution_expression_type}"
+                f"Generated code is missing the solution expression: 
+                {code_validations.solution_expression_name} of type:
+                {code_validations.solution_expression_type}"
             )
 
         if not code_validations.allow_imports and has_imports:
@@ -209,7 +222,8 @@ class PALChain(Chain):
                     and node.func.id in COMMAND_EXECUTION_FUNCTIONS
                 ):
                     raise ValueError(
-                        f"Found illegal command execution function {node.func.id} in code {code}"
+                        f"Found illegal command execution function
+                        {node.func.id} in code {code}"
                     )
 
     @classmethod

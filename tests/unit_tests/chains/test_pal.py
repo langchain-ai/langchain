@@ -1,7 +1,4 @@
 """Test LLM PAL functionality."""
-import ast
-import sys
-
 import pytest
 
 from langchain.chains.pal.base import PALChain, PALValidation
@@ -11,7 +8,8 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 _MATH_SOLUTION_1 = """
 def solution():
-    \"\"\"Olivia has $23. She bought five bagels for $3 each. How much money does she have left?\"\"\"
+    \"\"\"Olivia has $23. She bought five bagels for $3 each. 
+    How much money does she have left?\"\"\"
     money_initial = 23
     bagels = 5
     bagel_cost = 3
@@ -23,22 +21,28 @@ def solution():
 
 _MATH_SOLUTION_2 = """
 def solution():
-    \"\"\"Michael had 58 golf balls. On tuesday, he lost 23 golf balls. On wednesday, he lost 2 more. How many golf balls did he have at the end of wednesday?\"\"\"
+    \"\"\"Michael had 58 golf balls. On tuesday, he lost 23 golf balls. 
+    On wednesday, he lost 2 more. 
+    How many golf balls did he have at the end of wednesday?\"\"\"
     golf_balls_initial = 58
     golf_balls_lost_tuesday = 23
     golf_balls_lost_wednesday = 2
-    golf_balls_left = golf_balls_initial - golf_balls_lost_tuesday - golf_balls_lost_wednesday
+    golf_balls_left = golf_balls_initial 
+    - golf_balls_lost_tuesday - golf_balls_lost_wednesday
     result = golf_balls_left
     return result
 """
 
 _MATH_SOLUTION_INFINITE_LOOP = """
 def solution():
-    \"\"\"Michael had 58 golf balls. On tuesday, he lost 23 golf balls. On wednesday, he lost 2 more. How many golf balls did he have at the end of wednesday?\"\"\"
+    \"\"\"Michael had 58 golf balls. On tuesday, he lost 23 golf balls. 
+    On wednesday, he lost 2 more. 
+    How many golf balls did he have at the end of wednesday?\"\"\"
     golf_balls_initial = 58
     golf_balls_lost_tuesday = 23
     golf_balls_lost_wednesday = 2
-    golf_balls_left = golf_balls_initial - golf_balls_lost_tuesday - golf_balls_lost_wednesday
+    golf_balls_left = golf_balls_initial 
+    - golf_balls_lost_tuesday - golf_balls_lost_wednesday
     result = golf_balls_left
     while True:
         pass
@@ -97,7 +101,8 @@ answer = direct_right_color
 
 _SAMPLE_CODE_1 = """
 def solution():
-    \"\"\"Olivia has $23. She bought five bagels for $3 each. How much money does she have left?\"\"\"
+    \"\"\"Olivia has $23. She bought five bagels for $3 each. 
+    How much money does she have left?\"\"\"
     money_initial = 23
     bagels = 5
     bagel_cost = 3
@@ -109,7 +114,8 @@ def solution():
 
 _SAMPLE_CODE_2 = """
 def solution2():
-    \"\"\"Olivia has $23. She bought five bagels for $3 each. How much money does she have left?\"\"\"
+    \"\"\"Olivia has $23. She bought five bagels for $3 each. 
+    How much money does she have left?\"\"\"
     money_initial = 23
     bagels = 5
     bagel_cost = 3
@@ -121,7 +127,8 @@ def solution2():
 
 _SAMPLE_CODE_3 = """
 def solution():
-    \"\"\"Olivia has $23. She bought five bagels for $3 each. How much money does she have left?\"\"\"
+    \"\"\"Olivia has $23. She bought five bagels for $3 each. 
+    How much money does she have left?\"\"\"
     money_initial = 23
     bagels = 5
     bagel_cost = 3
@@ -167,7 +174,8 @@ _NO_IMPORTS_VALIDATIONS = PALValidation(
 
 def test_math_question_1() -> None:
     """Test simple question."""
-    question = "Olivia has $23. She bought five bagels for $3 each. How much money does she have left?"
+    question = """Olivia has $23. She bought five bagels for $3 each. 
+                How much money does she have left?"""
     prompt = MATH_PROMPT.format(question=question)
     queries = {prompt: _MATH_SOLUTION_1}
     fake_llm = FakeLLM(queries=queries)
@@ -178,7 +186,9 @@ def test_math_question_1() -> None:
 
 def test_math_question_2() -> None:
     """Test simple question."""
-    question = "Michael had 58 golf balls. On tuesday, he lost 23 golf balls. On wednesday, he lost 2 more. How many golf balls did he have at the end of wednesday?"
+    question = """Michael had 58 golf balls. On tuesday, he lost 23 golf balls. 
+                On wednesday, he lost 2 more. How many golf balls did he have 
+                at the end of wednesday?"""
     prompt = MATH_PROMPT.format(question=question)
     queries = {prompt: _MATH_SOLUTION_2}
     fake_llm = FakeLLM(queries=queries)
@@ -189,7 +199,9 @@ def test_math_question_2() -> None:
 
 def test_math_question_infinite_loop() -> None:
     """Test simple question."""
-    question = "Michael had 58 golf balls. On tuesday, he lost 23 golf balls. On wednesday, he lost 2 more. How many golf balls did he have at the end of wednesday?"
+    question = """Michael had 58 golf balls. On tuesday, he lost 23 golf balls. 
+                On wednesday, he lost 2 more. How many golf balls did he have 
+                at the end of wednesday?"""
     prompt = MATH_PROMPT.format(question=question)
     queries = {prompt: _MATH_SOLUTION_INFINITE_LOOP}
     fake_llm = FakeLLM(queries=queries)
@@ -200,7 +212,10 @@ def test_math_question_infinite_loop() -> None:
 
 def test_color_question_1() -> None:
     """Test simple question."""
-    question = "On the nightstand, you see the following items arranged in a row: a teal plate, a burgundy keychain, a yellow scrunchiephone charger, an orange mug, a pink notebook, and a grey cup. How many non-orange items do you see to the left of the teal item?"
+    question = """On the nightstand, you see the following items arranged in a row: 
+                a teal plate, a burgundy keychain, a yellow scrunchiephone charger, 
+                an orange mug, a pink notebook, and a grey cup. How many non-orange 
+                items do you see to the left of the teal item?"""
     prompt = COLORED_OBJECT_PROMPT.format(question=question)
     queries = {prompt: _COLORED_OBJECT_SOLUTION_1}
     fake_llm = FakeLLM(queries=queries)
@@ -211,7 +226,11 @@ def test_color_question_1() -> None:
 
 def test_color_question_2() -> None:
     """Test simple question."""
-    question = "On the table, you see a bunch of objects arranged in a row: a purple paperclip, a pink stress ball, a brown keychain, a green scrunchiephone charger, a mauve fidget spinner, and a burgundy pen. What is the color of the object directly to the right of the stress ball?"
+    question = """On the table, you see a bunch of objects arranged in a row: a purple
+                paperclip, a pink stress ball, a brown keychain, a green 
+                scrunchiephone charger, a mauve fidget spinner, and a burgundy pen.
+                What is the color of the object directly to the right of 
+                the stress ball?"""
     prompt = COLORED_OBJECT_PROMPT.format(question=question)
     queries = {prompt: _COLORED_OBJECT_SOLUTION_2}
     fake_llm = FakeLLM(queries=queries)
