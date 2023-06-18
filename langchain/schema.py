@@ -59,6 +59,13 @@ class AgentAction:
     tool_input: Union[str, dict]
     log: str
 
+    def to_dict(self):
+        return {
+            "tool": self.tool,
+            "tool_input": self.tool_input,
+            "log": self.log,
+        }
+
 
 class AgentFinish(NamedTuple):
     """Agent's return value."""
