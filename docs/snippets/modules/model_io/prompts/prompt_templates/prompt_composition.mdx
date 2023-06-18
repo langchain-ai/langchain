@@ -1,0 +1,88 @@
+```python
+from langchain.prompts.pipeline import PipelinePromptTemplate
+from langchain.prompts.prompt import PromptTemplate
+```
+
+
+```python
+full_template = """{introduction}
+
+{example}
+
+{start}"""
+full_prompt = PromptTemplate.from_template(full_template)
+```
+
+
+```python
+introduction_template = """You are impersonating {person}."""
+introduction_prompt = PromptTemplate.from_template(introduction_template)
+```
+
+
+```python
+example_template = """Here's an example of an interaction: 
+
+Q: {example_q}
+A: {example_a}"""
+example_prompt = PromptTemplate.from_template(example_template)
+```
+
+
+```python
+start_template = """Now, do this for real!
+
+Q: {input}
+A:"""
+start_prompt = PromptTemplate.from_template(start_template)
+```
+
+
+```python
+input_prompts = [
+    ("introduction", introduction_prompt),
+    ("example", example_prompt),
+    ("start", start_prompt)
+]
+pipeline_prompt = PipelinePromptTemplate(final_prompt=full_prompt, pipeline_prompts=input_prompts)
+```
+
+
+```python
+pipeline_prompt.input_variables
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    ['example_a', 'person', 'example_q', 'input']
+```
+
+</CodeOutputBlock>
+
+
+```python
+print(pipeline_prompt.format(
+    person="Elon Musk",
+    example_q="What's your favorite car?",
+    example_a="Telsa",
+    input="What's your favorite social media site?"
+))
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    You are impersonating Elon Musk.
+    Here's an example of an interaction: 
+    
+    Q: What's your favorite car?
+    A: Telsa
+    Now, do this for real!
+    
+    Q: What's your favorite social media site?
+    A:
+    
+```
+
+</CodeOutputBlock>
