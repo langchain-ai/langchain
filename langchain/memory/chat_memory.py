@@ -21,7 +21,7 @@ class BaseChatMemory(BaseMemory, ABC):
     ) -> Tuple[str, str]:
         
         if "intermediate_steps" in outputs.keys():
-            intermediate_steps = outputs[intermediate_steps]
+            intermediate_steps = outputs["intermediate_steps"]
             outputs.pop("intermediate_steps")
             self.intermediate_steps = intermediate_steps
 
