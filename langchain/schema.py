@@ -24,7 +24,7 @@ RUN_KEY = "__run"
 
 
 def get_buffer_string(
-    messages: List[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
+    messages: List[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI", agent_prefix: str = "Agent"
 ) -> str:
     """Get buffer string of messages."""
     string_messages = []
@@ -33,6 +33,8 @@ def get_buffer_string(
             role = human_prefix
         elif isinstance(m, AIMessage):
             role = ai_prefix
+        elif isinstance(m, AgentMessage):
+            role = agent_prefix
         elif isinstance(m, SystemMessage):
             role = "System"
         elif isinstance(m, FunctionMessage):
@@ -110,6 +112,15 @@ class AIMessage(BaseMessage):
         """Type of the message, used for serialization."""
         return "ai"
 
+class AgentMessage(BaseMessage):
+    """Type of message that is spoken by the Agent."""
+
+    example: bool = False
+
+    @property
+    def type(self) -> str:
+        """Type of the message, used for serialization."""
+        return "agent"
 
 class SystemMessage(BaseMessage):
     """Type of message that is a system message."""
@@ -290,6 +301,10 @@ class BaseChatMessageHistory(ABC):
     def add_ai_message(self, message: str) -> None:
         """Add an AI message to the store"""
         self.add_message(AIMessage(content=message))
+    
+    def add_agent_message(self, message: str) -> None:
+        """Add an Agent message to the store"""
+        self.add_message(AgentMessage(content=message))
 
     def add_message(self, message: BaseMessage) -> None:
         """Add a self-created message to the store"""
