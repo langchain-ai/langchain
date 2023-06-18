@@ -8,8 +8,8 @@ import numpy as np
 
 try:
     import deeplake
-    from deeplake.core.vectorstore import DeepLakeVectorStore
     from deeplake.core.fast_forwarding import version_compare
+    from deeplake.core.vectorstore import DeepLakeVectorStore
 
     _DEEPLAKE_INSTALLED = True
 except ImportError:
@@ -19,7 +19,6 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
-
 
 logger = logging.getLogger(__name__)
 
