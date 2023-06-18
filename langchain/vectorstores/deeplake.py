@@ -9,6 +9,7 @@ import numpy as np
 try:
     import deeplake
     from deeplake.core.vectorstore import DeepLakeVectorStore
+    from deeplake.core.fast_forwarding import version_compare
 
     _DEEPLAKE_INSTALLED = True
 except ImportError:
@@ -18,6 +19,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
+
 
 logger = logging.getLogger(__name__)
 
@@ -124,11 +126,10 @@ class DeepLake(VectorStore):
                 "Please install it with `pip install deeplake`."
             )
 
-        version = deeplake.__version__
-        if version != "3.6.2":
+        if version_compare(deeplake.__version__, "3.6.2") == -1:
             raise ValueError(
-                "deeplake version should be = 3.6.3, but you've installed"
-                f" {version}. Consider changing deeplake version to 3.6.3 ."
+                "deeplake version should be >= 3.6.3, but you've installed"
+                f" {deeplake.__version__}. Consider upgrading deeplake version pip install --upgrade deeplake."
             )
         self.dataset_path = dataset_path
 
@@ -303,7 +304,7 @@ class DeepLake(VectorStore):
             )
 
         if embedding_function:
-            _embedding_function = embedding_function
+            _embedding_function = embedding_function.embed_query
         elif self._embedding_function:
             _embedding_function = self._embedding_function.embed_query
         else:
