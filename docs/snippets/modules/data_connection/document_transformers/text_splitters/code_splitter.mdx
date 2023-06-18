@@ -1,0 +1,313 @@
+```python
+from langchain.text_splitter import (
+    RecursiveCharacterTextSplitter,
+    Language,
+)
+```
+
+
+```python
+# Full list of support languages
+[e.value for e in Language]
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    ['cpp',
+     'go',
+     'java',
+     'js',
+     'php',
+     'proto',
+     'python',
+     'rst',
+     'ruby',
+     'rust',
+     'scala',
+     'swift',
+     'markdown',
+     'latex',
+     'html',
+     'sol',]
+```
+
+</CodeOutputBlock>
+
+
+```python
+# You can also see the separators used for a given language
+RecursiveCharacterTextSplitter.get_separators_for_language(Language.PYTHON)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    ['\nclass ', '\ndef ', '\n\tdef ', '\n\n', '\n', ' ', '']
+```
+
+</CodeOutputBlock>
+
+## Python
+
+Here's an example using the PythonTextSplitter
+
+
+```python
+PYTHON_CODE = """
+def hello_world():
+    print("Hello, World!")
+
+# Call the function
+hello_world()
+"""
+python_splitter = RecursiveCharacterTextSplitter.from_language(
+    language=Language.PYTHON, chunk_size=50, chunk_overlap=0
+)
+python_docs = python_splitter.create_documents([PYTHON_CODE])
+python_docs
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Document(page_content='def hello_world():\n    print("Hello, World!")', metadata={}),
+     Document(page_content='# Call the function\nhello_world()', metadata={})]
+```
+
+</CodeOutputBlock>
+
+## JS
+Here's an example using the JS text splitter
+
+
+```python
+JS_CODE = """
+function helloWorld() {
+  console.log("Hello, World!");
+}
+
+// Call the function
+helloWorld();
+"""
+
+js_splitter = RecursiveCharacterTextSplitter.from_language(
+    language=Language.JS, chunk_size=60, chunk_overlap=0
+)
+js_docs = js_splitter.create_documents([JS_CODE])
+js_docs
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Document(page_content='function helloWorld() {\n  console.log("Hello, World!");\n}', metadata={}),
+     Document(page_content='// Call the function\nhelloWorld();', metadata={})]
+```
+
+</CodeOutputBlock>
+
+## Markdown
+
+Here's an example using the Markdown text splitter.
+
+
+```python
+markdown_text = """
+# 🦜️🔗 LangChain
+
+⚡ Building applications with LLMs through composability ⚡
+
+## Quick Install
+
+```bash
+# Hopefully this code block isn't split
+pip install langchain
+```
+
+As an open source project in a rapidly developing field, we are extremely open to contributions.
+"""
+```
+
+
+```python
+md_splitter = RecursiveCharacterTextSplitter.from_language(
+    language=Language.MARKDOWN, chunk_size=60, chunk_overlap=0
+)
+md_docs = md_splitter.create_documents([markdown_text])
+md_docs
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Document(page_content='# 🦜️🔗 LangChain', metadata={}),
+     Document(page_content='⚡ Building applications with LLMs through composability ⚡', metadata={}),
+     Document(page_content='## Quick Install', metadata={}),
+     Document(page_content="```bash\n# Hopefully this code block isn't split", metadata={}),
+     Document(page_content='pip install langchain', metadata={}),
+     Document(page_content='```', metadata={}),
+     Document(page_content='As an open source project in a rapidly developing field, we', metadata={}),
+     Document(page_content='are extremely open to contributions.', metadata={})]
+```
+
+</CodeOutputBlock>
+
+## Latex
+
+Here's an example on Latex text
+
+
+```python
+latex_text = """
+\documentclass{article}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+Large language models (LLMs) are a type of machine learning model that can be trained on vast amounts of text data to generate human-like language. In recent years, LLMs have made significant advances in a variety of natural language processing tasks, including language translation, text generation, and sentiment analysis.
+
+\subsection{History of LLMs}
+The earliest LLMs were developed in the 1980s and 1990s, but they were limited by the amount of data that could be processed and the computational power available at the time. In the past decade, however, advances in hardware and software have made it possible to train LLMs on massive datasets, leading to significant improvements in performance.
+
+\subsection{Applications of LLMs}
+LLMs have many applications in industry, including chatbots, content creation, and virtual assistants. They can also be used in academia for research in linguistics, psychology, and computational linguistics.
+
+\end{document}
+"""
+```
+
+
+```python
+latex_splitter = RecursiveCharacterTextSplitter.from_language(
+    language=Language.MARKDOWN, chunk_size=60, chunk_overlap=0
+)
+latex_docs = latex_splitter.create_documents([latex_text])
+latex_docs
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Document(page_content='\\documentclass{article}\n\n\x08egin{document}\n\n\\maketitle', metadata={}),
+     Document(page_content='\\section{Introduction}', metadata={}),
+     Document(page_content='Large language models (LLMs) are a type of machine learning', metadata={}),
+     Document(page_content='model that can be trained on vast amounts of text data to', metadata={}),
+     Document(page_content='generate human-like language. In recent years, LLMs have', metadata={}),
+     Document(page_content='made significant advances in a variety of natural language', metadata={}),
+     Document(page_content='processing tasks, including language translation, text', metadata={}),
+     Document(page_content='generation, and sentiment analysis.', metadata={}),
+     Document(page_content='\\subsection{History of LLMs}', metadata={}),
+     Document(page_content='The earliest LLMs were developed in the 1980s and 1990s,', metadata={}),
+     Document(page_content='but they were limited by the amount of data that could be', metadata={}),
+     Document(page_content='processed and the computational power available at the', metadata={}),
+     Document(page_content='time. In the past decade, however, advances in hardware and', metadata={}),
+     Document(page_content='software have made it possible to train LLMs on massive', metadata={}),
+     Document(page_content='datasets, leading to significant improvements in', metadata={}),
+     Document(page_content='performance.', metadata={}),
+     Document(page_content='\\subsection{Applications of LLMs}', metadata={}),
+     Document(page_content='LLMs have many applications in industry, including', metadata={}),
+     Document(page_content='chatbots, content creation, and virtual assistants. They', metadata={}),
+     Document(page_content='can also be used in academia for research in linguistics,', metadata={}),
+     Document(page_content='psychology, and computational linguistics.', metadata={}),
+     Document(page_content='\\end{document}', metadata={})]
+```
+
+</CodeOutputBlock>
+
+## HTML
+
+Here's an example using an HTML text splitter
+
+
+```python
+html_text = """
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>🦜️🔗 LangChain</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+            }
+            h1 {
+                color: darkblue;
+            }
+        </style>
+    </head>
+    <body>
+        <div>
+            <h1>🦜️🔗 LangChain</h1>
+            <p>⚡ Building applications with LLMs through composability ⚡</p>
+        </div>
+        <div>
+            As an open source project in a rapidly developing field, we are extremely open to contributions.
+        </div>
+    </body>
+</html>
+"""
+```
+
+
+```python
+html_splitter = RecursiveCharacterTextSplitter.from_language(
+    language=Language.MARKDOWN, chunk_size=60, chunk_overlap=0
+)
+html_docs = html_splitter.create_documents([html_text])
+html_docs
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Document(page_content='<!DOCTYPE html>\n<html>\n    <head>', metadata={}),
+     Document(page_content='<title>🦜️🔗 LangChain</title>\n        <style>', metadata={}),
+     Document(page_content='body {', metadata={}),
+     Document(page_content='font-family: Arial, sans-serif;', metadata={}),
+     Document(page_content='}\n            h1 {', metadata={}),
+     Document(page_content='color: darkblue;\n            }', metadata={}),
+     Document(page_content='</style>\n    </head>\n    <body>\n        <div>', metadata={}),
+     Document(page_content='<h1>🦜️🔗 LangChain</h1>', metadata={}),
+     Document(page_content='<p>⚡ Building applications with LLMs through', metadata={}),
+     Document(page_content='composability ⚡</p>', metadata={}),
+     Document(page_content='</div>\n        <div>', metadata={}),
+     Document(page_content='As an open source project in a rapidly', metadata={}),
+     Document(page_content='developing field, we are extremely open to contributions.', metadata={}),
+     Document(page_content='</div>\n    </body>\n</html>', metadata={})]
+```
+
+</CodeOutputBlock>
+
+
+## Solidity
+Here's an example using the Solidity text splitter
+
+```python
+SOL_CODE = """
+pragma solidity ^0.8.20;
+contract HelloWorld {
+   function add(uint a, uint b) pure public returns(uint) {
+       return a + b;
+   }
+}
+"""
+
+sol_splitter = RecursiveCharacterTextSplitter.from_language(
+    language=Language.SOL, chunk_size=128, chunk_overlap=0
+)
+sol_docs = sol_splitter.create_documents([SOL_CODE])
+sol_docs
+```
+
+<CodeOutputBlock>
+
+```
+[
+    Document(page_content='pragma solidity ^0.8.20;', metadata={}),
+    Document(page_content='contract HelloWorld {\n   function add(uint a, uint b) pure public returns(uint) {\n       return a + b;\n   }\n}', metadata={})
+]
+ ```
+
+ </CodeOutputBlock>
