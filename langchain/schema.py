@@ -353,7 +353,7 @@ class BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T]):
     """
 
     def parse_result(self, result: List[Generation]) -> T:
-        return result[0].text
+        return self.parse(result[0].text)
 
     @abstractmethod
     def parse(self, text: str) -> T:
@@ -405,7 +405,11 @@ class BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T]):
 
 
 class DefaultOutputParser(BaseOutputParser[str]):
-    def parse(self, text: str) -> T:
+    @property
+    def _type(self) -> str:
+        return "default"
+
+    def parse(self, text: str) -> str:
         return text
 
 
