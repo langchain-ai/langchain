@@ -8,7 +8,7 @@ from langchain.schema import get_buffer_string
 MANAGED_URL = "https://api.getmetal.io/v1/motorhead"
 # LOCAL_URL = "http://localhost:8080"
 
-
+MotorheadMemory()
 class MotorheadMemory(BaseChatMemory):
     url: str = MANAGED_URL
     timeout = 3000
@@ -81,8 +81,8 @@ class MotorheadMemory(BaseChatMemory):
                     {"role": "AI", "content": f"{output_str}"},
                 ]
         if self.intermediate_steps:
-            message = message + {"role": "Agent", "content": f"{self.intermediate_steps}"}
-            
+            message = message + [{"role": "Agent", "content": f"{self.intermediate_steps}"}]
+
         requests.post(
             f"{self.url}/sessions/{self.session_id}/memory",
             timeout=self.timeout,

@@ -14,6 +14,7 @@ class BaseChatMemory(BaseMemory, ABC):
     output_key: Optional[str] = None
     intermediate_steps_key: Optional[str] = None
     return_messages: bool = False
+    intermediate_steps: Optional[str] = None
 
     def _get_input_output(
         self, inputs: Dict[str, Any], outputs: Dict[str, str]
