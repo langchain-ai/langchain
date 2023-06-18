@@ -215,9 +215,9 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         cls,
         system_message: Optional[SystemMessage] = SystemMessage(
             content="You are a helpful AI assistant."
-        ),        
+        ),
         input_variables: Optional[List[str]] = None,
-        memory_prompts: Optional[List[BasePromptTemplate]] = None,
+        memory_prompts: Optional[List[BaseMessagePromptTemplate]] = None,
     ) -> BasePromptTemplate:
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
@@ -230,8 +230,8 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
 
         messages.extend(
             [
-                HumanMessagePromptTemplate.from_template("{input}"),
                 *_memory_prompts,
+                HumanMessagePromptTemplate.from_template("{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
         )
@@ -244,7 +244,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         input_variables: Optional[List[str]] = None,
-        memory_prompts: Optional[List[BasePromptTemplate]] = None,
+        memory_prompts: Optional[List[BaseMessagePromptTemplate]] = None,
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools."""
