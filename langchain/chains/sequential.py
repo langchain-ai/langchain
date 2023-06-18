@@ -174,7 +174,7 @@ class SimpleSequentialChain(Chain):
         _input = inputs[self.input_key]
         color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
         for i, chain in enumerate(self.chains):
-            _input = chain.run(_input, callbacks=_run_manager.get_child())
+            _input = chain.run(_input, callbacks=_run_manager.get_child(f"step_{i+1}"))
             if self.strip_outputs:
                 _input = _input.strip()
             _run_manager.on_text(

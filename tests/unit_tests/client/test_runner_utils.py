@@ -1,7 +1,7 @@
 """Test the LangChain+ client."""
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 from unittest import mock
 
 import pytest
@@ -170,6 +170,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         llm_or_chain: Union[BaseLanguageModel, Chain],
         n_repetitions: int,
         tracer: Any,
+        tags: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
         return [
             {"result": f"Result for example {example.id}"} for _ in range(n_repetitions)
@@ -201,4 +202,4 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             ]
             for uuid_ in uuids
         }
-        assert results == expected
+        assert results["results"] == expected

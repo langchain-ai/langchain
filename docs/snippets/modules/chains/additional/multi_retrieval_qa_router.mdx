@@ -1,0 +1,124 @@
+```python
+from langchain.chains.router import MultiRetrievalQAChain
+from langchain.llms import OpenAI
+```
+
+
+```python
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.document_loaders import TextLoader
+from langchain.vectorstores import FAISS
+
+sou_docs = TextLoader('../../state_of_the_union.txt').load_and_split()
+sou_retriever = FAISS.from_documents(sou_docs, OpenAIEmbeddings()).as_retriever()
+
+pg_docs = TextLoader('../../paul_graham_essay.txt').load_and_split()
+pg_retriever = FAISS.from_documents(pg_docs, OpenAIEmbeddings()).as_retriever()
+
+personal_texts = [
+    "I love apple pie",
+    "My favorite color is fuchsia",
+    "My dream is to become a professional dancer",
+    "I broke my arm when I was 12",
+    "My parents are from Peru",
+]
+personal_retriever = FAISS.from_texts(personal_texts, OpenAIEmbeddings()).as_retriever()
+```
+
+
+```python
+retriever_infos = [
+    {
+        "name": "state of the union", 
+        "description": "Good for answering questions about the 2023 State of the Union address", 
+        "retriever": sou_retriever
+    },
+    {
+        "name": "pg essay", 
+        "description": "Good for answer quesitons about Paul Graham's essay on his career", 
+        "retriever": pg_retriever
+    },
+    {
+        "name": "personal", 
+        "description": "Good for answering questions about me", 
+        "retriever": personal_retriever
+    }
+]
+```
+
+
+```python
+chain = MultiRetrievalQAChain.from_retrievers(OpenAI(), retriever_infos, verbose=True)
+```
+
+
+```python
+print(chain.run("What did the president say about the economy?"))
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    
+    
+    > Entering new MultiRetrievalQAChain chain...
+    state of the union: {'query': 'What did the president say about the economy in the 2023 State of the Union address?'}
+    > Finished chain.
+     The president said that the economy was stronger than it had been a year prior, and that the American Rescue Plan helped create record job growth and fuel economic relief for millions of Americans. He also proposed a plan to fight inflation and lower costs for families, including cutting the cost of prescription drugs and energy, providing investments and tax credits for energy efficiency, and increasing access to child care and Pre-K.
+```
+
+</CodeOutputBlock>
+
+
+```python
+print(chain.run("What is something Paul Graham regrets about his work?"))
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    
+    
+    > Entering new MultiRetrievalQAChain chain...
+    pg essay: {'query': 'What is something Paul Graham regrets about his work?'}
+    > Finished chain.
+     Paul Graham regrets that he did not take a vacation after selling his company, instead of immediately starting to paint.
+```
+
+</CodeOutputBlock>
+
+
+```python
+print(chain.run("What is my background?"))
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    
+    
+    > Entering new MultiRetrievalQAChain chain...
+    personal: {'query': 'What is my background?'}
+    > Finished chain.
+     Your background is Peruvian.
+```
+
+</CodeOutputBlock>
+
+
+```python
+print(chain.run("What year was the Internet created in?"))
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    
+    
+    > Entering new MultiRetrievalQAChain chain...
+    None: {'query': 'What year was the Internet created in?'}
+    > Finished chain.
+    The Internet was created in 1969 through a project called ARPANET, which was funded by the United States Department of Defense. However, the World Wide Web, which is often confused with the Internet, was created in 1989 by British computer scientist Tim Berners-Lee.
+```
+
+</CodeOutputBlock>

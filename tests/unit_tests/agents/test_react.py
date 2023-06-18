@@ -38,6 +38,7 @@ class FakeListLLM(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Increment counter, and then return response in that index."""
         self.i += 1

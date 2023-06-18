@@ -15,6 +15,7 @@ class FakeLLM(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Return `foo` if longer than 10000 words, else `bar`."""
         if len(prompt) > 10000:
