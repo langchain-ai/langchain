@@ -58,7 +58,7 @@ class MotorheadMemory(BaseChatMemory):
                 self.chat_memory.add_ai_message(message["content"])
             if message["role"] == "Agent":
                 self.chat_memory.add_agent_message(message["content"])
-            else:
+            if message["role"] == "Human":
                 self.chat_memory.add_user_message(message["content"])
 
         if context and context != "NONE":
