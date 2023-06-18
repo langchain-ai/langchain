@@ -2,7 +2,7 @@ from abc import ABC
 from typing import Any, Dict, Optional, Tuple
 
 from pydantic import Field
-
+import json
 from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
 from langchain.memory.utils import get_prompt_input_key
 from langchain.schema import BaseChatMessageHistory, BaseMemory
@@ -43,7 +43,7 @@ class BaseChatMemory(BaseMemory, ABC):
         self.chat_memory.add_user_message(input_str)
         self.chat_memory.add_ai_message(output_str)
         if self.intermediate_steps:
-            self.chat_memory.add_agent_message(self.intermediate_steps)
+            self.chat_memory.add_agent_message(json.dumps(self.intermediate_steps))
 
     def clear(self) -> None:
         """Clear memory contents."""
