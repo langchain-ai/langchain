@@ -3,7 +3,11 @@ import os
 
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.graphs import Neo4jGraph
-from langchain.graphs.neo4j_graph import node_properties_query, rel_properties_query, rel_query
+from langchain.graphs.neo4j_graph import (
+    node_properties_query,
+    rel_properties_query,
+    rel_query,
+)
 from langchain.llms.openai import OpenAI
 
 
@@ -205,16 +209,17 @@ def test_cypher_return_correct_schema() -> None:
     relationships = graph.query(rel_query)
 
     expected_node_properties = [
-        {'properties': [
-            {'property': 'property_a', 'type': 'STRING'}
-        ], 'labels': 'LabelA'}
+        {
+            "properties": [{"property": "property_a", "type": "STRING"}],
+            "labels": "LabelA",
+        }
     ]
     expected_relationships_properties = [
-        {'type': 'REL_TYPE', 'properties': [{'property': 'rel_prop', 'type': 'STRING'}]}
+        {"type": "REL_TYPE", "properties": [{"property": "rel_prop", "type": "STRING"}]}
     ]
     expected_relationships = [
-        '(:LabelA)-[:REL_TYPE]->(:LabelB)',
-        '(:LabelA)-[:REL_TYPE]->(:LabelC)',
+        "(:LabelA)-[:REL_TYPE]->(:LabelB)",
+        "(:LabelA)-[:REL_TYPE]->(:LabelC)",
     ]
 
     assert node_properties == expected_node_properties
