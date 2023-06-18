@@ -25,9 +25,28 @@ class MetaphorSearchAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    def _metaphor_search_results(self, query: str, num_results: int, include_domains: Optional[List[str]] = None, exclude_domains: Optional[List[str]] = None, start_crawl_date: Optional[str] = None, end_crawl_date: Optional[str] = None, start_published_date: Optional[str] = None, end_published_date: Optional[str] = None) -> List[dict]:
+    def _metaphor_search_results(
+        self,
+        query: str,
+        num_results: int,
+        include_domains: Optional[List[str]] = None,
+        exclude_domains: Optional[List[str]] = None,
+        start_crawl_date: Optional[str] = None,
+        end_crawl_date: Optional[str] = None,
+        start_published_date: Optional[str] = None,
+        end_published_date: Optional[str] = None,
+    ) -> List[dict]:
         headers = {"X-Api-Key": self.metaphor_api_key}
-        params = {"numResults": num_results, "query": query, "includeDomains": include_domains, "excludeDomains": exclude_domains, "startCrawlDate": start_crawl_date, "endCrawlDate": end_crawl_date, "startPublishedDate": start_published_date, "endPublishedDate": end_published_date}
+        params = {
+            "numResults": num_results,
+            "query": query,
+            "includeDomains": include_domains,
+            "excludeDomains": exclude_domains,
+            "startCrawlDate": start_crawl_date,
+            "endCrawlDate": end_crawl_date,
+            "startPublishedDate": start_published_date,
+            "endPublishedDate": end_published_date,
+        }
         response = requests.post(
             # type: ignore
             f"{METAPHOR_API_URL}/search",
@@ -50,7 +69,17 @@ class MetaphorSearchAPIWrapper(BaseModel):
 
         return values
 
-    def results(self, query: str, num_results: int, include_domains: Optional[List[str]] = None, exclude_domains: Optional[List[str]] = None, start_crawl_date: Optional[str] = None, end_crawl_date: Optional[str] = None, start_published_date: Optional[str] = None, end_published_date: Optional[str] = None) -> List[Dict]:
+    def results(
+        self,
+        query: str,
+        num_results: int,
+        include_domains: Optional[List[str]] = None,
+        exclude_domains: Optional[List[str]] = None,
+        start_crawl_date: Optional[str] = None,
+        end_crawl_date: Optional[str] = None,
+        start_published_date: Optional[str] = None,
+        end_published_date: Optional[str] = None,
+    ) -> List[Dict]:
         """Run query through Metaphor Search and return metadata.
 
         Args:
@@ -66,17 +95,43 @@ class MetaphorSearchAPIWrapper(BaseModel):
                     in YYYY-MM-DD format. Otherwise, None.
         """
         raw_search_results = self._metaphor_search_results(
-            query, num_results=num_results, include_domains=include_domains, exclude_domains=exclude_domains, start_crawl_date=start_crawl_date, end_crawl_date=end_crawl_date, start_published_date=start_published_date, end_published_date=end_published_date
+            query,
+            num_results=num_results,
+            include_domains=include_domains,
+            exclude_domains=exclude_domains,
+            start_crawl_date=start_crawl_date,
+            end_crawl_date=end_crawl_date,
+            start_published_date=start_published_date,
+            end_published_date=end_published_date,
         )
         return self._clean_results(raw_search_results)
 
-    async def results_async(self, query: str, num_results: int, include_domains: Optional[List[str]] = None, exclude_domains: Optional[List[str]] = None, start_crawl_date: Optional[str] = None, end_crawl_date: Optional[str] = None, start_published_date: Optional[str] = None, end_published_date: Optional[str] = None) -> List[Dict]:
+    async def results_async(
+        self,
+        query: str,
+        num_results: int,
+        include_domains: Optional[List[str]] = None,
+        exclude_domains: Optional[List[str]] = None,
+        start_crawl_date: Optional[str] = None,
+        end_crawl_date: Optional[str] = None,
+        start_published_date: Optional[str] = None,
+        end_published_date: Optional[str] = None,
+    ) -> List[Dict]:
         """Get results from the Metaphor Search API asynchronously."""
 
         # Function to perform the API call
         async def fetch() -> str:
             headers = {"X-Api-Key": self.metaphor_api_key}
-            params = {"numResults": num_results, "query": query, "includeDomains": include_domains, "excludeDomains": exclude_domains, "startCrawlDate": start_crawl_date, "endCrawlDate": end_crawl_date, "startPublishedDate": start_published_date, "endPublishedDate": end_published_date}
+            params = {
+                "numResults": num_results,
+                "query": query,
+                "includeDomains": include_domains,
+                "excludeDomains": exclude_domains,
+                "startCrawlDate": start_crawl_date,
+                "endCrawlDate": end_crawl_date,
+                "startPublishedDate": start_published_date,
+                "endPublishedDate": end_published_date,
+            }
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     f"{METAPHOR_API_URL}/search", json=params, headers=headers

@@ -35,7 +35,16 @@ class MetaphorSearchResults(BaseTool):
     ) -> Union[List[Dict], str]:
         """Use the tool."""
         try:
-            return self.api_wrapper.results(query, num_results, include_domains, exclude_domains, start_crawl_date, end_crawl_date, start_published_date, end_published_date)
+            return self.api_wrapper.results(
+                query,
+                num_results,
+                include_domains,
+                exclude_domains,
+                start_crawl_date,
+                end_crawl_date,
+                start_published_date,
+                end_published_date,
+            )
         except Exception as e:
             return repr(e)
 
@@ -53,6 +62,15 @@ class MetaphorSearchResults(BaseTool):
     ) -> Union[List[Dict], str]:
         """Use the tool asynchronously."""
         try:
-            return await self.api_wrapper.results_async(query, num_results, include_domains, exclude_domains, start_crawl_date, end_crawl_date, start_published_date, end_published_date)
+            return await self.api_wrapper.results_async(
+                query,
+                num_results,
+                include_domains,
+                exclude_domains,
+                start_crawl_date,
+                end_crawl_date,
+                start_published_date,
+                end_published_date,
+            )
         except Exception as e:
             return repr(e)
