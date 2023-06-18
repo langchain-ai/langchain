@@ -50,6 +50,7 @@ class LLMChain(Chain):
     output_key: str = "text"  #: :meta private:
     output_parser: BaseLLMOutputParser = Field(default_factory=DefaultOutputParser)
     return_final_only: bool = True
+    llm_kwargs: dict = Field(default_factory=dict)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -92,7 +93,10 @@ class LLMChain(Chain):
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list, run_manager=run_manager)
         return self.llm.generate_prompt(
-            prompts, stop, callbacks=run_manager.get_child() if run_manager else None
+            prompts,
+            stop,
+            callbacks=run_manager.get_child() if run_manager else None,
+            **self.llm_kwargs,
         )
 
     async def agenerate(
@@ -103,7 +107,10 @@ class LLMChain(Chain):
         """Generate LLM result from inputs."""
         prompts, stop = await self.aprep_prompts(input_list, run_manager=run_manager)
         return await self.llm.agenerate_prompt(
-            prompts, stop, callbacks=run_manager.get_child() if run_manager else None
+            prompts,
+            stop,
+            callbacks=run_manager.get_child() if run_manager else None,
+            **self.llm_kwargs,
         )
 
     def prep_prompts(

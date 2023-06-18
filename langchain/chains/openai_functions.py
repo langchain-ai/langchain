@@ -1,19 +1,13 @@
 import json
-from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
 from langchain.chains.base import Chain
-from langchain.chains.sequential import SimpleSequentialChain
-from langchain.chains.transform import TransformChain
-from langchain.prompts.base import BasePromptTemplate
+from langchain.chains.llm import LLMChain
 from langchain.prompts.chat import ChatPromptTemplate
+from langchain.schema import BaseLLMOutputParser, ChatGeneration, Generation
 
 EXTRACTION_NAME = "information_extraction"
 EXTRACTION_KWARGS = {"function_call": {"name": "information_extraction"}}
@@ -37,81 +31,51 @@ def _resolve_schema_references(schema: Any, definitions: Dict[str, Any]) -> Any:
     return schema
 
 
-def _get_function_arguments(inputs: dict) -> str:
-    message = inputs["input"]
-    try:
-        func_call = message.additional_kwargs["function_call"]
-    except ValueError as exc:
-        raise ValueError(f"Could not parse function call: {exc}")
+class OutputFunctionsParser(BaseLLMOutputParser[Any]):
+    def parse_result(self, result: List[Generation]) -> Any:
+        generation = result[0]
+        if not isinstance(generation, ChatGeneration):
+            raise ValueError(
+                "This output parser can only be used with a chat generation."
+            )
+        message = generation.message
+        try:
+            func_call = message.additional_kwargs["function_call"]
+        except ValueError as exc:
+            raise ValueError(f"Could not parse function call: {exc}")
 
-    return func_call["arguments"]
-
-
-def _parse_tag(inputs: dict) -> dict:
-    args = _get_function_arguments(inputs)
-    return {"output": json.loads(args)}
-
-
-def _parse_tag_pydantic(inputs: dict, pydantic_schema: Any) -> dict:
-    args = _get_function_arguments(inputs)
-    args = pydantic_schema.parse_raw(args)
-    return {"output": args}
+        return func_call["arguments"]
 
 
-def _parse_entities(inputs: dict) -> dict:
-    args = _get_function_arguments(inputs)
-    return {"output": json.loads(args)["info"]}
+class JsonOutputFunctionsParser(OutputFunctionsParser):
+    def parse_result(self, result: List[Generation]) -> Any:
+        _args = super().parse_result(result)
+        return json.loads(_args)
 
 
-def _parse_entities_pydantic(inputs: dict, pydantic_schema: Any) -> dict:
-    args = _get_function_arguments(inputs)
-    pydantic_args = pydantic_schema.parse_raw(args)
-    return {"output": pydantic_args.info}
+class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
+    key_name: str
+
+    def parse_result(self, result: List[Generation]) -> Any:
+        res = super().parse_result(result)
+        return res[self.key_name]
 
 
-class OpenAIFunctionsChain(Chain):
-    prompt: BasePromptTemplate
-    llm: BaseLanguageModel
-    functions: List[Dict]
-    kwargs: Dict = Field(default_factory=dict)
+class PydanticOutputFunctionsParser(OutputFunctionsParser):
+    pydantic_schema: Any
 
-    @property
-    def input_keys(self) -> List[str]:
-        return self.prompt.input_variables
+    def parse_result(self, result: List[Generation]) -> Any:
+        _args = super().parse_result(result)
+        pydantic_args = self.pydantic_schema.parse_raw(_args)
+        return pydantic_args
 
-    @property
-    def output_keys(self) -> List[str]:
-        return ["output"]
 
-    def _call(
-        self,
-        inputs: Dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
-        _inputs = {k: v for k, v in inputs.items() if k in self.prompt.input_variables}
-        prompt = self.prompt.format_prompt(**_inputs)
-        messages = prompt.to_messages()
-        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        callbacks = _run_manager.get_child()
-        predicted_message = self.llm.predict_messages(
-            messages, functions=self.functions, callbacks=callbacks, **self.kwargs
-        )
-        return {"output": predicted_message}
+class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
+    attr_name: str
 
-    async def _acall(
-        self,
-        inputs: Dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
-        _inputs = {k: v for k, v in inputs.items() if k in self.prompt.input_variables}
-        prompt = self.prompt.format_prompt(**_inputs)
-        messages = prompt.to_messages()
-        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
-        callbacks = _run_manager.get_child()
-        predicted_message = await self.llm.apredict_messages(
-            messages, functions=self.functions, callbacks=callbacks, **self.kwargs
-        )
-        return {"output": predicted_message}
+    def parse_result(self, result: List[Generation]) -> Any:
+        result = super().parse_result(result)
+        return getattr(result, self.attr_name)
 
 
 def _convert_schema(schema: dict) -> dict:
@@ -160,15 +124,14 @@ Passage:
 def create_extraction_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
     functions = _get_extraction_functions(schema)
     prompt = ChatPromptTemplate.from_template(_EXTRACTION_TEMPLATE)
-    chain = OpenAIFunctionsChain(
-        llm=llm, prompt=prompt, functions=functions, kwargs=EXTRACTION_KWARGS
+    output_parser = JsonKeyOutputFunctionsParser(key_name="info")
+    chain = LLMChain(
+        llm=llm,
+        prompt=prompt,
+        llm_kwargs={**{"functions": functions}, **EXTRACTION_KWARGS},
+        output_parser=output_parser,
     )
-    parsing_chain = TransformChain(
-        transform=_parse_entities,
-        input_variables=["input"],
-        output_variables=["output"],
-    )
-    return SimpleSequentialChain(chains=[chain, parsing_chain])
+    return chain
 
 
 def create_extraction_chain_pydantic(
@@ -184,15 +147,16 @@ def create_extraction_chain_pydantic(
 
     functions = _get_extraction_functions(openai_schema)
     prompt = ChatPromptTemplate.from_template(_EXTRACTION_TEMPLATE)
-    chain = OpenAIFunctionsChain(
-        llm=llm, prompt=prompt, functions=functions, kwargs=EXTRACTION_KWARGS
+    output_parser = PydanticAttrOutputFunctionsParser(
+        pydantic_schema=PydanticSchema, attr_name="info"
     )
-    pydantic_parsing_chain = TransformChain(
-        transform=partial(_parse_entities_pydantic, pydantic_schema=PydanticSchema),
-        input_variables=["input"],
-        output_variables=["output"],
+    chain = LLMChain(
+        llm=llm,
+        prompt=prompt,
+        llm_kwargs={**{"functions": functions}, **EXTRACTION_KWARGS},
+        output_parser=output_parser,
     )
-    return SimpleSequentialChain(chains=[chain, pydantic_parsing_chain])
+    return chain
 
 
 _TAGGING_TEMPLATE = """Extract the desired information from the following passage.
@@ -205,13 +169,14 @@ Passage:
 def create_tagging_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
     functions = _get_tagging_functions(schema)
     prompt = ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
-    chain = OpenAIFunctionsChain(
-        llm=llm, prompt=prompt, functions=functions, kwargs=EXTRACTION_KWARGS
+    output_parser = JsonOutputFunctionsParser()
+    chain = LLMChain(
+        llm=llm,
+        prompt=prompt,
+        llm_kwargs={**{"functions": functions}, **EXTRACTION_KWARGS},
+        output_parser=output_parser,
     )
-    parsing_chain = TransformChain(
-        transform=_parse_tag, input_variables=["input"], output_variables=["output"]
-    )
-    return SimpleSequentialChain(chains=[chain, parsing_chain])
+    return chain
 
 
 def create_tagging_chain_pydantic(
@@ -221,13 +186,11 @@ def create_tagging_chain_pydantic(
 
     functions = _get_tagging_functions(openai_schema)
     prompt = ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
-    chain = OpenAIFunctionsChain(
-        llm=llm, prompt=prompt, functions=functions, kwargs=EXTRACTION_KWARGS
+    output_parser = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+    chain = LLMChain(
+        llm=llm,
+        prompt=prompt,
+        llm_kwargs={**{"functions": functions}, **EXTRACTION_KWARGS},
+        output_parser=output_parser,
     )
-    pydantic_parsing_chain = TransformChain(
-        transform=partial(_parse_tag_pydantic, pydantic_schema=pydantic_schema),
-        input_variables=["input"],
-        output_variables=["output"],
-    )
-
-    return SimpleSequentialChain(chains=[chain, pydantic_parsing_chain])
+    return chain
