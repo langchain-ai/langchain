@@ -42,6 +42,7 @@ from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
+from langchain.llms.textgen import TextGen
 from langchain.llms.vertexai import VertexAI
 from langchain.llms.writer import Writer
 
@@ -64,6 +65,7 @@ __all__ = [
     "GooseAI",
     "GPT4All",
     "LlamaCpp",
+    "TextGen",
     "Modal",
     "MosaicML",
     "NLPCloud",
@@ -114,6 +116,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "huggingface_hub": HuggingFaceHub,
     "huggingface_endpoint": HuggingFaceEndpoint,
     "llamacpp": LlamaCpp,
+    "textgen": TextGen,
     "modal": Modal,
     "mosaic": MosaicML,
     "sagemaker_endpoint": SagemakerEndpoint,
