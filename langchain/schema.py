@@ -406,6 +406,10 @@ class BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T]):
 
 class DefaultOutputParser(BaseOutputParser[str]):
     @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    @property
     def _type(self) -> str:
         return "default"
 
