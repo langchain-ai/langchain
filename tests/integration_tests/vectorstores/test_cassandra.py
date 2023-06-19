@@ -1,33 +1,39 @@
 """Test Cassandra functionality."""
-from typing import List, Optional
+from typing import List, Optional, Type
+
+from cassandra.cluster import Cluster, Session
 
 from langchain.docstore.document import Document
 from langchain.vectorstores import Cassandra
 from tests.integration_tests.vectorstores.fake_embeddings import (
+    AngularTwoDimensionalEmbeddings,
     ConsistentFakeEmbeddings,
+    Embeddings,
 )
 
-from cassandra.cluster import Cluster, Session
 
 def _vectorstore_from_texts(
     texts: List[str],
     metadatas: Optional[List[dict]] = None,
-    drop: bool = True
+    embedding_class: Type[Embeddings] = ConsistentFakeEmbeddings,
+    drop: bool = True,
 ) -> Cassandra:
-    keyspace = 'vector_test_keyspace'
-    table_name = 'vector_test_table'
+    keyspace = "vector_test_keyspace"
+    table_name = "vector_test_table"
     # get db connection
     cluster = Cluster()
     session = cluster.connect()
     # ensure keyspace exists
-    session.execute(f"CREATE KEYSPACE IF NOT EXISTS {keyspace} WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}")
+    session.execute(
+        f"CREATE KEYSPACE IF NOT EXISTS {keyspace} WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}"
+    )
     # drop table if required
     if drop:
-        session.execute(f'DROP TABLE IF EXISTS {keyspace}.{table_name}')
+        session.execute(f"DROP TABLE IF EXISTS {keyspace}.{table_name}")
     #
     return Cassandra.from_texts(
         texts,
-        ConsistentFakeEmbeddings(),
+        embedding_class(),
         metadatas=metadatas,
         session=session,
         keyspace=keyspace,
@@ -60,15 +66,34 @@ def test_cassandra_with_score() -> None:
 
 
 def test_cassandra_max_marginal_relevance_search() -> None:
-    """Test end to end construction and MMR search."""
-    texts = ["foo", "bar", "baz"]
+    """
+    Test end to end construction and MMR search.
+    The embedding function used here ensures `texts` become
+    the following vectors on a circle (numbered v0 through v3):
+
+           ______ v2
+          /      \
+         /        \  v1
+    v3  |     .    | query
+         \        /  v0
+          \______/                 (N.B. very crude drawing)
+
+    With fetch_k==3 and k==2, when query is at (1, ),
+    one expects that v2 and v0 are returned (in some order).
+    """
+    texts = ["-0.125", "+0.125", "+0.25", "+1.0"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    docsearch = _vectorstore_from_texts(texts, metadatas=metadatas)
-    output = docsearch.max_marginal_relevance_search("doh", k=2, fetch_k=3)
-    assert output == [
-        Document(page_content="baz", metadata={"page": 2}),
-        Document(page_content="bar", metadata={"page": 1}),
-    ]
+    docsearch = _vectorstore_from_texts(
+        texts, metadatas=metadatas, embedding_class=AngularTwoDimensionalEmbeddings
+    )
+    output = docsearch.max_marginal_relevance_search("0.0", k=2, fetch_k=3)
+    output_set = {
+        (mmr_doc.page_content, mmr_doc.metadata["page"]) for mmr_doc in output
+    }
+    assert output_set == {
+        ("+0.25", 2),
+        ("-0.125", 0),
+    }
 
 
 def test_cassandra_add_extra() -> None:
