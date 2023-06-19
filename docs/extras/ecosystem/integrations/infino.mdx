@@ -1,8 +1,6 @@
 # Infino
 
-[Infino - Open-source observability platform](https://github.com/infinohq/infino)
-
->[Infino](https://github.com/infinohq/infino) is  an observability platform that stores both metrics and application logs together.
+>[Infino](https://github.com/infinohq/infino) is an open-source observability platform that stores both metrics and application logs together.
 
 Key features of infino include:
 - Metrics Tracking: Capture time taken by LLM model to handle request, errors, number of tokens, and costing indication for the particular LLM.
@@ -14,7 +12,7 @@ Key features of infino include:
 First, you'll need to install the  `infinopy` Python package as follows:
 
 ```bash
-pip install infinopy --upgrade
+pip install infinopy
 ```
 
 If you already have an Infino Server running, then you're good to go; but if
@@ -26,9 +24,11 @@ you don't, follow the next steps to start it:
     docker run --rm --detach --name infino-example -p 3000:3000 infinohq/infino:latest
     ```
 
+
+
 ## Using Infino
 
-See a [usage example of `InfinoCallbackHandler`](../modules/callbacks/examples/examples/infino.ipynb).
+See a [usage example of `InfinoCallbackHandler`](/docs/modules/callbacks/integrations/infino.html).
 
 ```python
 from langchain.callbacks import InfinoCallbackHandler
