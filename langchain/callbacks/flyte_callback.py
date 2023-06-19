@@ -191,14 +191,14 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self.deck.append(
             self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
-            + "\n"
-            + self.table_renderer().to_html(
-                self.pandas.DataFrame.from_records(all_complexity_metrics)
-            )
-            + "\n"
-            + dependency_tree
-            + "\n"
-            + entities
+            # + "\n"
+            # + self.table_renderer().to_html(
+            #     self.pandas.DataFrame.from_records(all_complexity_metrics)
+            # )
+            # + "\n"
+            # + dependency_tree
+            # + "\n"
+            # + entities
         )
 
     def on_llm_error(
@@ -229,9 +229,8 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         input_resp = deepcopy(resp)
         input_resp["inputs"] = chain_input
 
-        Deck(
-            "LLM Chain Start",
-            TableRenderer().to_html(pd.DataFrame.from_dict(input_resp)),
+        self.deck.append(
+            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(input_resp))
         )
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
@@ -249,9 +248,8 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update({"action": "on_chain_end", "outputs": chain_output})
         resp.update(self.metrics)
 
-        Deck(
-            "LLM Chain End",
-            TableRenderer().to_html(pd.DataFrame.from_dict(resp)),
+        self.deck.append(
+            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
         )
 
     def on_chain_error(
@@ -278,9 +276,8 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(flatten_dict(serialized))
         resp.update(self.metrics)
 
-        Deck(
-            "LLM Tool Start",
-            TableRenderer().to_html(pd.DataFrame.from_dict(resp)),
+        self.deck.append(
+            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
         )
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
@@ -297,9 +294,8 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update({"action": "on_tool_end", "output": output})
         resp.update(self.metrics)
 
-        Deck(
-            "LLM Tool End",
-            TableRenderer().to_html(pd.DataFrame.from_dict(resp)),
+        self.deck.append(
+            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
         )
 
     def on_tool_error(
@@ -324,9 +320,8 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update({"action": "on_text", "text": text})
         resp.update(self.metrics)
 
-        Deck(
-            "LLM Text",
-            TableRenderer().to_html(pd.DataFrame.from_dict(resp)),
+        self.deck.append(
+            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
         )
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
@@ -349,9 +344,8 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
         resp.update(self.metrics)
 
-        Deck(
-            "LLM Agent Finish",
-            TableRenderer().to_html(pd.DataFrame.from_dict(resp)),
+        self.deck.append(
+            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
         )
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
@@ -375,7 +369,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
         resp.update(self.metrics)
 
-        Deck(
-            "LLM Agent Action",
-            TableRenderer().to_html(pd.DataFrame.from_dict(resp)),
+        self.deck.append(
+            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
         )
