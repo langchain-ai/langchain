@@ -6034,7 +6034,7 @@ ptyprocess = ">=0.5"
 name = "pgvector"
 version = "0.1.8"
 description = "pgvector support for Python"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "pgvector-0.1.8-py2.py3-none-any.whl", hash = "sha256:99dce3a6580ef73863edb9b8441937671f4e1a09383826e6b0838176cd441a96"},
@@ -10855,7 +10855,7 @@ azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "chardet", "gql", "html2text", "jq", "lxml", "openai", "pandas", "pdfminer-six", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "requests-toolbelt", "scikit-learn", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "chardet", "gql", "html2text", "jq", "lxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "requests-toolbelt", "scikit-learn", "telethon", "tqdm", "zep-python"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
 qdrant = ["qdrant-client"]
@@ -10864,4 +10864,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "36cd5d49d9fe836427b308283af07540cb139c63884c10c3149d8a7242ed295e"
+content-hash = "1d1a851fba50d040e0a6cc9f06d54de98b6f011464eb54dbdaffae82b5b71e84"
