@@ -24,7 +24,11 @@ from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChai
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.llms.loading import load_llm, load_llm_from_config
-from langchain.prompts.loading import load_prompt, load_prompt_from_config
+from langchain.prompts.loading import (
+    _load_output_parser,
+    load_prompt,
+    load_prompt_from_config,
+)
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
@@ -47,6 +51,7 @@ def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:
         prompt = load_prompt(config.pop("prompt_path"))
     else:
         raise ValueError("One of `prompt` or `prompt_path` must be present.")
+    _load_output_parser(config)
 
     return LLMChain(llm=llm, prompt=prompt, **config)
 
