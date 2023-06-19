@@ -27,11 +27,11 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
             return self.last_tokens == self.answer_prefix_tokens
 
     def __init__(
-            self,
-            *,
-            answer_prefix_tokens: Optional[List[str]] = None,
-            strip_tokens: bool = True,
-            stream_prefix: bool = False
+        self,
+        *,
+        answer_prefix_tokens: Optional[List[str]] = None,
+        strip_tokens: bool = True,
+        stream_prefix: bool = False,
     ) -> None:
         """Instantiate AsyncFinalIteratorCallbackHandler.
 
@@ -61,7 +61,7 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
         self.answer_reached = False
 
     async def on_llm_start(
-            self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         # If two calls are made in a row, this resets the state
         self.done.clear()
