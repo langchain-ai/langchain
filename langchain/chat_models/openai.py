@@ -151,6 +151,10 @@ class ChatOpenAI(BaseChatModel):
     """
 
     @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"openai_api_key": "OPENAI_API_KEY"}
+
+    @property
     def lc_serializable(self) -> bool:
         return True
 
