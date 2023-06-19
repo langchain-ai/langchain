@@ -228,7 +228,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             _files = files
 
         returns = []
-        for file in files:
+        for file in _files:
             if file["trashed"] and not self.load_trashed_files:
                 continue
             elif file["mimeType"] == "application/vnd.google-apps.document":
