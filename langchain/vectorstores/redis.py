@@ -212,7 +212,7 @@ class Redis(VectorStore):
 
         assert not (keys and ids), "`ids` and `keys` cannot be provided at the same time."
 
-        ids = []
+        _ids = []
         prefix = _redis_prefix(self.index_name)
 
         # Write data to redis
@@ -237,7 +237,7 @@ class Redis(VectorStore):
                     self.metadata_key: json.dumps(metadata),
                 },
             )
-            ids.append(key)
+            _ids.append(key)
 
             # Write batch
             if i % batch_size == 0:
@@ -245,7 +245,7 @@ class Redis(VectorStore):
 
         # Cleanup final batch
         pipeline.execute()
-        return ids
+        return _ids
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
