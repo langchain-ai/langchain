@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import List
 
+import pytest
+
 from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     AIMessagePromptTemplate,
@@ -142,3 +144,21 @@ def test_chat_prompt_template_with_messages() -> None:
     )
     prompt_value_messages = prompt_value.to_messages()
     assert prompt_value_messages[-1] == HumanMessage(content="foo")
+
+
+def test_chat_invalid_input_variables_extra() -> None:
+    messages = [HumanMessage(content="foo")]
+    with pytest.raises(ValueError):
+        ChatPromptTemplate(messages=messages, input_variables=["foo"])
+
+
+def test_chat_invalid_input_variables_missing() -> None:
+    messages = [HumanMessagePromptTemplate.from_template("{foo}")]
+    with pytest.raises(ValueError):
+        ChatPromptTemplate(messages=messages, input_variables=[])
+
+
+def test_infer_variables() -> None:
+    messages = [HumanMessagePromptTemplate.from_template("{foo}")]
+    prompt = ChatPromptTemplate(messages=messages)
+    assert prompt.input_variables == ["foo"]

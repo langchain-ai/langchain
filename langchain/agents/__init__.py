@@ -31,6 +31,7 @@ from langchain.agents.load_tools import (
 )
 from langchain.agents.loading import load_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
+from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
 from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.agents.structured_chat.base import StructuredChatAgent
@@ -47,6 +48,7 @@ __all__ = [
     "ConversationalChatAgent",
     "LLMSingleActionAgent",
     "MRKLChain",
+    "OpenAIFunctionsAgent",
     "ReActChain",
     "ReActTextWorldAgent",
     "SelfAskWithSearchChain",
