@@ -163,9 +163,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
                 if response_from_arize.status_code == 200:
                     print("✅ Successfully logged data to Arize!")
                 else:
-                    print(
-                        f'❌ Logging failed "{response_from_arize.text}"'
-                    )
+                    print(f'❌ Logging failed "{response_from_arize.text}"')
 
                 i = i + 1
 
