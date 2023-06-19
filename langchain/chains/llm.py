@@ -1,6 +1,7 @@
 """Chain that just formats a prompt and calls an LLM."""
 from __future__ import annotations
 
+import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from pydantic import Extra, Field
@@ -20,8 +21,8 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseLLMOutputParser,
-    DefaultOutputParser,
     LLMResult,
+    NoOpOutputParser,
     PromptValue,
 )
 
@@ -47,9 +48,15 @@ class LLMChain(Chain):
     prompt: BasePromptTemplate
     """Prompt object to use."""
     llm: BaseLanguageModel
+    """Language model to call."""
     output_key: str = "text"  #: :meta private:
-    output_parser: BaseLLMOutputParser = Field(default_factory=DefaultOutputParser)
+    output_parser: BaseLLMOutputParser = Field(default_factory=NoOpOutputParser)
+    """Output parser to use.
+    Defaults to one that takes the most likely string but does not change it 
+    otherwise."""
     return_final_only: bool = True
+    """Whether to return only the final parsed result. Defaults to True.
+    If false, will return a bunch of extra information about the generation."""
     llm_kwargs: dict = Field(default_factory=dict)
 
     class Config:
@@ -205,7 +212,7 @@ class LLMChain(Chain):
     def _run_output_key(self) -> str:
         return self.output_key
 
-    def create_outputs(self, response: LLMResult) -> List[Dict[str, Any]]:
+    def create_outputs(self, llm_result: LLMResult) -> List[Dict[str, Any]]:
         """Create outputs from response."""
         result = [
             # Get the text of the top generated string.
@@ -213,7 +220,7 @@ class LLMChain(Chain):
                 self.output_key: self.output_parser.parse_result(generation),
                 "full_generation": generation,
             }
-            for generation in response.generations
+            for generation in llm_result.generations
         ]
         if self.return_final_only:
             result = [{self.output_key: r[self.output_key]} for r in result]
@@ -265,6 +272,10 @@ class LLMChain(Chain):
         self, callbacks: Callbacks = None, **kwargs: Any
     ) -> Union[str, List[str], Dict[str, Any]]:
         """Call predict and then parse the results."""
+        warnings.warn(
+            "The predict_and_parse method is deprecated, "
+            "instead pass an output parser directly to LLMChain."
+        )
         result = self.predict(callbacks=callbacks, **kwargs)
         if self.prompt.output_parser is not None:
             return self.prompt.output_parser.parse(result)
@@ -275,6 +286,10 @@ class LLMChain(Chain):
         self, callbacks: Callbacks = None, **kwargs: Any
     ) -> Union[str, List[str], Dict[str, str]]:
         """Call apredict and then parse the results."""
+        warnings.warn(
+            "The apredict_and_parse method is deprecated, "
+            "instead pass an output parser directly to LLMChain."
+        )
         result = await self.apredict(callbacks=callbacks, **kwargs)
         if self.prompt.output_parser is not None:
             return self.prompt.output_parser.parse(result)
@@ -285,25 +300,34 @@ class LLMChain(Chain):
         self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         """Call apply and then parse the results."""
+        warnings.warn(
+            "The apply_and_parse method is deprecated, "
+            "instead pass an output parser directly to LLMChain."
+        )
         result = self.apply(input_list, callbacks=callbacks)
-        return self._parse_result(result)
+        return self._parse_generation(result)
 
-    def _parse_result(
-        self, result: List[Dict[str, str]]
+    def _parse_generation(
+        self, generation: List[Dict[str, str]]
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         if self.prompt.output_parser is not None:
             return [
-                self.prompt.output_parser.parse(res[self.output_key]) for res in result
+                self.prompt.output_parser.parse(res[self.output_key])
+                for res in generation
             ]
         else:
-            return result
+            return generation
 
     async def aapply_and_parse(
         self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         """Call apply and then parse the results."""
+        warnings.warn(
+            "The aapply_and_parse method is deprecated, "
+            "instead pass an output parser directly to LLMChain."
+        )
         result = await self.aapply(input_list, callbacks=callbacks)
-        return self._parse_result(result)
+        return self._parse_generation(result)
 
     @property
     def _chain_type(self) -> str:
