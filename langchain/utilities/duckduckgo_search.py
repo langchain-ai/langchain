@@ -51,11 +51,12 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             )
             if results is None or next(results, None) is None:
                 return ["No good DuckDuckGo Search Result was found"]
-
-            for i, result in enumerate(results, 1):
-                yield result['body']
+            snippets = []
+            for i, res in enumerate(results, 1):
+                snippets.append(res['body'])
                 if i == self.max_results:
-                    return
+                    break
+            return snippets
 
     def run(self, query: str) -> str:
         snippets = self.get_snippets(query)
@@ -74,24 +75,28 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 title - The title of the result.
                 link - The link to the result.
         """
-        from duckduckgo_search import ddg
+        from duckduckgo_search import DDGS
 
-        results = ddg(
-            query,
-            region=self.region,
-            safesearch=self.safesearch,
-            time=self.time,
-            max_results=num_results,
-        )
+        with DDGS() as ddgs:
+            results = ddgs.text(
+                query,
+                region=self.region,
+                safesearch=self.safesearch,
+                timelimit=self.time
+            )
+            if results is None or next(results, None) is None:
+                return [{"Result": "No good DuckDuckGo Search Result was found"}]
 
-        if results is None or len(results) == 0:
-            return [{"Result": "No good DuckDuckGo Search Result was found"}]
+            def to_metadata(result: Dict) -> Dict[str, str]:
+                return {
+                    "snippet": result["body"],
+                    "title": result["title"],
+                    "link": result["href"],
+                }
 
-        def to_metadata(result: Dict) -> Dict[str, str]:
-            return {
-                "snippet": result["body"],
-                "title": result["title"],
-                "link": result["href"],
-            }
-
-        return [to_metadata(result) for result in results]
+            formatted_results = []
+            for i, res in enumerate(results, 1):
+                formatted_results.append(to_metadata(res))
+                if i == self.max_results:
+                    break
+            return formatted_results
