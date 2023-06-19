@@ -70,7 +70,7 @@ def create_citation_fuzzy_match_chain(llm: BaseLanguageModel):
         HumanMessagePromptTemplate.from_template("{context}"),
         HumanMessagePromptTemplate.from_template("Question: {question}"),
         HumanMessage(content="Tips: Make sure to cite your sources, and use the exact words from the context.")
-    ],
+    ]
     prompt = ChatPromptTemplate(messages =messages)
 
     chain = LLMChain(
