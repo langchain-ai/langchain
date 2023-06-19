@@ -184,3 +184,5 @@ def test_pgvector_with_filter_in_set() -> None:
         (Document(page_content="foo", metadata={"page": "0"}), 0.0),
         (Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406),
     ]
+
+

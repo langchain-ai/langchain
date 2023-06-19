@@ -4,7 +4,7 @@ from __future__ import annotations
 import enum
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
 import sqlalchemy
 from pgvector.sqlalchemy import Vector
@@ -128,6 +128,7 @@ class PGVector(VectorStore):
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
@@ -136,7 +137,55 @@ class PGVector(VectorStore):
         self.distance_strategy = distance_strategy
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
+        self.relevance_score_fn = (
+            relevance_score_fn or self._select_relevance_score_fn()
+        )
         self.__post_init__()
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+        if self.distance_strategy == DistanceStrategy.COSINE:
+            return self._cosine_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN:
+            return self._euclidean_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+            return self._max_inner_product_relevance_score_fn
+        else:
+            raise ValueError(
+                "No supported normalization function"
+                f" for distance_strategy of {self.distance_strategy}."
+                "Consider providing relevance_score_fn to PGVector constructor."
+            )
+
+    @staticmethod
+    def _euclidean_relevance_score_fn(distance: float) -> float:
+        """
+        Normalize the distance to a score on a scale [0, 1].
+        This function converts the Euclidean norm of normalized embeddings
+        (0 is most similar, sqrt(2) most dissimilar)
+        to a similarity function (0 to 1)
+        """
+
+        return 1 / (1 + (distance * 0.25))
+
+    @staticmethod
+    def _cosine_relevance_score_fn(distance: float) -> float:
+        """Normalize the distance to a score on a scale [0, 1]."""
+
+        return 1.0 - distance
+
+    @staticmethod
+    def _max_inner_product_relevance_score_fn(distance: float) -> float:
+        """Normalize the distance to a score on a scale [0, 1]."""
+
+        return -1.0 * distance
 
     def __post_init__(
         self,
@@ -203,6 +252,7 @@ class PGVector(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
         pre_delete_collection: bool = False,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> PGVector:
         if ids is None:
@@ -219,6 +269,7 @@ class PGVector(VectorStore):
             embedding_function=embedding,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
+            relevance_score_fn=relevance_score_fn,
         )
 
         store.add_embeddings(
@@ -323,6 +374,37 @@ class PGVector(VectorStore):
             k=k,
             filter=filter,
         )
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores, normalized on a scale from 0 to 1.
+
+        0 is dissimilar, 1 is most similar.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
+
+        if self.relevance_score_fn is None:
+            raise ValueError(
+                "relevance_score_fn must be provided to"
+                " PGVector constructor to normalize scores"
+            )
+
+        docs_and_scores = self.similarity_search_with_score(query=query, k=k)
+        docs_and_normalized_scores = [
+            (doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores
+        ]
+
+        return docs_and_normalized_scores
 
     def similarity_search_with_score(
         self,
@@ -438,6 +520,7 @@ class PGVector(VectorStore):
         distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> PGVector:
         """
@@ -457,6 +540,7 @@ class PGVector(VectorStore):
             collection_name=collection_name,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
+            relevance_score_fn=relevance_score_fn,
             **kwargs,
         )
 
