@@ -193,7 +193,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         print(all_complexity_metrics)
         print(
-            +self.table_renderer().to_html(
+            self.table_renderer().to_html(
                 self.pandas.DataFrame.from_records(all_complexity_metrics)
             )
         )
