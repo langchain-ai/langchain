@@ -28,6 +28,7 @@ from langchain.chains.openai_functions import (
     create_extraction_chain_pydantic,
     create_tagging_chain,
     create_tagging_chain_pydantic,
+create_citation_fuzzy_match_chain
 )
 from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_generation.base import QAGenerationChain
