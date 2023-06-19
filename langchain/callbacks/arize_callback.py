@@ -1,13 +1,10 @@
-from typing import Any, Dict, List, Optional, Union
 import uuid
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain.callbacks.utils import (
-    BaseMetadataCallbackHandler,
-    import_pandas,
-)
-from langchain.schema import AgentAction, AgentFinish, LLMResult
-
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Union
+
+from langchain.callbacks.base import BaseCallbackHandler
+from langchain.callbacks.utils import import_pandas
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class ArizeCallbackHandler(BaseCallbackHandler):
@@ -37,8 +34,8 @@ class ArizeCallbackHandler(BaseCallbackHandler):
         self.completion_tokens = 0
         self.total_tokens = 0
 
-        from arize.pandas.logger import Client
         from arize.pandas.embeddings import EmbeddingGenerator, UseCases
+        from arize.pandas.logger import Client
 
         self.generator = EmbeddingGenerator.from_use_case(
             use_case=UseCases.NLP.SEQUENCE_CLASSIFICATION,
@@ -64,12 +61,8 @@ class ArizeCallbackHandler(BaseCallbackHandler):
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         pd = import_pandas()
-        from arize.utils.types import (
-            EmbeddingColumnNames,
-            Environments,
-            ModelTypes,
-            Schema,
-        )
+        from arize.utils.types import (EmbeddingColumnNames, Environments,
+                                       ModelTypes, Schema)
 
         # Safe check if 'llm_output' and 'token_usage' exist
         if response.llm_output and "token_usage" in response.llm_output:
