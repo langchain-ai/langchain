@@ -153,7 +153,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update({"prompts": prompt_responses})
 
         self.deck.append(
-            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
+            self.table_renderer().to_html(
+                self.pandas.DataFrame.from_dict(resp, orient="index")
+            )
         )
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
@@ -190,15 +192,17 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 entities = generation_resp["entities"]
 
         self.deck.append(
-            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
-            # + "\n"
-            # + self.table_renderer().to_html(
-            #     self.pandas.DataFrame.from_records(all_complexity_metrics)
-            # )
-            # + "\n"
-            # + dependency_tree
-            # + "\n"
-            # + entities
+            self.table_renderer().to_html(
+                self.pandas.DataFrame.from_dict(resp, orient="index")
+            )
+            + "\n"
+            + self.table_renderer().to_html(
+                self.pandas.DataFrame.from_records(all_complexity_metrics)
+            )
+            + "\n"
+            + dependency_tree
+            + "\n"
+            + entities
         )
 
     def on_llm_error(
@@ -249,7 +253,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(self.metrics)
 
         self.deck.append(
-            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
+            self.table_renderer().to_html(
+                self.pandas.DataFrame.from_dict(resp, orient="index")
+            )
         )
 
     def on_chain_error(
@@ -277,7 +283,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(self.metrics)
 
         self.deck.append(
-            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
+            self.table_renderer().to_html(
+                self.pandas.DataFrame.from_dict(resp, orient="index")
+            )
         )
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
@@ -295,7 +303,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(self.metrics)
 
         self.deck.append(
-            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
+            self.table_renderer().to_html(
+                self.pandas.DataFrame.from_dict(resp, orient="index")
+            )
         )
 
     def on_tool_error(
@@ -321,7 +331,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(self.metrics)
 
         self.deck.append(
-            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
+            self.table_renderer().to_html(
+                self.pandas.DataFrame.from_dict(resp, orient="index")
+            )
         )
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
@@ -345,7 +357,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(self.metrics)
 
         self.deck.append(
-            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
+            self.table_renderer().to_html(
+                self.pandas.DataFrame.from_dict(resp, orient="index")
+            )
         )
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
@@ -370,5 +384,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(self.metrics)
 
         self.deck.append(
-            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
+            self.table_renderer().to_html(
+                self.pandas.DataFrame.from_dict(resp, orient="index")
+            )
         )
