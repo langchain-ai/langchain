@@ -191,20 +191,19 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 # self.deck("LLM End: Dependency Tree", dependency_tree)
                 # self.deck("LLM End: Entities", entities)
 
+        print(all_complexity_metrics)
         print(
-            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
-            + "\n"
-            + self.table_renderer().to_html(
+            +self.table_renderer().to_html(
                 self.pandas.DataFrame.from_records(all_complexity_metrics)
             )
         )
         self.deck(
             "LLM End",
-            # self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
+            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
             # + "\n"
-            self.table_renderer().to_html(
-                self.pandas.DataFrame.from_records(all_complexity_metrics)
-            ),
+            # self.table_renderer().to_html(
+            #     self.pandas.DataFrame.from_records(all_complexity_metrics)
+            # ),
         )
 
     def on_llm_error(
