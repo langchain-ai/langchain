@@ -28,20 +28,26 @@ class FakeEmbeddingsWithOsDimension(FakeEmbeddings):
 
 
 settings = AlibabaCloudOpenSearchSettings(
-    endpoint="The endpoint of opensearch instance, You can find it from the console of Alibaba Cloud OpenSearch.",
-    instance_id="The identify of opensearch instance, You can find it from the console of Alibaba Cloud OpenSearch.",
+    endpoint="The endpoint of opensearch instance, "
+    "You can find it from the console of Alibaba Cloud OpenSearch.",
+    instance_id="The identify of opensearch instance, "
+    "You can find it from the console of Alibaba Cloud OpenSearch.",
     datasource_name="The name of the data source specified when creating it.",
     username="The username specified when purchasing the instance.",
     password="The password specified when purchasing the instance.",
-    embedding_index_name="The name of the vector attribute specified when configuring the instance attributes.",
+    embedding_index_name="The name of the vector attribute "
+    "specified when configuring the instance attributes.",
     field_name_mapping={
         # insert data into opensearch based on the mapping name of the field.
         "id": "The id field name map of index document.",
         "document": "The text field name map of index document.",
-        "embedding": "The embedding field name map of index document，the values must be in float16 multivalue type "
-                     "and separated by commas.",
-        "metadata_x": "The metadata field name map of index document, could specify multiple, The value field contains "
-        "mapping name and operator, the operator would be used when executing metadata filter query",
+        "embedding": "The embedding field name map of index document，"
+        "the values must be in float16 multivalue type "
+        "and separated by commas.",
+        "metadata_x": "The metadata field name map of index document, "
+        "could specify multiple, The value field contains "
+        "mapping name and operator, the operator would be "
+        "used when executing metadata filter query",
     },
 )
 

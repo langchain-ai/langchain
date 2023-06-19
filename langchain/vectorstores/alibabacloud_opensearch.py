@@ -4,9 +4,6 @@ import numbers
 from hashlib import sha1
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from alibabacloud_ha3engine import client, models
-from alibabacloud_tea_util import models as util_models
-
 from langchain.embeddings.base import Embeddings
 from langchain.schema import Document
 from langchain.vectorstores.base import VectorStore
@@ -17,26 +14,26 @@ logger = logging.getLogger()
 class AlibabaCloudOpenSearchSettings:
     """Opensearch Client Configuration
     Attribute:
-        endpoint (str) : The endpoint of opensearch instance, You can find it from the console of Alibaba Cloud
-                            OpenSearch.
-        instance_id (str) : The identify of opensearch instance, You can find it from the console of Alibaba Cloud
-                            OpenSearch.
+        endpoint (str) : The endpoint of opensearch instance, You can find it
+        from the console of Alibaba Cloud OpenSearch.
+        instance_id (str) : The identify of opensearch instance, You can find
+        it from the console of Alibaba Cloud OpenSearch.
         datasource_name (str): The name of the data source specified when creating it.
         username (str) : The username specified when purchasing the instance.
         password (str) : The password specified when purchasing the instance.
-        embedding_index_name (str) :  The name of the vector attribute specified when configuring the instance
-                                      attributes.
-        field_name_mapping (Dict) : Using field name mapping between opensearch vector store and opensearch instance
-                                    configuration table field names:
-                                {
-                                    'id': 'The id field name map of index document.',
-                                    'document': 'The text field name map of index document.',
-                                    'embedding': 'In the embedding field of the opensearch instance, the values must be
-                                                in float16 multivalue type and separated by commas.',
-                                    'metadata_field_x': 'Metadata field mapping includes the mapped field name and
-                                    operator in the mapping value, separated by a comma between the mapped field name
-                                    and the operator.',
-                                }
+        embedding_index_name (str) :  The name of the vector attribute specified
+        when configuring the instance attributes.
+        field_name_mapping (Dict) : Using field name mapping between opensearch
+        vector store and opensearch instance configuration table field names:
+        {
+            'id': 'The id field name map of index document.',
+            'document': 'The text field name map of index document.',
+            'embedding': 'In the embedding field of the opensearch instance,
+            the values must be in float16 multivalue type and separated by commas.',
+            'metadata_field_x': 'Metadata field mapping includes the mapped
+            field name and operator in the mapping value, separated by a comma
+            between the mapped field name and the operator.',
+        }
     """
 
     endpoint: str
@@ -53,14 +50,14 @@ class AlibabaCloudOpenSearchSettings:
     }
 
     def __init__(
-            self,
-            endpoint: str,
-            instance_id: str,
-            username: str,
-            password: str,
-            datasource_name: str,
-            embedding_index_name: str,
-            field_name_mapping: Dict[str, str],
+        self,
+        endpoint: str,
+        instance_id: str,
+        username: str,
+        password: str,
+        datasource_name: str,
+        embedding_index_name: str,
+        field_name_mapping: Dict[str, str],
     ) -> None:
         self.endpoint = endpoint
         self.instance_id = instance_id
@@ -85,11 +82,20 @@ def create_metadata(fields: Dict[str, Any]) -> Dict[str, Any]:
 
 class AlibabaCloudOpenSearch(VectorStore):
     def __init__(
-            self,
-            embedding: Embeddings,
-            config: AlibabaCloudOpenSearchSettings,
-            **kwargs: Any,
+        self,
+        embedding: Embeddings,
+        config: AlibabaCloudOpenSearchSettings,
+        **kwargs: Any,
     ) -> None:
+        try:
+            from alibabacloud_ha3engine import client, models
+            from alibabacloud_tea_util import models as util_models
+        except ImportError:
+            raise ValueError(
+                "Could not import alibaba cloud opensearch python package. "
+                "Please install it with `pip install alibabacloud-ha3engine`."
+            )
+
         self.config = config
         self.embedding = embedding
 
@@ -113,10 +119,10 @@ class AlibabaCloudOpenSearch(VectorStore):
         self.options_headers: Dict[str, str] = {}
 
     def add_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[dict]] = None,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         def _upsert(push_doc_list: List[Dict]) -> List[str]:
             if push_doc_list is None or len(push_doc_list) == 0:
@@ -137,10 +143,13 @@ class AlibabaCloudOpenSearch(VectorStore):
                 return []
             except Exception as e:
                 logger.error(
-                    f"add doc to endpoint:{self.config.endpoint} instance_id:{self.config.instance_id} failed.",
+                    f"add doc to endpoint:{self.config.endpoint} "
+                    f"instance_id:{self.config.instance_id} failed.",
                     e,
                 )
                 raise e
+
+        from alibabacloud_ha3engine import models
 
         ids = [sha1(t.encode("utf-8")).hexdigest() for t in texts]
         embeddings = self.embedding.embed_documents(list(texts))
@@ -172,11 +181,11 @@ class AlibabaCloudOpenSearch(VectorStore):
         return _upsert(add_doc_list)
 
     def similarity_search(
-            self,
-            query: str,
-            k: int = 4,
-            search_filter: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        search_filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         embedding = self.embedding.embed_query(query)
         return self.create_results(
@@ -186,11 +195,11 @@ class AlibabaCloudOpenSearch(VectorStore):
         )
 
     def similarity_search_with_relevance_scores(
-            self,
-            query: str,
-            k: int = 4,
-            search_filter: Optional[dict] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        search_filter: Optional[dict] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         embedding: List[float] = self.embedding.embed_query(query)
         return self.create_results_with_score(
@@ -200,11 +209,11 @@ class AlibabaCloudOpenSearch(VectorStore):
         )
 
     def similarity_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            search_filter: Optional[dict] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        search_filter: Optional[dict] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         return self.create_results(
             self.inner_embedding_query(
@@ -213,10 +222,10 @@ class AlibabaCloudOpenSearch(VectorStore):
         )
 
     def inner_embedding_query(
-            self,
-            embedding: List[float],
-            search_filter: Optional[Dict[str, Any]] = None,
-            k: int = 4,
+        self,
+        embedding: List[float],
+        search_filter: Optional[Dict[str, Any]] = None,
+        k: int = 4,
     ) -> Dict[str, Any]:
         def generate_embedding_query() -> str:
             tmp_search_config_str = (
@@ -224,10 +233,10 @@ class AlibabaCloudOpenSearch(VectorStore):
                 f"first_formula:proxima_score({self.config.embedding_index_name})&&sort=+RANK"
             )
             tmp_query_str = (
-                    f"&&query={self.config.embedding_index_name}:"
-                    + "'"
-                    + ",".join(str(x) for x in embedding)
-                    + "'"
+                f"&&query={self.config.embedding_index_name}:"
+                + "'"
+                + ",".join(str(x) for x in embedding)
+                + "'"
             )
             if search_filter is not None:
                 filter_clause = "&&filter=" + " AND ".join(
@@ -247,7 +256,8 @@ class AlibabaCloudOpenSearch(VectorStore):
             expr = md_filter_expr.split(",")
             if len(expr) != 2:
                 logger.error(
-                    f"filter {md_filter_expr} express is not correct, must contain mapping field and operator."
+                    f"filter {md_filter_expr} express is not correct, "
+                    f"must contain mapping field and operator."
                 )
                 return ""
             md_filter_key = expr[0].strip()
@@ -263,18 +273,22 @@ class AlibabaCloudOpenSearch(VectorStore):
             )
             return json.loads(self.ha3EngineClient.search(search_request).body)
 
+        from alibabacloud_ha3engine import models
+
         try:
             query_str = generate_embedding_query()
             json_response = search_data(query_str)
             if len(json_response["errors"]) != 0:
                 logger.error(
-                    f"query {self.config.endpoint} {self.config.instance_id} errors:{json_response['errors']} failed."
+                    f"query {self.config.endpoint} {self.config.instance_id} "
+                    f"errors:{json_response['errors']} failed."
                 )
             else:
                 return json_response
         except Exception as e:
             logger.error(
-                f"query instance endpoint:{self.config.endpoint} instance_id:{self.config.instance_id} failed.",
+                f"query instance endpoint:{self.config.endpoint} "
+                f"instance_id:{self.config.instance_id} failed.",
                 e,
             )
         return {}
@@ -293,7 +307,7 @@ class AlibabaCloudOpenSearch(VectorStore):
         return query_result_list
 
     def create_results_with_score(
-            self, json_result: Dict[str, Any]
+        self, json_result: Dict[str, Any]
     ) -> List[Tuple[Document, float]]:
         items = json_result["result"]["items"]
         query_result_list: List[Tuple[Document, float]] = []
@@ -312,13 +326,13 @@ class AlibabaCloudOpenSearch(VectorStore):
 
     @classmethod
     def from_texts(
-            cls,
-            texts: List[str],
-            embedding: Embeddings,
-            metadatas: Optional[List[dict]] = None,
-            config: Optional[AlibabaCloudOpenSearchSettings] = None,
-            **kwargs: Any,
-    ) -> 'AlibabaCloudOpenSearch':
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        config: Optional[AlibabaCloudOpenSearchSettings] = None,
+        **kwargs: Any,
+    ) -> "AlibabaCloudOpenSearch":
         if config is None:
             raise Exception("config can't be none")
 
@@ -328,13 +342,13 @@ class AlibabaCloudOpenSearch(VectorStore):
 
     @classmethod
     def from_documents(
-            cls,
-            documents: List[Document],
-            embedding: Embeddings,
-            ids: Optional[List[str]] = None,
-            config: Optional[AlibabaCloudOpenSearchSettings] = None,
-            **kwargs: Any,
-    ) -> 'AlibabaCloudOpenSearch':
+        cls,
+        documents: List[Document],
+        embedding: Embeddings,
+        ids: Optional[List[str]] = None,
+        config: Optional[AlibabaCloudOpenSearchSettings] = None,
+        **kwargs: Any,
+    ) -> "AlibabaCloudOpenSearch":
         if config is None:
             raise Exception("config can't be none")
 
