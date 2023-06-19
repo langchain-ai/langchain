@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
