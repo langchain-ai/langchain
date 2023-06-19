@@ -191,6 +191,13 @@ class SingleStoreDB(VectorStore):
         """Pass the rest of the kwargs to the connection."""
         self.connection_kwargs = kwargs
 
+        """Add program name and version to connection attributes."""
+        if "conn_attrs" not in self.connection_kwargs:
+            self.connection_kwargs["conn_attrs"] = dict()
+        if "program_name" not in self.connection_kwargs["conn_attrs"]:
+            self.connection_kwargs["conn_attrs"]["program_name"] = "langchain python sdk"
+            self.connection_kwargs["conn_attrs"]["program_version"] = "0.0.205"  # the version of SingleStoreDB VectorStore implementation
+
         """Create connection pool."""
         self.connection_pool = QueuePool(
             self._get_connection,
@@ -270,7 +277,7 @@ class SingleStoreDB(VectorStore):
         return []
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """Returns the most similar indexed documents to the query text.
 
@@ -279,21 +286,23 @@ class SingleStoreDB(VectorStore):
         Args:
             query (str): The query text for which to find similar documents.
             k (int): The number of documents to return. Default is 4.
+            filter (dict): A dictionary of metadata fields and values to filter by.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        docs_and_scores = self.similarity_search_with_score(query=query, k=k, filter=filter)
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4
+        self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query. Uses cosine similarity.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter: A dictionary of metadata fields and values to filter by. Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -302,23 +311,44 @@ class SingleStoreDB(VectorStore):
         embedding = self.embedding.embed_query(query)
         conn = self.connection_pool.connect()
         result = []
+        where_clause: str = ""
+        where_clause_values = []
+        if filter:
+            where_clause = "WHERE "
+            arguments = []
+
+            def build_where_clause(where_clause_values:List[Any], sub_filter: dict, prefix_args: List[str] = []):
+                for key in sub_filter.keys():
+                    if isinstance(sub_filter[key], dict):
+                        build_where_clause(where_clause_values, sub_filter[key], prefix_args + [key])
+                    else:
+                        arguments.append("JSON_EXTRACT_JSON({}, {}) = %s".format(
+                            self.metadata_field, ", ".join(["%s"] * (len(prefix_args) + 1))))
+                        where_clause_values += prefix_args + [key]
+                        where_clause_values.append(json.dumps(sub_filter[key]))
+
+            build_where_clause(where_clause_values, filter)
+            where_clause += " AND ".join(arguments)
+
         try:
             cur = conn.cursor()
             try:
                 cur.execute(
                     """SELECT {}, {}, {}({}, JSON_ARRAY_PACK(%s)) as __score
-                    FROM {} ORDER BY __score {} LIMIT %s""".format(
+                    FROM {} {} ORDER BY __score {} LIMIT %s""".format(
                         self.content_field,
                         self.metadata_field,
                         self.distance_strategy,
                         self.vector_field,
                         self.table_name,
+                        where_clause,
                         ORDERING_DIRECTIVE[self.distance_strategy]
                     ),
                     (
                         "[{}]".format(",".join(map(str, embedding))),
-                        k,
-                    ),
+                    ) 
+                    + tuple(where_clause_values)
+                    + (k,)
                 )
 
                 for row in cur.fetchall():
