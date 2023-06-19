@@ -64,6 +64,21 @@ def test_pypdf_loader() -> None:
     docs = loader.load()
     assert len(docs) == 16
 
+    loader = PyPDFLoader(str(file_path), start_page=5)
+
+    docs = loader.load()
+    assert len(docs) == 11
+
+    loader = PyPDFLoader(str(file_path), start_page=5, end_page=8)
+
+    docs = loader.load()
+    assert len(docs) == 4
+
+    loader = PyPDFLoader(str(file_path), end_page=8)
+
+    docs = loader.load()
+    assert len(docs) == 9
+
 
 def test_pypdfium2_loader() -> None:
     """Test PyPDFium2Loader."""

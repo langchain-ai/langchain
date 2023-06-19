@@ -1,5 +1,5 @@
 """Module contains common parsers for PDFs."""
-from typing import Any, Iterator, Mapping, Optional
+from typing import Any, Iterator, List, Mapping, Optional
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
@@ -9,19 +9,36 @@ from langchain.schema import Document
 class PyPDFParser(BaseBlobParser):
     """Loads a PDF with pypdf and chunks at character level."""
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+    def lazy_parse(
+        self,
+        blob: Blob,
+        start_page: Optional[int] = None,
+        end_page: Optional[int] = None,
+    ) -> Iterator[Document]:
         """Lazily parse the blob."""
         import pypdf
 
         with blob.as_bytes_io() as pdf_file_obj:
             pdf_reader = pypdf.PdfReader(pdf_file_obj)
+            start_page = start_page or 0
+            end_page = end_page or len(pdf_reader.pages) - 1
             yield from [
                 Document(
                     page_content=page.extract_text(),
                     metadata={"source": blob.source, "page": page_number},
                 )
                 for page_number, page in enumerate(pdf_reader.pages)
+                if start_page <= page_number <= end_page
             ]
+
+    def parse(
+        self,
+        blob: Blob,
+        start_page: Optional[int] = None,
+        end_page: Optional[int] = None,
+    ) -> List[Document]:
+        """Eagerly parse the blob into a document or documents."""
+        return list(self.lazy_parse(blob, start_page=start_page, end_page=end_page))
 
 
 class PDFMinerParser(BaseBlobParser):
