@@ -6,7 +6,6 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import import_pandas
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
-
 class ArizeCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs to Arize."""
 
