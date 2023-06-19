@@ -243,11 +243,11 @@ class AzureSearch(VectorStore):
     ) -> List[Document]:
         search_type = kwargs.get("search_type", self.search_type)
         if search_type == "similarity":
-            docs = self.vector_search(query, k=k)
+            docs = self.vector_search(query, k=k, **kwargs)
         elif search_type == "hybrid":
-            docs = self.hybrid_search(query, k=k)
+            docs = self.hybrid_search(query, k=k, **kwargs)
         elif search_type == "semantic_hybrid":
-            docs = self.semantic_hybrid_search(query, k=k)
+            docs = self.semantic_hybrid_search(query, k=k, **kwargs)
         else:
             raise ValueError(f"search_type of {search_type} not allowed.")
         return docs

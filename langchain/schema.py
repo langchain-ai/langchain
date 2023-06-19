@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import (
     Any,
     Dict,
@@ -15,7 +16,7 @@ from typing import (
 )
 from uuid import UUID
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 
 from langchain.load.serializable import Serializable
 
@@ -34,15 +35,22 @@ def get_buffer_string(
             role = ai_prefix
         elif isinstance(m, SystemMessage):
             role = "System"
+        elif isinstance(m, FunctionMessage):
+            role = "Function"
         elif isinstance(m, ChatMessage):
             role = m.role
         else:
             raise ValueError(f"Got unsupported message type: {m}")
-        string_messages.append(f"{role}: {m.content}")
+        message = f"{role}: {m.content}"
+        if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
+            message += f"{m.additional_kwargs['function_call']}"
+        string_messages.append(message)
+
     return "\n".join(string_messages)
 
 
-class AgentAction(NamedTuple):
+@dataclass
+class AgentAction:
     """Agent's action to take."""
 
     tool: str
@@ -110,6 +118,15 @@ class SystemMessage(BaseMessage):
     def type(self) -> str:
         """Type of the message, used for serialization."""
         return "system"
+
+
+class FunctionMessage(BaseMessage):
+    name: str
+
+    @property
+    def type(self) -> str:
+        """Type of the message, used for serialization."""
+        return "function"
 
 
 class ChatMessage(BaseMessage):
@@ -212,7 +229,6 @@ class BaseMemory(Serializable, ABC):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     @property
@@ -323,11 +339,20 @@ Memory = BaseMemory
 T = TypeVar("T")
 
 
-class BaseOutputParser(Serializable, ABC, Generic[T]):
+class BaseLLMOutputParser(Serializable, ABC, Generic[T]):
+    @abstractmethod
+    def parse_result(self, result: List[Generation]) -> T:
+        """Parse LLM Result."""
+
+
+class BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T]):
     """Class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
     """
+
+    def parse_result(self, result: List[Generation]) -> T:
+        return self.parse(result[0].text)
 
     @abstractmethod
     def parse(self, text: str) -> T:
@@ -376,6 +401,21 @@ class BaseOutputParser(Serializable, ABC, Generic[T]):
         output_parser_dict = super().dict()
         output_parser_dict["_type"] = self._type
         return output_parser_dict
+
+
+class NoOpOutputParser(BaseOutputParser[str]):
+    """Output parser that just returns the text as is."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    @property
+    def _type(self) -> str:
+        return "default"
+
+    def parse(self, text: str) -> str:
+        return text
 
 
 class OutputParserException(ValueError):
