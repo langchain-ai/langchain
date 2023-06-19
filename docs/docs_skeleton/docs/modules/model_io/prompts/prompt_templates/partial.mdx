@@ -1,0 +1,13 @@
+# Partial prompt templates
+
+Like other methods, it can make sense to "partial" a prompt template - eg pass in a subset of the required values, as to create a new prompt template which expects only the remaining subset of values.
+
+LangChain supports this in two ways:
+1. Partial formatting with string values.
+2. Partial formatting with functions that return string values.
+
+These two different ways support different use cases. In the examples below, we go over the motivations for both use cases as well as how to do it in LangChain.
+
+import Example from "@snippets/modules/model_io/prompts/prompt_templates/partial.mdx"
+
+<Example/>

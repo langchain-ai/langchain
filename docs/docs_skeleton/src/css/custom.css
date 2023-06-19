@@ -1,0 +1,142 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @format
+ */
+
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #2e8555;
+  --ifm-color-primary-dark: #29784c;
+  --ifm-color-primary-darker: #277148;
+  --ifm-color-primary-darkest: #205d3b;
+  --ifm-color-primary-light: #33925d;
+  --ifm-color-primary-lighter: #359962;
+  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-code-font-size: 95%;
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #25c2a0;
+  --ifm-color-primary-dark: #21af90;
+  --ifm-color-primary-darker: #1fa588;
+  --ifm-color-primary-darkest: #1a8870;
+  --ifm-color-primary-light: #29d5b0;
+  --ifm-color-primary-lighter: #32d8b4;
+  --ifm-color-primary-lightest: #4fddbf;
+}
+
+/* Reduce width on mobile for Mendable Search */
+@media (max-width: 767px) {
+  .mendable-search {
+    width: 200px;
+  }
+}
+
+@media (max-width: 500px) {
+  .mendable-search {
+    width: 150px;
+  }
+}
+
+@media (max-width: 380px) {
+  .mendable-search {
+    width: 140px;
+  }
+}
+
+.footer__links {
+  margin-top: 1rem;
+  margin-bottom: 3rem;
+}
+
+.footer__col {
+  text-align: center;
+}
+
+.footer__copyright {
+  opacity: 0.6;
+}
+
+.node-only {
+  position: relative;
+}
+
+.node-only::after {
+  position: absolute;
+  right: 0.35rem;
+  top: 5px;
+  content: "Node.js";
+  background: #026e00;
+  color: #fff;
+  border-radius: 0.25rem;
+  padding: 0 0.5rem;
+  pointer-events: none;
+  font-size: 0.85rem;
+}
+
+.node-only-category {
+  position: relative;
+}
+
+.node-only-category::after {
+  position: absolute;
+  right: 3rem;
+  top: 5px;
+  content: "Node.js";
+  background: #026e00;
+  color: #fff;
+  border-radius: 0.25rem;
+  padding: 0 0.5rem;
+  pointer-events: none;
+  font-size: 0.85rem;
+}
+
+.theme-doc-sidebar-item-category > div > a {
+  flex: 1 1 0;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.theme-doc-sidebar-item-category > div > button {
+  opacity: 0.5;
+}
+
+.markdown > h2 {
+  margin-top: 2rem;
+  border-bottom-color: var(--ifm-color-primary);
+  border-bottom-width: 2px;
+  padding-bottom: 1rem;
+}
+
+.markdown > :not(h2) +  h3 {
+  margin-top: 1rem;
+}
+
+.markdown > h4 {
+  margin-bottom: 0.2rem;
+  font-weight: 600;
+}
+
+.markdown > h4:has(+ table) {
+  margin-bottom: 0.4rem;
+}
+
+.markdown > h5 {
+  margin-bottom: 0.2rem;
+  font-weight: 600;
+}
+
+.hidden {
+    display: none !important;
+}
