@@ -128,7 +128,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         from flytekitplugins.deck.renderer import TableRenderer, MarkdownRenderer
 
         self.table_renderer = TableRenderer
-        self.deck = Deck("Langchain Metrics", MarkdownRenderer("## Langchain Metrics"))
+        self.deck = Deck(
+            "Langchain Metrics", MarkdownRenderer().to_html("## Langchain Metrics")
+        )
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
