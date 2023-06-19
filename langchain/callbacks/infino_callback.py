@@ -43,7 +43,8 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         Parameters:
         key (str): the key to send to Infino.
         value (Any): the value to send to Infino.
-        is_ts (bool): if True, the value is part of a time series, else it is sent as a log message.
+        is_ts (bool): if True, the value is part of a time series, else it
+                      is sent as a log message.
         """
         payload = {
             "date": int(time.time()),
@@ -56,7 +57,8 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         if self.verbose:
             print(f"Tracking {key} with Infino: {payload}")
 
-        # Append to Infino time series only if is_ts is True, otherwise append to Infino log.
+        # Append to Infino time series only if is_ts is True, otherwise
+        # append to Infino log.
         if is_ts:
             self.client.append_ts(payload)
         else:
@@ -72,10 +74,12 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         for prompt in prompts:
             self._send_to_infino("prompt", prompt, is_ts=False)
 
-        # Set the error flag to indicate no error (this will get overridden in on_llm_error if an error occurs).
+        # Set the error flag to indicate no error (this will get overridden
+        # in on_llm_error if an error occurs).
         self.error = 0
 
-        # Set the start time (so that we can calculate the request duration in on_llm_end).
+        # Set the start time (so that we can calculate the request
+        # duration in on_llm_end).
         self.start_time = time.time()
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
@@ -93,9 +97,9 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         self._send_to_infino("error", self.error)
 
         # Track token usage.
-        if (response.llm_output != None) and isinstance(response.llm_output, Dict):
+        if (response.llm_output is not None) and isinstance(response.llm_output, Dict):
             token_usage = response.llm_output["token_usage"]
-            if token_usage != None:
+            if token_usage is not None:
                 prompt_tokens = token_usage["prompt_tokens"]
                 total_tokens = token_usage["total_tokens"]
                 completion_tokens = token_usage["completion_tokens"]
