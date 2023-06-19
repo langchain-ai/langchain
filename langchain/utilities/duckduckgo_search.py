@@ -97,6 +97,6 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             formatted_results = []
             for i, res in enumerate(results, 1):
                 formatted_results.append(to_metadata(res))
-                if i == self.max_results:
+                if i == num_results:
                     break
             return formatted_results
