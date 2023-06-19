@@ -552,9 +552,7 @@ class BaseOpenAI(BaseLLM):
 
     @property
     def max_context_size(self) -> int:
-        """
-        get max context size for this model
-        """
+        """Get max context size for this model."""
         return self.modelname_to_contextsize(self.model_name)
 
     def max_tokens_for_prompt(self, prompt: str) -> int:
