@@ -169,4 +169,5 @@ class HuggingFaceTextGenInference(LLM):
                 if not token.special:
                     if text_callback:
                         text_callback(token.text)
+                    text += token.text
         return text
