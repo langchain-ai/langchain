@@ -21,7 +21,7 @@ DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
 
 # Instantiate as constant instead of pytest fixture to prevent needing to make multiple
 # connections.
-TEST_CLIENT = MongoClient(CONNECTION_STRING)
+TEST_CLIENT: MongoClient = MongoClient(CONNECTION_STRING)
 collection = TEST_CLIENT[DB_NAME][COLLECTION_NAME]
 
 
