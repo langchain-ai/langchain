@@ -8,6 +8,7 @@ from langchain.tools.jira.prompt import (
     JIRA_GET_ALL_PROJECTS_PROMPT,
     JIRA_ISSUE_CREATE_PROMPT,
     JIRA_JQL_PROMPT,
+    JIRA_CONFLUENCE_PAGE_CREATE_PROMPT
 )
 from langchain.utils import get_from_dict_or_env
 
@@ -17,6 +18,7 @@ class JiraAPIWrapper(BaseModel):
     """Wrapper for Jira API."""
 
     jira: Any  #: :meta private:
+    confluence: Any
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
@@ -42,6 +44,11 @@ class JiraAPIWrapper(BaseModel):
             "name": "Catch all Jira API call",
             "description": JIRA_CATCH_ALL_PROMPT,
         },
+        {
+            "mode": "create_page",
+            "name": "Create confluence page",
+            "description": JIRA_CONFLUENCE_PAGE_CREATE_PROMPT
+        }
     ]
 
     class Config:
@@ -69,7 +76,7 @@ class JiraAPIWrapper(BaseModel):
         values["jira_instance_url"] = jira_instance_url
 
         try:
-            from atlassian import Jira
+            from atlassian import Jira, Confluence
         except ImportError:
             raise ImportError(
                 "atlassian-python-api is not installed. "
@@ -82,7 +89,16 @@ class JiraAPIWrapper(BaseModel):
             password=jira_api_token,
             cloud=True,
         )
+
+        confluence = Confluence(
+            url=jira_instance_url,
+            username=jira_username,
+            password=jira_api_token,
+            cloud=True,
+        )
+
         values["jira"] = jira
+        values["confluence"] = confluence
 
         return values
 
@@ -151,7 +167,7 @@ class JiraAPIWrapper(BaseModel):
         )
         return parsed_projects_str
 
-    def create(self, query: str) -> str:
+    def issue_create(self, query: str) -> str:
         try:
             import json
         except ImportError:
@@ -160,6 +176,16 @@ class JiraAPIWrapper(BaseModel):
             )
         params = json.loads(query)
         return self.jira.issue_create(fields=dict(params))
+
+    def page_create(self, query: str) -> str:
+        try:
+            import json
+        except ImportError:
+            raise ImportError(
+                "json is not installed. Please install it with `pip install json`"
+            )
+        params = json.loads(query)
+        return self.confluence.create_page(**dict(params))
 
     def other(self, query: str) -> str:
         context = {"self": self}
@@ -173,8 +199,10 @@ class JiraAPIWrapper(BaseModel):
         elif mode == "get_projects":
             return self.project()
         elif mode == "create_issue":
-            return self.create(query)
+            return self.issue_create(query)
         elif mode == "other":
             return self.other(query)
+        elif mode == "create_page":
+            return self.page_create(query)
         else:
             raise ValueError(f"Got unexpected mode {mode}")
