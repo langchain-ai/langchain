@@ -27,6 +27,8 @@ from langchain.chains.openai_functions import (
     create_citation_fuzzy_match_chain,
     create_extraction_chain,
     create_extraction_chain_pydantic,
+    create_qa_with_sources_chain,
+    create_qa_with_structure_chain,
     create_tagging_chain,
     create_tagging_chain_pydantic,
 )
@@ -95,4 +97,6 @@ __all__ = [
     "create_tagging_chain_pydantic",
     "load_chain",
     "create_citation_fuzzy_match_chain",
+    "create_qa_with_structure_chain",
+    "create_qa_with_sources_chain",
 ]
