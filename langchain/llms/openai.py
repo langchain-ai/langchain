@@ -550,6 +550,11 @@ class BaseOpenAI(BaseLLM):
 
         return context_size
 
+    @property
+    def max_context_size(self) -> int:
+        """Get max context size for this model."""
+        return self.modelname_to_contextsize(self.model_name)
+
     def max_tokens_for_prompt(self, prompt: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a prompt.
 
@@ -565,10 +570,7 @@ class BaseOpenAI(BaseLLM):
                 max_tokens = openai.max_token_for_prompt("Tell me a joke.")
         """
         num_tokens = self.get_num_tokens(prompt)
-
-        # get max context size for model by name
-        max_size = self.modelname_to_contextsize(self.model_name)
-        return max_size - num_tokens
+        return self.max_context_size - num_tokens
 
 
 class OpenAI(BaseOpenAI):
