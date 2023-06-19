@@ -273,7 +273,7 @@ class ConfluenceLoader(BaseLoader):
         docs = []
 
         expands = [content_format.value]
-        if not include_archived_content:
+        if not include_restricted_content:
             # expand restrictions for `self.is_public_page()`
             expands.append("restrictions.read.restrictions.user")
             expands.append("restrictions.read.restrictions.group")
