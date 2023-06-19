@@ -40,19 +40,22 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
 
     def get_snippets(self, query: str) -> List[str]:
         """Run query through DuckDuckGo and return concatenated results."""
-        from duckduckgo_search import ddg
+        from duckduckgo_search import DDGS
 
-        results = ddg(
-            query,
-            region=self.region,
-            safesearch=self.safesearch,
-            time=self.time,
-            max_results=self.max_results,
-        )
-        if results is None or len(results) == 0:
-            return ["No good DuckDuckGo Search Result was found"]
-        snippets = [result["body"] for result in results]
-        return snippets
+        with DDGS() as ddgs:
+            results = ddgs.text(
+                query,
+                region=self.region,
+                safesearch=self.safesearch,
+                timelimit=self.time
+            )
+            if results is None or next(results, None) is None:
+                return ["No good DuckDuckGo Search Result was found"]
+
+            for i, result in enumerate(results, 1):
+                yield result['body']
+                if i == self.max_results:
+                    return
 
     def run(self, query: str) -> str:
         snippets = self.get_snippets(query)
