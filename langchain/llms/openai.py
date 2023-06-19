@@ -20,7 +20,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Extra, Field, root_validator
+from pydantic import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -187,7 +187,6 @@ class BaseOpenAI(BaseLLM):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.ignore
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -500,7 +499,8 @@ class BaseOpenAI(BaseLLM):
             disallowed_special=self.disallowed_special,
         )
 
-    def modelname_to_contextsize(self, modelname: str) -> int:
+    @staticmethod
+    def modelname_to_contextsize(modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
 
         Args:
@@ -684,11 +684,6 @@ class OpenAIChat(BaseLLM):
     """Set of special tokens that are allowed。"""
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.ignore
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:

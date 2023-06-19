@@ -1,0 +1,17 @@
+---
+sidebar_position: 3
+---
+# Vector stores
+
+One of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding
+vectors, and then at query time to embed the unstructured query and retrieve the embedding vectors that are
+'most similar' to the embedded query. A vector store takes care of storing embedded data and performing vector search
+for you.
+
+## Get started
+
+This walkthrough showcases basic functionality related to VectorStores. A key part of working with vector stores is creating the vector to put in them, which is usually created via embeddings. Therefore, it is recommended that you familiarize yourself with the [text embedding model](/docs/modules/model_io/models/embeddings.html) interfaces before diving into this.
+
+import GetStarted from "@snippets/modules/data_connection/vectorstores/get_started.mdx"
+
+<GetStarted/>
