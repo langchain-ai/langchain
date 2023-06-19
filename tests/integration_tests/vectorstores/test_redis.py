@@ -38,6 +38,16 @@ def test_redis(texts: List[str]) -> None:
 
 def test_redis_new_vector(texts: List[str]) -> None:
     """Test adding a new document"""
+    ids = [str(i) for i in range(len(texts))]
+    docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
+    docsearch.add_texts(["foo"], ids=ids)
+    output = docsearch.similarity_search("foo", k=2)
+    assert output == TEST_RESULT
+    assert drop(docsearch.index_name)
+
+
+def test_redis_new_vector_with_static_ids(texts: List[str]) -> None:
+    """Test adding a new document"""
     docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)

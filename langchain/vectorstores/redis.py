@@ -75,9 +75,11 @@ def _check_index_exists(client: RedisType, index_name: str) -> bool:
     return True
 
 
-def _redis_key(prefix: str) -> str:
+def _redis_key(prefix: str, id: Optional[str] = None) -> str:
     """Redis key schema for a given prefix."""
-    return f"{prefix}:{uuid.uuid4().hex}"
+    if not id:
+        id = uuid.uuid4().hex
+    return f"{prefix}:{id}"
 
 
 def _redis_prefix(index_name: str) -> str:
@@ -189,6 +191,7 @@ class Redis(VectorStore):
         embeddings: Optional[List[List[float]]] = None,
         keys: Optional[List[str]] = None,
         batch_size: int = 1000,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Add more texts to the vectorstore.
@@ -206,6 +209,9 @@ class Redis(VectorStore):
         Returns:
             List[str]: List of ids added to the vectorstore
         """
+
+        assert not (keys and ids), "`ids` and `keys` cannot be provided at the same time."
+
         ids = []
         prefix = _redis_prefix(self.index_name)
 
@@ -213,7 +219,14 @@ class Redis(VectorStore):
         pipeline = self.client.pipeline(transaction=False)
         for i, text in enumerate(texts):
             # Use provided values by default or fallback
-            key = keys[i] if keys else _redis_key(prefix)
+            if keys:
+                key = keys[i]
+            else:
+                if ids:
+                    id = ids[i]
+                else:
+                    id = None
+                key = _redis_key(prefix, id=id)
             metadata = metadatas[i] if metadatas else {}
             embedding = embeddings[i] if embeddings else self.embedding_function(text)
             pipeline.hset(
