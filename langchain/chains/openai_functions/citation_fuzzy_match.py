@@ -12,7 +12,7 @@ from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplat
 from langchain.schema import HumanMessage, SystemMessage
 
 
-class Fact(BaseModel):
+class FactWithEvidence(BaseModel):
     """Class representing single statement.
 
     Each fact has a body and a list of sources.
@@ -52,7 +52,7 @@ class QuestionAnswer(BaseModel):
     each sentence contains a body and a list of sources."""
 
     question: str = Field(..., description="Question that was asked")
-    answer: List[Fact] = Field(
+    answer: List[FactWithEvidence] = Field(
         ...,
         description=(
             "Body of the answer, each fact should be "
