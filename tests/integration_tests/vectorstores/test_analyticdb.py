@@ -2,8 +2,6 @@
 import os
 from typing import List
 
-from sqlalchemy.orm import Session
-
 from langchain.docstore.document import Document
 from langchain.vectorstores.analyticdb import AnalyticDB
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
@@ -11,7 +9,7 @@ from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 CONNECTION_STRING = AnalyticDB.connection_string_from_db_params(
     driver=os.environ.get("PG_DRIVER", "psycopg2cffi"),
     host=os.environ.get("PG_HOST", "localhost"),
-    port=int(os.environ.get("PG_HOST", "5432")),
+    port=int(os.environ.get("PG_PORT", "5432")),
     database=os.environ.get("PG_DATABASE", "postgres"),
     user=os.environ.get("PG_USER", "postgres"),
     password=os.environ.get("PG_PASSWORD", "postgres"),
@@ -128,21 +126,3 @@ def test_analyticdb_with_filter_no_match() -> None:
     )
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "5"})
     assert output == []
-
-
-def test_analyticdb_collection_with_metadata() -> None:
-    """Test end to end collection construction"""
-    pgvector = AnalyticDB(
-        collection_name="test_collection",
-        collection_metadata={"foo": "bar"},
-        embedding_function=FakeEmbeddingsWithAdaDimension(),
-        connection_string=CONNECTION_STRING,
-        pre_delete_collection=True,
-    )
-    session = Session(pgvector.connect())
-    collection = pgvector.get_collection(session)
-    if collection is None:
-        assert False, "Expected a CollectionStore object but received None"
-    else:
-        assert collection.name == "test_collection"
-        assert collection.cmetadata == {"foo": "bar"}

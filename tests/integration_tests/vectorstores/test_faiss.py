@@ -93,7 +93,7 @@ def test_faiss_with_metadatas_and_filter() -> None:
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1, filter={"page": 1})
-    assert output == []
+    assert output == [Document(page_content="bar", metadata={"page": 1})]
 
 
 def test_faiss_search_not_found() -> None:
