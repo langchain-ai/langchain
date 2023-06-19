@@ -11,7 +11,7 @@ from langchain.output_parsers.regex import RegexParser
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseLLMOutputParser, DefaultOutputParser
+from langchain.schema import BaseLLMOutputParser, NoOpOutputParser
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
@@ -81,7 +81,7 @@ def _load_output_parser(config: dict) -> dict:
         if output_parser_type == "regex_parser":
             output_parser: BaseLLMOutputParser = RegexParser(**_config)
         elif output_parser_type == "default":
-            output_parser = DefaultOutputParser(**_config)
+            output_parser = NoOpOutputParser(**_config)
         else:
             raise ValueError(f"Unsupported output parser {output_parser_type}")
         config["output_parser"] = output_parser

@@ -403,7 +403,9 @@ class BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T]):
         return output_parser_dict
 
 
-class DefaultOutputParser(BaseOutputParser[str]):
+class NoOpOutputParser(BaseOutputParser[str]):
+    """Output parser that just returns the text as is."""
+
     @property
     def lc_serializable(self) -> bool:
         return True
