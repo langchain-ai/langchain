@@ -47,13 +47,13 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 query,
                 region=self.region,
                 safesearch=self.safesearch,
-                timelimit=self.time
+                timelimit=self.time,
             )
             if results is None or next(results, None) is None:
                 return ["No good DuckDuckGo Search Result was found"]
             snippets = []
             for i, res in enumerate(results, 1):
-                snippets.append(res['body'])
+                snippets.append(res["body"])
                 if i == self.max_results:
                     break
             return snippets
@@ -82,7 +82,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 query,
                 region=self.region,
                 safesearch=self.safesearch,
-                timelimit=self.time
+                timelimit=self.time,
             )
             if results is None or next(results, None) is None:
                 return [{"Result": "No good DuckDuckGo Search Result was found"}]
