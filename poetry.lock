@@ -572,19 +572,19 @@ test = ["coverage (>=5,<6)", "pytest (>=6,<7)"]
 
 [[package]]
 name = "awadb"
-version = "0.3.2"
+version = "0.3.3"
 description = "The AI Native database for embedding vectors"
 category = "main"
 optional = true
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "awadb-0.3.2-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:f3ce3b066198782fa413f452c56001c58ebec71a1e1dca0eee68f73321ba15a9"},
-    {file = "awadb-0.3.2-cp311-cp311-macosx_10_13_universal2.whl", hash = "sha256:c96b5e263c32b2563b1fa027035bdcf50540808ad303071cc1aed3471c3c39b7"},
-    {file = "awadb-0.3.2-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:3e43b5a74753261857d0b146543a4620e00938833181259f138f07457fa84812"},
-    {file = "awadb-0.3.2-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:6330b4d18a814c1562113b3b7897db629c2ac9b5818236ead0fc5f3445b6b7fb"},
-    {file = "awadb-0.3.2-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:82b4e61cc905339868a9f833d0988098f56411b42e0f8dd571aec7c8d6a3f1fa"},
-    {file = "awadb-0.3.2-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:5efaa93d69c467f16ec4f65ed250ec26015781826c0d059c8a54613a5d3e2c3e"},
-    {file = "awadb-0.3.2-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:7be0811550d72f49018e4790d290cf521f92ffa84d65ef1073e621f225d142ec"},
+    {file = "awadb-0.3.3-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:daebc108103c8cace41dfb3235fcfdda28ea48e6cd6548b6072f7ad49b64274b"},
+    {file = "awadb-0.3.3-cp311-cp311-macosx_10_13_universal2.whl", hash = "sha256:2bb3ca2f943448060b1bba4395dd99e2218d7f2149507a8fdfa7a3fd4cfe97ec"},
+    {file = "awadb-0.3.3-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:7b99662af9f7b58e217661a70c295e40605900552bec6d8e9553d90dbf19c5c1"},
+    {file = "awadb-0.3.3-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:94be44e587f28fa26b2cade0b6f4c04689f50cb0c07183db5ee50e48fe2e9ae3"},
+    {file = "awadb-0.3.3-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:314929dc3a8d25c0f234a2b86c920543050f4eb298a6f68bd2c97c9fe3fb6224"},
+    {file = "awadb-0.3.3-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:8bfccff1c7373899153427d93d96a97ae5371e8a6f09ff4dcbd28fb9f3f63ff4"},
+    {file = "awadb-0.3.3-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:810021a90b873f668d8ab63e2c2747b2b2835bf0ae25f4223b6c94f06faffea4"},
 ]
 
 [package.extras]
@@ -1762,13 +1762,13 @@ files = [
 
 [[package]]
 name = "deeplake"
-version = "3.6.1"
+version = "3.6.4"
 description = "Activeloop Deep Lake"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "deeplake-3.6.1.tar.gz", hash = "sha256:78b0280e3e21c6731a96a9a2519a24e767df708c309e934ab473dfbc17b13581"},
+    {file = "deeplake-3.6.4.tar.gz", hash = "sha256:cd31e772e00012a0cfdcd9d2cfe0e7fa3eaea1de122e98ae4f54e15d2722b94f"},
 ]
 
 [package.dependencies]
@@ -1785,12 +1785,12 @@ pyjwt = "*"
 tqdm = "*"
 
 [package.extras]
-all = ["IPython", "av (>=8.1.0)", "azure-cli", "azure-identity", "azure-storage-blob", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.56)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
+all = ["IPython", "av (>=8.1.0)", "azure-cli", "azure-identity", "azure-storage-blob", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.59)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
 audio = ["av (>=8.1.0)"]
 av = ["av (>=8.1.0)"]
 azure = ["azure-cli", "azure-identity", "azure-storage-blob"]
 dicom = ["nibabel", "pydicom"]
-enterprise = ["libdeeplake (==0.0.56)", "pyjwt"]
+enterprise = ["libdeeplake (==0.0.59)", "pyjwt"]
 gcp = ["google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)"]
 gdrive = ["google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "oauth2client (>=4.1.3,<4.2.0)"]
 medical = ["nibabel", "pydicom"]
@@ -11486,4 +11486,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b4a782d8223ccc19b2dfb777978c3ad636b11a79cc58a5c45e4dcdb0fe5e29c1"
+content-hash = "71afe34849d7dc7189fe79e795b12a48d5e185ea2146880ba80fc6770b6e6272"
