@@ -108,6 +108,7 @@ nebula3-python = {version = "^3.4.0", optional = true}
 langchainplus-sdk = ">=0.0.9"
 awadb = {version = "^0.3.3", optional = true}
 azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
+esprima = {version = "^4.0.1", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -218,6 +219,7 @@ text_helpers = ["chardet"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
+javascript = ["esprima"]
 azure = [
     "azure-identity",
     "azure-cosmos",
@@ -298,6 +300,7 @@ all = [
     "tigrisdb",
     "nebula3-python",
     "awadb",
+    "esprima",
 ]
 
 # An extra used to be able to add extended testing.
