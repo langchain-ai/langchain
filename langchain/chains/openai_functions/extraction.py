@@ -2,9 +2,9 @@ from typing import Any, List
 
 from pydantic import BaseModel
 
-from langchain.chains.llm import LLMChain
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
+from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import (
     _convert_schema,
     _resolve_schema_references,
