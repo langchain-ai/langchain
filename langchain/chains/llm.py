@@ -205,7 +205,7 @@ class LLMChain(Chain):
     def _run_output_key(self) -> str:
         return self.output_key
 
-    def create_outputs(self, response: LLMResult) -> List[Dict[str, Any]]:
+    def create_outputs(self, llm_result: LLMResult) -> List[Dict[str, Any]]:
         """Create outputs from response."""
         result = [
             # Get the text of the top generated string.
