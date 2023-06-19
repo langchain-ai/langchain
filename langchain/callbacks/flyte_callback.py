@@ -17,8 +17,8 @@ def import_flytekit():
         import flytekit  # noqa: F401
     except ImportError:
         raise ImportError(
-            "To use the flyte callback manager you need to have the `flytekit`"
-            "package installed. Please install it with `pip install flytekit`"
+            "To use the flyte callback manager you need to have the `flytekit` and"
+            "`flytekitplugins-deck-standard` packages installed. Please install it with `pip install flytekit`"
         )
 
 
@@ -200,9 +200,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
         self.deck(
             "LLM End",
-            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
-            + "\n"
-            + self.table_renderer().to_html(
+            # self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
+            # + "\n"
+            self.table_renderer().to_html(
                 self.pandas.DataFrame.from_records(all_complexity_metrics)
             ),
         )
