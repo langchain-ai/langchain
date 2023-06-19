@@ -102,7 +102,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
                         text_col=pd.Series(generation.text.replace("\n", " "))
                     ).reset_index(drop=True)
                 )
-                pred_id = str(uuid.uuid4())
+                str(uuid.uuid4())
                 pred_timestamp = datetime.now().timestamp()
 
                 # Define the columns and data
@@ -161,10 +161,10 @@ class ArizeCallbackHandler(BaseCallbackHandler):
                     environment=Environments.PRODUCTION,
                 )
                 if response_from_arize.status_code == 200:
-                    print(f"✅ Successfully logged data to Arize!")
+                    print("✅ Successfully logged data to Arize!")
                 else:
                     print(
-                        f'❌ Logging failed with status code {response_from_arize.status_code} and message "{response_from_arize.text}"'
+                        f'❌ Logging failed "{response_from_arize.text}"'
                     )
 
                 i = i + 1
