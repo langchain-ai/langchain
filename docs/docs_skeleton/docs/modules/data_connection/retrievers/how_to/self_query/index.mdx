@@ -1,0 +1,9 @@
+# Self-querying
+
+A self-querying retriever is one that, as the name suggests, has the ability to query itself. Specifically, given any natural language query, the retriever uses a query-constructing LLM chain to write a structured query and then applies that structured query to it's underlying VectorStore. This allows the retriever to not only use the user-input query for semantic similarity comparison with the contents of stored documented, but to also extract filters from the user query on the metadata of stored documents and to execute those filters.
+
+![](https://drive.google.com/uc?id=1OQUN-0MJcDUxmPXofgS7MqReEs720pqS)
+
+import Example from "@snippets/modules/data_connection/retrievers/self_query/get_started.mdx"
+
+<Example/>
