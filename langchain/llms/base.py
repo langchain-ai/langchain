@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import yaml
-from pydantic import Extra, Field, root_validator, validator
+from pydantic import Field, root_validator, validator
 
 import langchain
 from langchain.base_language import BaseLanguageModel
@@ -79,11 +79,12 @@ class BaseLLM(BaseLanguageModel, ABC):
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    tags: Optional[List[str]] = Field(default=None, exclude=True)
+    """Tags to add to the run trace."""
 
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     @root_validator()
@@ -155,6 +156,8 @@ class BaseLLM(BaseLanguageModel, ABC):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
+        *,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
@@ -176,7 +179,7 @@ class BaseLLM(BaseLanguageModel, ABC):
         ) = get_prompts(params, prompts)
         disregard_cache = self.cache is not None and not self.cache
         callback_manager = CallbackManager.configure(
-            callbacks, self.callbacks, self.verbose
+            callbacks, self.callbacks, self.verbose, tags, self.tags
         )
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
@@ -241,6 +244,8 @@ class BaseLLM(BaseLanguageModel, ABC):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
+        *,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
@@ -255,7 +260,7 @@ class BaseLLM(BaseLanguageModel, ABC):
         ) = get_prompts(params, prompts)
         disregard_cache = self.cache is not None and not self.cache
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, self.callbacks, self.verbose
+            callbacks, self.callbacks, self.verbose, tags, self.tags
         )
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"

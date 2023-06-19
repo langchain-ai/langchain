@@ -1029,22 +1029,18 @@ graph = ["gremlinpython (==3.4.6)"]
 
 [[package]]
 name = "cassio"
-version = "0.0.4"
-description = ""
-optional = false
+version = "0.0.5"
+description = "A framework-agnostic Python library to seamlessly integrate Apache Cassandra with ML/LLM/genAI workloads."
+optional = true
 python-versions = ">=3.8"
-files = []
-develop = false
+files = [
+    {file = "cassio-0.0.5-py3-none-any.whl", hash = "sha256:9538db4a04ab2f0769df7873adbbf07b5dc92a86ddb6b987c9d0e100b5e77172"},
+    {file = "cassio-0.0.5.tar.gz", hash = "sha256:bcc489f6c7521b3b93267d30dcff829a119d347e1ec79fb7a1871e308f2f7dc2"},
+]
 
 [package.dependencies]
 cassandra-driver = ">=3.28.0"
 numpy = ">=1.0"
-
-[package.source]
-type = "git"
-url = "https://github.com/cassioml/cassio.git"
-reference = "HEAD"
-resolved_reference = "b705a0286102216a62f7c9857ab6c2f637735d8d"
 
 [[package]]
 name = "catalogue"
@@ -6053,7 +6049,7 @@ ptyprocess = ">=0.5"
 name = "pgvector"
 version = "0.1.8"
 description = "pgvector support for Python"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "pgvector-0.1.8-py2.py3-none-any.whl", hash = "sha256:99dce3a6580ef73863edb9b8441937671f4e1a09383826e6b0838176cd441a96"},
@@ -6209,13 +6205,13 @@ files = [
 
 [[package]]
 name = "platformdirs"
-version = "3.5.3"
+version = "3.6.0"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "platformdirs-3.5.3-py3-none-any.whl", hash = "sha256:0ade98a4895e87dc51d47151f7d2ec290365a585151d97b4d8d6312ed6132fed"},
-    {file = "platformdirs-3.5.3.tar.gz", hash = "sha256:e48fabd87db8f3a7df7150a4a5ea22c546ee8bc39bc2473244730d4b56d2cc4e"},
+    {file = "platformdirs-3.6.0-py3-none-any.whl", hash = "sha256:ffa199e3fbab8365778c4a10e1fbf1b9cd50707de826eb304b50e57ec0cc8d38"},
+    {file = "platformdirs-3.6.0.tar.gz", hash = "sha256:57e28820ca8094678b807ff529196506d7a21e17156cb1cddb3e74cebce54640"},
 ]
 
 [package.extras]
@@ -10874,7 +10870,7 @@ azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "chardet", "gql", "html2text", "jq", "lxml", "openai", "pandas", "pdfminer-six", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "requests-toolbelt", "scikit-learn", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "gql", "html2text", "jq", "lxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "requests-toolbelt", "scikit-learn", "telethon", "tqdm", "zep-python"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
 qdrant = ["qdrant-client"]
@@ -10883,4 +10879,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "7c23bb087798b6cc460d97da0c686b65919245e157c5c33f583719d56592127d"
+content-hash = "ff0d16512cedf6f7e5c21bace0ca694e88a4571301defa45889ce84ee416dde0"
