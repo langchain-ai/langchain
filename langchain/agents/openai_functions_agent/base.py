@@ -236,12 +236,15 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
+        system_message: Optional[SystemMessage] = SystemMessage(
+            content="You are a helpful AI assistant."
+        ),
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools."""
         if not isinstance(llm, ChatOpenAI):
             raise ValueError("Only supported with OpenAI models.")
-        prompt = cls.create_prompt()
+        prompt = cls.create_prompt(system_message=system_message)
         return cls(
             llm=llm,
             prompt=prompt,
