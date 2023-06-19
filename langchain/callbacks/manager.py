@@ -224,9 +224,12 @@ async def _ahandle_event_for_handler(
             if asyncio.iscoroutinefunction(event):
                 await event(*args, **kwargs)
             else:
-                await asyncio.get_event_loop().run_in_executor(
-                    None, functools.partial(event, *args, **kwargs)
-                )
+                if handler.run_inline:
+                    event(*args, **kwargs)
+                else:
+                    await asyncio.get_event_loop().run_in_executor(
+                        None, functools.partial(event, *args, **kwargs)
+                    )
     except NotImplementedError as e:
         if event_name == "on_chat_model_start":
             message_strings = [get_buffer_string(m) for m in args[1]]
