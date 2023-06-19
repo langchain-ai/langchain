@@ -1,6 +1,5 @@
 from typing import Iterator, List
 
-import regex
 from pydantic import BaseModel, Field
 
 from langchain.base_language import BaseLanguageModel
@@ -30,6 +29,8 @@ class FactWithEvidence(BaseModel):
     )
 
     def _get_span(self, quote: str, context: str, errs: int = 100) -> Iterator[str]:
+        import regex
+
         minor = quote
         major = context
 
