@@ -2,8 +2,6 @@
 import uuid
 from typing import Any, Dict, List, Optional, Union
 
-import pandas as pd
-
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
@@ -77,6 +75,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Log data to Arize when an LLM ends."""
 
+        import pandas as pd
         from arize.utils.types import Embedding, Environments, ModelTypes
 
         # Record token usage of the LLM
