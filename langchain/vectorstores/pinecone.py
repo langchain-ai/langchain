@@ -113,28 +113,9 @@ class Pinecone(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        if namespace is None:
-            namespace = self._namespace
-        query_obj = self._embedding_function(query)
-        docs = []
-        results = self._index.query(
-            [query_obj],
-            top_k=k,
-            include_metadata=True,
-            namespace=namespace,
-            filter=filter,
+        return self.similarity_search_by_vector_with_relevance_scores(
+            [self._embedding_function(query)], k, filter, namespace
         )
-        for res in results["matches"]:
-            metadata = res["metadata"]
-            if self._text_key in metadata:
-                text = metadata.pop(self._text_key)
-                score = res["score"]
-                docs.append((Document(page_content=text, metadata=metadata), score))
-            else:
-                logger.warning(
-                    f"Found document with no `{self._text_key}` key. Skipping."
-                )
-        return docs
     
     def similarity_search_by_vector_with_relevance_scores(
         self,
