@@ -1,16 +1,14 @@
-# Import the necessary packages for ingestion
-import uuid
 from typing import Any, Dict, List, Optional, Union
-
+import uuid
 from langchain.callbacks.base import BaseCallbackHandler
+from langchain.callbacks.utils import (
+    BaseMetadataCallbackHandler,
+    import_pandas,
+)
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
-from arize.pandas.logger import Client
-from arize.utils.types import ModelTypes, Environments, Schema, Metrics
-from arize.utils.types import Environments, ModelTypes, EmbeddingColumnNames, Schema
-from arize.utils.types import ModelTypes, Environments, Schema, Metrics
-from arize.utils.types import EmbeddingColumnNames, Embedding
-from arize.pandas.embeddings import EmbeddingGenerator, UseCases
+from datetime import datetime
+
 
 class ArizeCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs to Arize."""
@@ -23,7 +21,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
         API_KEY: Optional[str] = None,
     ) -> None:
         """Initialize callback handler."""
-
+        
         super().__init__()
         self.model_id = model_id
         self.model_version = model_version
@@ -38,8 +36,12 @@ class ArizeCallbackHandler(BaseCallbackHandler):
         self.prompt_tokens = 0 
         self.completion_tokens = 0 
         self.total_tokens = 0
+
+        from arize.pandas.logger import Client
+        from arize.pandas.embeddings import EmbeddingGenerator, UseCases
+
+
         self.generator = EmbeddingGenerator.from_use_case(use_case=UseCases.NLP.SEQUENCE_CLASSIFICATION,model_name="distilbert-base-uncased",tokenizer_max_length=512,batch_size=256)
-        
         self.arize_client = Client(space_key=SPACE_KEY, api_key=API_KEY)
         if SPACE_KEY == "SPACE_KEY" or API_KEY == "API_KEY": raise ValueError("❌ CHANGE SPACE AND API KEYS")
         else: print("✅ Arize client setup done! Now you can start using Arize!")
@@ -55,6 +57,9 @@ class ArizeCallbackHandler(BaseCallbackHandler):
         pass
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+
+        pd = import_pandas()
+        from arize.utils.types import EmbeddingColumnNames, Environments, ModelTypes, Schema
 
         # Safe check if 'llm_output' and 'token_usage' exist
         if response.llm_output and 'token_usage' in response.llm_output:
