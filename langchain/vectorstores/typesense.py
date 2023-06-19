@@ -145,7 +145,8 @@ class Typesense(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 10. Minimum 10 results would be returned.
+            k: Number of Documents to return. Defaults to 10.
+                Minimum 10 results would be returned.
             filter: typesense filter_by expression to filter documents on
 
         Returns:
@@ -181,7 +182,8 @@ class Typesense(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 10. Minimum 10 results would be returned.
+            k: Number of Documents to return. Defaults to 10.
+                Minimum 10 results would be returned.
             filter: typesense filter_by expression to filter documents on
 
         Returns:
