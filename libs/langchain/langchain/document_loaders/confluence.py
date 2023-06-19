@@ -418,7 +418,7 @@ class ConfluenceLoader(BaseLoader):
 
     def is_public_page(self, page: dict) -> bool:
         """Check if a page is publicly accessible."""
-        restrictions = page['restrictions']
+        restrictions = page["restrictions"]
 
         return (
             page["status"] == "current"

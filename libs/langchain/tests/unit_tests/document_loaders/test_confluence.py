@@ -111,7 +111,7 @@ class TestConfluenceLoader:
         documents = confluence_loader.load(page_ids=mock_page_ids)
 
         assert mock_confluence.get_page_by_id.call_count == 2
-        assert mock_confluence.get_all_restrictions_for_content.call_count == 2
+        assert mock_confluence.get_all_restrictions_for_content.call_count == 0
 
         assert len(documents) == 2
         assert all(isinstance(doc, Document) for doc in documents)
@@ -214,6 +214,7 @@ class TestConfluenceLoader:
                 "editui": f"/pages/resumedraft.action?draftId={page_id}",
                 "webui": f"/spaces/{self.MOCK_SPACE_KEY}/overview",
             },
+            "restrictions": self._get_mock_page_restrictions(page_id),
         }
 
     def _get_mock_page_restrictions(self, page_id: str) -> Dict:
