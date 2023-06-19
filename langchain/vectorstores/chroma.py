@@ -109,7 +109,7 @@ class Chroma(VectorStore):
     ) -> List[Document]:
         """Query the chroma collection."""
         try:
-            import chromadb
+            import chromadb  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import chromadb python package. "
