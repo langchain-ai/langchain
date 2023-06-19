@@ -6,6 +6,7 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import import_pandas
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
+
 class ArizeCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs to Arize."""
 
@@ -60,8 +61,12 @@ class ArizeCallbackHandler(BaseCallbackHandler):
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         pd = import_pandas()
-        from arize.utils.types import (EmbeddingColumnNames, Environments,
-                                       ModelTypes, Schema)
+        from arize.utils.types import (
+            EmbeddingColumnNames,
+            Environments,
+            ModelTypes,
+            Schema,
+        )
 
         # Safe check if 'llm_output' and 'token_usage' exist
         if response.llm_output and "token_usage" in response.llm_output:
