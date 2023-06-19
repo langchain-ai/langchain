@@ -104,6 +104,14 @@ class StarRocks(VectorStore):
 
     You need a `pymysql` python package, and a valid account
     to connect to StarRocks.
+
+    Right now StarRocks has only implemented `cosine_similarity` function to
+    compute distance between two vectors. And there is no vector inside right now,
+    so we have to iterate all vectors and compute spatial distance.
+
+    For more information, please visit
+        [StarRocks official site](https://www.starrocks.io/)
+        [StarRocks github](https://github.com/StarRocks/starrocks)
     """
 
     def __init__(
