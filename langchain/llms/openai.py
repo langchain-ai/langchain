@@ -20,7 +20,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Extra, Field, root_validator
+from pydantic import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -187,7 +187,6 @@ class BaseOpenAI(BaseLLM):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.ignore
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -551,6 +550,11 @@ class BaseOpenAI(BaseLLM):
 
         return context_size
 
+    @property
+    def max_context_size(self) -> int:
+        """Get max context size for this model."""
+        return self.modelname_to_contextsize(self.model_name)
+
     def max_tokens_for_prompt(self, prompt: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a prompt.
 
@@ -566,10 +570,7 @@ class BaseOpenAI(BaseLLM):
                 max_tokens = openai.max_token_for_prompt("Tell me a joke.")
         """
         num_tokens = self.get_num_tokens(prompt)
-
-        # get max context size for model by name
-        max_size = self.modelname_to_contextsize(self.model_name)
-        return max_size - num_tokens
+        return self.max_context_size - num_tokens
 
 
 class OpenAI(BaseOpenAI):
@@ -685,11 +686,6 @@ class OpenAIChat(BaseLLM):
     """Set of special tokens that are allowed。"""
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.ignore
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:

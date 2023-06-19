@@ -23,7 +23,7 @@ class AlephAlpha(LLM):
         .. code-block:: python
 
             from langchain.llms import AlephAlpha
-            alpeh_alpha = AlephAlpha(aleph_alpha_api_key="my-api-key")
+            aleph_alpha = AlephAlpha(aleph_alpha_api_key="my-api-key")
     """
 
     client: Any  #: :meta private:
@@ -199,7 +199,7 @@ class AlephAlpha(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "alpeh_alpha"
+        return "aleph_alpha"
 
     def _call(
         self,
@@ -220,7 +220,7 @@ class AlephAlpha(LLM):
         Example:
             .. code-block:: python
 
-                response = alpeh_alpha("Tell me a joke.")
+                response = aleph_alpha("Tell me a joke.")
         """
         from aleph_alpha_client import CompletionRequest, Prompt
 
