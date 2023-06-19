@@ -247,6 +247,15 @@ class Chain(Serializable, ABC):
         """Call the chain on all inputs in the list."""
         return [self(inputs, callbacks=callbacks) for inputs in input_list]
 
+    @property
+    def _run_output_key(self) -> str:
+        if len(self.output_keys) != 1:
+            raise ValueError(
+                f"`run` not supported when there is not exactly "
+                f"one output key. Got {self.output_keys}."
+            )
+        return self.output_keys[0]
+
     def run(
         self,
         *args: Any,
@@ -255,19 +264,16 @@ class Chain(Serializable, ABC):
         **kwargs: Any,
     ) -> str:
         """Run the chain as text in, text out or multiple variables, text out."""
-        if len(self.output_keys) != 1:
-            raise ValueError(
-                f"`run` not supported when there is not exactly "
-                f"one output key. Got {self.output_keys}."
-            )
+        # Run at start to make sure this is possible/defined
+        _output_key = self._run_output_key
 
         if args and not kwargs:
             if len(args) != 1:
                 raise ValueError("`run` supports only one positional argument.")
-            return self(args[0], callbacks=callbacks, tags=tags)[self.output_keys[0]]
+            return self(args[0], callbacks=callbacks, tags=tags)[_output_key]
 
         if kwargs and not args:
-            return self(kwargs, callbacks=callbacks, tags=tags)[self.output_keys[0]]
+            return self(kwargs, callbacks=callbacks, tags=tags)[_output_key]
 
         if not kwargs and not args:
             raise ValueError(
