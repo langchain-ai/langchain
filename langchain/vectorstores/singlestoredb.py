@@ -290,6 +290,17 @@ class SingleStoreDB(VectorStore):
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
+
+        Examples:
+            .. code-block:: python
+                from langchain.vectorstores import SingleStoreDB
+                from langchain.embeddings import OpenAIEmbeddings
+                s2 = SingleStoreDB.from_documents(
+                    docs,
+                    OpenAIEmbeddings(),
+                    host="username:password@localhost:3306/database"
+                )
+                s2.similarity_search("query text", 1, {"metadata_field": "metadata_value"})
         """
         docs_and_scores = self.similarity_search_with_score(query=query, k=k, filter=filter)
         return [doc for doc, _ in docs_and_scores]
