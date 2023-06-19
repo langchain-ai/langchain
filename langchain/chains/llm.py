@@ -57,6 +57,7 @@ class LLMChain(Chain):
     return_final_only: bool = True
     """Whether to return only the final parsed result. Defaults to True.
     If false, will return a bunch of extra information about the generation."""
+    llm_kwargs: dict = Field(default_factory=dict)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -99,7 +100,10 @@ class LLMChain(Chain):
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list, run_manager=run_manager)
         return self.llm.generate_prompt(
-            prompts, stop, callbacks=run_manager.get_child() if run_manager else None
+            prompts,
+            stop,
+            callbacks=run_manager.get_child() if run_manager else None,
+            **self.llm_kwargs,
         )
 
     async def agenerate(
@@ -110,7 +114,10 @@ class LLMChain(Chain):
         """Generate LLM result from inputs."""
         prompts, stop = await self.aprep_prompts(input_list, run_manager=run_manager)
         return await self.llm.agenerate_prompt(
-            prompts, stop, callbacks=run_manager.get_child() if run_manager else None
+            prompts,
+            stop,
+            callbacks=run_manager.get_child() if run_manager else None,
+            **self.llm_kwargs,
         )
 
     def prep_prompts(
@@ -213,7 +220,7 @@ class LLMChain(Chain):
                 self.output_key: self.output_parser.parse_result(generation),
                 "full_generation": generation,
             }
-            for generation in response.generations
+            for generation in llm_result.generations
         ]
         if self.return_final_only:
             result = [{self.output_key: r[self.output_key]} for r in result]
