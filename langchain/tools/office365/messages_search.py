@@ -66,7 +66,7 @@ class O365SearchEmails(O365BaseTool):
     def _run(
             self,
             query: str,
-            folder: str = None,
+            folder: str = "",
             max_results: int = 10,
             truncate: bool = True,
             run_manager: Optional[CallbackManagerForToolRun] = None,
@@ -76,7 +76,7 @@ class O365SearchEmails(O365BaseTool):
         mailbox = self.account.mailbox()
 
         # Pull the folder if the user wants to search in a folder
-        if folder is not None:
+        if folder is not "":
             mailbox = mailbox.get_folder(folder_name=folder)
     
 

@@ -27,7 +27,7 @@ def clean_body(body: str) -> str:
     except ImportError:
         return str(body)
 
-def authenticate():
+def authenticate() -> Account:
     """Authenticate using the Microsoft Grah API"""
     
     if "CLIENT_ID" in os.environ and "CLIENT_SECRET" in os.environ:

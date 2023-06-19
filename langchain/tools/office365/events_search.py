@@ -85,12 +85,12 @@ class O365SearchEvents(O365BaseTool):
         calendar = schedule.get_default_calendar()
 
         # Process the date range parameters
-        start_datetime = dt.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S%z")
-        end_datetime = dt.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S%z")
+        start_datetime_query = dt.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S%z")
+        end_datetime_query = dt.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S%z")
 
         # Run the query
-        q = calendar.new_query('start').greater_equal(start_datetime)
-        q.chain('and').on_attribute('end').less_equal(end_datetime)
+        q = calendar.new_query('start').greater_equal(start_datetime_query)
+        q.chain('and').on_attribute('end').less_equal(end_datetime_query)
         events = calendar.get_events(query=q, include_recurring=True, limit=max_results)
 
         # Generate output dict
@@ -107,7 +107,7 @@ class O365SearchEvents(O365BaseTool):
                 output_event["body"] = clean_body(event.body)
 
             # Get the time zone from the search parameters
-            time_zone = start_datetime.tzinfo
+            time_zone = start_datetime_query.tzinfo
             # Assign the datetimes in the search time zone
             output_event["start_datetime"] = event.start.astimezone(time_zone).strftime("%Y-%m-%dT%H:%M:%S%z")
             output_event["end_datetime"] = event.end.astimezone(time_zone).strftime("%Y-%m-%dT%H:%M:%S%z")
