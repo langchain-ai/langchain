@@ -5,7 +5,7 @@ from pathlib import Path
 from string import Formatter
 from typing import Any, Dict, List, Union
 
-from pydantic import Extra, root_validator
+from pydantic import root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
@@ -47,11 +47,6 @@ class PromptTemplate(StringPromptTemplate):
     def _prompt_type(self) -> str:
         """Return the prompt type key."""
         return "prompt"
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.
