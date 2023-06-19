@@ -30,6 +30,7 @@ from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
+from langchain.vectorstores.starrocks import StarRocks
 
 __all__ = [
     "AnalyticDB",
@@ -58,6 +59,7 @@ __all__ = [
     "Redis",
     "SKLearnVectorStore",
     "SingleStoreDB",
+    "StarRocks",
     "SupabaseVectorStore",
     "Tair",
     "Tigris",
