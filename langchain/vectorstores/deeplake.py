@@ -8,6 +8,7 @@ import numpy as np
 
 try:
     import deeplake
+    from deeplake.core.fast_forwarding import version_compare
     from deeplake.core.vectorstore import DeepLakeVectorStore
 
     _DEEPLAKE_INSTALLED = True
@@ -124,11 +125,11 @@ class DeepLake(VectorStore):
                 "Please install it with `pip install deeplake`."
             )
 
-        version = deeplake.__version__
-        if version != "3.6.2":
+        if version_compare(deeplake.__version__, "3.6.2") == -1:
             raise ValueError(
-                "deeplake version should be = 3.6.3, but you've installed"
-                f" {version}. Consider changing deeplake version to 3.6.3 ."
+                "deeplake version should be >= 3.6.3, but you've installed"
+                f" {deeplake.__version__}. Consider upgrading deeplake version \
+                    pip install --upgrade deeplake."
             )
         self.dataset_path = dataset_path
 
@@ -303,7 +304,10 @@ class DeepLake(VectorStore):
             )
 
         if embedding_function:
-            _embedding_function = embedding_function
+            if isinstance(embedding_function, Embeddings):
+                _embedding_function = embedding_function.embed_query
+            else:
+                _embedding_function = embedding_function
         elif self._embedding_function:
             _embedding_function = self._embedding_function.embed_query
         else:
