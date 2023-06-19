@@ -1,16 +1,9 @@
-from typing import Any, Dict, List, Optional, Union
+# Import the necessary packages for ingestion
 import uuid
+from typing import Any, Dict, List, Optional, Union
+
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
-import pandas as pd
-from datetime import datetime
-
-from arize.pandas.logger import Client
-from arize.utils.types import ModelTypes, Environments, Schema, Metrics
-from arize.utils.types import Environments, ModelTypes, EmbeddingColumnNames, Schema
-from arize.utils.types import ModelTypes, Environments, Schema, Metrics
-from arize.utils.types import EmbeddingColumnNames, Embedding
-from arize.pandas.embeddings import EmbeddingGenerator, UseCases 
 
 class ArizeCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs to Arize."""
