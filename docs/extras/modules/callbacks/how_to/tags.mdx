@@ -1,0 +1,3 @@
+# Tags
+
+You can add tags to your callbacks by passing a `tags` argument to the `call()`/`run()`/`apply()` methods. This is useful for filtering your logs, eg. if you want to log all requests made to a specific LLMChain, you can add a tag, and then filter your logs by that tag. You can pass tags to both constructor and request callbacks, see the examples above for details. These tags are then passed to the `tags` argument of the "start" callback methods, ie. `on_llm_start`, `on_chat_model_start`, `on_chain_start`, `on_tool_start`.
