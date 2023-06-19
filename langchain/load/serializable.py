@@ -92,7 +92,6 @@ class Serializable(BaseModel, ABC):
         # as these secrets may be passed as an environment variable instead
         for key in secrets.keys():
             secret_value = getattr(self, key, None) or lc_kwargs.get(key)
-            print("SECRET", {key: secret_value})
             if secret_value is not None:
                 lc_kwargs.update({key: secret_value})
 
