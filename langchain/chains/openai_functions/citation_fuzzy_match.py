@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
+from langchain.chains.openai_functions.utils import get_llm_kwargs
 from langchain.output_parsers.openai_functions import (
     PydanticOutputFunctionsParser,
 )
@@ -65,14 +66,12 @@ class QuestionAnswer(BaseModel):
 def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
     output_parser = PydanticOutputFunctionsParser(pydantic_schema=QuestionAnswer)
     schema = QuestionAnswer.schema()
-    functions = [
-        {
-            "name": schema["title"],
-            "description": schema["description"],
-            "parameters": schema,
-        }
-    ]
-    kwargs = {"function_call": {"name": schema["title"]}}
+    function = {
+        "name": schema["title"],
+        "description": schema["description"],
+        "parameters": schema,
+    }
+    llm_kwargs = get_llm_kwargs(function)
     messages = [
         SystemMessage(
             content=(
@@ -95,7 +94,7 @@ def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
     chain = LLMChain(
         llm=llm,
         prompt=prompt,
-        llm_kwargs={**{"functions": functions}, **kwargs},
+        llm_kwargs=llm_kwargs,
         output_parser=output_parser,
     )
     return chain

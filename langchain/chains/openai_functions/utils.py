@@ -26,3 +26,7 @@ def _convert_schema(schema: dict) -> dict:
         "properties": props,
         "required": schema.get("required", []),
     }
+
+
+def get_llm_kwargs(function: dict) -> dict:
+    return {"functions": [function], "function_call": {"name": function["name"]}}

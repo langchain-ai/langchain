@@ -1,27 +1,22 @@
-from typing import Any, List
+from typing import Any
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.chains.openai_functions.utils import _convert_schema
+from langchain.chains.openai_functions.utils import _convert_schema, get_llm_kwargs
 from langchain.output_parsers.openai_functions import (
     JsonOutputFunctionsParser,
     PydanticOutputFunctionsParser,
 )
 from langchain.prompts import ChatPromptTemplate
 
-EXTRACTION_NAME = "information_extraction"
-EXTRACTION_KWARGS = {"function_call": {"name": "information_extraction"}}
 
-
-def _get_tagging_functions(schema: dict) -> List[dict]:
-    return [
-        {
-            "name": EXTRACTION_NAME,
-            "description": "Extracts the relevant information from the passage.",
-            "parameters": _convert_schema(schema),
-        }
-    ]
+def _get_tagging_function(schema: dict) -> dict:
+    return {
+        "name": "information_extraction",
+        "description": "Extracts the relevant information from the passage.",
+        "parameters": _convert_schema(schema),
+    }
 
 
 _TAGGING_TEMPLATE = """Extract the desired information from the following passage.
@@ -32,13 +27,14 @@ Passage:
 
 
 def create_tagging_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
-    functions = _get_tagging_functions(schema)
+    function = _get_tagging_function(schema)
     prompt = ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
     output_parser = JsonOutputFunctionsParser()
+    llm_kwargs = get_llm_kwargs(function)
     chain = LLMChain(
         llm=llm,
         prompt=prompt,
-        llm_kwargs={**{"functions": functions}, **EXTRACTION_KWARGS},
+        llm_kwargs=llm_kwargs,
         output_parser=output_parser,
     )
     return chain
@@ -48,14 +44,14 @@ def create_tagging_chain_pydantic(
     pydantic_schema: Any, llm: BaseLanguageModel
 ) -> Chain:
     openai_schema = pydantic_schema.schema()
-
-    functions = _get_tagging_functions(openai_schema)
+    function = _get_tagging_function(openai_schema)
     prompt = ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
     output_parser = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+    llm_kwargs = get_llm_kwargs(function)
     chain = LLMChain(
         llm=llm,
         prompt=prompt,
-        llm_kwargs={**{"functions": functions}, **EXTRACTION_KWARGS},
+        llm_kwargs=llm_kwargs,
         output_parser=output_parser,
     )
     return chain
