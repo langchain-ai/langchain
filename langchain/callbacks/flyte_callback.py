@@ -125,10 +125,10 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         }
 
         from flytekit import Deck
-        from flytekitplugins.deck.renderer import TableRenderer
+        from flytekitplugins.deck.renderer import TableRenderer, MarkdownRenderer
 
-        self.deck = Deck
         self.table_renderer = TableRenderer
+        self.deck = Deck("Langchain Metrics", MarkdownRenderer("## Langchain Metrics"))
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -150,9 +150,8 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         resp.update({"prompts": prompt_responses})
 
-        self.deck(
-            "LLM Start",
-            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp)),
+        self.deck.append(
+            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
         )
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
@@ -185,25 +184,19 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 complexity_metrics: Dict[str, float] = generation_resp.pop("text_complexity_metrics")  # type: ignore  # noqa: E501
                 all_complexity_metrics.append(complexity_metrics)
 
-                # dependency_tree = generation_resp["dependency_tree"]
-                # entities = generation_resp["entities"]
+                dependency_tree = generation_resp["dependency_tree"]
+                entities = generation_resp["entities"]
 
-                # self.deck("LLM End: Dependency Tree", dependency_tree)
-                # self.deck("LLM End: Entities", entities)
-
-        print(all_complexity_metrics)
-        print(
-            self.table_renderer().to_html(
+        self.deck.append(
+            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
+            + "\n"
+            + self.table_renderer().to_html(
                 self.pandas.DataFrame.from_records(all_complexity_metrics)
             )
-        )
-        self.deck(
-            "LLM End",
-            self.table_renderer().to_html(self.pandas.DataFrame.from_dict(resp))
-            # + "\n"
-            # self.table_renderer().to_html(
-            #     self.pandas.DataFrame.from_records(all_complexity_metrics)
-            # ),
+            + "\n"
+            + dependency_tree
+            + "\n"
+            + entities
         )
 
     def on_llm_error(
