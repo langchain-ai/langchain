@@ -1,0 +1,17 @@
+Using this we can replace
+
+```python
+llm.predict("What would be a good company name for a company that makes colorful socks?")
+```
+
+with
+
+```python
+from langchain.chains import LLMChain
+
+chain = LLMChain(llm=llm, prompt=prompt)
+chain.run("colorful socks")
+```
+```pycon
+Feetful of Fun
+```

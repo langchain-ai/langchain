@@ -106,13 +106,14 @@ class HuggingFaceTextGenInference(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "hf_textgen_inference"
+        return "huggingface_textgen_inference"
 
     def _call(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         if stop is None:
             stop = self.stop_sequences
@@ -130,6 +131,7 @@ class HuggingFaceTextGenInference(LLM):
                 temperature=self.temperature,
                 repetition_penalty=self.repetition_penalty,
                 seed=self.seed,
+                **kwargs,
             )
             # remove stop sequences from the end of the generated text
             for stop_seq in stop:
@@ -167,4 +169,5 @@ class HuggingFaceTextGenInference(LLM):
                 if not token.special:
                     if text_callback:
                         text_callback(token.text)
+                    text += token.text
         return text
