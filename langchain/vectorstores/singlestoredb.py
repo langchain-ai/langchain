@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import enum
 import json
-
 from typing import (
     Any,
     ClassVar,
@@ -21,16 +20,19 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
+
 class DistanceStrategy(str, enum.Enum):
     EUCLIDEAN_DISTANCE = "EUCLIDEAN_DISTANCE"
     DOT_PRODUCT = "DOT_PRODUCT"
+
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.DOT_PRODUCT
 
 ORDERING_DIRECTIVE: dict = {
     DistanceStrategy.EUCLIDEAN_DISTANCE: "",
-    DistanceStrategy.DOT_PRODUCT: "DESC"
+    DistanceStrategy.DOT_PRODUCT: "DESC",
 }
+
 
 class SingleStoreDB(VectorStore):
     """
@@ -72,14 +74,17 @@ class SingleStoreDB(VectorStore):
         Args:
             embedding (Embeddings): A text embedding model.
 
-            distance_strategy (DistanceStrategy, optional): Determines the strategy employed for calculating
+            distance_strategy (DistanceStrategy, optional):
+                Determines the strategy employed for calculating
                 the distance between vectors in the embedding space.
                 Defaults to DOT_PRODUCT.
                 Available options are:
-                - DOT_PRODUCT: Computes the scalar product of two vectors. This is the default behavior
-                - EUCLIDEAN_DISTANCE: Computes the Euclidean distance between two vectors. This metric
-                considers the geometric distance in the vector space, and might be more suitable for
-                embeddings that rely on spatial relationships.
+                - DOT_PRODUCT: Computes the scalar product of two vectors.
+                    This is the default behavior
+                - EUCLIDEAN_DISTANCE: Computes the Euclidean distance between
+                    two vectors. This metric considers the geometric distance in
+                    the vector space, and might be more suitable for embeddings
+                    that rely on spatial relationships.
 
             table_name (str, optional): Specifies the name of the table in use.
                 Defaults to "embeddings".
@@ -195,8 +200,12 @@ class SingleStoreDB(VectorStore):
         if "conn_attrs" not in self.connection_kwargs:
             self.connection_kwargs["conn_attrs"] = dict()
         if "program_name" not in self.connection_kwargs["conn_attrs"]:
-            self.connection_kwargs["conn_attrs"]["program_name"] = "langchain python sdk"
-            self.connection_kwargs["conn_attrs"]["program_version"] = "0.0.205"  # the version of SingleStoreDB VectorStore implementation
+            self.connection_kwargs["conn_attrs"][
+                "program_name"
+            ] = "langchain python sdk"
+            self.connection_kwargs["conn_attrs"][
+                "program_version"
+            ] = "0.0.205"  # the version of SingleStoreDB VectorStore implementation
 
         """Create connection pool."""
         self.connection_pool = QueuePool(
@@ -300,9 +309,12 @@ class SingleStoreDB(VectorStore):
                     OpenAIEmbeddings(),
                     host="username:password@localhost:3306/database"
                 )
-                s2.similarity_search("query text", 1, {"metadata_field": "metadata_value"})
+                s2.similarity_search("query text", 1,
+                    {"metadata_field": "metadata_value"})
         """
-        docs_and_scores = self.similarity_search_with_score(query=query, k=k, filter=filter)
+        docs_and_scores = self.similarity_search_with_score(
+            query=query, k=k, filter=filter
+        )
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_with_score(
@@ -313,7 +325,8 @@ class SingleStoreDB(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: A dictionary of metadata fields and values to filter by. Defaults to None.
+            filter: A dictionary of metadata fields and values to filter by.
+                    Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -323,18 +336,28 @@ class SingleStoreDB(VectorStore):
         conn = self.connection_pool.connect()
         result = []
         where_clause: str = ""
-        where_clause_values = []
+        where_clause_values: List[Any] = []
         if filter:
             where_clause = "WHERE "
             arguments = []
 
-            def build_where_clause(where_clause_values:List[Any], sub_filter: dict, prefix_args: List[str] = []):
+            def build_where_clause(
+                where_clause_values: List[Any],
+                sub_filter: dict,
+                prefix_args: List[str] = [],
+            ) -> None:
                 for key in sub_filter.keys():
                     if isinstance(sub_filter[key], dict):
-                        build_where_clause(where_clause_values, sub_filter[key], prefix_args + [key])
+                        build_where_clause(
+                            where_clause_values, sub_filter[key], prefix_args + [key]
+                        )
                     else:
-                        arguments.append("JSON_EXTRACT_JSON({}, {}) = %s".format(
-                            self.metadata_field, ", ".join(["%s"] * (len(prefix_args) + 1))))
+                        arguments.append(
+                            "JSON_EXTRACT_JSON({}, {}) = %s".format(
+                                self.metadata_field,
+                                ", ".join(["%s"] * (len(prefix_args) + 1)),
+                            )
+                        )
                         where_clause_values += prefix_args + [key]
                         where_clause_values.append(json.dumps(sub_filter[key]))
 
@@ -353,13 +376,11 @@ class SingleStoreDB(VectorStore):
                         self.vector_field,
                         self.table_name,
                         where_clause,
-                        ORDERING_DIRECTIVE[self.distance_strategy]
+                        ORDERING_DIRECTIVE[self.distance_strategy],
                     ),
-                    (
-                        "[{}]".format(",".join(map(str, embedding))),
-                    ) 
+                    ("[{}]".format(",".join(map(str, embedding))),)
                     + tuple(where_clause_values)
-                    + (k,)
+                    + (k,),
                 )
 
                 for row in cur.fetchall():

@@ -165,7 +165,9 @@ def test_singlestoredb_filter_metadata(texts: List[str]) -> None:
     """Test filtering by metadata"""
     table_name = "test_singlestoredb_filter_metadata"
     drop(table_name)
-    docs = [Document(page_content=t, metadata={"index": i}) for i, t in enumerate(texts)]
+    docs = [
+        Document(page_content=t, metadata={"index": i}) for i, t in enumerate(texts)
+    ]
     docsearch = SingleStoreDB.from_documents(
         docs,
         FakeEmbeddings(),
@@ -183,7 +185,10 @@ def test_singlestoredb_filter_metadata_2(texts: List[str]) -> None:
     """Test filtering by metadata field that is similar for each document"""
     table_name = "test_singlestoredb_filter_metadata_2"
     drop(table_name)
-    docs = [Document(page_content=t, metadata={"index": i, "category": "budget"}) for i, t in enumerate(texts)]
+    docs = [
+        Document(page_content=t, metadata={"index": i, "category": "budget"})
+        for i, t in enumerate(texts)
+    ]
     docsearch = SingleStoreDB.from_documents(
         docs,
         FakeEmbeddings(),
@@ -192,7 +197,9 @@ def test_singlestoredb_filter_metadata_2(texts: List[str]) -> None:
         host=TEST_SINGLESTOREDB_URL,
     )
     output = docsearch.similarity_search("foo", k=1, filter={"category": "budget"})
-    assert output == [Document(page_content="foo", metadata={"index": 0, "category": "budget"})]
+    assert output == [
+        Document(page_content="foo", metadata={"index": 0, "category": "budget"})
+    ]
     drop(table_name)
 
 
@@ -201,7 +208,10 @@ def test_singlestoredb_filter_metadata_3(texts: List[str]) -> None:
     """Test filtering by two metadata fields"""
     table_name = "test_singlestoredb_filter_metadata_3"
     drop(table_name)
-    docs = [Document(page_content=t, metadata={"index": i, "category": "budget"}) for i, t in enumerate(texts)]
+    docs = [
+        Document(page_content=t, metadata={"index": i, "category": "budget"})
+        for i, t in enumerate(texts)
+    ]
     docsearch = SingleStoreDB.from_documents(
         docs,
         FakeEmbeddings(),
@@ -209,8 +219,12 @@ def test_singlestoredb_filter_metadata_3(texts: List[str]) -> None:
         table_name=table_name,
         host=TEST_SINGLESTOREDB_URL,
     )
-    output = docsearch.similarity_search("foo", k=1, filter={"category": "budget", "index": 1})
-    assert output == [Document(page_content="bar", metadata={"index": 1, "category": "budget"})]
+    output = docsearch.similarity_search(
+        "foo", k=1, filter={"category": "budget", "index": 1}
+    )
+    assert output == [
+        Document(page_content="bar", metadata={"index": 1, "category": "budget"})
+    ]
     drop(table_name)
 
 
@@ -219,7 +233,10 @@ def test_singlestoredb_filter_metadata_4(texts: List[str]) -> None:
     """Test no matches"""
     table_name = "test_singlestoredb_filter_metadata_4"
     drop(table_name)
-    docs = [Document(page_content=t, metadata={"index": i, "category": "budget"}) for i, t in enumerate(texts)]
+    docs = [
+        Document(page_content=t, metadata={"index": i, "category": "budget"})
+        for i, t in enumerate(texts)
+    ]
     docsearch = SingleStoreDB.from_documents(
         docs,
         FakeEmbeddings(),
@@ -237,8 +254,17 @@ def test_singlestoredb_filter_metadata_5(texts: List[str]) -> None:
     """Test complex metadata path"""
     table_name = "test_singlestoredb_filter_metadata_5"
     drop(table_name)
-    docs = [Document(page_content=t, metadata={"index": i, "category": "budget", "subfield" : {
-            "subfield" : { "idx": i, "other_idx": i + 1}}}) for i, t in enumerate(texts)]
+    docs = [
+        Document(
+            page_content=t,
+            metadata={
+                "index": i,
+                "category": "budget",
+                "subfield": {"subfield": {"idx": i, "other_idx": i + 1}},
+            },
+        )
+        for i, t in enumerate(texts)
+    ]
     docsearch = SingleStoreDB.from_documents(
         docs,
         FakeEmbeddings(),
@@ -246,9 +272,19 @@ def test_singlestoredb_filter_metadata_5(texts: List[str]) -> None:
         table_name=table_name,
         host=TEST_SINGLESTOREDB_URL,
     )
-    output = docsearch.similarity_search("foo", k=1, filter={"category": "budget", "subfield" : { "subfield" : { "idx": 2}}})
-    assert output == [Document(page_content="baz", metadata={"index": 2, "category": "budget",
-                                                             "subfield" : { "subfield" : { "idx": 2, "other_idx": 3}}})]
+    output = docsearch.similarity_search(
+        "foo", k=1, filter={"category": "budget", "subfield": {"subfield": {"idx": 2}}}
+    )
+    assert output == [
+        Document(
+            page_content="baz",
+            metadata={
+                "index": 2,
+                "category": "budget",
+                "subfield": {"subfield": {"idx": 2, "other_idx": 3}},
+            },
+        )
+    ]
     drop(table_name)
 
 
@@ -257,7 +293,13 @@ def test_singlestoredb_filter_metadata_6(texts: List[str]) -> None:
     """Test filtering by other bool"""
     table_name = "test_singlestoredb_filter_metadata_6"
     drop(table_name)
-    docs = [Document(page_content=t, metadata={"index": i, "category": "budget", "is_good" : i  == 1}) for i, t in enumerate(texts)]
+    docs = [
+        Document(
+            page_content=t,
+            metadata={"index": i, "category": "budget", "is_good": i == 1},
+        )
+        for i, t in enumerate(texts)
+    ]
     docsearch = SingleStoreDB.from_documents(
         docs,
         FakeEmbeddings(),
@@ -265,8 +307,15 @@ def test_singlestoredb_filter_metadata_6(texts: List[str]) -> None:
         table_name=table_name,
         host=TEST_SINGLESTOREDB_URL,
     )
-    output = docsearch.similarity_search("foo", k=1, filter={"category": "budget", "is_good" : True})
-    assert output == [Document(page_content="bar", metadata={"index": 1, "category": "budget", "is_good" : True})]
+    output = docsearch.similarity_search(
+        "foo", k=1, filter={"category": "budget", "is_good": True}
+    )
+    assert output == [
+        Document(
+            page_content="bar",
+            metadata={"index": 1, "category": "budget", "is_good": True},
+        )
+    ]
     drop(table_name)
 
 
@@ -275,7 +324,13 @@ def test_singlestoredb_filter_metadata_7(texts: List[str]) -> None:
     """Test filtering by float"""
     table_name = "test_singlestoredb_filter_metadata_7"
     drop(table_name)
-    docs = [Document(page_content=t, metadata={"index": i, "category": "budget", "score" : i + 0.5}) for i, t in enumerate(texts)]
+    docs = [
+        Document(
+            page_content=t,
+            metadata={"index": i, "category": "budget", "score": i + 0.5},
+        )
+        for i, t in enumerate(texts)
+    ]
     docsearch = SingleStoreDB.from_documents(
         docs,
         FakeEmbeddings(),
@@ -283,6 +338,13 @@ def test_singlestoredb_filter_metadata_7(texts: List[str]) -> None:
         table_name=table_name,
         host=TEST_SINGLESTOREDB_URL,
     )
-    output = docsearch.similarity_search("bar", k=1, filter={"category": "budget", "score" : 2.5})
-    assert output == [Document(page_content="baz", metadata={"index": 2, "category": "budget", "score" : 2.5})]
+    output = docsearch.similarity_search(
+        "bar", k=1, filter={"category": "budget", "score": 2.5}
+    )
+    assert output == [
+        Document(
+            page_content="baz",
+            metadata={"index": 2, "category": "budget", "score": 2.5},
+        )
+    ]
     drop(table_name)
