@@ -262,12 +262,17 @@ async def _ahandle_event(
     **kwargs: Any,
 ) -> None:
     """Generic event handler for AsyncCallbackManager."""
+    for handler in [h for h in handlers if h.run_inline]:
+        await _ahandle_event_for_handler(
+            handler, event_name, ignore_condition_name, *args, **kwargs
+        )
     await asyncio.gather(
         *(
             _ahandle_event_for_handler(
                 handler, event_name, ignore_condition_name, *args, **kwargs
             )
             for handler in handlers
+            if not handler.run_inline
         )
     )
 
