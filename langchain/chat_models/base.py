@@ -62,11 +62,6 @@ class BaseChatModel(BaseLanguageModel, ABC):
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         return {}
 
-    def _messages_to_final_prompts(
-        self, messages: List[List[BaseMessage]]
-    ) -> List[List[dict]]:
-        return [[{m.type: m.content} for m in message] for message in messages]
-
     def generate(
         self,
         messages: List[List[BaseMessage]],
@@ -81,8 +76,6 @@ class BaseChatModel(BaseLanguageModel, ABC):
         params = self.dict()
         params["stop"] = stop
         options = {"stop": stop}
-
-        final_prompts = self._messages_to_final_prompts(messages)
 
         callback_manager = CallbackManager.configure(
             callbacks,
@@ -110,9 +103,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
             raise e
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
-        output = LLMResult(
-            generations=generations, final_prompts=final_prompts, llm_output=llm_output
-        )
+        output = LLMResult(generations=generations, llm_output=llm_output)
         run_manager.on_llm_end(output)
         if run_manager:
             output.run = RunInfo(run_id=run_manager.run_id)
