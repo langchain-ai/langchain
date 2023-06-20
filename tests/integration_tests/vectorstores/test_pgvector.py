@@ -186,6 +186,28 @@ def test_pgvector_with_filter_in_set() -> None:
     ]
 
 
+def test_pgvector_relevance_score() -> None:
+    """Test to make sure the relevance score is scaled to 0-1."""
+
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        metadatas=metadatas,
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), 1.0),
+        (Document(page_content="bar", metadata={"page": "1"}), 0.9996744261675065),
+        (Document(page_content="baz", metadata={"page": "2"}), 0.9986996093328621),
+    ]
+
+
 def test_pgvector_retriever_search_threshold() -> None:
     """Test using retriever for searching with threshold."""
 
@@ -212,7 +234,7 @@ def test_pgvector_retriever_search_threshold() -> None:
 
 
 def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
-    """Test searching with threshold and customize normalization function"""
+    """Test searching with threshold and customized normalization function"""
 
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
@@ -228,7 +250,7 @@ def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
 
     retriever = docsearch.as_retriever(
         search_type="similarity_score_threshold",
-        search_kwargs={"k": 3, "score_threshold": 0.85},
+        search_kwargs={"k": 3, "score_threshold": 0.5},
     )
-    output = retriever.get_relevant_documents("summer")
+    output = retriever.get_relevant_documents("foo")
     assert output == []
