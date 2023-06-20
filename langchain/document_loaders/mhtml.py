@@ -1,7 +1,7 @@
 """Loader to load MHTML files, enriching metadata with page title."""
 
-import logging
 import email
+import logging
 from typing import Dict, List, Union
 
 from langchain.docstore.document import Document
@@ -46,11 +46,11 @@ class MHTMLLoader(BaseLoader):
             message = email.message_from_string(f.read())
             parts = message.get_payload()
 
-            if not type(parts) is list:
+            if type(parts) is not list:
                 parts = [message]
 
             for part in parts:
-                if (part.get_content_type() == "text/html"):
+                if part.get_content_type() == "text/html":
                     html = part.get_payload(decode=True).decode()
 
                     soup = BeautifulSoup(html, **self.bs_kwargs)
