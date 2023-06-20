@@ -112,12 +112,12 @@ class BaseConversationalRetrievalChain(Chain):
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
         if chat_history_str:
-            output: Dict[str, Any] = {self.output_key: new_question}
+            output = {self.output_key: new_question}
         else:
             answer = self.combine_docs_chain.run(
                 input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
             )
-            output: Dict[str, Any] = {self.output_key: answer}
+            output = {self.output_key: answer}
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
@@ -149,12 +149,12 @@ class BaseConversationalRetrievalChain(Chain):
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
         if chat_history_str:
-            output: Dict[str, Any] = {self.output_key: new_question}
+            output = {self.output_key: new_question}
         else:
             answer = await self.combine_docs_chain.arun(
                 input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
             )
-            output: Dict[str, Any] = {self.output_key: answer}
+            output = {self.output_key: answer}
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
