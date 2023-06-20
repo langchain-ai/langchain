@@ -1,5 +1,5 @@
 """Loading logic for loading documents from Tencent Cloud COS directory."""
-from typing import List, Iterator
+from typing import Iterator, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
