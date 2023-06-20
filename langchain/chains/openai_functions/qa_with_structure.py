@@ -1,4 +1,4 @@
-from typing import Any, List, Type, Union
+from typing import Any, List, Type, Union, Optional
 
 from pydantic import BaseModel, Field
 
@@ -11,7 +11,7 @@ from langchain.output_parsers.openai_functions import (
 )
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.schema import BaseLLMOutputParser, HumanMessage, SystemMessage
-
+from langchain.prompts import PromptTemplate
 
 class AnswerWithSources(BaseModel):
     """An answer to the question being asked, with sources."""
@@ -26,6 +26,7 @@ def create_qa_with_structure_chain(
     llm: BaseLanguageModel,
     schema: Union[dict, Type[BaseModel]],
     output_parser: str = "base",
+    prompt: Optional[Union[PromptTemplate, ChatPromptTemplate]] = None,
 ) -> LLMChain:
     if output_parser == "pydantic":
         if not (isinstance(schema, type) and issubclass(schema, BaseModel)):
@@ -65,7 +66,7 @@ def create_qa_with_structure_chain(
         HumanMessagePromptTemplate.from_template("Question: {question}"),
         HumanMessage(content="Tips: Make sure to answer in the correct format"),
     ]
-    prompt = ChatPromptTemplate(messages=messages)
+    prompt = prompt or ChatPromptTemplate(messages=messages)
 
     chain = LLMChain(
         llm=llm,
