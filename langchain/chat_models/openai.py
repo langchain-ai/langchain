@@ -106,6 +106,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
+    elif role == "function":
+        return FunctionMessage(content=_dict["content"], name=_dict["name"])
     else:
         return ChatMessage(content=_dict["content"], role=role)
 
