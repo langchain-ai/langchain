@@ -1,8 +1,10 @@
 import unittest
+import pytest
 
 from langchain.document_loaders.language.javascript import JavaScriptParser
 
 
+@pytest.mark.requires("esprima")
 class TestJavaScriptParser(unittest.TestCase):
     def setUp(self):
         self.example_code = """const os = require('os');
@@ -36,6 +38,7 @@ hello("Hello!");"""
         parser = JavaScriptParser(self.example_code)
         extracted_code = parser.extract_functions_classes()
         self.assertEqual(extracted_code, self.expected_extracted_code)
+        assert False
 
     def test_simplify_code(self):
         parser = JavaScriptParser(self.example_code)
