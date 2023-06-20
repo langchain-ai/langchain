@@ -124,6 +124,7 @@ class CallbackManagerMixin:
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when LLM starts running."""
@@ -135,6 +136,7 @@ class CallbackManagerMixin:
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when a chat model starts running."""
@@ -149,6 +151,7 @@ class CallbackManagerMixin:
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when chain starts running."""
@@ -160,6 +163,7 @@ class CallbackManagerMixin:
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when tool starts running."""
@@ -221,6 +225,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM starts running."""
@@ -232,6 +237,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when a chat model starts running."""
@@ -276,6 +282,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when chain starts running."""
@@ -307,6 +314,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when tool starts running."""
@@ -370,6 +378,9 @@ class BaseCallbackManager(CallbackManagerMixin):
         handlers: List[BaseCallbackHandler],
         inheritable_handlers: Optional[List[BaseCallbackHandler]] = None,
         parent_run_id: Optional[UUID] = None,
+        *,
+        tags: Optional[List[str]] = None,
+        inheritable_tags: Optional[List[str]] = None,
     ) -> None:
         """Initialize callback manager."""
         self.handlers: List[BaseCallbackHandler] = handlers
@@ -377,6 +388,8 @@ class BaseCallbackManager(CallbackManagerMixin):
             inheritable_handlers or []
         )
         self.parent_run_id: Optional[UUID] = parent_run_id
+        self.tags = tags or []
+        self.inheritable_tags = inheritable_tags or []
 
     @property
     def is_async(self) -> bool:
@@ -406,3 +419,16 @@ class BaseCallbackManager(CallbackManagerMixin):
     def set_handler(self, handler: BaseCallbackHandler, inherit: bool = True) -> None:
         """Set handler as the only handler on the callback manager."""
         self.set_handlers([handler], inherit=inherit)
+
+    def add_tags(self, tags: List[str], inherit: bool = True) -> None:
+        for tag in tags:
+            if tag in self.tags:
+                self.remove_tags([tag])
+        self.tags.extend(tags)
+        if inherit:
+            self.inheritable_tags.extend(tags)
+
+    def remove_tags(self, tags: List[str]) -> None:
+        for tag in tags:
+            self.tags.remove(tag)
+            self.inheritable_tags.remove(tag)

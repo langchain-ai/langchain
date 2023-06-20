@@ -134,6 +134,7 @@ class GooglePalm(BaseLLM, BaseModel):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         generations = []
         for prompt in prompts:
@@ -147,6 +148,7 @@ class GooglePalm(BaseLLM, BaseModel):
                 top_k=self.top_k,
                 max_output_tokens=self.max_output_tokens,
                 candidate_count=self.n,
+                **kwargs,
             )
 
             prompt_generations = []
@@ -163,6 +165,7 @@ class GooglePalm(BaseLLM, BaseModel):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         raise NotImplementedError()
 

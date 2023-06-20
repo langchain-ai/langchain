@@ -5,8 +5,8 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
     BaseMetadataCallbackHandler,
     flatten_dict,
-    import_spacy,
     import_pandas,
+    import_spacy,
     import_textstat,
 )
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -15,10 +15,12 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 def import_flytekit():
     try:
         import flytekit  # noqa: F401
+        import flytekitplugins.deck.renderer
     except ImportError:
         raise ImportError(
             "To use the flyte callback manager you need to have the `flytekit` and"
-            "`flytekitplugins-deck-standard` packages installed. Please install it with `pip install flytekit`"
+            "`flytekitplugins-deck-standard` packages installed. Please install them with `pip install flytekit`"
+            "and `pip install flytekitplugins-deck-standard`."
         )
 
 
@@ -92,7 +94,13 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         super().__init__()
 
         self.action_records: list = []
-        self.nlp = spacy.load("en_core_web_sm")
+
+        try:
+            self.nlp = spacy.load("en_core_web_sm")
+        except OSError:
+            print(
+                "To download the en_core_web_sm model, run the following command in your terminal: `python -m spacy download en_core_web_sm` command."
+            )
 
         self.metrics = {
             "step": 0,
@@ -125,14 +133,14 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         }
 
         from flytekit import Deck
-        from flytekitplugins.deck.renderer import TableRenderer, MarkdownRenderer
+        from flytekitplugins.deck.renderer import MarkdownRenderer, TableRenderer
 
         self.table_renderer = TableRenderer
         self.markdown_renderer = MarkdownRenderer
 
         self.deck = Deck(
-            "Langchain Metrics",
-            self.markdown_renderer().to_html("## Langchain Metrics"),
+            "LangChain Metrics",
+            self.markdown_renderer().to_html("## LangChain Metrics"),
         )
 
     def on_llm_start(
@@ -191,21 +199,19 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 all_complexity_metrics.append(complexity_metrics)
 
                 dependency_tree = generation_resp["dependency_tree"]
-                entities = generation_resp["entities"]
 
         self.deck.append(self.markdown_renderer().to_html("### LLM End"))
+        self.deck.append(self.table_renderer().to_html(self.pandas.DataFrame([resp])))
         self.deck.append(
-            self.table_renderer().to_html(self.pandas.DataFrame([resp]))
-            + "\n"
-            + self.table_renderer().to_html(
+            self.markdown_renderer().to_html("#### Text Complexity Metrics")
+        )
+        self.deck.append(
+            self.table_renderer().to_html(
                 self.pandas.DataFrame.from_records(all_complexity_metrics)
             )
-            + "\n"
-            + dependency_tree
-            + "\n"
-            + entities
-            + "\n"
         )
+        self.deck.append(self.markdown_renderer().to_html("#### Dependency Tree"))
+        self.deck.append(dependency_tree)
 
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -218,9 +224,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Run when chain starts running."""
+        import pandas as pd
         from flytekit import Deck
         from flytekitplugins.deck.renderer import TableRenderer
-        import pandas as pd
 
         self.metrics["step"] += 1
         self.metrics["chain_starts"] += 1
@@ -242,9 +248,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
+        import pandas as pd
         from flytekit import Deck
         from flytekitplugins.deck.renderer import TableRenderer
-        import pandas as pd
 
         self.metrics["step"] += 1
         self.metrics["chain_ends"] += 1
@@ -271,9 +277,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
+        import pandas as pd
         from flytekit import Deck
         from flytekitplugins.deck.renderer import TableRenderer
-        import pandas as pd
 
         self.metrics["step"] += 1
         self.metrics["tool_starts"] += 1
@@ -291,9 +297,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
+        import pandas as pd
         from flytekit import Deck
         from flytekitplugins.deck.renderer import TableRenderer
-        import pandas as pd
 
         self.metrics["step"] += 1
         self.metrics["tool_ends"] += 1
@@ -319,9 +325,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         """
         Run when agent is ending.
         """
+        import pandas as pd
         from flytekit import Deck
         from flytekitplugins.deck.renderer import TableRenderer
-        import pandas as pd
 
         self.metrics["step"] += 1
         self.metrics["text_ctr"] += 1
@@ -337,9 +343,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent ends running."""
+        import pandas as pd
         from flytekit import Deck
         from flytekitplugins.deck.renderer import TableRenderer
-        import pandas as pd
 
         self.metrics["step"] += 1
         self.metrics["agent_ends"] += 1
@@ -362,9 +368,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
+        import pandas as pd
         from flytekit import Deck
         from flytekitplugins.deck.renderer import TableRenderer
-        import pandas as pd
 
         self.metrics["step"] += 1
         self.metrics["tool_starts"] += 1

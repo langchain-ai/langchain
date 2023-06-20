@@ -27,7 +27,9 @@ def test_vectara_add_documents() -> None:
     )
 
     # finally do a similarity search to see if all works okay
-    output = docsearch.similarity_search("large language model", k=2)
+    output = docsearch.similarity_search(
+        "large language model", k=2, n_sentence_context=0
+    )
     assert output[0].page_content == "large language model"
     assert output[0].metadata == {"abbr": "llm"}
     assert output[1].page_content == "information retrieval"

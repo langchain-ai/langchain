@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Extra, Field, root_validator
+from pydantic import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -35,6 +35,7 @@ from langchain.schema import (
     ChatGeneration,
     ChatMessage,
     ChatResult,
+    FunctionMessage,
     HumanMessage,
     SystemMessage,
 )
@@ -92,12 +93,17 @@ async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
     return await _completion_with_retry(**kwargs)
 
 
-def _convert_dict_to_message(_dict: dict) -> BaseMessage:
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict["role"]
     if role == "user":
         return HumanMessage(content=_dict["content"])
     elif role == "assistant":
-        return AIMessage(content=_dict["content"])
+        content = _dict["content"] or ""  # OpenAI returns None for tool invocations
+        if _dict.get("function_call"):
+            additional_kwargs = {"function_call": dict(_dict["function_call"])}
+        else:
+            additional_kwargs = {}
+        return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
     else:
@@ -111,8 +117,16 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+        if "function_call" in message.additional_kwargs:
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, FunctionMessage):
+        message_dict = {
+            "role": "function",
+            "content": message.content,
+            "name": message.name,
+        }
     else:
         raise ValueError(f"Got unknown type {message}")
     if "name" in message.additional_kwargs:
@@ -135,6 +149,10 @@ class ChatOpenAI(BaseChatModel):
             from langchain.chat_models import ChatOpenAI
             openai = ChatOpenAI(model_name="gpt-3.5-turbo")
     """
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
 
     client: Any  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
@@ -164,7 +182,6 @@ class ChatOpenAI(BaseChatModel):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.ignore
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -302,22 +319,35 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
         if self.streaming:
             inner_completion = ""
             role = "assistant"
             params["stream"] = True
+            function_call: Optional[dict] = None
             for stream_resp in self.completion_with_retry(
                 messages=message_dicts, **params
             ):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content", "")
+                token = stream_resp["choices"][0]["delta"].get("content") or ""
                 inner_completion += token
+                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
+                if _function_call:
+                    if function_call is None:
+                        function_call = _function_call
+                    else:
+                        function_call["arguments"] += _function_call["arguments"]
                 if run_manager:
                     run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
-                {"content": inner_completion, "role": role}
+                {
+                    "content": inner_completion,
+                    "role": role,
+                    "function_call": function_call,
+                }
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
         response = self.completion_with_retry(messages=message_dicts, **params)
@@ -348,22 +378,35 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
         if self.streaming:
             inner_completion = ""
             role = "assistant"
             params["stream"] = True
+            function_call: Optional[dict] = None
             async for stream_resp in await acompletion_with_retry(
                 self, messages=message_dicts, **params
             ):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content", "")
-                inner_completion += token
+                inner_completion += token or ""
+                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
+                if _function_call:
+                    if function_call is None:
+                        function_call = _function_call
+                    else:
+                        function_call["arguments"] += _function_call["arguments"]
                 if run_manager:
                     await run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
-                {"content": inner_completion, "role": role}
+                {
+                    "content": inner_completion,
+                    "role": role,
+                    "function_call": function_call,
+                }
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:
@@ -387,9 +430,9 @@ class ChatOpenAI(BaseChatModel):
             "model": self.model_name,
         }
         if self.openai_proxy:
-            openai_creds["proxy"] = (
-                {"http": self.openai_proxy, "https": self.openai_proxy},
-            )
+            import openai
+
+            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
         return {**openai_creds, **self._default_params}
 
     @property
@@ -433,12 +476,12 @@ class ChatOpenAI(BaseChatModel):
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
-        if model == "gpt-3.5-turbo-0301":
+        if model.startswith("gpt-3.5-turbo"):
             # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model == "gpt-4-0314":
+        elif model.startswith("gpt-4"):
             tokens_per_message = 3
             tokens_per_name = 1
         else:

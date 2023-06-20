@@ -1,4 +1,5 @@
 """Milvus Retriever"""
+import warnings
 from typing import Any, Dict, List, Optional
 
 from langchain.embeddings.base import Embeddings
@@ -8,7 +9,7 @@ from langchain.vectorstores.milvus import Milvus
 # TODO: Update to MilvusClient + Hybrid Search when available
 
 
-class MilvusRetreiver(BaseRetriever):
+class MilvusRetriever(BaseRetriever):
     def __init__(
         self,
         embedding_function: Embeddings,
@@ -41,3 +42,12 @@ class MilvusRetreiver(BaseRetriever):
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
         raise NotImplementedError
+
+
+def MilvusRetreiver(*args: Any, **kwargs: Any) -> MilvusRetriever:
+    warnings.warn(
+        "MilvusRetreiver will be deprecated in the future. "
+        "Please use MilvusRetriever ('i' before 'e') instead.",
+        DeprecationWarning,
+    )
+    return MilvusRetriever(*args, **kwargs)
