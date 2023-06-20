@@ -1,6 +1,6 @@
 """Test SQL Database Chain."""
 import pytest
-from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine, insert
+from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
 
 from langchain.chains.sql_database.base import (
     SQLDatabaseChain,
@@ -27,7 +27,7 @@ def test_sql_database_run() -> None:
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     db = SQLDatabase(engine)
-    db.run(f"INSERT INTO user VALUES (13, 'Harrison', 'Foo')")
+    db.run("INSERT INTO user VALUES (13, 'Harrison', 'Foo')")
     db_chain = SQLDatabaseChain.from_llm(OpenAI(temperature=0), db)
     output = db_chain.run("What company does Harrison work at?")
     expected_output = "Harrison works at Foo."
@@ -40,7 +40,7 @@ def test_sql_database_run_update() -> None:
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     db = SQLDatabase(engine)
-    db.run(f"INSERT INTO user VALUES (13, 'Harrison', 'Foo')")
+    db.run("INSERT INTO user VALUES (13, 'Harrison', 'Foo')")
     db_chain = SQLDatabaseChain.from_llm(
         OpenAI(temperature=0),
         db,
@@ -61,7 +61,7 @@ def test_sql_database_sequential_chain_run() -> None:
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     db = SQLDatabase(engine)
-    db.run(f"INSERT INTO user VALUES (13, 'Harrison', 'Foo')")
+    db.run("INSERT INTO user VALUES (13, 'Harrison', 'Foo')")
     db_chain = SQLDatabaseSequentialChain.from_llm(OpenAI(temperature=0), db)
     output = db_chain.run("What company does Harrison work at?")
     expected_output = "Harrison works at Foo."
@@ -75,7 +75,7 @@ def test_sql_database_sequential_chain_intermediate_steps() -> None:
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     db = SQLDatabase(engine)
-    db.run(f"INSERT INTO user VALUES (13, 'Harrison', 'Foo')")
+    db.run("INSERT INTO user VALUES (13, 'Harrison', 'Foo')")
     db_chain = SQLDatabaseSequentialChain.from_llm(
         OpenAI(temperature=0), db, return_intermediate_steps=True
     )

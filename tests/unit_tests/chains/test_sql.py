@@ -84,7 +84,8 @@ def test_simple_question(in_memory_db: SQLDatabase) -> None:
     prompt = SQLITE_PROMPT.format(top_k=5, input=question, table_info="")
     queries = {
         f"{prompt}\nSQLQuery:": "SELECT price FROM products WHERE name like '%iphone%'",
-        f"{prompt}\nSQLQuery:SELECT price FROM products WHERE name like '%iphone%'\nSQLResult: [(999.99,)]\nAnswer:": "999.99\n",
+        f"{prompt}\nSQLQuery:SELECT price FROM products WHERE name like '%iphone%'\n"
+        "SQLResult: [(999.99,)]\nAnswer:": "999.99\n",
     }
     fake_llm = FakeLLM(queries=queries)
     fake_llm_db_chain = SQLDatabaseChain.from_llm(fake_llm, in_memory_db)
@@ -105,7 +106,9 @@ def test_malformed_sql_query() -> None:
 @pytest.mark.requires("sqlfluff")
 def test_invalid_sql_dialect() -> None:
     with pytest.warns(
-        match="Dialect xxxxxxxxxxxxxx unsupported for SQL validation. No validation will be done. Go to https://docs.sqlfluff.com/en/stable/dialects.html to see supported dialects"
+        match="Dialect xxxxxxxxxxxxxx unsupported for SQL validation. "
+        "No validation will be done. Go to "
+        "https://docs.sqlfluff.com/en/stable/dialects.html to see supported dialects"
     ):
         validate_sql(
             "SELECT price FROM products WHERE name like %iphone%",

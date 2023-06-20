@@ -50,15 +50,21 @@ def validate_sql(sql_cmd: str, dialect: str, sql_validation: SQLValidation) -> N
     Args:
         sql_cmd (str): SQL query to validate.
         dialect (str): Dialect of the SQL query.
-        sql_validation (SQLValidation): Determines which validations need to be performed
+        sql_validation (SQLValidation):
+            Determines which validations need to be performed
 
     """
     try:
         parse_result = sqlfluff.parse(sql=sql_cmd, dialect=dialect)
     except sqlfluff.api.simple.APIParsingError as e:
         raise ValueError(f"Parsing of SQL query `{sql_cmd}` failed: {e.msg}")
-    except sqlfluff.core.errors.SQLFluffUserError as e:
-        unsupported_dialect_message = f"Dialect {dialect} unsupported for SQL validation. No validation will be done. Go to https://docs.sqlfluff.com/en/stable/dialects.html to see supported dialects"
+    except sqlfluff.core.errors.SQLFluffUserError:
+        unsupported_dialect_message = (
+            f"Dialect {dialect} unsupported for "
+            "SQL validation. No validation will be done. "
+            "Go to https://docs.sqlfluff.com/en/stable/dialects.html "
+            "to see supported dialects"
+        )
         if sql_validation.allow_unsupported_dialect is False:
             raise ValueError(unsupported_dialect_message)
         warnings.warn(unsupported_dialect_message)
@@ -67,9 +73,13 @@ def validate_sql(sql_cmd: str, dialect: str, sql_validation: SQLValidation) -> N
     if sql_validation.allow_non_select_statements is False:
         statements = get_json_segment(parse_result, "statement")
         for statement in statements:
-            if hasattr(statement, "keys") and list(statement.keys())[0] != "select_statement":
+            if (
+                hasattr(statement, "keys")
+                and list(statement.keys())[0] != "select_statement"
+            ):
                 raise ValueError(
-                    f"Found disallowed non select statement `{statement}` in SQL query `{sql_cmd}`"
+                    f"Found disallowed non select statement `{statement}`"
+                    f"in SQL query `{sql_cmd}`"
                 )
 
     if sql_validation.allow_select_all_statements is False:
@@ -83,7 +93,8 @@ def validate_sql(sql_cmd: str, dialect: str, sql_validation: SQLValidation) -> N
             found_wildcard_expressions = list(wildcard_expressions)
             if len(found_wildcard_expressions) > 0:
                 raise ValueError(
-                    f"Found disallowed wildcard select statement(s) `{found_wildcard_expressions}` in query `{sql_cmd}`"
+                    "Found disallowed wildcard select statement(s) "
+                    f"`{found_wildcard_expressions}` in query `{sql_cmd}`"
                 )
 
 
@@ -97,9 +108,12 @@ class SQLValidation(object):
         """Initialize an SQLValidation instance
 
         Args:
-            allow_unsupported_dialect (bool): If unsupported dialects are allowed, no validations will be done on them.
-            allow_non_select_statements (bool): Allow statments that are non select ones, such as DROP.
-            allow_select_all_statements (bool): Allow statments that are selecting all columns (SELECT *).
+            allow_unsupported_dialect (bool): If unsupported dialects are allowed,
+                no validations will be done on them.
+            allow_non_select_statements (bool):
+                Allow statments that are non select ones, such as DROP.
+            allow_select_all_statements (bool):
+                Allow statments that are selecting all columns (SELECT *).
         """
         self.allow_unsupported_dialect = allow_unsupported_dialect
         self.allow_non_select_statements = allow_non_select_statements

@@ -9,24 +9,36 @@ from langchain.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
+from langchain.prompts.example_selector import (
+    LengthBasedExampleSelector,
+    MaxMarginalRelevanceExampleSelector,
+    NGramOverlapExampleSelector,
+    SemanticSimilarityExampleSelector,
+)
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.few_shot_with_templates import FewShotPromptWithTemplates
 from langchain.prompts.loading import load_prompt
+from langchain.prompts.pipeline import PipelinePromptTemplate
 from langchain.prompts.prompt import Prompt, PromptTemplate
 
 __all__ = [
-    "BasePromptTemplate",
-    "StringPromptTemplate",
-    "load_prompt",
-    "PromptTemplate",
-    "FewShotPromptTemplate",
-    "Prompt",
-    "FewShotPromptWithTemplates",
-    "ChatPromptTemplate",
-    "MessagesPlaceholder",
-    "HumanMessagePromptTemplate",
     "AIMessagePromptTemplate",
-    "SystemMessagePromptTemplate",
-    "ChatMessagePromptTemplate",
     "BaseChatPromptTemplate",
+    "BasePromptTemplate",
+    "ChatMessagePromptTemplate",
+    "ChatPromptTemplate",
+    "FewShotPromptTemplate",
+    "FewShotPromptWithTemplates",
+    "HumanMessagePromptTemplate",
+    "LengthBasedExampleSelector",
+    "MaxMarginalRelevanceExampleSelector",
+    "MessagesPlaceholder",
+    "NGramOverlapExampleSelector",
+    "PipelinePromptTemplate",
+    "Prompt",
+    "PromptTemplate",
+    "SemanticSimilarityExampleSelector",
+    "StringPromptTemplate",
+    "SystemMessagePromptTemplate",
+    "load_prompt",
 ]
