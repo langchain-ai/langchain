@@ -205,15 +205,15 @@ class AzureSearch(VectorStore):
             # Encoding key for Azure Search valid characters
             key = base64.urlsafe_b64encode(bytes(key, "utf-8")).decode("ascii")
             metadata = metadatas[i] if metadatas else {}
-            record =                 {
-                    "@search.action": "upload",
-                    FIELDS_ID: key,
-                    FIELDS_CONTENT: text,
-                    FIELDS_CONTENT_VECTOR: np.array(
-                        self.embedding_function(text), dtype=np.float32
-                    ).tolist(),
-                    FIELDS_METADATA: json.dumps(metadata),
-                }
+            record = {
+                "@search.action": "upload",
+                FIELDS_ID: key,
+                FIELDS_CONTENT: text,
+                FIELDS_CONTENT_VECTOR: np.array(
+                    self.embedding_function(text), dtype=np.float32
+                ).tolist(),
+                FIELDS_METADATA: json.dumps(metadata),
+            }
             if extra_fields is not None:
                 record.update(extra_fields)
             # Add data to index
