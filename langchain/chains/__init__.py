@@ -2,6 +2,10 @@
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
+from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
+from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
+from langchain.chains.combine_documents.refine import RefineDocumentsChain
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.conversational_retrieval.base import (
@@ -99,4 +103,8 @@ __all__ = [
     "create_citation_fuzzy_match_chain",
     "create_qa_with_structure_chain",
     "create_qa_with_sources_chain",
+    "StuffDocumentsChain",
+    "MapRerankDocumentsChain",
+    "MapReduceDocumentsChain",
+    "RefineDocumentsChain",
 ]
