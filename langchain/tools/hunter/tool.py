@@ -1,3 +1,4 @@
+from typing import Dict, Union
 import os
 import requests
 from pydantic import BaseModel, Field
@@ -24,7 +25,7 @@ def search_email(full_name: str, domain: str, company: str) -> dict:
 
     endpoint = 'https://api.hunter.io/v2/email-finder'
 
-    params = {
+    params: Dict[str, Union[int, str]] = {
         'api_key': HUNTER_API_KEY,
         'max_duration': 20,
         'full_name': full_name,
@@ -43,7 +44,7 @@ def verify_email(email: str) -> dict:
 
     endpoint = 'https://api.hunter.io/v2/email-finder'
 
-    params = {
+    params: Dict[str, Union[int, str]] = {
         'api_key': HUNTER_API_KEY,
         'max_duration': 20,
         'email': email,
