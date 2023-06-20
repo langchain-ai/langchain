@@ -5,11 +5,11 @@ from langchain.tools import tool
 
 #: Free tier available in RapidAPI : 20 k req/month
 
-DOMAINR_API_KEY = os.environ['DOMAINR_API_KEY']
+DOMAINR_API_KEY = os.environ["DOMAINR_API_KEY"]
 
 
 class DomainAvailabilityRequest(BaseModel):
-    domain: str = Field(description='Domain name (ex. reddit.com)')
+    domain: str = Field(description="Domain name (ex. reddit.com)")
 
 
 @tool(
@@ -22,7 +22,7 @@ def domain_availability(domain: str) -> dict:
     Retrieves the availability for a domain name using Domainr service
     """
 
-    endpoint = 'https://domainr.p.rapidapi.com/v2/status'
+    endpoint = "https://domainr.p.rapidapi.com/v2/status"
 
     params = {
         "mashape-key": DOMAINR_API_KEY,
