@@ -404,7 +404,7 @@ def test_structured_tool_from_function_with_callbacks() -> None:
             bar: int
             baz: str
         """
-        raise "foo"
+        raise NotImplementedError()
 
     structured_tool = StructuredTool.from_function(foo)
 
