@@ -1,7 +1,7 @@
 """Chain that makes API calls and summarizes the responses to answer a question."""
-import re
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Optional
 
 from pydantic import Field, root_validator
@@ -16,6 +16,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts import BasePromptTemplate
 from langchain.requests import TextRequestsWrapper
+
 
 class APIChain(Chain):
     """Chain that makes API calls and summarizes the responses to answer a question."""
