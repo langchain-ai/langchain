@@ -314,7 +314,6 @@ def test_tool_lambda_args_schema() -> None:
     expected_args = {"tool_input": {"type": "string"}}
     assert tool.args == expected_args
 
-
 def test_structured_tool_from_function_docstring() -> None:
     """Test that structured tools can be created from functions."""
 
@@ -391,6 +390,36 @@ def test_empty_args_decorator() -> None:
     assert empty_tool_input.name == "empty_tool_input"
     assert empty_tool_input.args == {}
     assert empty_tool_input.run({}) == "the empty result"
+    
+def test_structured_tool_from_function_callbacks() -> None:
+    """Test args and schema of structured tool when using callbacks."""
+
+    def foo(
+        bar: int, baz: str, callbacks: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        """Docstring
+        Args:
+            bar: int
+            baz: str
+        """
+        raise "foo"
+
+    structured_tool = StructuredTool.from_function(foo)
+    
+    assert structured_tool.args == {
+        "bar": {"title": "Bar", "type": "integer"},
+        "baz": {"title": "Baz", "type": "string"},
+    }
+
+    assert structured_tool.args_schema.schema() == {
+        "properties": {
+            "bar": {"title": "Bar", "type": "integer"},
+            "baz": {"title": "Baz", "type": "string"},
+        },
+        "title": "fooSchemaSchema",
+        "type": "object",
+        "required": ["bar", "baz"],
+    }
 
 
 def test_named_tool_decorator() -> None:
