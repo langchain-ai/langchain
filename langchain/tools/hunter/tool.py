@@ -17,7 +17,7 @@ class EmailFinderRequest(BaseModel):
 
 
 @tool("search_email", return_direct=True, args_schema=EmailFinderRequest)
-def search_email(full_name: str, domain: str, company: str) -> str:
+def search_email(full_name: str, domain: str, company: str) -> dict:
     """
     Retrieves an email address using Hunter.io service
     """
