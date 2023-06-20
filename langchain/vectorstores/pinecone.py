@@ -160,6 +160,14 @@ class Pinecone(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        return self.similarity_search_with_score(query, k)
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],

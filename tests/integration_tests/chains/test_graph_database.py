@@ -2,7 +2,13 @@
 import os
 
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain.chains.loading import load_chain
 from langchain.graphs import Neo4jGraph
+from langchain.graphs.neo4j_graph import (
+    node_properties_query,
+    rel_properties_query,
+    rel_query,
+)
 from langchain.llms.openai import OpenAI
 
 
@@ -168,3 +174,81 @@ def test_cypher_return_direct() -> None:
     output = chain.run("Who played in Pulp Fiction?")
     expected_output = [{"a.name": "Bruce Willis"}]
     assert output == expected_output
+
+
+def test_cypher_return_correct_schema() -> None:
+    """Test that chain returns direct results."""
+    url = os.environ.get("NEO4J_URL")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(
+        url=url,
+        username=username,
+        password=password,
+    )
+    # Delete all nodes in the graph
+    graph.query("MATCH (n) DETACH DELETE n")
+    # Create two nodes and a relationship
+    graph.query(
+        """
+        CREATE (la:LabelA {property_a: 'a'})
+        CREATE (lb:LabelB)
+        CREATE (lc:LabelC)
+        MERGE (la)-[:REL_TYPE]-> (lb)
+        MERGE (la)-[:REL_TYPE {rel_prop: 'abc'}]-> (lc)
+        """
+    )
+    # Refresh schema information
+    graph.refresh_schema()
+
+    node_properties = graph.query(node_properties_query)
+    relationships_properties = graph.query(rel_properties_query)
+    relationships = graph.query(rel_query)
+
+    expected_node_properties = [
+        {
+            "properties": [{"property": "property_a", "type": "STRING"}],
+            "labels": "LabelA",
+        }
+    ]
+    expected_relationships_properties = [
+        {"type": "REL_TYPE", "properties": [{"property": "rel_prop", "type": "STRING"}]}
+    ]
+    expected_relationships = [
+        "(:LabelA)-[:REL_TYPE]->(:LabelB)",
+        "(:LabelA)-[:REL_TYPE]->(:LabelC)",
+    ]
+
+    assert node_properties == expected_node_properties
+    assert relationships_properties == expected_relationships_properties
+    assert relationships == expected_relationships
+
+
+def test_cypher_save_load() -> None:
+    """Test saving and loading."""
+
+    FILE_PATH = "cypher.yaml"
+    url = os.environ.get("NEO4J_URL")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(
+        url=url,
+        username=username,
+        password=password,
+    )
+    chain = GraphCypherQAChain.from_llm(
+        OpenAI(temperature=0), graph=graph, return_direct=True
+    )
+
+    chain.save(file_path=FILE_PATH)
+    qa_loaded = load_chain(FILE_PATH, graph=graph)
+
+    assert qa_loaded == chain

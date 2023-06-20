@@ -16,6 +16,12 @@ from langchain.document_loaders.bibtex import BibtexLoader
 from langchain.document_loaders.bigquery import BigQueryLoader
 from langchain.document_loaders.bilibili import BiliBiliLoader
 from langchain.document_loaders.blackboard import BlackboardLoader
+from langchain.document_loaders.blob_loaders import (
+    Blob,
+    BlobLoader,
+    FileSystemBlobLoader,
+    YoutubeAudioLoader,
+)
 from langchain.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
@@ -151,6 +157,8 @@ __all__ = [
     "BigQueryLoader",
     "BiliBiliLoader",
     "BlackboardLoader",
+    "Blob",
+    "BlobLoader",
     "BlockchainDocumentLoader",
     "CSVLoader",
     "ChatGPTLoader",
@@ -164,10 +172,13 @@ __all__ = [
     "DocugamiLoader",
     "Docx2txtLoader",
     "DuckDBLoader",
-    "FaunaLoader",
+    "EmbaasBlobLoader",
+    "EmbaasLoader",
     "EverNoteLoader",
     "FacebookChatLoader",
+    "FaunaLoader",
     "FigmaFileLoader",
+    "FileSystemBlobLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GitHubIssuesLoader",
@@ -196,8 +207,8 @@ __all__ = [
     "NotionDBLoader",
     "NotionDirectoryLoader",
     "ObsidianLoader",
-    "OneDriveLoader",
     "OneDriveFileLoader",
+    "OneDriveLoader",
     "OnlinePDFLoader",
     "OutlookMessageLoader",
     "PDFMinerLoader",
@@ -221,6 +232,7 @@ __all__ = [
     "SeleniumURLLoader",
     "SitemapLoader",
     "SlackDirectoryLoader",
+    "SnowflakeLoader",
     "SpreedlyLoader",
     "StripeLoader",
     "TelegramChatApiLoader",
@@ -253,8 +265,6 @@ __all__ = [
     "WebBaseLoader",
     "WhatsAppChatLoader",
     "WikipediaLoader",
+    "YoutubeAudioLoader",
     "YoutubeLoader",
-    "SnowflakeLoader",
-    "EmbaasLoader",
-    "EmbaasBlobLoader",
 ]
