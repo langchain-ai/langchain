@@ -2,6 +2,10 @@
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
+from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
+from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
+from langchain.chains.combine_documents.refine import RefineDocumentsChain
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.conversational_retrieval.base import (
@@ -24,6 +28,7 @@ from langchain.chains.mapreduce import MapReduceChain
 from langchain.chains.moderation import OpenAIModerationChain
 from langchain.chains.natbot.base import NatBotChain
 from langchain.chains.openai_functions import (
+    create_citation_fuzzy_match_chain,
     create_extraction_chain,
     create_extraction_chain_pydantic,
     create_tagging_chain,
@@ -93,4 +98,9 @@ __all__ = [
     "create_tagging_chain",
     "create_tagging_chain_pydantic",
     "load_chain",
+    "create_citation_fuzzy_match_chain",
+    "StuffDocumentsChain",
+    "MapRerankDocumentsChain",
+    "MapReduceDocumentsChain",
+    "RefineDocumentsChain",
 ]

@@ -129,7 +129,13 @@
         "kwargs": {
           "model": "davinci",
           "temperature": 0.5,
-          "openai_api_key": "hello"
+          "openai_api_key": {
+            "lc": 1,
+            "type": "secret",
+            "id": [
+              "OPENAI_API_KEY"
+            ]
+          }
         }
       },
       "prompt": {
