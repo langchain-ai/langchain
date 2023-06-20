@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Type, Union
 
 from pydantic import BaseModel, Field
 
@@ -23,9 +23,16 @@ class AnswerWithSources(BaseModel):
 
 
 def create_qa_with_structure_chain(
-    llm: BaseLanguageModel, schema: Any, output_parser: str = "base"
+    llm: BaseLanguageModel,
+    schema: Union[dict, Type[BaseModel]],
+    output_parser: str = "base",
 ) -> LLMChain:
     if output_parser == "pydantic":
+        if not (isinstance(schema, type) and issubclass(schema, BaseModel)):
+            raise ValueError(
+                "Must provide a pydantic class for schema when output_parser is "
+                "'pydantic'."
+            )
         _output_parser: BaseLLMOutputParser = PydanticOutputFunctionsParser(
             pydantic_schema=schema
         )
@@ -36,11 +43,14 @@ def create_qa_with_structure_chain(
             f"Got unexpected output_parser: {output_parser}. "
             f"Should be one of `pydantic` or `base`."
         )
-    schema = AnswerWithSources.schema()
+    if isinstance(schema, type) and issubclass(schema, BaseModel):
+        schema_dict = schema.schema()
+    else:
+        schema_dict = schema
     function = {
-        "name": schema["title"],
-        "description": schema["description"],
-        "parameters": schema,
+        "name": schema_dict["title"],
+        "description": schema_dict["description"],
+        "parameters": schema_dict,
     }
     llm_kwargs = get_llm_kwargs(function)
     messages = [
