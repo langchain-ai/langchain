@@ -1,4 +1,5 @@
 """Chain that makes API calls and summarizes the responses to answer a question."""
+import re
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -15,8 +16,6 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts import BasePromptTemplate
 from langchain.requests import TextRequestsWrapper
-import re
-
 
 class APIChain(Chain):
     """Chain that makes API calls and summarizes the responses to answer a question."""
@@ -66,11 +65,11 @@ class APIChain(Chain):
                 f"Input variables should be {expected_vars}, got {input_vars}"
             )
         return values
-    
-    def verify_api_url_is_legit(self, parsed_url: str):
+
+    def verify_api_url_is_legit(self, parsed_url: str) -> None:
         """Verify that the parsed URL corresponds to one of the URLs in the API spec"""
-        
-        base_url_re = re.compile('http[s]?://((?:[-\w.]|(?:%[\da-fA-F]{2}))+)')
+
+        base_url_re = re.compile("http[s]?://((?:[-\w.]|(?:%[\da-fA-F]{2}))+)")
         base_parsed_url = base_url_re.findall(parsed_url)[0].strip().lower()
         api_doc_allowed_urls = base_url_re.findall(self.api_docs)
         for url in api_doc_allowed_urls:
@@ -94,7 +93,7 @@ class APIChain(Chain):
         )
         _run_manager.on_text(api_url, color="green", end="\n", verbose=self.verbose)
         api_url = api_url.strip()
-        if self.allow_unverified_urls == False:
+        if self.allow_unverified_urls is False:
             self.verify_api_url_is_legit(api_url)
         api_response = self.requests_wrapper.get(api_url)
         _run_manager.on_text(
@@ -107,7 +106,7 @@ class APIChain(Chain):
             api_response=api_response,
             callbacks=_run_manager.get_child(),
         )
-        
+
         return {self.output_key: answer}
 
     async def _acall(
