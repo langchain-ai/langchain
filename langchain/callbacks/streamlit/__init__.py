@@ -62,7 +62,7 @@ def StreamlitCallbackHandler(
             parent_container,
             max_thought_containers=max_thought_containers,
             expand_new_thoughts=expand_new_thoughts,
-            contract_on_done=collapse_completed_thoughts,
+            collapse_completed_thoughts=collapse_completed_thoughts,
             thought_labeler=thought_labeler,
         )
     except ImportError:
