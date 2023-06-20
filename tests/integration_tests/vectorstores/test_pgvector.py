@@ -212,7 +212,7 @@ def test_pgvector_retriever_search_threshold() -> None:
 
 
 def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
-    """Test using retriever for searching with threshold and customize normalization function"""
+    """Test searching with threshold and customize normalization function"""
 
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
