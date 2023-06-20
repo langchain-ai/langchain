@@ -38,14 +38,22 @@ class Chain(Serializable, ABC):
     There are many different types of memory - please see memory docs 
     for the full catalog."""
     callbacks: Callbacks = Field(default=None, exclude=True)
-    """Callbacks."""
+    """Optional list of callback handlers (or callback manager). Defaults to None.
+    Callback handlers are called throughout the lifecycle of a call to a chain,
+    starting with on_chain_start, ending with on_chain_end or on_chain_error.
+    Each custom chain can optionally call additional callback methods, see Callback docs
+    for full details."""
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
-    """Callback manager."""
+    """Deprecated, use `callbacks` instead."""
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether or not run in verbose mode. In verbose mode, some intermediate logs
     will be printed to the console. Defaults to `langchain.verbose` value."""
     tags: Optional[List[str]] = None
-    """Optional list of tags associated with the chain."""
+    """Optional list of tags associated with the chain. Defaults to None
+    These tags will be associated with each call to this chain,
+    and passed as arguments to the handlers defined in `callbacks`.
+    You can use these to eg identify a specific instance of a chain with its use case.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
