@@ -34,7 +34,9 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
         """Return consistent embeddings for each text seen so far."""
         out_vectors = []
         for text in texts:
-            vector = self.embed_query(text)
+            if text not in self.known_texts:
+                self.known_texts.append(text)
+            vector = [float(1.0)] * 9 + [float(self.known_texts.index(text))]
             out_vectors.append(vector)
         return out_vectors
 
@@ -42,7 +44,7 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
         """Return consistent embeddings for the text, if seen before, or a constant
         one if the text is unknown."""
         if text not in self.known_texts:
-            self.known_texts.append(text)
+            return [float(1.0)] * 9 + [float(0.0)]
         return [float(1.0)] * 9 + [float(self.known_texts.index(text))]
 
 
@@ -67,6 +69,6 @@ class AngularTwoDimensionalEmbeddings(Embeddings):
         try:
             angle = float(text)
             return [math.cos(angle * math.pi), math.sin(angle * math.pi)]
-        except:
+        except ValueError:
             # Assume: just test string, no attention is paid to values.
             return [0.0, 0.0]

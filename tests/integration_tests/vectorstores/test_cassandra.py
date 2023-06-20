@@ -1,7 +1,7 @@
 """Test Cassandra functionality."""
 from typing import List, Optional, Type
 
-from cassandra.cluster import Cluster, Session
+from cassandra.cluster import Cluster
 
 from langchain.docstore.document import Document
 from langchain.vectorstores import Cassandra
@@ -25,7 +25,10 @@ def _vectorstore_from_texts(
     session = cluster.connect()
     # ensure keyspace exists
     session.execute(
-        f"CREATE KEYSPACE IF NOT EXISTS {keyspace} WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}"
+        (
+            f"CREATE KEYSPACE IF NOT EXISTS {keyspace} "
+            f"WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}"
+        )
     )
     # drop table if required
     if drop:
