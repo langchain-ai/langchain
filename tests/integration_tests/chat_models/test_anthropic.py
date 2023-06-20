@@ -27,7 +27,9 @@ def test_anthropic_call() -> None:
 def test_anthropic_generate() -> None:
     """Test generate method of anthropic."""
     chat = ChatAnthropic(model="test")
-    chat_messages = [[HumanMessage(content="How many toes do dogs have?")]]
+    chat_messages: List[List[BaseMessage]] = [
+        [HumanMessage(content="How many toes do dogs have?")]
+    ]
     messages_copy = [messages.copy() for messages in chat_messages]
     result: LLMResult = chat.generate(chat_messages)
     assert isinstance(result, LLMResult)
