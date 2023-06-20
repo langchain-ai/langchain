@@ -10,7 +10,7 @@ from langchain.tools import BaseTool
 from langchain.tools.sql_database.tool import (
     InfoSQLDatabaseTool,
     ListSQLDatabaseTool,
-    QueryCheckerTool,
+    QuerySQLCheckerTool,
     QuerySQLDataBaseTool,
 )
 
@@ -55,5 +55,5 @@ class SQLDatabaseToolkit(BaseToolkit):
                 db=self.db, description=info_sql_database_tool_description
             ),
             ListSQLDatabaseTool(db=self.db),
-            QueryCheckerTool(db=self.db, llm=self.llm),
+            QuerySQLCheckerTool(db=self.db, llm=self.llm),
         ]

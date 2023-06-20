@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union
 
-from pydantic import Field
+from pydantic import Field, root_validator
 
 from langchain.load.serializable import Serializable
 from langchain.memory.buffer import get_buffer_string
@@ -160,6 +160,26 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
 class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     input_variables: List[str]
     messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
+
+    @root_validator(pre=True)
+    def validate_input_variables(cls, values: dict) -> dict:
+        messages = values["messages"]
+        input_vars = set()
+        for message in messages:
+            if isinstance(message, BaseMessagePromptTemplate):
+                input_vars.update(message.input_variables)
+        if "partial_variables" in values:
+            input_vars = input_vars - set(values["partial_variables"])
+        if "input_variables" in values:
+            if input_vars != set(values["input_variables"]):
+                raise ValueError(
+                    "Got mismatched input_variables. "
+                    f"Expected: {input_vars}. "
+                    f"Got: {values['input_variables']}"
+                )
+        else:
+            values["input_variables"] = list(input_vars)
+        return values
 
     @classmethod
     def from_template(cls, template: str, **kwargs: Any) -> ChatPromptTemplate:
