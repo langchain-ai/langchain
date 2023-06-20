@@ -62,7 +62,7 @@ autodoc_pydantic_model_show_validator_summary = False
 autodoc_pydantic_model_show_field_summary = False
 autodoc_pydantic_model_members = False
 autodoc_pydantic_model_undoc_members = False
-autodoc_pydantic_model_hide_paramlist = False
+autodoc_pydantic_model_hide_paramlist = True
 autodoc_pydantic_model_signature_prefix = "class"
 autodoc_pydantic_field_signature_prefix = "attribute"
 autodoc_pydantic_model_summary_list_order = "bysource"
@@ -74,7 +74,6 @@ autodoc_default_options = {
     "inherited_members": "BaseModel",
 }
 autodoc_typehints = "description"
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
