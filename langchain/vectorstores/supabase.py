@@ -335,3 +335,86 @@ class SupabaseVectorStore(VectorStore):
             embedding[0], k, fetch_k, lambda_mult=lambda_mult
         )
         return docs
+
+    def add_documents_by_id(
+        self, ids: List[str], documents: List[Document]
+    ) -> List[str]:
+        """Add the documents to vectorstore by ID.
+
+        Args:
+            documents: A sequence of documents to add.
+            ids: A sequence of ids to use for the documents.
+
+        Returns:
+            A list of ids of the added documents. Auto-assigned if not provided.
+        """
+        texts = [document.page_content for document in documents]
+        metadatas = [document.metadata for document in documents]
+        embeddings = self._embedding.embed_documents(texts)
+        rows: List[dict[str, Any]] = [
+            {
+                "content": text,
+                "embedding": embedding,
+                "id": id,
+                "metadata": metadata,
+            }
+            for text, metadata, id, embedding in zip(texts, metadatas, ids, embeddings)
+        ]
+
+        # Following _add_vectors
+        chunk_size = 500
+        for i in range(0, len(rows), chunk_size):
+            chunk = rows[i : i + chunk_size]
+            # TODO: Add handling for duplicate keys
+            self._client.from_(self.table_name).insert(chunk).execute()
+
+        return ids
+
+    def update_documents_by_id(
+        self, ids: List[str], documents: List[Document]
+    ) -> List[str]:
+        """Update the documents.
+
+        Args:
+            documents: A sequence of documents to add.
+            ids: A sequence of ids to use for the documents.
+
+        Returns:
+            A list of ids of the added documents. Auto-assigned if not provided.
+        """
+        texts = [document.page_content for document in documents]
+        metadatas = [document.metadata for document in documents]
+        embeddings = self._embedding.embed_documents(texts)
+        rows: List[dict[str, Any]] = [
+            {
+                "content": text,
+                "embedding": embedding,
+                "id": id,
+                "metadata": metadata,
+            }
+            for text, metadata, id, embedding in zip(texts, metadatas, ids, embeddings)
+        ]
+
+        # Only update the row where the id is equal to the id of the current row
+        for row in rows:
+            self._client.from_(self.table_name).update(row).eq(
+                "id", row["id"]
+            ).execute()
+
+        return ids
+
+    def delete_by_id(self, ids: List[str]) -> None:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+        rows: List[dict[str, Any]] = [
+            {
+                "id": id,
+            }
+            for id in ids
+        ]
+
+        for row in rows:
+            self._client.from_(self.table_name).delete().eq("id", row["id"]).execute()
