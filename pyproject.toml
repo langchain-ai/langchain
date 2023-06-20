@@ -110,6 +110,7 @@ awadb = {version = "^0.3.3", optional = true}
 azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
 # now streamlit requires Python >=3.7, !=3.9.7 So, it is commented out.
 #streamlit = {version = "^1.18.0", optional = true}
+pypandoc = {version = "^1.11", optional = true}
 
 
 [tool.poetry.group.docs.dependencies]
@@ -300,6 +301,7 @@ all = [
     "tigrisdb",
     "nebula3-python",
     "awadb",
+    "pypandoc",
 ]
 
 # An extra used to be able to add extended testing.

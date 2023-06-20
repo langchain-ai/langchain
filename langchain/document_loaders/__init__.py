@@ -94,6 +94,7 @@ from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
+from langchain.document_loaders.rst import PandocRSTLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
@@ -160,6 +161,7 @@ __all__ = [
     "BlobLoader",
     "BlockchainDocumentLoader",
     "CSVLoader",
+    "PandocRSTLoader",
     "ChatGPTLoader",
     "CoNLLULoader",
     "CollegeConfidentialLoader",
