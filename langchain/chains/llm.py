@@ -226,9 +226,9 @@ class LLMChain(Chain):
             for generation in llm_result.generations
         ]
 
-        if response.final_prompts is not None:
+        if llm_result.final_prompts is not None:
             # Get the final prompts as strings
-            for result_dict, final_prompts in zip(result, response.final_prompts):
+            for result_dict, final_prompts in zip(result, llm_result.final_prompts):
                 result_dict["final_prompts"] = final_prompts
 
         if self.return_final_only:
