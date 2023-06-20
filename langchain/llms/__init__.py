@@ -6,6 +6,7 @@ from langchain.llms.aleph_alpha import AlephAlpha
 from langchain.llms.anthropic import Anthropic
 from langchain.llms.anyscale import Anyscale
 from langchain.llms.aviary import Aviary
+from langchain.llms.azureml_endpoint import AzureMLOnlineEndpoint
 from langchain.llms.bananadev import Banana
 from langchain.llms.base import BaseLLM
 from langchain.llms.baseten import Baseten
@@ -53,6 +54,7 @@ __all__ = [
     "Anthropic",
     "Anyscale",
     "Aviary",
+    "AzureMLOnlineEndpoint",
     "AzureOpenAI",
     "Banana",
     "Baseten",
@@ -104,6 +106,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "anyscale": Anyscale,
     "aviary": Aviary,
     "azure": AzureOpenAI,
+    "azureml_endpoint": AzureMLOnlineEndpoint,
     "bananadev": Banana,
     "baseten": Baseten,
     "beam": Beam,
