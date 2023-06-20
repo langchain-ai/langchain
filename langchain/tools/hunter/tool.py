@@ -36,7 +36,7 @@ def search_email(full_name: str, domain: str, company: str) -> str:
 
 
 @tool("verify_email", return_direct=True, args_schema=EmailVerificationRequest)
-def verify_email(email: str) -> str:
+def verify_email(email: str) -> dict:
     """
     Verifies an email address validity using Hunter.io service
     """
