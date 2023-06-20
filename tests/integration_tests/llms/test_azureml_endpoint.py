@@ -8,7 +8,6 @@ from typing import Dict
 import pytest
 
 from langchain.llms.azureml_endpoint import (
-    AzureMLEndpointClient,
     AzureMLOnlineEndpoint,
     ContentFormatterBase,
     DollyContentFormatter,
