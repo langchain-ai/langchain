@@ -195,6 +195,7 @@ class AzureSearch(VectorStore):
     ) -> List[str]:
         """Add texts data to an existing index."""
         keys = kwargs.get("keys")
+        extra_fields = kwargs.get("extra_fields")
         ids = []
         # Write data to index
         data = []
@@ -214,7 +215,7 @@ class AzureSearch(VectorStore):
                         self.embedding_function(text), dtype=np.float32
                     ).tolist(),
                     FIELDS_METADATA: json.dumps(metadata),
-                }
+                } | extra_fields
             )
             ids.append(key)
             # Upload data in batches
