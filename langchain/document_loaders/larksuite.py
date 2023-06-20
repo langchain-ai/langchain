@@ -16,7 +16,7 @@ class LarkSuiteDocLoader(BaseLoader):
         self.access_token = access_token
         self.document_id = document_id
 
-    def _get_larksuite_api_json_data(self, api_url) -> Any:
+    def _get_larksuite_api_json_data(self, api_url: str) -> Any:
         """Get LarkSuite (FeiShu) API response json data."""
         headers = {"Authorization": f"Bearer {self.access_token}"}
         request = urllib.request.Request(api_url, headers=headers)
