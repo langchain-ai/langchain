@@ -1,7 +1,7 @@
 """Loading logic for loading documents from Tencent Cloud COS file."""
 import os
 import tempfile
-from typing import List
+from typing import List, Iterator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -22,6 +22,9 @@ class TencentCOSFileLoader(BaseLoader):
         self.key = key
 
     def load(self) -> List[Document]:
+        return list(self.lazy_load())
+
+    def lazy_load(self) -> Iterator[Document]:
         """Load documents."""
         try:
             from qcloud_cos import CosS3Client
@@ -41,4 +44,5 @@ class TencentCOSFileLoader(BaseLoader):
                 Bucket=self.bucket, Key=self.key, DestFilePath=file_path
             )
             loader = UnstructuredFileLoader(file_path)
-            return loader.load()
+            # UnstructuredFileLoader not implement lazy_load yet
+            return iter(loader.load())

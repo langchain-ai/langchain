@@ -1,5 +1,5 @@
 """Loading logic for loading documents from Tencent Cloud COS directory."""
-from typing import List
+from typing import List, Iterator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -20,6 +20,9 @@ class TencentCOSDirectoryLoader(BaseLoader):
         self.prefix = prefix
 
     def load(self) -> List[Document]:
+        return list(self.lazy_load())
+
+    def lazy_load(self) -> Iterator[Document]:
         """Load documents."""
         try:
             from qcloud_cos import CosS3Client
@@ -40,10 +43,8 @@ class TencentCOSDirectoryLoader(BaseLoader):
             if response["IsTruncated"] == "false":
                 break
             marker = response["NextMarker"]
-        docs = []
         for content in contents:
             if content["Key"].endswith("/"):
                 continue
             loader = TencentCOSFileLoader(self.conf, self.bucket, content["Key"])
-            docs.extend(loader.load())
-        return docs
+            yield loader.load()[0]
