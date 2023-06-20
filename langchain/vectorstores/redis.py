@@ -210,7 +210,8 @@ class Redis(VectorStore):
             List[str]: List of ids added to the vectorstore
         """
 
-        assert not (keys and ids), "`ids` and `keys` cannot be provided at the same time."
+        if keys and ids:
+            raise ValueError("`ids` and `keys` cannot be provided at the same time.")
 
         _ids = []
         prefix = _redis_prefix(self.index_name)
