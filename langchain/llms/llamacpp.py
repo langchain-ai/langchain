@@ -168,7 +168,7 @@ class LlamaCpp(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "llama.cpp"
+        return "llamacpp"
 
     def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
         """

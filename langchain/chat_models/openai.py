@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Extra, Field, root_validator
+from pydantic import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -151,6 +151,10 @@ class ChatOpenAI(BaseChatModel):
     """
 
     @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"openai_api_key": "OPENAI_API_KEY"}
+
+    @property
     def lc_serializable(self) -> bool:
         return True
 
@@ -182,7 +186,6 @@ class ChatOpenAI(BaseChatModel):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.ignore
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -387,16 +390,27 @@ class ChatOpenAI(BaseChatModel):
             inner_completion = ""
             role = "assistant"
             params["stream"] = True
+            function_call: Optional[dict] = None
             async for stream_resp in await acompletion_with_retry(
                 self, messages=message_dicts, **params
             ):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content", "")
-                inner_completion += token
+                inner_completion += token or ""
+                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
+                if _function_call:
+                    if function_call is None:
+                        function_call = _function_call
+                    else:
+                        function_call["arguments"] += _function_call["arguments"]
                 if run_manager:
                     await run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
-                {"content": inner_completion, "role": role}
+                {
+                    "content": inner_completion,
+                    "role": role,
+                    "function_call": function_call,
+                }
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:
@@ -466,12 +480,12 @@ class ChatOpenAI(BaseChatModel):
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
-        if model == "gpt-3.5-turbo-0301":
+        if model.startswith("gpt-3.5-turbo"):
             # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model == "gpt-4-0314":
+        elif model.startswith("gpt-4"):
             tokens_per_message = 3
             tokens_per_name = 1
         else:
