@@ -76,7 +76,7 @@ def test_filter_sitemap() -> None:
     """Test sitemap loader."""
     loader = SitemapLoader(
         "https://langchain.readthedocs.io/sitemap.xml",
-        filter_urls=["https://python.langchain.com/en/stable/"],
+        filter_urls=["https://api.python.langchain.com/en/latest/"],
     )
     documents = loader.load()
     assert len(documents) == 1

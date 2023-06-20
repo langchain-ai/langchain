@@ -2,10 +2,13 @@
 import asyncio
 import logging
 import warnings
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+from urllib.parse import urlparse
 
 import aiohttp
 import requests
+from bs4 import BeautifulSoup
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -52,19 +55,19 @@ class WebBaseLoader(BaseLoader):
 
     def __init__(
         self,
-        web_path: Union[str, List[str]],
+        web_paths: Union[str, List[str]],
         header_template: Optional[dict] = None,
         verify: Optional[bool] = True,
     ):
-        """Initialize with webpage path."""
-
-        # TODO: Deprecate web_path in favor of web_paths, and remove this
-        # left like this because there are a number of loaders that expect single
-        # urls
-        if isinstance(web_path, str):
-            self.web_paths = [web_path]
-        elif isinstance(web_path, List):
-            self.web_paths = web_path
+        """Initialize with webpage path(s)."""
+        if isinstance(web_paths, str):
+            self.web_paths = [web_paths]
+        elif isinstance(web_paths, list):
+            self.web_paths = web_paths
+        else:
+            raise TypeError(
+                "web_paths must be a string or a list of strings representing URLs"
+            )
 
         self.session = requests.Session()
         try:
@@ -74,7 +77,6 @@ class WebBaseLoader(BaseLoader):
                 "bs4 package not found, please install it with " "`pip install bs4`"
             )
 
-        # Choose to verify
         self.verify = verify
 
         headers = header_template or default_header_template
@@ -91,6 +93,16 @@ class WebBaseLoader(BaseLoader):
                 )
         self.session.headers = dict(headers)
 
+    def get_web_path(self, index: int = 0) -> str:
+        """Return the webpath at the specified index."""
+        try:
+            return self.web_paths[index]
+        except IndexError:
+            raise IndexError(
+                f"Index {index} is out of bounds for web_paths "
+                f"with size {len(self.web_paths)}"
+            )
+
     @property
     def web_path(self) -> str:
         if len(self.web_paths) > 1:
@@ -98,8 +110,17 @@ class WebBaseLoader(BaseLoader):
         return self.web_paths[0]
 
     async def _fetch(
-        self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
+        self,
+        url_or_path: str,
+        retries: int = 3,
+        cooldown: int = 2,
+        backoff: float = 1.5,
     ) -> str:
+        # If it's a local file, read it and return its content
+        if urlparse(url_or_path).scheme == "" or Path(url_or_path).exists():
+            with open(url_or_path, "r") as file:
+                return file.read()
+
         # For SiteMap SSL verification
         if not self.requests_kwargs.get("verify", True):
             connector = aiohttp.TCPConnector(ssl=False)
@@ -110,7 +131,7 @@ class WebBaseLoader(BaseLoader):
             for i in range(retries):
                 try:
                     async with session.get(
-                        url, headers=self.session.headers, verify=self.verify
+                        url_or_path, headers=self.session.headers
                     ) as response:
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:
@@ -118,7 +139,7 @@ class WebBaseLoader(BaseLoader):
                         raise
                     else:
                         logger.warning(
-                            f"Error fetching {url} with attempt "
+                            f"Error fetching {url_or_path} with attempt "
                             f"{i + 1}/{retries}: {e}. Retrying..."
                         )
                         await asyncio.sleep(cooldown * backoff**i)
@@ -174,18 +195,24 @@ class WebBaseLoader(BaseLoader):
 
         return final_results
 
-    def _scrape(self, url: str, parser: Union[str, None] = None) -> Any:
-        from bs4 import BeautifulSoup
+    def _scrape(self, url_or_path: str, parser: Union[str, None] = None) -> Any:
+        # If it's a local file, read it and parse its content
+        if urlparse(url_or_path).scheme == "" or Path(url_or_path).exists():
+            with open(url_or_path, "r") as file:
+                content = file.read()
+            return BeautifulSoup(content, parser)
 
         if parser is None:
-            if url.endswith(".xml"):
+            if url_or_path.endswith(".xml"):
                 parser = "xml"
             else:
                 parser = self.default_parser
 
         self._check_parser(parser)
 
-        html_doc = self.session.get(url, verify=self.verify, **self.requests_kwargs)
+        html_doc = self.session.get(
+            url_or_path, verify=self.verify, **self.requests_kwargs
+        )
         html_doc.encoding = html_doc.apparent_encoding
         return BeautifulSoup(html_doc.text, parser)
 
