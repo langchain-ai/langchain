@@ -200,11 +200,15 @@ def _handle_event(
                     **kwargs,
                 )
             else:
-                logger.warning(f"Error in {event_name} callback: {e}")
+                logger.warning(
+                    f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+                )
         except Exception as e:
+            logger.warning(
+                f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+            )
             if handler.raise_error:
                 raise e
-            logger.warning(f"Error in {event_name} callback: {e}")
 
 
 async def _ahandle_event_for_handler(
@@ -236,11 +240,15 @@ async def _ahandle_event_for_handler(
                 **kwargs,
             )
         else:
-            logger.warning(f"Error in {event_name} callback: {e}")
+            logger.warning(
+                f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+            )
     except Exception as e:
+        logger.warning(
+            f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+        )
         if handler.raise_error:
             raise e
-        logger.warning(f"Error in {event_name} callback: {e}")
 
 
 async def _ahandle_event(
