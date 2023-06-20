@@ -1,7 +1,5 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -33,11 +31,6 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             from langchain.llms import Anthropic
             model = ChatAnthropic(model="<model_name>", anthropic_api_key="my-api-key")
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
 
     @property
     def _llm_type(self) -> str:
@@ -83,6 +76,8 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         Returns:
             str: Combined string with necessary HUMAN_PROMPT and AI_PROMPT tags.
         """
+        messages = messages.copy()  # don't mutate the original list
+
         if not self.AI_PROMPT:
             raise NameError("Please ensure the anthropic package is loaded")
 

@@ -129,6 +129,8 @@ class SerpAPIWrapper(BaseModel):
         """Process response from SerpAPI."""
         if "error" in res.keys():
             raise ValueError(f"Got error from SerpAPI: {res['error']}")
+        if "answer_box" in res.keys() and type(res["answer_box"]) == list:
+            res["answer_box"] = res["answer_box"][0]
         if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():
             toret = res["answer_box"]["answer"]
         elif "answer_box" in res.keys() and "snippet" in res["answer_box"].keys():

@@ -106,7 +106,7 @@ class HuggingFaceTextGenInference(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "hf_textgen_inference"
+        return "huggingface_textgen_inference"
 
     def _call(
         self,
@@ -169,4 +169,5 @@ class HuggingFaceTextGenInference(LLM):
                 if not token.special:
                     if text_callback:
                         text_callback(token.text)
+                    text += token.text
         return text
