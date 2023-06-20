@@ -291,9 +291,7 @@ class ElasticVectorSearch(VectorStore, ABC):
             "elasticsearch_url", "ELASTICSEARCH_URL"
         )
         index_name = index_name or uuid.uuid4().hex
-        vectorsearch = cls(
-            elasticsearch_url, index_name, embedding, **kwargs
-        )
+        vectorsearch = cls(elasticsearch_url, index_name, embedding, **kwargs)
         vectorsearch.add_texts(
             texts, metadatas=metadatas, refresh_indices=refresh_indices
         )
@@ -409,7 +407,13 @@ class ElasticKnnSearch(ElasticVectorSearch):
         """
         index_name = index_name or uuid.uuid4().hex
         vectorsearch = cls(
-            index_name, embedding, es_connection, es_cloud_id, es_user, es_password, ** kwargs
+            index_name,
+            embedding,
+            es_connection,
+            es_cloud_id,
+            es_user,
+            es_password,
+            **kwargs,
         )
         vectorsearch.add_texts(
             texts, metadatas=metadatas, refresh_indices=refresh_indices
