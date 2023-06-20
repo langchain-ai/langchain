@@ -291,7 +291,7 @@ class ElasticVectorSearch(VectorStore, ABC):
             "elasticsearch_url", "ELASTICSEARCH_URL"
         )
         index_name = index_name or uuid.uuid4().hex
-        vectorsearch = ElasticVectorSearch(
+        vectorsearch = cls(
             elasticsearch_url, index_name, embedding, **kwargs
         )
         vectorsearch.add_texts(
@@ -383,6 +383,38 @@ class ElasticKnnSearch(ElasticVectorSearch):
                     """Either provide a pre-existing Elasticsearch connection, \
                 or valid credentials for creating a new connection."""
                 )
+
+    @classmethod
+    def from_texts(
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        index_name: Optional[str] = None,
+        es_connection: Optional["Elasticsearch"] = None,
+        es_cloud_id: Optional[str] = None,
+        es_user: Optional[str] = None,
+        es_password: Optional[str] = None,
+        refresh_indices: bool = True,
+        **kwargs: Any,
+    ) -> ElasticKnnSearch:
+        """Construct ElasticKnnSearch wrapper from raw documents.
+
+        This is a user-friendly interface that:
+            1. Embeds documents.
+            2. Creates a new index for the embeddings in the Elasticsearch instance.
+            3. Adds the documents to the newly created Elasticsearch index.
+
+        This is intended to be a quick way to get started.
+        """
+        index_name = index_name or uuid.uuid4().hex
+        vectorsearch = cls(
+            index_name, embedding, es_connection, es_cloud_id, es_user, es_password, ** kwargs
+        )
+        vectorsearch.add_texts(
+            texts, metadatas=metadatas, refresh_indices=refresh_indices
+        )
+        return vectorsearch
 
     @staticmethod
     def _default_knn_mapping(dims: int) -> Dict:
