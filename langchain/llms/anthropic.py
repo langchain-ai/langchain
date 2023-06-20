@@ -42,7 +42,7 @@ class _AnthropicCommon(BaseModel):
     AI_PROMPT: Optional[str] = None
     count_tokens: Optional[Callable[[str], int]] = None
 
-    # Backwards compatibility for change of model parameter to common model_name property.
+    # Backwards compatibility for change to common model_name property.
     @property
     def model(self) -> str:
         return self.model_name
