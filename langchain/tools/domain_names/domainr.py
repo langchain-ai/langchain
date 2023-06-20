@@ -1,6 +1,8 @@
 import os
+
 import requests
 from pydantic import BaseModel, Field
+
 from langchain.tools import tool
 
 #: Free tier available in RapidAPI : 20 k req/month

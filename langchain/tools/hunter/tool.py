@@ -1,7 +1,9 @@
-from typing import Dict, Union
 import os
+from typing import Dict, Union
+
 import requests
 from pydantic import BaseModel, Field
+
 from langchain.tools import tool
 
 HUNTER_API_KEY = os.environ["HUNTER_API_KEY"]
