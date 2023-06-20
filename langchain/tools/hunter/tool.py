@@ -3,6 +3,8 @@ import requests
 from pydantic import BaseModel, Field
 from langchain.tools import tool
 
+HUNTER_API_KEY = os.environ['HUNTER_API_KEY']
+
 
 class EmailVerificationRequest(BaseModel):
     email: str = Field(description='Email to verify')
@@ -23,7 +25,7 @@ def search_email(full_name, domain, company) -> str:
     endpoint = 'https://api.hunter.io/v2/email-finder'
 
     params = {
-        'api_key': os.environ['HUNTER_API_KEY'],
+        'api_key': HUNTER_API_KEY,
         'max_duration': 20,
         'full_name': full_name,
         'domain': domain,
@@ -42,7 +44,7 @@ def verify_email(email) -> str:
     endpoint = 'https://api.hunter.io/v2/email-finder'
 
     params = {
-        'api_key': os.environ['HUNTER_API_KEY'],
+        'api_key': HUNTER_API_KEY,
         'max_duration': 20,
         'email': email,
     }
