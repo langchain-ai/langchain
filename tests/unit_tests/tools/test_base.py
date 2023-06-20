@@ -393,7 +393,7 @@ def test_empty_args_decorator() -> None:
     assert empty_tool_input.run({}) == "the empty result"
 
 
-def test_structured_tool_from_function_callbacks() -> None:
+def test_structured_tool_from_function_with_callbacks() -> None:
     """Test args and schema of structured tool when using callbacks."""
 
     def foo(
