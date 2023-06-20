@@ -5,10 +5,10 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.tools.jira.prompt import (
     JIRA_CATCH_ALL_PROMPT,
+    JIRA_CONFLUENCE_PAGE_CREATE_PROMPT,
     JIRA_GET_ALL_PROJECTS_PROMPT,
     JIRA_ISSUE_CREATE_PROMPT,
-    JIRA_JQL_PROMPT,
-    JIRA_CONFLUENCE_PAGE_CREATE_PROMPT
+    JIRA_JQL_PROMPT
 )
 from langchain.utils import get_from_dict_or_env
 
@@ -47,8 +47,8 @@ class JiraAPIWrapper(BaseModel):
         {
             "mode": "create_page",
             "name": "Create confluence page",
-            "description": JIRA_CONFLUENCE_PAGE_CREATE_PROMPT
-        }
+            "description": JIRA_CONFLUENCE_PAGE_CREATE_PROMPT,
+        },
     ]
 
     class Config:
@@ -76,7 +76,7 @@ class JiraAPIWrapper(BaseModel):
         values["jira_instance_url"] = jira_instance_url
 
         try:
-            from atlassian import Jira, Confluence
+            from atlassian import Confluence, Jira
         except ImportError:
             raise ImportError(
                 "atlassian-python-api is not installed. "

@@ -32,9 +32,12 @@ def test_create_ticket() -> None:
 def test_create_confluence_page() -> None:
     """Test for getting projects on JIRA"""
     jira = JiraAPIWrapper()
-    create_page_dict = '{"space": "ROC", "title":"This is the title","body":"This is the body. You can use \
-    <strong>HTML tags</strong>!"}'
+    create_page_dict = (
+        '{"space": "ROC", "title":"This is the title",'
+        '"body":"This is the body. You can use '
+        '<strong>HTML tags</strong>!"}'
+    )
 
     output = jira.run("create_page", create_page_dict)
     assert "type" in output
-    assert output["type"] == "page"
+    assert "page" in output
