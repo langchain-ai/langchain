@@ -17,7 +17,7 @@ class EmailFinderRequest(BaseModel):
 
 
 @tool("search_email", return_direct=True, args_schema=EmailFinderRequest)
-def search_email(full_name, domain, company) -> str:
+def search_email(full_name: str, domain: str, company: str) -> str:
     """
     Retrieves an email address using Hunter.io service
     """
@@ -36,7 +36,7 @@ def search_email(full_name, domain, company) -> str:
 
 
 @tool("verify_email", return_direct=True, args_schema=EmailVerificationRequest)
-def verify_email(email) -> str:
+def verify_email(email: str) -> str:
     """
     Verifies an email address validity using Hunter.io service
     """
