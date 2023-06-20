@@ -142,7 +142,7 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
     """Test saving/loading an AzureML Foundation Model LLM."""
 
     save_llm = AzureMLOnlineEndpoint(
-        deployment_name=os.getenv("DEPLOYMENT_NAME"),
+        deployment_name="databricks-dolly-v2-12b-4",
         model_kwargs={"temperature": 0.03, "top_p": 0.4, "max_tokens": 200},
     )
     save_llm.save(file_path=tmp_path / "azureml.yaml")
