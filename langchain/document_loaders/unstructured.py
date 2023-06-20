@@ -1,7 +1,7 @@
 """Loader that uses unstructured to load files."""
 import collections
 from abc import ABC, abstractmethod
-from typing import IO, Any, List, Sequence, Union
+from typing import IO, Any, Dict, List, Sequence, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -45,7 +45,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )
-        _valid_modes = {"single", "elements"}
+        _valid_modes = {"single", "elements", "paged"}
         if mode not in _valid_modes:
             raise ValueError(
                 f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
@@ -80,6 +80,31 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 if hasattr(element, "category"):
                     metadata["category"] = element.category
                 docs.append(Document(page_content=str(element), metadata=metadata))
+        elif self.mode == "paged":
+            text_dict: Dict[int, str] = {}
+            meta_dict: Dict[int, Dict] = {}
+
+            for idx, element in enumerate(elements):
+                metadata = self._get_metadata()
+                if hasattr(element, "metadata"):
+                    metadata.update(element.metadata.to_dict())
+                page_number = metadata.get("page_number", 1)
+
+                # Check if this page_number already exists in docs_dict
+                if page_number not in text_dict:
+                    # If not, create new entry with initial text and metadata
+                    text_dict[page_number] = str(element) + "\n\n"
+                    meta_dict[page_number] = metadata
+                else:
+                    # If exists, append to text and update the metadata
+                    text_dict[page_number] += str(element) + "\n\n"
+                    meta_dict[page_number].update(metadata)
+
+            # Convert the dict to a list of Document objects
+            docs = [
+                Document(page_content=text_dict[key], metadata=meta_dict[key])
+                for key in text_dict.keys()
+            ]
         elif self.mode == "single":
             metadata = self._get_metadata()
             text = "\n\n".join([str(el) for el in elements])
