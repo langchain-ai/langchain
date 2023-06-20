@@ -72,6 +72,7 @@ class Replicate(LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
+            "model": self.model,
             **{"model_kwargs": self.model_kwargs},
         }
 
