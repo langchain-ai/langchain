@@ -13,14 +13,14 @@ The purpose of this notebook is to demonstrate the integration of a `FlyteCallba
 
 ## Prepare the Dockerfile
 
-To guarantee reproducibility of your pipelines, Flyte tasks are containerized.
-Each Flyte task must be associated with an image, which can either be shared across the entire Flyte workflow or provided separately for each task.
+To guarantee reproducibility of your pipelines, Flyte [tasks](https://docs.flyte.org/projects/cookbook/en/latest/auto/core/flyte_basics/task.html) are containerized.
+Each Flyte task must be associated with an image, which can either be shared across the entire Flyte [workflow](https://docs.flyte.org/projects/cookbook/en/latest/auto/core/flyte_basics/basic_workflow.html) or provided separately for each task.
 
 NOTE: Our [getting started guide](https://docs.flyte.org/projects/cookbook/en/latest/index.html) offers detailed, step-by-step instructions on installing Flyte locally and running your initial workflow.
 
 This notebook illustrates the creation of a Docker image that you can utilize to execute your Flyte workflow.
 
-Please include the following code in a `Dockerfile`.
+Please include the following code in `Dockerfile`.
 
 ```docker
 FROM python:3.10-slim-buster
@@ -165,8 +165,8 @@ To execute the Flyte tasks on the configured Flyte backend, use the following co
 pyflyte run --image <your-image> langchain_flyte.py langchain_llm
 ```
 
-This command will initiate the execution of the langchain_llm task on the Flyte backend. You can trigger the remaining two tasks in a similar manner.
+This command will initiate the execution of the `langchain_llm` task on the Flyte backend. You can trigger the remaining two tasks in a similar manner.
 
 The metrics will be displayed on the Flyte UI as follows:
 
-![LangChain LLM]()
+![LangChain LLM](https://ik.imagekit.io/c8zl7irwkdda/Screenshot_2023-06-20_at_1.23.29_PM_MZYeG0dKa.png?updatedAt=1687247642993)
