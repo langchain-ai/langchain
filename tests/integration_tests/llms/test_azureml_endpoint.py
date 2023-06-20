@@ -148,13 +148,4 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
     save_llm.save(file_path=tmp_path / "azureml.yaml")
     loaded_llm = load_llm(tmp_path / "azureml.yaml")
 
-    llm = AzureMLOnlineEndpoint(
-        endpoint_url=os.getenv("ENDPOINT_URL"),
-        endpoint_api_key=os.getenv("ENDPOINT_API_KEY"),
-        deployment_name=loaded_llm.deployment_name,
-        model_kwargs=loaded_llm.model_kwargs,
-        content_formatter=DollyContentFormatter(),
-    )
-    resp = llm("Foo")
-    assert isinstance(resp, str)
-    assert loaded_llm == llm
+    assert loaded_llm == save_llm
