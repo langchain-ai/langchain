@@ -34,7 +34,7 @@ def sanitize_input(query: str) -> str:
 class PythonREPLTool(BaseTool):
     """A tool for running python code in a REPL."""
 
-    name = "Python REPL"
+    name = "Python_REPL"
     description = (
         "A Python shell. Use this to execute python commands. "
         "Input should be a valid python command. "

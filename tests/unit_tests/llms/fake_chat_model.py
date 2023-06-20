@@ -17,6 +17,7 @@ class FakeChatModel(SimpleChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         return "fake response"
 
@@ -25,6 +26,7 @@ class FakeChatModel(SimpleChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         output_str = "fake response"
         message = AIMessage(content=output_str)
