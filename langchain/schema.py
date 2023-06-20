@@ -199,7 +199,7 @@ class LLMResult(BaseModel):
     generations: List[List[Generation]]
     """List of the things generated. This is List[List[]] because
     each input could have multiple generations."""
-    final_prompts: Optional[List[List[dict]]] = None
+    final_prompts: Optional[List[str]] = None
     """List of final prompts used for each generation."""
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""

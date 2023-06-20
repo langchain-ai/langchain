@@ -81,9 +81,12 @@ class LLMChain(Chain):
     ) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list, run_manager=run_manager)
-        return self.llm.generate_prompt(
+        prompt_strings = [p.to_string() for p in prompts]
+        result = self.llm.generate_prompt(
             prompts, stop, callbacks=run_manager.get_child() if run_manager else None
         )
+        result.final_prompts = prompt_strings
+        return result
 
     async def agenerate(
         self,
@@ -193,7 +196,7 @@ class LLMChain(Chain):
         ]
 
         if response.final_prompts is not None:
-            # Get the final prompts as lists of prompts(system, user, etc.)
+            # Get the final prompts as strings
             for output_dict, final_prompts in zip(outputs, response.final_prompts):
                 output_dict["final_prompts"] = final_prompts
 
