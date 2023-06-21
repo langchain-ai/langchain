@@ -131,11 +131,11 @@ class OpenLLM(LLM):
     ):
         try:
             import openllm
-        except ImportError:
-            raise ValueError(
+        except ImportError as e:
+            raise ImportError(
                 "Could not import openllm. Make sure to install it with "
                 "'pip install openllm.'"
-            )
+            ) from e
 
         llm_kwargs = llm_kwargs or {}
 
@@ -212,27 +212,29 @@ class OpenLLM(LLM):
     @property
     def _identifying_params(self) -> IdentifyingParams:
         """Get the identifying parameters."""
-        res: Dict[str, Any] = {
-            "server_url": self.server_url,
-            "server_type": self.server_type,
-            "embedded": self.embedded,
-        }
         if self._client is not None:
             self.llm_kwargs.update(self._client.configuration)
-            res["model_name"] = self._client.model_name
-            res["model_id"] = self._client.model_id
+            model_name = self._client.model_name
+            model_id = self._client.model_id
         else:
-            assert self._runner is not None, "Runner must be initialized"
-            res["model_name"] = self.model_name
-            res["model_id"] = self.model_id
+            if self._runner is None:
+                raise ValueError("Runner must be initialized.")
+            model_name = self.model_name
+            model_id = self.model_id
             try:
                 self.llm_kwargs.update(
                     json.loads(self._runner.identifying_params["configuration"])
                 )
             except (TypeError, json.JSONDecodeError):
                 pass
-        res["llm_kwargs"] = self.llm_kwargs
-        return IdentifyingParams(**res)
+        return IdentifyingParams(
+            server_url=self.server_url,
+            server_type=self.server_type,
+            embedded=self.embedded,
+            llm_kwargs=self.llm_kwargs,
+            model_name=model_name,
+            model_id=model_id,
+        )
 
     @property
     def _llm_type(self) -> str:
@@ -247,10 +249,11 @@ class OpenLLM(LLM):
     ) -> str:
         try:
             import openllm
-        except ImportError:
-            raise ValueError(
-                "Could not import openllm. Make sure to install it with 'pip install openllm.'"
-            )
+        except ImportError as e:
+            raise ImportError(
+                "Could not import openllm. Make sure to install it with "
+                "'pip install openllm'."
+            ) from e
 
         copied = copy.deepcopy(self.llm_kwargs)
         copied.update(kwargs)
@@ -272,10 +275,11 @@ class OpenLLM(LLM):
     ) -> str:
         try:
             import openllm
-        except ImportError:
-            raise ValueError(
-                "Could not import openllm. Make sure to install it with 'pip install openllm.'"
-            )
+        except ImportError as e:
+            raise ImportError(
+                "Could not import openllm. Make sure to install it with "
+                "'pip install openllm'."
+            ) from e
 
         copied = copy.deepcopy(self.llm_kwargs)
         copied.update(kwargs)
