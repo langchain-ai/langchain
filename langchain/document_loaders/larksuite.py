@@ -1,7 +1,7 @@
 """Loader that loads LarkSuite (FeiShu) document json dump."""
 import json
 import urllib.request
-from typing import Any, List, Iterator
+from typing import Any, Iterator, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -27,8 +27,12 @@ class LarkSuiteDocLoader(BaseLoader):
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load LarkSuite (FeiShu) document."""
         api_url_prefix = f"{self.domain}/open-apis/docx/v1/documents"
-        metadata_json = self._get_larksuite_api_json_data(f"{api_url_prefix}/{self.document_id}")
-        raw_content_json = self._get_larksuite_api_json_data(f"{api_url_prefix}/{self.document_id}/raw_content")
+        metadata_json = self._get_larksuite_api_json_data(
+            f"{api_url_prefix}/{self.document_id}"
+        )
+        raw_content_json = self._get_larksuite_api_json_data(
+            f"{api_url_prefix}/{self.document_id}/raw_content"
+        )
         text = raw_content_json["data"]["content"]
         metadata = {
             "document_id": self.document_id,
