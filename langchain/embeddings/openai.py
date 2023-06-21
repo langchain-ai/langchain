@@ -187,7 +187,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     @property
     def _invocation_params(self) -> Dict:
         openai_args = {
-            "engine": self.deployment,
+            "model": self.model,
             "request_timeout": self.request_timeout,
             "headers": self.headers,
             "api_key": self.openai_api_key,
@@ -196,6 +196,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "api_type": self.openai_api_type,
             "api_version": self.openai_api_version,
         }
+        if self.openai_api_type in ("azure", "azure_ad", "azuread"):
+            openai_args["engine"] = self.deployment
         if self.openai_proxy:
             import openai
 
