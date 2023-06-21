@@ -15,7 +15,9 @@ from langchain.prompts.base import BasePromptTemplate
 
 
 class KuzuQAChain(Chain):
-    """Chain for question-answering against a graph by generating Cypher statements for Kùzu."""
+    """Chain for question-answering against a graph by generating Cypher statements for
+    Kùzu.
+    """
 
     graph: KuzuGraph = Field(exclude=True)
     cypher_generation_chain: LLMChain
@@ -68,7 +70,7 @@ class KuzuQAChain(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         question = inputs[self.input_key]
-        
+
         generated_cypher = self.cypher_generation_chain.run(
             {"question": question, "schema": self.graph.get_schema}, callbacks=callbacks
         )

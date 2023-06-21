@@ -8,8 +8,10 @@ class KuzuGraph:
         try:
             import kuzu
         except ImportError:
-            raise ImportError("Could not import Kùzu python package."
-                              "Please install Kùzu with `pip install kuzu`.")
+            raise ImportError(
+                "Could not import Kùzu python package."
+                "Please install Kùzu with `pip install kuzu`."
+            )
         self.db = db
         self.conn = kuzu.Connection(self.db)
         self.database = database
@@ -41,31 +43,34 @@ class KuzuGraph:
             current_table_schema = {"properties": [], "label": table_name}
             properties = self.conn._get_node_property_names(table_name)
             for property_name in properties:
-                property_type = properties[property_name]['type']
+                property_type = properties[property_name]["type"]
                 list_type_flag = ""
-                if properties[property_name]['dimension'] > 0:
-                    if 'shape' in properties[property_name]:
-                        for s in properties[property_name]['shape']:
+                if properties[property_name]["dimension"] > 0:
+                    if "shape" in properties[property_name]:
+                        for s in properties[property_name]["shape"]:
                             list_type_flag += "[%s]" % s
                     else:
-                        for i in range(properties[property_name]['dimension']):
+                        for i in range(properties[property_name]["dimension"]):
                             list_type_flag += "[]"
                 property_type += list_type_flag
-                current_table_schema['properties'].append(
-                    (property_name, property_type))
+                current_table_schema["properties"].append(
+                    (property_name, property_type)
+                )
             node_properties.append(current_table_schema)
 
         relationships = []
         rel_tables = self.conn._get_rel_table_names()
         for table in rel_tables:
-            relationships.append("(:%s)-[:%s]->(:%s)" %
-                                 (table['src'], table['name'], table['dst']))
+            relationships.append(
+                "(:%s)-[:%s]->(:%s)" % (table["src"], table["name"], table["dst"])
+            )
 
         rel_properties = []
         for table in rel_tables:
-            current_table_schema = {"properties": [], "label": table['name']}
+            current_table_schema = {"properties": [], "label": table["name"]}
             properties_text = self.conn._connection.get_rel_property_names(
-                table['name']).split("\n")
+                table["name"]
+            ).split("\n")
             for i, line in enumerate(properties_text):
                 # The first 3 lines defines src, dst and name, so we skip them
                 if i < 3:
@@ -73,8 +78,9 @@ class KuzuGraph:
                 if not line:
                     continue
                 property_name, property_type = line.strip().split(" ")
-                current_table_schema['properties'].append(
-                    (property_name, property_type))
+                current_table_schema["properties"].append(
+                    (property_name, property_type)
+                )
             rel_properties.append(current_table_schema)
 
         self.schema = (
