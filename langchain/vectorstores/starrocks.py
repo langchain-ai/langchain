@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 import logging
 from hashlib import sha1
+from threading import Thread
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+
+from pydantic import BaseSettings
+
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-from pydantic import BaseSettings
-from threading import Thread
-from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 logger = logging.getLogger()
 DEBUG = False
@@ -23,13 +25,12 @@ def has_mul_sub_str(s: str, *args: Any) -> bool:
     return True
 
 
-def debug_output(s):
+def debug_output(s: Any) -> None:
     if DEBUG:
         print(s)
-    pass
 
 
-def get_named_result(connection, query):
+def get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
     import pymysql.cursors
 
     cursor: pymysql.cursors.Cursor = connection.cursor()
@@ -77,9 +78,8 @@ class StarRocksSettings(BaseSettings):
 
     host: str = "localhost"
     port: int = 9030
-
-    username: Optional[str] = None
-    password: Optional[str] = None
+    username: str = "root"
+    password: str = ""
 
     column_map: Dict[str, str] = {
         "id": "id",
@@ -160,7 +160,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
     {self.config.column_map['document']} string,
     {self.config.column_map['embedding']} array<float>,
     {self.config.column_map['metadata']} string
-) ENGINE = OLAP PRIMARY KEY(id) DISTRIBUTED BY HASH(id) PROPERTIES ("replication_num" = "1")\
+) ENGINE = OLAP PRIMARY KEY(id) DISTRIBUTED BY HASH(id) \
+  PROPERTIES ("replication_num" = "1")\
 """
         self.dim = dim
         self.BS = "\\"
@@ -187,7 +188,9 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
 
     def _build_insert_sql(self, transac: Iterable, column_names: Iterable[str]) -> str:
         ks = ",".join(column_names)
-        embed_tuple_index = column_names.index(self.config.column_map["embedding"])
+        embed_tuple_index = tuple(column_names).index(
+            self.config.column_map["embedding"]
+        )
         _data = []
         for n in transac:
             n = ",".join(
@@ -312,13 +315,15 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         fields = 3
         _repr += "-" * (width * fields + 1) + "\n"
         columns = ["name", "type", "key"]
-        _repr += f"|\033[94m{columns[0]:24s}\033[0m|\033[96m{columns[1]:24s}\033[0m|\033[96m{columns[2]:24s}\033[0m|\n"
+        _repr += f"|\033[94m{columns[0]:24s}\033[0m|\033[96m{columns[1]:24s}"
+        _repr += f"\033[0m|\033[96m{columns[2]:24s}\033[0m|\n"
         _repr += "-" * (width * fields + 1) + "\n"
         q_str = f"DESC {self.config.database}.{self.config.table}"
         debug_output(q_str)
         rs = get_named_result(self.connection, q_str)
         for r in rs:
-            _repr += f"|\033[94m{r['Field']:24s}\033[0m|\033[96m{r['Type']:24s}\033[0m|\033[96m{r['Key']:24s}\033[0m|\n"
+            _repr += f"|\033[94m{r['Field']:24s}\033[0m|\033[96m{r['Type']:24s}"
+            _repr += f"\033[0m|\033[96m{r['Key']:24s}\033[0m|\n"
         _repr += "-" * (width * fields + 1) + "\n"
         return _repr
 
@@ -331,11 +336,11 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         else:
             where_str = ""
 
-        settings_strs = []
         q_str = f"""
             SELECT {self.config.column_map['document']}, 
                 {self.config.column_map['metadata']}, 
-                cosine_similarity_norm(array<float>[{q_emb_str}],{self.config.column_map['embedding']}) as dist
+                cosine_similarity_norm(array<float>[{q_emb_str}],
+                  {self.config.column_map['embedding']}) as dist
             FROM {self.config.database}.{self.config.table}
             {where_str}
             ORDER BY dist {self.dist_order}
@@ -445,8 +450,9 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         """
         Helper function: Drop data
         """
-        self.client.command(
-            f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}"
+        get_named_result(
+            self.connection,
+            f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}",
         )
 
     @property
