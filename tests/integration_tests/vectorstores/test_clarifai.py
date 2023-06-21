@@ -1,8 +1,6 @@
 """Test Clarifai vectore store functionality."""
 import time
 
-import pytest
-
 from langchain.docstore.document import Document
 from langchain.vectorstores import Clarifai
 

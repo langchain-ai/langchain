@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import traceback
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Iterable, List, Optional, Tuple
 
 import requests
 
@@ -43,7 +43,8 @@ class Clarifai(VectorStore):
             user_id (Optional[str], optional): User ID. Defaults to None.
             app_id (Optional[str], optional): App ID. Defaults to None.
             pat (Optional[str], optional): Personal access token. Defaults to None.
-            number_of_docs (Optional[int], optional): Number of documents to return during vector search. Defaults to None.
+            number_of_docs (Optional[int], optional): Number of documents to return
+            during vector search. Defaults to None.
             api_base (Optional[str], optional): API base. Defaults to None.
 
         Raises:
@@ -66,8 +67,11 @@ class Clarifai(VectorStore):
         self._pat = pat or os.environ.get("CLARIFAI_PAT_KEY")
         if self._user_id is None or self._app_id is None or self._pat is None:
             raise ValueError(
-                "Could not find CLARIFAI_USER_ID, CLARIFAI_APP_ID or CLARIFAI_PAT in your environment. "
-                "Please set those env variables with a valid user ID, app ID and personal access token from https://clarifai.com/settings/security."
+                "Could not find CLARIFAI_USER_ID, CLARIFAI_APP_ID or\
+                CLARIFAI_PAT in your environment. "
+                "Please set those env variables with a valid user ID, \
+                app ID and personal access token \
+                from https://clarifai.com/settings/security."
             )
 
         self._auth = ClarifaiAuthHelper(
@@ -134,9 +138,11 @@ class Clarifai(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Add texts to the Clarifai vectorstore. This will push the text to a Clarifai application.
+        """Add texts to the Clarifai vectorstore. This will push the text
+        to a Clarifai application.
         Application use base workflow that create and store embedding for each text.
-        Make sure you are using a base workflow that is compatible with text (such as Language Understanding).
+        Make sure you are using a base workflow that is compatible with text
+        (such as Language Understanding).
 
         Args:
             texts (Iterable[str]): Texts to add to the vectorstore.
@@ -180,7 +186,8 @@ class Clarifai(VectorStore):
         Args:
             query (str): Query text to search for.
             k (int): Number of results to return. Defaults to 4.
-            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            filter (Optional[Dict[str, str]]): Filter by metadata.
+            Defaults to None.
 
         Returns:
             List[Document]: List of documents most simmilar to the query text.
@@ -242,7 +249,8 @@ class Clarifai(VectorStore):
             requested_text = request.text
 
             logger.debug(
-                f"\tScore {hit.score:.2f} for annotation: {hit.annotation.id} off input: {hit.input.id}, text: {requested_text[:125]}"
+                f"\tScore {hit.score:.2f} for annotation: {hit.annotation.id}\
+                off input: {hit.input.id}, text: {requested_text[:125]}"
             )
 
             docs_and_scores.append(
@@ -289,9 +297,11 @@ class Clarifai(VectorStore):
             app_id (str): App ID.
             texts (List[str]): List of texts to add.
             pat (Optional[str]): Personal access token. Defaults to None.
-            number_of_docs (Optional[int]): Number of documents to return during vector search. Defaults to None.
+            number_of_docs (Optional[int]): Number of documents to return
+            during vector search. Defaults to None.
             api_base (Optional[str]): API base. Defaults to None.
-            metadatas (Optional[List[dict]]): Optional list of metadatas. Defaults to None.
+            metadatas (Optional[List[dict]]): Optional list of metadatas.
+            Defaults to None.
 
         Returns:
             Clarifai: Clarifai vectorstore.
@@ -325,7 +335,8 @@ class Clarifai(VectorStore):
             app_id (str): App ID.
             documents (List[Document]): List of documents to add.
             pat (Optional[str]): Personal access token. Defaults to None.
-            number_of_docs (Optional[int]): Number of documents to return during vector search. Defaults to None.
+            number_of_docs (Optional[int]): Number of documents to return
+            during vector search. Defaults to None.
             api_base (Optional[str]): API base. Defaults to None.
 
         Returns:

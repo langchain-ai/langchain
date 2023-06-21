@@ -15,14 +15,17 @@ logger = logging.getLogger(__name__)
 class Clarifai(LLM):
     """Wrapper around Clarifai's large language models.
 
-    To use, you should have an account on the Clarifai platform, the ``clarifai`` python package installed, and the
-    environment variable ``CLARIFAI_PAT_KEY`` set with your PAT key, or pass it as a named parameter to the constructor.
+    To use, you should have an account on the Clarifai platform, 
+    the ``clarifai`` python package installed, and the
+    environment variable ``CLARIFAI_PAT_KEY`` set with your PAT key, 
+    or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
             from langchain.llms import Clarifai
-            clarifai_llm = Clarifai(clarifai_pat_key=CLARIFAI_PAT_KEY, user_id=USER_ID, app_id=APP_ID, model_id=MODEL_ID)
+            clarifai_llm = Clarifai(clarifai_pat_key=CLARIFAI_PAT_KEY, \
+                user_id=USER_ID, app_id=APP_ID, model_id=MODEL_ID)
     """
 
     stub: Any  #: :meta private:
@@ -54,7 +57,8 @@ class Clarifai(LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that we have all required info to access Clarifai platform and python package exists in environment."""
+        """Validate that we have all required info to access Clarifai
+        platform and python package exists in environment."""
         values["clarifai_pat_key"] = get_from_dict_or_env(
             values, "clarifai_pat_key", "CLARIFAI_PAT_KEY"
         )
@@ -70,20 +74,6 @@ class Clarifai(LLM):
             raise ValueError("Please provide a app_id.")
         if model_id is None:
             raise ValueError("Please provide a model_id.")
-
-        try:
-            from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
-            from clarifai_grpc.grpc.api import (
-                resources_pb2,
-                service_pb2,
-                service_pb2_grpc,
-            )
-            from clarifai_grpc.grpc.api.status import status_code_pb2
-        except ImportError:
-            raise ImportError(
-                "Could not import cohere python package. "
-                "Please install it with `pip install clarifai`."
-            )
         return values
 
     @property
@@ -154,10 +144,13 @@ class Clarifai(LLM):
         else:
             params["stop_sequences"] = stop
 
+        # The userDataObject is created in the overview and
+        # is required when using a PAT
+        # If version_id None, Defaults to the latest model version
         post_model_outputs_request = service_pb2.PostModelOutputsRequest(
-            user_app_id=self.userDataObject,  # The userDataObject is created in the overview and is required when using a PAT
+            user_app_id=self.userDataObject,
             model_id=self.model_id,
-            version_id=self.model_version_id,  # This is optional. Defaults to the latest model version
+            version_id=self.model_version_id,
             inputs=[
                 resources_pb2.Input(
                     data=resources_pb2.Data(text=resources_pb2.Text(raw=prompt))

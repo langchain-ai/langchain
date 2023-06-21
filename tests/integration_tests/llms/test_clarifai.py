@@ -6,8 +6,6 @@ pip install clarifai
 You'll need to set env variable CLARIFAI_PAT_KEY to your personal access token key.
 """
 
-from pathlib import Path
-
 from langchain.llms.clarifai import Clarifai
 
 
@@ -19,9 +17,11 @@ def test_clarifai_call() -> None:
         model_id="text-summarization-english-pegasus",
     )
     output = llm(
-        "A chain is a serial assembly of connected pieces, called links, typically made of metal, \
-        with an overall character similar to that of a rope in that it is flexible and curved in compression \
-        but linear, rigid, and load-bearing in tension. A chain may consist of two or more links."
+        "A chain is a serial assembly of connected pieces, called links, \
+        typically made of metal, with an overall character similar to that\
+        of a rope in that it is flexible and curved in compression but \
+        linear, rigid, and load-bearing in tension. A chain may consist\
+        of two or more links."
     )
 
     assert isinstance(output, str)
