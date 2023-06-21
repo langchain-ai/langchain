@@ -75,7 +75,7 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
             'Content-Type': 'application/json; charset=UTF-8'
         }
 
-        num_to_return = 5        
+        num_to_return = 2        
         page_size = num_to_return        
 
         data = {"query": query, "page_size": f"{page_size}", "offset": 0 }
@@ -102,12 +102,14 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
                 appbuilders.append(details)
 
         answer =  "\n".join([f"{i+1}. {item}" for i, item in enumerate(appbuilders)])
+        if answer.count() > 1024:
+            answer = answer[:1024]
 
         return f"""
                 thought: I have find: 
                 {answer}
                 action: summarize answer and provide url link 
-                action_input: {answer} """
+                action_input:  """
 
     def fetch_appbuilder_details(self, prediction: str) -> Optional[str]:
         try:
@@ -141,7 +143,10 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
                     value = appbuilder_details[key]
                    
                     if isinstance(value, str) :
-                        formatted_details = f"{formatted_details} \n {key} : {value}"
+                        if "http" in value :
+                            print(value)
+                        else:
+                            formatted_details = f"{formatted_details} \n {key} : {value}"
                     else:
                         #formatted_details_sub =  self.format_array(value)
                         formatted_details = f"{formatted_details} \n {key} : {value}"
