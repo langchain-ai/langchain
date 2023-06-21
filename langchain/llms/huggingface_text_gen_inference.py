@@ -84,7 +84,7 @@ class HuggingFaceTextGenInference(LLM):
     seed: Optional[int] = None
     inference_server_url: str = ""
     timeout: int = 120
-    server_kwargs: dict[str, Any] = Field(default_factory=dict)
+    server_kwargs: Dict[str, Any] = Field(default_factory=dict)
     stream: bool = False
     client: Any
     async_client: Any
@@ -190,7 +190,7 @@ class HuggingFaceTextGenInference(LLM):
     async def _acall(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
+        stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
