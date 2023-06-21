@@ -401,7 +401,7 @@ def test_tool_from_function_with_run_manager() -> None:
     def foo(bar: str, callbacks: Optional[CallbackManagerForToolRun] = None) -> str:
         """Docstring
         Args:
-            tool_input: str
+            bar: str
         """
         assert callbacks is not None
         return "foo" + bar
