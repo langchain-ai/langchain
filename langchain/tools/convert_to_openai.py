@@ -15,7 +15,7 @@ class FunctionDescription(TypedDict):
 
 
 def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
-    """Format tool into the open AI function API."""
+    """Format tool into the OpenAI function API."""
     if isinstance(tool, StructuredTool):
         schema_ = tool.args_schema.schema()
         # Bug with required missing for structured tools.

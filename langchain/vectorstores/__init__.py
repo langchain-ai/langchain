@@ -1,10 +1,15 @@
 """Wrappers on top of vector stores."""
+from langchain.vectorstores.alibabacloud_opensearch import (
+    AlibabaCloudOpenSearch,
+    AlibabaCloudOpenSearchSettings,
+)
 from langchain.vectorstores.analyticdb import AnalyticDB
 from langchain.vectorstores.annoy import Annoy
 from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.awadb import AwaDB
 from langchain.vectorstores.azuresearch import AzureSearch
 from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.cassandra import Cassandra
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
 from langchain.vectorstores.deeplake import DeepLake
@@ -32,11 +37,14 @@ from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
 
 __all__ = [
+    "AlibabaCloudOpenSearch",
+    "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",
     "AtlasDB",
     "AwaDB",
     "AzureSearch",
+    "Cassandra",
     "Chroma",
     "Clickhouse",
     "ClickhouseSettings",
