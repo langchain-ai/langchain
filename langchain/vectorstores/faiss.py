@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import math
+import operator
 import os
 import pickle
 import uuid
+import warnings
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -15,7 +17,7 @@ from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-from langchain.vectorstores.utils import maximal_marginal_relevance
+from langchain.vectorstores.utils import MetricType, maximal_marginal_relevance
 
 
 def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
@@ -82,6 +84,7 @@ class FAISS(VectorStore):
             Callable[[float], float]
         ] = _default_relevance_score_fn,
         normalize_L2: bool = False,
+        metric_type: MetricType = MetricType.L2,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
@@ -90,6 +93,11 @@ class FAISS(VectorStore):
         self.index_to_docstore_id = index_to_docstore_id
         self.relevance_score_fn = relevance_score_fn
         self._normalize_L2 = normalize_L2
+        self.metric_type = metric_type
+        if self.metric_type != MetricType.L2 and self._normalize_L2:
+            warnings.warn(
+                f"Normalizing L2 is not applicable for metric type: {self.metric_type}"
+            )
 
     def __add(
         self,
@@ -229,10 +237,15 @@ class FAISS(VectorStore):
 
         score_threshold = kwargs.get("score_threshold")
         if score_threshold is not None:
+            cmp = (
+                operator.ge
+                if self.metric_type in (MetricType.INNER_PRODUCT, MetricType.JACCARD)
+                else operator.le
+            )
             docs = [
                 (doc, similarity)
                 for doc, similarity in docs
-                if similarity >= score_threshold
+                if cmp(similarity, score_threshold)
             ]
         return docs[:k]
 
@@ -466,9 +479,14 @@ class FAISS(VectorStore):
         **kwargs: Any,
     ) -> FAISS:
         faiss = dependable_faiss_import()
-        index = faiss.IndexFlatL2(len(embeddings[0]))
+        metric_type = kwargs.get("metric_type", MetricType.L2)
+        if metric_type == MetricType.INNER_PRODUCT:
+            index = faiss.IndexFlatIP(len(embeddings[0]))
+        else:
+            # Default to L2, currently other metric types not initialized.
+            index = faiss.IndexFlatL2(len(embeddings[0]))
         vector = np.array(embeddings, dtype=np.float32)
-        if normalize_L2:
+        if normalize_L2 and metric_type == MetricType.L2:
             faiss.normalize_L2(vector)
         index.add(vector)
         documents = []

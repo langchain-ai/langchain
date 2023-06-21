@@ -1,10 +1,17 @@
 """Utility functions for working with vectors and vectorstores."""
 
+from enum import Enum
 from typing import List
 
 import numpy as np
 
 from langchain.math_utils import cosine_similarity
+
+
+class MetricType(Enum):
+    INNER_PRODUCT = "inner_product"
+    L2 = "L2"
+    JACCARD = "jaccard"
 
 
 def maximal_marginal_relevance(
