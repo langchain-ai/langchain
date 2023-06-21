@@ -31,6 +31,7 @@ def debug_output(s):
 
 def get_named_result(connection, query):
     import pymysql.cursors
+
     cursor: pymysql.cursors.Cursor = connection.cursor()
     cursor.execute(query)
     columns = cursor.description
@@ -115,10 +116,10 @@ class StarRocks(VectorStore):
     """
 
     def __init__(
-            self,
-            embedding: Embeddings,
-            config: Optional[StarRocksSettings] = None,
-            **kwargs: Any,
+        self,
+        embedding: Embeddings,
+        config: Optional[StarRocksSettings] = None,
+        **kwargs: Any,
     ) -> None:
         """StarRocks Wrapper to LangChain
 
@@ -146,11 +147,7 @@ class StarRocks(VectorStore):
             self.config = StarRocksSettings()
         assert self.config
         assert self.config.host and self.config.port
-        assert (
-                self.config.column_map
-                and self.config.database
-                and self.config.table
-        )
+        assert self.config.column_map and self.config.database and self.config.table
         for k in ["id", "embedding", "document", "metadata"]:
             assert k in self.config.column_map
 
@@ -194,9 +191,13 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         _data = []
         for n in transac:
             n = ",".join(
-                [f"'{self.escape_str(str(_n))}'" if idx != embed_tuple_index
-                 else f"array<float>{str(_n)}" for (idx, _n)
-                 in enumerate(n)])
+                [
+                    f"'{self.escape_str(str(_n))}'"
+                    if idx != embed_tuple_index
+                    else f"array<float>{str(_n)}"
+                    for (idx, _n) in enumerate(n)
+                ]
+            )
             _data.append(f"({n})")
         i_str = f"""
                 INSERT INTO
@@ -212,12 +213,12 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         get_named_result(self.connection, _insert_query)
 
     def add_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[dict]] = None,
-            batch_size: int = 32,
-            ids: Optional[Iterable[str]] = None,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        batch_size: int = 32,
+        ids: Optional[Iterable[str]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Insert more texts through the embeddings and add to the VectorStore.
 
@@ -247,10 +248,10 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         try:
             t = None
             for v in self.pgbar(
-                    zip(*values), desc="Inserting data...", total=len(metadatas)
+                zip(*values), desc="Inserting data...", total=len(metadatas)
             ):
                 assert (
-                        len(v[keys.index(self.config.column_map["embedding"])]) == self.dim
+                    len(v[keys.index(self.config.column_map["embedding"])]) == self.dim
                 )
                 transac.append(v)
                 if len(transac) == batch_size:
@@ -270,14 +271,14 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
 
     @classmethod
     def from_texts(
-            cls,
-            texts: List[str],
-            embedding: Embeddings,
-            metadatas: Optional[List[Dict[Any, Any]]] = None,
-            config: Optional[StarRocksSettings] = None,
-            text_ids: Optional[Iterable[str]] = None,
-            batch_size: int = 32,
-            **kwargs: Any,
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        config: Optional[StarRocksSettings] = None,
+        text_ids: Optional[Iterable[str]] = None,
+        batch_size: int = 32,
+        **kwargs: Any,
     ) -> StarRocks:
         """Create StarRocks wrapper with existing texts
 
@@ -310,21 +311,19 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         width = 25
         fields = 3
         _repr += "-" * (width * fields + 1) + "\n"
-        columns = ['name', 'type', 'key']
+        columns = ["name", "type", "key"]
         _repr += f"|\033[94m{columns[0]:24s}\033[0m|\033[96m{columns[1]:24s}\033[0m|\033[96m{columns[2]:24s}\033[0m|\n"
-        _repr += "-" * (width * fields + 1) + '\n'
+        _repr += "-" * (width * fields + 1) + "\n"
         q_str = f"DESC {self.config.database}.{self.config.table}"
         debug_output(q_str)
         rs = get_named_result(self.connection, q_str)
         for r in rs:
-            _repr += (
-                f"|\033[94m{r['Field']:24s}\033[0m|\033[96m{r['Type']:24s}\033[0m|\033[96m{r['Key']:24s}\033[0m|\n"
-            )
+            _repr += f"|\033[94m{r['Field']:24s}\033[0m|\033[96m{r['Type']:24s}\033[0m|\033[96m{r['Key']:24s}\033[0m|\n"
         _repr += "-" * (width * fields + 1) + "\n"
         return _repr
 
     def _build_query_sql(
-            self, q_emb: List[float], topk: int, where_str: Optional[str] = None
+        self, q_emb: List[float], topk: int, where_str: Optional[str] = None
     ) -> str:
         q_emb_str = ",".join(map(str, q_emb))
         if where_str:
@@ -347,7 +346,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         return q_str
 
     def similarity_search(
-            self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
+        self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
     ) -> List[Document]:
         """Perform a similarity search with StarRocks
 
@@ -370,11 +369,11 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         )
 
     def similarity_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            where_str: Optional[str] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        where_str: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Perform a similarity search with StarRocks by vectors
 
@@ -397,7 +396,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             return [
                 Document(
                     page_content=r[self.config.column_map["document"]],
-                    metadata=json.loads(r[self.config.column_map["metadata"]])
+                    metadata=json.loads(r[self.config.column_map["metadata"]]),
                 )
                 for r in get_named_result(self.connection, q_str)
             ]
@@ -406,7 +405,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             return []
 
     def similarity_search_with_relevance_scores(
-            self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
+        self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Perform a similarity search with StarRocks
 
@@ -432,7 +431,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                 (
                     Document(
                         page_content=r[self.config.column_map["document"]],
-                        metadata=json.loads(r[self.config.column_map["metadata"]])
+                        metadata=json.loads(r[self.config.column_map["metadata"]]),
                     ),
                     r["dist"],
                 )
