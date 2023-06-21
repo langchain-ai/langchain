@@ -67,4 +67,24 @@ tools = load_tools(["searx-search-results-json"],
                     num_results=5)
 ```
 
-For more information on tools, see [this page](/docs/modules/agents/tools/getting_started.md)
+#### Quickly creating tools
+
+This examples showcases a quick way to create multiple tools from the same
+wrapper.
+
+```python
+from langchain.tools.searx_search.tool import SearxSearchResults
+
+wrapper = SearxSearchWrapper(searx_host="**")
+github_tool = SearxSearchResults(name="Github", wrapper=wrapper,
+                            kwargs = {
+                                "engines": ["github"],
+                                })
+
+arxiv_tool = SearxSearchResults(name="Arxiv", wrapper=wrapper,
+                            kwargs = {
+                                "engines": ["arxiv"]
+                                })
+```
+
+For more information on tools, see [this page](/docs/modules/agents/tools/).

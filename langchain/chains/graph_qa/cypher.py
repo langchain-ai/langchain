@@ -59,6 +59,10 @@ class GraphCypherQAChain(Chain):
         _output_keys = [self.output_key]
         return _output_keys
 
+    @property
+    def _chain_type(self) -> str:
+        return "graph_cypher_chain"
+
     @classmethod
     def from_llm(
         cls,

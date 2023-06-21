@@ -18,4 +18,4 @@ whether for semantic search or example selection.
 from langchain.vectorstores import AwaDB
 ```
 
-For a more detailed walkthrough of the AwaDB wrapper, see [this notebook](../modules/indexes/vectorstores/examples/awadb.ipynb)
+For a more detailed walkthrough of the AwaDB wrapper, see [here](/docs/modules/data_connection/vectorstores/integrations/awadb.html).
