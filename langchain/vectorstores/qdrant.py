@@ -60,6 +60,7 @@ class Qdrant(VectorStore):
         embeddings: Optional[Embeddings] = None,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
+        distance_strategy: str = "COSINE",
         embedding_function: Optional[Callable] = None,  # deprecated
     ):
         """Initialize with necessary components."""
@@ -108,6 +109,9 @@ class Qdrant(VectorStore):
             )
             self._embeddings_function = embeddings
             self.embeddings = None
+
+        self.distance_strategy = distance_strategy.upper()
+        self.relevance_score_fn = self._select_relevance_score_fn()
 
     def add_texts(
         self,
@@ -407,6 +411,27 @@ class Qdrant(VectorStore):
             for result in results
         ]
 
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+
+        if self.distance_strategy == "COSINE":
+            return self._cosine_relevance_score_fn
+        elif self.distance_strategy == "DOT":
+            return self._max_inner_product_relevance_score_fn
+        elif self.distance_strategy == "EUCLID":
+            return self._euclidean_relevance_score_fn
+        else:
+            raise ValueError(
+                "Unknown distance strategy, must be cosine, max_inner_product, or euclidean"
+            )
+
     def _similarity_search_with_relevance_scores(
         self,
         query: str,
@@ -687,6 +712,7 @@ class Qdrant(VectorStore):
             embeddings=embedding,
             content_payload_key=content_payload_key,
             metadata_payload_key=metadata_payload_key,
+            distance_strategy=distance_func,
         )
 
     @classmethod

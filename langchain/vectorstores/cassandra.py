@@ -84,6 +84,7 @@ class Cassandra(VectorStore):
             embedding_dimension=self._getEmbeddingDimension(),
             auto_id=False,  # the `add_texts` contract admits user-provided ids
         )
+        self.relevance_score_fn = self._cosine_relevance_score_fn
 
     def delete_collection(self) -> None:
         """
@@ -251,22 +252,6 @@ class Cassandra(VectorStore):
         return self.similarity_search_with_score_by_vector(
             embedding_vector,
             k,
-        )
-
-    # Even though this is a `_`-method,
-    # it is apparently used by VectorSearch parent class
-    # in an exposed method (`similarity_search_with_relevance_scores`).
-    # So we implement it (hmm).
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        return self.similarity_search_with_score(
-            query,
-            k,
-            **kwargs,
         )
 
     def max_marginal_relevance_search_by_vector(

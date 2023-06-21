@@ -339,24 +339,6 @@ class Redis(VectorStore):
 
         return docs
 
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores, normalized on a scale from 0 to 1.
-
-        0 is dissimilar, 1 is most similar.
-        """
-        if self.relevance_score_fn is None:
-            raise ValueError(
-                "relevance_score_fn must be provided to"
-                " Redis constructor to normalize scores"
-            )
-        docs_and_scores = self.similarity_search_with_score(query, k=k)
-        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
-
     @classmethod
     def from_texts_return_keys(
         cls,

@@ -19,12 +19,7 @@ from sqlalchemy.pool import QueuePool
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
-
-
-class DistanceStrategy(str, enum.Enum):
-    EUCLIDEAN_DISTANCE = "EUCLIDEAN_DISTANCE"
-    DOT_PRODUCT = "DOT_PRODUCT"
-
+from langchain.vectorstores.utils import DistanceStrategy
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.DOT_PRODUCT
 
@@ -215,6 +210,7 @@ class SingleStoreDB(VectorStore):
             timeout=timeout,
         )
         self._create_table()
+        self.relevance_score_fn = self._max_inner_product_relevance_score_fn
 
     def _create_table(self: SingleStoreDB) -> None:
         """Create table if it doesn't exist."""
