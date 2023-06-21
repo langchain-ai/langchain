@@ -2,16 +2,13 @@
 import json
 import urllib.request
 from abc import abstractmethod
-from typing import Any, Dict, Generic, List, Mapping, Optional, TypeVar, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 from pydantic import BaseModel, validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
-
-INPUT_TYPE = TypeVar("INPUT_TYPE", bound=Union[str, List[str]])
-OUTPUT_TYPE = TypeVar("OUTPUT_TYPE", bound=Union[str, List[List[float]]])
 
 
 class AzureMLEndpointClient(object):
