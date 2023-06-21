@@ -61,7 +61,7 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
 
         """Validate that api key is in your environment variable."""
         gappbuilders_ds_url = get_from_dict_or_env(
-            values, "gappbuilders_DS_URL", "GAPP_BUILDER_DS_URL"
+            values, "gappbuilders_ds_url", "GAPP_BUILDER_DS_URL"
         )
         values["gappbuilders_ds_url"] = gappbuilders_ds_url
         
