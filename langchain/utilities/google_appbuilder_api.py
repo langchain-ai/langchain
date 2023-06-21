@@ -76,8 +76,7 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
         }
 
         num_to_return = 5        
-        page_size = num_to_return
-        print(f"page_size : {page_size}")
+        page_size = num_to_return        
 
         data = {"query": query, "page_size": f"{page_size}", "offset": 0 }
         
@@ -102,7 +101,12 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
             if details is not None:
                 appbuilders.append(details)
 
-        return "\n".join([f"{i+1}. {item}" for i, item in enumerate(appbuilders)])
+        answer =  "\n".join([f"{i+1}. {item}" for i, item in enumerate(appbuilders)])
+
+        return f"""
+                thought: {answer}
+                action: summarize answer and provide url link 
+                action_input: {answer} """
 
     def fetch_appbuilder_details(self, prediction: str) -> Optional[str]:
         try:
@@ -153,23 +157,3 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
             print(f"FATAL format_array  {e}") 
             return appbuilder_details
                 
-
-    def format_appbuilder_details(self, appbuilder_details: Dict[str, Any]) -> Optional[str]:
-        try:
-            title = appbuilder_details.get("title", "")
-
-            formatted_details = title
-            formatted_details = formatted_details +" \n "+ self.format_array(appbuilder_details)            
-                
-            return formatted_details
-                        
-        except Exception as e:
-            logging.error(f"An error occurred while formatting appbuilder details: {e}")
-            return None
-
-    def fetch_strucdata(self, metatags):
-        description = ""
-        for metatag in  metatags:                
-            description += metatag.get("twitter:description", "Unkown") + "\n"
-        
-        return description
