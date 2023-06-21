@@ -1,4 +1,4 @@
-from typing import Any, List, Type, Union, Optional
+from typing import Any, List, Optional, Type, Union
 
 from pydantic import BaseModel, Field
 
@@ -9,9 +9,10 @@ from langchain.output_parsers.openai_functions import (
     OutputFunctionsParser,
     PydanticOutputFunctionsParser,
 )
+from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.schema import BaseLLMOutputParser, HumanMessage, SystemMessage
-from langchain.prompts import PromptTemplate
+
 
 class AnswerWithSources(BaseModel):
     """An answer to the question being asked, with sources."""
