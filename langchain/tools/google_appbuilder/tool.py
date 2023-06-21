@@ -25,8 +25,8 @@ class GoogleAppBuilderTool(BaseTool):
         "discover addressed from ambiguous text. "
         "Input should be a search query."
     )
-    # Field(default_factory=GoogleAppBuilderAPIWrapper)
-    api_wrapper: GoogleAppBuilderAPIWrapper = GoogleAppBuilderAPIWrapper()
+    
+    api_wrapper: GoogleAppBuilderAPIWrapper = Field(default_factory=GoogleAppBuilderAPIWrapper)
     args_schema: Type[BaseModel] = GoogleAppBuilderSchema
 
     def _run(
