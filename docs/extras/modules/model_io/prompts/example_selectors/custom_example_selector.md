@@ -10,7 +10,7 @@ An `ExampleSelector` must implement two methods:
 Let's implement a custom `ExampleSelector` that just selects two examples at random.
 
 :::{note}
-Take a look at the current set of example selector implementations supported in LangChain [here](../../prompt_templates/getting_started.md).
+Take a look at the current set of example selector implementations supported in LangChain [here](/docs/modules/model_io/prompts/example_selectors/).
 :::
 
 <!-- TODO(shreya): Add the correct link. -->
