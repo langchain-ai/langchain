@@ -18,6 +18,7 @@ Classes
 .. autosummary::
     :toctree: document_transformers
     :template: class.rst
+    :show-inheritance:
 
     document_transformers._DocumentWithState
     document_transformers.EmbeddingsRedundantFilter
@@ -34,6 +35,7 @@ Classes
 .. currentmodule:: langchain
 
 .. autosummary::
+    :toctree: text_splitter
     :template: class.rst
 
     text_splitter.TextSplitter

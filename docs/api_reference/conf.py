@@ -70,6 +70,7 @@ autodoc_member_order = "bysource"
 autodoc_default_options = {
     "members": True,
     "show-inheritance": True,
+    "inherited-members": True,
     "undoc_members": True,
     "inherited_members": "BaseModel",
 }
