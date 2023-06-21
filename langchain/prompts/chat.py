@@ -168,6 +168,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         for message in messages:
             if isinstance(message, BaseMessagePromptTemplate):
                 input_vars.update(message.input_variables)
+        if "partial_variables" in values:
+            input_vars = input_vars - set(values["partial_variables"])
         if "input_variables" in values:
             if input_vars != set(values["input_variables"]):
                 raise ValueError(
