@@ -4,10 +4,10 @@ import json
 import os
 from pathlib import Path
 from typing import Dict
+from urllib.request import HTTPError
 
 import pytest
 
-from urllib.request import HTTPError
 from langchain.llms.azureml_endpoint import (
     AzureMLOnlineEndpoint,
     ContentFormatterBase,
