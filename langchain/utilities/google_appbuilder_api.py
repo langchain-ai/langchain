@@ -102,7 +102,7 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
                 appbuilders.append(details)
 
         answer =  "\n".join([f"{i+1}. {item}" for i, item in enumerate(appbuilders)])
-        if answer.count() > 1024:
+        if len(answer) > 1024:
             answer = answer[:1024]
 
         return f"""
