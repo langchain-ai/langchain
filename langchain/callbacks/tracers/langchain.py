@@ -5,7 +5,7 @@ import logging
 import os
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Union
 from uuid import UUID
 
 from langchainplus_sdk import LangChainPlusClient
@@ -59,7 +59,7 @@ class LangChainTracer(BaseTracer):
         # set max_workers to 1 to process tasks in order
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.client = client or LangChainPlusClient()
-        self._futures: List[Future] = []
+        self._futures: Set[Future] = set()
         global _TRACERS
         _TRACERS.append(self)
 
@@ -120,65 +120,67 @@ class LangChainTracer(BaseTracer):
 
     def _on_llm_start(self, run: Run) -> None:
         """Persist an LLM run."""
-        self._futures.append(
+        self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Persist an LLM run."""
-        self._futures.append(
+        self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
 
     def _on_llm_end(self, run: Run) -> None:
         """Process the LLM Run."""
-        self._futures.append(
+        self._futures.add(
             self.executor.submit(self._update_run_single, run.copy(deep=True))
         )
 
     def _on_llm_error(self, run: Run) -> None:
         """Process the LLM Run upon error."""
-        self._futures.append(
+        self._futures.add(
             self.executor.submit(self._update_run_single, run.copy(deep=True))
         )
 
     def _on_chain_start(self, run: Run) -> None:
         """Process the Chain Run upon start."""
-        self._futures.append(
+        self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
 
     def _on_chain_end(self, run: Run) -> None:
         """Process the Chain Run."""
-        self._futures.append(
+        self._futures.add(
             self.executor.submit(self._update_run_single, run.copy(deep=True))
         )
 
     def _on_chain_error(self, run: Run) -> None:
         """Process the Chain Run upon error."""
-        self._futures.append(
+        self._futures.add(
             self.executor.submit(self._update_run_single, run.copy(deep=True))
         )
 
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""
-        self._futures.append(
+        self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
 
     def _on_tool_end(self, run: Run) -> None:
         """Process the Tool Run."""
-        self._futures.append(
+        self._futures.add(
             self.executor.submit(self._update_run_single, run.copy(deep=True))
         )
 
     def _on_tool_error(self, run: Run) -> None:
         """Process the Tool Run upon error."""
-        self._futures.append(
+        self._futures.add(
             self.executor.submit(self._update_run_single, run.copy(deep=True))
         )
 
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
-        wait(self._futures)
-        self._futures.clear()
+        futures = list(self._futures)
+        wait(futures)
+        for future in futures:
+            self._futures.remove(future)
