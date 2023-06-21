@@ -104,22 +104,30 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
         answer =  "\n".join([f"{i+1}. {item}" for i, item in enumerate(appbuilders)])
 
         return f"""
-                thought: {answer}
+                thought: I have find: 
+                {answer}
                 action: summarize answer and provide url link 
                 action_input: {answer} """
 
     def fetch_appbuilder_details(self, prediction: str) -> Optional[str]:
         try:
-           
             derivedStructData = prediction.get("document", {}).get("derivedStructData", {})
 
-            formatted_details = self.format_appbuilder_details(derivedStructData)
-            return formatted_details
+            return self.format_appbuilder_details(derivedStructData)
         except Exception as e:
             logging.error(f"An Error occurred while fetching appbuilder details: {e}")
             return None
         
+    def format_appbuilder_details(self, appbuilder_details: Dict[str, Any]) -> Optional[str]:
+        try:
+            title = appbuilder_details.get("title", "")
 
+            formatted_details = title +" \n "+ self.format_array(appbuilder_details)            
+                
+            return formatted_details
+        except Exception as e:
+            logging.error(f"An error occurred while formatting appbuilder details: {e}")
+            return None        
         
     def format_array(self, appbuilder_details)  -> str:
         formatted_details = ""
