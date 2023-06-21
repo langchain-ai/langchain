@@ -4,25 +4,27 @@ Free, but setup is required. See link below.
 https://learn.microsoft.com/en-us/graph/auth/
 """
 
-from langchain.tools.office365.base import O365BaseTool
-from langchain.tools.office365.utils import clean_body
-from typing import Dict, List, Optional, Any, Type
+from typing import Any, Dict, List, Optional, Type
+
 from pydantic import BaseModel, Extra, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.tools.office365.base import O365BaseTool
+from langchain.tools.office365.utils import clean_body
 
 
 class SearchEmailsInput(BaseModel):
     """Input for SearchEmails Tool."""
+
     """From https://learn.microsoft.com/en-us/graph/search-query-parameter"""
 
     folder: str = Field(
         default=None,
         description=" If the user wants to search in only one folder, the name of the folder. Default folders"
-        " are \"inbox\", \"drafts\", \"sent items\", \"deleted ttems\", but users can search custom folders as well.",
+        ' are "inbox", "drafts", "sent items", "deleted ttems", but users can search custom folders as well.',
     )
     query: str = Field(
         description="The Microsoift Graph v1.0 $search query. Example filters include from:sender,"
@@ -47,8 +49,9 @@ class SearchEmailsInput(BaseModel):
 class O365SearchEmails(O365BaseTool):
     """Class for searching email messages in Office 365
 
-        Free, but setup is required
+    Free, but setup is required
     """
+
     name: str = "messages_search"
     args_schema: Type[BaseModel] = SearchEmailsInput
     description: str = (
@@ -56,29 +59,26 @@ class O365SearchEmails(O365BaseTool):
         " The input must be a valid Microsoft Graph v1.0 $search query."
         " The output is a JSON list of the requested resource."
     )
-    
+
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
 
-
     def _run(
-            self,
-            query: str,
-            folder: str = "",
-            max_results: int = 10,
-            truncate: bool = True,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        query: str,
+        folder: str = "",
+        max_results: int = 10,
+        truncate: bool = True,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> List[Dict[str, Any]]:
-
         # Get mailbox object
         mailbox = self.account.mailbox()
 
         # Pull the folder if the user wants to search in a folder
         if folder is not "":
             mailbox = mailbox.get_folder(folder_name=folder)
-    
 
         # Retrieve messages based on query
         query = mailbox.q().search(query)
@@ -89,7 +89,7 @@ class O365SearchEmails(O365BaseTool):
         for message in messages:
             output_message = {}
             output_message["from"] = message.sender
-            
+
             if truncate:
                 output_message["body"] = message.body_preview
             else:
@@ -102,7 +102,7 @@ class O365SearchEmails(O365BaseTool):
             output_message["to"] = []
             for recipient in message.to._recipients:
                 output_message["to"].append(str(recipient))
-            
+
             output_message["cc"] = []
             for recipient in message.cc._recipients:
                 output_message["cc"].append(str(recipient))
@@ -114,7 +114,7 @@ class O365SearchEmails(O365BaseTool):
             output_messages.append(output_message)
 
         return output_messages
-    
+
     async def _arun(
         self,
         query: str,

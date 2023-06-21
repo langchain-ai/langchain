@@ -1,4 +1,3 @@
-from langchain.tools.office365.base import O365BaseTool
 from typing import List, Optional, Type
 
 from pydantic import BaseModel, Field
@@ -7,6 +6,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.tools.office365.base import O365BaseTool
 
 
 class SendMessageSchema(BaseModel):
@@ -48,17 +48,18 @@ class O365SendMessage(O365BaseTool):
         bcc: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        
         # Get mailbox object
         mailbox = self.account.mailbox()
         message = mailbox.new_message()
-        
+
         # Assign message values
         message.body = body
         message.subject = subject
         message.to.add(to)
-        if cc is not None:  message.cc.add(cc)
-        if bcc is not None:  message.bcc.add(cc)
+        if cc is not None:
+            message.cc.add(cc)
+        if bcc is not None:
+            message.bcc.add(cc)
 
         message.send()
 

@@ -4,19 +4,21 @@ Free, but setup is required. See link below.
 https://learn.microsoft.com/en-us/graph/auth/
 """
 
-from langchain.tools.office365.base import O365BaseTool
-from typing import Dict, List, Optional, Any, Type
-from pydantic import BaseModel, Extra, Field
 from datetime import datetime as dt
+from typing import Any, Dict, List, Optional, Type
+
+from pydantic import BaseModel, Extra, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.tools.office365.base import O365BaseTool
 
 
 class SendEventSchema(BaseModel):
     """Input for CreateEvent Tool."""
+
     body: str = Field(
         ...,
         description="The message body to include in the event.",
@@ -30,21 +32,22 @@ class SendEventSchema(BaseModel):
         description="The subject of the event.",
     )
     start_datetime: str = Field(
-        description=" The start datetime for the event in the following format: " 
-                    " YYYY-MM-DDTHH:MM:SS±hh:mm, where \"T\" separates the date and time "
-                    " components, and the time zone offset is specified as ±hh:mm. "
-                    " For example: \"2023-06-09T10:30:00+03:00\" represents June 9th, " 
-                    " 2023, at 10:30 AM in a time zone with a positive offset of 3 "
-                    " hours from Coordinated Universal Time (UTC).",
+        description=" The start datetime for the event in the following format: "
+        ' YYYY-MM-DDTHH:MM:SS±hh:mm, where "T" separates the date and time '
+        " components, and the time zone offset is specified as ±hh:mm. "
+        ' For example: "2023-06-09T10:30:00+03:00" represents June 9th, '
+        " 2023, at 10:30 AM in a time zone with a positive offset of 3 "
+        " hours from Coordinated Universal Time (UTC).",
     )
     end_datetime: str = Field(
-        description=" The end datetime for the event in the following format: " 
-                    " YYYY-MM-DDTHH:MM:SS±hh:mm, where \"T\" separates the date and time "
-                    " components, and the time zone offset is specified as ±hh:mm. "
-                    " For example: \"2023-06-09T10:30:00+03:00\" represents June 9th, " 
-                    " 2023, at 10:30 AM in a time zone with a positive offset of 3 "
-                    " hours from Coordinated Universal Time (UTC).",
+        description=" The end datetime for the event in the following format: "
+        ' YYYY-MM-DDTHH:MM:SS±hh:mm, where "T" separates the date and time '
+        " components, and the time zone offset is specified as ±hh:mm. "
+        ' For example: "2023-06-09T10:30:00+03:00" represents June 9th, '
+        " 2023, at 10:30 AM in a time zone with a positive offset of 3 "
+        " hours from Coordinated Universal Time (UTC).",
     )
+
 
 class O365SendEvent(O365BaseTool):
     name: str = "send_event"
@@ -62,7 +65,6 @@ class O365SendEvent(O365BaseTool):
         end_datetime: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-
         # Get calendar object
         schedule = self.account.schedule()
         calendar = schedule.get_default_calendar()
@@ -92,4 +94,3 @@ class O365SendEvent(O365BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         raise NotImplementedError(f"The tool {self.name} does not support async yet.")
-
