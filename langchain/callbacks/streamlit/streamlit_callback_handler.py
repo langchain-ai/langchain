@@ -377,17 +377,14 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
-        # chain is redundant with tool + LLM
         pass
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
-        # chain is redundant with tool + LLM
         pass
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
-        # chain is redundant with tool + LLM
         pass
 
     def on_agent_action(
