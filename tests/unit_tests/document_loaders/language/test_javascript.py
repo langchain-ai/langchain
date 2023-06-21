@@ -6,7 +6,7 @@ from langchain.document_loaders.language.javascript import JavaScriptParser
 
 @pytest.mark.requires("esprima")
 class TestJavaScriptParser(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.example_code = """const os = require('os');
 
 function hello(text) {
@@ -34,13 +34,13 @@ hello("Hello!");"""
             "class Simple {\n    constructor() {\n        this.a = 1;\n    }\n}",
         ]
 
-    def test_extract_functions_classes(self):
+    def test_extract_functions_classes(self) -> None:
         parser = JavaScriptParser(self.example_code)
         extracted_code = parser.extract_functions_classes()
         self.assertEqual(extracted_code, self.expected_extracted_code)
         assert False
 
-    def test_simplify_code(self):
+    def test_simplify_code(self) -> None:
         parser = JavaScriptParser(self.example_code)
         simplified_code = parser.simplify_code()
         self.assertEqual(simplified_code, self.expected_simplified_code)

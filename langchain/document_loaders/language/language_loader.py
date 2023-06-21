@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, Any
 from pathlib import Path
 
 import tokenize
@@ -9,7 +9,7 @@ from langchain.document_loaders.language.python import PythonParser
 from langchain.document_loaders.language.javascript import JavaScriptParser
 
 
-LANGUAGE_PARSERS = {
+LANGUAGE_PARSERS: Dict[str, Dict[str, Any]] = {
     "py": {
         "parser": PythonParser,
         "language": "python",
@@ -42,10 +42,10 @@ class LanguageLoader(TextLoader):
         ):
             return [document]
 
-        LanguageParser = LANGUAGE_PARSERS[self.file_extension]["parser"]
+        Parser = LANGUAGE_PARSERS[self.file_extension]["parser"]
         language = LANGUAGE_PARSERS[self.file_extension]["language"]
 
-        parser = LanguageParser(document.page_content)
+        parser = Parser(document.page_content)
         if not parser.is_valid():
             return [document]
         documents = []

@@ -1,12 +1,12 @@
-from typing import List
+from typing import List, Any
 import ast
 
 from langchain.document_loaders.language.language_parser import LanguageParser
 
 
 class PythonParser(LanguageParser):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, code: str):
+        super().__init__(code)
         self.source_lines = self.code.splitlines()
 
     def is_valid(self) -> bool:
@@ -16,7 +16,7 @@ class PythonParser(LanguageParser):
         except SyntaxError:
             return False
 
-    def _extract_code(self, node) -> str:
+    def _extract_code(self, node: Any) -> str:
         start = node.lineno - 1
         end = node.end_lineno
         return "\n".join(self.source_lines[start:end])
@@ -40,7 +40,8 @@ class PythonParser(LanguageParser):
                 start = node.lineno - 1
                 simplified_lines[start] = f"# Code for: {simplified_lines[start]}"
 
+                assert isinstance(node.end_lineno, int)
                 for line_num in range(start + 1, node.end_lineno):
-                    simplified_lines[line_num] = None
+                    simplified_lines[line_num] = None  # type: ignore
 
         return "\n".join(line for line in simplified_lines if line is not None)

@@ -10,9 +10,9 @@ class LanguageParser(ABC):
         return True
 
     @abstractmethod
-    def simplify_code(self) -> List[str]:
+    def simplify_code(self) -> str:
         raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
-    def extract_functions_classes(self) -> str:
+    def extract_functions_classes(self) -> List[str]:
         raise NotImplementedError  # pragma: no cover

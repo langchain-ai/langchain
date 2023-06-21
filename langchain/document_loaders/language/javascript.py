@@ -1,11 +1,11 @@
-from typing import List
+from typing import List, Any
 
 from langchain.document_loaders.language.language_parser import LanguageParser
 
 
 class JavaScriptParser(LanguageParser):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, code: str):
+        super().__init__(code)
         self.source_lines = self.code.splitlines()
 
         try:
@@ -25,7 +25,7 @@ class JavaScriptParser(LanguageParser):
         except esprima.Error:
             return False
 
-    def _extract_code(self, node) -> str:
+    def _extract_code(self, node: Any) -> str:
         start = node.loc.start.line - 1
         end = node.loc.end.line
         return "\n".join(self.source_lines[start:end])
@@ -60,6 +60,6 @@ class JavaScriptParser(LanguageParser):
                 simplified_lines[start] = f"// Code for: {simplified_lines[start]}"
 
                 for line_num in range(start + 1, node.loc.end.line):
-                    simplified_lines[line_num] = None
+                    simplified_lines[line_num] = None  # type: ignore
 
         return "\n".join(line for line in simplified_lines if line is not None)
