@@ -198,7 +198,9 @@ class OpenLLM(LLM):
                 embedded=False,
             )
             tools = load_tools(["serpapi", "llm-math"], llm=llm)
-            agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION)
+            agent = initialize_agent(
+                tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION
+            )
             svc = bentoml.Service("langchain-openllm", runners=[llm.runner])
 
             @svc.api(input=Text(), output=Text())
