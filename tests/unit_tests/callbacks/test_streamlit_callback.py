@@ -11,10 +11,10 @@ class TestImport(unittest.TestCase):
     """Test the StreamlitCallbackHandler 'auto-updating' API"""
 
     def setUp(self) -> None:
-        self.python_import = builtins.__import__
+        self.builtins_import = builtins.__import__
 
     def tearDown(self) -> None:
-        builtins.__import__ = self.python_import
+        builtins.__import__ = self.builtins_import
 
     @mock.patch("langchain.callbacks.streamlit._InternalStreamlitCallbackHandler")
     def test_create_internal_handler(self, mock_internal_handler: Any) -> None:
@@ -27,7 +27,7 @@ class TestImport(unittest.TestCase):
         ) -> Any:
             if name == "streamlit.external.langchain":
                 raise ImportError
-            return self.python_import(name, globals, locals, fromlist, level)
+            return self.builtins_import(name, globals, locals, fromlist, level)
 
         builtins.__import__ = external_import_error  # type: ignore[assignment]
 
@@ -62,7 +62,7 @@ class TestImport(unittest.TestCase):
         ) -> Any:
             if name == "streamlit.external.langchain":
                 return mock_streamlit_module
-            return self.python_import(name, globals, locals, fromlist, level)
+            return self.builtins_import(name, globals, locals, fromlist, level)
 
         builtins.__import__ = external_import_success  # type: ignore[assignment]
 
