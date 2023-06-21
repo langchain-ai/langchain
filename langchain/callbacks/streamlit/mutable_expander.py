@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
-from streamlit.delta_generator import DeltaGenerator
-from streamlit.type_util import SupportsStr
+if TYPE_CHECKING:
+    from streamlit.delta_generator import DeltaGenerator
+    from streamlit.type_util import SupportsStr
 
 
 class ChildType(Enum):
@@ -21,7 +22,7 @@ class ChildRecord(NamedTuple):
 class MutableExpander:
     """A Streamlit expander that can be renamed and dynamically expanded/collapsed."""
 
-    def __init__(self, parent_container: DeltaGenerator, label: str, expanded: bool):
+    def __init__(self, parent_container: "DeltaGenerator", label: str, expanded: bool):
         """Create a new MutableExpander.
 
         Parameters
@@ -95,7 +96,7 @@ class MutableExpander:
 
     def markdown(
         self,
-        body: SupportsStr,
+        body: "SupportsStr",
         unsafe_allow_html: bool = False,
         *,
         help: Optional[str] = None,
@@ -103,7 +104,7 @@ class MutableExpander:
     ) -> int:
         """Add a Markdown element to the container and return its index."""
         kwargs = {"body": body, "unsafe_allow_html": unsafe_allow_html, "help": help}
-        new_dg = self._get_dg(index).markdown(**kwargs)  # type: ignore
+        new_dg = self._get_dg(index).markdown(**kwargs)  # type: ignore[arg-type]
         record = ChildRecord(ChildType.MARKDOWN, kwargs, new_dg)
         return self._add_record(record, index)
 
@@ -112,7 +113,7 @@ class MutableExpander:
     ) -> int:
         """Add an Exception element to the container and return its index."""
         kwargs = {"exception": exception}
-        new_dg = self._get_dg(index).exception(**kwargs)  # type: ignore
+        new_dg = self._get_dg(index).exception(**kwargs)
         record = ChildRecord(ChildType.EXCEPTION, kwargs, new_dg)
         return self._add_record(record, index)
 
