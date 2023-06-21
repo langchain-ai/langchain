@@ -9,7 +9,7 @@ for py in glob.glob("../../langchain/**/*.py", recursive=True):
         classes[first] = []
     with open(py) as f:
         for l in f.readlines():
-            found = re.findall(r"class (.*)\(", l)
+            found = re.findall(r"^class (.*)\(", l)
             classes[first].extend([mod + "." + c for c in found])
 
 

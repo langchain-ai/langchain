@@ -4,7 +4,6 @@
 API Reference
 =============
 
-
 :mod:`langchain.document_transformers`: Document Transformers
 ==============================================================
 
@@ -111,23 +110,6 @@ Classes
 
     base_language.BaseLanguageModel
 
-:mod:`langchain.utils`: Utils
-==============================
-
-.. automodule:: langchain.utils
-    :no-members:
-    :no-inherited-members:
-
-Classes
---------------
-.. currentmodule:: langchain
-
-.. autosummary::
-    :toctree: utils
-    :template: class.rst
-
-    utils.MockDateTime
-
 :mod:`langchain.requests`: Requests
 ====================================
 
@@ -176,7 +158,6 @@ Classes
     schema.PromptValue
     schema.BaseMemory
     schema.BaseChatMessageHistory
-    schema.FileChatMessageHistory
     schema.Document
     schema.BaseRetriever
     schema.BaseLLMOutputParser
@@ -311,7 +292,6 @@ Classes
     tools.ifttt.IFTTTWebhook
     tools.wikipedia.tool.WikipediaQueryRun
     tools.spark_sql.tool.BaseSparkSQLTool
-    tools.spark_sql.tool.Config
     tools.spark_sql.tool.QuerySparkSQLTool
     tools.spark_sql.tool.InfoSparkSQLTool
     tools.spark_sql.tool.ListSparkSQLTool
@@ -329,7 +309,6 @@ Classes
     tools.searx_search.tool.SearxSearchRun
     tools.searx_search.tool.SearxSearchResults
     tools.sql_database.tool.BaseSQLDatabaseTool
-    tools.sql_database.tool.Config
     tools.sql_database.tool.QuerySQLDataBaseTool
     tools.sql_database.tool.InfoSQLDatabaseTool
     tools.sql_database.tool.ListSQLDatabaseTool
@@ -419,7 +398,6 @@ Classes
     tools.gmail.get_thread.GmailGetThread
     tools.gmail.base.GmailBaseTool
     tools.vectorstore.tool.BaseVectorStoreTool
-    tools.vectorstore.tool.Config
     tools.vectorstore.tool.VectorStoreQATool
     tools.vectorstore.tool.VectorStoreQAWithSourcesTool
     tools.google_serper.tool.GoogleSerperRun
@@ -459,7 +437,6 @@ Classes
     embeddings.huggingface.HuggingFaceInstructEmbeddings
     embeddings.sagemaker_endpoint.EmbeddingsContentHandler
     embeddings.sagemaker_endpoint.SagemakerEndpointEmbeddings
-    embeddings.sagemaker_endpoint.ContentHandler
     embeddings.deepinfra.DeepInfraEmbeddings
     embeddings.tensorflow_hub.TensorflowHubEmbeddings
     embeddings.self_hosted_hugging_face.SelfHostedHuggingFaceEmbeddings
@@ -513,7 +490,6 @@ Classes
     memory.chat_message_histories.file.FileChatMessageHistory
     memory.chat_message_histories.redis.RedisChatMessageHistory
     memory.chat_message_histories.postgres.PostgresChatMessageHistory
-    memory.chat_message_histories.sql.Message
     memory.chat_message_histories.sql.SQLChatMessageHistory
     memory.chat_message_histories.in_memory.ChatMessageHistory
     memory.chat_message_histories.firestore.FirestoreChatMessageHistory
@@ -550,7 +526,6 @@ Classes
     callbacks.comet_ml_callback.CometCallbackHandler
     callbacks.streaming_stdout_final_only.FinalStreamingStdOutCallbackHandler
     callbacks.manager.BaseRunManager
-    callbacks.manager.for run manager
     callbacks.manager.RunManager
     callbacks.manager.AsyncRunManager
     callbacks.manager.CallbackManagerForLLMRun
@@ -785,11 +760,9 @@ Classes
     vectorstores.typesense.Typesense
     vectorstores.elastic_vector_search.ElasticVectorSearch
     vectorstores.elastic_vector_search.ElasticKnnSearch
-    vectorstores.elastic_vector_search.for performing k-Nearest Neighbors
     vectorstores.annoy.Annoy
     vectorstores.docarray.hnsw.DocArrayHnswSearch
     vectorstores.docarray.base.DocArrayIndex
-    vectorstores.docarray.base.DocArrayDoc
     vectorstores.docarray.in_memory.DocArrayInMemorySearch
 
 :mod:`langchain.load`: Load
@@ -1160,10 +1133,8 @@ Classes
     llms.mosaicml.MosaicML
     llms.stochasticai.StochasticAI
     llms.sagemaker_endpoint.ContentHandlerBase
-    llms.sagemaker_endpoint.ContentHandler
     llms.sagemaker_endpoint.LLMContentHandler
     llms.sagemaker_endpoint.SagemakerEndpoint
-    llms.sagemaker_endpoint.ContentHandler
     llms.baseten.Baseten
     llms.anthropic._AnthropicCommon
     llms.anthropic.Anthropic
@@ -1217,7 +1188,6 @@ Classes
     chains.hyde.base.HypotheticalDocumentEmbedder
     chains.question_answering.__init__.LoadingCallable
     chains.openai_functions.qa_with_structure.AnswerWithSources
-    chains.openai_functions.extraction.PydanticSchema
     chains.openai_functions.citation_fuzzy_match.FactWithEvidence
     chains.openai_functions.citation_fuzzy_match.QuestionAnswer
     chains.sql_database.base.SQLDatabaseChain
