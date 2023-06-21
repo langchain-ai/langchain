@@ -101,7 +101,8 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         """Generate next turn in the conversation.
 
         Args:
-            messages: The history of the conversation as a list of messages. Code chat does not support context.
+            messages: The history of the conversation as a list of messages. Code chat
+                does not support context.
             stop: The list of stop words (optional).
             run_manager: The Callbackmanager for LLM run, it's not used at the moment.
 
