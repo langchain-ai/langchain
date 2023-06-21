@@ -12,6 +12,7 @@ from langchain.callbacks.streamlit import StreamlitCallbackHandler
 @pytest.mark.requires("streamlit")
 class TestImport(unittest.TestCase):
     """Test the StreamlitCallbackHandler 'auto-updating' API"""
+
     def setUp(self) -> None:
         # we monkeypatch the builtins.import to control whether
         # "import streamlit.external.langchain.StreamlitCallbackHandler" is an error.
@@ -26,14 +27,14 @@ class TestImport(unittest.TestCase):
         StreamlitCallbackHandler, use our own implementation.
         """
 
-        def external_handler_import_error(
+        def external_import_error(
             name: str, globals: Any, locals: Any, fromlist: Any, level: int
         ) -> Any:
             if name == "streamlit.external.langchain":
                 raise ImportError
             return self.python_import(name, globals, locals, fromlist, level)
 
-        builtins.__import__ = external_handler_import_error  # type: ignore[assignment]
+        builtins.__import__ = external_import_error  # type: ignore[assignment]
 
         parent_container = MagicMock()
         thought_labeler = MagicMock()
@@ -61,14 +62,14 @@ class TestImport(unittest.TestCase):
 
         mock_streamlit_module = MagicMock()
 
-        def external_handler_import_success(
+        def external_import_success(
             name: str, globals: Any, locals: Any, fromlist: Any, level: int
         ) -> Any:
             if name == "streamlit.external.langchain":
                 return mock_streamlit_module
             return self.python_import(name, globals, locals, fromlist, level)
 
-        builtins.__import__ = external_handler_import_success  # type: ignore[assignment] # noqa: E501
+        builtins.__import__ = external_import_success  # type: ignore[assignment]
 
         parent_container = MagicMock()
         thought_labeler = MagicMock()
