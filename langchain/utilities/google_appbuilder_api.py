@@ -33,7 +33,7 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
     gappbuilders_api_key: Optional[str] = None
     google_map_client: Any  #: :meta private:
     top_k_results: Optional[int] = 5
-    gappbuilders_ds_url= None
+    gappbuilders_ds_url= ""
 
     class Config:
         """Configuration for this pydantic object."""
