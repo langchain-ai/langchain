@@ -15,11 +15,12 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 def import_flytekit() -> None:
     try:
         import flytekit  # noqa: F401
-        import flytekitplugins.deck.renderer
+        import flytekitplugins.deck.renderer  # noqa: F401
     except ImportError:
         raise ImportError(
-            "To use the flyte callback manager you need to have the `flytekit` and"
-            "`flytekitplugins-deck-standard` packages installed. Please install them with `pip install flytekit`"
+            "To use the flyte callback manager you need"
+            "to have the `flytekit` and `flytekitplugins-deck-standard`"
+            "packages installed. Please install them with `pip install flytekit`"
             "and `pip install flytekitplugins-deck-standard`."
         )
 
@@ -99,7 +100,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             self.nlp = spacy.load("en_core_web_sm")
         except OSError:
             print(
-                "To download the en_core_web_sm model, run the following command in your terminal: `python -m spacy download en_core_web_sm` command."
+                "To download the en_core_web_sm model, \
+                run the following command in your terminal: \
+                `python -m spacy download en_core_web_sm` command."
             )
 
         self.metrics = {
