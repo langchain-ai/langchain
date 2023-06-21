@@ -1,7 +1,9 @@
 """Callback Handler that prints to streamlit."""
 
+from __future__ import annotations
+
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.streamlit.mutable_expander import MutableExpander
@@ -100,7 +102,7 @@ class LLMThoughtLabeler:
 class LLMThought:
     def __init__(
         self,
-        parent_container: "DeltaGenerator",
+        parent_container: DeltaGenerator,
         labeler: LLMThoughtLabeler,
         expanded: bool,
         collapse_on_complete: bool,
@@ -213,7 +215,7 @@ class LLMThought:
 class StreamlitCallbackHandler(BaseCallbackHandler):
     def __init__(
         self,
-        parent_container: "DeltaGenerator",
+        parent_container: DeltaGenerator,
         *,
         max_thought_containers: int = 4,
         expand_new_thoughts: bool = True,

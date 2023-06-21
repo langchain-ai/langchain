@@ -1,6 +1,6 @@
-from typing import Optional
+from __future__ import annotations
 
-from streamlit.delta_generator import DeltaGenerator
+from typing import TYPE_CHECKING, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.streamlit.streamlit_callback_handler import (
@@ -9,6 +9,9 @@ from langchain.callbacks.streamlit.streamlit_callback_handler import (
 from langchain.callbacks.streamlit.streamlit_callback_handler import (
     StreamlitCallbackHandler as _InternalStreamlitCallbackHandler,
 )
+
+if TYPE_CHECKING:
+    from streamlit.delta_generator import DeltaGenerator
 
 
 def StreamlitCallbackHandler(
