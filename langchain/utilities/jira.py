@@ -8,7 +8,7 @@ from langchain.tools.jira.prompt import (
     JIRA_CONFLUENCE_PAGE_CREATE_PROMPT,
     JIRA_GET_ALL_PROJECTS_PROMPT,
     JIRA_ISSUE_CREATE_PROMPT,
-    JIRA_JQL_PROMPT
+    JIRA_JQL_PROMPT,
 )
 from langchain.utils import get_from_dict_or_env
 
