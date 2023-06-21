@@ -70,9 +70,9 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
     def run(self, query: str) -> str:
         """Run appbuilders search and get k number of appbuilders that exists that match."""
 
-    
+        token = self.getToken()
         headers = {
-            'Authorization': f'Bearer {self.getToken()}',
+            'Authorization': f'Bearer {token}',
             'Content-Type': 'application/json; charset=UTF-8'
         }
 
