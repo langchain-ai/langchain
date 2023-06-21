@@ -8,12 +8,18 @@ EXPECTED_SCHEMA = """
 Node properties: [{'properties': [('name', 'STRING')], 'label': 'Movie'}, {'properties': [('name', 'STRING'), ('birthDate', 'STRING')], 'label': 'Person'}]
 Relationships properties: [{'properties': [], 'label': 'ActedIn'}]
 Relationships: ['(:Person)-[:ActedIn]->(:Movie)']
-"""
+"""  # noqa: E501
 
 
 class TestKuzu(unittest.TestCase):
     def setUp(self) -> None:
-        import kuzu
+        try:
+            import kuzu
+        except ImportError as e:
+            raise ImportError(
+                "Cannot import Python package kuzu. Please install it by running "
+                "`pip install kuzu`."
+            ) from e
 
         self.tmpdir = tempfile.mkdtemp()
         self.kuzu_database = kuzu.Database(self.tmpdir)
