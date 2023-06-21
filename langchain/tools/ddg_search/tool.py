@@ -44,7 +44,7 @@ class DuckDuckGoSearchRun(BaseTool):
 
 
 class DuckDuckGoSearchResults(BaseTool):
-    """Tool that queries the Duck Duck Go Search API and get back json."""
+    """Tool that queries the DuckDuckGo search API and get back json."""
 
     name = "DuckDuckGo Results JSON"
     description = (
