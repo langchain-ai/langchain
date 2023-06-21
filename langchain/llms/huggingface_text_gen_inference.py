@@ -29,9 +29,9 @@ class HuggingFaceTextGenInference(LLM):
     - seed: The seed to use when generating text.
     - inference_server_url: The URL of the inference server to use.
     - timeout: The timeout value in seconds to use while connecting to inference server.
-    - server_kwargs: The keyword arguments to pass to the inference server (e.g. headers)
+    - server_kwargs: The keyword arguments to pass to the inference server.
     - client: The client object used to communicate with the inference server.
-    - async_client: The async client object used to communicate with the inference server.
+    - async_client: The async client object used to communicate with the server.
 
     Methods:
     - _call: Generates text based on a given prompt and stop sequences.
