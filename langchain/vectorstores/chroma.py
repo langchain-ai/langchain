@@ -463,7 +463,6 @@ class Chroma(VectorStore):
         client_settings: Optional[chromadb.config.Settings] = None,
         client: Optional[chromadb.Client] = None,
         collection_metadata: Optional[Dict] = None,
-        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a raw documents.
@@ -480,7 +479,6 @@ class Chroma(VectorStore):
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
             collection_metadata (Optional[Dict]): Collection configurations. Defaults to None.
-            relevance_score_fn (Optional[Callable[[float], float]]): Function to be applied on the relevance score.
 
         Returns:
             Chroma: Chroma vectorstore.
@@ -492,7 +490,7 @@ class Chroma(VectorStore):
             client_settings=client_settings,
             client=client,
             collection_metadata=collection_metadata,
-            relevance_score_fn=relevance_score_fn,
+            **kwargs,
         )
         chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return chroma_collection
@@ -508,7 +506,6 @@ class Chroma(VectorStore):
         client_settings: Optional[chromadb.config.Settings] = None,
         client: Optional[chromadb.Client] = None,  # Add this line
         collection_metadata: Optional[Dict] = None,
-        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a list of documents.
@@ -524,7 +521,7 @@ class Chroma(VectorStore):
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
             collection_metadata (Optional[Dict]): Collection configurations. Defaults to None.
-            relevance_score_fn (Optional[Callable[[float], float]]): Function to be applied on the relevance score.
+
         Returns:
             Chroma: Chroma vectorstore.
         """
@@ -540,5 +537,5 @@ class Chroma(VectorStore):
             client_settings=client_settings,
             client=client,
             collection_metadata=collection_metadata,
-            relevance_score_fn=relevance_score_fn,
+            **kwargs,
         )
