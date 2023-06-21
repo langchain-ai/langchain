@@ -26,12 +26,14 @@ from langchain.callbacks.streaming_stdout_final_only import (
 # from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
+from langchain.callbacks.promptlayer_callback import PromptLayerCallbackHandler
 
 __all__ = [
     "AimCallbackHandler",
     "ArgillaCallbackHandler",
     "ArizeCallbackHandler",
     "AsyncIteratorCallbackHandler",
+    "PromptLayerCallbackHandler",
     "ClearMLCallbackHandler",
     "CometCallbackHandler",
     "FileCallbackHandler",
