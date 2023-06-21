@@ -1,4 +1,4 @@
-# 🦜️🔗 LangChain
+# 🦜️🔗 LANGCHAIN
 
 ⚡ Building applications with LLMs through composability ⚡
 
