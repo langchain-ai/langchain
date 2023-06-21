@@ -23,8 +23,8 @@ const config = {
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
 
-  onBrokenLinks: "ignore",
-  onBrokenMarkdownLinks: "ignore",
+  onBrokenLinks: "warn",
+  onBrokenMarkdownLinks: "throw",
 
   plugins: [
     () => ({
