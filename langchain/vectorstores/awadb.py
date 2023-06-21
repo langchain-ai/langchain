@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 from langchain.docstore.document import Document
@@ -48,10 +49,14 @@ class AwaDB(VectorStore):
             else:
                 self.awadb_client = awadb.Client()
 
-        self.awadb_client.Create(table_name)
-        self.embedding_model = embedding_model
+        if table_name == self._DEFAULT_TABLE_NAME:
+            table_name += '_';
+            table_name += str(uuid.uuid4()).split('-')[-1]
 
-        self.added_doc_count = 0
+        self.awadb_client.Create(table_name)
+        self.embedding_model = {}
+        self.embedding_model[table_name] = embedding_model
+        self.using_table_name = table_name
 
     def add_texts(
         self,
@@ -74,16 +79,16 @@ class AwaDB(VectorStore):
             raise ValueError("AwaDB client is None!!!")
 
         embeddings = None
-        if self.embedding_model is not None:
-            embeddings = self.embedding_model.embed_documents(list(texts))
+        if self.embedding_model[self.using_table_name] is not None:
+            embeddings = self.embedding_model[self.using_table_name].embed_documents(list(texts))
 
         return self.awadb_client.AddTexts(
-            "text", "text_embedding", texts, embeddings, metadatas, is_duplicate_texts
+            "embedding_text", "text_embedding", texts, embeddings, metadatas, is_duplicate_texts
         )
 
     def load_local(
         self,
-        table_name: str = _DEFAULT_TABLE_NAME,
+        table_name: str,
         **kwargs: Any,
     ) -> bool:
         if self.awadb_client is None:
@@ -102,8 +107,8 @@ class AwaDB(VectorStore):
             raise ValueError("AwaDB client is None!!!")
 
         embedding = None
-        if self.embedding_model is not None:
-            embedding = self.embedding_model.embed_query(query)
+        if self.embedding_model[self.using_table_name] is not None:
+            embedding = self.embedding_model[self.using_table_name].embed_query(query)
         else:
             from awadb import llm_embedding
 
@@ -127,8 +132,8 @@ class AwaDB(VectorStore):
             raise ValueError("AwaDB client is None!!!")
 
         embedding = None
-        if self.embedding_model is not None:
-            embedding = self.embedding_model.embed_query(query)
+        if self.embedding_model[self.using_table_name] is not None:
+            embedding = self.embedding_model[self.using_table_name].embed_query(query)
         else:
             from awadb import llm_embedding
 
@@ -174,7 +179,7 @@ class AwaDB(VectorStore):
 
         embedding = None
         if self.embedding_model is not None:
-            embedding = self.embedding_model.embed_query(query)
+            embedding = self.embedding_model[self.using_table_name].embed_query(query)
 
         show_results = self.awadb_client.Search(embedding, k)
 
@@ -237,9 +242,9 @@ class AwaDB(VectorStore):
                     item_key == "Field@0" and self.embedding_model is not None
                 ):  # text for the document
                     content = item_detail[item_key]
-                elif self.embedding_model is None and item_key == "embedding_text":
+                elif item_key == "embedding_text":
                     content = item_detail[item_key]
-                elif item_key == "Field@1":  # embedding field for the document
+                elif item_key == "Field@1" or item_key == "text_embedding":  # embedding field for the document
                     continue
                 elif item_key == "score":  # L2 distance
                     if scores is not None:
@@ -249,6 +254,57 @@ class AwaDB(VectorStore):
                     meta_data[item_key] = item_detail[item_key]
             results.append(Document(page_content=content, metadata=meta_data))
         return results
+
+    def create_table(
+        self,
+        table_name: str,
+        **kwargs: Any,
+    ) -> bool:
+        """Create a new table."""
+
+        if sef.awadb_client is None:
+            return False
+
+        ret = self.awadb_client.Create(table_name)
+
+        if ret:
+            self.using_table_name = table_name
+        return ret
+
+    def use(
+        self,
+        table_name: str,
+        **kwargs: Any,
+    ) -> bool:
+        """Use the specified table. Don't know the tables, please invoke list_tables."""
+
+        if sef.awadb_client is None:
+            return False
+
+        ret = self.awadb_client.Use(table_name)
+        if ret:
+            self.using_table_name = table_name
+
+        return ret
+
+    def list_tables(
+        self,
+        **kwargs: Any,
+    ) -> List[str]:
+        """List all the tables created by the client."""
+
+        if self.awadb_client is None:
+            return []
+
+        return self.awadb_client.ListAllTables()
+
+    def get_current_table(
+        self,
+        **kwargs: Any,
+    ) -> str:
+        """Get the current table."""
+
+        return self.using_table_name
 
     @classmethod
     def from_texts(
@@ -300,7 +356,7 @@ class AwaDB(VectorStore):
         Args:
             documents (List[Document]): List of documents to add to the vectorstore.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
-            table_name (str): Name of the collection to create.
+            table_name (str): Name of the table to create.
             logging_and_data_dir (Optional[str]): Directory to persist the table.
             client (Optional[awadb.Client]): AwaDB client
 
