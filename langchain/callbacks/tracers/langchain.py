@@ -21,11 +21,7 @@ from langchain.schema import BaseMessage, messages_to_dict
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
-<<<<<<< Updated upstream
-_TRACERS = []
-=======
 _TRACERS: List[LangChainTracer] = []
->>>>>>> Stashed changes
 
 
 def log_error_once(method: str, exception: Exception) -> None:

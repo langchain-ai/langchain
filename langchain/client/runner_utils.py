@@ -228,7 +228,10 @@ async def _gather_with_concurrency(
         *(run_coroutine_with_semaphore(function) for function in async_funcs)
     )
     while tracer_queue:
-        tracer = tracer_queue.get_nowait()
+        try:
+            tracer = tracer_queue.get_nowait()
+        except asyncio.QueueEmpty:
+            break
         if tracer:
             tracer.wait_for_futures()
     return results
