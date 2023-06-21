@@ -106,6 +106,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
+    elif role == "function":
+        return FunctionMessage(content=_dict["content"], name=_dict["name"])
     else:
         return ChatMessage(content=_dict["content"], role=role)
 
@@ -149,6 +151,10 @@ class ChatOpenAI(BaseChatModel):
             from langchain.chat_models import ChatOpenAI
             openai = ChatOpenAI(model_name="gpt-3.5-turbo")
     """
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"openai_api_key": "OPENAI_API_KEY"}
 
     @property
     def lc_serializable(self) -> bool:
