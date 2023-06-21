@@ -3,7 +3,17 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 import numpy as np
 
@@ -63,6 +73,7 @@ class Chroma(VectorStore):
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[Dict] = None,
         client: Optional[chromadb.Client] = None,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
         """Initialize with Chroma client."""
         try:
@@ -97,6 +108,62 @@ class Chroma(VectorStore):
             else None,
             metadata=collection_metadata,
         )
+        self.relevance_score_fn = (
+            relevance_score_fn or self._select_relevance_score_fn()
+        )
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+
+        distance = "l2"
+        distance_key = "hnsw:space"
+        metadata = self._collection.metadata
+
+        if metadata and distance_key in metadata:
+            distance = metadata[distance_key]
+
+        if distance == "cosine":
+            return self._cosine_relevance_score_fn
+        elif distance == "l2":
+            return self._euclidean_relevance_score_fn
+        elif distance == "ip":
+            return self._max_inner_product_relevance_score_fn
+        else:
+            raise ValueError(
+                "No supported normalization function"
+                f" for distance metric of type: {distance}."
+                "Consider providing relevance_score_fn to PGVector constructor."
+            )
+
+    @staticmethod
+    def _euclidean_relevance_score_fn(distance: float) -> float:
+        """
+        Normalize the distance to a score on a scale [0, 1].
+        This function converts the Euclidean norm of normalized embeddings
+        (0 is most similar, sqrt(2) most dissimilar)
+        to a similarity function (0 to 1)
+        """
+
+        return 1 / (1 + (distance * 0.25))
+
+    @staticmethod
+    def _cosine_relevance_score_fn(distance: float) -> float:
+        """Normalize the distance to a score on a scale [0, 1]."""
+
+        return 1.0 - distance
+
+    @staticmethod
+    def _max_inner_product_relevance_score_fn(distance: float) -> float:
+        """Normalize the distance to a score on a scale [0, 1]."""
+
+        return 1.0 - distance
 
     @xor_args(("query_texts", "query_embeddings"))
     def __query_collection(
@@ -244,7 +311,12 @@ class Chroma(VectorStore):
         """
 
         docs_and_scores = self.similarity_search_with_score(query, k)
-        return [(doc, 1.0 - score) for doc, score in docs_and_scores]
+
+        docs_and_normalized_scores = [
+            (doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores
+        ]
+
+        return docs_and_normalized_scores
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -390,6 +462,8 @@ class Chroma(VectorStore):
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         client: Optional[chromadb.Client] = None,
+        collection_metadata: Optional[Dict] = None,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a raw documents.
@@ -405,6 +479,8 @@ class Chroma(VectorStore):
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
+            collection_metadata (Optional[Dict]): Collection configurations. Defaults to None.
+            relevance_score_fn (Optional[Callable[[float], float]]): Function to be applied on the relevance score.
 
         Returns:
             Chroma: Chroma vectorstore.
@@ -415,6 +491,8 @@ class Chroma(VectorStore):
             persist_directory=persist_directory,
             client_settings=client_settings,
             client=client,
+            collection_metadata=collection_metadata,
+            relevance_score_fn=relevance_score_fn,
         )
         chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return chroma_collection
@@ -429,6 +507,8 @@ class Chroma(VectorStore):
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         client: Optional[chromadb.Client] = None,  # Add this line
+        collection_metadata: Optional[Dict] = None,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a list of documents.
@@ -443,6 +523,8 @@ class Chroma(VectorStore):
             documents (List[Document]): List of documents to add to the vectorstore.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
+            collection_metadata (Optional[Dict]): Collection configurations. Defaults to None.
+            relevance_score_fn (Optional[Callable[[float], float]]): Function to be applied on the relevance score.
         Returns:
             Chroma: Chroma vectorstore.
         """
@@ -457,4 +539,6 @@ class Chroma(VectorStore):
             persist_directory=persist_directory,
             client_settings=client_settings,
             client=client,
+            collection_metadata=collection_metadata,
+            relevance_score_fn=relevance_score_fn,
         )
