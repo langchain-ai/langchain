@@ -181,6 +181,11 @@ class DeepLake(VectorStore):
         if metadatas is None:
             metadatas = [{}] * len(list(texts))
 
+        if texts is None:
+            raise ValueError("`texts` parameter shouldn't be None.")
+        elif len(texts) == 0:
+            raise ValueError("`texts` parameter shouldn't be empty.")
+        
         return self.vectorstore.add(
             text=texts,
             metadata=metadatas,
@@ -196,7 +201,7 @@ class DeepLake(VectorStore):
         self,
         tql_query: Optional[str],
         exec_option: Optional[str] = None,
-        return_score: bool = False,
+        **kwargs,
     ) -> Any[List[Document], List[Tuple[Document, float]]]:
         """Function for performing tql_search.
 
@@ -235,9 +240,13 @@ class DeepLake(VectorStore):
             )
             for text, metadata in zip(texts, metadatas)
         ]
-
-        if return_score:
-            raise ValueError("scores can't be returned with tql search")
+        
+        if kwargs:
+            unsupported_argument = next(iter(kwargs))
+            if kwargs[unsupported_argument] is not False:
+                raise ValueError(
+                    f"specifying {unsupported_argument} is not supported with tql search."
+                )
 
         return docs
 
@@ -301,6 +310,11 @@ class DeepLake(VectorStore):
                 tql_query=kwargs["tql_query"],
                 exec_option=exec_option,
                 return_score=return_score,
+                embedding=embedding,
+                embedding_function=embedding_function,
+                distance_metric=distance_metric,
+                use_maximal_marginal_relevance=use_maximal_marginal_relevance,
+                filter=filter,
             )
 
         if embedding_function:
@@ -384,7 +398,8 @@ class DeepLake(VectorStore):
             ...     exec_option=<preferred_exec_option>,
             ... )
             >>> # Run tql search:
-            >>> data = vector_store.tql_search(
+            >>> data = vector_store.similarity_search(
+            ...     query=None,
             ...     tql_query="SELECT * WHERE id == <id>",
             ...     exec_option="compute_engine",
             ... )
