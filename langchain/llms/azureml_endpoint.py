@@ -25,7 +25,7 @@ class AzureMLEndpointClient(object):
         self.endpoint_api_key = endpoint_api_key
         self.deployment_name = deployment_name
 
-    def call(self, body: bytes) -> Union[Dict, str]:
+    def call(self, body: bytes) -> Union[bytes, str]:
         """call."""
 
         url = self.endpoint_url
