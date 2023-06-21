@@ -339,11 +339,20 @@ Memory = BaseMemory
 T = TypeVar("T")
 
 
-class BaseOutputParser(Serializable, ABC, Generic[T]):
+class BaseLLMOutputParser(Serializable, ABC, Generic[T]):
+    @abstractmethod
+    def parse_result(self, result: List[Generation]) -> T:
+        """Parse LLM Result."""
+
+
+class BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T]):
     """Class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
     """
+
+    def parse_result(self, result: List[Generation]) -> T:
+        return self.parse(result[0].text)
 
     @abstractmethod
     def parse(self, text: str) -> T:
@@ -392,6 +401,21 @@ class BaseOutputParser(Serializable, ABC, Generic[T]):
         output_parser_dict = super().dict()
         output_parser_dict["_type"] = self._type
         return output_parser_dict
+
+
+class NoOpOutputParser(BaseOutputParser[str]):
+    """Output parser that just returns the text as is."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    @property
+    def _type(self) -> str:
+        return "default"
+
+    def parse(self, text: str) -> str:
+        return text
 
 
 class OutputParserException(ValueError):
