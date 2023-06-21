@@ -31,9 +31,7 @@ def debug_output(s: Any) -> None:
 
 
 def get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
-    import pymysql.cursors
-
-    cursor: pymysql.cursors.Cursor = connection.cursor()
+    cursor = connection.cursor()
     cursor.execute(query)
     columns = cursor.description
     result = []
@@ -127,9 +125,9 @@ class StarRocks(VectorStore):
         config (StarRocksSettings): Configuration to StarRocks Client
         """
         try:
-            import pymysql
+            import pymysql  # type: ignore[import]
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import pymysql python package. "
                 "Please install it with `pip install pymysql`."
             )
