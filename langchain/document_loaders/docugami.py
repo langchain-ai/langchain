@@ -243,7 +243,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
             artifact_url = artifact.get("url")
             artifact_doc = artifact.get("document")
 
-            if artifact_name == f"{project_id}.xml" and artifact_url and artifact_doc:
+            if artifact_name == "report-values.xml" and artifact_url and artifact_doc:
                 doc_id = artifact_doc["id"]
                 metadata: Dict = {}
 
@@ -266,11 +266,11 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     artifact_tree = etree.parse(io.BytesIO(response.content))
                     artifact_root = artifact_tree.getroot()
                     ns = artifact_root.nsmap
-                    entries = artifact_root.xpath("//wp:Entry", namespaces=ns)
+                    entries = artifact_root.xpath("//pr:Entry", namespaces=ns)
                     for entry in entries:
-                        heading = entry.xpath("./wp:Heading", namespaces=ns)[0].text
+                        heading = entry.xpath("./pr:Heading", namespaces=ns)[0].text
                         value = " ".join(
-                            entry.xpath("./wp:Value", namespaces=ns)[0].itertext()
+                            entry.xpath("./pr:Value", namespaces=ns)[0].itertext()
                         ).strip()
                         metadata[heading] = value
                     per_file_metadata[doc_id] = metadata
