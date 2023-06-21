@@ -53,7 +53,7 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
         
         return values
 
-    def getToken() -> str:
+    def getToken(self) -> str:
         import google.auth
         import google.auth.transport.requests
         creds, project = google.auth.default()
