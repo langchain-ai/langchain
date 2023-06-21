@@ -1,0 +1,279 @@
+# serializer version: 1
+# name: test_person
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "test_dump",
+      "Person"
+    ],
+    "kwargs": {
+      "secret": {
+        "lc": 1,
+        "type": "secret",
+        "id": [
+          "SECRET"
+        ]
+      },
+      "you_can_see_me": "hello"
+    }
+  }
+  '''
+# ---
+# name: test_person.1
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "test_dump",
+      "SpecialPerson"
+    ],
+    "kwargs": {
+      "another_secret": {
+        "lc": 1,
+        "type": "secret",
+        "id": [
+          "ANOTHER_SECRET"
+        ]
+      },
+      "secret": {
+        "lc": 1,
+        "type": "secret",
+        "id": [
+          "SECRET"
+        ]
+      },
+      "another_visible": "bye",
+      "you_can_see_me": "hello"
+    }
+  }
+  '''
+# ---
+# name: test_serialize_llmchain
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain",
+      "chains",
+      "llm",
+      "LLMChain"
+    ],
+    "kwargs": {
+      "llm": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "llms",
+          "openai",
+          "OpenAI"
+        ],
+        "kwargs": {
+          "model": "davinci",
+          "temperature": 0.5,
+          "openai_api_key": {
+            "lc": 1,
+            "type": "secret",
+            "id": [
+              "OPENAI_API_KEY"
+            ]
+          }
+        }
+      },
+      "prompt": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "prompts",
+          "prompt",
+          "PromptTemplate"
+        ],
+        "kwargs": {
+          "input_variables": [
+            "name"
+          ],
+          "template": "hello {name}!",
+          "template_format": "f-string"
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_llmchain_chat
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain",
+      "chains",
+      "llm",
+      "LLMChain"
+    ],
+    "kwargs": {
+      "llm": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "chat_models",
+          "openai",
+          "ChatOpenAI"
+        ],
+        "kwargs": {
+          "model": "davinci",
+          "temperature": 0.5,
+          "openai_api_key": {
+            "lc": 1,
+            "type": "secret",
+            "id": [
+              "OPENAI_API_KEY"
+            ]
+          }
+        }
+      },
+      "prompt": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "prompts",
+          "chat",
+          "ChatPromptTemplate"
+        ],
+        "kwargs": {
+          "input_variables": [
+            "name"
+          ],
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain",
+                "prompts",
+                "chat",
+                "HumanMessagePromptTemplate"
+              ],
+              "kwargs": {
+                "prompt": {
+                  "lc": 1,
+                  "type": "constructor",
+                  "id": [
+                    "langchain",
+                    "prompts",
+                    "prompt",
+                    "PromptTemplate"
+                  ],
+                  "kwargs": {
+                    "input_variables": [
+                      "name"
+                    ],
+                    "template": "hello {name}!",
+                    "template_format": "f-string"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_llmchain_with_non_serializable_arg
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain",
+      "chains",
+      "llm",
+      "LLMChain"
+    ],
+    "kwargs": {
+      "llm": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "llms",
+          "openai",
+          "OpenAI"
+        ],
+        "kwargs": {
+          "model": "davinci",
+          "temperature": 0.5,
+          "openai_api_key": {
+            "lc": 1,
+            "type": "secret",
+            "id": [
+              "OPENAI_API_KEY"
+            ]
+          },
+          "client": {
+            "lc": 1,
+            "type": "not_implemented",
+            "id": [
+              "openai",
+              "api_resources",
+              "completion",
+              "Completion"
+            ]
+          }
+        }
+      },
+      "prompt": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "prompts",
+          "prompt",
+          "PromptTemplate"
+        ],
+        "kwargs": {
+          "input_variables": [
+            "name"
+          ],
+          "template": "hello {name}!",
+          "template_format": "f-string"
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_openai_llm
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain",
+      "llms",
+      "openai",
+      "OpenAI"
+    ],
+    "kwargs": {
+      "model": "davinci",
+      "temperature": 0.7,
+      "openai_api_key": {
+        "lc": 1,
+        "type": "secret",
+        "id": [
+          "OPENAI_API_KEY"
+        ]
+      }
+    }
+  }
+  '''
+# ---

@@ -62,7 +62,7 @@ class VectorStoreToolkit(BaseToolkit):
 
 
 class VectorStoreRouterToolkit(BaseToolkit):
-    """Toolkit for routing between vectorstores."""
+    """Toolkit for routing between vector stores."""
 
     vectorstores: List[VectorStoreInfo] = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))

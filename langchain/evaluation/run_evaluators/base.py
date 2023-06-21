@@ -11,11 +11,10 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from langchain.chains.llm import LLMChain
 from langchain.schema import RUN_KEY, BaseOutputParser
 
 
-class RunEvalInputMapper:
+class RunEvaluatorInputMapper:
     """Map the inputs of a run to the inputs of an evaluation."""
 
     @abstractmethod
@@ -37,9 +36,9 @@ class RunEvaluatorOutputParser(BaseOutputParser[EvaluationResult]):
 class RunEvaluatorChain(Chain, RunEvaluator):
     """Evaluate Run and optional examples."""
 
-    input_mapper: RunEvalInputMapper
+    input_mapper: RunEvaluatorInputMapper
     """Maps the Run and Optional example to a dictionary for the eval chain."""
-    eval_chain: LLMChain
+    eval_chain: Chain
     """The evaluation chain."""
     output_parser: RunEvaluatorOutputParser
     """Parse the output of the eval chain into feedback."""

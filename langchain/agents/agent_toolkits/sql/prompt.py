@@ -19,3 +19,5 @@ SQL_SUFFIX = """Begin!
 Question: {input}
 Thought: I should look at the tables in the database to see what I can query.  Then I should query the schema of the most relevant tables.
 {agent_scratchpad}"""
+
+SQL_FUNCTIONS_SUFFIX = """I should look at the tables in the database to see what I can query.  Then I should query the schema of the most relevant tables."""
