@@ -50,12 +50,13 @@ class AwaDB(VectorStore):
                 self.awadb_client = awadb.Client()
 
         if table_name == self._DEFAULT_TABLE_NAME:
-            table_name += '_';
-            table_name += str(uuid.uuid4()).split('-')[-1]
+            table_name += "_"
+            table_name += str(uuid.uuid4()).split("-")[-1]
 
         self.awadb_client.Create(table_name)
-        self.embedding_model = {}
-        self.embedding_model[table_name] = embedding_model
+        self.table2embeddings: dict[str, Embeddings] = {}
+        if embedding_model is not None:
+            self.table2embeddings[table_name] = embedding_model
         self.using_table_name = table_name
 
     def add_texts(
@@ -79,11 +80,18 @@ class AwaDB(VectorStore):
             raise ValueError("AwaDB client is None!!!")
 
         embeddings = None
-        if self.embedding_model[self.using_table_name] is not None:
-            embeddings = self.embedding_model[self.using_table_name].embed_documents(list(texts))
+        if self.using_table_name in self.table2embeddings:
+            embeddings = self.table2embeddings[self.using_table_name].embed_documents(
+                list(texts)
+            )
 
         return self.awadb_client.AddTexts(
-            "embedding_text", "text_embedding", texts, embeddings, metadatas, is_duplicate_texts
+            "embedding_text",
+            "text_embedding",
+            texts,
+            embeddings,
+            metadatas,
+            is_duplicate_texts,
         )
 
     def load_local(
@@ -107,8 +115,8 @@ class AwaDB(VectorStore):
             raise ValueError("AwaDB client is None!!!")
 
         embedding = None
-        if self.embedding_model[self.using_table_name] is not None:
-            embedding = self.embedding_model[self.using_table_name].embed_query(query)
+        if self.using_table_name in self.table2embeddings:
+            embedding = self.table2embeddings[self.using_table_name].embed_query(query)
         else:
             from awadb import llm_embedding
 
@@ -132,20 +140,15 @@ class AwaDB(VectorStore):
             raise ValueError("AwaDB client is None!!!")
 
         embedding = None
-        if self.embedding_model[self.using_table_name] is not None:
-            embedding = self.embedding_model[self.using_table_name].embed_query(query)
+        if self.using_table_name in self.table2embeddings:
+            embedding = self.table2embeddings[self.using_table_name].embed_query(query)
         else:
             from awadb import llm_embedding
 
             llm = llm_embedding.LLMEmbedding()
             embedding = llm.Embedding(query)
 
-        # show_results = self.awadb_client.Search(embedding, k)
-
         results: List[Tuple[Document, float]] = []
-
-        # if show_results.__len__() == 0:
-        #    return results
 
         scores: List[float] = []
         retrieval_docs = self.similarity_search_by_vector(embedding, k, scores)
@@ -178,8 +181,8 @@ class AwaDB(VectorStore):
             raise ValueError("AwaDB client is None!!!")
 
         embedding = None
-        if self.embedding_model is not None:
-            embedding = self.embedding_model[self.using_table_name].embed_query(query)
+        if self.using_table_name in self.table2embeddings:
+            embedding = self.table2embeddings[self.using_table_name].embed_query(query)
 
         show_results = self.awadb_client.Search(embedding, k)
 
@@ -239,12 +242,15 @@ class AwaDB(VectorStore):
             meta_data = {}
             for item_key in item_detail:
                 if (
-                    item_key == "Field@0" and self.embedding_model is not None
+                    item_key == "Field@0"
+                    and self.using_table_name in self.table2embeddings
                 ):  # text for the document
                     content = item_detail[item_key]
                 elif item_key == "embedding_text":
                     content = item_detail[item_key]
-                elif item_key == "Field@1" or item_key == "text_embedding":  # embedding field for the document
+                elif (
+                    item_key == "Field@1" or item_key == "text_embedding"
+                ):  # embedding field for the document
                     continue
                 elif item_key == "score":  # L2 distance
                     if scores is not None:
@@ -262,7 +268,7 @@ class AwaDB(VectorStore):
     ) -> bool:
         """Create a new table."""
 
-        if sef.awadb_client is None:
+        if self.awadb_client is None:
             return False
 
         ret = self.awadb_client.Create(table_name)
@@ -278,7 +284,7 @@ class AwaDB(VectorStore):
     ) -> bool:
         """Use the specified table. Don't know the tables, please invoke list_tables."""
 
-        if sef.awadb_client is None:
+        if self.awadb_client is None:
             return False
 
         ret = self.awadb_client.Use(table_name)
