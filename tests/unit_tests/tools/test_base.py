@@ -403,6 +403,7 @@ def test_tool_from_function_with_run_manager() -> None:
         Args:
             tool_input: str
         """
+        assert callbacks is not None
         return "foo" + bar
 
     handler = FakeCallbackHandler()
@@ -422,6 +423,7 @@ def test_structured_tool_from_function_with_run_manager() -> None:
             bar: int
             baz: str
         """
+        assert callbacks is not None
         return str(bar) + baz
 
     handler = FakeCallbackHandler()
