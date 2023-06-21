@@ -22,7 +22,7 @@ from langchain.agents import Tool, AgentExecutor, LLMSingleActionAgent, AgentOut
 from langchain.prompts import StringPromptTemplate
 from langchain import OpenAI, SerpAPIWrapper, LLMChain
 from typing import List, Union
-from langchain.schema import AgentAction, AgentFinish
+from langchain.schema import AgentAction, AgentFinish, OutputParserException
 import re
 ```
 
@@ -135,7 +135,7 @@ class CustomOutputParser(AgentOutputParser):
         regex = r"Action\s*\d*\s*:(.*?)\nAction\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
         match = re.search(regex, llm_output, re.DOTALL)
         if not match:
-            raise ValueError(f"Could not parse LLM output: `{llm_output}`")
+            raise OutputParserException(f"Could not parse LLM output: `{llm_output}`")
         action = match.group(1).strip()
         action_input = match.group(2)
         # Return the action and action input
