@@ -4,12 +4,9 @@ from typing import Any
 from unittest import mock
 from unittest.mock import MagicMock
 
-import pytest
-
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 
 
-@pytest.mark.requires("streamlit")
 class TestImport(unittest.TestCase):
     """Test the StreamlitCallbackHandler 'auto-updating' API"""
 
