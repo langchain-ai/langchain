@@ -252,7 +252,6 @@ class PGVector(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
         pre_delete_collection: bool = False,
-        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> PGVector:
         if ids is None:
@@ -261,15 +260,12 @@ class PGVector(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
-        connection_string = cls.get_connection_string(kwargs)
-
         store = cls(
-            connection_string=connection_string,
             collection_name=collection_name,
             embedding_function=embedding,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
-            relevance_score_fn=relevance_score_fn,
+            **kwargs,
         )
 
         store.add_embeddings(
@@ -520,7 +516,6 @@ class PGVector(VectorStore):
         distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
-        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> PGVector:
         """
@@ -540,7 +535,6 @@ class PGVector(VectorStore):
             collection_name=collection_name,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
-            relevance_score_fn=relevance_score_fn,
             **kwargs,
         )
 

@@ -188,7 +188,6 @@ def test_pgvector_with_filter_in_set() -> None:
 
 def test_pgvector_relevance_score() -> None:
     """Test to make sure the relevance score is scaled to 0-1."""
-
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = PGVector.from_texts(
@@ -210,7 +209,6 @@ def test_pgvector_relevance_score() -> None:
 
 def test_pgvector_retriever_search_threshold() -> None:
     """Test using retriever for searching with threshold."""
-
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = PGVector.from_texts(
@@ -234,8 +232,7 @@ def test_pgvector_retriever_search_threshold() -> None:
 
 
 def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
-    """Test searching with threshold and customized normalization function"""
-
+    """Test searching with threshold and custom normalization function"""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = PGVector.from_texts(
