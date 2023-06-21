@@ -34,6 +34,12 @@ logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="TextSplitter")
 
 
+DEFAULT_CHUNK_SIZE_CHARS = 4000
+DEFAULT_CHUNK_OVERLAP_CHARS = DEFAULT_CHUNK_SIZE_CHARS / 20
+DEFAULT_CHUNK_SIZE_TOKENS = DEFAULT_CHUNK_SIZE_CHARS / 5
+DEFAULT_CHUNK_OVERLAP_TOKENS = max(20, DEFAULT_CHUNK_SIZE_TOKENS / 20)
+
+
 def _split_text_with_regex(
     text: str, separator: str, keep_separator: bool
 ) -> List[str]:
@@ -58,8 +64,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
     def __init__(
         self,
-        chunk_size: int = 4000,
-        chunk_overlap: int = 200,
+        chunk_size: int = DEFAULT_CHUNK_SIZE_CHARS,
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP_CHARS,
         length_function: Callable[[str], int] = len,
         keep_separator: bool = False,
         add_start_index: bool = False,
@@ -164,7 +170,13 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         return docs
 
     @classmethod
-    def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
+    def from_huggingface_tokenizer(
+        cls,
+        tokenizer: Any,
+        chunk_size: int = DEFAULT_CHUNK_SIZE_TOKENS,
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP_TOKENS,
+        **kwargs: Any,
+    ) -> TextSplitter:
         """Text splitter that uses HuggingFace tokenizer to count length."""
         try:
             from transformers import PreTrainedTokenizerBase
@@ -182,11 +194,18 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-        return cls(length_function=_huggingface_tokenizer_length, **kwargs)
+        return cls(
+            length_function=_huggingface_tokenizer_length,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            **kwargs,
+        )
 
     @classmethod
     def from_tiktoken_encoder(
         cls: Type[TS],
+        chunk_size: int = DEFAULT_CHUNK_SIZE_TOKENS,
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP_TOKENS,
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
@@ -223,6 +242,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 "model_name": model_name,
                 "allowed_special": allowed_special,
                 "disallowed_special": disallowed_special,
+                "chunk_size": chunk_size,
+                "chunk_overlap": chunk_overlap,
             }
             kwargs = {**kwargs, **extra_kwargs}
 
