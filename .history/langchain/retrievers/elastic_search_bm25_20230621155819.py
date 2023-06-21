@@ -77,7 +77,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         texts: Iterable[str],
         refresh_indices: bool = True,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the retriever.
+        """Run more texts through the embeddings and add to the retriver.
 
         Args:
             texts: Iterable of strings to add to the retriever.
