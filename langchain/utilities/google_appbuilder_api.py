@@ -41,20 +41,6 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def getToken():
-        import google.auth
-        import google.auth.transport.requests
-        creds, project = google.auth.default()
-
-        # creds.valid is False, and creds.token is None
-        # Need to refresh credentials to populate those
-
-        auth_req = google.auth.transport.requests.Request()
-        creds.refresh(auth_req)
-
-        return creds.token
-
-
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
 
@@ -67,6 +53,19 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
         
         return values
 
+    def getToken() -> str:
+        import google.auth
+        import google.auth.transport.requests
+        creds, project = google.auth.default()
+
+        # creds.valid is False, and creds.token is None
+        # Need to refresh credentials to populate those
+
+        auth_req = google.auth.transport.requests.Request()
+        creds.refresh(auth_req)
+
+        return creds.token
+    
     def run(self, query: str) -> str:
         """Run appbuilders search and get k number of appbuilders that exists that match."""
 
@@ -132,7 +131,7 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
                     if isinstance(value, str) :
                         formatted_details = f"{formatted_details} \n {key} : {value}"
                     else:
-                        formatted_details_sub =  self.format_array(value)
+                        #formatted_details_sub =  self.format_array(value)
                         formatted_details = f"{formatted_details} \n {key} : {value}"
 
 
