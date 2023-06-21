@@ -1,0 +1,16 @@
+Here is an example implementation of a singleton class in Python:
+
+```python
+class Singleton:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            print("Creating new instance")
+            cls._instance = super().__new__(cls)
+        else:
+            print("Using existing instance")
+        return cls._instance
+```
+
+In this implementation, the `_instance` variable keeps track of whether an instance of the class has already been created. The `__new__` method is called when an instance of the class is requested. If an instance has already been created, it returns that instance. Otherwise, it creates a new instance and returns that.

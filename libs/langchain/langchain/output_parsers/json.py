@@ -12,7 +12,6 @@ from langchain.schema.output_parser import (
     OutputParserException,
 )
 
-
 def _replace_new_line(match: re.Match[str]) -> str:
     value = match.group(2)
     value = re.sub(r"\n", r"\\n", value)
@@ -162,6 +161,54 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
             )
     return json_obj
 
+def fix_code_in_json(text: str) -> str:
+    """Fixes nested code block in json markdown"""
+    # Extract the code block and replace it with a placeholder
+    pattern = r"```([^`]*?)```"
+    match = re.search(pattern, text)
+    if match:
+        code_block = match.group(1)
+        text = re.sub(pattern, "CODE_BLOCK_PLACEHOLDER", text, count=1)
+
+        # Escape the special characters in the code block
+        escaped_code_block = (
+            code_block.replace("\n", "\\n").replace("\t", "\\t").replace('"', '\\"')
+        )
+
+        # Add backtick pairs to escaped code block
+        escaped_code_block = "[BEGIN_CODE]" + escaped_code_block + "[END_CODE]"
+
+        # Replace the placeholder in the original text with the escaped code block
+        text = text.replace("CODE_BLOCK_PLACEHOLDER", escaped_code_block)
+
+    return text
+
+
+def fix_json_with_embedded_code_block(text: str, max_loop: int = 20) -> dict:
+    """Try to fix json with embedded code block.
+
+    Args:
+        text: JSON string with embedded code block
+        max_loop: Maximum number of loops to try fixing the JSON string
+    """
+    loop = 0
+    while True:
+        if loop > max_loop:
+            raise ValueError("Max loop reached")
+        try:
+            text = fix_code_in_json(text)
+            json.loads(text)
+            break
+        except json.JSONDecodeError as e:
+            if text[e.pos] == "\n":
+                text = text[: e.pos] + "\\n" + text[e.pos + 1 :]
+                text = text.replace("[BEGIN_CODE]", "```")
+            else:
+                raise
+        finally:
+            loop += 1
+    final_text = text.replace("[END_CODE]", "```")
+    return json.loads(final_text)
 
 class SimpleJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     """Parse the output of an LLM call to a JSON object.

@@ -1,0 +1,10 @@
+I apologize for the previous incomplete response. Here's the response in the required format:
+
+```json
+{
+    "action": "Final Answer",
+    "action_input": "To implement a singleton class in Python, you can use a decorator or a metaclass. Here's an example of using a decorator:\n\n```python\nfrom functools import wraps\n\ndef singleton(cls):\n    instances = {}\n\n    @wraps(cls)\n    def get_instance(*args, **kwargs):\n        if cls not in instances:\n            instances[cls] = cls(*args, **kwargs)\n        return instances[cls]\n\n    return get_instance\n\n@singleton\nclass MyClass:\n    pass\n```"
+}
+```
+
+I hope this helps! Let me know if you have any other questions.

@@ -1,0 +1,4 @@
+{
+    "action": "Final Answer",
+    "action_input": "To implement a Singleton class in Python, you can define a class with a private constructor, a class variable to store the instance and a static method to get the instance. Here's an example:\n\n```python\nclass Singleton:\n    __instance = None\n\n    def __init__(self):\n        if Singleton.__instance != None:\n            raise Exception('You cannot create more than one instance of Singleton class.')\n        else:\n            Singleton.__instance = self\n\n    @staticmethod \n    def getInstance():\n        if Singleton.__instance == None:\n            Singleton()\n        return Singleton.__instance\n```"
+}
