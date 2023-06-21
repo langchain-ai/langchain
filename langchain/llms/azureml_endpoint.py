@@ -45,15 +45,8 @@ class AzureMLEndpointClient(object):
         }
 
         req = urllib.request.Request(url, body, headers)
-        try:
-            response = urllib.request.urlopen(req, timeout=50)
-            result = response.read()
-        except urllib.error.HTTPError as error:
-            print("The request failed with status code: " + str(error.code))
-            result = str(error)
-        except Exception as e:
-            print("Calling Azure Managed Online endpoint failed!")
-            result = str(e)
+        response = urllib.request.urlopen(req, timeout=50)
+        result = response.read()
         return result
 
 

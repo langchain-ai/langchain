@@ -7,6 +7,7 @@ from typing import Dict
 
 import pytest
 
+from urllib.request import HTTPError
 from langchain.llms.azureml_endpoint import (
     AzureMLOnlineEndpoint,
     ContentFormatterBase,
@@ -115,7 +116,7 @@ def test_invalid_request_format() -> None:
             response_json = json.loads(output)
             return response_json[0]["0"]
 
-    with pytest.raises(json.JSONDecodeError):
+    with pytest.raises(HTTPError):
         llm = AzureMLOnlineEndpoint(
             endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),
             endpoint_url=os.getenv("OSS_ENDPOINT_URL"),
@@ -127,7 +128,7 @@ def test_invalid_request_format() -> None:
 
 def test_incorrect_key() -> None:
     """Testing AzureML Endpoint for incorrect key"""
-    with pytest.raises(json.JSONDecodeError):
+    with pytest.raises(HTTPError):
         llm = AzureMLOnlineEndpoint(
             endpoint_api_key="incorrect-key",
             endpoint_url=os.getenv("OSS_ENDPOINT_URL"),
