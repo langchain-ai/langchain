@@ -1,0 +1,8 @@
+{%- extends "basic/search.html" %}
+{% block extrahead %}
+  <script type="text/javascript" src="{{ pathto('searchindex.js', 1) }}" defer></script>
+  <script src="{{ pathto('_static/doctools.js', 1) }}"></script>
+  <script src="{{ pathto('_static/language_data.js', 1) }}"></script>
+  <script src="{{ pathto('_static/searchtools.js', 1) }}"></script>
+  <script src="{{ pathto('_static/sphinx_highlight.js', 1) }}"></script>
+{% endblock %}

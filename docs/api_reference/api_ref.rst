@@ -34,7 +34,6 @@ Classes
 .. currentmodule:: langchain
 
 .. autosummary::
-    :toctree: text_splitter
     :template: class.rst
 
     text_splitter.TextSplitter
