@@ -17,8 +17,10 @@ from langchain.tools.base import (
     BaseTool,
     SchemaAnnotationError,
     StructuredTool,
+    Tool,
     ToolException,
 )
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 def test_unnamed_decorator() -> None:
@@ -393,7 +395,23 @@ def test_empty_args_decorator() -> None:
     assert empty_tool_input.run({}) == "the empty result"
 
 
-def test_structured_tool_from_function_with_callbacks() -> None:
+def test_tool_from_function_with_run_manager() -> None:
+    """Test run of tool when using run_manager."""
+
+    def foo(bar: str, callbacks: Optional[CallbackManagerForToolRun] = None) -> str:
+        """Docstring
+        Args:
+            tool_input: str
+        """
+        return "foo" + bar
+
+    handler = FakeCallbackHandler()
+    tool = Tool.from_function(foo, name="foo", description="Docstring")
+
+    assert tool.run(tool_input={"bar": "bar"}, run_manager=[handler]) == "foobar"
+
+
+def test_structured_tool_from_function_with_run_manager() -> None:
     """Test args and schema of structured tool when using callbacks."""
 
     def foo(
@@ -404,8 +422,9 @@ def test_structured_tool_from_function_with_callbacks() -> None:
             bar: int
             baz: str
         """
-        raise NotImplementedError()
+        return str(bar) + baz
 
+    handler = FakeCallbackHandler()
     structured_tool = StructuredTool.from_function(foo)
 
     assert structured_tool.args == {
@@ -422,6 +441,13 @@ def test_structured_tool_from_function_with_callbacks() -> None:
         "type": "object",
         "required": ["bar", "baz"],
     }
+
+    assert (
+        structured_tool.run(
+            tool_input={"bar": "10", "baz": "baz"}, run_manger=[handler]
+        )
+        == "10baz"
+    )
 
 
 def test_named_tool_decorator() -> None:
