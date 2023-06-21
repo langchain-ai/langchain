@@ -1,13 +1,14 @@
 """Callback Handler that prints to streamlit."""
 
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional, Union
-
-from streamlit.delta_generator import DeltaGenerator
+from typing import Any, Dict, List, NamedTuple, Optional, Union, TYPE_CHECKING
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.streamlit.mutable_expander import MutableExpander
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+
+if TYPE_CHECKING:
+    from streamlit.delta_generator import DeltaGenerator
 
 
 def _convert_newlines(text: str) -> str:
@@ -99,7 +100,7 @@ class LLMThoughtLabeler:
 class LLMThought:
     def __init__(
         self,
-        parent_container: DeltaGenerator,
+        parent_container: "DeltaGenerator",
         labeler: LLMThoughtLabeler,
         expanded: bool,
         collapse_on_complete: bool,
@@ -212,7 +213,7 @@ class LLMThought:
 class StreamlitCallbackHandler(BaseCallbackHandler):
     def __init__(
         self,
-        parent_container: DeltaGenerator,
+        parent_container: "DeltaGenerator",
         *,
         max_thought_containers: int = 4,
         expand_new_thoughts: bool = True,
