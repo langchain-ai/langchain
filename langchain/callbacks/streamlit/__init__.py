@@ -1,11 +1,12 @@
-from __future__ import annotations
+from typing import Optional
 
 from streamlit.delta_generator import DeltaGenerator
 
 from langchain.callbacks.base import BaseCallbackHandler
-
-from .streamlit_callback_handler import LLMThoughtLabeler as LLMThoughtLabeler
-from .streamlit_callback_handler import (
+from langchain.callbacks.streamlit.streamlit_callback_handler import (
+    LLMThoughtLabeler as LLMThoughtLabeler,
+)
+from langchain.callbacks.streamlit.streamlit_callback_handler import (
     StreamlitCallbackHandler as _InternalStreamlitCallbackHandler,
 )
 
@@ -16,7 +17,7 @@ def StreamlitCallbackHandler(
     max_thought_containers: int = 4,
     expand_new_thoughts: bool = True,
     collapse_completed_thoughts: bool = True,
-    thought_labeler: LLMThoughtLabeler | None = None,
+    thought_labeler: Optional[LLMThoughtLabeler] = None,
 ) -> BaseCallbackHandler:
     """Construct a new StreamlitCallbackHandler. This CallbackHandler is geared towards
     use with a LangChain Agent; it displays the Agent's LLM and tool-usage "thoughts"
