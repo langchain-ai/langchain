@@ -11,8 +11,6 @@ class TestImport(unittest.TestCase):
     """Test the StreamlitCallbackHandler 'auto-updating' API"""
 
     def setUp(self) -> None:
-        # we monkeypatch the builtins.import to control whether
-        # "import streamlit.external.langchain.StreamlitCallbackHandler" is an error.
         self.python_import = builtins.__import__
 
     def tearDown(self) -> None:
