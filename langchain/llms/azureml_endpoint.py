@@ -25,7 +25,7 @@ class AzureMLEndpointClient(object):
         self.endpoint_api_key = endpoint_api_key
         self.deployment_name = deployment_name
 
-    def call(self, body: bytes) -> Dict | str:
+    def call(self, body: bytes) -> Union[Dict, str]:
         """call."""
 
         url = self.endpoint_url
@@ -34,8 +34,9 @@ class AzureMLEndpointClient(object):
         if not api_key:
             raise Exception("A key should be provided to invoke the endpoint")
 
-        # The azureml-model-deployment header will force the request to go to a specific deployment.
-        # Remove this header to have the request observe the endpoint traffic rules
+        # The azureml-model-deployment header will force the request to go to a
+        # specific deployment. Remove this header to have the request observe the
+        # endpoint traffic rules.
 
         headers = {
             "Content-Type": "application/json",
@@ -64,13 +65,24 @@ class ContentFormatterBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
     """
     Example:
         .. code-block:: python
+        
             class ContentFormatter(ContentFormatterBase[str, str]):
                 content_type = "application/json"
                 accepts = "application/json"
                 
-                def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
-                    input_str = json.dumps({"inputs": {"input_string": [prompt]}, "parameters": model_kwargs})
+                def format_request_payload(
+                    self, 
+                    prompt: str, 
+                    model_kwargs: Dict
+                ) -> bytes:
+                    input_str = json.dumps(
+                        {
+                            "inputs": {"input_string": [prompt]}, 
+                            "parameters": model_kwargs,
+                        }
+                    )
                     return str.encode(input_str)
+                    
                 def format_response_payload(self, output: str) -> str:
                     response_json = json.loads(output)
                     return response_json[0]["0"]
