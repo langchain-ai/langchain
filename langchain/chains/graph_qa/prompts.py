@@ -72,6 +72,23 @@ NGQL_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"], template=NGQL_GENERATION_TEMPLATE
 )
 
+KUZU_EXTRA_INSTRUCTIONS = """
+Instructions:
+
+Generate statement with Kùzu Cypher dialect (rather than standard):
+1. do not use `WHERE EXISTS` clause to check the existence of a property because Kùzu database has a fixed schema.
+2. do not omit relationship pattern. Always use `()-[]->()` instead of `()->()`.
+3. do not include any notes or comments even if the statement does not produce the expected result.
+```\n"""
+
+KUZU_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
+    "Generate Cypher", "Generate Kùzu Cypher"
+).replace("Instructions:", KUZU_EXTRA_INSTRUCTIONS)
+
+KUZU_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "question"], template=KUZU_GENERATION_TEMPLATE
+)
+
 CYPHER_QA_TEMPLATE = """You are an assistant that helps to form nice and human understandable answers.
 The information part contains the provided information that you must use to construct an answer.
 The provided information is authorative, you must never doubt it or try to use your internal knowledge to correct it.

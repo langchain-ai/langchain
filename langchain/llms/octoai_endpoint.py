@@ -1,13 +1,13 @@
 """Wrapper around OctoAI APIs."""
 from typing import Any, Dict, List, Mapping, Optional
+
+from octoai import client
 from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
-
-from octoai import client
 
 
 class OctoAIEndpoint(LLM):
@@ -23,7 +23,7 @@ class OctoAIEndpoint(LLM):
 
             from langchain.llms.octoai_endpoint  import OctoAIEndpoint
             OctoAIEndpoint(
-                octoai_api_token="octoai-api-key",                
+                octoai_api_token="octoai-api-key",
                 endpoint_url="https://mpt-7b-demo-kk0powt97tmb.octoai.cloud/generate",
                 model_kwargs={
                     "max_new_tokens": 200,
@@ -34,7 +34,7 @@ class OctoAIEndpoint(LLM):
                     "stop": [],
                 },
             )
-            
+
     """
 
     endpoint_url: Optional[str] = None
@@ -77,7 +77,7 @@ class OctoAIEndpoint(LLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "octoai_endpoint"
-    
+
     def _call(
         self,
         prompt: str,
@@ -101,15 +101,15 @@ class OctoAIEndpoint(LLM):
         parameter_payload = {"inputs": prompt, "parameters": _model_kwargs}
 
         try:
-            # Initialize the OctoAI client            
+            # Initialize the OctoAI client
             octoai_client = client.Client(token=self.octoai_api_token)
-            
-            # Send the request using the OctoAI client            
+
+            # Send the request using the OctoAI client
             resp_json = octoai_client.infer(self.endpoint_url, parameter_payload)
             text = resp_json["generated_text"]
 
         except Exception as e:
-            # Handle any errors raised by the inference endpoint        
+            # Handle any errors raised by the inference endpoint
             raise ValueError(f"Error raised by the inference endpoint: {e}") from e
 
         if stop is not None:
