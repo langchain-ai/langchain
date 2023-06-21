@@ -337,7 +337,7 @@ class SupabaseVectorStore(VectorStore):
         return docs
 
     def add_documents_by_id(
-        self, ids: List[str], documents: List[Document]
+        self, documents: List[Document], ids: List[str]
     ) -> List[str]:
         """Add the documents to vectorstore by ID.
 
@@ -361,17 +361,26 @@ class SupabaseVectorStore(VectorStore):
             for text, metadata, id, embedding in zip(texts, metadatas, ids, embeddings)
         ]
 
-        # Following _add_vectors
-        chunk_size = 500
-        for i in range(0, len(rows), chunk_size):
-            chunk = rows[i : i + chunk_size]
-            # TODO: Add handling for duplicate keys
-            self._client.from_(self.table_name).insert(chunk).execute()
+        # Handle each insert individually to avoid conflicting IDs
+        for row in rows:
+            # Check if ID exists
+            existing = (
+                self._client.from_(self.table_name)
+                .select("id")
+                .eq("id", row["id"])
+                .execute()
+            )
+            if existing:
+                self._client.from_(self.table_name).update(row).eq(
+                    "id", row["id"]
+                ).execute()
+            else:
+                self._client.from_(self.table_name).insert(row).execute()
 
         return ids
 
     def update_documents_by_id(
-        self, ids: List[str], documents: List[Document]
+        self, documents: List[Document], ids: List[str]
     ) -> List[str]:
         """Update the documents.
 

@@ -355,7 +355,7 @@ class Pinecone(VectorStore):
         )
 
     def add_documents_by_id(
-        self, ids: List[str], documents: List[Document]
+        self, documents: List[Document], ids: List[str]
     ) -> List[str]:
         """Add the documents to vectorstore by ID.
 
@@ -371,7 +371,7 @@ class Pinecone(VectorStore):
         return self.add_texts(texts=texts, metadatas=metadatas, ids=ids)
 
     def update_documents_by_id(
-        self, ids: List[str], documents: List[Document]
+        self, documents: List[Document], ids: List[str]
     ) -> List[str]:
         """Update the documents.
 
@@ -394,4 +394,8 @@ class Pinecone(VectorStore):
             ids: List of ids to delete.
         """
 
-        self._index.delete(ids=ids)
+        # This is the maximum number of IDs that can be deleted
+        chunk_size = 1000
+        for i in range(0, len(ids), chunk_size):
+            chunk = ids[i : i + chunk_size]
+            self._index.delete(ids=chunk)
