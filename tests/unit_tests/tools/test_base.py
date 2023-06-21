@@ -17,7 +17,6 @@ from langchain.tools.base import (
     BaseTool,
     SchemaAnnotationError,
     StructuredTool,
-    Tool,
     ToolException,
 )
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -410,6 +409,7 @@ def test_tool_from_function_with_run_manager() -> None:
     tool = Tool.from_function(foo, name="foo", description="Docstring")
 
     assert tool.run(tool_input={"bar": "bar"}, run_manager=[handler]) == "foobar"
+    assert tool.run("baz", run_manager=[handler]) == "foobaz"
 
 
 def test_structured_tool_from_function_with_run_manager() -> None:

@@ -82,7 +82,7 @@ def _get_filtered_args(
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
     valid_keys = signature(func).parameters
-    return {k: schema[k] for k in valid_keys if k not in ["run_manager", "callbacks"]}
+    return {k: schema[k] for k in valid_keys if k not in ("run_manager", "callbacks")}
 
 
 class _SchemaConfig:
