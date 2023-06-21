@@ -8,71 +8,23 @@ The purpose of this notebook is to demonstrate the integration of a `FlyteCallba
 ## Installation & Setup
 
 - Install the Flytekit library by running the command `pip install flytekit`.
+- Install the Flytekit-Envd plugin by running the command `pip install flytekitplugins-envd`.
 - Install LangChain by running the command `pip install langchain`.
 - Install [Docker](https://docs.docker.com/engine/install/) on your system.
 
-## Prepare the Dockerfile
-
-To guarantee reproducibility of your pipelines, Flyte [tasks](https://docs.flyte.org/projects/cookbook/en/latest/auto/core/flyte_basics/task.html) are containerized.
-Each Flyte task must be associated with an image, which can either be shared across the entire Flyte [workflow](https://docs.flyte.org/projects/cookbook/en/latest/auto/core/flyte_basics/basic_workflow.html) or provided separately for each task.
-
-NOTE: Our [getting started guide](https://docs.flyte.org/projects/cookbook/en/latest/index.html) offers detailed, step-by-step instructions on installing Flyte locally and running your initial workflow.
-
-This notebook illustrates the creation of a Docker image that you can utilize to execute your Flyte workflow.
-
-Please include the following code in `Dockerfile`.
-
-```docker
-FROM python:3.10-slim-buster
-
-USER root
-WORKDIR /root
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
-ENV PYTHONPATH /root
-
-RUN apt-get update && apt-get install -y build-essential git
-
-ENV VENV /opt/venv
-RUN python3 -m venv ${VENV}
-ENV PATH="${VENV}/bin:$PATH"
-
-COPY requirements.txt /tmp
-RUN pip install -r /tmp/requirements.txt
-RUN python -m spacy download en_core_web_sm
-```
-
-Ensure that your `requirements.txt` file contains the necessary libraries required to execute the subsequent code:
-
-```
-openai
-spacy
-flytekit
-flytekitplugins-deck-standard
-textstat
-google-search-results
-```
-
-Build a Docker image using the following command:
-
-```
-docker buildx build --platform linux/amd64 -t <registry> -f Dockerfile --push .
-```
-
-You have the flexibility to push the Docker image to a registry of your preference.
-[Docker Hub](https://hub.docker.com/) or [GitHub Container Registry (GHCR)](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) is a convenient option to begin with.
-
 ## Flyte Tasks
 
-Compose your Flyte tasks to execute your LangChain experiments.
-The following examples demonstrate tasks related to OpenAI LLM, chains, and agent with tools:
+A Flyte [task](https://docs.flyte.org/projects/cookbook/en/latest/auto/core/flyte_basics/task.html) serves as the foundational building block of Flyte.
+To execute LangChain experiments, you need to write Flyte tasks that define the specific steps and operations involved.
 
-Import the necessary dependencies.
+NOTE: The [getting started guide](https://docs.flyte.org/projects/cookbook/en/latest/index.html) offers detailed, step-by-step instructions on installing Flyte locally and running your initial Flyte pipeline.
+
+First, import the necessary dependencies to support your LangChain experiments.
 
 ```python
 import os
 
-from flytekit import task
+from flytekit import ImageSpec, task
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import FlyteCallbackHandler
 from langchain.chains import LLMChain
@@ -92,12 +44,38 @@ os.environ["SERPAPI_API_KEY"] = "<your_serp_api_key>"
 
 Replace `<your_openai_api_key>` and `<your_serp_api_key>` with your respective API keys obtained from OpenAI and Serp API.
 
-Now, let's create Flyte tasks that log the LangChain metrics to Flyte Deck:
+To guarantee reproducibility of your pipelines, Flyte tasks are containerized.
+Each Flyte task must be associated with an image, which can either be shared across the entire Flyte [workflow](https://docs.flyte.org/projects/cookbook/en/latest/auto/core/flyte_basics/basic_workflow.html) or provided separately for each task.
+
+To streamline the process of supplying the required dependencies for each Flyte task, you can initialize an [`ImageSpec`](https://docs.flyte.org/projects/cookbook/en/latest/auto/core/image_spec/image_spec.html) object.
+This approach automatically triggers a Docker build, alleviating the need for users to manually create a Docker image.
+
+```python
+custom_image = ImageSpec(
+    name="langchain-flyte",
+    packages=[
+        "langchain",
+        "openai",
+        "spacy",
+        "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.5.0/en_core_web_sm-3.5.0.tar.gz",
+        "textstat",
+        "google-search-results",
+    ],
+    registry="<your-registry>",
+)
+```
+
+You have the flexibility to push the Docker image to a registry of your preference.
+[Docker Hub](https://hub.docker.com/) or [GitHub Container Registry (GHCR)](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) is a convenient option to begin with.
+
+Once you have selected a registry, you can proceed to create Flyte tasks that log the LangChain metrics to Flyte Deck.
+
+The following examples demonstrate tasks related to OpenAI LLM, chains and agent with tools:
 
 ### LLM
 
 ```python
-@task(disable_deck=False)
+@task(disable_deck=False, container_image=custom_image)
 def langchain_llm() -> str:
     llm = OpenAI(
         model_name="gpt-3.5-turbo",
@@ -110,7 +88,7 @@ def langchain_llm() -> str:
 ### Chain
 
 ```python
-@task(disable_deck=False)
+@task(disable_deck=False, container_image=custom_image)
 def langchain_chain() -> list[dict[str, str]]:
     template = """You are a playwright. Given the title of play, it is your job to write a synopsis for that title.
 Title: {title}
@@ -135,7 +113,7 @@ Playwright: This is a synopsis for the above play:"""
 ### Agent
 
 ```python
-@task(disable_deck=False)
+@task(disable_deck=False, container_image=custom_image)
 def langchain_agent() -> str:
     llm = OpenAI(
         model_name="gpt-3.5-turbo",
@@ -156,6 +134,8 @@ def langchain_agent() -> str:
         "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"
     )
 ```
+
+These tasks serve as a starting point for running your LangChain experiments within Flyte.
 
 ## Execute the Flyte Tasks on Kubernetes
 

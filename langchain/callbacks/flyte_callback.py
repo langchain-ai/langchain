@@ -12,7 +12,7 @@ from langchain.callbacks.utils import (
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-def import_flytekit():
+def import_flytekit() -> None:
     try:
         import flytekit  # noqa: F401
         import flytekitplugins.deck.renderer
@@ -224,10 +224,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Run when chain starts running."""
-        import pandas as pd
-        from flytekit import Deck
-        from flytekitplugins.deck.renderer import TableRenderer
-
         self.metrics["step"] += 1
         self.metrics["chain_starts"] += 1
         self.metrics["starts"] += 1
@@ -248,10 +244,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
-        import pandas as pd
-        from flytekit import Deck
-        from flytekitplugins.deck.renderer import TableRenderer
-
         self.metrics["step"] += 1
         self.metrics["chain_ends"] += 1
         self.metrics["ends"] += 1
@@ -277,10 +269,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
-        import pandas as pd
-        from flytekit import Deck
-        from flytekitplugins.deck.renderer import TableRenderer
-
         self.metrics["step"] += 1
         self.metrics["tool_starts"] += 1
         self.metrics["starts"] += 1
@@ -297,10 +285,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
-        import pandas as pd
-        from flytekit import Deck
-        from flytekitplugins.deck.renderer import TableRenderer
-
         self.metrics["step"] += 1
         self.metrics["tool_ends"] += 1
         self.metrics["ends"] += 1
@@ -325,10 +309,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         """
         Run when agent is ending.
         """
-        import pandas as pd
-        from flytekit import Deck
-        from flytekitplugins.deck.renderer import TableRenderer
-
         self.metrics["step"] += 1
         self.metrics["text_ctr"] += 1
 
@@ -343,10 +323,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent ends running."""
-        import pandas as pd
-        from flytekit import Deck
-        from flytekitplugins.deck.renderer import TableRenderer
-
         self.metrics["step"] += 1
         self.metrics["agent_ends"] += 1
         self.metrics["ends"] += 1
@@ -368,10 +344,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
-        import pandas as pd
-        from flytekit import Deck
-        from flytekitplugins.deck.renderer import TableRenderer
-
         self.metrics["step"] += 1
         self.metrics["tool_starts"] += 1
         self.metrics["starts"] += 1
