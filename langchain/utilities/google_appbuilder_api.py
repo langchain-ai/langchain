@@ -33,7 +33,7 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
     gappbuilders_api_key: Optional[str] = None
     google_map_client: Any  #: :meta private:
     top_k_results: Optional[int] = 5
-    gappbuilders_ds_url="https://discoveryengine.googleapis.com/v1alpha/projects/660199673046/locations/global/collections/default_collection/dataStores/bienici_1686652101046/servingConfigs/default_search:search"
+    gappbuilders_ds_url= None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -61,9 +61,9 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
 
         """Validate that api key is in your environment variable."""
         gappbuilders_ds_url = get_from_dict_or_env(
-            values, "GAPP_BUILDER_DS_URL", "GAPP_BUILDER_DS_URL"
+            values, "gappbuilders_DS_URL", "GAPP_BUILDER_DS_URL"
         )
-        values["gappbuilders_DS_URL"] = gappbuilders_ds_url
+        values["gappbuilders_ds_url"] = gappbuilders_ds_url
         
         return values
 
@@ -76,9 +76,8 @@ class GoogleAppBuilderAPIWrapper(BaseModel):
             'Content-Type': 'application/json; charset=UTF-8'
         }
 
-        num_to_return = 5
-        
-        page_size = max(min(num_to_return, 1),10)
+        num_to_return = 5        
+        page_size = num_to_return
         print(f"page_size : {page_size}")
 
         data = {"query": query, "page_size": f"{page_size}", "offset": 0 }
