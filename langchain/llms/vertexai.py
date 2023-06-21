@@ -54,7 +54,7 @@ class _VertexAICommon(BaseModel):
     def _code_params(self) -> Dict[str, Any]:
         base_params = {
             "temperature": self.temperature,
-            "max_output_tokens": self.max_output_tokens
+            "max_output_tokens": self.max_output_tokens,
         }
         return {**base_params}
 
@@ -99,7 +99,10 @@ class VertexAI(_VertexAICommon, LLM):
         """Validate that the python package exists in environment."""
         cls._try_init_vertexai(values)
         try:
-            from vertexai.preview.language_models import TextGenerationModel, CodeGenerationModel
+            from vertexai.preview.language_models import (
+                CodeGenerationModel,
+                TextGenerationModel,
+            )
         except ImportError:
             raise_vertex_import_error()
         tuned_model_name = values.get("tuned_model_name")
@@ -107,9 +110,13 @@ class VertexAI(_VertexAICommon, LLM):
             values["client"] = TextGenerationModel.get_tuned_model(tuned_model_name)
         else:
             if "code" in values["model_name"]:
-                values["client"] = CodeGenerationModel.from_pretrained(values["model_name"])
+                values["client"] = CodeGenerationModel.from_pretrained(
+                    values["model_name"]
+                )
             else:
-                values["client"] = TextGenerationModel.from_pretrained(values["model_name"])
+                values["client"] = TextGenerationModel.from_pretrained(
+                    values["model_name"]
+                )
         return values
 
     def _call(
