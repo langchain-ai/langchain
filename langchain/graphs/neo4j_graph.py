@@ -21,7 +21,8 @@ rel_query = """
 CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE type = "RELATIONSHIP" AND elementType = "node"
-RETURN "(:" + label + ")-[:" + property + "]->(:" + toString(other[0]) + ")" AS output
+UNWIND other AS other_node
+RETURN "(:" + label + ")-[:" + property + "]->(:" + toString(other_node) + ")" AS output
 """
 
 

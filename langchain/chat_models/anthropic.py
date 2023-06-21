@@ -76,6 +76,8 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         Returns:
             str: Combined string with necessary HUMAN_PROMPT and AI_PROMPT tags.
         """
+        messages = messages.copy()  # don't mutate the original list
+
         if not self.AI_PROMPT:
             raise NameError("Please ensure the anthropic package is loaded")
 
