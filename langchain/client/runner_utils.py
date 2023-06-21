@@ -278,7 +278,7 @@ async def arun_on_examples(
     results: Dict[str, List[Any]] = {}
 
     async def process_example(
-        example: Example, tracer: LangChainTracer, job_state: dict
+        example: Example, tracer: Optional[LangChainTracer], job_state: dict
     ) -> None:
         """Process a single example."""
         result = await _arun_llm_or_chain(
@@ -466,6 +466,7 @@ async def arun_on_dataset(
     """
     client_ = client or LangChainPlusClient()
     session_name = _get_session_name(session_name, llm_or_chain_factory, dataset_name)
+    client_.create_session(session_name, mode="eval")
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))
 
@@ -517,6 +518,7 @@ def run_on_dataset(
     """
     client_ = client or LangChainPlusClient()
     session_name = _get_session_name(session_name, llm_or_chain_factory, dataset_name)
+    client_.create_session(session_name, mode="eval")
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))
     results = run_on_examples(
