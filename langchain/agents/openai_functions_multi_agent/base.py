@@ -116,7 +116,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
         final_tools: List[AgentAction] = []
         for tool_schema in tools:
             _tool_input = tool_schema["action"]
-            function_name = tool_schema["tool_name"]
+            function_name = tool_schema["action_name"]
 
             # HACK HACK HACK:
             # The code that encodes tool input into Open AI uses a special variable
@@ -161,7 +161,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
 
     def get_allowed_tools(self) -> List[str]:
         """Get allowed tools."""
-        return list([t.name for t in self.tools])
+        return [t.name for t in self.tools]
 
     @root_validator
     def validate_llm(cls, values: dict) -> dict:
@@ -188,25 +188,41 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     def functions(self) -> List[dict]:
         enum_vals = [t.name for t in self.tools]
         tool_selection = {
-            "name": "ToolSelection",
+            # OpenAI functions returns a single tool invocation
+            # Here we force the single tool invocation it returns to
+            # itself be a list of tool invocations. We do this by constructing
+            # a new tool that has one argument which is a list of tools
+            # to use.
+            "name": "tool_selection",
             "description": "A list of actions to take.",
             "parameters": {
-                "title": "ToolSelection",
+                "title": "tool_selection",
                 "description": "A list of actions to take.",
                 "type": "object",
                 "properties": {
                     "actions": {
-                        "title": "Actions",
+                        "title": "actions",
                         "type": "array",
                         "items": {
-                            "title": "ToolCall",
+                            # This is a custom item which bundles the action_name
+                            # and the action. We do this because some actions
+                            # could have the same schema, and without this there
+                            # is no way to differentiate them.
+                            "title": "tool_call",
                             "type": "object",
                             "properties": {
-                                "tool_name": {
-                                    "title": "Tool Name",
+                                # This is the name of the action to take
+                                "action_name": {
+                                    "title": "action_name",
                                     "enum": enum_vals,
                                     "type": "string",
+                                    "description": (
+                                        "Name of the action to take. The name "
+                                        "provided here should match up with the "
+                                        "parameters for the action below."
+                                    ),
                                 },
+                                # This is the action to take.
                                 "action": {
                                     "title": "Action",
                                     "anyOf": [
@@ -219,7 +235,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
                                     ],
                                 },
                             },
-                            "required": ["tool_name", "action"],
+                            "required": ["action_name", "action"],
                         },
                     }
                 },
@@ -333,8 +349,6 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         **kwargs: Any,
     ) -> BaseMultiActionAgent:
         """Construct an agent from an LLM and tools."""
-        if not isinstance(llm, ChatOpenAI):
-            raise ValueError("Only supported with ChatOpenAI models.")
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,
             system_message=system_message,
