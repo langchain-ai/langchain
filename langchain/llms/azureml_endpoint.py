@@ -50,7 +50,7 @@ class AzureMLEndpointClient(object):
         return result
 
 
-class ContentFormatterBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
+class ContentFormatterBase:
     """A handler class to transform request and response of
     AzureML endpoint to match with required schema.
     """
@@ -59,7 +59,7 @@ class ContentFormatterBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
     Example:
         .. code-block:: python
         
-            class ContentFormatter(ContentFormatterBase[str, str]):
+            class ContentFormatter(ContentFormatterBase):
                 content_type = "application/json"
                 accepts = "application/json"
                 
@@ -80,28 +80,28 @@ class ContentFormatterBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
                     response_json = json.loads(output)
                     return response_json[0]["0"]
     """
-    content_type: Optional[str] = "text/plain"
+    content_type: Optional[str] = "application/json"
     """The MIME type of the input data passed to the endpoint"""
 
-    accepts: Optional[str] = "text/plain"
+    accepts: Optional[str] = "application/json"
     """The MIME type of the response data returned form the endpoint"""
 
     @abstractmethod
-    def format_request_payload(self, prompt: INPUT_TYPE, model_kwargs: Dict) -> bytes:
+    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         """Formats the request body according to the input schema of
         the model. Returns bytes or seekable file like object in the
         format specified in the content_type request header.
         """
 
     @abstractmethod
-    def format_response_payload(self, output: bytes) -> OUTPUT_TYPE:
+    def format_response_payload(self, output: bytes) -> str:
         """Formats the response body according to the output
         schema of the model. Returns the data type that is
         received from the response.
         """
 
 
-class OSSContentFormatter(ContentFormatterBase[str, str]):
+class OSSContentFormatter(ContentFormatterBase):
     """Content handler for LLMs from the OSS catalog."""
 
     content_type = "application/json"
@@ -118,7 +118,7 @@ class OSSContentFormatter(ContentFormatterBase[str, str]):
         return response_json[0]["0"]
 
 
-class HFContentFormatter(ContentFormatterBase[str, str]):
+class HFContentFormatter(ContentFormatterBase):
     """Content handler for LLMs from the HuggingFace catalog."""
 
     content_type = "application/json"
@@ -133,7 +133,7 @@ class HFContentFormatter(ContentFormatterBase[str, str]):
         return response_json[0][0]["generated_text"]
 
 
-class DollyContentFormatter(ContentFormatterBase[str, str]):
+class DollyContentFormatter(ContentFormatterBase):
     """Content handler for the Dolly-v2-12b model"""
 
     content_type = "application/json"
