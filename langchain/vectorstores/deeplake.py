@@ -809,3 +809,10 @@ class DeepLake(VectorStore):
     def delete_dataset(self) -> None:
         """Delete the collection."""
         self.delete(delete_all=True)
+        
+    def ds(self):
+        logger.warning(
+            "this method is deprecated and will be removed, "
+            "better to use `db.vectorstore.dataset` instead."
+        )
+        return self.vectorstore.dataset
