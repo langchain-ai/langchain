@@ -219,7 +219,7 @@ class FAISS(VectorStore):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")
             if filter is not None:
                 filter = {
-                    key: [value] if type(value) is not list else value
+                    key: [value] if not isinstance(value, list) else value
                     for key, value in filter.items()
                 }
                 if all(doc.metadata.get(key) in value for key, value in filter.items()):
