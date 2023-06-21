@@ -389,12 +389,6 @@ class PGVector(VectorStore):
             List of Documents most similar to the query and score for each
         """
 
-        if self.relevance_score_fn is None:
-            raise ValueError(
-                "relevance_score_fn must be provided to"
-                " PGVector constructor to normalize scores"
-            )
-
         docs_and_scores = self.similarity_search_with_score(query=query, k=k)
         docs_and_normalized_scores = [
             (doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores
