@@ -45,6 +45,7 @@ class EmbaasDocumentExtractionParameters(TypedDict):
 
 
 class EmbaasDocumentExtractionPayload(EmbaasDocumentExtractionParameters):
+    """Payload for the Embaas document extraction API."""
     bytes: str
     """The base64 encoded bytes of the document to extract text from."""
 

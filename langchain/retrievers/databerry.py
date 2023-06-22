@@ -7,6 +7,7 @@ from langchain.schema import BaseRetriever, Document
 
 
 class DataberryRetriever(BaseRetriever):
+    """Retriever that uses the Databerry API."""
     datastore_url: str
     top_k: Optional[int]
     api_key: Optional[str]

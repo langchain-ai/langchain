@@ -31,8 +31,24 @@ class ConditionalPromptSelector(BasePromptSelector):
 
 
 def is_llm(llm: BaseLanguageModel) -> bool:
+    """Check if the language model is a LLM.
+
+    Args:
+        llm: Language model to check.
+
+    Returns:
+        True if the language model is a BaseLLM model, False otherwise.
+    """
     return isinstance(llm, BaseLLM)
 
 
 def is_chat_model(llm: BaseLanguageModel) -> bool:
+    """Check if the language model is a chat model.
+
+    Args:
+        llm: Language model to check.
+
+    Returns:
+        True if the language model is a BaseChatModel model, False otherwise.
+    """
     return isinstance(llm, BaseChatModel)

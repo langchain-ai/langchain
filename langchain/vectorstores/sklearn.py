@@ -119,6 +119,7 @@ SERIALIZER_MAP: Dict[str, Type[BaseSerializer]] = {
 
 
 class SKLearnVectorStoreException(RuntimeError):
+    """Exception raised by SKLearnVectorStore."""
     pass
 
 

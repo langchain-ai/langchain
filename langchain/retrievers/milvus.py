@@ -10,6 +10,7 @@ from langchain.vectorstores.milvus import Milvus
 
 
 class MilvusRetriever(BaseRetriever):
+    """Retriever that uses the Milvus API."""
     def __init__(
         self,
         embedding_function: Embeddings,
@@ -45,6 +46,15 @@ class MilvusRetriever(BaseRetriever):
 
 
 def MilvusRetreiver(*args: Any, **kwargs: Any) -> MilvusRetriever:
+    """ Deprecated MilvusRetreiver. Please use MilvusRetriever ('i' before 'e') instead.
+
+    Args:
+        *args:
+        **kwargs:
+
+    Returns:
+        MilvusRetriever
+    """
     warnings.warn(
         "MilvusRetreiver will be deprecated in the future. "
         "Please use MilvusRetriever ('i' before 'e') instead.",

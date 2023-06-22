@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 class ChatGooglePalmError(Exception):
+    """Error raised when there is an issue with the Google PaLM API."""
     pass
 
 

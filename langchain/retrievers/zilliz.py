@@ -10,6 +10,7 @@ from langchain.vectorstores.zilliz import Zilliz
 
 
 class ZillizRetriever(BaseRetriever):
+    """Retriever that uses the Zilliz API."""
     def __init__(
         self,
         embedding_function: Embeddings,
@@ -45,6 +46,15 @@ class ZillizRetriever(BaseRetriever):
 
 
 def ZillizRetreiver(*args: Any, **kwargs: Any) -> ZillizRetriever:
+    """
+    Deprecated ZillizRetreiver. Please use ZillizRetriever ('i' before 'e') instead.
+    Args:
+        *args:
+        **kwargs:
+
+    Returns:
+        ZillizRetriever
+    """
     warnings.warn(
         "ZillizRetreiver will be deprecated in the future. "
         "Please use ZillizRetriever ('i' before 'e') instead.",

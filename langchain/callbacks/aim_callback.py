@@ -6,6 +6,7 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 def import_aim() -> Any:
+    """Import the aim python package and raise an error if it is not installed."""
     try:
         import aim
     except ImportError:
