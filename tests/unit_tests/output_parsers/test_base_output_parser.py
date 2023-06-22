@@ -21,9 +21,12 @@ def non_abstract_subclasses(
     return subclasses
 
 
+# parsers defined not in the output_parsers module:
 _PARSERS_TO_SKIP = {
     "FakeOutputParser",
     "BaseOutputParser",
+    "FinishedOutputParser",
+    "RouterOutputParser",
     "FakeReflexionOutputParser",
     "ReflexionOutputParser",
 }
