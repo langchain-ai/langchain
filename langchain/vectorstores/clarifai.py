@@ -97,12 +97,12 @@ class Clarifai(VectorStore):
         try:
             from clarifai_grpc.grpc.api import resources_pb2, service_pb2
             from clarifai_grpc.grpc.api.status import status_code_pb2
-            from google.protobuf.struct_pb2 import Struct
-        except ImportError:
-            raise ValueError(
+            from google.protobuf.struct_pb2 import Struct  # type: ignore
+        except ImportError as e:
+            raise ImportError(
                 "Could not import clarifai python package. "
                 "Please install it with `pip install clarifai`."
-            )
+            ) from e
 
         input_metadata = Struct()
         input_metadata.update(metadata)
@@ -195,12 +195,12 @@ class Clarifai(VectorStore):
         try:
             from clarifai_grpc.grpc.api import resources_pb2, service_pb2
             from clarifai_grpc.grpc.api.status import status_code_pb2
-            from google.protobuf import json_format
-        except ImportError:
-            raise ValueError(
+            from google.protobuf import json_format  # type: ignore
+        except ImportError as e:
+            raise ImportError(
                 "Could not import clarifai python package. "
                 "Please install it with `pip install clarifai`."
-            )
+            ) from e
 
         # Get number of docs to return
         if self._number_of_docs is not None:
