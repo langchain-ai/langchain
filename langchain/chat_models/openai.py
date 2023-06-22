@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Extra, Field, root_validator
+from pydantic import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -106,6 +106,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
+    elif role == "function":
+        return FunctionMessage(content=_dict["content"], name=_dict["name"])
     else:
         return ChatMessage(content=_dict["content"], role=role)
 
@@ -151,6 +153,10 @@ class ChatOpenAI(BaseChatModel):
     """
 
     @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"openai_api_key": "OPENAI_API_KEY"}
+
+    @property
     def lc_serializable(self) -> bool:
         return True
 
@@ -182,7 +188,6 @@ class ChatOpenAI(BaseChatModel):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.ignore
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -387,16 +392,27 @@ class ChatOpenAI(BaseChatModel):
             inner_completion = ""
             role = "assistant"
             params["stream"] = True
+            function_call: Optional[dict] = None
             async for stream_resp in await acompletion_with_retry(
                 self, messages=message_dicts, **params
             ):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content", "")
-                inner_completion += token
+                inner_completion += token or ""
+                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
+                if _function_call:
+                    if function_call is None:
+                        function_call = _function_call
+                    else:
+                        function_call["arguments"] += _function_call["arguments"]
                 if run_manager:
                     await run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
-                {"content": inner_completion, "role": role}
+                {
+                    "content": inner_completion,
+                    "role": role,
+                    "function_call": function_call,
+                }
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:

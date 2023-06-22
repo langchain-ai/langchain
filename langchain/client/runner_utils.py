@@ -278,7 +278,7 @@ async def arun_on_examples(
     results: Dict[str, List[Any]] = {}
 
     async def process_example(
-        example: Example, tracer: LangChainTracer, job_state: dict
+        example: Example, tracer: Optional[LangChainTracer], job_state: dict
     ) -> None:
         """Process a single example."""
         result = await _arun_llm_or_chain(

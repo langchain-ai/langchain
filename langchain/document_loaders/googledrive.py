@@ -9,6 +9,7 @@
 # 4. For service accounts visit
 #   https://cloud.google.com/iam/docs/service-accounts-create
 
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
@@ -32,6 +33,10 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     recursive: bool = False
     file_types: Optional[Sequence[str]] = None
     load_trashed_files: bool = False
+    # NOTE(MthwRobinson) - changing the file_loader_cls to type here currently
+    # results in pydantic validation errors
+    file_loader_cls: Any = None
+    file_loader_kwargs: Dict["str", Any] = {}
 
     @root_validator
     def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -91,6 +96,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         """Load credentials."""
         # Adapted from https://developers.google.com/drive/api/v3/quickstart/python
         try:
+            from google.auth import default
             from google.auth.transport.requests import Request
             from google.oauth2 import service_account
             from google.oauth2.credentials import Credentials
@@ -116,6 +122,12 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
+            elif "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
+                creds, project = default()
+                creds = creds.with_scopes(SCOPES)
+                # no need to write to file
+                if creds:
+                    return creds
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     str(self.credentials_path), SCOPES
@@ -216,14 +228,17 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             _files = files
 
         returns = []
-        for file in files:
+        for file in _files:
             if file["trashed"] and not self.load_trashed_files:
                 continue
             elif file["mimeType"] == "application/vnd.google-apps.document":
                 returns.append(self._load_document_from_id(file["id"]))  # type: ignore
             elif file["mimeType"] == "application/vnd.google-apps.spreadsheet":
                 returns.extend(self._load_sheet_from_id(file["id"]))  # type: ignore
-            elif file["mimeType"] == "application/pdf":
+            elif (
+                file["mimeType"] == "application/pdf"
+                or self.file_loader_cls is not None
+            ):
                 returns.extend(self._load_file_from_id(file["id"]))  # type: ignore
             else:
                 pass
@@ -279,23 +294,32 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         done = False
         while done is False:
             status, done = downloader.next_chunk()
-        content = fh.getvalue()
 
-        from PyPDF2 import PdfReader
+        if self.file_loader_cls is not None:
+            fh.seek(0)
+            loader = self.file_loader_cls(file=fh, **self.file_loader_kwargs)
+            docs = loader.load()
+            for doc in docs:
+                doc.metadata["source"] = f"https://drive.google.com/file/d/{id}/view"
+            return docs
 
-        pdf_reader = PdfReader(BytesIO(content))
+        else:
+            from PyPDF2 import PdfReader
 
-        return [
-            Document(
-                page_content=page.extract_text(),
-                metadata={
-                    "source": f"https://drive.google.com/file/d/{id}/view",
-                    "title": f"{file.get('name')}",
-                    "page": i,
-                },
-            )
-            for i, page in enumerate(pdf_reader.pages)
-        ]
+            content = fh.getvalue()
+            pdf_reader = PdfReader(BytesIO(content))
+
+            return [
+                Document(
+                    page_content=page.extract_text(),
+                    metadata={
+                        "source": f"https://drive.google.com/file/d/{id}/view",
+                        "title": f"{file.get('name')}",
+                        "page": i,
+                    },
+                )
+                for i, page in enumerate(pdf_reader.pages)
+            ]
 
     def _load_file_from_ids(self) -> List[Document]:
         """Load files from a list of IDs."""
