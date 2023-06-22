@@ -2,6 +2,8 @@
 import logging
 from typing import Any, List
 
+from tqdm import tqdm
+
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -16,6 +18,7 @@ class UnstructuredURLLoader(BaseLoader):
         urls: List[str],
         continue_on_failure: bool = True,
         mode: str = "single",
+        show_progress_bar: bool = False,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
@@ -51,6 +54,7 @@ class UnstructuredURLLoader(BaseLoader):
         self.continue_on_failure = continue_on_failure
         self.headers = headers
         self.unstructured_kwargs = unstructured_kwargs
+        self.show_progress_bar = show_progress_bar
 
     def _validate_mode(self, mode: str) -> None:
         _valid_modes = {"single", "elements"}
@@ -83,7 +87,12 @@ class UnstructuredURLLoader(BaseLoader):
         from unstructured.partition.html import partition_html
 
         docs: List[Document] = list()
-        for url in self.urls:
+        if self.show_progress_bar:
+            iterator = tqdm(self.urls)
+        else:
+            iterator = self.urls
+
+        for url in iterator:
             try:
                 if self.__is_non_html_available():
                     if self.__is_headers_available_for_non_html():
