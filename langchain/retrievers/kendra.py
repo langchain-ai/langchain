@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Extra
 
@@ -7,12 +7,16 @@ from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
 
-def clean_excerpt(res_text):
-    res = re.sub("\s+", " ", res_text).replace("...", "")
+def clean_excerpt(excerpt: str) -> str:
+    if not excerpt:
+        return excerpt
+    res = re.sub("\s+", " ", excerpt).replace("...", "")
     return res
 
 
 def combined_text(title: str, excerpt: str) -> str:
+    if not title or not excerpt:
+        return ""
     return f"Document Title: {title} \nDocument Excerpt: \n{excerpt}\n"
 
 
@@ -33,6 +37,12 @@ class AdditionalResultAttribute(BaseModel, extra=Extra.allow):
     ValueType: Literal["TEXT_WITH_HIGHLIGHTS_VALUE"]
     Value: Optional[TextWithHighLights]
 
+    def get_value_text(self) -> str:
+        if not self.Value:
+            return ""
+        else:
+            return self.Value.Text
+
 
 class QueryResultItem(BaseModel, extra=Extra.allow):
     DocumentId: str
@@ -45,14 +55,24 @@ class QueryResultItem(BaseModel, extra=Extra.allow):
     AdditionalAttributes: Optional[List[AdditionalResultAttribute]] = []
     DocumentExcerpt: Optional[TextWithHighLights]
 
+    def get_attribute_value(self) -> str:
+        if not self.AdditionalAttributes:
+            return ""
+        if not self.AdditionalAttributes[0]:
+            return ""
+        else:
+            return self.AdditionalAttributes[0].get_value_text()
+
     def get_excerpt(self) -> str:
         if (
             self.AdditionalAttributes
             and self.AdditionalAttributes[0].Key == "AnswerText"
         ):
-            excerpt = self.AdditionalAttributes[0].Value.Text
-        else:
+            excerpt = self.get_attribute_value()
+        elif self.DocumentExcerpt:
             excerpt = self.DocumentExcerpt.Text
+        else:
+            excerpt = ""
 
         return clean_excerpt(excerpt)
 
@@ -97,11 +117,13 @@ class RetrieveResultItem(BaseModel, extra=Extra.allow):
     DocumentURI: Optional[str]
     Id: Optional[str]
 
-    def get_excerpt(self):
+    def get_excerpt(self) -> str:
+        if not self.Content:
+            return ""
         return clean_excerpt(self.Content)
 
     def to_doc(self) -> Document:
-        title = self.DocumentTitle
+        title = self.DocumentTitle if self.DocumentTitle else ""
         source = self.DocumentURI
         excerpt = self.get_excerpt()
         page_content = combined_text(title, excerpt)
@@ -149,18 +171,18 @@ class AmazonKendraRetriever(BaseRetriever):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
-    client: Optional[Any] = None
+    client: Any  #: :meta private:
     """boto3 client for Kendra."""
 
     def __init__(
         self,
-        index_id,
-        region_name=None,
-        credentials_profile_name=None,
-        client=None,
+        index_id: str,
+        region_name: Optional[str] = None,
+        credentials_profile_name: Optional[str] = None,
+        client: Optional[Any] = None,
     ):
         self.index_id = index_id
-        
+
         if client is not None:
             self.client = client
             return
@@ -191,11 +213,12 @@ class AmazonKendraRetriever(BaseRetriever):
                 "profile name are valid."
             ) from e
 
-    def _kendra_query(self, 
-                      query: str, 
-                      top_k: Optional[int] = 3, 
-                      attribute_filter: Optional[Dict] = None
-                    ) -> List[Document]:
+    def _kendra_query(
+        self,
+        query: str,
+        top_k: int,
+        attribute_filter: Optional[Dict] = None,
+    ) -> List[Document]:
         if attribute_filter is not None:
             response = self.client.retrieve(
                 IndexId=self.index_id,
@@ -205,9 +228,7 @@ class AmazonKendraRetriever(BaseRetriever):
             )
         else:
             response = self.client.retrieve(
-                IndexId=self.index_id,
-                QueryText=query.strip(),
-                PageSize=top_k
+                IndexId=self.index_id, QueryText=query.strip(), PageSize=top_k
             )
         r_result = RetrieveResult.parse_obj(response)
         result_len = len(r_result.ResultItems)
@@ -223,9 +244,7 @@ class AmazonKendraRetriever(BaseRetriever):
                 )
             else:
                 response = self.client.query(
-                    IndexId=self.index_id,
-                    QueryText=query.strip(),
-                    PageSize=top_k
+                    IndexId=self.index_id, QueryText=query.strip(), PageSize=top_k
                 )
             q_result = QueryResult.parse_obj(response)
             docs = q_result.get_top_k_docs(top_k)
@@ -234,11 +253,11 @@ class AmazonKendraRetriever(BaseRetriever):
         return docs
 
     def get_relevant_documents(
-            self, 
-            query: str, 
-            top_k: Optional[int] = 3, 
-            attribute_filter: Optional[Dict] = None
-        ) -> List[Document]:
+        self,
+        query: str,
+        top_k: int = 3,
+        attribute_filter: Optional[Dict] = None,
+    ) -> List[Document]:
         """Run search on Kendra index and get top k documents
 
         Example:
