@@ -236,7 +236,6 @@ all = [
     "openai",
     "nlpcloud",
     "huggingface_hub",
-    "openllm",
     "jina",
     "manifest-ml",
     "elasticsearch",
