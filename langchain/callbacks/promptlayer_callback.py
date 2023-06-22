@@ -1,10 +1,8 @@
 import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
+from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.chat_models import ChatOpenAI
-from langchain.llms import OpenAI, Replicate
-from uuid import UUID
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -16,11 +14,15 @@ from langchain.schema import (
 
 
 class PromptLayerCallbackHandler(BaseCallbackHandler):
-    def __init__(self, pl_id_callback=None, pl_tags=[]):
+    def __init__(
+        self,
+        pl_id_callback: Optional[Callable[..., Any]] = None,
+        pl_tags: Optional[List[str]] = [],
+    ) -> None:
         self.pl_id_callback = pl_id_callback
         self.pl_tags = pl_tags
 
-        self.runs = {}
+        self.runs: Dict[UUID, Dict[str, Any]] = {}
 
     def on_chat_model_start(
         self,
@@ -33,7 +35,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> Any:
         self.runs[run_id] = {
-            "messages": messages,
+            "messages": [self._create_message_dicts(m) for m in messages],
             "invocation_params": kwargs.get("invocation_params", {}),
             "name": kwargs.get("invocation_params", {}).get("_type", "No Type"),
             "request_start_time": datetime.datetime.now().timestamp(),
@@ -66,7 +68,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
-        run_info = self.runs.get(run_id)
+        run_info = self.runs.get(run_id, {})
         run_info["request_end_time"] = datetime.datetime.now().timestamp()
         if not run_info:
             return
@@ -77,34 +79,14 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
                 "text": generation.text,
                 "llm_output": response.llm_output,
             }
-
+            model_params = run_info.get("invocation_params", {})
             if run_info.get("name") == "openai-chat":
                 function_name = f"langchain.chat.{run_info.get('name')}"
-                message_dicts, model_params = self._create_message_dicts(
-                    run_info.get("messages", [])
-                )
-                model_input = []
-                model_response, model_params = self._create_message_dicts(
-                    [[generation.message]]
-                )
-                model_response = {
-                    "choices": [
-                        {
-                            "finish_reason": "stop",
-                            "index": 0,
-                            "message": {
-                                "content": generation.message.content,
-                                "role": "assistant",
-                            },
-                        }
-                    ],
-                    "usage": response.llm_output.get("token_usage", {}),
-                }
-                model_params["messages"] = message_dicts
+                model_input = run_info.get("messages", [])[i]
+                model_response = self._convert_message_to_dict(generation.message)
             else:
                 function_name = f"langchain.{run_info.get('name')}"
-                model_input = [run_info.get("prompts")[i]]
-                model_params = run_info.get("invocation_params", {})
+                model_input = [run_info.get("prompts", [])[i]]
                 model_response = resp
 
             from promptlayer.utils import get_api_key, promptlayer_api_request
@@ -149,5 +131,5 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
         self, messages: List[BaseMessage]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params: Dict[str, Any] = {}
-        message_dicts = [self._convert_message_to_dict(m) for m in messages[0]]
+        message_dicts = [self._convert_message_to_dict(m) for m in messages]
         return message_dicts, params
