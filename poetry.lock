@@ -1607,6 +1607,39 @@ tornado = ">=5.0.2"
 test = ["coverage", "flake8 (==2.1.0)", "gevent", "mock", "nose2", "pyyaml", "tox"]
 
 [[package]]
+name = "clarifai"
+version = "9.1.0"
+description = "Clarifai Python Utilities"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "clarifai-9.1.0-py3-none-any.whl", hash = "sha256:a22b6c34d18067eb6902111bdbd9627dc2b72b743ac50b3f3178dc7663016003"},
+    {file = "clarifai-9.1.0.tar.gz", hash = "sha256:f6e65fd81a810c4063f23a066ded68306423da1be0bbf61b32c5ef01214f607f"},
+]
+
+[package.dependencies]
+clarifai-grpc = ">=9.1.0"
+
+[[package]]
+name = "clarifai-grpc"
+version = "9.1.1"
+description = "Clarifai gRPC API Client"
+category = "main"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "clarifai-grpc-9.1.1.tar.gz", hash = "sha256:d347b64f8d8dcf4dee1c51c5eced3c3f489e3be595ca4c8374323fdf934bae57"},
+    {file = "clarifai_grpc-9.1.1-py3-none-any.whl", hash = "sha256:84a49e3d4fa57937ab38fb365c535a8ae255acac4666134d188f5dbe10e865ba"},
+]
+
+[package.dependencies]
+googleapis-common-protos = ">=1.53.0"
+grpcio = ">=1.44.0"
+protobuf = ">=3.12"
+requests = ">=2.25.1"
+
+[[package]]
 name = "click"
 version = "8.1.3"
 description = "Composable command line interface toolkit"
@@ -5444,6 +5477,22 @@ files = [
     {file = "mypy_extensions-1.0.0-py3-none-any.whl", hash = "sha256:4392f6c0eb8a5668a69e23d168ffa70f0be9ccfd32b5cc2d26a34ae5b844552d"},
     {file = "mypy_extensions-1.0.0.tar.gz", hash = "sha256:75dbf8955dc00442a438fc4d0666508a9a97b6bd41aa2f0ffe9d2f2725af0782"},
 ]
+
+[[package]]
+name = "mypy-protobuf"
+version = "3.3.0"
+description = "Generate mypy stub files from protobuf specs"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "mypy-protobuf-3.3.0.tar.gz", hash = "sha256:24f3b0aecb06656e983f58e07c732a90577b9d7af3e1066fc2b663bbf0370248"},
+    {file = "mypy_protobuf-3.3.0-py3-none-any.whl", hash = "sha256:15604f6943b16c05db646903261e3b3e775cf7f7990b7c37b03d043a907b650d"},
+]
+
+[package.dependencies]
+protobuf = ">=3.19.4"
+types-protobuf = ">=3.19.12"
 
 [[package]]
 name = "myst-nb"
@@ -10902,6 +10951,18 @@ files = [
 ]
 
 [[package]]
+name = "types-protobuf"
+version = "4.23.0.1"
+description = "Typing stubs for protobuf"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-protobuf-4.23.0.1.tar.gz", hash = "sha256:7bd5ea122a057b11a82b785d9de464932a1e9175fe977a4128adef11d7f35547"},
+    {file = "types_protobuf-4.23.0.1-py3-none-any.whl", hash = "sha256:c926104f69ea62103846681b35b690d8d100ecf86c6cdda16c850a1313a272e4"},
+]
+
+[[package]]
 name = "types-pyopenssl"
 version = "23.2.0.0"
 description = "Typing stubs for pyOpenSSL"
@@ -12040,13 +12101,14 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "azure-search-documents", "openai"]
+clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
 extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "chardet", "gql", "html2text", "jq", "lxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "requests-toolbelt", "scikit-learn", "telethon", "tqdm", "zep-python"]
-llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers"]
+llms = ["anthropic", "clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
 qdrant = ["qdrant-client"]
 text-helpers = ["chardet"]
@@ -12054,4 +12116,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "4ef80074fedf100df7216da7231f96008c62fe84abf0619322debf7a5d9078bb"
+content-hash = "df0aa59ee541224667b5cefebec83d2ff48813218f959294eb7612148dc5ef82"
