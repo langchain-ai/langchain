@@ -5,7 +5,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import requests
 from pydantic import BaseModel, root_validator
@@ -39,7 +39,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
     access_token: Optional[str] = os.environ.get("DOCUGAMI_API_KEY")
     docset_id: Optional[str]
     document_ids: Optional[Sequence[str]]
-    file_paths: Optional[Sequence[Path]]
+    file_paths: Optional[Sequence[Union[Path, str]]]
     min_chunk_size: int = 32  # appended to the next chunk to avoid over-chunking
 
     @root_validator
@@ -63,7 +63,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         try:
             from lxml import etree
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import lxml python package. "
                 "Please install it with `pip install lxml`."
             )
@@ -243,7 +243,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
             artifact_url = artifact.get("url")
             artifact_doc = artifact.get("document")
 
-            if artifact_name == f"{project_id}.xml" and artifact_url and artifact_doc:
+            if artifact_name == "report-values.xml" and artifact_url and artifact_doc:
                 doc_id = artifact_doc["id"]
                 metadata: Dict = {}
 
@@ -259,18 +259,18 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     try:
                         from lxml import etree
                     except ImportError:
-                        raise ValueError(
+                        raise ImportError(
                             "Could not import lxml python package. "
                             "Please install it with `pip install lxml`."
                         )
                     artifact_tree = etree.parse(io.BytesIO(response.content))
                     artifact_root = artifact_tree.getroot()
                     ns = artifact_root.nsmap
-                    entries = artifact_root.xpath("//wp:Entry", namespaces=ns)
+                    entries = artifact_root.xpath("//pr:Entry", namespaces=ns)
                     for entry in entries:
-                        heading = entry.xpath("./wp:Heading", namespaces=ns)[0].text
+                        heading = entry.xpath("./pr:Heading", namespaces=ns)[0].text
                         value = " ".join(
-                            entry.xpath("./wp:Value", namespaces=ns)[0].itertext()
+                            entry.xpath("./pr:Value", namespaces=ns)[0].itertext()
                         ).strip()
                         metadata[heading] = value
                     per_file_metadata[doc_id] = metadata
@@ -331,6 +331,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         elif self.file_paths:
             # local mode (for integration testing, or pre-downloaded XML)
             for path in self.file_paths:
+                path = Path(path)
                 with open(path, "rb") as file:
                     chunks += self._parse_dgml(
                         {

@@ -62,15 +62,17 @@ class BasePDFLoader(BaseLoader, ABC):
                 )
 
             self.web_path = self.file_path
-            self.temp_file = tempfile.NamedTemporaryFile()
-            self.temp_file.write(r.content)
-            self.file_path = self.temp_file.name
+            self.temp_dir = tempfile.TemporaryDirectory()
+            temp_pdf = Path(self.temp_dir.name) / "tmp.pdf"
+            with open(temp_pdf, mode="wb") as f:
+                f.write(r.content)
+            self.file_path = str(temp_pdf)
         elif not os.path.isfile(self.file_path):
             raise ValueError("File path %s is not a valid file or url" % self.file_path)
 
     def __del__(self) -> None:
-        if hasattr(self, "temp_file"):
-            self.temp_file.close()
+        if hasattr(self, "temp_dir"):
+            self.temp_dir.cleanup()
 
     @staticmethod
     def _is_valid_url(url: str) -> bool:
@@ -103,7 +105,7 @@ class PyPDFLoader(BasePDFLoader):
         try:
             import pypdf  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
         self.parser = PyPDFParser()
@@ -194,7 +196,7 @@ class PDFMinerLoader(BasePDFLoader):
         try:
             from pdfminer.high_level import extract_text  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`pdfminer` package not found, please install it with "
                 "`pip install pdfminer.six`"
             )
@@ -222,7 +224,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
         try:
             from pdfminer.high_level import extract_text_to_fp  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`pdfminer` package not found, please install it with "
                 "`pip install pdfminer.six`"
             )
@@ -256,7 +258,7 @@ class PyMuPDFLoader(BasePDFLoader):
         try:
             import fitz  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`PyMuPDF` package not found, please install it with "
                 "`pip install pymupdf`"
             )
@@ -375,7 +377,7 @@ class PDFPlumberLoader(BasePDFLoader):
         try:
             import pdfplumber  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "pdfplumber package not found, please install it with "
                 "`pip install pdfplumber`"
             )

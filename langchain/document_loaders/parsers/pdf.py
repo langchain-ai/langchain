@@ -93,12 +93,20 @@ class PyPDFium2Parser(BaseBlobParser):
         """Lazily parse the blob."""
         import pypdfium2
 
-        with blob.as_bytes_io() as f:
-            pdf_reader = pypdfium2.PdfDocument(f)
-            for page_number, page in enumerate(pdf_reader):
-                content = page.get_textpage().get_text_range()
-                metadata = {"source": blob.source, "page": page_number}
-                yield Document(page_content=content, metadata=metadata)
+        # pypdfium2 is really finicky with respect to closing things,
+        # if done incorrectly creates seg faults.
+        with blob.as_bytes_io() as file_path:
+            pdf_reader = pypdfium2.PdfDocument(file_path, autoclose=True)
+            try:
+                for page_number, page in enumerate(pdf_reader):
+                    text_page = page.get_textpage()
+                    content = text_page.get_text_range()
+                    text_page.close()
+                    page.close()
+                    metadata = {"source": blob.source, "page": page_number}
+                    yield Document(page_content=content, metadata=metadata)
+            finally:
+                pdf_reader.close()
 
 
 class PDFPlumberParser(BaseBlobParser):

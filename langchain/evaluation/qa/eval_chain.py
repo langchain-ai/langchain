@@ -1,7 +1,7 @@
 """LLM Chain specifically for evaluating question answering."""
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any, List, Sequence
 
 from langchain import PromptTemplate
 from langchain.base_language import BaseLanguageModel
@@ -41,8 +41,8 @@ class QAEvalChain(LLMChain):
 
     def evaluate(
         self,
-        examples: List[dict],
-        predictions: List[dict],
+        examples: Sequence[dict],
+        predictions: Sequence[dict],
         question_key: str = "query",
         answer_key: str = "answer",
         prediction_key: str = "result",

@@ -1,6 +1,7 @@
 """Test Weaviate functionality."""
 import logging
 import os
+import uuid
 from typing import Generator, Union
 
 import pytest
@@ -79,6 +80,48 @@ class TestWeaviate:
             where_filter={"path": ["page"], "operator": "Equal", "valueNumber": 0},
         )
         assert output == [Document(page_content="foo", metadata={"page": 0})]
+
+    @pytest.mark.vcr(ignore_localhost=True)
+    def test_similarity_search_with_metadata_and_additional(
+        self, weaviate_url: str, embedding_openai: OpenAIEmbeddings
+    ) -> None:
+        """Test end to end construction and search with metadata and additional."""
+        texts = ["foo", "bar", "baz"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = Weaviate.from_texts(
+            texts, embedding_openai, metadatas=metadatas, weaviate_url=weaviate_url
+        )
+        output = docsearch.similarity_search(
+            "foo",
+            k=1,
+            additional=["certainty"],
+        )
+        assert output == [
+            Document(
+                page_content="foo",
+                metadata={"page": 0, "_additional": {"certainty": 1}},
+            )
+        ]
+
+    @pytest.mark.vcr(ignore_localhost=True)
+    def test_similarity_search_with_uuids(
+        self, weaviate_url: str, embedding_openai: OpenAIEmbeddings
+    ) -> None:
+        """Test end to end construction and search with uuids."""
+        texts = ["foo", "bar", "baz"]
+        # Weaviate replaces the object if the UUID already exists
+        uuids = [uuid.uuid5(uuid.NAMESPACE_DNS, "same-name") for text in texts]
+
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = Weaviate.from_texts(
+            texts,
+            embedding_openai,
+            metadatas=metadatas,
+            weaviate_url=weaviate_url,
+            uuids=uuids,
+        )
+        output = docsearch.similarity_search("foo", k=2)
+        assert len(output) == 1
 
     @pytest.mark.vcr(ignore_localhost=True)
     def test_max_marginal_relevance_search(
@@ -181,3 +224,23 @@ class TestWeaviate:
             Document(page_content="foo"),
             Document(page_content="foo"),
         ]
+
+    def test_add_texts_with_given_uuids(self, weaviate_url: str) -> None:
+        texts = ["foo", "bar", "baz"]
+        embedding = FakeEmbeddings()
+        uuids = [uuid.uuid5(uuid.NAMESPACE_DNS, text) for text in texts]
+
+        docsearch = Weaviate.from_texts(
+            texts,
+            embedding=embedding,
+            weaviate_url=weaviate_url,
+            uuids=uuids,
+        )
+
+        # Weaviate replaces the object if the UUID already exists
+        docsearch.add_texts(["foo"], uuids=[uuids[0]])
+        output = docsearch.similarity_search_by_vector(
+            embedding.embed_query("foo"), k=2
+        )
+        assert output[0] == Document(page_content="foo")
+        assert output[1] != Document(page_content="foo")

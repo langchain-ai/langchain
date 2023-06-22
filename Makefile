@@ -10,6 +10,9 @@ coverage:
 
 clean: docs_clean
 
+docs_compile:
+	poetry run nbdoc_build --srcdir $(srcdir)
+
 docs_build:
 	cd docs && poetry run make html
 
@@ -35,13 +38,13 @@ lint lint_diff:
 TEST_FILE ?= tests/unit_tests/
 
 test:
-	poetry run pytest $(TEST_FILE)
+	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
-tests:
-	poetry run pytest $(TEST_FILE)
+tests: 
+	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 extended_tests:
-	poetry run pytest --only-extended tests/unit_tests
+	poetry run pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
 
 test_watch:
 	poetry run ptw --now . -- tests/unit_tests

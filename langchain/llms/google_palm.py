@@ -1,9 +1,17 @@
 """Wrapper arround Google's PaLM Text APIs."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+import logging
+from typing import Any, Callable, Dict, List, Optional
 
 from pydantic import BaseModel, root_validator
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -12,6 +20,47 @@ from langchain.callbacks.manager import (
 from langchain.llms import BaseLLM
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
+
+logger = logging.getLogger(__name__)
+
+
+def _create_retry_decorator() -> Callable[[Any], Any]:
+    """Returns a tenacity retry decorator, preconfigured to handle PaLM exceptions"""
+    try:
+        import google.api_core.exceptions
+    except ImportError:
+        raise ImportError(
+            "Could not import google-api-core python package. "
+            "Please install it with `pip install google-api-core`."
+        )
+
+    multiplier = 2
+    min_seconds = 1
+    max_seconds = 60
+    max_retries = 10
+
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential(multiplier=multiplier, min=min_seconds, max=max_seconds),
+        retry=(
+            retry_if_exception_type(google.api_core.exceptions.ResourceExhausted)
+            | retry_if_exception_type(google.api_core.exceptions.ServiceUnavailable)
+            | retry_if_exception_type(google.api_core.exceptions.GoogleAPIError)
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
+def generate_with_retry(llm: GooglePalm, **kwargs: Any) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator()
+
+    @retry_decorator
+    def _generate_with_retry(**kwargs: Any) -> Any:
+        return llm.client.generate_text(**kwargs)
+
+    return _generate_with_retry(**kwargs)
 
 
 def _strip_erroneous_leading_spaces(text: str) -> str:
@@ -59,7 +108,10 @@ class GooglePalm(BaseLLM, BaseModel):
 
             genai.configure(api_key=google_api_key)
         except ImportError:
-            raise ImportError("Could not import google.generativeai python package.")
+            raise ImportError(
+                "Could not import google-generativeai python package. "
+                "Please install it with `pip install google-generativeai`."
+            )
 
         values["client"] = genai
 
@@ -82,10 +134,12 @@ class GooglePalm(BaseLLM, BaseModel):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         generations = []
         for prompt in prompts:
-            completion = self.client.generate_text(
+            completion = generate_with_retry(
+                self,
                 model=self.model_name,
                 prompt=prompt,
                 stop_sequences=stop,
@@ -94,6 +148,7 @@ class GooglePalm(BaseLLM, BaseModel):
                 top_k=self.top_k,
                 max_output_tokens=self.max_output_tokens,
                 candidate_count=self.n,
+                **kwargs,
             )
 
             prompt_generations = []
@@ -110,6 +165,7 @@ class GooglePalm(BaseLLM, BaseModel):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         raise NotImplementedError()
 
