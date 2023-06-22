@@ -143,7 +143,9 @@ class VectorStore(ABC):
     @staticmethod
     def _max_inner_product_relevance_score_fn(distance: float) -> float:
         """Normalize the distance to a score on a scale [0, 1]."""
-
+        if distance > 0:
+            return 1.0 - distance
+    
         return -1.0 * distance
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
