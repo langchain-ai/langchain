@@ -60,7 +60,6 @@ Classes
     agents.mrkl.base.ZeroShotAgent
     agents.mrkl.output_parser.MRKLOutputParser
     agents.openai_functions_agent.base.OpenAIFunctionsAgent
-    agents.openai_functions_agent.base._FunctionsAgentAction
     agents.react.base.ReActChain
     agents.react.base.ReActDocstoreAgent
     agents.react.base.ReActTextWorldAgent
@@ -73,6 +72,36 @@ Classes
     agents.structured_chat.output_parser.StructuredChatOutputParser
     agents.structured_chat.output_parser.StructuredChatOutputParserWithRetries
     agents.tools.InvalidTool
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: agents
+
+    agents.agent_toolkits.csv.base.create_csv_agent
+    agents.agent_toolkits.json.base.create_json_agent
+    agents.agent_toolkits.openapi.base.create_openapi_agent
+    agents.agent_toolkits.openapi.planner.create_openapi_agent
+    agents.agent_toolkits.openapi.spec.dereference_refs
+    agents.agent_toolkits.openapi.spec.reduce_openapi_spec
+    agents.agent_toolkits.pandas.base.create_pandas_dataframe_agent
+    agents.agent_toolkits.powerbi.base.create_pbi_agent
+    agents.agent_toolkits.powerbi.chat_base.create_pbi_chat_agent
+    agents.agent_toolkits.python.base.create_python_agent
+    agents.agent_toolkits.spark.base.create_spark_dataframe_agent
+    agents.agent_toolkits.spark_sql.base.create_spark_sql_agent
+    agents.agent_toolkits.sql.base.create_sql_agent
+    agents.agent_toolkits.vectorstore.base.create_vectorstore_agent
+    agents.agent_toolkits.vectorstore.base.create_vectorstore_router_agent
+    agents.initialize.initialize_agent
+    agents.load_tools.get_all_tool_names
+    agents.load_tools.load_huggingface_tool
+    agents.load_tools.load_tools
+    agents.loading.load_agent
+    agents.loading.load_agent_from_config
+    agents.utils.validate_tools_single_input
 
 :mod:`langchain.base_language`: Base Language
 ==============================================
@@ -181,6 +210,43 @@ Classes
     callbacks.wandb_callback.WandbCallbackHandler
     callbacks.whylabs_callback.WhyLabsCallbackHandler
 
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: callbacks
+
+    callbacks.aim_callback.import_aim
+    callbacks.clearml_callback.import_clearml
+    callbacks.comet_ml_callback.import_comet_ml
+    callbacks.manager.env_var_is_set
+    callbacks.manager.get_openai_callback
+    callbacks.manager.trace_as_chain_group
+    callbacks.manager.tracing_enabled
+    callbacks.manager.tracing_v2_enabled
+    callbacks.manager.wandb_tracing_enabled
+    callbacks.mlflow_callback.analyze_text
+    callbacks.mlflow_callback.construct_html_from_prompt_and_generation
+    callbacks.mlflow_callback.import_mlflow
+    callbacks.openai_info.get_openai_token_cost_for_model
+    callbacks.openai_info.standardize_model_name
+    callbacks.tracers.langchain.log_error_once
+    callbacks.tracers.langchain_v1.get_headers
+    callbacks.tracers.stdout.elapsed
+    callbacks.tracers.stdout.try_json_stringify
+    callbacks.utils.flatten_dict
+    callbacks.utils.hash_string
+    callbacks.utils.import_pandas
+    callbacks.utils.import_spacy
+    callbacks.utils.import_textstat
+    callbacks.utils.load_json
+    callbacks.wandb_callback.analyze_text
+    callbacks.wandb_callback.construct_html_from_prompt_and_generation
+    callbacks.wandb_callback.import_wandb
+    callbacks.wandb_callback.load_json_to_dict
+    callbacks.whylabs_callback.import_langkit
+
 :mod:`langchain.chains`: Chains
 ================================
 
@@ -198,7 +264,6 @@ Classes
 
     chains.api.base.APIChain
     chains.api.openapi.chain.OpenAPIEndpointChain
-    chains.api.openapi.chain._ParamMapping
     chains.api.openapi.requests_chain.APIRequesterChain
     chains.api.openapi.requests_chain.APIRequesterOutputParser
     chains.api.openapi.response_chain.APIResponderChain
@@ -219,8 +284,6 @@ Classes
     chains.conversational_retrieval.base.ConversationalRetrievalChain
     chains.flare.base.FlareChain
     chains.flare.base.QuestionGeneratorChain
-    chains.flare.base._OpenAIResponseChain
-    chains.flare.base._ResponseChain
     chains.flare.prompts.FinishedOutputParser
     chains.graph_qa.base.GraphQAChain
     chains.graph_qa.cypher.GraphCypherQAChain
@@ -279,6 +342,41 @@ Classes
     chains.summarize.__init__.LoadingCallable
     chains.transform.TransformChain
 
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: chains
+
+    chains.combine_documents.base.format_document
+    chains.graph_qa.cypher.extract_cypher
+    chains.loading.load_chain
+    chains.loading.load_chain_from_config
+    chains.openai_functions.citation_fuzzy_match.create_citation_fuzzy_match_chain
+    chains.openai_functions.extraction.create_extraction_chain
+    chains.openai_functions.extraction.create_extraction_chain_pydantic
+    chains.openai_functions.qa_with_structure.create_qa_with_sources_chain
+    chains.openai_functions.qa_with_structure.create_qa_with_structure_chain
+    chains.openai_functions.tagging.create_tagging_chain
+    chains.openai_functions.tagging.create_tagging_chain_pydantic
+    chains.openai_functions.utils.get_llm_kwargs
+    chains.pal.math_prompt.solution
+    chains.pal.math_prompt.solution
+    chains.pal.math_prompt.solution
+    chains.pal.math_prompt.solution
+    chains.pal.math_prompt.solution
+    chains.pal.math_prompt.solution
+    chains.pal.math_prompt.solution
+    chains.pal.math_prompt.solution
+    chains.prompt_selector.is_chat_model
+    chains.prompt_selector.is_llm
+    chains.qa_with_sources.loading.load_qa_with_sources_chain
+    chains.query_constructor.base.load_query_constructor_chain
+    chains.query_constructor.parser.get_parser
+    chains.question_answering.__init__.load_qa_chain
+    chains.summarize.__init__.load_summarize_chain
+
 :mod:`langchain.chat_models`: Chat Models
 ==========================================
 
@@ -304,6 +402,15 @@ Classes
     chat_models.promptlayer_openai.PromptLayerChatOpenAI
     chat_models.vertexai.ChatVertexAI
 
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: chat_models
+
+    chat_models.google_palm.chat_with_retry
+
 :mod:`langchain.client`: Client
 ================================
 
@@ -320,6 +427,18 @@ Classes
     :template: class.rst
 
     client.runner_utils.InputFormatError
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: client
+
+    client.runner_utils.run_llm
+    client.runner_utils.run_llm_or_chain
+    client.runner_utils.run_on_dataset
+    client.runner_utils.run_on_examples
 
 :mod:`langchain.docstore`: Docstore
 ====================================
@@ -435,10 +554,6 @@ Classes
     document_loaders.obsidian.ObsidianLoader
     document_loaders.odt.UnstructuredODTLoader
     document_loaders.onedrive.OneDriveLoader
-    document_loaders.onedrive._FileType
-    document_loaders.onedrive._OneDriveSettings
-    document_loaders.onedrive._OneDriveTokenStorage
-    document_loaders.onedrive._SupportedFileTypes
     document_loaders.onedrive_file.OneDriveFileLoader
     document_loaders.parsers.audio.OpenAIWhisperParser
     document_loaders.parsers.generic.MimeTypeBasedParser
@@ -501,6 +616,26 @@ Classes
     document_loaders.youtube.GoogleApiYoutubeLoader
     document_loaders.youtube.YoutubeLoader
 
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: document_loaders
+
+    document_loaders.chatgpt.concatenate_rows
+    document_loaders.facebook_chat.concatenate_rows
+    document_loaders.helpers.detect_file_encodings
+    document_loaders.notebook.concatenate_cells
+    document_loaders.notebook.remove_newlines
+    document_loaders.parsers.registry.get_parser
+    document_loaders.telegram.concatenate_rows
+    document_loaders.telegram.text_to_docs
+    document_loaders.unstructured.get_elements_from_api
+    document_loaders.unstructured.satisfies_min_unstructured_version
+    document_loaders.unstructured.validate_unstructured_version
+    document_loaders.whatsapp_chat.concatenate_rows
+
 :mod:`langchain.document_transformers`: Document Transformers
 ==============================================================
 
@@ -517,7 +652,15 @@ Classes
     :template: class.rst
 
     document_transformers.EmbeddingsRedundantFilter
-    document_transformers._DocumentWithState
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: document_transformers
+
+    document_transformers.get_stateful_documents
 
 :mod:`langchain.embeddings`: Embeddings
 ========================================
@@ -563,6 +706,35 @@ Classes
     embeddings.tensorflow_hub.TensorflowHubEmbeddings
     embeddings.vertexai.VertexAIEmbeddings
 
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: embeddings
+
+    embeddings.dashscope.embed_with_retry
+    embeddings.google_palm.embed_with_retry
+    embeddings.minimax.embed_with_retry
+    embeddings.openai.embed_with_retry
+    embeddings.self_hosted_hugging_face.load_embedding_model
+
+:mod:`langchain.env`: Env
+==========================
+
+.. automodule:: langchain.env
+    :no-members:
+    :no-inherited-members:
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: env
+
+    env.get_runtime_environment
+
 :mod:`langchain.evaluation`: Evaluation
 ========================================
 
@@ -591,6 +763,34 @@ Classes
     evaluation.run_evaluators.implementations.StringRunEvaluatorInputMapper
     evaluation.run_evaluators.implementations.TrajectoryEvalOutputParser
     evaluation.run_evaluators.implementations.TrajectoryInputMapper
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: evaluation
+
+    evaluation.loading.load_dataset
+    evaluation.run_evaluators.implementations.get_criteria_evaluator
+    evaluation.run_evaluators.implementations.get_qa_evaluator
+    evaluation.run_evaluators.implementations.get_trajectory_evaluator
+
+:mod:`langchain.example_generator`: Example Generator
+======================================================
+
+.. automodule:: langchain.example_generator
+    :no-members:
+    :no-inherited-members:
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: example_generator
+
+    example_generator.generate_example
 
 :mod:`langchain.experimental`: Experimental
 ============================================
@@ -633,6 +833,20 @@ Classes
     experimental.plan_and_execute.schema.Step
     experimental.plan_and_execute.schema.StepResponse
 
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: experimental
+
+    experimental.autonomous_agents.autogpt.output_parser.preprocess_json_input
+    experimental.autonomous_agents.autogpt.prompt_generator.get_prompt
+    experimental.llms.jsonformer_decoder.import_jsonformer
+    experimental.llms.rellm_decoder.import_rellm
+    experimental.plan_and_execute.executors.agent_executor.load_agent_executor
+    experimental.plan_and_execute.planners.chat_planner.load_chat_planner
+
 :mod:`langchain.formatting`: Formatting
 ========================================
 
@@ -667,6 +881,16 @@ Classes
 
     graphs.networkx_graph.KnowledgeTriple
 
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: graphs
+
+    graphs.networkx_graph.get_entities
+    graphs.networkx_graph.parse_triples
+
 :mod:`langchain.indexes`: Indexes
 ==================================
 
@@ -686,7 +910,26 @@ Classes
     indexes.vectorstore.VectorStoreIndexWrapper
     indexes.vectorstore.VectorstoreIndexCreator
 
-:mod:`langchain.llms`: Llms
+:mod:`langchain.input`: Input
+==============================
+
+.. automodule:: langchain.input
+    :no-members:
+    :no-inherited-members:
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: input
+
+    input.get_bolded_text
+    input.get_color_mapping
+    input.get_colored_text
+    input.print_text
+
+:mod:`langchain.llms`: LLMS
 ============================
 
 .. automodule:: langchain.llms
@@ -705,7 +948,6 @@ Classes
     llms.ai21.AI21PenaltyData
     llms.aleph_alpha.AlephAlpha
     llms.anthropic.Anthropic
-    llms.anthropic._AnthropicCommon
     llms.anyscale.Anyscale
     llms.aviary.Aviary
     llms.bananadev.Banana
@@ -718,9 +960,6 @@ Classes
     llms.cohere.Cohere
     llms.ctransformers.CTransformers
     llms.databricks.Databricks
-    llms.databricks._DatabricksClientBase
-    llms.databricks._DatabricksClusterDriverProxyClient
-    llms.databricks._DatabricksServingEndpointClient
     llms.deepinfra.DeepInfra
     llms.fake.FakeListLLM
     llms.forefrontai.ForefrontAI
@@ -757,8 +996,27 @@ Classes
     llms.stochasticai.StochasticAI
     llms.textgen.TextGen
     llms.vertexai.VertexAI
-    llms.vertexai._VertexAICommon
     llms.writer.Writer
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: llms
+
+    llms.base.get_prompts
+    llms.base.update_cache
+    llms.cohere.completion_with_retry
+    llms.databricks.get_default_api_token
+    llms.databricks.get_default_host
+    llms.databricks.get_repl_context
+    llms.google_palm.generate_with_retry
+    llms.loading.load_llm
+    llms.loading.load_llm_from_config
+    llms.openai.completion_with_retry
+    llms.openai.update_token_usage
+    llms.utils.enforce_stop_tokens
 
 :mod:`langchain.load`: Load
 ============================
@@ -780,6 +1038,36 @@ Classes
     load.serializable.SerializedConstructor
     load.serializable.SerializedNotImplemented
     load.serializable.SerializedSecret
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: load
+
+    load.dump.default
+    load.dump.dumpd
+    load.dump.dumps
+    load.load.loads
+    load.serializable.to_json_not_implemented
+
+:mod:`langchain.math_utils`: Math Utils
+========================================
+
+.. automodule:: langchain.math_utils
+    :no-members:
+    :no-inherited-members:
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: math_utils
+
+    math_utils.cosine_similarity
+    math_utils.cosine_similarity_top_k
 
 :mod:`langchain.memory`: Memory
 ================================
@@ -828,6 +1116,16 @@ Classes
     memory.token_buffer.ConversationTokenBufferMemory
     memory.vectorstore.VectorStoreRetrieverMemory
 
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: memory
+
+    memory.chat_message_histories.sql.create_message_model
+    memory.utils.get_prompt_input_key
+
 :mod:`langchain.output_parsers`: Output Parsers
 ================================================
 
@@ -863,6 +1161,17 @@ Classes
     output_parsers.retry.RetryWithErrorOutputParser
     output_parsers.structured.ResponseSchema
     output_parsers.structured.StructuredOutputParser
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: output_parsers
+
+    output_parsers.json.parse_and_check_json_markdown
+    output_parsers.json.parse_json_markdown
+    output_parsers.loading.load_output_parser
 
 :mod:`langchain.prompts`: Prompts
 ==================================
@@ -901,6 +1210,21 @@ Classes
     prompts.few_shot_with_templates.FewShotPromptWithTemplates
     prompts.pipeline.PipelinePromptTemplate
     prompts.prompt.PromptTemplate
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: prompts
+
+    prompts.base.check_valid_template
+    prompts.base.jinja2_formatter
+    prompts.base.validate_jinja2
+    prompts.example_selector.ngram_overlap.ngram_overlap_score
+    prompts.example_selector.semantic_similarity.sorted_values
+    prompts.loading.load_prompt
+    prompts.loading.load_prompt_from_config
 
 :mod:`langchain.requests`: Requests
 ====================================
@@ -975,6 +1299,24 @@ Classes
     retrievers.zep.ZepRetriever
     retrievers.zilliz.ZillizRetriever
 
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: retrievers
+
+    retrievers.document_compressors.chain_extract.default_get_input
+    retrievers.document_compressors.chain_filter.default_get_input
+    retrievers.knn.create_index
+    retrievers.milvus.MilvusRetreiver
+    retrievers.pinecone_hybrid_search.create_index
+    retrievers.pinecone_hybrid_search.hash_text
+    retrievers.self_query.myscale.DEFAULT_COMPOSER
+    retrievers.self_query.myscale.FUNCTION_COMPOSER
+    retrievers.svm.create_index
+    retrievers.zilliz.ZillizRetreiver
+
 :mod:`langchain.schema`: Schema
 ================================
 
@@ -1013,6 +1355,49 @@ Classes
     schema.RunInfo
     schema.SystemMessage
 
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: schema
+
+    schema.get_buffer_string
+    schema.messages_from_dict
+    schema.messages_to_dict
+
+:mod:`langchain.server`: Server
+================================
+
+.. automodule:: langchain.server
+    :no-members:
+    :no-inherited-members:
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: server
+
+    server.main
+
+:mod:`langchain.sql_database`: Sql Database
+============================================
+
+.. automodule:: langchain.sql_database
+    :no-members:
+    :no-inherited-members:
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: sql_database
+
+    sql_database.truncate_word
+
 :mod:`langchain.text_splitter`: Text Splitter
 ==============================================
 
@@ -1041,6 +1426,15 @@ Classes
     text_splitter.SpacyTextSplitter
     text_splitter.TextSplitter
     text_splitter.TokenTextSplitter
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: text_splitter
+
+    text_splitter.split_text_on_tokens
 
 :mod:`langchain.tools`: Tools
 ==============================
@@ -1183,6 +1577,37 @@ Classes
     tools.zapier.tool.ZapierNLAListActions
     tools.zapier.tool.ZapierNLARunAction
 
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: tools
+
+    tools.azure_cognitive_services.utils.detect_file_src_type
+    tools.azure_cognitive_services.utils.download_audio_from_url
+    tools.base.create_schema_from_function
+    tools.base.tool
+    tools.convert_to_openai.format_tool_to_openai_function
+    tools.ddg_search.tool.DuckDuckGoSearchTool
+    tools.file_management.utils.get_validated_relative_path
+    tools.file_management.utils.is_relative_to
+    tools.gmail.utils.build_resource_service
+    tools.gmail.utils.clean_email_body
+    tools.gmail.utils.get_gmail_credentials
+    tools.gmail.utils.import_google
+    tools.gmail.utils.import_googleapiclient_resource_builder
+    tools.gmail.utils.import_installed_app_flow
+    tools.interaction.tool.StdInInquireTool
+    tools.playwright.base.lazy_import_playwright_browsers
+    tools.playwright.utils.create_async_playwright_browser
+    tools.playwright.utils.create_sync_playwright_browser
+    tools.playwright.utils.get_current_page
+    tools.playwright.utils.run_async
+    tools.plugin.marshal_spec
+    tools.python.tool.sanitize_input
+    tools.steamship_image_generation.utils.make_image_public
+
 :mod:`langchain.utilities`: Utilities
 ======================================
 
@@ -1223,6 +1648,43 @@ Classes
     utilities.wikipedia.WikipediaAPIWrapper
     utilities.wolfram_alpha.WolframAlphaAPIWrapper
     utilities.zapier.ZapierNLAWrapper
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: utilities
+
+    utilities.loading.try_load_from_hub
+    utilities.powerbi.fix_table_name
+    utilities.powerbi.json_to_md
+    utilities.vertexai.init_vertexai
+    utilities.vertexai.raise_vertex_import_error
+
+:mod:`langchain.utils`: Utils
+==============================
+
+.. automodule:: langchain.utils
+    :no-members:
+    :no-inherited-members:
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: utils
+
+    utils.comma_list
+    utils.get_from_dict_or_env
+    utils.get_from_env
+    utils.guard_import
+    utils.mock_now
+    utils.raise_for_status_with_text
+    utils.stringify_dict
+    utils.stringify_value
+    utils.xor_args
 
 :mod:`langchain.vectorstores`: Vectorstores
 ============================================
@@ -1293,4 +1755,18 @@ Classes
     vectorstores.vectara.VectaraRetriever
     vectorstores.weaviate.Weaviate
     vectorstores.zilliz.Zilliz
+
+Functions
+--------------
+.. currentmodule:: langchain
+
+.. autosummary::
+    :toctree: vectorstores
+
+    vectorstores.alibabacloud_opensearch.create_metadata
+    vectorstores.annoy.dependable_annoy_import
+    vectorstores.clickhouse.has_mul_sub_str
+    vectorstores.faiss.dependable_faiss_import
+    vectorstores.myscale.has_mul_sub_str
+    vectorstores.utils.maximal_marginal_relevance
 
