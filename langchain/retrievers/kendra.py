@@ -149,11 +149,6 @@ class AmazonKendraRetriever(BaseRetriever):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
-    language_code: Optional[str] = None
-    """Language code that the documents are indexed with.
-    See: https://docs.aws.amazon.com/kendra/latest/dg/in-adding-languages.html
-    """
-
     client: Optional[Any] = None
     """boto3 client for Kendra."""
 
@@ -162,12 +157,10 @@ class AmazonKendraRetriever(BaseRetriever):
         index_id,
         region_name=None,
         credentials_profile_name=None,
-        language_code=None,
         client=None,
     ):
         self.index_id = index_id
-        self.language_code = language_code
-
+        
         if client is not None:
             self.client = client
             return
@@ -198,21 +191,12 @@ class AmazonKendraRetriever(BaseRetriever):
                 "profile name are valid."
             ) from e
 
-    def _kendra_query(self, query, top_k: int = 3) -> List[Document]:
-        if self.language_code is not None:
-            attribute_filter = {
-                "AndAllFilters": [
-                    {
-                        "EqualsTo": {
-                            "Key": "_language_code",
-                            "Value": {
-                                "StringValue": self.language_code,
-                            },
-                        }
-                    }
-                ]
-            }
-
+    def _kendra_query(self, 
+                      query: str, 
+                      top_k: Optional[int] = 3, 
+                      attribute_filter: Optional[Dict] = None
+                    ) -> List[Document]:
+        if attribute_filter is not None:
             response = self.client.retrieve(
                 IndexId=self.index_id,
                 QueryText=query.strip(),
@@ -230,7 +214,7 @@ class AmazonKendraRetriever(BaseRetriever):
 
         if result_len == 0:
             # retrieve API returned 0 results, call query API
-            if self.language_code is not None:
+            if attribute_filter is not None:
                 response = self.client.query(
                     IndexId=self.index_id,
                     QueryText=query.strip(),
@@ -249,7 +233,12 @@ class AmazonKendraRetriever(BaseRetriever):
             docs = r_result.get_top_k_docs(top_k)
         return docs
 
-    def get_relevant_documents(self, query: str, top_k: int = 3) -> List[Document]:
+    def get_relevant_documents(
+            self, 
+            query: str, 
+            top_k: Optional[int] = 3, 
+            attribute_filter: Optional[Dict] = None
+        ) -> List[Document]:
         """Run search on Kendra index and get top k documents
 
         Example:
@@ -258,7 +247,7 @@ class AmazonKendraRetriever(BaseRetriever):
             docs = retriever.get_relevant_documents('This is my query')
 
         """
-        docs = self._kendra_query(query, top_k)
+        docs = self._kendra_query(query, top_k, attribute_filter)
         return docs
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
