@@ -11,6 +11,7 @@ from langchain.vectorstores.azuresearch import AzureSearch
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.cassandra import Cassandra
 from langchain.vectorstores.chroma import Chroma
+from langchain.vectorstores.clarifai import Clarifai
 from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
 from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
@@ -59,6 +60,14 @@ __all__ = [
     "LanceDB",
     "MatchingEngine",
     "Milvus",
+    "Zilliz",
+    "SingleStoreDB",
+    "Chroma",
+    "Clarifai",
+    "OpenSearchVectorSearch",
+    "AtlasDB",
+    "DeepLake",
+    "Annoy",
     "MongoDBAtlasVectorSearch",
     "MyScale",
     "MyScaleSettings",
