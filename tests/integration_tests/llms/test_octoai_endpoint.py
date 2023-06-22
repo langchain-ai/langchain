@@ -15,6 +15,7 @@ def test_octoai_endpoint_text_generation() -> None:
     """Test valid call to OctoAI text generation model."""
     llm = OctoAIEndpoint(
         endpoint_url="https://mpt-7b-demo-kk0powt97tmb.octoai.cloud/generate",
+        octoai_api_token="<octoai_api_token>",        
         model_kwargs={
             "max_new_tokens": 200,
             "temperature": 0.75,
@@ -44,6 +45,7 @@ def test_saving_loading_endpoint_llm(tmp_path: Path) -> None:
     """Test saving/loading an OctoAIHub LLM."""
     llm = OctoAIEndpoint(
         endpoint_url="https://mpt-7b-demo-kk0powt97tmb.octoai.cloud/generate",
+        octoai_api_token="<octoai_api_token>",
         model_kwargs={
             "max_new_tokens": 200,
             "temperature": 0.75,
