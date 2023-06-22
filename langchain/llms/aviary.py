@@ -1,18 +1,18 @@
 """Wrapper around Aviary"""
-from typing import Any, Dict, List, Mapping, Optional, Union
-
 import dataclasses
 import os
-from pydantic import Extra, root_validator
+from typing import Any, Dict, List, Mapping, Optional, Union
+
 import requests
+from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
-
 TIMEOUT = 60
+
 
 @dataclasses.dataclass
 class AviaryBackend:
@@ -21,7 +21,7 @@ class AviaryBackend:
 
     def __post_init__(self):
         self.header = {"Authorization": self.bearer}
-    
+
     @classmethod
     def from_env(cls):
         aviary_url = os.getenv("AVIARY_URL")
@@ -33,7 +33,8 @@ class AviaryBackend:
         aviary_url += "/" if not aviary_url.endswith("/") else ""
 
         return cls(aviary_url, bearer)
-    
+
+
 def get_models() -> List[str]:
     """List available models"""
     backend = AviaryBackend.from_env()
@@ -102,7 +103,7 @@ class Aviary(LLM):
     model: str = "amazon/LightGPT"
     aviary_url: Optional[str] = None
     aviary_token: Optional[str] = None
-    # If True the prompt template for the model will be ignored. 
+    # If True the prompt template for the model will be ignored.
     use_prompt_format: bool = True
     # API version to use for Aviary
     version: Optional[str] = None
@@ -129,10 +130,8 @@ class Aviary(LLM):
 
         model = values.get("model")
         if model and model not in aviary_models:
-            raise ValueError(
-                f"{aviary_url} does not support model {values['model']}."
-            )
-        
+            raise ValueError(f"{aviary_url} does not support model {values['model']}.")
+
         return values
 
     @property
@@ -176,7 +175,7 @@ class Aviary(LLM):
             prompt=prompt,
             **kwargs,
         )
-        
+
         text = output["generated_text"]
         if stop:
             text = enforce_stop_tokens(text, stop)
