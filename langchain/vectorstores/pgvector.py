@@ -213,14 +213,12 @@ class PGVector(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
-        connection_string = cls.get_connection_string(kwargs)
-
         store = cls(
-            connection_string=connection_string,
             collection_name=collection_name,
             embedding_function=embedding,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
+            **kwargs,
         )
 
         store.add_embeddings(
@@ -325,6 +323,7 @@ class PGVector(VectorStore):
             k=k,
             filter=filter,
         )
+
 
     def similarity_search_with_score(
         self,
