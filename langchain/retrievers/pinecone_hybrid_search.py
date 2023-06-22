@@ -75,6 +75,7 @@ def create_index(
 
 class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
     embeddings: Embeddings
+    """description"""
     sparse_encoder: Any
     index: Any
     top_k: int = 4

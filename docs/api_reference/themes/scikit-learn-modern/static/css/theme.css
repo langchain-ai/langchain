@@ -1,6 +1,6 @@
 /* Elements */
 a {
-  color: #2878A2;
+  color: #359962;
   word-wrap: break-word;
 }
 
@@ -11,7 +11,7 @@ a:focus {
 /* Anchor links */
 
 a.headerlink {
-  color: #c60f0f;
+  color: #3cad6e;
   font-size: 0.8em;
   padding: 0 4px 0 4px;
   text-decoration: none;
@@ -19,7 +19,7 @@ a.headerlink {
 }
 
 a.headerlink:hover {
-  background-color: #c60f0f;
+  background-color: #3cad6e;
   color: white;
 }
 
@@ -73,7 +73,7 @@ a code {
 a code {
   background-color: transparent;
   font-weight: bold;
-  color: #2878A2;
+  color: #359962;
   border-radius: 0;
   padding: 0;
   white-space: nowrap;
@@ -107,7 +107,7 @@ div.highlight a {
 }
 
 a.sk-landing-btn {
-  background-color: #ff9c34;
+  background-color: #ecf8f2;
   color: black;
   cursor: pointer;
   font-size: 1.1rem;
@@ -115,7 +115,7 @@ a.sk-landing-btn {
 }
 
 a.sk-landing-btn:hover {
-  background-color: #ffb05f;
+  background-color: #359962;
 }
 
 .sk-donate-btn {
@@ -576,7 +576,7 @@ dl.citation > dd > ol {
 /* docs index */
 
 div.sk-documentation-index-card {
-  border-left: 0.15rem solid #ff9c34;
+  border-left: 0.15rem solid #205d3b;
 }
 div.sk-documentation-index-card:hover {
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
@@ -584,7 +584,7 @@ div.sk-documentation-index-card:hover {
 
 a.sk-documentation-index-anchor:hover {
   text-decoration: none;
-  color: #2878A2;
+  color: #359962;
 }
 
 .sk-documentation-index-header {
@@ -731,7 +731,7 @@ table.longtable tr.row-odd {
   background-color: #f8f8f8;
   font-weight: normal;
   border: 1px solid rgba(0, 0, 0, 0.125);
-  border-left: 2px solid #ff9c34;
+  border-left: 2px solid #205d3b;
   overflow: auto;
   margin-bottom: 1rem;
 }
@@ -1101,11 +1101,21 @@ table.dataframe tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
 
+
+.alert alerg-danger {
+  background-color: #d9f2e4;
+  border-color: #d9f2e4;
+  color: white;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
 /* rellinks */
 
 .sk-btn-rellink {
-  background-color: #ff9c34;
-  border-color: #ff9c34;
+  background-color: #d9f2e4;
+  border-color: #d9f2e4;
   color: white;
   cursor: pointer;
   font-size: 0.8rem;
@@ -1127,8 +1137,8 @@ table.dataframe tbody tr:hover {
   position: absolute;
   padding: 0.5rem;
   overflow: hidden;
-  background-color: #ff9c34;
-  border: 1px solid #ff9c34;
+  background-color: #205d3b;
+  border: 1px solid #205d3b;
   white-space: pre;
   content: attr(sk-rellink-tooltip);
   text-align: left;
@@ -1225,7 +1235,7 @@ div.install > label:hover {
 
 /* Style the button when the checkbox is checked */
 div.install > input:checked + label {
-  background-color: #ff9c34;
+  background-color: #205d3b;
   color: white;
 }
 

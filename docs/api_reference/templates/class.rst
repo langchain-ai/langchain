@@ -5,15 +5,6 @@
 
 .. autoclass:: {{ objname }}
 
-.. include:: {{module}}.{{objname}}.examples
-
-
-{{ fullname | escape | underline}}
-
-.. currentmodule:: {{ module }}
-
-.. autoclass:: {{ objname }}
-
    {% block methods %}
    {% if methods %}
    .. rubric:: {{ _('Methods') }}
@@ -25,6 +16,13 @@
    {% endif %}
    {% endblock %}
 
-.. raw:: html
+   {% block attributes %}
+   {% if attributes %}
+   .. rubric:: {{ _('Attributes') }}
 
-    <div class="clearer"></div>
+   .. autosummary::
+   {% for item in attributes %}
+      ~{{ name }}.{{ item }}
+   {%- endfor %}
+   {% endif %}
+   {% endblock %}

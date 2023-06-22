@@ -66,16 +66,10 @@
         {%- if pagename != "install" %}
         <div class="alert alert-danger p-1 mb-2" role="alert">
           <p class="text-center mb-0">
-          <strong>scikit-learn {{ release }}</strong><br/>
-          <a href="http://scikit-learn.org/dev/versions.html">Other versions</a>
+          <strong>LangChain {{ release }}</strong>
           </p>
         </div>
         {%- endif %}
-        <div class="alert alert-warning p-1 mb-2" role="alert">
-          <p class="text-center mb-0">
-            Please <a class="font-weight-bold" href="{{ pathto('about').replace('#', '') }}#citing-scikit-learn"><string>cite us</string></a> if you use the software.
-          </p>
-        </div>
             {%- if meta and meta['parenttoc']|tobool %}
             <div class="sk-sidebar-toc">
             {% set nav = get_nav_object(maxdepth=3, collapse=True, numbered=True) %}

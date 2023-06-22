@@ -49,7 +49,6 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",
-    "sphinx_tabs.tabs",
 ]
 source_suffix = [".rst"]
 
@@ -59,22 +58,25 @@ autodoc_pydantic_config_members = False
 autodoc_pydantic_model_show_config_summary = False
 autodoc_pydantic_model_show_validator_members = False
 autodoc_pydantic_model_show_validator_summary = False
-autodoc_pydantic_model_show_field_summary = False
-autodoc_pydantic_model_members = False
-autodoc_pydantic_model_undoc_members = False
-autodoc_pydantic_model_hide_paramlist = True
+# autodoc_pydantic_model_show_field_summary = True
+# autodoc_pydantic_model_members = False
+# autodoc_pydantic_model_undoc_members = False
+# autodoc_pydantic_model_hide_paramlist = True
 autodoc_pydantic_model_signature_prefix = "class"
 autodoc_pydantic_field_signature_prefix = "attribute"
-autodoc_pydantic_model_summary_list_order = "bysource"
-autodoc_member_order = "bysource"
+# autodoc_pydantic_model_summary_list_order = "bysource"
+autodoc_member_order = "groupwise"
+autoclass_content = "both"
+autodoc_typehints_format = "short"
+
 autodoc_default_options = {
     "members": True,
     "show-inheritance": True,
-    "inherited-members": True,
-    "undoc_members": True,
-    "inherited_members": "BaseModel",
+    "inherited-members": "BaseModel",
+    "undoc-members": True,
+    "special-members": "__call__",
 }
-autodoc_typehints = "description"
+# autodoc_typehints = "description"
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["templates"]
 
