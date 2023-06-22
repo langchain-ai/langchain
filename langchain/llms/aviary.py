@@ -1,7 +1,7 @@
 """Wrapper around Aviary"""
 import dataclasses
 import os
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union, cast
 
 import requests
 from pydantic import Extra, root_validator
@@ -19,11 +19,11 @@ class AviaryBackend:
     backend_url: str
     bearer: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.header = {"Authorization": self.bearer}
 
     @classmethod
-    def from_env(cls):
+    def from_env(cls) -> "AviaryBackend":
         aviary_url = os.getenv("AVIARY_URL")
         assert aviary_url, "AVIARY_URL must be set"
 
@@ -176,7 +176,7 @@ class Aviary(LLM):
             **kwargs,
         )
 
-        text = output["generated_text"]
+        text = cast(str, output["generated_text"])
         if stop:
             text = enforce_stop_tokens(text, stop)
 
