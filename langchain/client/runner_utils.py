@@ -224,9 +224,17 @@ async def _gather_with_concurrency(
                 tracer_queue.put_nowait(tracer)
             return result
 
-    return await asyncio.gather(
+    results = await asyncio.gather(
         *(run_coroutine_with_semaphore(function) for function in async_funcs)
     )
+    while tracer_queue:
+        try:
+            tracer = tracer_queue.get_nowait()
+        except asyncio.QueueEmpty:
+            break
+        if tracer:
+            tracer.wait_for_futures()
+    return results
 
 
 async def _tracer_initializer(session_name: Optional[str]) -> Optional[LangChainTracer]:
@@ -411,7 +419,9 @@ def run_on_examples(
         )
         if verbose:
             print(f"{i+1} processed", flush=True, end="\r")
-    results[str(example.id)] = result
+        results[str(example.id)] = result
+    if tracer:
+        tracer.wait_for_futures()
     return results
 
 
