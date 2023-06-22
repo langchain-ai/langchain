@@ -82,9 +82,6 @@ class Aviary(LLM):
     find out more about aviary at
     http://github.com/ray-project/aviary
 
-    The only dependency is the aviary sdk which can be installed via 
-    `pip install git+http://github.com/ray-project/aviary.git`
-
     To get a list of the models supported on an
     aviary, follow the instructions on the web site to
     install the aviary CLI and then use:
