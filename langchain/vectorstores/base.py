@@ -48,6 +48,20 @@ class VectorStore(ABC):
             List of ids from adding the texts into the vectorstore.
         """
 
+    def delete_by_id(self, ids: List[str]) -> None:
+        """Delete by vector ID.
+
+        Args:
+            ids: List of ids to delete.
+
+        Returns:
+            None.
+        """
+
+        raise NotImplementedError(
+            "delete_by_id method must be implemented by subclass."
+        )
+
     async def aadd_texts(
         self,
         texts: Iterable[str],

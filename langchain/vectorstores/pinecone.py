@@ -354,39 +354,6 @@ class Pinecone(VectorStore):
             pinecone.Index(index_name), embedding.embed_query, text_key, namespace
         )
 
-    def add_documents_by_id(
-        self, documents: List[Document], ids: List[str]
-    ) -> List[str]:
-        """Add the documents to vectorstore by ID.
-
-        Args:
-            documents: A sequence of documents to add.
-            ids: A sequence of ids to use for the documents.
-
-        Returns:
-            A list of ids of the added documents. Auto-assigned if not provided.
-        """
-        texts = [document.page_content for document in documents]
-        metadatas = [document.metadata for document in documents]
-        return self.add_texts(texts=texts, metadatas=metadatas, ids=ids)
-
-    def update_documents_by_id(
-        self, documents: List[Document], ids: List[str]
-    ) -> List[str]:
-        """Update the documents.
-
-        Args:
-            documents: A sequence of documents to add.
-            ids: A sequence of ids to use for the documents.
-
-        Returns:
-            A list of ids of the added documents. Auto-assigned if not provided.
-        """
-        texts = [document.page_content for document in documents]
-        metadatas = [document.metadata for document in documents]
-        # Upsert, in add_text, will handle update by ID
-        return self.add_texts(texts=texts, metadatas=metadatas, ids=ids)
-
     def delete_by_id(self, ids: List[str]) -> None:
         """Delete by vector IDs.
 

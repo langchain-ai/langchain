@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from itertools import repeat
 from typing import (
     TYPE_CHECKING,
@@ -70,12 +71,14 @@ class SupabaseVectorStore(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict[Any, Any]]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
         docs = self._texts_to_documents(texts, metadatas)
 
         vectors = self._embedding.embed_documents(list(texts))
-        return self.add_vectors(vectors, docs)
+        return self.add_vectors(vectors, docs, ids)
 
     @classmethod
     def from_texts(
@@ -86,6 +89,7 @@ class SupabaseVectorStore(VectorStore):
         client: Optional[supabase.client.Client] = None,
         table_name: Optional[str] = "documents",
         query_name: Union[str, None] = "match_documents",
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> "SupabaseVectorStore":
         """Return VectorStore initialized from texts and embeddings."""
@@ -97,8 +101,9 @@ class SupabaseVectorStore(VectorStore):
             raise ValueError("Supabase document table_name is required.")
 
         embeddings = embedding.embed_documents(texts)
+        ids = [str(uuid.uuid4()) for _ in texts]
         docs = cls._texts_to_documents(texts, metadatas)
-        _ids = cls._add_vectors(client, table_name, embeddings, docs)
+        _ids = cls._add_vectors(client, table_name, embeddings, docs, ids)
 
         return cls(
             client=client,
@@ -108,9 +113,12 @@ class SupabaseVectorStore(VectorStore):
         )
 
     def add_vectors(
-        self, vectors: List[List[float]], documents: List[Document]
+        self,
+        vectors: List[List[float]],
+        documents: List[Document],
+        ids: List[str],
     ) -> List[str]:
-        return self._add_vectors(self._client, self.table_name, vectors, documents)
+        return self._add_vectors(self._client, self.table_name, vectors, documents, ids)
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -200,11 +208,13 @@ class SupabaseVectorStore(VectorStore):
         table_name: str,
         vectors: List[List[float]],
         documents: List[Document],
+        ids: List[str],
     ) -> List[str]:
         """Add vectors to Supabase table."""
 
         rows: List[dict[str, Any]] = [
             {
+                "id": ids[idx],
                 "content": documents[idx].page_content,
                 "embedding": embedding,
                 "metadata": documents[idx].metadata,  # type: ignore
@@ -219,7 +229,7 @@ class SupabaseVectorStore(VectorStore):
         for i in range(0, len(rows), chunk_size):
             chunk = rows[i : i + chunk_size]
 
-            result = client.from_(table_name).insert(chunk).execute()  # type: ignore
+            result = client.from_(table_name).upsert(chunk).execute()  # type: ignore
 
             if len(result.data) == 0:
                 raise Exception("Error inserting: No rows added")
@@ -336,82 +346,6 @@ class SupabaseVectorStore(VectorStore):
         )
         return docs
 
-    def add_documents_by_id(
-        self, documents: List[Document], ids: List[str]
-    ) -> List[str]:
-        """Add the documents to vectorstore by ID.
-
-        Args:
-            documents: A sequence of documents to add.
-            ids: A sequence of ids to use for the documents.
-
-        Returns:
-            A list of ids of the added documents. Auto-assigned if not provided.
-        """
-        texts = [document.page_content for document in documents]
-        metadatas = [document.metadata for document in documents]
-        embeddings = self._embedding.embed_documents(texts)
-        rows: List[dict[str, Any]] = [
-            {
-                "content": text,
-                "embedding": embedding,
-                "id": id,
-                "metadata": metadata,
-            }
-            for text, metadata, id, embedding in zip(texts, metadatas, ids, embeddings)
-        ]
-
-        # Handle each insert individually to avoid conflicting IDs
-        for row in rows:
-            # Check if ID exists
-            existing = (
-                self._client.from_(self.table_name)
-                .select("id")
-                .eq("id", row["id"])
-                .execute()
-            )
-            if existing:
-                self._client.from_(self.table_name).update(row).eq(
-                    "id", row["id"]
-                ).execute()
-            else:
-                self._client.from_(self.table_name).insert(row).execute()
-
-        return ids
-
-    def update_documents_by_id(
-        self, documents: List[Document], ids: List[str]
-    ) -> List[str]:
-        """Update the documents.
-
-        Args:
-            documents: A sequence of documents to add.
-            ids: A sequence of ids to use for the documents.
-
-        Returns:
-            A list of ids of the added documents. Auto-assigned if not provided.
-        """
-        texts = [document.page_content for document in documents]
-        metadatas = [document.metadata for document in documents]
-        embeddings = self._embedding.embed_documents(texts)
-        rows: List[dict[str, Any]] = [
-            {
-                "content": text,
-                "embedding": embedding,
-                "id": id,
-                "metadata": metadata,
-            }
-            for text, metadata, id, embedding in zip(texts, metadatas, ids, embeddings)
-        ]
-
-        # Only update the row where the id is equal to the id of the current row
-        for row in rows:
-            self._client.from_(self.table_name).update(row).eq(
-                "id", row["id"]
-            ).execute()
-
-        return ids
-
     def delete_by_id(self, ids: List[str]) -> None:
         """Delete by vector IDs.
 
@@ -425,5 +359,6 @@ class SupabaseVectorStore(VectorStore):
             for id in ids
         ]
 
+        # TODO: Check if this can be done in bulk
         for row in rows:
             self._client.from_(self.table_name).delete().eq("id", row["id"]).execute()
