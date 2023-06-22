@@ -11,13 +11,13 @@ from langchain.experimental.plan_and_execute.schema import Plan, PlanOutputParse
 class BasePlanner(BaseModel):
     @abstractmethod
     def plan(self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any) -> Plan:
-        """Given input, decided what to do."""
+        """Given input, decide what to do."""
 
     @abstractmethod
     async def aplan(
         self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any
     ) -> Plan:
-        """Given input, decided what to do."""
+        """Given input, decide what to do."""
 
 
 class LLMPlanner(BasePlanner):
@@ -26,14 +26,14 @@ class LLMPlanner(BasePlanner):
     stop: Optional[List] = None
 
     def plan(self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any) -> Plan:
-        """Given input, decided what to do."""
+        """Given input, decide what to do."""
         llm_response = self.llm_chain.run(**inputs, stop=self.stop, callbacks=callbacks)
         return self.output_parser.parse(llm_response)
 
     async def aplan(
         self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any
     ) -> Plan:
-        """Given input, decided what to do."""
+        """Given input, decide what to do."""
         llm_response = await self.llm_chain.arun(
             **inputs, stop=self.stop, callbacks=callbacks
         )
