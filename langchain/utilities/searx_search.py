@@ -120,7 +120,8 @@ Public searxNG instances often use a rate limiter for API usage, so you might wa
 use a self hosted instance and disable the rate limiter.
 
 If you are self-hosting an instance you can customize the rate limiter for your
-own network as described `here <https://github.com/searxng/searxng/pull/2129>`_.
+own network as described
+`here <https://docs.searxng.org/src/searx.botdetection.html#limiter-src>`_.
 
 
 For a list of public SearxNG instances see https://searx.space/

@@ -1,3 +1,4 @@
+import datetime
 from typing import Any, Optional, Sequence, Union
 
 try:
@@ -34,12 +35,14 @@ GRAMMAR = """
 
     ?value: SIGNED_INT -> int
         | SIGNED_FLOAT -> float
+        | TIMESTAMP -> timestamp
         | list
         | string
         | ("false" | "False" | "FALSE") -> false
         | ("true" | "True" | "TRUE") -> true
 
     args: expr ("," expr)*
+    TIMESTAMP.2: /["'](\d{4}-[01]\d-[0-3]\d)["']/
     string: /'[^']*'/ | ESCAPED_STRING
     list: "[" [args] "]"
 
@@ -119,6 +122,10 @@ class QueryTransformer(Transformer):
 
     def float(self, item: Any) -> float:
         return float(item)
+
+    def timestamp(self, item: Any) -> datetime.date:
+        item = item.replace("'", '"')
+        return datetime.datetime.strptime(item, '"%Y-%m-%d"').date()
 
     def string(self, item: Any) -> str:
         # Remove escaped quotes

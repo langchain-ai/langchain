@@ -394,7 +394,7 @@ class Tool(BaseTool):
         # For backwards compatibility. The tool must be run with a single input
         all_args = list(args) + list(kwargs.values())
         if len(all_args) != 1:
-            raise ValueError(
+            raise ToolException(
                 f"Too many arguments to single-input tool {self.name}."
                 f" Args: {all_args}"
             )
