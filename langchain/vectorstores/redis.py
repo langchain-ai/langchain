@@ -56,8 +56,9 @@ def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -
             return
     # otherwise raise error
     error_message = (
-        "You must add the RediSearch (>= 2.4) module from Redis Stack. "
-        "Please refer to Redis Stack docs: https://redis.io/docs/stack/"
+        "Redis cannot be used as a vector database without RediSearch >=2.4"
+        "Please head to https://redis.io/docs/stack/search/quick_start/"
+        "to know more about installing the RediSearch module within Redis Stack."
     )
     logging.error(error_message)
     raise ValueError(error_message)
@@ -126,7 +127,7 @@ class Redis(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
-                "Please install it with `pip install redis`."
+                "Please install it with `pip install redis>=4.1.0`."
             )
 
         self.embedding_function = embedding_function
@@ -351,14 +352,14 @@ class Redis(VectorStore):
         if self.relevance_score_fn is None:
             raise ValueError(
                 "relevance_score_fn must be provided to"
-                " Weaviate constructor to normalize scores"
+                " Redis constructor to normalize scores"
             )
         docs_and_scores = self.similarity_search_with_score(query, k=k)
         return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
 
     @classmethod
     def from_texts_return_keys(
-        cls: Type[Redis],
+        cls,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -397,9 +398,9 @@ class Redis(VectorStore):
 
         # Create instance
         instance = cls(
-            redis_url=redis_url,
-            index_name=index_name,
-            embedding_function=embedding.embed_query,
+            redis_url,
+            index_name,
+            embedding.embed_query,
             content_key=content_key,
             metadata_key=metadata_key,
             vector_key=vector_key,
@@ -446,15 +447,14 @@ class Redis(VectorStore):
                 )
         """
         instance, _ = cls.from_texts_return_keys(
-            cls=cls,
-            texts=texts,
-            embedding=embedding,
+            texts,
+            embedding,
             metadatas=metadatas,
             index_name=index_name,
             content_key=content_key,
             metadata_key=metadata_key,
             vector_key=vector_key,
-            kwargs=kwargs,
+            **kwargs,
         )
         return instance
 

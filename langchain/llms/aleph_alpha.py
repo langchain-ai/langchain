@@ -23,7 +23,7 @@ class AlephAlpha(LLM):
         .. code-block:: python
 
             from langchain.llms import AlephAlpha
-            alpeh_alpha = AlephAlpha(aleph_alpha_api_key="my-api-key")
+            aleph_alpha = AlephAlpha(aleph_alpha_api_key="my-api-key")
     """
 
     client: Any  #: :meta private:
@@ -148,7 +148,7 @@ class AlephAlpha(LLM):
 
             values["client"] = aleph_alpha_client.Client(token=aleph_alpha_api_key)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
@@ -199,13 +199,14 @@ class AlephAlpha(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "alpeh_alpha"
+        return "aleph_alpha"
 
     def _call(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Aleph Alpha's completion endpoint.
 
@@ -219,7 +220,7 @@ class AlephAlpha(LLM):
         Example:
             .. code-block:: python
 
-                response = alpeh_alpha("Tell me a joke.")
+                response = aleph_alpha("Tell me a joke.")
         """
         from aleph_alpha_client import CompletionRequest, Prompt
 
@@ -232,6 +233,7 @@ class AlephAlpha(LLM):
             params["stop_sequences"] = self.stop_sequences
         else:
             params["stop_sequences"] = stop
+        params = {**params, **kwargs}
         request = CompletionRequest(prompt=Prompt.from_text(prompt), **params)
         response = self.client.complete(model=self.model, request=request)
         text = response.completions[0].completion

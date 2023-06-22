@@ -9,7 +9,7 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
-VALID_TASKS = ("text2text-generation", "text-generation")
+VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 
 class HuggingFaceEndpoint(LLM):
@@ -37,7 +37,8 @@ class HuggingFaceEndpoint(LLM):
     endpoint_url: str = ""
     """Endpoint URL to use."""
     task: Optional[str] = None
-    """Task to call the model with. Should be a task that returns `generated_text`."""
+    """Task to call the model with.
+    Should be a task that returns `generated_text` or `summary_text`."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
@@ -95,6 +96,7 @@ class HuggingFaceEndpoint(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
 
@@ -113,7 +115,8 @@ class HuggingFaceEndpoint(LLM):
         _model_kwargs = self.model_kwargs or {}
 
         # payload samples
-        parameter_payload = {"inputs": prompt, "parameters": _model_kwargs}
+        params = {**_model_kwargs, **kwargs}
+        parameter_payload = {"inputs": prompt, "parameters": params}
 
         # HTTP headers for authorization
         headers = {
@@ -138,6 +141,8 @@ class HuggingFaceEndpoint(LLM):
             text = generated_text[0]["generated_text"][len(prompt) :]
         elif self.task == "text2text-generation":
             text = generated_text[0]["generated_text"]
+        elif self.task == "summarization":
+            text = generated_text[0]["summary_text"]
         else:
             raise ValueError(
                 f"Got invalid task {self.task}, "

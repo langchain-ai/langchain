@@ -1,0 +1,57 @@
+# C Transformers
+
+This page covers how to use the [C Transformers](https://github.com/marella/ctransformers) library within LangChain.
+It is broken into two parts: installation and setup, and then references to specific C Transformers wrappers.
+
+## Installation and Setup
+
+- Install the Python package with `pip install ctransformers`
+- Download a supported [GGML model](https://huggingface.co/TheBloke) (see [Supported Models](https://github.com/marella/ctransformers#supported-models))
+
+## Wrappers
+
+### LLM
+
+There exists a CTransformers LLM wrapper, which you can access with:
+
+```python
+from langchain.llms import CTransformers
+```
+
+It provides a unified interface for all models:
+
+```python
+llm = CTransformers(model='/path/to/ggml-gpt-2.bin', model_type='gpt2')
+
+print(llm('AI is going to'))
+```
+
+If you are getting `illegal instruction` error, try using `lib='avx'` or `lib='basic'`:
+
+```py
+llm = CTransformers(model='/path/to/ggml-gpt-2.bin', model_type='gpt2', lib='avx')
+```
+
+It can be used with models hosted on the Hugging Face Hub:
+
+```py
+llm = CTransformers(model='marella/gpt-2-ggml')
+```
+
+If a model repo has multiple model files (`.bin` files), specify a model file using:
+
+```py
+llm = CTransformers(model='marella/gpt-2-ggml', model_file='ggml-model.bin')
+```
+
+Additional parameters can be passed using the `config` parameter:
+
+```py
+config = {'max_new_tokens': 256, 'repetition_penalty': 1.1}
+
+llm = CTransformers(model='marella/gpt-2-ggml', config=config)
+```
+
+See [Documentation](https://github.com/marella/ctransformers#config) for a list of available parameters.
+
+For a more detailed walkthrough of this, see [this notebook](/docs/modules/model_io/models/llms/integrations/ctransformers.html).

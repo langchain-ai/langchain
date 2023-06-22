@@ -1,0 +1,21 @@
+```python
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage
+)
+
+chat = ChatOpenAI(temperature=0)
+chat.predict_messages([HumanMessage(content="Translate this sentence from English to French. I love programming.")])
+# >> AIMessage(content="J'aime programmer.", additional_kwargs={})
+```
+
+It is useful to understand how chat models are different from a normal LLM, but it can often be handy to just be able to treat them the same.
+LangChain makes that easy by also exposing an interface through which you can interact with a chat model as you would a normal LLM.
+You can access this through the `predict` interface.
+
+```python
+chat.predict("Translate this sentence from English to French. I love programming.")
+# >> J'aime programmer
+```

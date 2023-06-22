@@ -58,7 +58,7 @@ class SitemapLoader(WebBaseLoader):
         try:
             import lxml  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "lxml package not found, please install it with " "`pip install lxml`"
             )
 
@@ -79,8 +79,11 @@ class SitemapLoader(WebBaseLoader):
             if not loc:
                 continue
 
+            # Strip leading and trailing whitespace and newlines
+            loc_text = loc.text.strip()
+
             if self.filter_urls and not any(
-                re.match(r, loc.text) for r in self.filter_urls
+                re.match(r, loc_text) for r in self.filter_urls
             ):
                 continue
 
@@ -107,8 +110,9 @@ class SitemapLoader(WebBaseLoader):
             try:
                 import bs4
             except ImportError:
-                raise ValueError(
-                    "bs4 package not found, please install it with " "`pip install bs4`"
+                raise ImportError(
+                    "beautifulsoup4 package not found, please install it"
+                    " with `pip install beautifulsoup4`"
                 )
             fp = open(self.web_path)
             soup = bs4.BeautifulSoup(fp, "xml")

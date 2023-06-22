@@ -41,7 +41,7 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
 
             values["apify_client"] = ApifyClient()
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import apify-client Python package. "
                 "Please install it with `pip install apify-client`."
             )

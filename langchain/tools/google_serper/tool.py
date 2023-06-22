@@ -15,7 +15,7 @@ from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 class GoogleSerperRun(BaseTool):
     """Tool that adds the capability to query the Serper.dev Google search API."""
 
-    name = "Google Serper"
+    name = "google_serper"
     description = (
         "A low-cost Google Search API."
         "Useful for when you need to answer questions about current events."

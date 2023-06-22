@@ -3,9 +3,19 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
-from pydantic import Extra, Field, root_validator
+from pydantic import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -25,12 +35,28 @@ from langchain.schema import (
     ChatGeneration,
     ChatMessage,
     ChatResult,
+    FunctionMessage,
     HumanMessage,
     SystemMessage,
 )
 from langchain.utils import get_from_dict_or_env
 
+if TYPE_CHECKING:
+    import tiktoken
+
 logger = logging.getLogger(__name__)
+
+
+def _import_tiktoken() -> Any:
+    try:
+        import tiktoken
+    except ImportError:
+        raise ValueError(
+            "Could not import tiktoken python package. "
+            "This is needed in order to calculate get_token_ids. "
+            "Please install it with `pip install tiktoken`."
+        )
+    return tiktoken
 
 
 def _create_retry_decorator(llm: ChatOpenAI) -> Callable[[Any], Any]:
@@ -67,14 +93,21 @@ async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
     return await _completion_with_retry(**kwargs)
 
 
-def _convert_dict_to_message(_dict: dict) -> BaseMessage:
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict["role"]
     if role == "user":
         return HumanMessage(content=_dict["content"])
     elif role == "assistant":
-        return AIMessage(content=_dict["content"])
+        content = _dict["content"] or ""  # OpenAI returns None for tool invocations
+        if _dict.get("function_call"):
+            additional_kwargs = {"function_call": dict(_dict["function_call"])}
+        else:
+            additional_kwargs = {}
+        return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
+    elif role == "function":
+        return FunctionMessage(content=_dict["content"], name=_dict["name"])
     else:
         return ChatMessage(content=_dict["content"], role=role)
 
@@ -86,8 +119,16 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+        if "function_call" in message.additional_kwargs:
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, FunctionMessage):
+        message_dict = {
+            "role": "function",
+            "content": message.content,
+            "name": message.name,
+        }
     else:
         raise ValueError(f"Got unknown type {message}")
     if "name" in message.additional_kwargs:
@@ -111,8 +152,16 @@ class ChatOpenAI(BaseChatModel):
             openai = ChatOpenAI(model_name="gpt-3.5-turbo")
     """
 
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"openai_api_key": "OPENAI_API_KEY"}
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     client: Any  #: :meta private:
-    model_name: str = "gpt-3.5-turbo"
+    model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -123,6 +172,8 @@ class ChatOpenAI(BaseChatModel):
     leave blank if not using a proxy or service emulator."""
     openai_api_base: Optional[str] = None
     openai_organization: Optional[str] = None
+    # to support explicit proxy for OpenAI
+    openai_proxy: Optional[str] = None
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     max_retries: int = 6
@@ -137,13 +188,12 @@ class ChatOpenAI(BaseChatModel):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.ignore
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
-
+        all_required_field_names = cls.all_required_field_names()
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
@@ -156,8 +206,7 @@ class ChatOpenAI(BaseChatModel):
                 )
                 extra[field_name] = values.pop(field_name)
 
-        disallowed_model_kwargs = all_required_field_names | {"model"}
-        invalid_model_kwargs = disallowed_model_kwargs.intersection(extra.keys())
+        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
         if invalid_model_kwargs:
             raise ValueError(
                 f"Parameters {invalid_model_kwargs} should be specified explicitly. "
@@ -170,19 +219,25 @@ class ChatOpenAI(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        openai_api_key = get_from_dict_or_env(
+        values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        openai_organization = get_from_dict_or_env(
+        values["openai_organization"] = get_from_dict_or_env(
             values,
             "openai_organization",
             "OPENAI_ORGANIZATION",
             default="",
         )
-        openai_api_base = get_from_dict_or_env(
+        values["openai_api_base"] = get_from_dict_or_env(
             values,
             "openai_api_base",
             "OPENAI_API_BASE",
+            default="",
+        )
+        values["openai_proxy"] = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
             default="",
         )
         try:
@@ -193,11 +248,6 @@ class ChatOpenAI(BaseChatModel):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        openai.api_key = openai_api_key
-        if openai_organization:
-            openai.organization = openai_organization
-        if openai_api_base:
-            openai.api_base = openai_api_base
         try:
             values["client"] = openai.ChatCompletion
         except AttributeError:
@@ -275,22 +325,35 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
         if self.streaming:
             inner_completion = ""
             role = "assistant"
             params["stream"] = True
+            function_call: Optional[dict] = None
             for stream_resp in self.completion_with_retry(
                 messages=message_dicts, **params
             ):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content", "")
+                token = stream_resp["choices"][0]["delta"].get("content") or ""
                 inner_completion += token
+                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
+                if _function_call:
+                    if function_call is None:
+                        function_call = _function_call
+                    else:
+                        function_call["arguments"] += _function_call["arguments"]
                 if run_manager:
                     run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
-                {"content": inner_completion, "role": role}
+                {
+                    "content": inner_completion,
+                    "role": role,
+                    "function_call": function_call,
+                }
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
         response = self.completion_with_retry(messages=message_dicts, **params)
@@ -299,7 +362,7 @@ class ChatOpenAI(BaseChatModel):
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
+        params = dict(self._invocation_params)
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
@@ -321,22 +384,35 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
         if self.streaming:
             inner_completion = ""
             role = "assistant"
             params["stream"] = True
+            function_call: Optional[dict] = None
             async for stream_resp in await acompletion_with_retry(
                 self, messages=message_dicts, **params
             ):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content", "")
-                inner_completion += token
+                inner_completion += token or ""
+                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
+                if _function_call:
+                    if function_call is None:
+                        function_call = _function_call
+                    else:
+                        function_call["arguments"] += _function_call["arguments"]
                 if run_manager:
                     await run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
-                {"content": inner_completion, "role": role}
+                {
+                    "content": inner_completion,
+                    "role": role,
+                    "function_call": function_call,
+                }
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:
@@ -351,46 +427,27 @@ class ChatOpenAI(BaseChatModel):
         return {**{"model_name": self.model_name}, **self._default_params}
 
     @property
+    def _invocation_params(self) -> Mapping[str, Any]:
+        """Get the parameters used to invoke the model."""
+        openai_creds: Dict[str, Any] = {
+            "api_key": self.openai_api_key,
+            "api_base": self.openai_api_base,
+            "organization": self.openai_organization,
+            "model": self.model_name,
+        }
+        if self.openai_proxy:
+            import openai
+
+            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
+        return {**openai_creds, **self._default_params}
+
+    @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "openai-chat"
 
-    def get_num_tokens(self, text: str) -> int:
-        """Calculate num tokens with tiktoken package."""
-        # tiktoken NOT supported for Python 3.7 or below
-        if sys.version_info[1] <= 7:
-            return super().get_num_tokens(text)
-        try:
-            import tiktoken
-        except ImportError:
-            raise ValueError(
-                "Could not import tiktoken python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please install it with `pip install tiktoken`."
-            )
-        # create a GPT-3.5-Turbo encoder instance
-        enc = tiktoken.encoding_for_model(self.model_name)
-
-        # encode the text using the GPT-3.5-Turbo encoder
-        tokenized_text = enc.encode(text)
-
-        # calculate the number of tokens in the encoded text
-        return len(tokenized_text)
-
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
-        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
-
-        Official documentation: https://github.com/openai/openai-cookbook/blob/
-        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
-        try:
-            import tiktoken
-        except ImportError:
-            raise ValueError(
-                "Could not import tiktoken python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please install it with `pip install tiktoken`."
-            )
-
+    def _get_encoding_model(self) -> Tuple[str, tiktoken.Encoding]:
+        tiktoken_ = _import_tiktoken()
         model = self.model_name
         if model == "gpt-3.5-turbo":
             # gpt-3.5-turbo may change over time.
@@ -400,20 +457,37 @@ class ChatOpenAI(BaseChatModel):
             # gpt-4 may change over time.
             # Returning num tokens assuming gpt-4-0314.
             model = "gpt-4-0314"
-
         # Returns the number of tokens used by a list of messages.
         try:
-            encoding = tiktoken.encoding_for_model(model)
+            encoding = tiktoken_.encoding_for_model(model)
         except KeyError:
             logger.warning("Warning: model not found. Using cl100k_base encoding.")
-            encoding = tiktoken.get_encoding("cl100k_base")
+            model = "cl100k_base"
+            encoding = tiktoken_.get_encoding(model)
+        return model, encoding
 
-        if model == "gpt-3.5-turbo-0301":
+    def get_token_ids(self, text: str) -> List[int]:
+        """Get the tokens present in the text with tiktoken package."""
+        # tiktoken NOT supported for Python 3.7 or below
+        if sys.version_info[1] <= 7:
+            return super().get_token_ids(text)
+        _, encoding_model = self._get_encoding_model()
+        return encoding_model.encode(text)
+
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
+
+        Official documentation: https://github.com/openai/openai-cookbook/blob/
+        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
+        if sys.version_info[1] <= 7:
+            return super().get_num_tokens_from_messages(messages)
+        model, encoding = self._get_encoding_model()
+        if model.startswith("gpt-3.5-turbo"):
             # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model == "gpt-4-0314":
+        elif model.startswith("gpt-4"):
             tokens_per_message = 3
             tokens_per_name = 1
         else:

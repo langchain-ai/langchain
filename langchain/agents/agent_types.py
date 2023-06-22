@@ -11,3 +11,5 @@ class AgentType(str, Enum):
     STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION = (
         "structured-chat-zero-shot-react-description"
     )
+    OPENAI_FUNCTIONS = "openai-functions"
+    OPENAI_MULTI_FUNCTIONS = "openai-multi-functions"

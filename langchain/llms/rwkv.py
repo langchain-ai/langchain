@@ -103,7 +103,7 @@ class RWKV(LLM, BaseModel):
         try:
             import tokenizers
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tokenizers python package. "
                 "Please install it with `pip install tokenizers`."
             )
@@ -140,7 +140,7 @@ class RWKV(LLM, BaseModel):
     @property
     def _llm_type(self) -> str:
         """Return the type of llm."""
-        return "rwkv-4"
+        return "rwkv"
 
     def run_rnn(self, _tokens: List[str], newline_adj: int = 0) -> Any:
         AVOID_REPEAT_TOKENS = []
@@ -210,6 +210,7 @@ class RWKV(LLM, BaseModel):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         r"""RWKV generation
 

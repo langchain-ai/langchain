@@ -54,7 +54,7 @@ class NetworkxEntityGraph:
         try:
             import networkx as nx
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import networkx python package. "
                 "Please install it with `pip install networkx`."
             )
@@ -70,7 +70,7 @@ class NetworkxEntityGraph:
         try:
             import networkx as nx
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import networkx python package. "
                 "Please install it with `pip install networkx`."
             )
