@@ -4,6 +4,7 @@ from langchainplus_sdk.evaluation import EvaluationResult
 from langchainplus_sdk.schemas import Example, Run, RunTypeEnum
 from pydantic import BaseModel, Field
 
+from langchain import evaluation
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
@@ -111,10 +112,12 @@ def get_qa_evaluator(
             choices_map={"CORRECT": 1, "INCORRECT": 0},
         ),
     )
+    tags = kwargs.pop("tags", [])
     return RunEvaluatorChain(
         eval_chain=eval_chain,
         input_mapper=input_mapper,
         output_parser=output_parser,
+        tags=tags + [evaluation_name],
         **kwargs,
     )
 
@@ -192,10 +195,12 @@ def get_criteria_evaluator(
         ),
     )
     eval_chain = LLMChain(llm=llm, prompt=prompt_, **kwargs)
+    tags = kwargs.pop("tags", [])
     return RunEvaluatorChain(
         eval_chain=eval_chain,
         input_mapper=input_mapper,
         output_parser=parser,
+        tags=tags + [evaluation_name],
         **kwargs,
     )
 
@@ -314,9 +319,11 @@ def get_trajectory_evaluator(
         TrajectoryEvalOutputParser(evaluation_name=evaluation_name),
     )
     eval_chain = LLMChain(llm=llm, prompt=prompt, **kwargs)
+    tags = kwargs.pop("tags", [])
     return RunEvaluatorChain(
         eval_chain=eval_chain,
         input_mapper=input_mapper,
         output_parser=parser,
+        tags=tags + [evaluation_name],
         **kwargs,
     )
