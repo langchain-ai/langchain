@@ -47,7 +47,7 @@ class OctoAIEmbeddings(BaseModel, Embeddings):
         return {"endpoint_url": self.endpoint_url, "model_kwargs": self.model_kwargs or {}}
    
     def _compute_embeddings(self, texts: List[str], instruction: str) -> List[List[float]]:
-        """Common functionality for compute embeddings using a OctoAI instruct model."""
+        """Common functionality for compute embeddings using an OctoAI instruct model."""
         embeddings = []
         octoai_client = client.Client(token=self.octoai_api_token)
 
@@ -70,7 +70,7 @@ class OctoAIEmbeddings(BaseModel, Embeddings):
             
         return embeddings
     
-    def embed_documents(self, texts: List[str]) -> List[float]:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute document embeddings using an OctoAI instruct model."""
         texts = list(map(lambda x: x.replace("\n", " "), texts))
         return self._compute_embeddings(texts, self.embed_instruction)
@@ -78,5 +78,5 @@ class OctoAIEmbeddings(BaseModel, Embeddings):
     def embed_query(self, text: str) -> List[float]:
         """Compute query embedding using an OctoAI instruct model."""
         text = text.replace("\n", " ")
-        return self._compute_embeddings([text], self.embed_instruction)
+        return self._compute_embeddings([text], self.embed_instruction)[0]
 
