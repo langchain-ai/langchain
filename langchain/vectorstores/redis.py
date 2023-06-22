@@ -116,9 +116,7 @@ class Redis(VectorStore):
         content_key: str = "content",
         metadata_key: str = "metadata",
         vector_key: str = "content_vector",
-        relevance_score_fn: Optional[
-            Callable[[float], float]
-        ] = _default_relevance_score,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
@@ -145,6 +143,13 @@ class Redis(VectorStore):
         self.metadata_key = metadata_key
         self.vector_key = vector_key
         self.relevance_score_fn = relevance_score_fn
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return (
+            self.relevance_score_fn
+            if self.relevance_score_fn
+            else _default_relevance_score
+        )
 
     def _create_index(
         self, dim: int = 1536, distance_metric: REDIS_DISTANCE_METRICS = "COSINE"

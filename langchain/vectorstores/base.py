@@ -181,11 +181,9 @@ class VectorStore(ABC):
         Returns:
             List of Tuples of (doc, similarity_score)
         """
-        assert (
-            self.relevance_score_fn is not None
-        ), "Vectorstore must specify a relevance score."
+        relevance_score_fn = self._select_relevance_score_fn()
         docs_and_scores = self.similarity_search_with_score(query, k, **kwargs)
-        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
+        return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
 
     def similarity_search_with_relevance_scores(
         self,

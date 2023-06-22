@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import typing
-from typing import Any, Iterable, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar
 
 import numpy as np
 
@@ -84,7 +84,9 @@ class Cassandra(VectorStore):
             embedding_dimension=self._getEmbeddingDimension(),
             auto_id=False,  # the `add_texts` contract admits user-provided ids
         )
-        self.relevance_score_fn = self._cosine_relevance_score_fn
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return self._cosine_relevance_score_fn
 
     def delete_collection(self) -> None:
         """

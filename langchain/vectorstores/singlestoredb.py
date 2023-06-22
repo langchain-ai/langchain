@@ -5,6 +5,7 @@ import enum
 import json
 from typing import (
     Any,
+    Callable,
     ClassVar,
     Collection,
     Iterable,
@@ -210,7 +211,9 @@ class SingleStoreDB(VectorStore):
             timeout=timeout,
         )
         self._create_table()
-        self.relevance_score_fn = self._max_inner_product_relevance_score_fn
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return self._max_inner_product_relevance_score_fn
 
     def _create_table(self: SingleStoreDB) -> None:
         """Create table if it doesn't exist."""

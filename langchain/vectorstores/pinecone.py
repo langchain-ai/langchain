@@ -61,7 +61,6 @@ class Pinecone(VectorStore):
         self._text_key = text_key
         self._namespace = namespace
         self.distance_strategy = distance_strategy
-        self.relevance_score_fn = self._select_relevance_score_fn()
 
     def add_texts(
         self,

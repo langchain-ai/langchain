@@ -66,6 +66,7 @@ class FAISS(VectorStore):
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         normalize_L2: bool = False,
         distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
     ):
@@ -75,7 +76,7 @@ class FAISS(VectorStore):
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
         self.distance_strategy = distance_strategy
-        self.relevance_score_fn = self._select_relevance_score_fn()
+        self.override_relevance_score_fn = relevance_score_fn
         self._normalize_L2 = normalize_L2
         if (
             self.distance_strategy != DistanceStrategy.EUCLIDEAN_DISTANCE
@@ -624,6 +625,10 @@ class FAISS(VectorStore):
         - embedding dimensionality
         - etc.
         """
+        if self.override_relevance_score_fn is not None:
+            return self.override_relevance_score_fn
+
+        # Default strategy is to rely on distance strategy provided in vectorstore constructor
         if self.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             return self._max_inner_product_relevance_score_fn
         elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
@@ -643,7 +648,8 @@ class FAISS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
-        if self.relevance_score_fn is None:
+        relevance_score_fn = self._select_relevance_score_fn()
+        if relevance_score_fn is None:
             raise ValueError(
                 "normalize_score_fn must be provided to"
                 " FAISS constructor to normalize scores"
@@ -655,4 +661,4 @@ class FAISS(VectorStore):
             fetch_k=fetch_k,
             **kwargs,
         )
-        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
+        return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]

@@ -118,6 +118,13 @@ class Weaviate(VectorStore):
         if attributes is not None:
             self._query_attrs.extend(attributes)
 
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return (
+            self.relevance_score_fn
+            if self.relevance_score_fn
+            else _default_score_normalizer
+        )
+
     def add_texts(
         self,
         texts: Iterable[str],

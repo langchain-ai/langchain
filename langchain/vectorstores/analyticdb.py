@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type
 
 from sqlalchemy import REAL, Column, String, Table, create_engine, insert, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSON, TEXT
@@ -67,7 +67,9 @@ class AnalyticDB(VectorStore):
         """
         self.engine = create_engine(self.connection_string)
         self.create_collection()
-        self.relevance_score_fn = self._euclidean_relevance_score_fn
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return self._euclidean_relevance_score_fn
 
     def create_table_if_not_exists(self) -> None:
         # Define the dynamic table

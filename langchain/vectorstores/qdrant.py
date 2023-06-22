@@ -111,7 +111,6 @@ class Qdrant(VectorStore):
             self.embeddings = None
 
         self.distance_strategy = distance_strategy.upper()
-        self.relevance_score_fn = self._select_relevance_score_fn()
 
     def add_texts(
         self,

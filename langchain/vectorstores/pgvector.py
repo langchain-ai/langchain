@@ -137,9 +137,7 @@ class PGVector(VectorStore):
         self.distance_strategy = distance_strategy
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
-        self.relevance_score_fn = (
-            relevance_score_fn or self._select_relevance_score_fn()
-        )
+        self.override_relevance_score_fn = relevance_score_fn
         self.__post_init__()
 
     def __post_init__(
@@ -610,6 +608,10 @@ class PGVector(VectorStore):
         - embedding dimensionality
         - etc.
         """
+        if self.override_relevance_score_fn is not None:
+            return self.override_relevance_score_fn
+
+        # Default strategy is to rely on distance strategy provided in vectorstore constructor
         if self.distance_strategy == DistanceStrategy.COSINE:
             return self._cosine_relevance_score_fn
         elif self.distance_strategy == DistanceStrategy.EUCLIDEAN:
