@@ -3,7 +3,17 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 import numpy as np
 
@@ -399,6 +409,7 @@ class Chroma(VectorStore):
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         client: Optional[chromadb.Client] = None,
+        collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a raw documents.
@@ -414,6 +425,7 @@ class Chroma(VectorStore):
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
+            collection_metadata (Optional[Dict]): Collection configurations. Defaults to None.
 
         Returns:
             Chroma: Chroma vectorstore.
@@ -424,6 +436,8 @@ class Chroma(VectorStore):
             persist_directory=persist_directory,
             client_settings=client_settings,
             client=client,
+            collection_metadata=collection_metadata,
+            **kwargs,
         )
         chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return chroma_collection
@@ -438,6 +452,7 @@ class Chroma(VectorStore):
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         client: Optional[chromadb.Client] = None,  # Add this line
+        collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a list of documents.
@@ -452,6 +467,8 @@ class Chroma(VectorStore):
             documents (List[Document]): List of documents to add to the vectorstore.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
+            collection_metadata (Optional[Dict]): Collection configurations. Defaults to None.
+
         Returns:
             Chroma: Chroma vectorstore.
         """
@@ -466,4 +483,6 @@ class Chroma(VectorStore):
             persist_directory=persist_directory,
             client_settings=client_settings,
             client=client,
+            collection_metadata=collection_metadata,
+            **kwargs,
         )
