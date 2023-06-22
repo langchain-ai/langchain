@@ -25,7 +25,7 @@ for mod, clist in sorted(classes.items(), key=lambda kv: kv[0]):
         continue
     cstring = "\n    ".join(sorted(clist))
     mod_title = mod.replace("_", " ").title()
-    if mod_title == "Llm":
+    if mod_title == "Llms":
         mod_title = mod_title.upper()
     section = f":mod:`langchain.{mod}`: {mod_title}"
     doc = f"""\
