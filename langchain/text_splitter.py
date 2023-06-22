@@ -288,7 +288,7 @@ class MarkdownHeaderTextSplitter:
             headers_to_split_on, key=lambda split: len(split[0]), reverse=True
         )
 
-    def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[LineType]:
+    def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Document]:
         """Combine lines with common metadata into chunks
         Args:
             lines: Line of text / associated header metadata
@@ -307,9 +307,13 @@ class MarkdownHeaderTextSplitter:
             else:
                 # Otherwise, append the current line to the aggregated list
                 aggregated_chunks.append(line)
-        return aggregated_chunks
 
-    def split_text(self, text: str) -> List[LineType]:
+        return [
+            Document(page_content=chunk["content"], metadata=chunk["metadata"])
+            for chunk in aggregated_chunks
+        ]
+
+    def split_text(self, text: str) -> List[Document]:
         """Split markdown file
         Args:
             text: Markdown file"""
@@ -401,7 +405,10 @@ class MarkdownHeaderTextSplitter:
         if not self.return_each_line:
             return self.aggregate_lines_to_chunks(lines_with_metadata)
         else:
-            return lines_with_metadata
+            return [
+                Document(page_content=chunk["content"], metadata=chunk["metadata"])
+                for chunk in lines_with_metadata
+            ]
 
 
 # should be in newer Python versions (3.10+)
