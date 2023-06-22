@@ -153,6 +153,9 @@ class AmazonKendraRetriever(BaseRetriever):
     """
 
     language_code: Optional[str] = None
+    """Language code that the documents are indexed with.
+    See: https://docs.aws.amazon.com/kendra/latest/dg/in-adding-languages.html
+    """
     
     client: Optional[Any] = None
     """boto3 client for Kendra."""
