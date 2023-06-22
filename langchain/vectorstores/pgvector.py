@@ -324,7 +324,6 @@ class PGVector(VectorStore):
             filter=filter,
         )
 
-
     def similarity_search_with_score(
         self,
         query: str,

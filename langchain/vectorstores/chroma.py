@@ -263,7 +263,8 @@ class Chroma(VectorStore):
             raise ValueError(
                 "No supported normalization function"
                 f" for distance metric of type: {distance}."
-                "Consider providing relevance_score_fn to Chroma constructor.")
+                "Consider providing relevance_score_fn to Chroma constructor."
+            )
 
     def max_marginal_relevance_search_by_vector(
         self,
