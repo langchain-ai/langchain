@@ -88,11 +88,9 @@ class UnstructuredURLLoader(BaseLoader):
 
         docs: List[Document] = list()
         if self.show_progress_bar:
-            iterator = tqdm(self.urls)
-        else:
-            iterator = self.urls
+            self.urls = tqdm(self.urls)
 
-        for url in iterator:
+        for url in self.urls:
             try:
                 if self.__is_non_html_available():
                     if self.__is_headers_available_for_non_html():
