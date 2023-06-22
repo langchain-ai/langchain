@@ -1,10 +1,14 @@
 """Chain for wrapping a retriever."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 from langchain.schema import BaseRetriever, Document
 
@@ -43,6 +47,7 @@ class Retriever(Chain):
     def _call(
         self,
         inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Run _get_docs on input query.
 
@@ -66,6 +71,7 @@ class Retriever(Chain):
     async def _acall(
         self,
         inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Run _get_docs on input query.
 
