@@ -1,6 +1,7 @@
 """Wrapper around Aviary"""
 from typing import Any, Dict, List, Mapping, Optional
 
+import os
 import requests
 from pydantic import Extra, Field, root_validator
 
@@ -8,6 +9,8 @@ from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
+
+import aviary.api.sdk as aviary_sdk
 
 TIMEOUT = 60
 
@@ -19,33 +22,33 @@ class Aviary(LLM):
     find out more about aviary at
     http://github.com/ray-project/aviary
 
-    Has no dependencies, since it connects to backend
-    directly.
+    The only dependency is the aviary sdk which can be installed via 
+    `pip install git+http://github.com/ray-project/aviary.git`
 
     To get a list of the models supported on an
     aviary, follow the instructions on the web site to
     install the aviary CLI and then use:
     `aviary models`
 
-    You must at least specify the environment
-    variable or parameter AVIARY_URL.
-
-    You may optionally specify the environment variable
-    or parameter AVIARY_TOKEN.
+    AVIARY_URL and AVIARY_TOKEN environement variables must be set.
 
     Example:
         .. code-block:: python
 
             from langchain.llms import Aviary
-            light = Aviary(aviary_url='AVIARY_URL',
-                            model='amazon/LightGPT')
-
-            result = light.predict('How do you make fried rice?')
+            os.environ["AVIARY_URL"] = "<URL>"
+            os.environ["AVIARY_TOKEN"] = "<TOKEN>"
+            light = Aviary(model='amazon/LightGPT')
+            output = light('How do you make fried rice?')
     """
 
-    model: str
-    aviary_url: str
-    aviary_token: str = Field("", exclude=True)
+    model_name: str = "amazon/LightGPT"
+    aviary_url: Optional[str] = None
+    aviary_token: Optional[str] = None
+    # If True the prompt template for the model will be ignored. 
+    use_prompt_format: bool = True
+    # API version to use for Aviary
+    version: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -56,49 +59,36 @@ class Aviary(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         aviary_url = get_from_dict_or_env(values, "aviary_url", "AVIARY_URL")
-        if not aviary_url.endswith("/"):
-            aviary_url += "/"
-        values["aviary_url"] = aviary_url
-        aviary_token = get_from_dict_or_env(
-            values, "aviary_token", "AVIARY_TOKEN", default=""
-        )
-        values["aviary_token"] = aviary_token
+        aviary_token = get_from_dict_or_env(values, "aviary_token", "AVIARY_TOKEN")
 
-        aviary_endpoint = aviary_url + "models"
-        headers = {"Authorization": f"Bearer {aviary_token}"} if aviary_token else {}
+        # Set env viarables for aviary sdk
+        os.environ["AVIARY_URL"] = aviary_url
+        os.environ["AVIARY_TOKEN"] = aviary_token
+
         try:
-            response = requests.get(aviary_endpoint, headers=headers)
-            result = response.json()
-            # Confirm model is available
-            if values["model"] not in result:
-                raise ValueError(
-                    f"{aviary_url} does not support model {values['model']}."
-                )
-
+            aviary_models = aviary_sdk.models()
         except requests.exceptions.RequestException as e:
             raise ValueError(e)
 
+        if values["model_name"] not in aviary_models:
+            raise ValueError(
+                f"{aviary_url} does not support model {values['model']}."
+            )
+        
         return values
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
+            "model_name": self.model_name,
             "aviary_url": self.aviary_url,
-            "aviary_token": self.aviary_token,
         }
 
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "aviary"
-
-    @property
-    def headers(self) -> Dict[str, str]:
-        if self.aviary_token:
-            return {"Authorization": f"Bearer {self.aviary_token}"}
-        else:
-            return {}
+        return f"aviary-{self.model_name.replace('/', '-')}"
 
     def _call(
         self,
@@ -119,19 +109,18 @@ class Aviary(LLM):
 
                 response = aviary("Tell me a joke.")
         """
-        url = self.aviary_url + "query/" + self.model.replace("/", "--")
-        response = requests.post(
-            url,
-            headers=self.headers,
-            json={"prompt": prompt},
-            timeout=TIMEOUT,
+        kwargs = {"use_prompt_format": self.use_prompt_format}
+        if self.version:
+            kwargs["version"] = self.version
+
+        output = aviary_sdk.completions(
+            model=self.model_name,
+            prompt=prompt,
+            **kwargs,
         )
-        try:
-            text = response.json()[self.model]["generated_text"]
-        except requests.JSONDecodeError as e:
-            raise ValueError(
-                f"Error decoding JSON from {url}. Text response: {response.text}",
-            ) from e
+        
+        text = output["generated_text"]
         if stop:
             text = enforce_stop_tokens(text, stop)
+
         return text
