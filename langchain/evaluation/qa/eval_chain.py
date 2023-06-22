@@ -1,15 +1,17 @@
 """LLM Chain specifically for evaluating question answering."""
 from __future__ import annotations
 
-from typing import Any, List, Sequence
+from typing import Any, List, Optional, Sequence
 
 from langchain import PromptTemplate
 from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
+from langchain.evaluation.schema import StringEvaluator
 
 
-class QAEvalChain(LLMChain):
+class QAEvalChain(LLMChain, StringEvaluator):
     """LLM Chain specifically for evaluating question answering."""
 
     @classmethod
@@ -46,6 +48,8 @@ class QAEvalChain(LLMChain):
         question_key: str = "query",
         answer_key: str = "answer",
         prediction_key: str = "result",
+        *,
+        callbacks: Callbacks = None,
     ) -> List[dict]:
         """Evaluate question answering examples and predictions."""
         inputs = [
@@ -57,7 +61,21 @@ class QAEvalChain(LLMChain):
             for i, example in enumerate(examples)
         ]
 
-        return self.apply(inputs)
+        return self.apply(inputs, callbacks=callbacks)
+
+    def evaluate_strings(
+        self,
+        *,
+        prediction: str,
+        reference: Optional[str] = None,
+        input: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        return self.evaluate(
+            examples=[{"query": input, "answer": reference}],
+            predictions=[{"result": prediction}],
+            callbacks=kwargs.get("callbacks"),
+        )[0]
 
 
 class ContextQAEvalChain(LLMChain):
@@ -104,6 +122,8 @@ class ContextQAEvalChain(LLMChain):
         question_key: str = "query",
         context_key: str = "context",
         prediction_key: str = "result",
+        *,
+        callbacks: Callbacks = None,
     ) -> List[dict]:
         """Evaluate question answering examples and predictions."""
         inputs = [
@@ -115,7 +135,21 @@ class ContextQAEvalChain(LLMChain):
             for i, example in enumerate(examples)
         ]
 
-        return self.apply(inputs)
+        return self.apply(inputs, callbacks=callbacks)
+
+    def evaluate_strings(
+        self,
+        *,
+        prediction: str,
+        reference: Optional[str] = None,
+        input: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        return self.evaluate(
+            examples=[{"query": input, "context": reference}],
+            predictions=[{"result": prediction}],
+            callbacks=kwargs.get("callbacks"),
+        )[0]
 
 
 class CotQAEvalChain(ContextQAEvalChain):
