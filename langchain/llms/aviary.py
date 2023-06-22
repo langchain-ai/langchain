@@ -1,18 +1,78 @@
 """Wrapper around Aviary"""
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Union
 
+import dataclasses
 import os
+from pydantic import Extra, root_validator
 import requests
-from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
-import aviary.api.sdk as aviary_sdk
 
 TIMEOUT = 60
+
+@dataclasses.dataclass
+class AviaryBackend:
+    backend_url: str
+    bearer: str
+
+    def __post_init__(self):
+        self.header = {"Authorization": self.bearer}
+    
+    @classmethod
+    def from_env(cls):
+        aviary_url = os.getenv("AVIARY_URL")
+        assert aviary_url, "AVIARY_URL must be set"
+
+        aviary_token = os.getenv("AVIARY_TOKEN", "")
+
+        bearer = f"Bearer {aviary_token}" if aviary_token else ""
+        aviary_url += "/" if not aviary_url.endswith("/") else ""
+
+        return cls(aviary_url, bearer)
+    
+def get_models() -> List[str]:
+    """List available models"""
+    backend = AviaryBackend.from_env()
+    request_url = backend.backend_url + "-/routes"
+    response = requests.get(request_url, headers=backend.header, timeout=TIMEOUT)
+    try:
+        result = response.json()
+    except requests.JSONDecodeError as e:
+        raise RuntimeError(
+            f"Error decoding JSON from {request_url}. Text response: {response.text}"
+        ) from e
+    result = sorted(
+        [k.lstrip("/").replace("--", "/") for k in result.keys() if "--" in k]
+    )
+    return result
+
+
+def get_completions(
+    model: str,
+    prompt: str,
+    use_prompt_format: bool = True,
+    version: str = "",
+) -> Dict[str, Union[str, float, int]]:
+    """Get completions from Aviary models."""
+
+    backend = AviaryBackend.from_env()
+    url = backend.backend_url + model.replace("/", "--") + "/" + version + "query"
+    response = requests.post(
+        url,
+        headers=backend.header,
+        json={"prompt": prompt, "use_prompt_format": use_prompt_format},
+        timeout=TIMEOUT,
+    )
+    try:
+        return response.json()
+    except requests.JSONDecodeError as e:
+        raise RuntimeError(
+            f"Error decoding JSON from {url}. Text response: {response.text}"
+        ) from e
 
 
 class Aviary(LLM):
@@ -42,7 +102,7 @@ class Aviary(LLM):
             output = light('How do you make fried rice?')
     """
 
-    model_name: str = "amazon/LightGPT"
+    model: str = "amazon/LightGPT"
     aviary_url: Optional[str] = None
     aviary_token: Optional[str] = None
     # If True the prompt template for the model will be ignored. 
@@ -66,11 +126,12 @@ class Aviary(LLM):
         os.environ["AVIARY_TOKEN"] = aviary_token
 
         try:
-            aviary_models = aviary_sdk.models()
+            aviary_models = get_models()
         except requests.exceptions.RequestException as e:
             raise ValueError(e)
 
-        if values["model_name"] not in aviary_models:
+        model = values.get("model")
+        if model and model not in aviary_models:
             raise ValueError(
                 f"{aviary_url} does not support model {values['model']}."
             )
@@ -81,14 +142,14 @@ class Aviary(LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
-            "model_name": self.model_name,
+            "model_name": self.model,
             "aviary_url": self.aviary_url,
         }
 
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return f"aviary-{self.model_name.replace('/', '-')}"
+        return f"aviary-{self.model.replace('/', '-')}"
 
     def _call(
         self,
@@ -113,8 +174,8 @@ class Aviary(LLM):
         if self.version:
             kwargs["version"] = self.version
 
-        output = aviary_sdk.completions(
-            model=self.model_name,
+        output = get_completions(
+            model=self.model,
             prompt=prompt,
             **kwargs,
         )
