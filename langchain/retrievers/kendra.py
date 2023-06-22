@@ -69,7 +69,7 @@ class QueryResultItem(BaseModel, extra=Extra.allow):
 class QueryResult(BaseModel, extra=Extra.allow):
     ResultItems: List[QueryResultItem]
 
-    def get_top_n_docs(self, top_n: int) -> List[Document]:
+    def get_top_k_docs(self, top_n: int) -> List[Document]:
         items_len = len(self.ResultItems)
         count = items_len if items_len < top_n else top_n
         docs = [self.ResultItems[i].to_doc() for i in range(0, count)]
@@ -113,7 +113,7 @@ class RetrieveResult(BaseModel, extra=Extra.allow):
     QueryId: str
     ResultItems: List[RetrieveResultItem]
 
-    def get_top_n_docs(self, top_n: int) -> List[Document]:
+    def get_top_k_docs(self, top_n: int) -> List[Document]:
         items_len = len(self.ResultItems)
         count = items_len if items_len < top_n else top_n
         docs = [self.ResultItems[i].to_doc() for i in range(0, count)]
@@ -212,30 +212,41 @@ class AmazonKendraRetriever(BaseRetriever):
                     }
                 ]
             }
-        else:
-            attribute_filter = None
 
-        response = self.client.retrieve(
-            IndexId=self.index_id,
-            QueryText=query.strip(),
-            PageSize=top_k,
-            AttributeFilter=attribute_filter,
-        )
-        r_result = RetrieveResult.parse_obj(response)
-        result_len = len(r_result.ResultItems)
-
-        if result_len == 0:
-            # retrieve API returned 0 results, call query API
-            response = self.client.query(
+            response = self.client.retrieve(
                 IndexId=self.index_id,
                 QueryText=query.strip(),
                 PageSize=top_k,
                 AttributeFilter=attribute_filter,
             )
-            q_result = QueryResult.parse_obj(response)
-            docs = q_result.get_top_n_docs(top_k)
         else:
-            docs = r_result.get_top_n_docs(top_k)
+            response = self.client.retrieve(
+                IndexId=self.index_id,
+                QueryText=query.strip(),
+                PageSize=top_k
+            )
+        r_result = RetrieveResult.parse_obj(response)
+        result_len = len(r_result.ResultItems)
+
+        if result_len == 0:
+            # retrieve API returned 0 results, call query API
+            if self.language_code is not None:
+                response = self.client.query(
+                    IndexId=self.index_id,
+                    QueryText=query.strip(),
+                    PageSize=top_k,
+                    AttributeFilter=attribute_filter,
+                )
+            else:
+                response = self.client.query(
+                    IndexId=self.index_id,
+                    QueryText=query.strip(),
+                    PageSize=top_k
+                )
+            q_result = QueryResult.parse_obj(response)
+            docs = q_result.get_top_k_docs(top_k)
+        else:
+            docs = r_result.get_top_k_docs(top_k)
         return docs
 
     def get_relevant_documents(self, query: str, top_k: int = 3) -> List[Document]:
