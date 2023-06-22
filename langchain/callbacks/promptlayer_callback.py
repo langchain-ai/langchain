@@ -16,8 +16,8 @@ from langchain.schema import (
 
 
 class PromptLayerCallbackHandler(BaseCallbackHandler):
-    def __init__(self, request_id_func=None, pl_tags=[]):
-        self.request_id_func = request_id_func
+    def __init__(self, pl_id_callback=None, pl_tags=[]):
+        self.pl_id_callback = pl_id_callback
         self.pl_tags = pl_tags
 
         self.runs = {}
@@ -119,7 +119,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
                 run_info.get("request_start_time"),
                 run_info.get("request_end_time"),
                 get_api_key(),
-                return_pl_id=bool(self.request_id_func),
+                return_pl_id=bool(self.pl_id_callback != None),
                 metadata={
                     "_langchain_run_id": str(run_id),
                     "_langchain_parent_run_id": str(parent_run_id),
@@ -127,8 +127,8 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
                 },
             )
 
-            if self.request_id_func:
-                self.request_id_func(pl_request_id)
+            if self.pl_id_callback:
+                self.pl_id_callback(pl_request_id)
 
     def _convert_message_to_dict(self, message: BaseMessage) -> Dict[str, Any]:
         if isinstance(message, HumanMessage):
