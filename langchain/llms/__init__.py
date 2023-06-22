@@ -33,6 +33,7 @@ from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
+from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
 from langchain.llms.petals import Petals
 from langchain.llms.pipelineai import PipelineAI
@@ -83,6 +84,7 @@ __all__ = [
     "NLPCloud",
     "OpenAI",
     "OpenAIChat",
+    "OpenLLM",
     "OpenLM",
     "Petals",
     "PipelineAI",
@@ -141,5 +143,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "self_hosted_hugging_face": SelfHostedHuggingFaceLLM,
     "stochasticai": StochasticAI,
     "vertexai": VertexAI,
+    "openllm": OpenLLM,
+    "openllm_client": OpenLLM,
     "writer": Writer,
 }
