@@ -48,14 +48,15 @@ class VectorStore(ABC):
             List of ids from adding the texts into the vectorstore.
         """
 
-    def delete_by_id(self, ids: List[str]) -> None:
+    def delete(self, ids: List[str]) -> Optional[bool]:
         """Delete by vector ID.
 
         Args:
             ids: List of ids to delete.
 
         Returns:
-            None.
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
         """
 
         raise NotImplementedError(

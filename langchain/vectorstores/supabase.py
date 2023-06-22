@@ -346,7 +346,7 @@ class SupabaseVectorStore(VectorStore):
         )
         return docs
 
-    def delete_by_id(self, ids: List[str]) -> None:
+    def delete(self, ids: List[str]) -> None:
         """Delete by vector IDs.
 
         Args:

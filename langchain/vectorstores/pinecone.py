@@ -354,7 +354,7 @@ class Pinecone(VectorStore):
             pinecone.Index(index_name), embedding.embed_query, text_key, namespace
         )
 
-    def delete_by_id(self, ids: List[str]) -> None:
+    def delete(self, ids: List[str]) -> None:
         """Delete by vector IDs.
 
         Args:

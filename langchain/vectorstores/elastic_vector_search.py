@@ -317,7 +317,7 @@ class ElasticVectorSearch(VectorStore, ABC):
             )
         return response
 
-    def delete_by_id(self, ids: List[str]) -> None:
+    def delete(self, ids: List[str]) -> None:
         """Delete by vector IDs.
 
         Args:
