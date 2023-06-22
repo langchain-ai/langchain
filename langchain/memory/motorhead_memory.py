@@ -86,3 +86,9 @@ class MotorheadMemory(BaseChatMemory):
             headers=self.__get_headers(),
         )
         super().save_context(inputs, outputs)
+
+    def delete_session(self):
+        """ Delete a session """
+        requests.delete(
+            f"{self.url}/sessions/{self.session_id}/memory"
+        )
