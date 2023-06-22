@@ -622,25 +622,3 @@ class PGVector(VectorStore):
                 f" for distance_strategy of {self.distance_strategy}."
                 "Consider providing relevance_score_fn to PGVector constructor."
             )
-
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores, normalized on a scale from 0 to 1.
-        0 is dissimilar, 1 is most similar.
-        Args:
-            query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-        Returns:
-            List of Documents most similar to the query and score for each
-        """
-
-        docs_and_scores = self.similarity_search_with_score(query=query, k=k)
-        docs_and_normalized_scores = [
-            (doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores
-        ]
-
-        return docs_and_normalized_scores
