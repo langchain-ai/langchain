@@ -4,11 +4,13 @@ from typing import Type
 
 import pytest
 
+from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_chain import (
     ContextQAEvalChain,
     CotQAEvalChain,
     QAEvalChain,
 )
+from langchain.evaluation.schema import StringEvaluator
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -44,3 +46,10 @@ def test_context_eval_chain(chain_cls: Type[ContextQAEvalChain]) -> None:
     assert outputs[0] == outputs[1]
     assert "text" in outputs[0]
     assert outputs[0]["text"] == "foo"
+
+
+@pytest.mark.parametrize("chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain])
+def test_implements_string_evaluator_protocol(
+    chain_cls: Type[LLMChain],
+) -> None:
+    assert isinstance(chain_cls, StringEvaluator)

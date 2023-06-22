@@ -8,10 +8,9 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
-from langchain.evaluation.schema import StringEvaluator
 
 
-class QAEvalChain(LLMChain, StringEvaluator):
+class QAEvalChain(LLMChain):
     """LLM Chain specifically for evaluating question answering."""
 
     @classmethod
@@ -76,6 +75,19 @@ class QAEvalChain(LLMChain, StringEvaluator):
             predictions=[{"result": prediction}],
             callbacks=kwargs.get("callbacks"),
         )[0]
+
+    async def aevaluate_strings(
+        self,
+        *,
+        prediction: str,
+        reference: Optional[str] = None,
+        input: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        return await self.acall(
+            inputs={"query": input, "answer": reference, "result": prediction},
+            callbacks=kwargs.get("callbacks"),
+        )
 
 
 class ContextQAEvalChain(LLMChain):
@@ -150,6 +162,19 @@ class ContextQAEvalChain(LLMChain):
             predictions=[{"result": prediction}],
             callbacks=kwargs.get("callbacks"),
         )[0]
+
+    async def aevaluate_strings(
+        self,
+        *,
+        prediction: str,
+        reference: Optional[str] = None,
+        input: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        return await self.acall(
+            inputs={"query": input, "context": reference, "result": prediction},
+            callbacks=kwargs.get("callbacks"),
+        )
 
 
 class CotQAEvalChain(ContextQAEvalChain):

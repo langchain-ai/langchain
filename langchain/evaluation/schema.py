@@ -16,11 +16,12 @@ class StringEvaluator(Protocol):
         input: Optional[str] = None,
         **kwargs: Any
     ) -> dict:
-        """Evaluate Chain or LLM output, based on optional inputs and label.
+        """Evaluate Chain or LLM output, based on optional input and label.
 
         Args:
             prediction (str): the LLM or chain prediction to evaluate.
-            reference (Optional[str], optional): the reference label to evaluate against.
+            reference (Optional[str], optional): the reference label
+                to evaluate against.
             input (Optional[str], optional): the input to consider during evaluation
             **kwargs: additional keyword arguments, including callbacks, tags, etc.
         Returns:
@@ -35,11 +36,13 @@ class StringEvaluator(Protocol):
         input: Optional[str] = None,
         **kwargs: Any
     ) -> dict:
-        """Asynchronously evaluate Chain or LLM output, based on optional inputs and label.
+        """Asynchronously evaluate Chain or LLM output, based on optional
+          input and label.
 
         Args:
             prediction (str): the LLM or chain prediction to evaluate.
-            reference (Optional[str], optional): the reference label to evaluate against.
+            reference (Optional[str], optional): the reference label
+                 to evaluate against.
             input (Optional[str], optional): the input to consider during evaluation
             **kwargs: additional keyword arguments, including callbacks, tags, etc.
         Returns:

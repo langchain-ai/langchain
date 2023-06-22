@@ -48,16 +48,6 @@ for d in (
     _SUPPORTED_CRITERIA.update(d)
 
 
-def _get_reference(reference: Optional[str] = None) -> str:
-    print("FORMATTING REFERENCE", reference)
-    if reference is None:
-        return ""
-    return f"""
-***
-[Reference]: {reference}
-"""
-
-
 class CriteriaEvalChain(LLMChain):
     """LLM Chain specifically for evaluating runs against criteria."""
 
@@ -84,7 +74,7 @@ class CriteriaEvalChain(LLMChain):
     ) -> CriteriaEvalChain:
         criteria_ = cls.resolve_criteria(criteria)
         criteria_str = " ".join(f"{k}: {v}" for k, v in criteria_.items())
-        prompt_ = prompt.partial(criteria=criteria_str, reference=_get_reference)
+        prompt_ = prompt.partial(criteria=criteria_str)
         return cls(llm=llm, prompt=prompt_, **kwargs)
 
     def evaluate_strings(
