@@ -1,6 +1,6 @@
 import re
 from langchain.docstore.document import Document
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, Extra
 
 from langchain.schema import BaseRetriever
@@ -151,17 +151,27 @@ class AmazonKendraRetriever(BaseRetriever):
     credentials from IMDS will be used.
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
+
+    language_code: Optional[str] = None
     
-    client: Any
-    """ boto3 client for Kendra. """
+    client: Optional[Any] = None
+    """boto3 client for Kendra."""
     
     def __init__(
             self, 
             index_id, 
             region_name=None, 
-            credentials_profile_name=None
+            credentials_profile_name=None,
+            language_code=None,
+            client=None
         ):
         self.index_id = index_id
+        self.language_code = language_code
+
+        if client is not None:
+            self.client = client
+            return
+        
         try:
             import boto3 
 
@@ -188,11 +198,33 @@ class AmazonKendraRetriever(BaseRetriever):
                 "profile name are valid."
             ) from e
 
-    def _kendra_query(self, query, top_k) -> List[Document]:
+    def _kendra_query(
+            self, 
+            query, 
+            top_k: int = 3
+        ) -> List[Document]:
+
+        if self.language_code is not None:
+            attribute_filter = {
+                "AndAllFilters": [
+                    {
+                        "EqualsTo": {
+                            "Key": "_language_code",
+                            "Value": {
+                                "StringValue": self.language_code,
+                            },
+                        }
+                    }
+                ]
+            }
+        else:
+            attribute_filter = None
+
         response = self.client.retrieve(
             IndexId=self.index_id, 
             QueryText=query.strip(), 
-            PageSize=top_k
+            PageSize=top_k,
+            AttributeFilter=attribute_filter
         )
         r_result = RetrieveResult.parse_obj(response)
         result_len = len(r_result.ResultItems)
@@ -202,7 +234,8 @@ class AmazonKendraRetriever(BaseRetriever):
             response = self.client.query(
                 IndexId=self.index_id, 
                 QueryText=query.strip(), 
-                PageSize=top_k
+                PageSize=top_k,
+                AttributeFilter=attribute_filter
             )
             q_result = QueryResult.parse_obj(response)
             docs = q_result.get_top_n_docs(top_k)
@@ -217,7 +250,7 @@ class AmazonKendraRetriever(BaseRetriever):
         Example:
         .. code-block:: python
 
-            docs = get_relevant_documents('This is my query')
+            docs = retriever.get_relevant_documents('This is my query')
         
         """
         docs = self._kendra_query(query, top_k)
