@@ -2,7 +2,7 @@
 import json
 import urllib.request
 from abc import abstractmethod
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, validator
 
@@ -18,6 +18,8 @@ class AzureMLEndpointClient(object):
         self, endpoint_url: str, endpoint_api_key: str, deployment_name: str
     ) -> None:
         """Initialize the class."""
+        if not endpoint_api_key:
+            raise ValueError("A key should be provided to invoke the endpoint")
         self.endpoint_url = endpoint_url
         self.endpoint_api_key = endpoint_api_key
         self.deployment_name = deployment_name
@@ -25,23 +27,16 @@ class AzureMLEndpointClient(object):
     def call(self, body: bytes) -> bytes:
         """call."""
 
-        url = self.endpoint_url
-        # Replace this with the primary/secondary key or AMLToken for the endpoint
-        api_key = self.endpoint_api_key
-        if not api_key:
-            raise Exception("A key should be provided to invoke the endpoint")
-
         # The azureml-model-deployment header will force the request to go to a
         # specific deployment. Remove this header to have the request observe the
         # endpoint traffic rules.
-
         headers = {
             "Content-Type": "application/json",
-            "Authorization": ("Bearer " + api_key),
+            "Authorization": ("Bearer " + self.endpoint_api_key),
             "azureml-model-deployment": self.deployment_name,
         }
 
-        req = urllib.request.Request(url, body, headers)
+        req = urllib.request.Request(self.endpoint_url, body, headers)
         response = urllib.request.urlopen(req, timeout=50)
         result = response.read()
         return result
@@ -101,9 +96,6 @@ class ContentFormatterBase:
 class OSSContentFormatter(ContentFormatterBase):
     """Content handler for LLMs from the OSS catalog."""
 
-    content_type = "application/json"
-    accepts = "application/json"
-
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         input_str = json.dumps(
             {"inputs": {"input_string": [prompt]}, "parameters": model_kwargs}
@@ -118,9 +110,6 @@ class OSSContentFormatter(ContentFormatterBase):
 class HFContentFormatter(ContentFormatterBase):
     """Content handler for LLMs from the HuggingFace catalog."""
 
-    content_type = "application/json"
-    accepts = "application/json"
-
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         input_str = json.dumps({"inputs": [prompt], "parameters": model_kwargs})
         return str.encode(input_str)
@@ -132,9 +121,6 @@ class HFContentFormatter(ContentFormatterBase):
 
 class DollyContentFormatter(ContentFormatterBase):
     """Content handler for the Dolly-v2-12b model"""
-
-    content_type = "application/json"
-    accepts = "application/json"
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         input_str = json.dumps(
@@ -149,23 +135,29 @@ class DollyContentFormatter(ContentFormatterBase):
 
 class AzureMLOnlineEndpoint(LLM, BaseModel):
     """Wrapper around Azure ML Hosted models using Managed Online Endpoints.
+
     Example:
         .. code-block:: python
-            auzre_llm = AzureMLModel(
+
+            azure_llm = AzureMLModel(
                 endpoint_url="https://<your-endpoint>.<your_region>.inference.ml.azure.com/score",
                 endpoint_api_key="my-api-key",
                 deployment_name="my-deployment-name",
-                content_formatter=content_formatter)
-    """
+                content_formatter=content_formatter,
+            )
+    """  # noqa: E501
 
     endpoint_url: str = ""
-    """ URL of prexisting Endpoint """
+    """URL of pre-existing Endpoint. Should be passed to constructor or specified as 
+        env var `AZUREML_ENDPOINT_URL`."""
 
     endpoint_api_key: str = ""
-    """ Authentication Key for Endpoint"""
+    """Authentication Key for Endpoint. Should be passed to constructor or specified as
+        env var `AZUREML_ENDPOINT_API_KEY`."""
 
     deployment_name: str = ""
-    """ Deployment Name for Endpoint"""
+    """Deployment Name for Endpoint. Should be passed to constructor or specified as
+        env var `AZUREML_DEPLOYMENT_NAME`."""
 
     http_client: Any = None  #: :meta private:
 
@@ -182,10 +174,14 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
     def validate_client(cls, field_value: Any, values: Dict) -> AzureMLEndpointClient:
         """Validate that api key and python package exists in environment."""
         endpoint_key = get_from_dict_or_env(
-            values, "endpoint_api_key", "ENDPOINT_API_KEY"
+            values, "endpoint_api_key", "AZUREML_ENDPOINT_API_KEY"
         )
-        endpoint_url = values["endpoint_url"]
-        deployment_name = values["deployment_name"]
+        endpoint_url = get_from_dict_or_env(
+            values, "endpoint_url", "AZUREML_ENDPOINT_URL"
+        )
+        deployment_name = get_from_dict_or_env(
+            values, "deployment_name", "AZUREML_DEPLOYMENT_NAME"
+        )
         http_client = AzureMLEndpointClient(endpoint_url, endpoint_key, deployment_name)
         return http_client
 
