@@ -375,13 +375,14 @@ class Redis(VectorStore):
             1. Embeds documents.
             2. Creates a new index for the embeddings in Redis.
             3. Adds the documents to the newly created Redis index.
+            4. Returns the keys of the newly created documents.
         This is intended to be a quick way to get started.
         Example:
             .. code-block:: python
                 from langchain.vectorstores import Redis
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
-                redisearch = RediSearch.from_texts(
+                redisearch, keys = RediSearch.from_texts_return_keys(
                     texts,
                     embeddings,
                     redis_url="redis://username:password@localhost:6379"
