@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Union
 from uuid import UUID
 
 from langchainplus_sdk import LangChainPlusClient
@@ -21,6 +21,7 @@ from langchain.schema import BaseMessage, messages_to_dict
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
+_TRACERS: List[LangChainTracer] = []
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -32,13 +33,19 @@ def log_error_once(method: str, exception: Exception) -> None:
     logger.error(exception)
 
 
+def wait_for_all_tracers() -> None:
+    global _TRACERS
+    for tracer in _TRACERS:
+        tracer.wait_for_futures()
+
+
 class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
     def __init__(
         self,
         example_id: Optional[Union[UUID, str]] = None,
-        session_name: Optional[str] = None,
+        project_name: Optional[str] = None,
         client: Optional[LangChainPlusClient] = None,
         **kwargs: Any,
     ) -> None:
@@ -48,10 +55,15 @@ class LangChainTracer(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.session_name = session_name or os.getenv("LANGCHAIN_SESSION", "default")
+        self.project_name = project_name or os.getenv(
+            "LANGCHAIN_PROJECT", os.getenv("LANGCHAIN_SESSION", "default")
+        )
         # set max_workers to 1 to process tasks in order
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.client = client or LangChainPlusClient()
+        self._futures: Set[Future] = set()
+        global _TRACERS
+        _TRACERS.append(self)
 
     def on_chat_model_start(
         self,
@@ -93,7 +105,7 @@ class LangChainTracer(BaseTracer):
         extra["runtime"] = get_runtime_environment()
         run_dict["extra"] = extra
         try:
-            run = self.client.create_run(**run_dict, session_name=self.session_name)
+            self.client.create_run(**run_dict, project_name=self.project_name)
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
             log_error_once("post", e)
@@ -110,40 +122,67 @@ class LangChainTracer(BaseTracer):
 
     def _on_llm_start(self, run: Run) -> None:
         """Persist an LLM run."""
-        self.executor.submit(self._persist_run_single, run.copy(deep=True))
+        self._futures.add(
+            self.executor.submit(self._persist_run_single, run.copy(deep=True))
+        )
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Persist an LLM run."""
-        self.executor.submit(self._persist_run_single, run.copy(deep=True))
+        self._futures.add(
+            self.executor.submit(self._persist_run_single, run.copy(deep=True))
+        )
 
     def _on_llm_end(self, run: Run) -> None:
         """Process the LLM Run."""
-        self.executor.submit(self._update_run_single, run.copy(deep=True))
+        self._futures.add(
+            self.executor.submit(self._update_run_single, run.copy(deep=True))
+        )
 
     def _on_llm_error(self, run: Run) -> None:
         """Process the LLM Run upon error."""
-        self.executor.submit(self._update_run_single, run.copy(deep=True))
+        self._futures.add(
+            self.executor.submit(self._update_run_single, run.copy(deep=True))
+        )
 
     def _on_chain_start(self, run: Run) -> None:
         """Process the Chain Run upon start."""
-        self.executor.submit(self._persist_run_single, run.copy(deep=True))
+        self._futures.add(
+            self.executor.submit(self._persist_run_single, run.copy(deep=True))
+        )
 
     def _on_chain_end(self, run: Run) -> None:
         """Process the Chain Run."""
-        self.executor.submit(self._update_run_single, run.copy(deep=True))
+        self._futures.add(
+            self.executor.submit(self._update_run_single, run.copy(deep=True))
+        )
 
     def _on_chain_error(self, run: Run) -> None:
         """Process the Chain Run upon error."""
-        self.executor.submit(self._update_run_single, run.copy(deep=True))
+        self._futures.add(
+            self.executor.submit(self._update_run_single, run.copy(deep=True))
+        )
 
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""
-        self.executor.submit(self._persist_run_single, run.copy(deep=True))
+        self._futures.add(
+            self.executor.submit(self._persist_run_single, run.copy(deep=True))
+        )
 
     def _on_tool_end(self, run: Run) -> None:
         """Process the Tool Run."""
-        self.executor.submit(self._update_run_single, run.copy(deep=True))
+        self._futures.add(
+            self.executor.submit(self._update_run_single, run.copy(deep=True))
+        )
 
     def _on_tool_error(self, run: Run) -> None:
         """Process the Tool Run upon error."""
-        self.executor.submit(self._update_run_single, run.copy(deep=True))
+        self._futures.add(
+            self.executor.submit(self._update_run_single, run.copy(deep=True))
+        )
+
+    def wait_for_futures(self) -> None:
+        """Wait for the given futures to complete."""
+        futures = list(self._futures)
+        wait(futures)
+        for future in futures:
+            self._futures.remove(future)

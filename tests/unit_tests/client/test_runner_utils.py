@@ -176,12 +176,17 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             {"result": f"Result for example {example.id}"} for _ in range(n_repetitions)
         ]
 
+    def mock_create_project(*args: Any, **kwargs: Any) -> None:
+        pass
+
     with mock.patch.object(
         LangChainPlusClient, "read_dataset", new=mock_read_dataset
     ), mock.patch.object(
         LangChainPlusClient, "list_examples", new=mock_list_examples
     ), mock.patch(
         "langchain.client.runner_utils._arun_llm_or_chain", new=mock_arun_chain
+    ), mock.patch.object(
+        LangChainPlusClient, "create_project", new=mock_create_project
     ):
         client = LangChainPlusClient(api_url="http://localhost:1984", api_key="123")
         chain = mock.MagicMock()
@@ -190,7 +195,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             dataset_name="test",
             llm_or_chain_factory=lambda: chain,
             concurrency_level=2,
-            session_name="test_session",
+            project_name="test_project",
             num_repetitions=num_repetitions,
             client=client,
         )

@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
-from pydantic import Extra, Field, root_validator
+from pydantic import Field, root_validator
 
 import langchain
 from langchain.base_language import BaseLanguageModel
@@ -56,7 +56,6 @@ class BaseChatModel(BaseLanguageModel, ABC):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
