@@ -129,8 +129,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         context = history.system_message.content if history.system_message else None
         params = {**self._default_params, **kwargs}
         if not self.is_codey_model:
-            params["context"] = context
-        chat = self.client.start_chat(**params)
+            chat = self.client.start_chat(context=context, **params)
+        else:
+            chat = self.client.start_chat(**params)
         for pair in history.history:
             chat._history.append((pair.question.content, pair.answer.content))
         response = chat.send_message(question.content, **params)
