@@ -196,7 +196,7 @@ class SimpleRequestChain(Chain):
         else:
             try:
                 response = api_response.json()
-            except:
+            except Exception:  # noqa: E722
                 response = api_response.text
         return {self.output_key: response}
 
@@ -216,7 +216,7 @@ def get_openapi_chain(
             try:
                 spec = conversion(spec)  # type: ignore[arg-type]
                 break
-            except:  # noqa: E722
+            except Exception:  # noqa: E722
                 pass
         if isinstance(spec, str):
             raise ValueError(f"Unable to parse spec from source {spec}")
