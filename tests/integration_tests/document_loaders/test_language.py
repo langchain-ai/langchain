@@ -1,4 +1,5 @@
 from pathlib import Path
+import pytest
 
 from langchain.document_loaders import LanguageLoader
 
@@ -20,11 +21,16 @@ def test_language_loader_for_python() -> None:
     assert metadata["content_type"] == "simplified_code"
     assert metadata["language"] == "python"
 
-    assert docs[0].page_content == """def main():
+    assert (
+        docs[0].page_content
+        == """def main():
     print("Hello World!")
 
     return 0"""
-    assert docs[1].page_content == """#!/usr/bin/env python3
+    )
+    assert (
+        docs[1].page_content
+        == """#!/usr/bin/env python3
 
 import sys
 
@@ -32,8 +38,9 @@ import sys
 # Code for: def main():
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())"""
+    )
 
 
 def test_language_loader_for_python_with_parser_threshold() -> None:
@@ -45,6 +52,17 @@ def test_language_loader_for_python_with_parser_threshold() -> None:
     assert len(docs) == 1
 
 
+def esprima_installed() -> bool:
+    try:
+        import esprima  # noqa: F401
+
+        return True
+    except Exception as e:
+        print(f"esprima not installed, skipping test {e}")
+        return False
+
+
+@pytest.mark.skipif(not esprima_installed(), reason="requires esprima package")
 def test_language_loader_for_javascript() -> None:
     """Test JavaScript loader with parser enabled."""
     file_path = Path(__file__).parent.parent / "examples" / "hello_world.js"
@@ -66,20 +84,29 @@ def test_language_loader_for_javascript() -> None:
     assert metadata["content_type"] == "simplified_code"
     assert metadata["language"] == "javascript"
 
-    assert docs[0].page_content == """class HelloWorld {
+    assert (
+        docs[0].page_content
+        == """class HelloWorld {
   sayHello() {
     console.log("Hello World!");
   }
 }"""
-    assert docs[1].page_content == """function main() {
+    )
+    assert (
+        docs[1].page_content
+        == """function main() {
   const hello = new HelloWorld();
   hello.sayHello();
 }"""
-    assert docs[2].page_content == """// Code for: class HelloWorld {
+    )
+    assert (
+        docs[2].page_content
+        == """// Code for: class HelloWorld {
 
 // Code for: function main() {
 
 main();"""
+    )
 
 
 def test_language_loader_for_javascript_with_parser_threshold() -> None:
