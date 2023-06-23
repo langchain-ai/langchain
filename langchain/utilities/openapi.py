@@ -283,5 +283,3 @@ class OpenAPISpec(OpenAPI):
             path = re.sub(r"[^a-zA-Z0-9]", "_", path.lstrip("/"))
             operation_id = f"{path}_{method}"
         return operation_id.replace("-", "_").replace(".", "_").replace("/", "_")
-
-

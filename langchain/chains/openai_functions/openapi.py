@@ -1,12 +1,20 @@
 import json
 import re
 from collections import defaultdict
-from typing import Any, Optional, List, Tuple, Dict, Callable, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
 from openapi_schema_pydantic import Parameter
+from requests import Response
 
-from langchain import LLMChain
+from langchain import BasePromptTemplate, LLMChain
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.chains.base import Chain
+from langchain.chains.sequential import SequentialChain
+from langchain.chat_models import ChatOpenAI
+from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
+from langchain.prompts import ChatPromptTemplate
 from langchain.tools import APIOperation
 from langchain.utilities.openapi import OpenAPISpec
 
@@ -75,102 +83,9 @@ def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -
     return {"type": "object", "properties": properties, "required": required}
 
 
-# TODO: Re-implement using APIOperation
 def openapi_spec_to_openai_fn(
-    spec: OpenAPISpec, *, prefer_short: bool = False
+    spec: OpenAPISpec,
 ) -> Tuple[List[Dict[str, Any]], Callable]:
-    """Convert a valid OpenAPI spec to the JSON Schema format expected for OpenAI
-        functions.
-
-    Args:
-        spec: The OpenAPI spec to convert
-        prefer_short: Whether to use 'summary' or 'description' for a schema when
-            both are present.
-
-    Returns:
-        Tuple of the OpenAI functions JSON schema and a default function for executing
-            a request based on the OpenAI function schema.
-    """
-    if not spec.paths:
-        return [], lambda: None
-    functions = []
-    _name_to_call_map = {}
-    api_name = spec.info.title.replace(" ", "_").replace("-", "_").lower()
-    for path in spec.paths:
-        path_params = {
-            (p.name, p.param_in): p for p in spec.get_parameters_for_path(path)
-        }
-        for method in spec.get_methods_for_path(path):
-            op = spec.get_operation(path, method)
-            op_params = path_params.copy()
-            for param in spec.get_parameters_for_operation(op):
-                op_params[(param.name, param.param_in)] = param
-            params_by_type = defaultdict(list)
-            for name_loc, p in op_params.items():
-                params_by_type[name_loc[1]].append(p)
-
-            url = spec.base_url.rstrip("/") + "/" + path.lstrip("/")
-            request_args: Dict = {
-                "method": {"const": method.upper()},
-                "url": {"const": url},
-            }
-            param_type_to_arg_name = {
-                "query": "params",
-                "header": "headers",
-                "cookie": "cookies",
-                "path": "path_params",
-            }
-            for param_type, arg_name in param_type_to_arg_name.items():
-                if params_by_type[param_type]:
-                    request_args[arg_name] = _openapi_params_to_json_schema(
-                        params_by_type[param_type], spec
-                    )
-
-            request_body = spec.get_request_body_for_operation(op)
-            # TODO: Support more MIME types.
-            if request_body and request_body.content:
-                media_types = []
-                for media_type in request_body.content.values():
-                    if media_type.media_type_schema:
-                        schema = spec.get_schema(media_type.media_type_schema)
-                        media_types.append(schema.dict(exclude_none=True))
-                if len(media_types) == 1:
-                    request_args["data"] = media_types[0]
-                elif len(media_types) > 1:
-                    request_args["data"] = {"anyOf": media_types}
-
-            if op.operationId:
-                name = op.operationId
-            else:
-                name = api_name + "_" + path.replace("/", "_") + "_" + method
-            fn = {
-                "name": name,
-                "description": _get_description(op, prefer_short),
-                "parameters": {
-                    "type": "object",
-                    "properties": request_args,
-                    "required": ["method", "url"],
-                },
-            }
-            functions.append(fn)
-            _name_to_call_map[fn["name"]] = {"method": method, "url": url}
-
-    def default_call_api(function_call: dict) -> Any:
-        name = function_call["name"]
-        args = function_call["arguments"]
-        _request_args = args if isinstance(args, dict) else json.loads(args.strip())
-        method = _name_to_call_map[name]["method"]
-        url = _name_to_call_map[name]["url"]
-        path_params = _request_args.pop("path_params", {})
-        _format_url(url, path_params)
-        if "data" in _request_args and isinstance(_request_args["data"], dict):
-            _request_args["data"] = json.dumps(_request_args["data"])
-        return requests.request(method, url, **_request_args)
-
-    return functions, default_call_api
-
-
-def openapi_spec_to_openai_fn2(spec: OpenAPISpec) -> Tuple[List[Dict[str, Any]], Callable]:
     """Convert a valid OpenAPI spec to the JSON Schema format expected for OpenAI
         functions.
 
@@ -229,32 +144,99 @@ def openapi_spec_to_openai_fn2(spec: OpenAPISpec) -> Tuple[List[Dict[str, Any]],
                 "parameters": {
                     "type": "object",
                     "properties": request_args,
-                }
+                },
             }
             functions.append(fn)
-            _name_to_call_map[fn["name"]] = {"method": method, "url": api_op.base_url + api_op.path}
+            _name_to_call_map[fn["name"]] = {
+                "method": method,
+                "url": api_op.base_url + api_op.path,
+            }
 
-    def default_call_api(function_call: dict, **kwargs: Any) -> Any:
-        name = function_call["name"]
-        args = function_call["arguments"]
-        _request_args = args if isinstance(args, dict) else json.loads(args.strip())
+    def default_call_api(name: str, fn_args: dict, **kwargs: Any) -> Any:
         method = _name_to_call_map[name]["method"]
         url = _name_to_call_map[name]["url"]
-        path_params = _request_args.pop("path_params", {})
+        path_params = fn_args.pop("path_params", {})
         _format_url(url, path_params)
-        if "data" in _request_args and isinstance(_request_args["data"], dict):
-            _request_args["data"] = json.dumps(_request_args["data"])
-        _kwargs = {**_request_args, **kwargs}
+        if "data" in fn_args and isinstance(fn_args["data"], dict):
+            fn_args["data"] = json.dumps(fn_args["data"])
+        _kwargs = {**fn_args, **kwargs}
         return requests.request(method, url, **_kwargs)
 
     return functions, default_call_api
 
 
-def get_openapi_chain(spec: Union[OpenAPISpec, str]) -> LLMChain:
-    if isinstance(spec, str):
-        for conversion in (OpenAPISpec.from_url, OpenAPISpec.from_file, OpenAPISpec.from_text):
+class SimpleRequestChain(Chain):
+    request_method: Callable
+    output_key: str = "response"
+    input_key: str = "function"
+
+    @property
+    def input_keys(self) -> List[str]:
+        return [self.input_key]
+
+    @property
+    def output_keys(self) -> List[str]:
+        return [self.output_key]
+
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        """Run the logic of this chain and return the output."""
+        name = inputs["function"].pop("name")
+        args = inputs["function"].pop("arguments")
+        api_response: Response = self.request_method(name, args)
+        if api_response.status_code != 200:
+            response = (
+                f"{api_response.status_code}: {api_response.reason}"
+                + f"\nFor {name} "
+                + f"Called with args: {args['params']}"
+            )
+        else:
             try:
-                spec = conversion(spec)
-                break
+                response = api_response.json()
             except:
+                response = api_response.text
+        return {self.output_key: response}
+
+
+def get_openapi_chain(
+    spec: Union[OpenAPISpec, str],
+    llm: Optional[BaseLanguageModel] = None,
+    prompt: Optional[BasePromptTemplate] = None,
+    request_chain: Optional[Chain] = None,
+) -> SequentialChain:
+    if isinstance(spec, str):
+        for conversion in (
+            OpenAPISpec.from_url,
+            OpenAPISpec.from_file,
+            OpenAPISpec.from_text,
+        ):
+            try:
+                spec = conversion(spec)  # type: ignore[arg-type]
+                break
+            except:  # noqa: E722
                 pass
+        if isinstance(spec, str):
+            raise ValueError(f"Unable to parse spec from source {spec}")
+    openai_fns, call_api_fn = openapi_spec_to_openai_fn(spec)
+    llm = llm or ChatOpenAI(
+        model="gpt-3.5-turbo-0613",
+    )
+    prompt = prompt or ChatPromptTemplate.from_template(
+        "Use the provided API's to respond to this user query:\n\n{query}"
+    )
+    llm_chain = LLMChain(
+        llm=llm,
+        prompt=prompt,
+        llm_kwargs={"functions": openai_fns},
+        output_parser=JsonOutputFunctionsParser(args_only=False),
+        output_key="function",
+    )
+    request_chain = request_chain or SimpleRequestChain(request_method=call_api_fn)
+    return SequentialChain(
+        chains=[llm_chain, request_chain],
+        input_variables=llm_chain.input_keys,
+        output_variables=["response"],
+    )
