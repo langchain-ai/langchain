@@ -106,7 +106,7 @@ def wandb_tracing_enabled(
 
 @contextmanager
 def tracing_v2_enabled(
-    session_name: Optional[str] = None,
+    project_name: Optional[str] = None,
     *,
     example_id: Optional[Union[str, UUID]] = None,
 ) -> Generator[None, None, None]:
@@ -120,7 +120,7 @@ def tracing_v2_enabled(
         example_id = UUID(example_id)
     cb = LangChainTracer(
         example_id=example_id,
-        session_name=session_name,
+        project_name=project_name,
     )
     tracing_v2_callback_var.set(cb)
     yield
@@ -131,12 +131,12 @@ def tracing_v2_enabled(
 def trace_as_chain_group(
     group_name: str,
     *,
-    session_name: Optional[str] = None,
+    project_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
 ) -> Generator[CallbackManager, None, None]:
     """Get a callback manager for a chain group in a context manager."""
     cb = LangChainTracer(
-        session_name=session_name,
+        project_name=project_name,
         example_id=example_id,
     )
     cm = CallbackManager.configure(
@@ -152,12 +152,12 @@ def trace_as_chain_group(
 async def atrace_as_chain_group(
     group_name: str,
     *,
-    session_name: Optional[str] = None,
+    project_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
 ) -> AsyncGenerator[AsyncCallbackManager, None]:
     """Get a callback manager for a chain group in a context manager."""
     cb = LangChainTracer(
-        session_name=session_name,
+        project_name=project_name,
         example_id=example_id,
     )
     cm = AsyncCallbackManager.configure(
@@ -1039,10 +1039,10 @@ def _configure(
     tracing_v2_enabled_ = (
         env_var_is_set("LANGCHAIN_TRACING_V2") or tracer_v2 is not None
     )
-    tracer_session = os.environ.get("LANGCHAIN_SESSION")
+    tracer_project = os.environ.get(
+        "LANGCHAIN_PROJECT", os.environ.get("LANGCHAIN_SESSION", "default")
+    )
     debug = _get_debug()
-    if tracer_session is None:
-        tracer_session = "default"
     if (
         verbose
         or debug
@@ -1072,7 +1072,7 @@ def _configure(
                 callback_manager.add_handler(tracer, True)
             else:
                 handler = LangChainTracerV1()
-                handler.load_session(tracer_session)
+                handler.load_session(tracer_project)
                 callback_manager.add_handler(handler, True)
         if wandb_tracing_enabled_ and not any(
             isinstance(handler, WandbTracer) for handler in callback_manager.handlers
@@ -1090,7 +1090,7 @@ def _configure(
                 callback_manager.add_handler(tracer_v2, True)
             else:
                 try:
-                    handler = LangChainTracer(session_name=tracer_session)
+                    handler = LangChainTracer(project_name=tracer_project)
                     callback_manager.add_handler(handler, True)
                 except Exception as e:
                     logger.warning(
