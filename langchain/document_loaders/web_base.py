@@ -2,7 +2,7 @@
 import asyncio
 import logging
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 import aiohttp
 import requests
@@ -197,16 +197,17 @@ class WebBaseLoader(BaseLoader):
 
         return self._scrape(self.web_path, parser)
 
-    def load(self) -> List[Document]:
-        """Load text from the url(s) in web_path."""
-        docs = []
+    def lazy_load(self) -> Iterator[Document]:
+        """Lazy load text from the url(s) in web_path."""
         for path in self.web_paths:
             soup = self._scrape(path)
             text = soup.get_text()
             metadata = _build_metadata(soup, path)
-            docs.append(Document(page_content=text, metadata=metadata))
+            yield Document(page_content=text, metadata=metadata)
 
-        return docs
+    def load(self) -> List[Document]:
+        """Load text from the url(s) in web_path."""
+        return list(self.lazy_load())
 
     def aload(self) -> List[Document]:
         """Load text from the urls in web_path async into Documents."""
