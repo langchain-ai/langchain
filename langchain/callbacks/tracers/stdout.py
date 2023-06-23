@@ -30,7 +30,8 @@ def elapsed(run: Any) -> str:
         run: any object with a start_time and end_time attribute.
 
     Returns:
-        A string with the elapsed time in seconds or milliseconds if time is less than a second.
+        A string with the elapsed time in seconds or
+            milliseconds if time is less than a second.
 
     """
     elapsed_time = run.end_time - run.start_time

@@ -56,7 +56,8 @@ def standardize_model_name(
     Standardize the model name to a format that can be used in the OpenAI API.
     Args:
         model_name: Model name to standardize.
-        is_completion: Whether the model is used for completion or not. Defaults to False.
+        is_completion: Whether the model is used for completion or not.
+            Defaults to False.
 
     Returns:
         Standardized model name.
@@ -82,7 +83,8 @@ def get_openai_token_cost_for_model(
     Args:
         model_name: Name of the model
         num_tokens: Number of tokens.
-        is_completion: Whether the model is used for completion or not. Defaults to False.
+        is_completion: Whether the model is used for completion or not.
+            Defaults to False.
 
     Returns:
         Cost in USD.

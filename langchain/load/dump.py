@@ -5,7 +5,8 @@ from langchain.load.serializable import Serializable, to_json_not_implemented
 
 
 def default(obj: Any) -> Any:
-    """Return a default value for a Serializable object or a SerializedNotImplemented object."""
+    """Return a default value for a Serializable object or
+    a SerializedNotImplemented object."""
     if isinstance(obj, Serializable):
         return obj.to_json()
     else:

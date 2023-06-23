@@ -128,7 +128,8 @@ def load_query_constructor_chain(
     Args:
         llm: BaseLanguageModel to use for the chain.
         document_contents: The contents of the document to be queried.
-        attribute_info: A list of AttributeInfo objects describing the attributes of the document.
+        attribute_info: A list of AttributeInfo objects describing
+            the attributes of the document.
         examples: Optional list of examples to use for the chain.
         allowed_comparators: An optional list of allowed comparators.
         allowed_operators: An optional list of allowed operators.
