@@ -192,7 +192,7 @@ class FAISS(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            filter (Optional[Dict[str, Any]]): Filter by metadata. Defaults to None.
             fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
                       Defaults to 20.
             **kwargs: kwargs to be passed to similarity search. Can include:
@@ -218,7 +218,11 @@ class FAISS(VectorStore):
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")
             if filter is not None:
-                if all(doc.metadata.get(key) == value for key, value in filter.items()):
+                filter = {
+                    key: [value] if not isinstance(value, list) else value
+                    for key, value in filter.items()
+                }
+                if all(doc.metadata.get(key) in value for key, value in filter.items()):
                     docs.append((doc, scores[0][j]))
             else:
                 docs.append((doc, scores[0][j]))

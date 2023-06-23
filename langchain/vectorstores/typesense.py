@@ -42,10 +42,10 @@ class Typesense(VectorStore):
 
             embedding = OpenAIEmbeddings()
             vectorstore = Typesense(
-                typesense_client,
-                typesense_collection_name,
-                embedding.embed_query,
-                "text",
+                typesense_client=typesense_client,
+                embedding=embedding,
+                typesense_collection_name=typesense_collection_name,
+                text_key="text",
             )
     """
 
@@ -138,14 +138,15 @@ class Typesense(VectorStore):
     def similarity_search_with_score(
         self,
         query: str,
-        k: int = 4,
+        k: int = 10,
         filter: Optional[str] = "",
     ) -> List[Tuple[Document, float]]:
         """Return typesense documents most similar to query, along with scores.
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return. Defaults to 10.
+                Minimum 10 results would be returned.
             filter: typesense filter_by expression to filter documents on
 
         Returns:
@@ -173,7 +174,7 @@ class Typesense(VectorStore):
     def similarity_search(
         self,
         query: str,
-        k: int = 4,
+        k: int = 10,
         filter: Optional[str] = "",
         **kwargs: Any,
     ) -> List[Document]:
@@ -181,7 +182,8 @@ class Typesense(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return. Defaults to 10.
+                Minimum 10 results would be returned.
             filter: typesense filter_by expression to filter documents on
 
         Returns:

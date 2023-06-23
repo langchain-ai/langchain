@@ -194,6 +194,8 @@ class BaseCallbackHandler(
 
     raise_error: bool = False
 
+    run_inline: bool = False
+
     @property
     def ignore_llm(self) -> bool:
         """Whether to ignore LLM callbacks."""
