@@ -207,6 +207,15 @@ def get_openapi_chain(
     prompt: Optional[BasePromptTemplate] = None,
     request_chain: Optional[Chain] = None,
 ) -> SequentialChain:
+    """Create a chain for querying an API from a OpenAPI spec.
+
+    Args:
+        spec: OpenAPISpec or url/file/text string corresponding to one.
+        llm: language model, should be an OpenAI function-calling model, e.g.
+            `ChatOpenAI(model="gpt-3.5-turbo-0613")`.
+        prompt: Main prompt template to use.
+        request_chain: Chain for taking the functions output and executing the request.
+    """
     if isinstance(spec, str):
         for conversion in (
             OpenAPISpec.from_url,
