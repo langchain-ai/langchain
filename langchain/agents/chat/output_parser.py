@@ -23,7 +23,9 @@ class ChatOutputParser(AgentOutputParser):
                     "Parsing LLM output produced a final answer "
                     f"and a parse-able action: {text}"
                 )
-            return AgentAction(response["action"], response.get("action_input", ""), text)
+            return AgentAction(
+                response["action"], response.get("action_input", {}), text
+            )
 
         except Exception:
             if not includes_answer:
