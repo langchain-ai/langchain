@@ -45,7 +45,8 @@ class WikipediaLoader(BaseLoader):
         Loads the query result from Wikipedia into a list of Documents.
 
         Returns:
-            List[Document]: A list of Document objects representing the loaded Wikipedia pages.
+            List[Document]: A list of Document objects representing the loaded
+                Wikipedia pages.
         """
         client = WikipediaAPIWrapper(
             lang=self.lang,
