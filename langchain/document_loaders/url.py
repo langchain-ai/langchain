@@ -87,10 +87,9 @@ class UnstructuredURLLoader(BaseLoader):
         from unstructured.partition.html import partition_html
 
         docs: List[Document] = list()
-        if self.show_progress_bar:
-            self.urls = tqdm(self.urls)
+        urls = tqdm(self.urls) if self.show_progress_bar else self.urls
 
-        for url in self.urls:
+        for url in urls:
             try:
                 if self.__is_non_html_available():
                     if self.__is_headers_available_for_non_html():
