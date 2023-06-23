@@ -75,6 +75,7 @@ from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.odt import UnstructuredODTLoader
 from langchain.document_loaders.onedrive import OneDriveLoader
 from langchain.document_loaders.onedrive_file import OneDriveFileLoader
+from langchain.document_loaders.open_city_data import OpenCityDataLoader
 from langchain.document_loaders.pdf import (
     MathpixPDFLoader,
     OnlinePDFLoader,
@@ -209,6 +210,7 @@ __all__ = [
     "OneDriveLoader",
     "OnlinePDFLoader",
     "OutlookMessageLoader",
+    "OpenCityDataLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
     "PDFPlumberLoader",
