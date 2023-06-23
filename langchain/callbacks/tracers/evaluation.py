@@ -10,9 +10,33 @@ from langchain.callbacks.tracers.schemas import Run
 
 
 class EvaluatorCallbackHandler(BaseTracer):
-    """A tracer that runs a run evaluator whenever a
+    """A tracer that runs a run evaluator whenever a run is persisted.
 
-    run is persisted."""
+    Parameters
+    ----------
+    evaluators : Sequence[RunEvaluator]
+        The sequence of run evaluators to be executed.
+    max_workers : int, optional
+        The maximum number of worker threads to use for running the evaluators. If not specified, it will default to the number of evaluators.
+    client : LangChainPlusClient, optional
+        The LangChainPlusClient instance to use for evaluating the runs. If not specified, a new instance will be created.
+    example_id : Union[UUID, str], optional
+        The example ID to be associated with the runs. If a string is provided, it will be converted to a UUID. If not specified, no example ID will be associated.
+
+    Attributes
+    ----------
+    example_id : Union[UUID, None]
+        The example ID associated with the runs.
+    client : LangChainPlusClient
+        The LangChainPlusClient instance used for evaluating the runs.
+    evaluators : Sequence[RunEvaluator]
+        The sequence of run evaluators to be executed.
+    executor : ThreadPoolExecutor
+        The thread pool executor used for running the evaluators.
+    futures : Set[Future]
+        The set of futures representing the running evaluators.
+
+    """
 
     name = "evaluator_callback_handler"
 
@@ -34,7 +58,14 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.futures: Set[Future] = set()
 
     def _persist_run(self, run: Run) -> None:
-        """Run the evaluator on the run."""
+        """Run the evaluator on the run.
+
+        Parameters
+        ----------
+        run : Run
+            The run to be evaluated.
+
+        """
         run_ = run.copy()
         run_.reference_example_id = self.example_id
         for evaluator in self.evaluators:
