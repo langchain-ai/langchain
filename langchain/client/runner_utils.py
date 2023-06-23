@@ -1,4 +1,4 @@
-"""Utilities for running Language Models (LLMs) or Chains over datasets."""
+"""Utilities for running language models or Chains over datasets."""
 
 from __future__ import annotations
 
@@ -140,10 +140,10 @@ async def _arun_llm(
     callbacks: Callbacks = None,
 ) -> Union[LLMResult, ChatResult]:
     """
-    Asynchronously run the Language Model (LLM).
+    Asynchronously run the language model.
 
     Args:
-        llm: The Language Model to run.
+        llm: The language model to run.
         inputs: The input dictionary.
         tags: Optional tags to add to the run.
         callbacks: Optional callbacks to use during the run.
@@ -192,11 +192,11 @@ async def _arun_llm_or_chain(
     callbacks: Optional[List[BaseCallbackHandler]] = None,
 ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
     """
-    Asynchronously run the Chain or Language Model (LLM).
+    Asynchronously run the Chain or language model.
 
     Args:
         example: The example to run.
-        llm_or_chain_factory: The Chain or Language Model constructor to run.
+        llm_or_chain_factory: The Chain or language model constructor to run.
         n_repetitions: The number of times to run the model on each example.
         tags: Optional tags to add to the run.
         callbacks: Optional callbacks to use during the run.
@@ -288,18 +288,18 @@ async def _gather_with_concurrency(
     return results
 
 
-async def _tracer_initializer(session_name: Optional[str]) -> Optional[LangChainTracer]:
+async def _tracer_initializer(project_name: Optional[str]) -> Optional[LangChainTracer]:
     """
     Initialize a tracer to share across tasks.
 
     Args:
-        session_name: The session name for the tracer.
+        project_name: The project name for the tracer.
 
     Returns:
-        A LangChainTracer instance with an active session.
+        A LangChainTracer instance with an active project.
     """
-    if session_name:
-        tracer = LangChainTracer(session_name=session_name)
+    if project_name:
+        tracer = LangChainTracer(project_name=project_name)
         return tracer
     else:
         return None
@@ -311,14 +311,15 @@ async def arun_on_examples(
     *,
     concurrency_level: int = 5,
     num_repetitions: int = 1,
-    session_name: Optional[str] = None,
+    project_name: Optional[str] = None,
     verbose: bool = False,
     client: Optional[LangChainPlusClient] = None,
     tags: Optional[List[str]] = None,
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
 ) -> Dict[str, Any]:
     """
-    Asynchronously run the Chain or Language Model (LLM) on examples.
+    Asynchronously run the chain on examples and store traces
+        to the specified project name.
 
     Args:
         examples: Examples to run the model or chain over.
@@ -329,20 +330,20 @@ async def arun_on_examples(
         num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
-        session_name: Name of the session to store the traces in.
+        project_name: Project name to use when tracing runs.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
         client: Client to use to read the dataset. If not provided, a new
             client will be created using the credentials in the environment.
-        tags: Tags to add to each run in the session.
+        tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
 
     Returns:
         A dictionary mapping example ids to the model outputs.
     """
-    session_name = _get_session_name(session_name, llm_or_chain_factory, None)
+    project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or LangChainPlusClient()
-    client_.create_session(session_name, mode="eval")
+    client_.create_project(project_name, mode="eval")
 
     results: Dict[str, List[Any]] = {}
     evaluation_handler = EvaluatorCallbackHandler(
@@ -374,7 +375,7 @@ async def arun_on_examples(
 
     await _gather_with_concurrency(
         concurrency_level,
-        functools.partial(_tracer_initializer, session_name),
+        functools.partial(_tracer_initializer, project_name),
         *(functools.partial(process_example, e) for e in examples),
     )
     evaluation_handler.wait_for_futures()
@@ -389,10 +390,10 @@ def run_llm(
     tags: Optional[List[str]] = None,
 ) -> Union[LLMResult, ChatResult]:
     """
-    Run the Language Model (LLM) on the example.
+    Run the language model on the example.
 
     Args:
-        llm: The Language Model to run.
+        llm: The language model to run.
         inputs: The input dictionary.
         callbacks: The callbacks to use during the run.
         tags: Optional tags to add to the run.
@@ -437,11 +438,11 @@ def run_llm_or_chain(
     callbacks: Optional[List[BaseCallbackHandler]] = None,
 ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
     """
-    Run the Chain or Language Model (LLM) synchronously.
+    Run the Chain or language model synchronously.
 
     Args:
         example: The example to run.
-        llm_or_chain_factory: The Chain or Language Model constructor to run.
+        llm_or_chain_factory: The Chain or language model constructor to run.
         n_repetitions: The number of times to run the model on each example.
         tags: Optional tags to add to the run.
         callbacks: Optional callbacks to use during the run.
@@ -484,15 +485,15 @@ def run_on_examples(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
     num_repetitions: int = 1,
-    session_name: Optional[str] = None,
+    project_name: Optional[str] = None,
     verbose: bool = False,
     client: Optional[LangChainPlusClient] = None,
     tags: Optional[List[str]] = None,
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
 ) -> Dict[str, Any]:
     """
-    Run the Chain or Language Model on examples and store
-    traces to the specified session name.
+    Run the Chain or language model on examples and store
+    traces to the specified project name.
 
     Args:
         examples: Examples to run the model or chain over.
@@ -502,22 +503,22 @@ def run_on_examples(
         num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
-        session_name: Name of the session to store the traces in.
+        project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
         client: Client to use to access the dataset. If None, a new client
             will be created using the credentials in the environment.
-        tags: Tags to add to each run in the session.
+        tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
 
     Returns:
         A dictionary mapping example ids to the model outputs.
     """
     results: Dict[str, Any] = {}
-    session_name = _get_session_name(session_name, llm_or_chain_factory, None)
+    project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or LangChainPlusClient()
-    client_.create_session(session_name, mode="eval")
-    tracer = LangChainTracer(session_name=session_name)
+    client_.create_project(project_name, mode="eval")
+    tracer = LangChainTracer(project_name=project_name)
     evalution_handler = EvaluatorCallbackHandler(
         evaluators=run_evaluators or [], client=client_
     )
@@ -538,24 +539,24 @@ def run_on_examples(
     return results
 
 
-def _get_session_name(
-    session_name: Optional[str],
+def _get_project_name(
+    project_name: Optional[str],
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     dataset_name: Optional[str],
 ) -> str:
     """
-    Get the session name.
+    Get the project name.
 
     Args:
-        session_name: The session name.
-        llm_or_chain_factory: The Chain or Language Model constructor.
+        project_name: The project name if manually specified.
+        llm_or_chain_factory: The Chain or language model constructor.
         dataset_name: The dataset name.
 
     Returns:
-        The session name.
+        The project name.
     """
-    if session_name is not None:
-        return session_name
+    if project_name is not None:
+        return project_name
     current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     if isinstance(llm_or_chain_factory, BaseLanguageModel):
         model_name = llm_or_chain_factory.__class__.__name__
@@ -571,15 +572,15 @@ async def arun_on_dataset(
     *,
     concurrency_level: int = 5,
     num_repetitions: int = 1,
-    session_name: Optional[str] = None,
+    project_name: Optional[str] = None,
     verbose: bool = False,
     client: Optional[LangChainPlusClient] = None,
     tags: Optional[List[str]] = None,
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
 ) -> Dict[str, Any]:
     """
-    Asynchronously run the Chain or Language Model on a dataset
-    and store traces to the specified session name.
+    Asynchronously run the Chain or language model on a dataset
+    and store traces to the specified project name.
 
     Args:
         dataset_name: Name of the dataset to run the chain on.
@@ -590,19 +591,19 @@ async def arun_on_dataset(
         num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
-        session_name: Name of the session to store the traces in.
+        project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
         client: Client to use to read the dataset. If not provided, a new
             client will be created using the credentials in the environment.
-        tags: Tags to add to each run in the session.
+        tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
 
     Returns:
-        A dictionary containing the run's session name and the resulting model outputs.
+        A dictionary containing the run's project name and the resulting model outputs.
     """
     client_ = client or LangChainPlusClient()
-    session_name = _get_session_name(session_name, llm_or_chain_factory, dataset_name)
+    project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))
     results = await arun_on_examples(
@@ -610,14 +611,14 @@ async def arun_on_dataset(
         llm_or_chain_factory,
         concurrency_level=concurrency_level,
         num_repetitions=num_repetitions,
-        session_name=session_name,
+        project_name=project_name,
         verbose=verbose,
         client=client_,
         tags=tags,
         run_evaluators=run_evaluators,
     )
     return {
-        "session_name": session_name,
+        "project_name": project_name,
         "results": results,
     }
 
@@ -627,15 +628,15 @@ def run_on_dataset(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
     num_repetitions: int = 1,
-    session_name: Optional[str] = None,
+    project_name: Optional[str] = None,
     verbose: bool = False,
     client: Optional[LangChainPlusClient] = None,
     tags: Optional[List[str]] = None,
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
 ) -> Dict[str, Any]:
     """
-    Run the Chain or Language Model on a dataset and store traces
-    to the specified session name.
+    Run the Chain or language model on a dataset and store traces
+    to the specified project name.
 
     Args:
         dataset_name: Name of the dataset to run the chain on.
@@ -646,32 +647,32 @@ def run_on_dataset(
         num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
-        session_name: Name of the session to store the traces in.
+        project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
         client: Client to use to access the dataset. If None, a new client
             will be created using the credentials in the environment.
-        tags: Tags to add to each run in the session.
+        tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
 
     Returns:
-        A dictionary containing the run's session name and the resulting model outputs.
+        A dictionary containing the run's project name and the resulting model outputs.
     """
     client_ = client or LangChainPlusClient()
-    session_name = _get_session_name(session_name, llm_or_chain_factory, dataset_name)
+    project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))
     results = run_on_examples(
         examples,
         llm_or_chain_factory,
         num_repetitions=num_repetitions,
-        session_name=session_name,
+        project_name=project_name,
         verbose=verbose,
         tags=tags,
         run_evaluators=run_evaluators,
         client=client_,
     )
     return {
-        "session_name": session_name,
+        "project_name": project_name,
         "results": results,
     }
