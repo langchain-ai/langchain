@@ -37,7 +37,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Print out that we are entering a chain."""
-        class_name = serialized.get("id", ["<unknown>"])[-1]
+        class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
         print(f"\n\n\033[1m> Entering new {class_name} chain...\033[0m")
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
