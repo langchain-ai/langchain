@@ -42,6 +42,7 @@ def elapsed(run: Any) -> str:
 
 class ConsoleCallbackHandler(BaseTracer):
     """Tracer that prints to the console."""
+
     name = "console_callback_handler"
 
     def _persist_run(self, run: Run) -> None:

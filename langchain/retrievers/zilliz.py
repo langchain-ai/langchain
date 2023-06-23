@@ -11,6 +11,7 @@ from langchain.vectorstores.zilliz import Zilliz
 
 class ZillizRetriever(BaseRetriever):
     """Retriever that uses the Zilliz API."""
+
     def __init__(
         self,
         embedding_function: Embeddings,

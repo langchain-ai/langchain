@@ -20,6 +20,7 @@ def _uuid_key() -> str:
 
 class Tair(VectorStore):
     """Wrapper around Tair Vector store."""
+
     def __init__(
         self,
         embedding_function: Embeddings,

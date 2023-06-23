@@ -6,28 +6,33 @@ from pydantic import BaseModel, PrivateAttr
 
 class BaseSerialized(TypedDict):
     """Base class for serialized objects."""
+
     lc: int
     id: List[str]
 
 
 class SerializedConstructor(BaseSerialized):
     """Serialized constructor."""
+
     type: Literal["constructor"]
     kwargs: Dict[str, Any]
 
 
 class SerializedSecret(BaseSerialized):
     """Serialized secret."""
+
     type: Literal["secret"]
 
 
 class SerializedNotImplemented(BaseSerialized):
     """Serialized not implemented."""
+
     type: Literal["not_implemented"]
 
 
 class Serializable(BaseModel, ABC):
     """Serializable base class."""
+
     @property
     def lc_serializable(self) -> bool:
         """
@@ -135,7 +140,7 @@ def _replace_secrets(
 
 
 def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
-    """ Serialize a "not implemented" object.
+    """Serialize a "not implemented" object.
 
     Args:
         obj: object to serialize

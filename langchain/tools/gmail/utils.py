@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def import_google() -> Tuple[Request, Credentials]:
-    """ Import google libraries.
+    """Import google libraries.
 
     Returns:
         Tuple[Request, Credentials]: Request and Credentials classes.
@@ -34,7 +34,7 @@ def import_google() -> Tuple[Request, Credentials]:
 
 
 def import_installed_app_flow() -> InstalledAppFlow:
-    """ Import InstalledAppFlow class.
+    """Import InstalledAppFlow class.
 
     Returns:
         InstalledAppFlow: InstalledAppFlow class.
@@ -50,7 +50,7 @@ def import_installed_app_flow() -> InstalledAppFlow:
 
 
 def import_googleapiclient_resource_builder() -> build_resource:
-    """ Import googleapiclient.discovery.build function.
+    """Import googleapiclient.discovery.build function.
 
     Returns:
         build_resource: googleapiclient.discovery.build function.

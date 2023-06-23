@@ -22,6 +22,7 @@ def DEFAULT_COMPOSER(op_name: str) -> Callable:
     Returns:
         Callable that takes a list of arguments and returns a string.
     """
+
     def f(*args: Any) -> str:
         args_: map[str] = map(str, args)
         return f" {op_name} ".join(args_)
@@ -38,6 +39,7 @@ def FUNCTION_COMPOSER(op_name: str) -> Callable:
     Returns:
         Callable that takes a list of arguments and returns a string.
     """
+
     def f(*args: Any) -> str:
         args_: map[str] = map(str, args)
         return f"{op_name}({','.join(args_)})"

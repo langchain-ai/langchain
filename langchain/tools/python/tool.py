@@ -22,7 +22,7 @@ def _get_default_python_repl() -> PythonREPL:
 
 
 def sanitize_input(query: str) -> str:
-    """ Sanitize input to the python REPL.
+    """Sanitize input to the python REPL.
     Remove whitespace, backtick & python (if llm mistakes python console as terminal)
 
     Args:

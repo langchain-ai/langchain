@@ -31,6 +31,7 @@ def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
 
 class KNNRetriever(BaseRetriever, BaseModel):
     """KNN Retriever."""
+
     embeddings: Embeddings
     index: Any
     texts: List[str]

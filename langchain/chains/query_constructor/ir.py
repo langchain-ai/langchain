@@ -61,6 +61,7 @@ class Expr(BaseModel):
 
 class Operator(str, Enum):
     """Enumerator of the operations."""
+
     AND = "and"
     OR = "or"
     NOT = "not"
@@ -68,6 +69,7 @@ class Operator(str, Enum):
 
 class Comparator(str, Enum):
     """Enumerator of the comparison operators."""
+
     EQ = "eq"
     GT = "gt"
     GTE = "gte"

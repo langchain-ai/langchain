@@ -28,6 +28,7 @@ incoming_payment_details",
 
 class ModernTreasuryLoader(BaseLoader):
     """Loader that fetches data from Modern Treasury."""
+
     def __init__(
         self,
         resource: str,

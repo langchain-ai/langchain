@@ -74,6 +74,7 @@ def create_extraction_chain_pydantic(
     Returns:
         Chain that can be used to extract information from a passage.
     """
+
     class PydanticSchema(BaseModel):
         info: List[pydantic_schema]  # type: ignore
 

@@ -31,6 +31,7 @@ def create_message_model(table_name, DynamicBase):  # type: ignore
         The model class.
 
     """
+
     # Model decleared inside a function to have a dynamic table name
     class Message(DynamicBase):
         __tablename__ = table_name
@@ -43,6 +44,7 @@ def create_message_model(table_name, DynamicBase):  # type: ignore
 
 class SQLChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in an SQL database."""
+
     def __init__(
         self,
         session_id: str,

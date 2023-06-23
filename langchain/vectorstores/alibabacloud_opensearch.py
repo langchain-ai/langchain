@@ -72,7 +72,7 @@ class AlibabaCloudOpenSearchSettings:
 
 
 def create_metadata(fields: Dict[str, Any]) -> Dict[str, Any]:
-    """ Create metadata from fields.
+    """Create metadata from fields.
 
     Args:
         fields: The fields of the document. The fields must be a dict.
@@ -90,6 +90,7 @@ def create_metadata(fields: Dict[str, Any]) -> Dict[str, Any]:
 
 class AlibabaCloudOpenSearch(VectorStore):
     """Alibaba Cloud OpenSearch Vector Store"""
+
     def __init__(
         self,
         embedding: Embeddings,

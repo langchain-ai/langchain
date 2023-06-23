@@ -30,6 +30,7 @@ def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
 
 class SVMRetriever(BaseRetriever, BaseModel):
     """SVM Retriever."""
+
     embeddings: Embeddings
     index: Any
     texts: List[str]

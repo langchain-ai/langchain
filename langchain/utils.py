@@ -66,7 +66,7 @@ def raise_for_status_with_text(response: Response) -> None:
 
 
 def stringify_value(val: Any) -> str:
-    """ Stringify a value.
+    """Stringify a value.
 
     Args:
         val: The value to stringify.
@@ -85,7 +85,7 @@ def stringify_value(val: Any) -> str:
 
 
 def stringify_dict(data: dict) -> str:
-    """ Stringify a dictionary.
+    """Stringify a dictionary.
 
     Args:
         data: The dictionary to stringify.

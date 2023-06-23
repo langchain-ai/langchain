@@ -15,6 +15,7 @@ from langchain.tools.gmail.utils import clean_email_body
 
 class Resource(str, Enum):
     """Enumerator of Resources to search."""
+
     THREADS = "threads"
     MESSAGES = "messages"
 

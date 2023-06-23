@@ -11,6 +11,7 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 
 class SearchType(str, Enum):
     """Enumerator of the types of search to perform."""
+
     similarity = "similarity"
     mmr = "mmr"
 
