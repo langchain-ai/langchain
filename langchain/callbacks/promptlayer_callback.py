@@ -35,7 +35,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> Any:
         self.runs[run_id] = {
-            "messages": [self._create_message_dicts(m) for m in messages],
+            "messages": [self._create_message_dicts(m)[0] for m in messages],
             "invocation_params": kwargs.get("invocation_params", {}),
             "name": kwargs.get("invocation_params", {}).get("_type", "No Type"),
             "request_start_time": datetime.datetime.now().timestamp(),
@@ -83,7 +83,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
             if run_info.get("name") == "openai-chat":
                 function_name = f"langchain.chat.{run_info.get('name')}"
                 model_input = run_info.get("messages", [])[i]
-                model_response = self._convert_message_to_dict(generation.message)
+                model_response = [self._convert_message_to_dict(generation.message)]
             else:
                 function_name = f"langchain.{run_info.get('name')}"
                 model_input = [run_info.get("prompts", [])[i]]
