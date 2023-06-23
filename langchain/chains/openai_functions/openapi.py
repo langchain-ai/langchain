@@ -134,9 +134,9 @@ def openapi_spec_to_openai_fn(
                         schema = spec.get_schema(media_type_object.media_type_schema)
                         media_types[media_type] = schema.dict(exclude_none=True)
                 if len(media_types) == 1:
-                    media_type, schema = list(media_types.items())[0]
+                    media_type, schema_dict = list(media_types.items())[0]
                     key = "json" if media_type == "application/json" else "data"
-                    request_args[key] = schema
+                    request_args[key] = schema_dict
                 elif len(media_types) > 1:
                     request_args["data"] = {"anyOf": list(media_types.values())}
 
