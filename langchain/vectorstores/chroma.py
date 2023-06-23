@@ -91,8 +91,9 @@ class Chroma(VectorStore):
 
         if embeddings is None and "embedding_function" in kwargs:
             # Use kwarg embedding_function and print a deprecation warning
-            assert isinstance(kwargs["embedding_function"], Embeddings), \
-                "Class `Chroma` expects to instantiated with an `Embeddings` instance."
+            if not isinstance(kwargs["embedding_function"], Embeddings):
+                raise ValueError("Class `Chroma` expects kwarg `embedding_function`" +\
+                                 " to be of type `Embeddings`.")
             embeddings = kwargs["embedding_function"]
             warn("The named argument `embedding_function` is deprecated. " + \
                  "Please use the argument `embeddings` instead.",

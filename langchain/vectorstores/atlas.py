@@ -74,8 +74,9 @@ class AtlasDB(VectorStore):
 
         if embeddings is None and "embedding_function" in kwargs:
             # Use kwarg embedding_function and print a deprecation warning
-            assert isinstance(kwargs["embedding_function"], Embeddings), \
-                "Class `AtlasDB` expects to instantiated with an `Embeddings` instance."
+            if not isinstance(kwargs["embedding_function"], Embeddings):
+                raise ValueError("Class `AtlasDB` expects kwarg `embedding_function`" +\
+                                 " to be of type `Embeddings`.")
             embeddings = kwargs["embedding_function"]
             warn("Using the named argument `embedding_function` is "+\
                  "deprecated. Please use the argument `embeddings` instead.",
