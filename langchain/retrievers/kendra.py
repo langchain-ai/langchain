@@ -171,6 +171,14 @@ class AmazonKendraRetriever(BaseRetriever):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
+    top_k: int = 3
+    """No of results to return"""
+
+    attribute_filter: Optional[Dict] = None
+    """Additional filtering of results based on metadata
+    See: https://docs.aws.amazon.com/kendra/latest/APIReference/API_AttributeFilter.html
+    """
+
     client: Any  #: :meta private:
     """boto3 client for Kendra."""
 
@@ -179,9 +187,13 @@ class AmazonKendraRetriever(BaseRetriever):
         index_id: str,
         region_name: Optional[str] = None,
         credentials_profile_name: Optional[str] = None,
+        top_k: int = 3,
+        attribute_filter: Optional[Dict] = None,
         client: Optional[Any] = None,
     ):
         self.index_id = index_id
+        self.top_k = top_k
+        self.attribute_filter = attribute_filter
 
         if client is not None:
             self.client = client
@@ -252,12 +264,7 @@ class AmazonKendraRetriever(BaseRetriever):
             docs = r_result.get_top_k_docs(top_k)
         return docs
 
-    def get_relevant_documents(
-        self,
-        query: str,
-        top_k: int = 3,
-        attribute_filter: Optional[Dict] = None,
-    ) -> List[Document]:
+    def get_relevant_documents(self, query: str) -> List[Document]:
         """Run search on Kendra index and get top k documents
 
         Example:
@@ -266,7 +273,7 @@ class AmazonKendraRetriever(BaseRetriever):
             docs = retriever.get_relevant_documents('This is my query')
 
         """
-        docs = self._kendra_query(query, top_k, attribute_filter)
+        docs = self._kendra_query(query, self.top_k, self.attribute_filter)
         return docs
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
