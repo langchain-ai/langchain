@@ -21,7 +21,7 @@ from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
 
 __all__ = [
     "ArgillaCallbackHandler",
-    "ArthurCallbackHandler"
+    "ArthurCallbackHandler",
     "OpenAICallbackHandler",
     "StdOutCallbackHandler",
     "FileCallbackHandler",
