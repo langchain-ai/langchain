@@ -94,6 +94,7 @@ from langchain.document_loaders.psychic import PsychicLoader
 from langchain.document_loaders.pyspark_dataframe import PySparkDataFrameLoader
 from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
+from langchain.document_loaders.recursive_url_loader import RecusiveUrlLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
@@ -226,6 +227,7 @@ __all__ = [
     "PySparkDataFrameLoader",
     "PythonLoader",
     "ReadTheDocsLoader",
+    "RecusiveUrlLoader",
     "RedditPostsLoader",
     "RoamLoader",
     "S3DirectoryLoader",
