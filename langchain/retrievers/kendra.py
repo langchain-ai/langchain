@@ -144,7 +144,26 @@ class RetrieveResult(BaseModel, extra=Extra.allow):
 
 
 class AmazonKendraRetriever(BaseRetriever):
-    """Retriever to query documents from Amazon Kendra Index.
+    """Retriever class to query documents from Amazon Kendra Index.
+
+    Args:
+        index_id: Kendra index id
+
+        region_name: The aws region e.g., `us-west-2`.
+            Fallsback to AWS_DEFAULT_REGION env variable
+            or region specified in ~/.aws/config.
+
+        credentials_profile_name: The name of the profile in the ~/.aws/credentials
+            or ~/.aws/config files, which has either access keys or role information
+            specified. If not specified, the default credential profile or, if on an
+            EC2 instance, credentials from IMDS will be used.
+
+        top_k: No of results to return
+
+        attribute_filter: Additional filtering of results based on metadata
+            See: https://docs.aws.amazon.com/kendra/latest/APIReference
+
+        client: boto3 client for Kendra
 
     Example:
         .. code-block:: python
@@ -154,33 +173,6 @@ class AmazonKendraRetriever(BaseRetriever):
             )
 
     """
-
-    index_id: str
-    """Kendra index id"""
-
-    region_name: Optional[str] = None
-    """The aws region e.g., `us-west-2`. Fallsback to AWS_DEFAULT_REGION env variable
-    or region specified in ~/.aws/config in case it is not provided here.
-    """
-
-    credentials_profile_name: Optional[str] = None
-    """The name of the profile in the ~/.aws/credentials or ~/.aws/config files, which
-    has either access keys or role information specified.
-    If not specified, the default credential profile or, if on an EC2 instance,
-    credentials from IMDS will be used.
-    See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
-    """
-
-    top_k: int = 3
-    """No of results to return"""
-
-    attribute_filter: Optional[Dict] = None
-    """Additional filtering of results based on metadata
-    See: https://docs.aws.amazon.com/kendra/latest/APIReference/API_AttributeFilter.html
-    """
-
-    client: Any  #: :meta private:
-    """boto3 client for Kendra."""
 
     def __init__(
         self,
@@ -202,7 +194,7 @@ class AmazonKendraRetriever(BaseRetriever):
         try:
             import boto3
 
-            if self.credentials_profile_name is not None:
+            if credentials_profile_name is not None:
                 session = boto3.Session(profile_name=credentials_profile_name)
             else:
                 # use default credentials
