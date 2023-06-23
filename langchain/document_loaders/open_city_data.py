@@ -19,7 +19,6 @@ class OpenCityDataLoader(BaseLoader):
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load records."""
 
-        import pandas as pd
         from sodapy import Socrata
 
         client = Socrata(self.city_id, None)
