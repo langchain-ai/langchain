@@ -51,7 +51,10 @@ class WebBaseLoader(BaseLoader):
     """kwargs for requests"""
 
     def __init__(
-        self, web_path: Union[str, List[str]], header_template: Optional[dict] = None
+        self,
+        web_path: Union[str, List[str]],
+        header_template: Optional[dict] = None,
+        verify: Optional[bool] = True,
     ):
         """Initialize with webpage path."""
 
@@ -70,6 +73,9 @@ class WebBaseLoader(BaseLoader):
             raise ValueError(
                 "bs4 package not found, please install it with " "`pip install bs4`"
             )
+
+        # Choose to verify
+        self.verify = verify
 
         headers = header_template or default_header_template
         if not headers.get("User-Agent"):
@@ -94,11 +100,17 @@ class WebBaseLoader(BaseLoader):
     async def _fetch(
         self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
     ) -> str:
-        async with aiohttp.ClientSession() as session:
+        # For SiteMap SSL verification
+        if not self.requests_kwargs.get("verify", True):
+            connector = aiohttp.TCPConnector(ssl=False)
+        else:
+            connector = None
+
+        async with aiohttp.ClientSession(connector=connector) as session:
             for i in range(retries):
                 try:
                     async with session.get(
-                        url, headers=self.session.headers
+                        url, headers=self.session.headers, verify=self.verify
                     ) as response:
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:
@@ -173,7 +185,7 @@ class WebBaseLoader(BaseLoader):
 
         self._check_parser(parser)
 
-        html_doc = self.session.get(url, **self.requests_kwargs)
+        html_doc = self.session.get(url, verify=self.verify, **self.requests_kwargs)
         html_doc.encoding = html_doc.apparent_encoding
         return BeautifulSoup(html_doc.text, parser)
 

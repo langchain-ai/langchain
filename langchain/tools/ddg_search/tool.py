@@ -16,7 +16,7 @@ from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 class DuckDuckGoSearchRun(BaseTool):
     """Tool that adds the capability to query the DuckDuckGo search API."""
 
-    name = "DuckDuckGo Search"
+    name = "duckduckgo_search"
     description = (
         "A wrapper around DuckDuckGo Search. "
         "Useful for when you need to answer questions about current events. "

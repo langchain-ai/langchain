@@ -266,7 +266,7 @@ class Vectara(VectorStore):
         docs_and_scores = self.similarity_search_with_score(
             query,
             k=k,
-            lamnbda_val=lambda_val,
+            lambda_val=lambda_val,
             filter=filter,
             n_sentence_context=n_sentence_context,
             **kwargs,

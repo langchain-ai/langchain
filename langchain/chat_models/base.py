@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
-from pydantic import Extra, Field, root_validator
+from pydantic import Field, root_validator
 
 import langchain
 from langchain.base_language import BaseLanguageModel
@@ -17,6 +17,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
+from langchain.load.dump import dumpd
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -38,6 +39,8 @@ class BaseChatModel(BaseLanguageModel, ABC):
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    tags: Optional[List[str]] = Field(default=None, exclude=True)
+    """Tags to add to the run trace."""
 
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -53,7 +56,6 @@ class BaseChatModel(BaseLanguageModel, ABC):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
@@ -64,18 +66,25 @@ class BaseChatModel(BaseLanguageModel, ABC):
         messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
+        *,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Top Level call"""
 
         params = self.dict()
         params["stop"] = stop
+        options = {"stop": stop}
 
         callback_manager = CallbackManager.configure(
-            callbacks, self.callbacks, self.verbose
+            callbacks,
+            self.callbacks,
+            self.verbose,
+            tags,
+            self.tags,
         )
         run_manager = callback_manager.on_chat_model_start(
-            {"name": self.__class__.__name__}, messages, invocation_params=params
+            dumpd(self), messages, invocation_params=params, options=options
         )
 
         new_arg_supported = inspect.signature(self._generate).parameters.get(
@@ -104,17 +113,24 @@ class BaseChatModel(BaseLanguageModel, ABC):
         messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
+        *,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Top Level call"""
         params = self.dict()
         params["stop"] = stop
+        options = {"stop": stop}
 
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, self.callbacks, self.verbose
+            callbacks,
+            self.callbacks,
+            self.verbose,
+            tags,
+            self.tags,
         )
         run_manager = await callback_manager.on_chat_model_start(
-            {"name": self.__class__.__name__}, messages, invocation_params=params
+            dumpd(self), messages, invocation_params=params, options=options
         )
 
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
@@ -187,9 +203,10 @@ class BaseChatModel(BaseLanguageModel, ABC):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> BaseMessage:
         generation = self.generate(
-            [messages], stop=stop, callbacks=callbacks
+            [messages], stop=stop, callbacks=callbacks, **kwargs
         ).generations[0][0]
         if isinstance(generation, ChatGeneration):
             return generation.message
@@ -224,7 +241,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
             _stop = None
         else:
             _stop = list(stop)
-        result = self([HumanMessage(content=text)], stop=_stop)
+        result = self([HumanMessage(content=text)], stop=_stop, **kwargs)
         return result.content
 
     def predict_messages(
