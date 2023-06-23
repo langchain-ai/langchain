@@ -353,3 +353,16 @@ class Pinecone(VectorStore):
         return cls(
             pinecone.Index(index_name), embedding.embed_query, text_key, namespace
         )
+
+    def delete(self, ids: List[str]) -> None:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+
+        # This is the maximum number of IDs that can be deleted
+        chunk_size = 1000
+        for i in range(0, len(ids), chunk_size):
+            chunk = ids[i : i + chunk_size]
+            self._index.delete(ids=chunk)
