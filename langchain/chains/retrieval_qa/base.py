@@ -116,9 +116,18 @@ class BaseRetrievalQA(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
 
+        existing_keys = [self.input_key]
+        if self.combine_documents_chain.memory is not None:
+            if hasattr(self.combine_documents_chain.memory, "memory_key"):
+                existing_keys += [self.combine_documents_chain.memory.memory_key]
+        kwargs = {k: v for k, v in inputs.items() if k not in existing_keys}
+
         docs = self._get_docs(question)
         answer = self.combine_documents_chain.run(
-            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+            input_documents=docs,
+            question=question,
+            callbacks=_run_manager.get_child(),
+            **kwargs,
         )
 
         if self.return_source_documents:
