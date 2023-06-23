@@ -2,6 +2,7 @@
 
 from langchain.callbacks.aim_callback import AimCallbackHandler
 from langchain.callbacks.argilla_callback import ArgillaCallbackHandler
+from langchain.callbacks.arthur_callback import ArthurCallbackHandler
 from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
 from langchain.callbacks.file import FileCallbackHandler
@@ -20,6 +21,7 @@ from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
 
 __all__ = [
     "ArgillaCallbackHandler",
+    "ArthurCallbackHandler"
     "OpenAICallbackHandler",
     "StdOutCallbackHandler",
     "FileCallbackHandler",
