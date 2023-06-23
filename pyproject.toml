@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.208"
+version = "0.0.209"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -103,14 +103,14 @@ momento = {version = "^1.5.0", optional = true}
 bibtexparser = {version = "^1.4.0", optional = true}
 singlestoredb = {version = "^0.7.1", optional = true}
 pyspark = {version = "^3.4.0", optional = true}
+clarifai = {version = "9.1.0", optional = true}
 tigrisdb = {version = "^1.0.0b6", optional = true}
 nebula3-python = {version = "^3.4.0", optional = true}
 langchainplus-sdk = ">=0.0.13"
 awadb = {version = "^0.3.3", optional = true}
 azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
-# now streamlit requires Python >=3.7, !=3.9.7 So, it is commented out.
-#streamlit = {version = "^1.18.0", optional = true}
-
+openllm = {version = ">=0.1.6", optional = true}
+streamlit = {version = "^1.18.0", optional = true, python = ">=3.8.1,<3.9.7 || >3.9.7,<4.0"}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -156,7 +156,7 @@ optional = true
 # 2. Add the package name to the extended_testing extra (find it below)
 # 3. Relock the poetry file
 #       poetry lock --no-update
-# 4. Favor unit tests not integration tests. 
+# 4. Favor unit tests not integration tests.
 #    Use the @pytest.mark.requires(pkg_name) decorator in unit_tests.
 #    Your tests should not rely on network access, as it prevents other
 #    developers from being able to easily run them.
@@ -198,6 +198,7 @@ types-toml = "^0.10.8.1"
 types-redis = "^4.3.21.6"
 black = "^23.1.0"
 types-chardet = "^5.0.4.6"
+mypy-protobuf = "^3.0.0"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
@@ -213,10 +214,11 @@ playwright = "^1.28.0"
 setuptools = "^67.6.1"
 
 [tool.poetry.extras]
-llms = ["anthropic", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+llms = ["anthropic", "clarifai", "cohere", "openai", "openllm", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
+clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
@@ -232,6 +234,7 @@ azure = [
 ]
 all = [
     "anthropic",
+    "clarifai",
     "cohere",
     "openai",
     "nlpcloud",
@@ -328,8 +331,7 @@ extended_testing = [
  "html2text",
  "py-trello",
  "scikit-learn",
-# now streamlit requires Python >=3.7, !=3.9.7 So, it is commented out.
-# "streamlit",
+ "streamlit",
  "pyspark",
  "openai"
 ]

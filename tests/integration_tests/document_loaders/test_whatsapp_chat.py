@@ -17,4 +17,5 @@ def test_whatsapp_chat_loader() -> None:
         "User 2 on 1/23/23, 3:19 AM: Bye!\n\n"
         "User 1 on 1/23/23, 3:22_AM: And let me know if anything changes\n\n"
         "~ User name 2 on 1/24/21, 12:41:03 PM: Of course!\n\n"
+        "~ User 2 on 2023/5/4, 16:13:23: See you!\n\n"
     )
