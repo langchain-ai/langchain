@@ -169,8 +169,8 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         example: Example,
         llm_or_chain: Union[BaseLanguageModel, Chain],
         n_repetitions: int,
-        tracer: Any,
         tags: Optional[List[str]] = None,
+        callbacks: Optional[Any] = None,
     ) -> List[Dict[str, Any]]:
         return [
             {"result": f"Result for example {example.id}"} for _ in range(n_repetitions)

@@ -15,13 +15,15 @@ class EvaluatorCallbackHandler(BaseTracer):
     Parameters
     ----------
     evaluators : Sequence[RunEvaluator]
-        The sequence of run evaluators to be executed.
+        The run evaluators to apply to all top level runs.
     max_workers : int, optional
-        The maximum number of worker threads to use for running the evaluators. If not specified, it will default to the number of evaluators.
+        The maximum number of worker threads to use for running the evaluators.
+        If not specified, it will default to the number of evaluators.
     client : LangChainPlusClient, optional
-        The LangChainPlusClient instance to use for evaluating the runs. If not specified, a new instance will be created.
+        The LangChainPlusClient instance to use for evaluating the runs.
+        If not specified, a new instance will be created.
     example_id : Union[UUID, str], optional
-        The example ID to be associated with the runs. If a string is provided, it will be converted to a UUID. If not specified, no example ID will be associated.
+        The example ID to be associated with the runs.
 
     Attributes
     ----------
@@ -35,7 +37,6 @@ class EvaluatorCallbackHandler(BaseTracer):
         The thread pool executor used for running the evaluators.
     futures : Set[Future]
         The set of futures representing the running evaluators.
-
     """
 
     name = "evaluator_callback_handler"
