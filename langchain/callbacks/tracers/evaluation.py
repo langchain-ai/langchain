@@ -1,6 +1,6 @@
 """A tracer that runs evaluators over completed runs."""
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import Any, List, Optional, Sequence, Set, Union
+from typing import Any, Optional, Sequence, Set, Union
 from uuid import UUID
 
 from langchainplus_sdk import LangChainPlusClient, RunEvaluator

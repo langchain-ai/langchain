@@ -491,7 +491,8 @@ def run_on_examples(
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
 ) -> Dict[str, Any]:
     """
-    Run the Chain or Language Model (LLM) on examples and store traces to the specified session name.
+    Run the Chain or Language Model on examples and store
+    traces to the specified session name.
 
     Args:
         examples: Examples to run the model or chain over.
@@ -577,7 +578,8 @@ async def arun_on_dataset(
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
 ) -> Dict[str, Any]:
     """
-    Asynchronously run the Chain or Language Model (LLM) on a dataset and store traces to the specified session name.
+    Asynchronously run the Chain or Language Model on a dataset
+    and store traces to the specified session name.
 
     Args:
         dataset_name: Name of the dataset to run the chain on.
@@ -632,7 +634,8 @@ def run_on_dataset(
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
 ) -> Dict[str, Any]:
     """
-    Run the Chain or Language Model (LLM) on a dataset and store traces to the specified session name.
+    Run the Chain or Language Model on a dataset and store traces
+    to the specified session name.
 
     Args:
         dataset_name: Name of the dataset to run the chain on.
