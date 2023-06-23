@@ -187,7 +187,6 @@ class Redis(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         embeddings: Optional[List[List[float]]] = None,
-        keys: Optional[List[str]] = None,
         batch_size: int = 1000,
         **kwargs: Any,
     ) -> List[str]:
@@ -199,7 +198,7 @@ class Redis(VectorStore):
                 Defaults to None.
             embeddings (Optional[List[List[float]]], optional): Optional pre-generated
                 embeddings. Defaults to None.
-            keys (Optional[List[str]], optional): Optional key values to use as ids.
+            keys (List[str]) or ids (List[str]): Identifiers of entries.
                 Defaults to None.
             batch_size (int, optional): Batch size to use for writes. Defaults to 1000.
 
@@ -209,11 +208,15 @@ class Redis(VectorStore):
         ids = []
         prefix = _redis_prefix(self.index_name)
 
+        # Get keys or ids from kwargs
+        # Other vectorstores use ids
+        keys_or_ids = kwargs.get("keys", kwargs.get("ids"))
+
         # Write data to redis
         pipeline = self.client.pipeline(transaction=False)
         for i, text in enumerate(texts):
             # Use provided values by default or fallback
-            key = keys[i] if keys else _redis_key(prefix)
+            key = keys_or_ids[i] if keys_or_ids else _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
             embedding = embeddings[i] if embeddings else self.embedding_function(text)
             pipeline.hset(
@@ -461,19 +464,23 @@ class Redis(VectorStore):
 
     @staticmethod
     def delete(
-        keys: List[str],
+        ids: List[str],
         **kwargs: Any,
     ) -> bool:
         """
         Delete a Redis entry.
 
         Args:
-            keys (List[str]): Keys of entries to delete.
+            ids: List of ids (keys) to delete.
 
         Returns:
             bool: Whether or not the deletions were successful.
         """
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
+
+        if ids is None:
+            raise ValueError("'ids' (keys)() were not provided.")
+
         try:
             import redis
         except ImportError:
@@ -491,11 +498,11 @@ class Redis(VectorStore):
             raise ValueError(f"Your redis connected error: {e}")
         # Check if index exists
         try:
-            client.delete(*keys)
+            client.delete(*ids)
             logger.info("Entries deleted")
             return True
         except:  # noqa: E722
-            # Keys not exist
+            # ids does not exist
             return False
 
     @staticmethod
