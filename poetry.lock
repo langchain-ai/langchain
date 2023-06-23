@@ -4362,13 +4362,13 @@ tests = ["doctest", "pytest", "pytest-mock"]
 
 [[package]]
 name = "langchainplus-sdk"
-version = "0.0.15"
-description = "Client library to connect to the LangChainPlus LLM Tracing and Evaluation Platform."
+version = "0.0.17"
+description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchainplus_sdk-0.0.15-py3-none-any.whl", hash = "sha256:e69bdbc8af6007ef2f774248d2483bbaf2d75712b1acc9ea50eda3b9f6dc567d"},
-    {file = "langchainplus_sdk-0.0.15.tar.gz", hash = "sha256:ce40e9e3b6d42741f0a2aa89f83a12f2648f38690a9dd57e5fe3a56f2f232908"},
+    {file = "langchainplus_sdk-0.0.17-py3-none-any.whl", hash = "sha256:899675fe850bb0829691ce7643d5c3b4425de1535b6f2d6ce1e5f5457ffb05bf"},
+    {file = "langchainplus_sdk-0.0.17.tar.gz", hash = "sha256:6520c864a23dcadbe6fb7233a117347f6acc32725a97758e59354704c50de303"},
 ]
 
 [package.dependencies]
@@ -11771,4 +11771,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "09d46ad12369c6a16513558618553623cd520c2855bff3b8fe8248e1b18cbb94"
+content-hash = "6e495e4f58127a5d2001385404b973896e275f5ca71a6ebe856cb114977189d1"
