@@ -375,13 +375,14 @@ class Redis(VectorStore):
             1. Embeds documents.
             2. Creates a new index for the embeddings in Redis.
             3. Adds the documents to the newly created Redis index.
+            4. Returns the keys of the newly created documents.
         This is intended to be a quick way to get started.
         Example:
             .. code-block:: python
                 from langchain.vectorstores import Redis
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
-                redisearch = RediSearch.from_texts(
+                redisearch, keys = RediSearch.from_texts_return_keys(
                     texts,
                     embeddings,
                     redis_url="redis://username:password@localhost:6379"
@@ -457,6 +458,45 @@ class Redis(VectorStore):
             **kwargs,
         )
         return instance
+
+    @staticmethod
+    def delete(
+        keys: List[str],
+        **kwargs: Any,
+    ) -> bool:
+        """
+        Delete a Redis entry.
+
+        Args:
+            keys (List[str]): Keys of entries to delete.
+
+        Returns:
+            bool: Whether or not the deletions were successful.
+        """
+        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
+        try:
+            import redis
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+        try:
+            # We need to first remove redis_url from kwargs,
+            # otherwise passing it to Redis will result in an error.
+            if "redis_url" in kwargs:
+                kwargs.pop("redis_url")
+            client = redis.from_url(url=redis_url, **kwargs)
+        except ValueError as e:
+            raise ValueError(f"Your redis connected error: {e}")
+        # Check if index exists
+        try:
+            client.delete(*keys)
+            logger.info("Entries deleted")
+            return True
+        except:  # noqa: E722
+            # Keys not exist
+            return False
 
     @staticmethod
     def drop_index(
