@@ -1,8 +1,8 @@
 """Test Retriever Chain functionality."""
 from pathlib import Path
 
-from langchain.chains.retriever import Retriever
 from langchain.chains.loading import load_chain
+from langchain.chains.retriever import Retriever
 from langchain.document_loaders import TextLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter

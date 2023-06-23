@@ -92,4 +92,3 @@ class Retriever(Chain):
     def _chain_type(self) -> str:
         """Return the chain type."""
         return "retriever"
-

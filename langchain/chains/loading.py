@@ -400,6 +400,7 @@ def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
         **config,
     )
 
+
 def _load_retriever(config: dict, **kwargs: Any) -> Retriever:
     if "retriever" in kwargs:
         retriever = kwargs.pop("retriever")
