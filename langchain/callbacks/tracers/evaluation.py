@@ -54,7 +54,9 @@ class EvaluatorCallbackHandler(BaseTracer):
         )
         self.client = client or LangChainPlusClient()
         self.evaluators = evaluators
-        self.executor = ThreadPoolExecutor(max_workers=max_workers or len(evaluators))
+        self.executor = ThreadPoolExecutor(
+            max_workers=max(max_workers or len(evaluators), 1)
+        )
         self.futures: Set[Future] = set()
 
     def _persist_run(self, run: Run) -> None:
