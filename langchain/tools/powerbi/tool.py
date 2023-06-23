@@ -96,7 +96,7 @@ class QueryPowerBITool(BaseTool):
         logger.info("Query: %s", query)
         pbi_result = self.powerbi.run(command=query)
         result, error = self._parse_output(pbi_result)
-        if "TokenExpired" in error:
+        if error is not None and "TokenExpired" in error:
             self.session_cache[
                 tool_input
             ] = f"Authentication token expired or invalid, please try reauthenticate."
@@ -145,7 +145,7 @@ class QueryPowerBITool(BaseTool):
         logger.info("Query: %s", query)
         pbi_result = await self.powerbi.arun(command=query)
         result, error = self._parse_output(pbi_result)
-        if "TokenExpired" in error:
+        if error is not None and "TokenExpired" in error:
             self.session_cache[
                 tool_input
             ] = f"Authentication token expired or invalid, please try reauthenticate."
