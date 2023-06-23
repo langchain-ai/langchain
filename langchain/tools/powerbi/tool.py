@@ -99,7 +99,7 @@ class QueryPowerBITool(BaseTool):
         if error is not None and "TokenExpired" in error:
             self.session_cache[
                 tool_input
-            ] = f"Authentication token expired or invalid, please try reauthenticate."
+            ] = "Authentication token expired or invalid, please try reauthenticate."
             return self.session_cache[tool_input]
 
         iterations = kwargs.get("iterations", 0)
@@ -148,7 +148,7 @@ class QueryPowerBITool(BaseTool):
         if error is not None and "TokenExpired" in error:
             self.session_cache[
                 tool_input
-            ] = f"Authentication token expired or invalid, please try reauthenticate."
+            ] = "Authentication token expired or invalid, please try reauthenticate."
             return self.session_cache[tool_input]
 
         iterations = kwargs.get("iterations", 0)
