@@ -57,6 +57,9 @@ GRAMMAR = """
 
 @v_args(inline=True)
 class QueryTransformer(Transformer):
+    """Transforms a query string into an IR representation
+    (intermediate representation)."""
+
     def __init__(
         self,
         *args: Any,
@@ -136,6 +139,16 @@ def get_parser(
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
 ) -> Lark:
+    """
+    Returns a parser for the query language.
+
+    Args:
+        allowed_comparators: Optional[Sequence[Comparator]]
+        allowed_operators: Optional[Sequence[Operator]]
+
+    Returns:
+        Lark parser for the query language.
+    """
     transformer = QueryTransformer(
         allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
     )
