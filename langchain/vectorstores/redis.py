@@ -464,23 +464,22 @@ class Redis(VectorStore):
 
     @staticmethod
     def delete(
-        ids: Optional[List[str]] = None,
+        ids: List[str],
         **kwargs: Any,
     ) -> bool:
         """
         Delete a Redis entry.
 
         Args:
-            keys (List[str]) or ids (List[str]): Identifiers of entries to delete.
+            ids: List of ids (keys) to delete.
 
         Returns:
             bool: Whether or not the deletions were successful.
         """
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
-        keys_or_ids = ids if ids else kwargs.get("keys")
 
-        if keys_or_ids is None:
-            raise ValueError("Neither 'keys' nor 'ids' were provided.")
+        if ids is None:
+            raise ValueError("'ids' (keys)() were not provided.")
 
         try:
             import redis
@@ -499,11 +498,11 @@ class Redis(VectorStore):
             raise ValueError(f"Your redis connected error: {e}")
         # Check if index exists
         try:
-            client.delete(*keys_or_ids)
+            client.delete(*ids)
             logger.info("Entries deleted")
             return True
         except:  # noqa: E722
-            # keys_or_ids not exist
+            # ids does not exist
             return False
 
     @staticmethod
