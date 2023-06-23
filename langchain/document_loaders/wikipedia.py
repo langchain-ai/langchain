@@ -25,10 +25,14 @@ class WikipediaLoader(BaseLoader):
 
         Args:
             query (str): The query string to search on Wikipedia.
-            lang (str, optional): The language code for the Wikipedia language edition. Defaults to "en".
-            load_max_docs (int, optional): The maximum number of documents to load. Defaults to 100.
-            load_all_available_meta (bool, optional): Indicates whether to load all available metadata for each document. Defaults to False.
-            doc_content_chars_max (int, optional): The maximum number of characters for the document content. Defaults to 4000.
+            lang (str, optional): The language code for the Wikipedia language edition.
+                Defaults to "en".
+            load_max_docs (int, optional): The maximum number of documents to load.
+                Defaults to 100.
+            load_all_available_meta (bool, optional): Indicates whether to load all
+                available metadata for each document. Defaults to False.
+            doc_content_chars_max (int, optional): The maximum number of characters
+                for the document content. Defaults to 4000.
         """
         self.query = query
         self.lang = lang
@@ -41,7 +45,8 @@ class WikipediaLoader(BaseLoader):
         Loads the query result from Wikipedia into a list of Documents.
 
         Returns:
-            List[Document]: A list of Document objects representing the loaded Wikipedia pages.
+            List[Document]: A list of Document objects representing the loaded
+                Wikipedia pages.
         """
         client = WikipediaAPIWrapper(
             lang=self.lang,
