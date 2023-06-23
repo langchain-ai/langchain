@@ -1,6 +1,7 @@
 """Base interfaces for tracing runs."""
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
@@ -9,7 +10,6 @@ from uuid import UUID
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
 from langchain.schema import LLMResult
-import logging
 
 logger = logging.getLogger(__name__)
 
