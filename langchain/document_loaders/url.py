@@ -2,8 +2,6 @@
 import logging
 from typing import Any, List
 
-from tqdm import tqdm
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -87,7 +85,19 @@ class UnstructuredURLLoader(BaseLoader):
         from unstructured.partition.html import partition_html
 
         docs: List[Document] = list()
-        urls = tqdm(self.urls) if self.show_progress_bar else self.urls
+        if self.show_progress_bar:
+            try:
+                from tqdm import tqdm
+            except ImportError as e:
+                raise ImportError(
+                    "Package tqdm must be installed if show_progress_bar=True. "
+                    "Please install with 'pip install tqdm' or set "
+                    "show_progress_bar=False."
+                ) from e
+
+            urls = tqdm(self.urls)
+        else:
+            urls = self.urls
 
         for url in urls:
             try:
