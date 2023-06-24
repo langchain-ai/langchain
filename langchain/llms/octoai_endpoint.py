@@ -1,13 +1,13 @@
 """Wrapper around OctoAI APIs."""
 from typing import Any, Dict, List, Mapping, Optional
+
+from octoai import client
 from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
-
-from octoai import client
 
 
 class OctoAIEndpoint(LLM):

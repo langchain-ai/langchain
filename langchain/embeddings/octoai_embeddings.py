@@ -1,10 +1,12 @@
 """Module providing a wrapper around OctoAI Compute Service embedding models."""
 
 from typing import Any, Dict, List, Mapping, Optional
+
+from octoai import client
 from pydantic import BaseModel, Extra, Field, root_validator
+
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
-from octoai import client
 
 DEFAULT_EMBED_INSTRUCTION = "Represent this input: "
 DEFAULT_QUERY_INSTRUCTION = "Represent the question for retrieving similar documents: "

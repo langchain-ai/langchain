@@ -7,7 +7,6 @@ import pytest
 
 from langchain.llms.loading import load_llm
 from langchain.llms.octoai_endpoint import OctoAIEndpoint
-
 from tests.integration_tests.llms.utils import assert_llm_equality
 
 
@@ -15,7 +14,7 @@ def test_octoai_endpoint_text_generation() -> None:
     """Test valid call to OctoAI text generation model."""
     llm = OctoAIEndpoint(
         endpoint_url="https://mpt-7b-demo-kk0powt97tmb.octoai.cloud/generate",
-        octoai_api_token="<octoai_api_token>",        
+        octoai_api_token="<octoai_api_token>",
         model_kwargs={
             "max_new_tokens": 200,
             "temperature": 0.75,
