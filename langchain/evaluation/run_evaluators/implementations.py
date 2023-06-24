@@ -42,14 +42,12 @@ class StringRunEvaluatorInputMapper(RunEvaluatorInputMapper, BaseModel):
     answer_map: Optional[Dict[str, str]] = None
     """Map from example outputs to the evaluation inputs."""
 
-    def map(self, run: Run, example: Optional[Example] = None) -> Dict[str, str]:
+    def map(self, run: Run, example: Optional[Example] = None) -> Dict[str, Any]:
         """Maps the Run and Optional[Example] to a dictionary"""
-        if run.outputs is None:
+        if run.outputs is None and self.prediction_map:
             raise ValueError(f"Run {run.id} has no outputs.")
-
-        data = {
-            value: run.outputs.get(key) for key, value in self.prediction_map.items()
-        }
+        outputs = run.outputs or {}
+        data = {value: outputs.get(key) for key, value in self.prediction_map.items()}
         data.update(
             {value: run.inputs.get(key) for key, value in self.input_map.items()}
         )
