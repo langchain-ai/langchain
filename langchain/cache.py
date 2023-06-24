@@ -143,6 +143,8 @@ class SQLAlchemyCache(BaseCache):
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
+        print("foo")
+        print(llm_string)
         stmt = (
             select(self.cache_schema.response)
             .where(self.cache_schema.prompt == prompt)  # type: ignore
@@ -151,6 +153,7 @@ class SQLAlchemyCache(BaseCache):
         )
         with Session(self.engine) as session:
             rows = session.execute(stmt).fetchall()
+            print(rows)
             if rows:
                 try:
                     return [loads(row[0]) for row in rows]
@@ -172,6 +175,7 @@ class SQLAlchemyCache(BaseCache):
             self.cache_schema(prompt=prompt, llm=llm_string, response=dumps(gen), idx=i)
             for i, gen in enumerate(return_val)
         ]
+        print(llm_string)
         with Session(self.engine) as session, session.begin():
             for item in items:
                 session.merge(item)
@@ -179,7 +183,7 @@ class SQLAlchemyCache(BaseCache):
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
         with Session(self.engine) as session:
-            session.execute(self.cache_schema.delete())
+            session.query(self.cache_schema).delete()
 
 
 class SQLiteCache(SQLAlchemyCache):

@@ -3,12 +3,13 @@ from typing import Dict, Generator, List, Union
 
 import pytest
 from _pytest.fixtures import FixtureRequest
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 import langchain
 from langchain.cache import (
     InMemoryCache,
-    SQLiteCache,
+    SQLAlchemyCache,
 )
 from langchain.chat_models import FakeListChatModel
 from langchain.chat_models.base import BaseChatModel, dumps
@@ -22,11 +23,14 @@ from langchain.schema import (
     HumanMessage,
 )
 
-CACHE_DB_FILE = ".langchain.test.db"
+
+def get_sqlite_cache() -> SQLAlchemyCache:
+    return SQLAlchemyCache(engine=create_engine("sqlite://"))
+
 
 CACHE_OPTIONS = [
-    InMemoryCache(),
-    SQLiteCache(CACHE_DB_FILE),
+    InMemoryCache,
+    get_sqlite_cache,
 ]
 
 
@@ -34,7 +38,7 @@ CACHE_OPTIONS = [
 def set_cache_and_teardown(request: FixtureRequest) -> Generator[None, None, None]:
     # Will be run before each test
     cache_instance = request.param
-    langchain.llm_cache = cache_instance
+    langchain.llm_cache = cache_instance()
     if langchain.llm_cache:
         langchain.llm_cache.clear()
     else:
@@ -69,7 +73,7 @@ def test_llm_caching() -> None:
 
 
 def test_old_sqlite_llm_caching() -> None:
-    if isinstance(langchain.llm_cache, SQLiteCache):
+    if isinstance(langchain.llm_cache, SQLAlchemyCache):
         prompt = "How are you?"
         response = "Test response"
         cached_response = "Cached test response"
@@ -97,12 +101,38 @@ def test_chat_model_caching() -> None:
     if langchain.llm_cache:
         langchain.llm_cache.update(
             prompt=dumps(prompt),
-            llm_string=create_llm_string(llm),
+            llm_string=llm._get_llm_string(),
             return_val=[ChatGeneration(message=cached_message)],
         )
         result = llm(prompt)
         assert isinstance(result, AIMessage)
-        assert llm(prompt).content == cached_response
+        assert result.content == cached_response
+    else:
+        raise ValueError(
+            "The cache not set. This should never happen, as the pytest fixture "
+            "`set_cache_and_teardown` always sets the cache."
+        )
+
+
+def test_chat_model_caching_params() -> None:
+    prompt: List[BaseMessage] = [HumanMessage(content="How are you?")]
+    response = "Test response"
+    cached_response = "Cached test response"
+    cached_message = AIMessage(content=cached_response)
+    llm = FakeListChatModel(responses=[response])
+    if langchain.llm_cache:
+        langchain.llm_cache.update(
+            prompt=dumps(prompt),
+            llm_string=llm._get_llm_string(functions=[]),
+            return_val=[ChatGeneration(message=cached_message)],
+        )
+        result = llm(prompt, functions=[])
+        assert isinstance(result, AIMessage)
+        assert result.content == cached_response
+        result_no_params = llm(prompt)
+        assert isinstance(result_no_params, AIMessage)
+        assert result_no_params.content == response
+
     else:
         raise ValueError(
             "The cache not set. This should never happen, as the pytest fixture "

@@ -70,6 +70,17 @@ class BaseChatModel(BaseLanguageModel, ABC):
         params["stop"] = stop
         return params
 
+    def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
+        if self.lc_serializable:
+            params = {**kwargs, **{"stop": stop}}
+            param_string = str(sorted([(k, v) for k, v in params.items()]))
+            llm_string = dumps(self)
+            return llm_string + "---" + param_string
+        else:
+            params = self._get_invocation_params(stop=stop)
+            params = {**params, **kwargs}
+            return str(sorted([(k, v) for k, v in params.items()]))
+
     def generate(
         self,
         messages: List[List[BaseMessage]],
@@ -202,8 +213,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
             else:
                 return self._generate(messages, stop=stop, **kwargs)
         else:
-            params = self._get_invocation_params(stop=stop)
-            llm_string = str(sorted([(k, v) for k, v in params.items()]))
+            llm_string = self._get_llm_string(stop=stop, **kwargs)
             prompt = dumps(messages)
             cache_val = langchain.llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
@@ -242,8 +252,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
             else:
                 return await self._agenerate(messages, stop=stop, **kwargs)
         else:
-            params = self._get_invocation_params(stop=stop)
-            llm_string = str(sorted([(k, v) for k, v in params.items()]))
+            llm_string = self._get_llm_string(stop=stop, **kwargs)
             prompt = dumps(messages)
             cache_val = langchain.llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
