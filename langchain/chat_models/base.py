@@ -1,6 +1,5 @@
 import asyncio
 import inspect
-import json
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
@@ -18,7 +17,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
-from langchain.load.dump import dumpd
+from langchain.load.dump import dumpd, dumps
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -28,16 +27,11 @@ from langchain.schema import (
     LLMResult,
     PromptValue,
     RunInfo,
-    messages_to_dict,
 )
 
 
 def _get_verbosity() -> bool:
     return langchain.verbose
-
-
-def chat_history_as_string(messages: List[BaseMessage]) -> str:
-    return json.dumps(messages_to_dict(messages))
 
 
 class BaseChatModel(BaseLanguageModel, ABC):
@@ -210,7 +204,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         else:
             params = self._get_invocation_params(stop=stop)
             llm_string = str(sorted([(k, v) for k, v in params.items()]))
-            prompt = chat_history_as_string(messages)
+            prompt = dumps(messages)
             cache_val = langchain.llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 return ChatResult(generations=cache_val)
@@ -250,7 +244,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         else:
             params = self._get_invocation_params(stop=stop)
             llm_string = str(sorted([(k, v) for k, v in params.items()]))
-            prompt = chat_history_as_string(messages)
+            prompt = dumps(messages)
             cache_val = langchain.llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 return ChatResult(generations=cache_val)

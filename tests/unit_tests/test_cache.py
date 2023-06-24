@@ -1,8 +1,9 @@
 """Test caching for LLMs and ChatModels."""
-from typing import Dict, Generator, Union
+from typing import Dict, Generator, List, Union
 
 import pytest
 from _pytest.fixtures import FixtureRequest
+from sqlalchemy.orm import Session
 
 import langchain
 from langchain.cache import (
@@ -10,10 +11,16 @@ from langchain.cache import (
     SQLiteCache,
 )
 from langchain.chat_models import FakeListChatModel
-from langchain.chat_models.base import BaseChatModel, chat_history_as_string
+from langchain.chat_models.base import BaseChatModel, dumps
 from langchain.llms import FakeListLLM
 from langchain.llms.base import BaseLLM
-from langchain.schema import AIMessage, ChatGeneration, Generation, _message_from_dict
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    ChatGeneration,
+    Generation,
+    HumanMessage,
+)
 
 CACHE_DB_FILE = ".langchain.test.db"
 
@@ -61,21 +68,37 @@ def test_llm_caching() -> None:
         )
 
 
+def test_old_sqlite_llm_caching() -> None:
+    if isinstance(langchain.llm_cache, SQLiteCache):
+        prompt = "How are you?"
+        response = "Test response"
+        cached_response = "Cached test response"
+        llm = FakeListLLM(responses=[response])
+        items = [
+            langchain.llm_cache.cache_schema(
+                prompt=prompt,
+                llm=create_llm_string(llm),
+                response=cached_response,
+                idx=0,
+            )
+        ]
+        with Session(langchain.llm_cache.engine) as session, session.begin():
+            for item in items:
+                session.merge(item)
+        assert llm(prompt) == cached_response
+
+
 def test_chat_model_caching() -> None:
-    prompt = [
-        _message_from_dict({"type": "human", "data": {"content": "How are you?"}})
-    ]
+    prompt: List[BaseMessage] = [HumanMessage(content="How are you?")]
     response = "Test response"
     cached_response = "Cached test response"
-    cached_message = _message_from_dict(
-        {"type": "ai", "data": {"content": cached_response}}
-    )
+    cached_message = AIMessage(content=cached_response)
     llm = FakeListChatModel(responses=[response])
     if langchain.llm_cache:
         langchain.llm_cache.update(
-            prompt=chat_history_as_string(prompt),
+            prompt=dumps(prompt),
             llm_string=create_llm_string(llm),
-            return_val=[ChatGeneration(text=cached_response, message=cached_message)],
+            return_val=[ChatGeneration(message=cached_message)],
         )
         result = llm(prompt)
         assert isinstance(result, AIMessage)
