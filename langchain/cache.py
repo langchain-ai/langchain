@@ -179,7 +179,7 @@ class SQLAlchemyCache(BaseCache):
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
         with Session(self.engine) as session:
-            session.query(self.cache_schema).delete()
+            session.execute(self.cache_schema.delete())
 
 
 class SQLiteCache(SQLAlchemyCache):
