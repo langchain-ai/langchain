@@ -145,6 +145,14 @@ def _message_to_dict(message: BaseMessage) -> dict:
 
 
 def messages_to_dict(messages: List[BaseMessage]) -> List[dict]:
+    """Convert messages to dict.
+
+    Args:
+        messages: List of messages to convert.
+
+    Returns:
+        List of dicts.
+    """
     return [_message_to_dict(m) for m in messages]
 
 
@@ -163,6 +171,14 @@ def _message_from_dict(message: dict) -> BaseMessage:
 
 
 def messages_from_dict(messages: List[dict]) -> List[BaseMessage]:
+    """Convert messages from dict.
+
+    Args:
+        messages: List of messages (dicts) to convert.
+
+    Returns:
+        List of messages (BaseMessages).
+    """
     return [_message_from_dict(m) for m in messages]
 
 
@@ -308,6 +324,8 @@ class Document(Serializable):
 
 
 class BaseRetriever(ABC):
+    """Base interface for retrievers."""
+
     @abstractmethod
     def get_relevant_documents(self, query: str) -> List[Document]:
         """Get documents relevant for a query.
