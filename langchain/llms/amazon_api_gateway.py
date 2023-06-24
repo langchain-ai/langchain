@@ -15,7 +15,7 @@ class ContentHandlerAmazonAPIGateway:
 
     @classmethod
     def transform_input(
-            cls, prompt: str, model_kwargs: Dict[str, Any]
+        cls, prompt: str, model_kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         return {"inputs": prompt, "parameters": model_kwargs}
 
@@ -33,7 +33,7 @@ class AmazonAPIGateway(LLM):
     model_kwargs: Optional[Dict] = None
     """Key word arguments to pass to the model."""
 
-    content_handler: ContentHandlerAmazonAPIGateway
+    content_handler: ContentHandlerAmazonAPIGateway = ContentHandlerAmazonAPIGateway()
     """The content handler class that provides an input and
     output transform functions to handle formats between LLM
     and the endpoint.
@@ -59,10 +59,10 @@ class AmazonAPIGateway(LLM):
         return "amazon_api_gateway"
 
     def _call(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
         """Call out to Amazon API Gateway model.
 
