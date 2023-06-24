@@ -157,12 +157,12 @@ class BaseChatModel(BaseLanguageModel, ABC):
                     self._agenerate(
                         m,
                         stop=stop,
-                        run_manager=run_managers[0] if run_managers else None,
+                        run_manager=run_managers[i] if run_managers else None,
                         **kwargs,
                     )
                     if new_arg_supported
                     else self._agenerate(m, stop=stop)
-                    for m in messages
+                    for i, m in enumerate(messages)
                 ]
             )
         except (KeyboardInterrupt, Exception) as e:
