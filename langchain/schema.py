@@ -76,6 +76,11 @@ class Generation(Serializable):
     """May include things like reason for finishing (e.g. in OpenAI)"""
     # TODO: add log probs
 
+    @property
+    def lc_serializable(self) -> bool:
+        """This class is LangChain serializable."""
+        return True
+
 
 class BaseMessage(Serializable):
     """Message object."""
@@ -87,6 +92,11 @@ class BaseMessage(Serializable):
     @abstractmethod
     def type(self) -> str:
         """Type of the message, used for serialization."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        """This class is LangChain serializable."""
+        return True
 
 
 class HumanMessage(BaseMessage):
