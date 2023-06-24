@@ -83,7 +83,6 @@ class BaseChatModel(BaseLanguageModel, ABC):
             tags,
             self.tags,
         )
-
         run_managers = callback_manager.on_chat_model_start(
             dumpd(self), messages, invocation_params=params, options=options
         )
@@ -91,22 +90,24 @@ class BaseChatModel(BaseLanguageModel, ABC):
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
         )
-        try:
-            results = [
-                self._generate(
-                    m,
-                    stop=stop,
-                    run_manager=run_managers[0] if run_managers else None,
-                    **kwargs,
-                )
-                if new_arg_supported
-                else self._generate(m, stop=stop)
-                for m in messages
-            ]
-        except (KeyboardInterrupt, Exception) as e:
-            for run_manager in run_managers:
-                run_manager.on_llm_error(e)
-            raise e
+        results = []
+        for i, m in enumerate(messages):
+            try:
+                if new_arg_supported:
+                    results.append(
+                        self._generate(
+                            m,
+                            stop=stop,
+                            run_manager=run_managers[i] if run_managers else None,
+                            **kwargs,
+                        )
+                    )
+                else:
+                    results.append(self._generate(m, stop=stop))
+            except (KeyboardInterrupt, Exception) as e:
+                if run_managers:
+                    run_managers[i].on_llm_error(e)
+                raise e
         flattened_outputs = [
             LLMResult(generations=[res.generations], llm_output=res.llm_output)
             for res in results
@@ -151,25 +152,28 @@ class BaseChatModel(BaseLanguageModel, ABC):
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
         )
-        try:
-            results = await asyncio.gather(
-                *[
+        tasks = []
+        for i, m in enumerate(messages):
+            if new_arg_supported:
+                tasks.append(
                     self._agenerate(
                         m,
                         stop=stop,
                         run_manager=run_managers[i] if run_managers else None,
                         **kwargs,
                     )
-                    if new_arg_supported
-                    else self._agenerate(m, stop=stop)
-                    for i, m in enumerate(messages)
-                ]
-            )
-        except (KeyboardInterrupt, Exception) as e:
-            await asyncio.gather(
-                *[run_manager.on_llm_error(e) for run_manager in run_managers]
-            )
-            raise e
+                )
+            else:
+                tasks.append(self._agenerate(m, stop=stop))
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        exceptions = []
+        for i, res in enumerate(results):
+            if isinstance(res, Exception):
+                if run_managers:
+                    await run_managers[i].on_llm_error(res)
+                exceptions.append(res)
+        if exceptions:
+            raise exceptions[0]
         flattened_outputs = [
             LLMResult(generations=[res.generations], llm_output=res.llm_output)
             for res in results
