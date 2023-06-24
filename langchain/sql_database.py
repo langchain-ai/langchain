@@ -290,7 +290,7 @@ class SQLDatabase:
             if has_extra_info:
                 table_info += "*/"
             tables.append(table_info)
-		tables.sort()
+        tables.sort()
         final_str = "\n\n".join(tables)
         return final_str
 
