@@ -63,6 +63,7 @@ class AmazonAPIGateway(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Amazon API Gateway model.
 
