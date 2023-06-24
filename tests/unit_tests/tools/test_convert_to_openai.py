@@ -110,7 +110,7 @@ def test_add_union_field_enum_properties() -> None:
 
 
 def test_add_non_enum_properties() -> None:
-    """Test that a union that looks like enum but are not will not be added 
+    """Test that a union that looks like enum but are not will not be added
     into functions."""
     arg_stub_schema = ArgStub.schema()
 
