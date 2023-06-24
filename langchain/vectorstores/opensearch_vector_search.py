@@ -89,8 +89,7 @@ def _bulk_ingest_embeddings(
     bulk = _import_bulk()
     not_found_error = _import_not_found_error()
     requests = []
-    if ids is None:
-        ids = []
+    return_ids = []
     mapping = mapping
 
     try:
@@ -110,10 +109,10 @@ def _bulk_ingest_embeddings(
             "_id": _id,
         }
         requests.append(request)
-        ids.append(_id)
+        return_ids.append(_id)
     bulk(client, requests)
     client.indices.refresh(index=index_name)
-    return ids
+    return return_ids
 
 
 def _default_scripting_text_mapping(
