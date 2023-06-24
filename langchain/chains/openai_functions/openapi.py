@@ -78,7 +78,7 @@ def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -
             schema = spec.get_schema(media_type_schema)
         if p.description and not schema.description:
             schema.description = p.description
-        properties[p.name] = schema.dict(exclude_none=True)
+        properties[p.name] = json.loads(schema.json(exclude_none=True))
         if p.required:
             required.append(p.name)
     return {"type": "object", "properties": properties, "required": required}
@@ -132,7 +132,9 @@ def openapi_spec_to_openai_fn(
                 for media_type, media_type_object in request_body.content.items():
                     if media_type_object.media_type_schema:
                         schema = spec.get_schema(media_type_object.media_type_schema)
-                        media_types[media_type] = schema.dict(exclude_none=True)
+                        media_types[media_type] = json.loads(
+                            schema.json(exclude_none=True)
+                        )
                 if len(media_types) == 1:
                     media_type, schema_dict = list(media_types.items())[0]
                     key = "json" if media_type == "application/json" else "data"
