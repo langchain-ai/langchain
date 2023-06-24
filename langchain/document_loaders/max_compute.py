@@ -64,7 +64,8 @@ class MaxComputeLoader(BaseLoader):
         return cls(query, api_wrapper, **kwargs)
 
     def lazy_load(self) -> Iterator[Document]:
-        for row in self.api_wrapper.query(self.query):
+        query: str = self.query or ""
+        for row in self.api_wrapper.query(query):
             if self.page_content_columns:
                 page_content_data = {
                     k: v for k, v in row.items() if k in self.page_content_columns
