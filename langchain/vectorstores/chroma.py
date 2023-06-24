@@ -109,29 +109,18 @@ class Chroma(VectorStore):
     ) -> List[Document]:
         """Query the chroma collection."""
         try:
-            import chromadb
+            import chromadb  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
-
-        for i in range(n_results, 0, -1):
-            try:
-                return self._collection.query(
-                    query_texts=query_texts,
-                    query_embeddings=query_embeddings,
-                    n_results=i,
-                    where=where,
-                    **kwargs,
-                )
-            except chromadb.errors.NotEnoughElementsException:
-                logger.error(
-                    f"Chroma collection {self._collection.name} "
-                    f"contains fewer than {i} elements."
-                )
-        raise chromadb.errors.NotEnoughElementsException(
-            f"No documents found for Chroma collection {self._collection.name}"
+        return self._collection.query(
+            query_texts=query_texts,
+            query_embeddings=query_embeddings,
+            n_results=n_results,
+            where=where,
+            **kwargs,
         )
 
     def add_texts(
@@ -157,7 +146,7 @@ class Chroma(VectorStore):
         embeddings = None
         if self._embedding_function is not None:
             embeddings = self._embedding_function.embed_documents(list(texts))
-        self._collection.add(
+        self._collection.upsert(
             metadatas=metadatas, embeddings=embeddings, documents=texts, ids=ids
         )
         return ids
@@ -453,3 +442,11 @@ class Chroma(VectorStore):
             client_settings=client_settings,
             client=client,
         )
+
+    def delete(self, ids: List[str]) -> None:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+        self._collection.delete(ids=ids)

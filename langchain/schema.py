@@ -16,7 +16,7 @@ from typing import (
 )
 from uuid import UUID
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 
 from langchain.load.serializable import Serializable
 
@@ -145,6 +145,14 @@ def _message_to_dict(message: BaseMessage) -> dict:
 
 
 def messages_to_dict(messages: List[BaseMessage]) -> List[dict]:
+    """Convert messages to dict.
+
+    Args:
+        messages: List of messages to convert.
+
+    Returns:
+        List of dicts.
+    """
     return [_message_to_dict(m) for m in messages]
 
 
@@ -163,6 +171,14 @@ def _message_from_dict(message: dict) -> BaseMessage:
 
 
 def messages_from_dict(messages: List[dict]) -> List[BaseMessage]:
+    """Convert messages from dict.
+
+    Args:
+        messages: List of messages (dicts) to convert.
+
+    Returns:
+        List of messages (BaseMessages).
+    """
     return [_message_from_dict(m) for m in messages]
 
 
@@ -229,7 +245,6 @@ class BaseMemory(Serializable, ABC):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     @property
@@ -309,6 +324,8 @@ class Document(Serializable):
 
 
 class BaseRetriever(ABC):
+    """Base interface for retrievers."""
+
     @abstractmethod
     def get_relevant_documents(self, query: str) -> List[Document]:
         """Get documents relevant for a query.
@@ -340,11 +357,20 @@ Memory = BaseMemory
 T = TypeVar("T")
 
 
-class BaseOutputParser(Serializable, ABC, Generic[T]):
+class BaseLLMOutputParser(Serializable, ABC, Generic[T]):
+    @abstractmethod
+    def parse_result(self, result: List[Generation]) -> T:
+        """Parse LLM Result."""
+
+
+class BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T]):
     """Class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
     """
+
+    def parse_result(self, result: List[Generation]) -> T:
+        return self.parse(result[0].text)
 
     @abstractmethod
     def parse(self, text: str) -> T:
@@ -393,6 +419,21 @@ class BaseOutputParser(Serializable, ABC, Generic[T]):
         output_parser_dict = super().dict()
         output_parser_dict["_type"] = self._type
         return output_parser_dict
+
+
+class NoOpOutputParser(BaseOutputParser[str]):
+    """Output parser that just returns the text as is."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    @property
+    def _type(self) -> str:
+        return "default"
+
+    def parse(self, text: str) -> str:
+        return text
 
 
 class OutputParserException(ValueError):

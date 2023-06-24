@@ -160,6 +160,14 @@ class Pinecone(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        return self.similarity_search_with_score(query, k)
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -345,3 +353,16 @@ class Pinecone(VectorStore):
         return cls(
             pinecone.Index(index_name), embedding.embed_query, text_key, namespace
         )
+
+    def delete(self, ids: List[str]) -> None:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+
+        # This is the maximum number of IDs that can be deleted
+        chunk_size = 1000
+        for i in range(0, len(ids), chunk_size):
+            chunk = ids[i : i + chunk_size]
+            self._index.delete(ids=chunk)

@@ -20,7 +20,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Extra, Field, root_validator
+from pydantic import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -187,7 +187,6 @@ class BaseOpenAI(BaseLLM):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.ignore
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -500,7 +499,8 @@ class BaseOpenAI(BaseLLM):
             disallowed_special=self.disallowed_special,
         )
 
-    def modelname_to_contextsize(self, modelname: str) -> int:
+    @staticmethod
+    def modelname_to_contextsize(modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
 
         Args:
@@ -517,10 +517,15 @@ class BaseOpenAI(BaseLLM):
         model_token_mapping = {
             "gpt-4": 8192,
             "gpt-4-0314": 8192,
+            "gpt-4-0613": 8192,
             "gpt-4-32k": 32768,
             "gpt-4-32k-0314": 32768,
+            "gpt-4-32k-0613": 32768,
             "gpt-3.5-turbo": 4096,
             "gpt-3.5-turbo-0301": 4096,
+            "gpt-3.5-turbo-0613": 4096,
+            "gpt-3.5-turbo-16k": 16385,
+            "gpt-3.5-turbo-16k-0613": 16385,
             "text-ada-001": 2049,
             "ada": 2049,
             "text-babbage-001": 2040,
@@ -550,6 +555,11 @@ class BaseOpenAI(BaseLLM):
 
         return context_size
 
+    @property
+    def max_context_size(self) -> int:
+        """Get max context size for this model."""
+        return self.modelname_to_contextsize(self.model_name)
+
     def max_tokens_for_prompt(self, prompt: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a prompt.
 
@@ -565,10 +575,7 @@ class BaseOpenAI(BaseLLM):
                 max_tokens = openai.max_token_for_prompt("Tell me a joke.")
         """
         num_tokens = self.get_num_tokens(prompt)
-
-        # get max context size for model by name
-        max_size = self.modelname_to_contextsize(self.model_name)
-        return max_size - num_tokens
+        return self.max_context_size - num_tokens
 
 
 class OpenAI(BaseOpenAI):
@@ -684,11 +691,6 @@ class OpenAIChat(BaseLLM):
     """Set of special tokens that are allowed。"""
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.ignore
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:

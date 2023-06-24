@@ -1,5 +1,6 @@
 """All different types of document loaders."""
 
+from langchain.document_loaders.acreom import AcreomLoader
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
@@ -15,6 +16,12 @@ from langchain.document_loaders.bibtex import BibtexLoader
 from langchain.document_loaders.bigquery import BigQueryLoader
 from langchain.document_loaders.bilibili import BiliBiliLoader
 from langchain.document_loaders.blackboard import BlackboardLoader
+from langchain.document_loaders.blob_loaders import (
+    Blob,
+    BlobLoader,
+    FileSystemBlobLoader,
+    YoutubeAudioLoader,
+)
 from langchain.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
@@ -60,6 +67,7 @@ from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.mastodon import MastodonTootsLoader
 from langchain.document_loaders.max_compute import MaxComputeLoader
 from langchain.document_loaders.mediawikidump import MWDumpLoader
+from langchain.document_loaders.merge import MergedDataLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
@@ -68,6 +76,7 @@ from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.odt import UnstructuredODTLoader
 from langchain.document_loaders.onedrive import OneDriveLoader
 from langchain.document_loaders.onedrive_file import OneDriveFileLoader
+from langchain.document_loaders.open_city_data import OpenCityDataLoader
 from langchain.document_loaders.pdf import (
     MathpixPDFLoader,
     OnlinePDFLoader,
@@ -85,6 +94,7 @@ from langchain.document_loaders.psychic import PsychicLoader
 from langchain.document_loaders.pyspark_dataframe import PySparkDataFrameLoader
 from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
+from langchain.document_loaders.recursive_url_loader import RecusiveUrlLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
@@ -136,6 +146,7 @@ PagedPDFSplitter = PyPDFLoader
 TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
+    "AcreomLoader",
     "AZLyricsLoader",
     "AirbyteJSONLoader",
     "AirtableLoader",
@@ -148,6 +159,8 @@ __all__ = [
     "BigQueryLoader",
     "BiliBiliLoader",
     "BlackboardLoader",
+    "Blob",
+    "BlobLoader",
     "BlockchainDocumentLoader",
     "CSVLoader",
     "ChatGPTLoader",
@@ -161,10 +174,13 @@ __all__ = [
     "DocugamiLoader",
     "Docx2txtLoader",
     "DuckDBLoader",
-    "FaunaLoader",
+    "EmbaasBlobLoader",
+    "EmbaasLoader",
     "EverNoteLoader",
     "FacebookChatLoader",
+    "FaunaLoader",
     "FigmaFileLoader",
+    "FileSystemBlobLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GitHubIssuesLoader",
@@ -187,15 +203,17 @@ __all__ = [
     "MastodonTootsLoader",
     "MathpixPDFLoader",
     "MaxComputeLoader",
+    "MergedDataLoader",
     "ModernTreasuryLoader",
     "NotebookLoader",
     "NotionDBLoader",
     "NotionDirectoryLoader",
     "ObsidianLoader",
-    "OneDriveLoader",
     "OneDriveFileLoader",
+    "OneDriveLoader",
     "OnlinePDFLoader",
     "OutlookMessageLoader",
+    "OpenCityDataLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
     "PDFPlumberLoader",
@@ -209,6 +227,7 @@ __all__ = [
     "PySparkDataFrameLoader",
     "PythonLoader",
     "ReadTheDocsLoader",
+    "RecusiveUrlLoader",
     "RedditPostsLoader",
     "RoamLoader",
     "S3DirectoryLoader",
@@ -217,6 +236,7 @@ __all__ = [
     "SeleniumURLLoader",
     "SitemapLoader",
     "SlackDirectoryLoader",
+    "SnowflakeLoader",
     "SpreedlyLoader",
     "StripeLoader",
     "TelegramChatApiLoader",
@@ -249,8 +269,6 @@ __all__ = [
     "WebBaseLoader",
     "WhatsAppChatLoader",
     "WikipediaLoader",
+    "YoutubeAudioLoader",
     "YoutubeLoader",
-    "SnowflakeLoader",
-    "EmbaasLoader",
-    "EmbaasBlobLoader",
 ]
