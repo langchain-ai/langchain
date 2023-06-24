@@ -100,16 +100,11 @@ class BaseChatModel(BaseLanguageModel, ABC):
             dumpd(self), messages, invocation_params=params, options=options
         )
 
-        new_arg_supported = inspect.signature(self._generate).parameters.get(
-            "run_manager"
-        )
         try:
             results = [
                 self._generate_with_cache(
                     m, stop=stop, run_manager=run_manager, **kwargs
                 )
-                if new_arg_supported
-                else self._generate_with_cache(m, stop=stop)
                 for m in messages
             ]
         except (KeyboardInterrupt, Exception) as e:
@@ -147,17 +142,12 @@ class BaseChatModel(BaseLanguageModel, ABC):
             dumpd(self), messages, invocation_params=params, options=options
         )
 
-        new_arg_supported = inspect.signature(self._agenerate).parameters.get(
-            "run_manager"
-        )
         try:
             results = await asyncio.gather(
                 *[
                     self._agenerate_with_cache(
                         m, stop=stop, run_manager=run_manager, **kwargs
                     )
-                    if new_arg_supported
-                    else self._agenerate_with_cache(m, stop=stop)
                     for m in messages
                 ]
             )
@@ -201,6 +191,9 @@ class BaseChatModel(BaseLanguageModel, ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        new_arg_supported = inspect.signature(self._generate).parameters.get(
+            "run_manager"
+        )
         disregard_cache = self.cache is not None and not self.cache
         if langchain.llm_cache is None or disregard_cache:
             # This happens when langchain.cache is None, but self.cache is True
@@ -208,9 +201,12 @@ class BaseChatModel(BaseLanguageModel, ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            return self._generate(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
+            if new_arg_supported:
+                return self._generate(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                )
+            else:
+                return self._generate(messages, stop=stop, **kwargs)
         else:
             params = self._get_invocation_params(stop=stop)
             llm_string = str(sorted([(k, v) for k, v in params.items()]))
@@ -224,9 +220,12 @@ class BaseChatModel(BaseLanguageModel, ABC):
                 ]
                 return ChatResult(generations=cache_val_for_chat)
             else:
-                result = self._generate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
+                if new_arg_supported:
+                    result = self._generate(
+                        messages, stop=stop, run_manager=run_manager, **kwargs
+                    )
+                else:
+                    result = self._generate(messages, stop=stop, **kwargs)
                 langchain.llm_cache.update(prompt, llm_string, result.generations)
                 return result
 
@@ -237,6 +236,9 @@ class BaseChatModel(BaseLanguageModel, ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        new_arg_supported = inspect.signature(self._agenerate).parameters.get(
+            "run_manager"
+        )
         disregard_cache = self.cache is not None and not self.cache
         if langchain.llm_cache is None or disregard_cache:
             # This happens when langchain.cache is None, but self.cache is True
@@ -244,9 +246,12 @@ class BaseChatModel(BaseLanguageModel, ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            return await self._agenerate(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
+            if new_arg_supported:
+                return await self._agenerate(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                )
+            else:
+                return await self._agenerate(messages, stop=stop, **kwargs)
         else:
             params = self._get_invocation_params(stop=stop)
             llm_string = str(sorted([(k, v) for k, v in params.items()]))
@@ -260,9 +265,12 @@ class BaseChatModel(BaseLanguageModel, ABC):
                 ]
                 return ChatResult(generations=cache_val_for_chat)
             else:
-                result = await self._agenerate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
+                if new_arg_supported:
+                    result = await self._agenerate(
+                        messages, stop=stop, run_manager=run_manager, **kwargs
+                    )
+                else:
+                    result = await self._agenerate(messages, stop=stop, **kwargs)
                 langchain.llm_cache.update(prompt, llm_string, result.generations)
                 return result
 
