@@ -213,12 +213,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
             prompt = chat_history_as_string(messages)
             cache_val = langchain.llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
-                # the cache stores List[Generation]; we parse it to List[ChatGeneration]
-                cache_val_for_chat = [
-                    ChatGeneration(text=gen.text, message=AIMessage(content=gen.text))
-                    for gen in cache_val
-                ]
-                return ChatResult(generations=cache_val_for_chat)
+                return ChatResult(generations=cache_val)
             else:
                 if new_arg_supported:
                     result = self._generate(
@@ -258,12 +253,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
             prompt = chat_history_as_string(messages)
             cache_val = langchain.llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
-                # the cache stores List[Generation]; we parse it to List[ChatGeneration]
-                cache_val_for_chat = [
-                    ChatGeneration(text=gen.text, message=AIMessage(content=gen.text))
-                    for gen in cache_val
-                ]
-                return ChatResult(generations=cache_val_for_chat)
+                return ChatResult(generations=cache_val)
             else:
                 if new_arg_supported:
                     result = await self._agenerate(
