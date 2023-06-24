@@ -361,11 +361,11 @@ class OpenSearchVectorSearch(VectorStore):
             self.index_name,
             embeddings,
             texts,
-            metadatas,
-            ids,
-            vector_field,
-            text_field,
-            mapping,
+            metadatas=metadatas,
+            ids=ids,
+            vector_field=vector_field,
+            text_field=text_field,
+            mapping=mapping,
         )
 
     def similarity_search(
@@ -683,9 +683,9 @@ class OpenSearchVectorSearch(VectorStore):
             index_name,
             embeddings,
             texts,
-            metadatas,
-            vector_field,
-            text_field,
-            mapping,
+            metadatas=metadatas,
+            vector_field=vector_field,
+            text_field=text_field,
+            mapping=mapping,
         )
         return cls(opensearch_url, index_name, embedding, **kwargs)
