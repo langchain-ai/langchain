@@ -22,7 +22,15 @@ def _get_default_python_repl() -> PythonREPL:
 
 
 def sanitize_input(query: str) -> str:
-    # Remove whitespace, backtick & python (if llm mistakes python console as terminal)
+    """Sanitize input to the python REPL.
+    Remove whitespace, backtick & python (if llm mistakes python console as terminal)
+
+    Args:
+        query: The query to sanitize
+
+    Returns:
+        str: The sanitized query
+    """
 
     # Removes `, whitespace & python from start
     query = re.sub(r"^(\s|`)*(?i:python)?\s*", "", query)

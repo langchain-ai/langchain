@@ -52,6 +52,17 @@ def standardize_model_name(
     model_name: str,
     is_completion: bool = False,
 ) -> str:
+    """
+    Standardize the model name to a format that can be used in the OpenAI API.
+    Args:
+        model_name: Model name to standardize.
+        is_completion: Whether the model is used for completion or not.
+            Defaults to False.
+
+    Returns:
+        Standardized model name.
+
+    """
     model_name = model_name.lower()
     if "ft-" in model_name:
         return model_name.split(":")[0] + "-finetuned"
@@ -66,6 +77,18 @@ def standardize_model_name(
 def get_openai_token_cost_for_model(
     model_name: str, num_tokens: int, is_completion: bool = False
 ) -> float:
+    """
+    Get the cost in USD for a given model and number of tokens.
+
+    Args:
+        model_name: Name of the model
+        num_tokens: Number of tokens.
+        is_completion: Whether the model is used for completion or not.
+            Defaults to False.
+
+    Returns:
+        Cost in USD.
+    """
     model_name = standardize_model_name(model_name, is_completion=is_completion)
     if model_name not in MODEL_COST_PER_1K_TOKENS:
         raise ValueError(

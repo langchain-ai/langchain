@@ -165,6 +165,7 @@ class BaseLLM(BaseLanguageModel, ABC):
                 self._generate(
                     prompts,
                     stop=stop,
+                    # TODO: support multiple run managers
                     run_manager=run_managers[0] if run_managers else None,
                     **kwargs,
                 )
