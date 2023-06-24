@@ -78,7 +78,7 @@ def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -
             schema = spec.get_schema(media_type_schema)
         if p.description and not schema.description:
             schema.description = p.description
-        properties[p.name] = schema.dict(exclude_none=True)
+        properties[p.name] = json.loads(schema.json(exclude_none=True))
         if p.required:
             required.append(p.name)
     return {"type": "object", "properties": properties, "required": required}
