@@ -12,7 +12,7 @@ class MaxComputeLoader(BaseLoader):
 
     def __init__(
         self,
-        query: str,
+        query: Optional[str],
         api_wrapper: MaxComputeAPIWrapper,
         *,
         page_content_columns: Optional[Sequence[str]] = None,
