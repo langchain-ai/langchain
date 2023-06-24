@@ -229,7 +229,7 @@ class BaseLLM(BaseLanguageModel, ABC):
             return output
         if len(missing_prompts) > 0:
             run_managers = callback_manager.on_llm_start(
-                dumpd(self), prompts, invocation_params=params, options=options
+                dumpd(self), missing_prompts, invocation_params=params, options=options
             )
             new_results = self._generate_helper(
                 missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
@@ -327,7 +327,7 @@ class BaseLLM(BaseLanguageModel, ABC):
             return output
         if len(missing_prompts) > 0:
             run_managers = await callback_manager.on_llm_start(
-                dumpd(self), prompts, invocation_params=params, options=options
+                dumpd(self), missing_prompts, invocation_params=params, options=options
             )
             new_results = await self._agenerate_helper(
                 missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
