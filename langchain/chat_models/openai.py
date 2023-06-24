@@ -184,6 +184,7 @@ class ChatOpenAI(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
+    tiktoken_model_name: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""

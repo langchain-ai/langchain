@@ -170,6 +170,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout in seconds for the OpenAPI request."""
     headers: Any = None
+    tiktoken_model_name: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -265,7 +266,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         tokens = []
         indices = []
-        encoding = tiktoken.model.encoding_for_model(self.model)
+        model_name = self.tiktoken_model_name or self.model
+        encoding = tiktoken.model.encoding_for_model(model_name)
         for i, text in enumerate(texts):
             if self.model.endswith("001"):
                 # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
@@ -329,7 +331,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         tokens = []
         indices = []
-        encoding = tiktoken.model.encoding_for_model(self.model)
+        model_name = self.tiktoken_model_name or self.model
+        encoding = tiktoken.model.encoding_for_model(model_name)
         for i, text in enumerate(texts):
             if self.model.endswith("001"):
                 # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500

@@ -171,6 +171,7 @@ class BaseOpenAI(BaseLLM):
     """Set of special tokens that are allowed。"""
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
+    tiktoken_model_name: Optional[str] = None
 
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
@@ -491,7 +492,8 @@ class BaseOpenAI(BaseLLM):
                 "Please install it with `pip install tiktoken`."
             )
 
-        enc = tiktoken.encoding_for_model(self.model_name)
+        model_name = self.tiktoken_model_name or self.model_name
+        enc = tiktoken.model.encoding_for_model(model_name)
 
         return enc.encode(
             text,
