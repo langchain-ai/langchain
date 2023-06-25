@@ -151,9 +151,9 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
 
         try:
             self.session.execute(
-                """INSERT INTO message_store
+                """INSERT INTO %s
                 (id, session_id, history) VALUES (%s, %s, %s);""",
-                (uuid.uuid4(), self.session_id, json.dumps(_message_to_dict(message))),
+                (self.table_name,uuid.uuid4(), self.session_id, json.dumps(_message_to_dict(message))),
             )
         except (Unavailable, WriteTimeout, WriteFailure) as error:
             logger.error("Unable to write chat history messages to cassandra")
