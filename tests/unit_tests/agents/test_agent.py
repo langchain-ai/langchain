@@ -31,6 +31,9 @@ class FakeListLLM(LLM):
     def get_num_tokens(self, text: str) -> int:
         """Return number of tokens in text."""
         return len(text.split())
+    
+    async def _acall(self, *args, **kwargs):
+        return self._call(*args, **kwargs)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
