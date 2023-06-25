@@ -2,6 +2,7 @@ import logging
 import time
 import typing as ty
 from functools import wraps
+from asyncio import CancelledError
 
 from abc import ABC, abstractmethod
 from langchain.input import get_color_mapping
@@ -250,8 +251,9 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             await self._on_first_async_step()
         try:
             return await self._acall_next()
-        except TimeoutError:
-            await self._astop()
+        except (TimeoutError, CancelledError):
+            await self.timeout_manager.__aexit__(None, None, None); self.timeout_manager = None
+            return await self._astop()
         except (KeyboardInterrupt, Exception) as e:
             await self.run_manager.on_chain_error(e)
             raise
