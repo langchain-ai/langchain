@@ -172,6 +172,15 @@ class BaseOpenAI(BaseLLM):
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
     tiktoken_model_name: Optional[str] = None
+    """The model name to pass to tiktoken when using this class. 
+    Tiktoken is used to count the number of tokens in documents to constrain 
+    them to be under a certain limit. By default, when set to None, this will 
+    be the same as the embedding model name. However, there are some cases 
+    where you may want to use this Embedding class with a model name not 
+    supported by tiktoken. This can include when using Azure embeddings or 
+    when using one of the many model providers that expose an OpenAI-like 
+    API but with different models. In those cases, in order to avoid erroring 
+    when tiktoken is called, you can specify a model name to use here."""
 
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
@@ -493,7 +502,12 @@ class BaseOpenAI(BaseLLM):
             )
 
         model_name = self.tiktoken_model_name or self.model_name
-        enc = tiktoken.model.encoding_for_model(model_name)
+        try:
+            enc = tiktoken.encoding_for_model(model_name)
+        except KeyError:
+            logger.warning("Warning: model not found. Using cl100k_base encoding.")
+            model = "cl100k_base"
+            enc = tiktoken.get_encoding(model)
 
         return enc.encode(
             text,

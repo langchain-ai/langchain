@@ -171,6 +171,15 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Timeout in seconds for the OpenAPI request."""
     headers: Any = None
     tiktoken_model_name: Optional[str] = None
+    """The model name to pass to tiktoken when using this class. 
+    Tiktoken is used to count the number of tokens in documents to constrain 
+    them to be under a certain limit. By default, when set to None, this will 
+    be the same as the embedding model name. However, there are some cases 
+    where you may want to use this Embedding class with a model name not 
+    supported by tiktoken. This can include when using Azure embeddings or 
+    when using one of the many model providers that expose an OpenAI-like 
+    API but with different models. In those cases, in order to avoid erroring 
+    when tiktoken is called, you can specify a model name to use here."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -267,7 +276,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         tokens = []
         indices = []
         model_name = self.tiktoken_model_name or self.model
-        encoding = tiktoken.model.encoding_for_model(model_name)
+        try:
+            encoding = tiktoken.encoding_for_model(model_name)
+        except KeyError:
+            logger.warning("Warning: model not found. Using cl100k_base encoding.")
+            model = "cl100k_base"
+            encoding = tiktoken.get_encoding(model)
         for i, text in enumerate(texts):
             if self.model.endswith("001"):
                 # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
