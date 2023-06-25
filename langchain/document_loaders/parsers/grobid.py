@@ -7,21 +7,21 @@ from langchain.document_loaders.blob_loaders import Blob
 from langchain.schema import Document
 
 
-class GrobidParser(BaseBlobParser):
+class GrobidParser():
     """Loads a PDF with pypdf and chunks at character level."""
 
-    def parse_grobid(file_path,xml_data,segment_sentences) -> Iterator[Document]:
+    def lazy_parse(self,file_path,xml_data,segment_sentences) -> Iterator[Document]:
       soup = BeautifulSoup(xml_data, 'xml')
       sections = soup.find_all('div')
       title = soup.find_all('title')[0].text
       chunks=[]
       for section in sections:
-        try:
-          sect=section.find('head')
+        sect=section.find('head')
+        if sect!=None:
           for i, paragraph in enumerate(section.find_all('p')):
             chunk_bboxes=[]
             paragraph_text=[]
-            for sentence in section.find_all('s'):
+            for i,sentence in enumerate(paragraph.find_all('s')):
                 paragraph_text.append(sentence.text)
                 sbboxes=[]
                 for bbox in sentence.get("coords").split(";"):
@@ -31,6 +31,7 @@ class GrobidParser(BaseBlobParser):
                 if segment_sentences==True:
                   fpage, lpage = sbboxes[0]['page'], sbboxes[-1]['page']
                   sentence_dict= {'text':sentence.text,
+                          'para':str(i),
                           'bboxes':[sbboxes],
                           'section_title':sect.text,
                           'section_number':sect.get('n'),
@@ -40,24 +41,26 @@ class GrobidParser(BaseBlobParser):
             if segment_sentences!=True:
                 fpage, lpage = chunk_bboxes[0][0]['page'], chunk_bboxes[-1][-1]['page']
                 paragraph_dict= {'text':"".join(paragraph_text),
+                          'para':str(i),
                           'bboxes':chunk_bboxes,
-                          'section_title':s.text,
-                          'section_number':s.get('n'),
+                          'section_title':sect.text,
+                          'section_number':sect.get('n'),
                           'pages':(fpage,lpage),
                         }
                 chunks.append(paragraph_dict)
-        except:
-          continue  
+
 
       yield from [
         Document(page_content=chunk['text'],
                 metadata=dict(
-                  {'bboxes':chunk['bboxes'],
-                  'pages':chunk['pages'],
-                  'section_title':chunk['section_title'],
-                  'section_number':chunk['section_number'],
-                  'paper_title':title,
-                  'file_path':file_path,
+                  {'text':str(chunk['text']),
+                  'para':str(chunk['para']),
+                  'bboxes':str(chunk['bboxes']),
+                  'pages':str(chunk['pages']),
+                  'section_title':str(chunk['section_title']),
+                  'section_number':str(chunk['section_number']),
+                  'paper_title':str(title),
+                  'file_path':str(file_path),
                   })
                 )
                 for chunk in chunks
