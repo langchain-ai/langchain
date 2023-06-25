@@ -62,6 +62,11 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
             description="Useful for looking up things in a table",
         ),
     ]
+    
+    if "tools" in kwargs:
+        tools = tools + kwargs.get("tools")
+        del kwargs["tools"]
+
     agent = initialize_agent(
         tools,
         fake_llm,
