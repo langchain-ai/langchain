@@ -180,8 +180,7 @@ def trace_as_chain_group(
     *,
     project_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
-    inheritable_tags: Optional[List[str]] = None,
-    local_tags: Optional[List[str]] = None,
+    tags: Optional[List[str]] = None,
 ) -> Generator[CallbackManager, None, None]:
     """Get a callback manager for a chain group in a context manager.
     Useful for grouping different calls together as a single run even if
@@ -193,9 +192,7 @@ def trace_as_chain_group(
             Defaults to None.
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
-        inheritable_tags (List[str], optional): The inheritable tags.
-            Defaults to None.
-        local_tags (List[str], optional): The local tags.
+        tags (List[str], optional): The inheritable tags to apply to all runs.
             Defaults to None.
 
     Returns:
@@ -212,8 +209,7 @@ def trace_as_chain_group(
     )
     cm = CallbackManager.configure(
         inheritable_callbacks=[cb],
-        inheritable_tags=inheritable_tags,
-        local_tags=local_tags,
+        inheritable_tags=tags,
     )
 
     run_manager = cm.on_chain_start({"name": group_name}, {})
@@ -227,8 +223,7 @@ async def atrace_as_chain_group(
     *,
     project_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
-    inheritable_tags: Optional[List[str]] = None,
-    local_tags: Optional[List[str]] = None,
+    tags: Optional[List[str]] = None,
 ) -> AsyncGenerator[AsyncCallbackManager, None]:
     """Get an async callback manager for a chain group in a context manager.
     Useful for grouping different async calls together as a single run even if
@@ -240,11 +235,8 @@ async def atrace_as_chain_group(
             Defaults to None.
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
-        inheritable_tags (List[str], optional): The inheritable tags.
+        tags (List[str], optional): The inheritable tags to apply to all runs.
             Defaults to None.
-        local_tags (List[str], optional): The local tags.
-            Defaults to None.
-
     Returns:
         AsyncCallbackManager: The async callback manager for the chain group.
 
@@ -258,7 +250,7 @@ async def atrace_as_chain_group(
         example_id=example_id,
     )
     cm = AsyncCallbackManager.configure(
-        inheritable_callbacks=[cb],
+        inheritable_callbacks=[cb], inheritable_tags=tags
     )
 
     run_manager = await cm.on_chain_start({"name": group_name}, {})
