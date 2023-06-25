@@ -68,6 +68,7 @@ from langchain.document_loaders.mastodon import MastodonTootsLoader
 from langchain.document_loaders.max_compute import MaxComputeLoader
 from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.merge import MergedDataLoader
+from langchain.document_loaders.mhtml import MHTMLLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
@@ -205,6 +206,7 @@ __all__ = [
     "MathpixPDFLoader",
     "MaxComputeLoader",
     "MergedDataLoader",
+    "MHTMLLoader",
     "ModernTreasuryLoader",
     "NotebookLoader",
     "NotionDBLoader",
