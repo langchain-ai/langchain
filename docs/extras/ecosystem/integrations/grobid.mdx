@@ -1,0 +1,30 @@
+# Grobid
+
+This page covers how to use the Grobid to parse articles for LangChain.
+It is seperated into two parts: installation and running the server
+
+## Installation and Setup
+#Ensure You have Javascript installed
+!apt-get install -y openjdk-11-jdk -q
+!update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+
+#Clone and install the Grobid Repo
+os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
+!git clone https://github.com/kermitt2/grobid.git
+os.chdir('grobid')
+!./gradlew clean install
+
+#Run the server, 
+get_ipython().system_raw('nohup ./gradlew run > grobid.log 2>&1 &')
+
+You can now use the GrobidParser to produce documents
+```python
+from langchain.documentloaders import GrobidLoader
+
+#Produce chunks from article paragraphs
+chunks=GrobidLoader(file_path,segment_sentences=False)
+
+#Produce chunks from article sentences
+chunks=GrobidLoader(file_path,segment_sentences=True)
+```
+Chunk metadata will include bboxes although these are a bit funky to parse, see https://grobid.readthedocs.io/en/latest/Coordinates-in-PDF/
