@@ -145,7 +145,7 @@ from langchain.document_loaders.youtube import (
     YoutubeLoader,
 )
 
-from langchain.document_loaders.py import GrobidLoader
+from langchain.document_loaders import GrobidLoader
 
 # Legacy: only for backwards compat. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
