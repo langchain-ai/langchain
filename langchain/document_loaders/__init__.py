@@ -145,6 +145,8 @@ from langchain.document_loaders.youtube import (
     YoutubeLoader,
 )
 
+from langchain.document_loaders.py import GrobidLoader
+
 # Legacy: only for backwards compat. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
 
@@ -283,4 +285,5 @@ __all__ = [
     "WikipediaLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
+    "GrobidLoader",
 ]
