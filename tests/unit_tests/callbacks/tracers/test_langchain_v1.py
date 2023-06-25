@@ -18,7 +18,7 @@ from langchain.callbacks.tracers.langchain_v1 import (
     TracerSessionV1,
 )
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum, TracerSessionV1Base
-from langchain.schema import LLMResult
+from langchain.schema import HumanMessage, LLMResult
 
 TEST_SESSION_ID = 2023
 
@@ -127,9 +127,15 @@ def test_tracer_llm_run() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_chat_model_run() -> None:
     """Test tracer on a Chat Model run."""
-    uuid = uuid4()
+    tracer = FakeTracer()
+
+    tracer.new_session()
+    manager = CallbackManager(handlers=[tracer])
+    run_managers = manager.on_chat_model_start(
+        serialized=SERIALIZED_CHAT, messages=[[HumanMessage(content="")]]
+    )
     compare_run = LLMRun(
-        uuid=str(uuid),
+        uuid=str(run_managers[0].run_id),
         parent_uuid=None,
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
@@ -137,19 +143,13 @@ def test_tracer_chat_model_run() -> None:
         execution_order=1,
         child_execution_order=1,
         serialized=SERIALIZED_CHAT,
-        prompts=[""],
+        prompts=["Human: "],
         response=LLMResult(generations=[[]]),
         session_id=TEST_SESSION_ID,
         error=None,
     )
-    tracer = FakeTracer()
-
-    tracer.new_session()
-    manager = CallbackManager(handlers=[tracer])
-    run_manager = manager.on_chat_model_start(
-        serialized=SERIALIZED_CHAT, messages=[[]], run_id=uuid
-    )
-    run_manager.on_llm_end(response=LLMResult(generations=[[]]))
+    for run_manager in run_managers:
+        run_manager.on_llm_end(response=LLMResult(generations=[[]]))
     assert tracer.runs == [compare_run]
 
 
