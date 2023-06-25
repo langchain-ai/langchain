@@ -37,10 +37,12 @@ from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.agents.structured_chat.base import StructuredChatAgent
 from langchain.agents.tools import Tool, tool
+from langchain.agents.agent_iterator import AgentExecutorIterator
 
 __all__ = [
     "Agent",
     "AgentExecutor",
+    "AgentExecutorIterator",
     "AgentOutputParser",
     "AgentType",
     "BaseMultiActionAgent",
