@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import time
+import typing as ty
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
@@ -1073,6 +1074,35 @@ s
                 return await self._areturn(
                     output, intermediate_steps, run_manager=run_manager
                 )
+
+    def __call__(
+        self,
+        inputs: dict[str, str] | ty.Any,
+        return_only_outputs: bool = False,
+        callbacks: Callbacks = None,
+        *,
+        tags: list[str] | None = None,
+        include_run_info: bool = False,
+        iterator: bool = False,
+        async_: bool = False,
+    ) -> dict[str, ty.Any]:
+        if iterator:
+            return AgentExecutorIterator(
+                self,
+                inputs,
+                callbacks,
+                tags=tags,
+                include_run_info=include_run_info,
+                async_=async_
+            )    
+        else:
+            return super().__call__(
+                inputs,
+                return_only_outputs,
+                callbacks,
+                tags=tags,
+                include_run_info=include_run_info
+            )
 
     def _get_tool_return(
         self, next_step_output: Tuple[AgentAction, str]
