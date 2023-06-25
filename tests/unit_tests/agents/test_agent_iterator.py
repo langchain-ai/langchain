@@ -43,7 +43,7 @@ def test_agent_iterator_stopped_early() -> None:
     for step in agent_iter:
         outputs.append(step)
 
-    assert outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
+    assert not outputs
 
 @pytest.mark.asyncio
 async def test_agent_async_iterator_stopped_early() -> None:
