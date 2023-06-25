@@ -2,12 +2,12 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.callbacks.utils import import_pandas
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-class ArizeCallbackHandler(BaseCallbackHandler):
+class ArizeCallbackHandler(AsyncCallbackHandler):
     """Callback Handler that logs to Arize."""
 
     def __init__(
