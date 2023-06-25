@@ -1,20 +1,28 @@
-import asyncio
-import sys
-import time
 import logging
-import inspect
+import time
 import typing as ty
 from functools import wraps
 
+from abc import ABC, abstractmethod
 from langchain.input import get_color_mapping
 from langchain.agents import AgentExecutor, Tool
 from langchain.agents.agent import AgentAction, AgentFinish
 from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun, Callbacks, CallbackManager, AsyncCallbackManager
+    Callbacks, CallbackManager, AsyncCallbackManager
 )
 from langchain.utilities.asyncio import asyncio_timeout
 from langchain.load.dump import dumpd
 from langchain.schema import RUN_KEY, RunInfo
+
+
+logger = logging.getLogger(__name__)
+
+
+class BaseAgentExecutorIterator(ABC):
+
+    @abstractmethod
+    def build_callback_manager(self) -> None:
+        pass
 
 
 def rebuild_callback_manager_on_set(
@@ -22,13 +30,13 @@ def rebuild_callback_manager_on_set(
 ) -> ty.Callable[..., None]:
     """Decorator to force setters to rebuild callback mgr"""
     @wraps(setter_method)
-    def wrapper(self: ty.Any, *args: ty.Any, **kwargs: ty.Any) -> None:
+    def wrapper(self: BaseAgentExecutorIterator, *args: ty.Any, **kwargs: ty.Any) -> None:
         setter_method(self, *args, **kwargs)
         self.build_callback_manager()
     return wrapper
 
 
-class AgentExecutorIterator:
+class AgentExecutorIterator(BaseAgentExecutorIterator):
     def __init__(
         self,
         agent_executor: AgentExecutor,
