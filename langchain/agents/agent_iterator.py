@@ -351,6 +351,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         """
         Stop the iterator and raise a StopIteration exception with the stopped response.
         """
+        logger.warning("Stopping agent prematurely due to triggering stop condition")
         output = self.agent_executor.agent.return_stopped_response(
             self.agent_executor.early_stopping_method,
             self.intermediate_steps,
@@ -359,6 +360,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         output = self.agent_executor._return(
             output, self.intermediate_steps, run_manager=self.run_manager
         )
+        logger.warning(output)
         self.raise_stopiteration(output)
     
     async def _astop(self) -> None:
@@ -366,6 +368,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         Stop the async iterator and raise a StopAsyncIteration exception with 
         the stopped response.
         """
+        logger.warning("Stopping agent prematurely due to triggering stop condition")
         output = self.agent_executor.agent.return_stopped_response(
             self.agent_executor.early_stopping_method,
             self.intermediate_steps,
