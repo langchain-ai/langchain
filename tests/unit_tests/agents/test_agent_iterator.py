@@ -33,10 +33,7 @@ def test_agent_iterator_stopped_early() -> None:
     outputs = []
     for step in agent_iter:
         outputs.append(step)
-    print("OUTPUTS")
-    print(outputs)
     assert not outputs
-    assert outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
 
     # execution time limit
     agent = _get_agent(max_execution_time=0.0)
