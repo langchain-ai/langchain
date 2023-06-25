@@ -101,26 +101,37 @@ class BaseChatModel(BaseLanguageModel, ABC):
             tags,
             self.tags,
         )
-        run_manager = callback_manager.on_chat_model_start(
+        run_managers = callback_manager.on_chat_model_start(
             dumpd(self), messages, invocation_params=params, options=options
         )
-
-        try:
-            results = [
-                self._generate_with_cache(
-                    m, stop=stop, run_manager=run_manager, **kwargs
+        results = []
+        for i, m in enumerate(messages):
+            try:
+                results.append(
+                    self._generate_with_cache(
+                        m,
+                        stop=stop,
+                        run_manager=run_managers[i] if run_managers else None,
+                        **kwargs,
+                    )
                 )
-                for m in messages
-            ]
-        except (KeyboardInterrupt, Exception) as e:
-            run_manager.on_llm_error(e)
-            raise e
+            except (KeyboardInterrupt, Exception) as e:
+                if run_managers:
+                    run_managers[i].on_llm_error(e)
+                raise e
+        flattened_outputs = [
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)
+            for res in results
+        ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
-        run_manager.on_llm_end(output)
-        if run_manager:
-            output.run = RunInfo(run_id=run_manager.run_id)
+        if run_managers:
+            run_infos = []
+            for manager, flattened_output in zip(run_managers, flattened_outputs):
+                manager.on_llm_end(flattened_output)
+                run_infos.append(RunInfo(run_id=manager.run_id))
+            output.run = run_infos
         return output
 
     async def agenerate(
@@ -143,28 +154,62 @@ class BaseChatModel(BaseLanguageModel, ABC):
             tags,
             self.tags,
         )
-        run_manager = await callback_manager.on_chat_model_start(
+
+        run_managers = await callback_manager.on_chat_model_start(
             dumpd(self), messages, invocation_params=params, options=options
         )
 
-        try:
-            results = await asyncio.gather(
-                *[
-                    self._agenerate_with_cache(
-                        m, stop=stop, run_manager=run_manager, **kwargs
-                    )
-                    for m in messages
-                ]
-            )
-        except (KeyboardInterrupt, Exception) as e:
-            await run_manager.on_llm_error(e)
-            raise e
+        results = await asyncio.gather(
+            *[
+                self._agenerate_with_cache(
+                    m,
+                    stop=stop,
+                    run_manager=run_managers[i] if run_managers else None,
+                    **kwargs,
+                )
+                for i, m in enumerate(messages)
+            ],
+            return_exceptions=True,
+        )
+        exceptions = []
+        for i, res in enumerate(results):
+            if isinstance(res, Exception):
+                if run_managers:
+                    await run_managers[i].on_llm_error(res)
+                exceptions.append(res)
+        if exceptions:
+            if run_managers:
+                await asyncio.gather(
+                    *[
+                        run_manager.on_llm_end(
+                            LLMResult(
+                                generations=[res.generations], llm_output=res.llm_output
+                            )
+                        )
+                        for run_manager, res in zip(run_managers, results)
+                        if not isinstance(res, Exception)
+                    ]
+                )
+            raise exceptions[0]
+        flattened_outputs = [
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)
+            for res in results
+        ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
-        await run_manager.on_llm_end(output)
-        if run_manager:
-            output.run = RunInfo(run_id=run_manager.run_id)
+        await asyncio.gather(
+            *[
+                run_manager.on_llm_end(flattened_output)
+                for run_manager, flattened_output in zip(
+                    run_managers, flattened_outputs
+                )
+            ]
+        )
+        if run_managers:
+            output.run = [
+                RunInfo(run_id=run_manager.run_id) for run_manager in run_managers
+            ]
         return output
 
     def generate_prompt(
