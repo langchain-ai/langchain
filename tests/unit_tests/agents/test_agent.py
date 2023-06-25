@@ -64,7 +64,7 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
     ]
     
     if "tools" in kwargs:
-        tools = tools + kwargs.get("tools")
+        tools = kwargs.get("tools")
         del kwargs["tools"]
 
     agent = initialize_agent(
