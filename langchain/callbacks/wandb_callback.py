@@ -17,6 +17,7 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 def import_wandb() -> Any:
+    """Import the wandb python package and raise an error if it is not installed."""
     try:
         import wandb  # noqa: F401
     except ImportError:

@@ -46,7 +46,7 @@ def _create_weaviate_client(**kwargs: Any) -> Any:
     except ImportError:
         raise ValueError(
             "Could not import weaviate python  package. "
-            "Please install it with `pip instal weaviate-client`"
+            "Please install it with `pip install weaviate-client`"
         )
 
     auth = (

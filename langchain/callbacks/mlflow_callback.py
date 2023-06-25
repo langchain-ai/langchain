@@ -20,6 +20,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 def import_mlflow() -> Any:
+    """Import the mlflow python package and raise an error if it is not installed."""
     try:
         import mlflow
     except ImportError:
