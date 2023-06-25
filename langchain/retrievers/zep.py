@@ -20,7 +20,7 @@ class ZepRetriever(BaseRetriever):
     histories, and exposes them via simple, low-latency APIs.
 
     For server installation instructions, see:
-    https://getzep.github.io/deployment/quickstart/
+    https://docs.getzep.com/deployment/quickstart/
     """
 
     def __init__(

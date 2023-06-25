@@ -37,7 +37,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
     summarizes, embeds, indexes, and enriches conversational AI chat
     histories, and exposes them via simple, low-latency APIs.
 
-    For server installation instructions and more, see: https://getzep.github.io/
+    For server installation instructions and more, see: https://docs.getzep.com/deployment/quickstart/
 
     This class is a thin wrapper around the zep-python package. Additional
     Zep functionality is exposed via the `zep_summary` and `zep_messages`
