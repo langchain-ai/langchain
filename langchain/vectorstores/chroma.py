@@ -16,6 +16,7 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 if TYPE_CHECKING:
     import chromadb
     import chromadb.config
+    from chromadb.api.types import Where, ID, OneOrMany, WhereDocument
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
