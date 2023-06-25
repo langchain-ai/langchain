@@ -31,28 +31,26 @@ def test_agent_iterator_stopped_early() -> None:
     agent_iter = agent(inputs="when was langchain made", iterator=True)
 
     outputs = []
-    print("Stop after 1 iteration")
     for step in agent_iter:
         outputs.append(step)
-    print("outputs: ", outputs)
-    #assert output == "Agent stopped due to iteration limit or time limit."
-    #assert not outputs
+    # NOTE: we don't use agent.run like in the test for the regular agent executor, 
+    # so the dict structure for outputs stays intact
+    assert outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
 
     # execution time limit
-    agent = _get_agent(max_execution_time=0.2)
+    agent = _get_agent(max_execution_time=1e-5)
     agent_iter = agent(inputs="when was langchain made", iterator=True)
 
     outputs = []
     for step in agent_iter:
         outputs.append(step)
-    print("outputs: ", outputs)
-    assert not outputs
+    assert outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
 
 @pytest.mark.asyncio
 async def test_agent_async_iterator_stopped_early() -> None:
     """Test react chain async iterator when max iterations or max execution time is exceeded."""
     # iteration limit
-    agent = _get_agent(max_iterations=0)
+    agent = _get_agent(max_iterations=1)
     agent_async_iter = agent(inputs="when was langchain made", iterator=True, async_=True)
 
     outputs = []
@@ -62,7 +60,7 @@ async def test_agent_async_iterator_stopped_early() -> None:
     assert outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
 
     # execution time limit
-    agent = _get_agent(max_execution_time=0.0)
+    agent = _get_agent(max_execution_time=1e-5)
     agent_async_iter = agent(inputs="when was langchain made", iterator=True, async_=True)
 
     outputs = []
