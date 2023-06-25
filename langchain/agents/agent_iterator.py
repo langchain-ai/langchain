@@ -215,7 +215,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         Perform any necessary setup for the first step of the asynchronous iterator.
         """
         # on first step, need to await callback manager and start async timeout ctxmgr
-        if not self.iterations:
+        if self.iterations == 0:
             self.run_manager = await self.callback_manager.on_chain_start(
                 dumpd(self.agent_executor),
                 self.inputs,
@@ -231,7 +231,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
                 _take_next_step             _take_next_step   
         """
         # first step
-        if not self.iterations:
+        if self.iterations == 0:
             self._on_first_step()
         # N.B. timeout taken care of by "_should_continue" in sync case
         try:
@@ -249,7 +249,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             _acall              <=>     _acall_next
                 _atake_next_step            _atake_next_step   
         """
-        if not self.iterations:
+        if self.iterations == 0:
             await self._on_first_async_step()
         try:
             return await self._acall_next()

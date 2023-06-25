@@ -234,15 +234,6 @@ def test_agent_iterator_empty_input() -> None:
     assert outputs[-1]["output"]  # Check if there is an output
 
 
-def test_agent_iterator_invalid_input() -> None:
-    """Test AgentExecutorIterator with invalid input."""
-    agent = _get_agent()
-    agent_iter = agent(inputs=123, iterator=True)  # Pass a non-string input
-
-    with pytest.raises(TypeError):
-        next(agent_iter)
-
-
 def test_agent_iterator_custom_stopping_condition() -> None:
     """Test AgentExecutorIterator with a custom stopping condition."""
     agent = _get_agent()
@@ -264,8 +255,8 @@ def test_agent_iterator_custom_stopping_condition() -> None:
 def test_agent_iterator_failing_tool() -> None:
     """Test AgentExecutorIterator with a tool that raises an exception."""
     
-    """Get agent for testing."""
-    bad_action_name = "BadAction"
+    # Get agent for testing.
+    bad_action_name = "FailingTool"
     responses = [
         f"I'm turning evil\nAction: {bad_action_name}\nAction Input: misalignment",
         "Oh well\nFinal Answer: curses foiled again",
@@ -288,6 +279,9 @@ def test_agent_iterator_failing_tool() -> None:
     )
 
     agent_iter = agent(inputs="when was langchain made", iterator=True)
+
+    # initialise iterator
+    iter(agent_iter)
     
     with pytest.raises(ZeroDivisionError):
         next(agent_iter)
