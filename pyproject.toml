@@ -112,6 +112,7 @@ azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-de
 openllm = {version = ">=0.1.6", optional = true}
 # now streamlit requires Python >=3.7, !=3.9.7 So, it is commented out.
 #streamlit = {version = "^1.18.0", optional = true}
+scripts = "^2.0"
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
