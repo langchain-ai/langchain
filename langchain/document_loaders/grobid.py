@@ -3,12 +3,11 @@ from bs4 import BeautifulSoup
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.document_loaders.parsers.grobid import GrobidParser
 
 class ServerUnavailableException(Exception):
     pass
   
-class GrobidLoader():
+class GrobidLoader(BaseLoader):
     """Loader that uses Grobid to load article PDF files."""
     def __init__(self,file_path,segment_sentences,grobid_server="http://localhost:8070/API/processFulltextDocument") -> None:
         try:
