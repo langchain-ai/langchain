@@ -3,9 +3,7 @@ from bs4 import BeautifulSoup
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.document_loaders.parsers.pdf import (
-    GrobidParser,
-)
+from langchain.document_loaders.parsers.grobid import GrobidParser
 
 class ServerUnavailableException(Exception):
     pass
@@ -44,12 +42,12 @@ class GrobidLoader():
               timeout=60,
           )
           xml_data,status = r.text,r.status_code
-      except requests.exceptions.ReadTimeout:
-       status,xml_data=408, None
+        except requests.exceptions.ReadTimeout:
+           status,xml_data=408, None
               
-      super().__init__(file_path,xml_data,segment_sentences)
+        super().__init__(file_path,xml_data,segment_sentences)
 
-    def load(self, **kwargs: Optional[Any]) -> List[Document]:
+    def load(self) -> List[Document]:
         """Load file."""
         parser = GrobidParser()
         if self.xml_data==None:
