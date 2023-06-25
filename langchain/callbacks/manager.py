@@ -672,66 +672,72 @@ class CallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
-        run_id: Optional[UUID] = None,
         **kwargs: Any,
-    ) -> CallbackManagerForLLMRun:
+    ) -> List[CallbackManagerForLLMRun]:
         """Run when LLM starts running."""
-        if run_id is None:
-            run_id = uuid4()
+        managers = []
+        for prompt in prompts:
+            run_id_ = uuid4()
+            _handle_event(
+                self.handlers,
+                "on_llm_start",
+                "ignore_llm",
+                serialized,
+                [prompt],
+                run_id=run_id_,
+                parent_run_id=self.parent_run_id,
+                tags=self.tags,
+                **kwargs,
+            )
 
-        _handle_event(
-            self.handlers,
-            "on_llm_start",
-            "ignore_llm",
-            serialized,
-            prompts,
-            run_id=run_id,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            **kwargs,
-        )
+            managers.append(
+                CallbackManagerForLLMRun(
+                    run_id=run_id_,
+                    handlers=self.handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                )
+            )
 
-        return CallbackManagerForLLMRun(
-            run_id=run_id,
-            handlers=self.handlers,
-            inheritable_handlers=self.inheritable_handlers,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            inheritable_tags=self.inheritable_tags,
-        )
+        return managers
 
     def on_chat_model_start(
         self,
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
-        run_id: Optional[UUID] = None,
         **kwargs: Any,
-    ) -> CallbackManagerForLLMRun:
+    ) -> List[CallbackManagerForLLMRun]:
         """Run when LLM starts running."""
-        if run_id is None:
-            run_id = uuid4()
-        _handle_event(
-            self.handlers,
-            "on_chat_model_start",
-            "ignore_chat_model",
-            serialized,
-            messages,
-            run_id=run_id,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            **kwargs,
-        )
 
-        # Re-use the LLM Run Manager since the outputs are treated
-        # the same for now
-        return CallbackManagerForLLMRun(
-            run_id=run_id,
-            handlers=self.handlers,
-            inheritable_handlers=self.inheritable_handlers,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            inheritable_tags=self.inheritable_tags,
-        )
+        managers = []
+        for message_list in messages:
+            run_id_ = uuid4()
+            _handle_event(
+                self.handlers,
+                "on_chat_model_start",
+                "ignore_chat_model",
+                serialized,
+                [message_list],
+                run_id=run_id_,
+                parent_run_id=self.parent_run_id,
+                tags=self.tags,
+                **kwargs,
+            )
+
+            managers.append(
+                CallbackManagerForLLMRun(
+                    run_id=run_id_,
+                    handlers=self.handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                )
+            )
+
+        return managers
 
     def on_chain_start(
         self,
@@ -830,64 +836,84 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
-        run_id: Optional[UUID] = None,
         **kwargs: Any,
-    ) -> AsyncCallbackManagerForLLMRun:
+    ) -> List[AsyncCallbackManagerForLLMRun]:
         """Run when LLM starts running."""
-        if run_id is None:
-            run_id = uuid4()
 
-        await _ahandle_event(
-            self.handlers,
-            "on_llm_start",
-            "ignore_llm",
-            serialized,
-            prompts,
-            run_id=run_id,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            **kwargs,
-        )
+        tasks = []
+        managers = []
 
-        return AsyncCallbackManagerForLLMRun(
-            run_id=run_id,
-            handlers=self.handlers,
-            inheritable_handlers=self.inheritable_handlers,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            inheritable_tags=self.inheritable_tags,
-        )
+        for prompt in prompts:
+            run_id_ = uuid4()
+
+            tasks.append(
+                _ahandle_event(
+                    self.handlers,
+                    "on_llm_start",
+                    "ignore_llm",
+                    serialized,
+                    [prompt],
+                    run_id=run_id_,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    **kwargs,
+                )
+            )
+
+            managers.append(
+                AsyncCallbackManagerForLLMRun(
+                    run_id=run_id_,
+                    handlers=self.handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                )
+            )
+
+        await asyncio.gather(*tasks)
+
+        return managers
 
     async def on_chat_model_start(
         self,
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
-        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        if run_id is None:
-            run_id = uuid4()
+        tasks = []
+        managers = []
 
-        await _ahandle_event(
-            self.handlers,
-            "on_chat_model_start",
-            "ignore_chat_model",
-            serialized,
-            messages,
-            run_id=run_id,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            **kwargs,
-        )
+        for message_list in messages:
+            run_id_ = uuid4()
 
-        return AsyncCallbackManagerForLLMRun(
-            run_id=run_id,
-            handlers=self.handlers,
-            inheritable_handlers=self.inheritable_handlers,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            inheritable_tags=self.inheritable_tags,
-        )
+            tasks.append(
+                _ahandle_event(
+                    self.handlers,
+                    "on_chat_model_start",
+                    "ignore_chat_model",
+                    serialized,
+                    [message_list],
+                    run_id=run_id_,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    **kwargs,
+                )
+            )
+
+            managers.append(
+                AsyncCallbackManagerForLLMRun(
+                    run_id=run_id_,
+                    handlers=self.handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                )
+            )
+
+        await asyncio.gather(*tasks)
+        return managers
 
     async def on_chain_start(
         self,
