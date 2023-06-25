@@ -273,15 +273,31 @@ def test_agent_iterator_custom_stopping_condition() -> None:
 
 def test_agent_iterator_failing_tool() -> None:
     """Test AgentExecutorIterator with a tool that raises an exception."""
-    tools = [
-        Tool(
-            name="FailingTool",
-            func=lambda x: 1 / 0,  # This tool will raise a ZeroDivisionError
-            description="A tool that fails",
-        ),
+    
+    """Get agent for testing."""
+    bad_action_name = "BadAction"
+    responses = [
+        f"I'm turning evil\nAction: {bad_action_name}\nAction Input: misalignment",
+        "Oh well\nFinal Answer: curses foiled again",
     ]
-    agent = _get_agent(tools=tools)
-    agent_iter = agent(inputs="when was langchain made", iterator=True)
+    fake_llm = FakeListLLM(responses=responses)
 
+    tools = [
+            Tool(
+                name="FailingTool",
+                func=lambda x: 1 / 0,  # This tool will raise a ZeroDivisionError
+                description="A tool that fails",
+            ),
+        ]
+    
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True
+    )
+
+    agent_iter = agent(inputs="when was langchain made", iterator=True)
+    
     with pytest.raises(ZeroDivisionError):
         next(agent_iter)
