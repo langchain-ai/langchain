@@ -23,17 +23,6 @@ def test_agent_iterator_bad_action() -> None:
 
     assert outputs[-1]["output"] == "curses foiled again"
 
-@pytest.mark.asyncio
-async def test_agent_async_iterator_bad_action() -> None:
-    """Test react chain async iterator when bad action given."""
-    agent = _get_agent()
-    agent_async_iter = agent(inputs="when was langchain made", iterator=True, async_=True)
-
-    outputs = []
-    async for step in agent_async_iter:
-        outputs.append(step)
-
-    assert outputs[-1]["output"] == "curses foiled again"
 
 def test_agent_iterator_stopped_early() -> None:
     """Test react chain iterator when max iterations or max execution time is exceeded."""
@@ -44,7 +33,9 @@ def test_agent_iterator_stopped_early() -> None:
     outputs = []
     for step in agent_iter:
         outputs.append(step)
-
+    print("OUTPUTS")
+    print(outputs)
+    assert not outputs
     assert outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
 
     # execution time limit

@@ -1085,8 +1085,9 @@ s
         include_run_info: bool = False,
         iterator: bool = False,
         async_: bool = False,
-    ) -> dict[str, ty.Any]:
+    ) -> dict[str, ty.Any] | ty.Any:
         if iterator:
+            from langchain.agents.agent_iterator import AgentExecutorIterator
             return AgentExecutorIterator(
                 self,
                 inputs,
