@@ -346,7 +346,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         tokens = []
         indices = []
         model_name = self.tiktoken_model_name or self.model
-        encoding = tiktoken.model.encoding_for_model(model_name)
+        try:
+            encoding = tiktoken.encoding_for_model(model_name)
+        except KeyError:
+            logger.warning("Warning: model not found. Using cl100k_base encoding.")
+            model = "cl100k_base"
+            encoding = tiktoken.get_encoding(model)
         for i, text in enumerate(texts):
             if self.model.endswith("001"):
                 # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
