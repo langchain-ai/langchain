@@ -12,7 +12,7 @@ class ServerUnavailableException(Exception):
   
 class GrobidLoader():
     """Loader that uses Grobid to load article PDF files."""
-    def __init__(self,file_path,segment_sentences,grobid_server="http://localhost:8070/API/processFulltextDocument",segment_sentences) -> None:
+    def __init__(self,file_path,segment_sentences,grobid_server="http://localhost:8070/API/processFulltextDocument") -> None:
         try:
             from bs4 import BeautifulSoup  # noqa:F401
         except ImportError:
