@@ -8,7 +8,7 @@ from langchain.document_loaders.parsers.pdf import (
     PyPDFium2Parser,
     PyPDFParser,
 )
-
+from langchain.document_loaders.parsers.grobid import GrobidParser
 __all__ = [
     "BS4HTMLParser",
     "LanguageParser",
