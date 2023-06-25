@@ -296,7 +296,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = await self.llm.apredict_messages(
-            messages, functions=self.functions
+            messages, functions=self.functions, callbacks=callbacks
         )
         agent_decision = _parse_ai_message(predicted_message)
         return agent_decision
