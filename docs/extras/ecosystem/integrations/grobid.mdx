@@ -9,8 +9,9 @@ It is seperated into two parts: installation and running the server
 !update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
 
 #Clone and install the Grobid Repo
-os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
+import os
 !git clone https://github.com/kermitt2/grobid.git
+os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
 os.chdir('grobid')
 !./gradlew clean install
 
