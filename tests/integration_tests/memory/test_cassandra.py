@@ -1,5 +1,6 @@
 import os
 import time
+from typing import Optional
 
 from cassandra.cluster import Cluster
 
@@ -16,7 +17,7 @@ from langchain.schema import (
 def _chat_message_history(
     session_id: str = "test-session",
     drop: bool = True,
-    ttl_seconds: int | None = None,
+    ttl_seconds: Optional[int] = None,
 ) -> CassandraChatMessageHistory:
     keyspace = "cmh_test_keyspace"
     table_name = "cmh_test_table"
