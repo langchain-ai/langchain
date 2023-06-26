@@ -10,7 +10,7 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.evaluation.agents.trajectory_eval_prompt import (
     EVAL_CHAT_PROMPT as TRAJECTORY_PROMPT,
 )
-from langchain.evaluation.criteria.base import CriteriaEvalChain
+from langchain.evaluation.criteria.eval_chain import CriteriaEvalChain
 from langchain.evaluation.criteria.prompt import PROMPT as CRITERIA_PROMPT
 from langchain.evaluation.qa.eval_chain import QAEvalChain
 from langchain.evaluation.qa.eval_prompt import PROMPT as QA_DEFAULT_PROMPT

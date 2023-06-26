@@ -1,7 +1,10 @@
 """Test the criteria eval chain."""
 
 
-from langchain.evaluation.criteria.base import HELPFULNESS_CRITERION, CriteriaEvalChain
+from langchain.evaluation.criteria.eval_chain import (
+    HELPFULNESS_CRITERION,
+    CriteriaEvalChain,
+)
 from langchain.evaluation.schema import StringEvaluator
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

@@ -68,12 +68,25 @@ class QAEvalChain(LLMChain):
         prediction: str,
         reference: Optional[str] = None,
         input: Optional[str] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> dict:
+        """Evaluate Chain or LLM output, based on optional input and label.
+
+        Args:
+            prediction (str): the LLM or chain prediction to evaluate.
+            reference (Optional[str], optional): the reference label
+                to evaluate against.
+            input (Optional[str], optional): the input to consider during evaluation
+            callbacks (Callbacks, optional): the callbacks to use for tracing.
+            **kwargs: additional keyword arguments, including callbacks, tags, etc.
+        Returns:
+            dict: The evaluation results containing the score or value.
+        """
         return self.evaluate(
             examples=[{"query": input, "answer": reference}],
             predictions=[{"result": prediction}],
-            callbacks=kwargs.get("callbacks"),
+            callbacks=callbacks,
         )[0]
 
     async def aevaluate_strings(
@@ -82,11 +95,12 @@ class QAEvalChain(LLMChain):
         prediction: str,
         reference: Optional[str] = None,
         input: Optional[str] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> dict:
         return await self.acall(
             inputs={"query": input, "answer": reference, "result": prediction},
-            callbacks=kwargs.get("callbacks"),
+            callbacks=callbacks,
         )
 
 
