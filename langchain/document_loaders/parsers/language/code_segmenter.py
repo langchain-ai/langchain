@@ -1,8 +1,8 @@
-from typing import List
 from abc import ABC, abstractmethod
+from typing import List
 
 
-class LanguageParser(ABC):
+class CodeSegmenter(ABC):
     def __init__(self, code: str):
         self.code = code
 

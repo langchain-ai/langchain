@@ -1,11 +1,12 @@
 import unittest
+
 import pytest
 
-from langchain.document_loaders.language.javascript import JavaScriptParser
+from langchain.document_loaders.parsers.language.javascript import JavaScriptSegmenter
 
 
 @pytest.mark.requires("esprima")
-class TestJavaScriptParser(unittest.TestCase):
+class TestJavaScriptSegmenter(unittest.TestCase):
     def setUp(self) -> None:
         self.example_code = """const os = require('os');
 
@@ -35,12 +36,11 @@ hello("Hello!");"""
         ]
 
     def test_extract_functions_classes(self) -> None:
-        parser = JavaScriptParser(self.example_code)
-        extracted_code = parser.extract_functions_classes()
+        segmenter = JavaScriptSegmenter(self.example_code)
+        extracted_code = segmenter.extract_functions_classes()
         self.assertEqual(extracted_code, self.expected_extracted_code)
-        assert False
 
     def test_simplify_code(self) -> None:
-        parser = JavaScriptParser(self.example_code)
-        simplified_code = parser.simplify_code()
+        segmenter = JavaScriptSegmenter(self.example_code)
+        simplified_code = segmenter.simplify_code()
         self.assertEqual(simplified_code, self.expected_simplified_code)

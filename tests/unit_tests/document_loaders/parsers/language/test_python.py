@@ -1,9 +1,9 @@
 import unittest
 
-from langchain.document_loaders.language.python import PythonParser
+from langchain.document_loaders.parsers.language.python import PythonSegmenter
 
 
-class TestPythonParser(unittest.TestCase):
+class TestPythonSegmenter(unittest.TestCase):
     def setUp(self) -> None:
         self.example_code = """import os
 
@@ -30,11 +30,11 @@ hello("Hello!")"""
         ]
 
     def test_extract_functions_classes(self) -> None:
-        parser = PythonParser(self.example_code)
-        extracted_code = parser.extract_functions_classes()
+        segmenter = PythonSegmenter(self.example_code)
+        extracted_code = segmenter.extract_functions_classes()
         self.assertEqual(extracted_code, self.expected_extracted_code)
 
     def test_simplify_code(self) -> None:
-        parser = PythonParser(self.example_code)
-        simplified_code = parser.simplify_code()
+        segmenter = PythonSegmenter(self.example_code)
+        simplified_code = segmenter.simplify_code()
         self.assertEqual(simplified_code, self.expected_simplified_code)

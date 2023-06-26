@@ -1,10 +1,10 @@
-from typing import List, Any
 import ast
+from typing import Any, List
 
-from langchain.document_loaders.language.language_parser import LanguageParser
+from langchain.document_loaders.parsers.language.code_segmenter import CodeSegmenter
 
 
-class PythonParser(LanguageParser):
+class PythonSegmenter(CodeSegmenter):
     def __init__(self, code: str):
         super().__init__(code)
         self.source_lines = self.code.splitlines()
