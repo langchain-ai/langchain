@@ -21,6 +21,14 @@ class DocstoreFn(Docstore):
         self._lookup_fn = lookup_fn
 
     def search(self, search: str) -> Document:
+        """
+        Search for a document.
+        Args:
+            search: search string
+
+        Returns:
+            Document if found, else error message.
+        """
         r = self._lookup_fn(search)
         if isinstance(r, str):
             # NOTE: assume the search string is the source ID

@@ -342,8 +342,8 @@ async def arun_on_examples(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
-        concurrency_level: The number of async tasks to run concurrently.
-        num_repetitions: Number of times to run the model on each example.
+        concurrency_level: [Default: 5] The number of async tasks to run concurrently.
+        num_repetitions: [Default: 1] Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
         project_name: Project name to use when tracing runs.
@@ -605,14 +605,14 @@ async def arun_on_dataset(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
-        concurrency_level: The number of async tasks to run concurrently.
-        num_repetitions: Number of times to run the model on each example.
+        concurrency_level: [Default: 5] The number of async tasks to run concurrently.
+        num_repetitions: [Default: 1] Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
-        project_name: Name of the project to store the traces in.
+        project_name: [Default: None] Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
-        verbose: Whether to print progress.
-        client: Client to use to read the dataset. If not provided, a new
+        verbose: [Default: False] Whether to print progress.
+        client: [Default: None] Client to use to read the dataset. If not provided, a new
             client will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
@@ -661,14 +661,13 @@ def run_on_dataset(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
-        concurrency_level: Number of async workers to run in parallel.
-        num_repetitions: Number of times to run the model on each example.
+        num_repetitions: [Default: 1] Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
-        project_name: Name of the project to store the traces in.
+        project_name: [Default: None] Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
-        verbose: Whether to print progress.
-        client: Client to use to access the dataset. If None, a new client
+        verbose: [Default: False] Whether to print progress.
+        client: [Default: None] Client to use to access the dataset. If None, a new client
             will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.

@@ -25,6 +25,11 @@ class Wikipedia(Docstore):
 
         If page exists, return the page summary, and a PageWithLookups object.
         If page does not exist, return similar entries.
+
+        Args:
+            search: search string.
+
+        Returns: a Document object or error message.
         """
         import wikipedia
 
