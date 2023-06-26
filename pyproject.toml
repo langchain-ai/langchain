@@ -381,3 +381,8 @@ addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused
 markers = [
   "requires: mark tests as requiring a specific library"
 ]
+
+[tool.codespell]
+skip = '.git,*.pdf,*.svg'
+#
+# ignore-words-list = ''
