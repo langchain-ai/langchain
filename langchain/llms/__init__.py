@@ -31,6 +31,7 @@ from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInfe
 from langchain.llms.human import HumanInputLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.manifest import ManifestWrapper
+from langchain.llms.minimax import MiniMaxChatCompletion
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
@@ -83,6 +84,7 @@ __all__ = [
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
+    "MiniMaxChatCompletion",
     "Modal",
     "MosaicML",
     "NLPCloud",
@@ -136,6 +138,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "human-input": HumanInputLLM,
     "llamacpp": LlamaCpp,
     "textgen": TextGen,
+    "minimax": MiniMaxChatCompletion,
     "modal": Modal,
     "mosaic": MosaicML,
     "nlpcloud": NLPCloud,
