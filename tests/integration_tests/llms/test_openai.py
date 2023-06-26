@@ -96,6 +96,15 @@ def test_openai_streaming() -> None:
         assert isinstance(token["choices"][0]["text"], str)
 
 
+def test_openai_multiple_prompts() -> None:
+    """Test completion with multiple prompts."""
+    llm = OpenAI(max_tokens=10)
+    output = llm.generate(["I'm Pickle Rick", "I'm Pickle Rick"])
+    assert isinstance(output, LLMResult)
+    assert isinstance(output.generations, list)
+    assert len(output.generations) == 2
+
+
 def test_openai_streaming_error() -> None:
     """Test error handling in stream."""
     llm = OpenAI(best_of=2)

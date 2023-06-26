@@ -621,14 +621,44 @@ class AgentExecutor(Chain):
     """Consists of an agent using tools."""
 
     agent: Union[BaseSingleActionAgent, BaseMultiActionAgent]
+    """The agent to run for creating a plan and determining actions
+    to take at each step of the execution loop."""
     tools: Sequence[BaseTool]
+    """The valid tools the agent can call."""
     return_intermediate_steps: bool = False
+    """Whether to return the agent's trajectory of intermediate steps
+    at the end in addition to the final output."""
     max_iterations: Optional[int] = 15
+    """The maximum number of steps to take before ending the execution
+    loop.
+    
+    Setting to 'None' could lead to an infinite loop."""
     max_execution_time: Optional[float] = None
+    """The maximum amount of wall clock time to spend in the execution
+    loop.
+    """
     early_stopping_method: str = "force"
+    """The method to use for early stopping if the agent never
+    returns `AgentFinish`. Either 'force' or 'generate'.
+
+    `"force"` returns a string saying that it stopped because it met a
+        time or iteration limit.
+    
+    `"generate"` calls the agent's LLM Chain one final time to generate
+        a final answer based on the previous steps.
+    """
     handle_parsing_errors: Union[
         bool, str, Callable[[OutputParserException], str]
     ] = False
+    """How to handle errors raised by the agent's output parser.
+    Defaults to `False`, which raises the error.
+s
+    If `true`, the error will be sent back to the LLM as an observation.
+    If a string, the string itself will be sent to the LLM as an observation.
+    If a callable function, the function will be called with the exception
+     as an argument, and the result of that function will be passed to the agent
+      as an observation.
+    """
 
     @classmethod
     def from_agent_and_tools(

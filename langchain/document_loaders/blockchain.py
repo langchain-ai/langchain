@@ -11,6 +11,8 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class BlockchainType(Enum):
+    """Enumerator of the supported blockchains."""
+
     ETH_MAINNET = "eth-mainnet"
     ETH_GOERLI = "eth-goerli"
     POLYGON_MAINNET = "polygon-mainnet"

@@ -67,6 +67,8 @@ from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.mastodon import MastodonTootsLoader
 from langchain.document_loaders.max_compute import MaxComputeLoader
 from langchain.document_loaders.mediawikidump import MWDumpLoader
+from langchain.document_loaders.merge import MergedDataLoader
+from langchain.document_loaders.mhtml import MHTMLLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
@@ -75,6 +77,7 @@ from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.odt import UnstructuredODTLoader
 from langchain.document_loaders.onedrive import OneDriveLoader
 from langchain.document_loaders.onedrive_file import OneDriveFileLoader
+from langchain.document_loaders.open_city_data import OpenCityDataLoader
 from langchain.document_loaders.pdf import (
     MathpixPDFLoader,
     OnlinePDFLoader,
@@ -92,8 +95,10 @@ from langchain.document_loaders.psychic import PsychicLoader
 from langchain.document_loaders.pyspark_dataframe import PySparkDataFrameLoader
 from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
+from langchain.document_loaders.recursive_url_loader import RecusiveUrlLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
+from langchain.document_loaders.rst import UnstructuredRSTLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
@@ -200,6 +205,8 @@ __all__ = [
     "MastodonTootsLoader",
     "MathpixPDFLoader",
     "MaxComputeLoader",
+    "MergedDataLoader",
+    "MHTMLLoader",
     "ModernTreasuryLoader",
     "NotebookLoader",
     "NotionDBLoader",
@@ -209,6 +216,7 @@ __all__ = [
     "OneDriveLoader",
     "OnlinePDFLoader",
     "OutlookMessageLoader",
+    "OpenCityDataLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
     "PDFPlumberLoader",
@@ -222,6 +230,7 @@ __all__ = [
     "PySparkDataFrameLoader",
     "PythonLoader",
     "ReadTheDocsLoader",
+    "RecusiveUrlLoader",
     "RedditPostsLoader",
     "RoamLoader",
     "S3DirectoryLoader",
@@ -255,6 +264,7 @@ __all__ = [
     "UnstructuredODTLoader",
     "UnstructuredPDFLoader",
     "UnstructuredPowerPointLoader",
+    "UnstructuredRSTLoader",
     "UnstructuredRTFLoader",
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",

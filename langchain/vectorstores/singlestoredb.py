@@ -22,6 +22,8 @@ from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 
 class DistanceStrategy(str, enum.Enum):
+    """Enumerator of the Distance strategies for SingleStoreDB."""
+
     EUCLIDEAN_DISTANCE = "EUCLIDEAN_DISTANCE"
     DOT_PRODUCT = "DOT_PRODUCT"
 
@@ -37,6 +39,7 @@ ORDERING_DIRECTIVE: dict = {
 class SingleStoreDB(VectorStore):
     """
     This class serves as a Pythonic interface to the SingleStore DB database.
+
     The prerequisite for using this class is the installation of the ``singlestoredb``
     Python package.
 
@@ -445,6 +448,8 @@ class SingleStoreDB(VectorStore):
 
 
 class SingleStoreDBRetriever(VectorStoreRetriever):
+    """Retriever for SingleStoreDB vector stores."""
+
     vectorstore: SingleStoreDB
     k: int = 4
     allowed_search_types: ClassVar[Collection[str]] = ("similarity",)
