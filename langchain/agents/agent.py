@@ -1088,21 +1088,22 @@ s
     ) -> dict[str, ty.Any] | ty.Any:
         if iterator:
             from langchain.agents.agent_iterator import AgentExecutorIterator
+
             return AgentExecutorIterator(
                 self,
                 inputs,
                 callbacks,
                 tags=tags,
                 include_run_info=include_run_info,
-                async_=async_
-            )    
+                async_=async_,
+            )
         else:
             return super().__call__(
                 inputs,
                 return_only_outputs,
                 callbacks,
                 tags=tags,
-                include_run_info=include_run_info
+                include_run_info=include_run_info,
             )
 
     def _get_tool_return(

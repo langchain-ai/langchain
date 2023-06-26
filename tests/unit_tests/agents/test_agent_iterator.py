@@ -1,11 +1,16 @@
-from langchain.agents import AgentExecutor, AgentType, initialize_agent
+import pytest
+
+from langchain.agents import (
+    AgentExecutor,
+    AgentExecutorIterator,
+    AgentType,
+    initialize_agent,
+)
 from langchain.agents.tools import Tool
 from langchain.llms import FakeListLLM
+from tests.unit_tests.agents.test_agent import _get_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 from tests.unit_tests.test_cache import set_cache_and_teardown
-from tests.unit_tests.agents.test_agent import _get_agent
-import pytest
-from langchain.agents import AgentExecutorIterator
 
 
 def test_agent_iterator_bad_action() -> None:
@@ -29,9 +34,11 @@ def test_agent_iterator_stopped_early() -> None:
     outputs = []
     for step in agent_iter:
         outputs.append(step)
-    # NOTE: we don't use agent.run like in the test for the regular agent executor, 
+    # NOTE: we don't use agent.run like in the test for the regular agent executor,
     # so the dict structure for outputs stays intact
-    assert outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
+    assert (
+        outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
+    )
 
     # execution time limit
     agent = _get_agent(max_execution_time=1e-5)
@@ -40,7 +47,9 @@ def test_agent_iterator_stopped_early() -> None:
     outputs = []
     for step in agent_iter:
         outputs.append(step)
-    assert outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
+    assert (
+        outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
+    )
 
 
 @pytest.mark.asyncio
@@ -48,23 +57,31 @@ async def test_agent_async_iterator_stopped_early() -> None:
     """Test react chain async iterator when max iterations or max execution time is exceeded."""
     # iteration limit
     agent = _get_agent(max_iterations=1)
-    agent_async_iter = agent(inputs="when was langchain made", iterator=True, async_=True)
+    agent_async_iter = agent(
+        inputs="when was langchain made", iterator=True, async_=True
+    )
 
     outputs = []
     async for step in agent_async_iter:
         outputs.append(step)
 
-    assert outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
+    assert (
+        outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
+    )
 
     # execution time limit
     agent = _get_agent(max_execution_time=1e-5)
-    agent_async_iter = agent(inputs="when was langchain made", iterator=True, async_=True)
+    agent_async_iter = agent(
+        inputs="when was langchain made", iterator=True, async_=True
+    )
 
     outputs = []
     async for step in agent_async_iter:
         outputs.append(step)
 
-    assert outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
+    assert (
+        outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
+    )
 
 
 def test_agent_iterator_with_callbacks(set_cache_and_teardown) -> None:
@@ -92,13 +109,12 @@ def test_agent_iterator_with_callbacks(set_cache_and_teardown) -> None:
     ]
 
     agent = initialize_agent(
-        tools,
-        fake_llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        verbose=True
+        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
 
-    agent_iter = agent(inputs="when was langchain made", iterator=True, callbacks=[handler1])
+    agent_iter = agent(
+        inputs="when was langchain made", iterator=True, callbacks=[handler1]
+    )
 
     outputs = []
     for step in agent_iter:
@@ -158,12 +174,14 @@ async def test_agent_async_iterator_with_callbacks(set_cache_and_teardown) -> No
     ]
 
     agent = initialize_agent(
-        tools,
-        fake_llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        verbose=True
+        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
-    agent_async_iter = agent(inputs="when was langchain made", iterator=True, callbacks=[handler1], async_=True)
+    agent_async_iter = agent(
+        inputs="when was langchain made",
+        iterator=True,
+        callbacks=[handler1],
+        async_=True,
+    )
 
     outputs = []
     async for step in agent_async_iter:
@@ -217,7 +235,7 @@ def test_agent_iterator_properties_and_setters(set_cache_and_teardown) -> None:
     new_agent = _get_agent()
     agent_iter.agent_executor = new_agent
     assert isinstance(agent_iter.agent_executor, AgentExecutor)
-    
+
 
 def test_agent_iterator_reset() -> None:
     """Test reset functionality of AgentExecutorIterator."""
@@ -260,7 +278,9 @@ def test_agent_iterator_output_structure() -> None:
 async def test_agent_async_iterator_output_structure() -> None:
     """Test the async output structure of AgentExecutorIterator."""
     agent = _get_agent()
-    agent_async_iter = agent(inputs="when was langchain made", iterator=True, async_=True)
+    agent_async_iter = agent(
+        inputs="when was langchain made", iterator=True, async_=True
+    )
 
     async for step in agent_async_iter:
         assert isinstance(step, dict)
@@ -299,11 +319,11 @@ def test_agent_iterator_custom_stopping_condition() -> None:
         outputs.append(step)
 
     assert len(outputs) == 2  # Check if the custom stopping condition is respected
-    
+
 
 def test_agent_iterator_failing_tool() -> None:
     """Test AgentExecutorIterator with a tool that raises an exception."""
-    
+
     # Get agent for testing.
     bad_action_name = "FailingTool"
     responses = [
@@ -313,24 +333,21 @@ def test_agent_iterator_failing_tool() -> None:
     fake_llm = FakeListLLM(responses=responses)
 
     tools = [
-            Tool(
-                name="FailingTool",
-                func=lambda x: 1 / 0,  # This tool will raise a ZeroDivisionError
-                description="A tool that fails",
-            ),
-        ]
-    
+        Tool(
+            name="FailingTool",
+            func=lambda x: 1 / 0,  # This tool will raise a ZeroDivisionError
+            description="A tool that fails",
+        ),
+    ]
+
     agent = initialize_agent(
-        tools,
-        fake_llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        verbose=True
+        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
 
     agent_iter = agent(inputs="when was langchain made", iterator=True)
 
     # initialise iterator
     iter(agent_iter)
-    
+
     with pytest.raises(ZeroDivisionError):
         next(agent_iter)
