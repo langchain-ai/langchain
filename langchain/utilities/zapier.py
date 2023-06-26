@@ -1,6 +1,6 @@
 """Util that can interact with Zapier NLA.
 
-Full docs here: https://nla.zapier.com/api/v1/docs
+Full docs here: https://nla.zapier.com/start/
 
 Note: this wrapper currently only implemented the `api_key` auth method for testing
 and server-side production use cases (using the developer's connected accounts on
@@ -24,16 +24,19 @@ from langchain.utils import get_from_dict_or_env
 class ZapierNLAWrapper(BaseModel):
     """Wrapper for Zapier NLA.
 
-    Full docs here: https://nla.zapier.com/api/v1/docs
+    Full docs here: https://nla.zapier.com/start/
 
-    Note: this wrapper currently only implemented the `api_key` auth method for
-    testingand server-side production use cases (using the developer's connected
-    accounts on Zapier.com)
+    This wrapper supports both API Key and OAuth Credential auth methods. API Key
+    is the fastest way to get started using this wrapper.
 
+    Call this wrapper with either `zapier_nla_api_key` or `zapier_nla_oauth_access_token`
+    arguments, or set the `ZAPIER_NLA_API_KEY` environment variable. If both arguments are
+    set, the Access Token will take precedence.
+    
     For use-cases where LangChain + Zapier NLA is powering a user-facing application,
     and LangChain needs access to the end-user's connected accounts on Zapier.com,
-    you'll need to use oauth. Review the full docs above and reach out to
-    nla@zapier.com for developer support.
+    you'll need to use OAuth. Review the full docs above to learn how to create
+    your own provider and generate credentials.
     """
 
     zapier_nla_api_key: str
@@ -120,7 +123,7 @@ class ZapierNLAWrapper(BaseModel):
         `params` will always contain an `instructions` key, the only required
         param. All others optional and if provided will override any AI guesses
         (see "understanding the AI guessing flow" here:
-        https://nla.zapier.com/api/v1/docs)
+        https://nla.zapier.com/docs/using-the-api#ai-guessing)
         """
         session = self._get_session()
         response = session.get(self.zapier_nla_api_base + "exposed/")
