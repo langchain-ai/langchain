@@ -40,7 +40,7 @@ class WhatsAppChatLoader(BaseLoader):
                 (?:
                     :\d{2}
                 )?
-                (?:[ _](?:AM|PM))?
+                (?:[\s_](?:AM|PM))?
             )
             \]?
             [\s-]*
@@ -50,7 +50,9 @@ class WhatsAppChatLoader(BaseLoader):
             (.+)
         """
         for line in lines:
-            result = re.match(message_line_regex, line.strip(), flags=re.VERBOSE)
+            result = re.match(
+                message_line_regex, line.strip(), flags=re.VERBOSE | re.IGNORECASE
+            )
             if result:
                 date, sender, text = result.groups()
                 text_content += concatenate_rows(date, sender, text)
