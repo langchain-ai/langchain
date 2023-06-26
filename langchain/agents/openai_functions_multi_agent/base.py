@@ -138,7 +138,8 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
                 message_log=[message],
             )
             final_tools.append(_tool)
-        return final_tools
+        if len(final_tools) > 0:
+            return final_tools
 
     return AgentFinish(return_values={"output": message.content}, log=message.content)
 
