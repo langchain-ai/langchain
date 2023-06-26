@@ -25,13 +25,22 @@ SYSTEM_PROMPT = (
 
 class PlanningOutputParser(PlanOutputParser):
     def parse(self, text: str) -> Plan:
-        steps = [Step(value=v) for v in re.split("\n\d+\. ", text)[1:]]
+        steps = [Step(value=v) for v in re.split("\n\s*\d+\. ", text)[1:]]
         return Plan(steps=steps)
 
 
 def load_chat_planner(
     llm: BaseLanguageModel, system_prompt: str = SYSTEM_PROMPT
 ) -> LLMPlanner:
+    """
+    Load a chat planner.
+    Args:
+        llm: Language model.
+        system_prompt: System prompt.
+
+    Returns:
+        LLMPlanner
+    """
     prompt_template = ChatPromptTemplate.from_messages(
         [
             SystemMessage(content=system_prompt),

@@ -30,7 +30,7 @@ class PlaywrightURLLoader(BaseLoader):
         try:
             import playwright  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "playwright package not found, please install it with "
                 "`pip install playwright`"
             )

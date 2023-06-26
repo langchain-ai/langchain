@@ -30,7 +30,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that python package exists in environment."""
         try:
-            from duckduckgo_search import ddg  # noqa: F401
+            from duckduckgo_search import DDGS  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import duckduckgo-search python package. "
@@ -40,18 +40,23 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
 
     def get_snippets(self, query: str) -> List[str]:
         """Run query through DuckDuckGo and return concatenated results."""
-        from duckduckgo_search import ddg
+        from duckduckgo_search import DDGS
 
-        results = ddg(
-            query,
-            region=self.region,
-            safesearch=self.safesearch,
-            time=self.time,
-            max_results=self.max_results,
-        )
-        if results is None or len(results) == 0:
-            return ["No good DuckDuckGo Search Result was found"]
-        snippets = [result["body"] for result in results]
+        with DDGS() as ddgs:
+            results = ddgs.text(
+                query,
+                region=self.region,
+                safesearch=self.safesearch,
+                timelimit=self.time,
+            )
+            if results is None:
+                return ["No good DuckDuckGo Search Result was found"]
+            snippets = []
+            for i, res in enumerate(results, 1):
+                if res is not None:
+                    snippets.append(res["body"])
+                if len(snippets) == self.max_results:
+                    break
         return snippets
 
     def run(self, query: str) -> str:
@@ -71,24 +76,29 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 title - The title of the result.
                 link - The link to the result.
         """
-        from duckduckgo_search import ddg
+        from duckduckgo_search import DDGS
 
-        results = ddg(
-            query,
-            region=self.region,
-            safesearch=self.safesearch,
-            time=self.time,
-            max_results=num_results,
-        )
+        with DDGS() as ddgs:
+            results = ddgs.text(
+                query,
+                region=self.region,
+                safesearch=self.safesearch,
+                timelimit=self.time,
+            )
+            if results is None:
+                return [{"Result": "No good DuckDuckGo Search Result was found"}]
 
-        if results is None or len(results) == 0:
-            return [{"Result": "No good DuckDuckGo Search Result was found"}]
+            def to_metadata(result: Dict) -> Dict[str, str]:
+                return {
+                    "snippet": result["body"],
+                    "title": result["title"],
+                    "link": result["href"],
+                }
 
-        def to_metadata(result: Dict) -> Dict[str, str]:
-            return {
-                "snippet": result["body"],
-                "title": result["title"],
-                "link": result["href"],
-            }
-
-        return [to_metadata(result) for result in results]
+            formatted_results = []
+            for i, res in enumerate(results, 1):
+                if res is not None:
+                    formatted_results.append(to_metadata(res))
+                if len(formatted_results) == num_results:
+                    break
+        return formatted_results

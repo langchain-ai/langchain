@@ -15,11 +15,23 @@ from langchain.schema import BaseRetriever, Document
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
+    """
+    Create an index of embeddings for a list of contexts.
+
+    Args:
+        contexts: List of contexts to embed.
+        embeddings: Embeddings model to use.
+
+    Returns:
+        Index of embeddings.
+    """
     with concurrent.futures.ThreadPoolExecutor() as executor:
         return np.array(list(executor.map(embeddings.embed_query, contexts)))
 
 
 class KNNRetriever(BaseRetriever, BaseModel):
+    """KNN Retriever."""
+
     embeddings: Embeddings
     index: Any
     texts: List[str]
@@ -51,13 +63,14 @@ class KNNRetriever(BaseRetriever, BaseModel):
         denominator = np.max(similarities) - np.min(similarities) + 1e-6
         normalized_similarities = (similarities - np.min(similarities)) / denominator
 
-        top_k_results = []
-        for row in sorted_ix[0 : self.k]:
+        top_k_results = [
+            Document(page_content=self.texts[row])
+            for row in sorted_ix[0 : self.k]
             if (
                 self.relevancy_threshold is None
                 or normalized_similarities[row] >= self.relevancy_threshold
-            ):
-                top_k_results.append(Document(page_content=self.texts[row]))
+            )
+        ]
         return top_k_results
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:

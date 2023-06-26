@@ -12,7 +12,6 @@ from langchain.tools import BaseTool
 from langchain.tools.powerbi.prompt import QUESTION_TO_QUERY
 from langchain.tools.powerbi.tool import (
     InfoPowerBITool,
-    InputToQueryTool,
     ListPowerBITool,
     QueryPowerBITool,
 )
@@ -25,6 +24,7 @@ class PowerBIToolkit(BaseToolkit):
     powerbi: PowerBIDataset = Field(exclude=True)
     llm: BaseLanguageModel = Field(exclude=True)
     examples: Optional[str] = None
+    max_iterations: int = 5
     callback_manager: Optional[BaseCallbackManager] = None
 
     class Config:
@@ -52,12 +52,12 @@ class PowerBIToolkit(BaseToolkit):
                 ),
             )
         return [
-            QueryPowerBITool(powerbi=self.powerbi),
-            InfoPowerBITool(powerbi=self.powerbi),
-            ListPowerBITool(powerbi=self.powerbi),
-            InputToQueryTool(
+            QueryPowerBITool(
                 llm_chain=chain,
                 powerbi=self.powerbi,
                 examples=self.examples,
+                max_iterations=self.max_iterations,
             ),
+            InfoPowerBITool(powerbi=self.powerbi),
+            ListPowerBITool(powerbi=self.powerbi),
         ]

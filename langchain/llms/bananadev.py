@@ -23,6 +23,7 @@ class Banana(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import Banana
             banana = Banana(model_key="")
     """
@@ -79,23 +80,25 @@ class Banana(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "banana"
+        return "bananadev"
 
     def _call(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call to Banana endpoint."""
         try:
             import banana_dev as banana
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import banana-dev python package. "
                 "Please install it with `pip install banana-dev`."
             )
         params = self.model_kwargs or {}
+        params = {**params, **kwargs}
         api_key = self.banana_api_key
         model_key = self.model_key
         model_inputs = {

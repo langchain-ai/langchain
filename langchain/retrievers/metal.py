@@ -4,6 +4,8 @@ from langchain.schema import BaseRetriever, Document
 
 
 class MetalRetriever(BaseRetriever):
+    """Retriever that uses the Metal API."""
+
     def __init__(self, client: Any, params: Optional[dict] = None):
         from metal_sdk.metal import Metal
 

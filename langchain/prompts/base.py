@@ -7,9 +7,10 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Union
 
 import yaml
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Field, root_validator
 
 from langchain.formatting import formatter
+from langchain.load.serializable import Serializable
 from langchain.schema import BaseMessage, BaseOutputParser, HumanMessage, PromptValue
 
 
@@ -27,6 +28,14 @@ def jinja2_formatter(template: str, **kwargs: Any) -> str:
 
 
 def validate_jinja2(template: str, input_variables: List[str]) -> None:
+    """
+    Validate that the input variables are valid for the template.
+    Raise an exception if missing or extra variables are found.
+
+    Args:
+        template: The template string.
+        input_variables: The input variables.
+    """
     input_variables_set = set(input_variables)
     valid_variables = _get_jinja2_variables_from_template(template)
     missing_variables = valid_variables - input_variables_set
@@ -100,7 +109,7 @@ class StringPromptValue(PromptValue):
         return [HumanMessage(content=self.text)]
 
 
-class BasePromptTemplate(BaseModel, ABC):
+class BasePromptTemplate(Serializable, ABC):
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
@@ -111,10 +120,13 @@ class BasePromptTemplate(BaseModel, ABC):
         default_factory=dict
     )
 
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     @abstractmethod

@@ -18,6 +18,7 @@ class Anyscale(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import Anyscale
             anyscale = Anyscale(anyscale_service_url="SERVICE_URL",
                                 anyscale_service_route="SERVICE_ROUTE",
@@ -58,12 +59,17 @@ class Anyscale(LLM):
         anyscale_service_token = get_from_dict_or_env(
             values, "anyscale_service_token", "ANYSCALE_SERVICE_TOKEN"
         )
+        if anyscale_service_url.endswith("/"):
+            anyscale_service_url = anyscale_service_url[:-1]
+        if not anyscale_service_route.startswith("/"):
+            anyscale_service_route = "/" + anyscale_service_route
         try:
-            anyscale_service_endpoint = f"{anyscale_service_url}/-/route"
+            anyscale_service_endpoint = f"{anyscale_service_url}/-/routes"
             headers = {"Authorization": f"Bearer {anyscale_service_token}"}
             requests.get(anyscale_service_endpoint, headers=headers)
         except requests.exceptions.RequestException as e:
             raise ValueError(e)
+
         values["anyscale_service_url"] = anyscale_service_url
         values["anyscale_service_route"] = anyscale_service_route
         values["anyscale_service_token"] = anyscale_service_token
@@ -87,6 +93,7 @@ class Anyscale(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Anyscale Service endpoint.
         Args:
@@ -100,7 +107,7 @@ class Anyscale(LLM):
         """
 
         anyscale_service_endpoint = (
-            f"{self.anyscale_service_url}/{self.anyscale_service_route}"
+            f"{self.anyscale_service_url}{self.anyscale_service_route}"
         )
         headers = {"Authorization": f"Bearer {self.anyscale_service_token}"}
         body = {"prompt": prompt}
