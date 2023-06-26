@@ -16,7 +16,7 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 if TYPE_CHECKING:
     import chromadb
     import chromadb.config
-    from chromadb.api.types import Where, ID, OneOrMany, WhereDocument
+    from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
@@ -337,15 +337,15 @@ class Chroma(VectorStore):
             include: A list of what to include in the results. Can contain `"embeddings"`, `"metadatas"`, `"documents"`. Ids are always included. Defaults to `["metadatas", "documents"]`. Optional.
         """
         kwargs = {
-            'ids': ids,
-            'where': where,
-            'limit': limit,
-            'offset': offset,
-            'where_document': where_document,
+            "ids": ids,
+            "where": where,
+            "limit": limit,
+            "offset": offset,
+            "where_document": where_document,
         }
 
         if include is not None:
-            kwargs['include'] = include
+            kwargs["include"] = include
 
         return self._collection.get(**kwargs)
 
