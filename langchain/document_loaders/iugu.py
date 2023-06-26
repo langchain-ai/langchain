@@ -17,6 +17,8 @@ IUGU_ENDPOINTS = {
 
 
 class IuguLoader(BaseLoader):
+    """Loader that fetches data from IUGU."""
+
     def __init__(self, resource: str, api_token: Optional[str] = None) -> None:
         self.resource = resource
         api_token = api_token or get_from_env("api_token", "IUGU_API_TOKEN")

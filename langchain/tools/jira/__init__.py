@@ -1,1 +1,1 @@
-"""Zapier Tool."""
+"""Jira Tool."""

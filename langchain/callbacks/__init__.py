@@ -7,6 +7,7 @@ from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
 from langchain.callbacks.file import FileCallbackHandler
 from langchain.callbacks.human import HumanApprovalCallbackHandler
+from langchain.callbacks.infino_callback import InfinoCallbackHandler
 from langchain.callbacks.manager import (
     get_openai_callback,
     tracing_enabled,
@@ -20,9 +21,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.callbacks.streaming_stdout_final_only import (
     FinalStreamingStdOutCallbackHandler,
 )
-
-# now streamlit requires Python >=3.7, !=3.9.7 So, it is commented out here.
-# from langchain.callbacks.streamlit import StreamlitCallbackHandler
+from langchain.callbacks.streamlit import LLMThoughtLabeler, StreamlitCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
 
@@ -36,12 +35,13 @@ __all__ = [
     "FileCallbackHandler",
     "FinalStreamingStdOutCallbackHandler",
     "HumanApprovalCallbackHandler",
+    "InfinoCallbackHandler",
     "MlflowCallbackHandler",
     "OpenAICallbackHandler",
     "StdOutCallbackHandler",
     "StreamingStdOutCallbackHandler",
-    # now streamlit requires Python >=3.7, !=3.9.7 So, it is commented out here.
-    # "StreamlitCallbackHandler",
+    "StreamlitCallbackHandler",
+    "LLMThoughtLabeler",
     "WandbCallbackHandler",
     "WhyLabsCallbackHandler",
     "get_openai_callback",

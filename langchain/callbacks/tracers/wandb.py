@@ -137,6 +137,8 @@ def _replace_type_with_kind(data: Any) -> Any:
 
 
 class WandbRunArgs(TypedDict):
+    """Arguments for the WandbTracer."""
+
     job_type: Optional[str]
     dir: Optional[StrPath]
     config: Union[Dict, str, None]
