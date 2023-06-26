@@ -54,7 +54,7 @@ class NotionDBLoader(BaseLoader):
 
     def _retrieve_page_summaries(
         self, query_dict: Dict[str, Any] = {"page_size": 100}
-    ) -> List[Dict[str,Any]]:
+    ) -> List[Dict[str, Any]]:
         """Get all the pages from a Notion database."""
         pages: List[Dict[str, Any]] = []
 
@@ -74,7 +74,7 @@ class NotionDBLoader(BaseLoader):
 
         return pages
 
-    def load_page(self, page_summary: Dict[str,Any]) -> Document:
+    def load_page(self, page_summary: Dict[str, Any]) -> Document:
         """Read a page."""
         page_id = page_summary["id"]
 
