@@ -61,7 +61,6 @@ from langchain.utilities.zapier import ZapierNLAWrapper
 llm = OpenAI(temperature=0)
 zapier = ZapierNLAWrapper()
 ## To leverage OAuth you may pass the value `nla_oauth_access_token` to the ZapierNLAWrapper
-## or set the ZAPIER_NLA_OAUTH_ACCESS_TOKEN env variable.
 ## If you do this there is no need to initialize the ZAPIER_NLA_API_KEY env variable
 # zapier = ZapierNLAWrapper(zapier_nla_oauth_access_token="TOKEN_HERE")
 toolkit = ZapierToolkit.from_zapier_nla_wrapper(zapier)
