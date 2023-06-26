@@ -27,7 +27,7 @@ class AwaDB(VectorStore):
     def __init__(
         self,
         table_name: str = _DEFAULT_TABLE_NAME,
-        embedding_model: Optional[Embeddings] = None,
+        embedding: Optional[Embeddings] = None,
         log_and_data_dir: Optional[str] = None,
         client: Optional[awadb.Client] = None,
     ) -> None:
@@ -55,8 +55,8 @@ class AwaDB(VectorStore):
 
         self.awadb_client.Create(table_name)
         self.table2embeddings: dict[str, Embeddings] = {}
-        if embedding_model is not None:
-            self.table2embeddings[table_name] = embedding_model
+        if embedding is not None:
+            self.table2embeddings[table_name] = embedding
         self.using_table_name = table_name
 
     def add_texts(
@@ -338,7 +338,7 @@ class AwaDB(VectorStore):
         """
         awadb_client = cls(
             table_name=table_name,
-            embedding_model=embedding,
+            embedding=embedding,
             log_and_data_dir=log_and_data_dir,
             client=client,
         )
