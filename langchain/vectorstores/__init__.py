@@ -17,6 +17,7 @@ from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
 from langchain.vectorstores.faiss import FAISS
+from langchain.vectorstores.pghnsw import HNSWVectoreStore
 from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
 from langchain.vectorstores.matching_engine import MatchingEngine
@@ -56,6 +57,7 @@ __all__ = [
     "DocArrayInMemorySearch",
     "ElasticVectorSearch",
     "FAISS",
+    "HNSWVectoreStore",
     "Hologres",
     "LanceDB",
     "MatchingEngine",
