@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import List
+from typing import TYPE_CHECKING, List
 
-from O365 import Account
 from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
@@ -13,6 +12,9 @@ from langchain.tools.office365.messages_search import O365SearchEmails
 from langchain.tools.office365.send_event import O365SendEvent
 from langchain.tools.office365.send_message import O365SendMessage
 from langchain.tools.office365.utils import authenticate
+
+if TYPE_CHECKING:
+    from O365 import Account
 
 
 class O365Toolkit(BaseToolkit):
