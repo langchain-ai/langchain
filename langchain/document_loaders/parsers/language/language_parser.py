@@ -20,10 +20,63 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
 
 class LanguageParser(BaseBlobParser):
     """
-    Parse code files, using the respective parser.
+    Language parser that split code using the respective language syntax.
+
+    Each top-level function and class in the code are loaded into separate documents.
+    Then, an additional document is created with the top-level code, but without the
+    already loaded functions and classes.
+
+    This could improve the accuracy of QA chains over source code.
+
+    Examples:
+
+        .. code-block:: python
+
+            from langchain.text_splitter.Language
+            from langchain.document_loaders.generic import GenericLoader
+            from langchain.document_loaders.parsers import LanguageParser
+
+            loader = GenericLoader.from_filesystem(
+                "./code",
+                glob="**/*",
+                suffixes=[".py", ".js"],
+                parser=LanguageParser()
+            )
+            docs = loader.load()
+
+        Example instantiations to manually select the language:
+
+        ... code-block:: python
+
+            from langchain.text_splitter import Language
+
+            loader = GenericLoader.from_filesystem(
+                "./code",
+                glob="**/*",
+                suffixes=[".py"],
+                parser=LanguageParser(language=Language.PYTHON)
+            )
+
+        Example instantiations to set number of lines threshold:
+
+        ... code-block:: python
+
+            loader = GenericLoader.from_filesystem(
+                "./code",
+                glob="**/*",
+                suffixes=[".py"],
+                parser=LanguageParser(parser_threshold=200)
+            )
     """
 
     def __init__(self, language: Optional[Language] = None, parser_threshold: int = 0):
+        """
+        Language parser that split code using the respective language syntax.
+
+        Args:
+            language: If None (default), it will try to infer language from source.
+            parser_threshold: Minimum lines needed to activate parsing (0 by default).
+        """
         self.language = language
         self.parser_threshold = parser_threshold
 
