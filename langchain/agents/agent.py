@@ -1077,7 +1077,7 @@ s
 
     def __call__(
         self,
-        inputs: dict[str, str] | ty.Any,
+        inputs: dict[str, str] | Any,
         return_only_outputs: bool = False,
         callbacks: Callbacks = None,
         *,
@@ -1085,7 +1085,7 @@ s
         include_run_info: bool = False,
         iterator: bool = False,
         async_: bool = False,
-    ) -> dict[str, ty.Any] | ty.Any:
+    ) -> dict[str, Any] | Any:
         if iterator:
             from langchain.agents.agent_iterator import AgentExecutorIterator
 

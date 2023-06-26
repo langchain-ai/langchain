@@ -4,7 +4,8 @@ import typing as ty
 from abc import ABC, abstractmethod
 from asyncio import CancelledError
 from functools import wraps
-from typing import Any, Callable, Dict
+from typing import Any, Callable, NoReturn, Optional
+
 from langchain.agents import AgentExecutor
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager, Callbacks
 from langchain.input import get_color_mapping
@@ -28,9 +29,7 @@ def rebuild_callback_manager_on_set(
     """Decorator to force setters to rebuild callback mgr"""
 
     @wraps(setter_method)
-    def wrapper(
-        self: BaseAgentExecutorIterator, *args: Any, **kwargs: Any
-    ) -> None:
+    def wrapper(self: BaseAgentExecutorIterator, *args: Any, **kwargs: Any) -> None:
         setter_method(self, *args, **kwargs)
         self.build_callback_manager()
 
@@ -41,10 +40,10 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
     def __init__(
         self,
         agent_executor: AgentExecutor,
-        inputs: dict[str, str] | str,
+        inputs: dict[str, str] | Any,
         callbacks: Callbacks = None,
         *,
-        tags: list[str] | None = None,
+        tags: Optional[list[str]] = None,
         include_run_info: bool = False,
         async_: bool = False,
     ):
@@ -62,12 +61,15 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         self.run_manager = None
         self.reset()
 
+    _callback_manager: AsyncCallbackManager | CallbackManager
+    _inputs: dict[str, str]
+
     @property
     def inputs(self) -> dict[str, str]:
         return self._inputs
 
     @inputs.setter
-    def inputs(self, inputs: dict[str, str] | str) -> None:
+    def inputs(self, inputs: dict[str, str] | Any) -> None:
         self._inputs = self.agent_executor.prep_inputs(inputs)
 
     @property
@@ -123,7 +125,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         return {tool.name: tool for tool in self.agent_executor.tools}
 
     @property
-    def color_mapping(self) -> Dict[str, str]:
+    def color_mapping(self) -> dict[str, str]:
         return get_color_mapping(
             [tool.name for tool in self.agent_executor.tools],
             excluded_colors=["green", "red"],
@@ -151,14 +153,14 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             f"Agent Iterations: {self.iterations} ({self.time_elapsed:.2f}s elapsed)"
         )
 
-    def raise_stopiteration(self, output: Any):
+    def raise_stopiteration(self, output: Any) -> NoReturn:
         """
         Raise a StopIteration exception with the given output.
         """
         logger.debug("Chain end: stop iteration")
         raise StopIteration(output)
 
-    async def raise_stopasynciteration(self, output: Any):
+    async def raise_stopasynciteration(self, output: Any) -> NoReturn:
         """
         Raise a StopAsyncIteration exception with the given output.
         Close the timeout context manager.
@@ -169,14 +171,14 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         raise StopAsyncIteration(output)
 
     @property
-    def final_outputs(self):
+    def final_outputs(self) -> Optional[dict[str, Any]]:
         return self._final_outputs
 
     @final_outputs.setter
-    def final_outputs(self, outputs):
+    def final_outputs(self, outputs: dict[str, Any]) -> None:
         # have access to intermediate steps by design in iterator,
         # so return only outputs may as well always be true.
-        final_outputs: dict[str, Any] = self.agent_executor.prep_outputs(
+        final_outputs = self.agent_executor.prep_outputs(
             self.inputs, outputs, return_only_outputs=True
         )
         if self.include_run_info and self.run_manager is not None:
@@ -184,7 +186,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             final_outputs[RUN_KEY] = RunInfo(run_id=self.run_manager.run_id)
         self._final_outputs = final_outputs
 
-    def __iter__(self):
+    def __iter__(self: "AgentExecutorIterator") -> "AgentExecutorIterator":
         logger.debug("Initialising AgentExecutorIterator")
         self.reset()
         self.run_manager = self.callback_manager.on_chain_start(
@@ -193,7 +195,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         )
         return self
 
-    def __aiter__(self):
+    def __aiter__(self) -> "AgentExecutorIterator":
         """
         N.B. __aiter__ must be a normal method, so need to initialise async run manager
         on first __anext__ call where we can await it
@@ -243,7 +245,8 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         except StopIteration:
             raise
         except (KeyboardInterrupt, Exception) as e:
-            self.run_manager.on_chain_error(e)
+            if self.run_manager:
+                self.run_manager.on_chain_error(e)
             raise
 
     async def __anext__(self) -> dict[str, Any]:
@@ -264,10 +267,11 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             self.timeout_manager = None
             return await self._astop()
         except (KeyboardInterrupt, Exception) as e:
-            await self.run_manager.on_chain_error(e)
+            if self.run_manager:
+                await self.run_manager.on_chain_error(e)
             raise
 
-    def _execute_next_step(self):
+    def _execute_next_step(self) -> AgentFinish | list[tuple[AgentAction, str]]:
         """
         Execute the next step in the chain using the AgentExecutor's _take_next_step method.
         """
@@ -279,7 +283,9 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             run_manager=self.run_manager,
         )
 
-    async def _execute_next_async_step(self):
+    async def _execute_next_async_step(
+        self,
+    ) -> (AgentFinish | list[tuple[AgentAction, str]]):
         """
         Execute the next step in the chain using the AgentExecutor's _atake_next_step method.
         """
@@ -291,7 +297,11 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             run_manager=self.run_manager,
         )
 
-    def _process_next_step_output(self, next_step_output, run_manager):
+    def _process_next_step_output(
+        self,
+        next_step_output: AgentFinish | list[tuple[AgentAction, str]],
+        run_manager: Any,
+    ) -> dict[str, Any] | dict[str, list[tuple[AgentAction, str]]]:
         """
         Process the output of the next step, handling AgentFinish and tool return cases.
         """
@@ -306,7 +316,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             if self.run_manager:
                 self.run_manager.on_chain_end(output)
             self.final_outputs = output
-            return self.final_outputs
+            return output
 
         self.intermediate_steps.extend(next_step_output)
         logger.debug("Updated intermediate_steps with step output")
@@ -322,12 +332,16 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
                 if self.run_manager:
                     self.run_manager.on_chain_end(output)
                 self.final_outputs = output
-                return self.final_outputs
+                return output
 
         output = {"intermediate_steps": self.intermediate_steps}
         return output
 
-    async def _aprocess_next_step_output(self, next_step_output, run_manager):
+    async def _aprocess_next_step_output(
+        self,
+        next_step_output: AgentFinish | list[tuple[AgentAction, str]],
+        run_manager: Any,
+    ) -> (dict[str, Any] | dict[str, list[tuple[AgentAction, str]]]):
         """
         Process the output of the next async step, handling AgentFinish and tool return cases.
         """
@@ -342,7 +356,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             if self.run_manager:
                 await self.run_manager.on_chain_end(output)
             self.final_outputs = output
-            return self.final_outputs
+            return output
 
         self.intermediate_steps.extend(next_step_output)
         logger.debug("Updated intermediate_steps with step output")
@@ -358,12 +372,12 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
                 if self.run_manager:
                     await self.run_manager.on_chain_end(output)
                 self.final_outputs = output
-                return self.final_outputs
+                return output
 
         output = {"intermediate_steps": self.intermediate_steps}
         return output
 
-    def _stop(self) -> None:
+    def _stop(self) -> dict[str, Any]:
         """
         Stop the iterator and raise a StopIteration exception with the stopped response.
         """
@@ -374,13 +388,13 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             self.intermediate_steps,
             **self.inputs,
         )
-        output = self.agent_executor._return(
+        returned_output = self.agent_executor._return(
             output, self.intermediate_steps, run_manager=self.run_manager
         )
-        self.final_outputs = output
-        return self.final_outputs
+        self.final_outputs = returned_output
+        return returned_output
 
-    async def _astop(self) -> None:
+    async def _astop(self) -> dict[str, Any]:
         """
         Stop the async iterator and raise a StopAsyncIteration exception with
         the stopped response.
@@ -391,11 +405,11 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             self.intermediate_steps,
             **self.inputs,
         )
-        output = await self.agent_executor._areturn(
+        returned_output = await self.agent_executor._areturn(
             output, self.intermediate_steps, run_manager=self.run_manager
         )
-        self.final_outputs = output
-        return self.final_outputs
+        self.final_outputs = returned_output
+        return returned_output
 
     def _call_next(self) -> dict[str, Any]:
         """
