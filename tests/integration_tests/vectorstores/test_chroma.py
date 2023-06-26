@@ -214,16 +214,16 @@ def test_chroma_update_document() -> None:
 def test_chroma_with_persistence_with_client_settings() -> None:
     """Test end to end construction and search, with persistence and with client settings."""
     try:
-            import chromadb
-            import chromadb.config
+        import chromadb
+        import chromadb.config
     except ImportError:
-            raise ValueError(
-                "Could not import chromadb python package. "
-                "Please install it with `pip install chromadb`."
-            )
+        raise ValueError(
+            "Could not import chromadb python package. "
+            "Please install it with `pip install chromadb`."
+        )
     chroma_client_settings = chromadb.config.Settings(
-                        chroma_db_impl="duckdb+parquet",
-                    )
+        chroma_db_impl="duckdb+parquet",
+    )
     chroma_persist_dir = "./tests/persist_dir"
     collection_name = "test_collection"
     texts = ["foo", "bar", "baz"]
@@ -255,4 +255,3 @@ def test_chroma_with_persistence_with_client_settings() -> None:
     # Persist doesn't need to be called again
     # Data will be automatically persisted on object deletion
     # Or on program exit
-
