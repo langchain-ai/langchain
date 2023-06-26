@@ -10,6 +10,28 @@ from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
 
 
+def _parse_string_eval_output(text: str) -> dict:
+    """Parse the output text.
+
+    Args:
+        text (str): The output text to parse.
+
+    Returns:
+        Any: The parsed output.
+    """
+    reasoning, verdict = text.strip().rsplit("\n", maxsplit=1)
+    score = (
+        1
+        if verdict.upper() == "CORRECT"
+        else (0 if verdict.upper() == "INCORRECT" else None)
+    )
+    return {
+        "reasoning": reasoning.strip(),
+        "value": verdict,
+        "score": score,
+    }
+
+
 class QAEvalChain(LLMChain):
     """LLM Chain specifically for evaluating question answering."""
 
@@ -83,11 +105,12 @@ class QAEvalChain(LLMChain):
         Returns:
             dict: The evaluation results containing the score or value.
         """
-        return self.evaluate(
+        result = self.evaluate(
             examples=[{"query": input, "answer": reference}],
             predictions=[{"result": prediction}],
             callbacks=callbacks,
         )[0]
+        return _parse_string_eval_output(result["text"])
 
     async def aevaluate_strings(
         self,
@@ -98,10 +121,11 @@ class QAEvalChain(LLMChain):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> dict:
-        return await self.acall(
+        result = await self.acall(
             inputs={"query": input, "answer": reference, "result": prediction},
             callbacks=callbacks,
         )
+        return _parse_string_eval_output(result["text"])
 
 
 class ContextQAEvalChain(LLMChain):
@@ -171,11 +195,12 @@ class ContextQAEvalChain(LLMChain):
         input: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
-        return self.evaluate(
+        result = self.evaluate(
             examples=[{"query": input, "context": reference}],
             predictions=[{"result": prediction}],
             callbacks=kwargs.get("callbacks"),
         )[0]
+        return _parse_string_eval_output(result["text"])
 
     async def aevaluate_strings(
         self,
@@ -185,10 +210,11 @@ class ContextQAEvalChain(LLMChain):
         input: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
-        return await self.acall(
+        result = await self.acall(
             inputs={"query": input, "context": reference, "result": prediction},
             callbacks=kwargs.get("callbacks"),
         )
+        return _parse_string_eval_output(result["text"])
 
 
 class CotQAEvalChain(ContextQAEvalChain):

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
+
+from pydantic import Field
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BaseOutputParser
 
 CONCISENESS_CRITERION = {"conciseness": "Is the submission concise and to the point?"}
 RELEVANCE_CRITERION = {
@@ -49,6 +52,31 @@ for d in (
     _SUPPORTED_CRITERIA.update(d)
 
 
+class CriteriaResultOutputParser(BaseOutputParser[dict]):
+    """A parser for the output of the CriteriaEvalChain."""
+
+    @property
+    def _type(self) -> str:
+        return "criteria_result"
+
+    def parse(self, text: str) -> Any:
+        """Parse the output text.
+
+        Args:
+            text (str): The output text to parse.
+
+        Returns:
+            Any: The parsed output.
+        """
+        reasoning, verdict = text.strip().rsplit("\n", maxsplit=1)
+        score = 1 if verdict.upper() == "Y" else (0 if verdict.upper() == "N" else None)
+        return {
+            "reasoning": reasoning.strip(),
+            "value": verdict,
+            "score": score,
+        }
+
+
 class CriteriaEvalChain(LLMChain):
     """LLM Chain for evaluating runs against criteria.
 
@@ -82,11 +110,32 @@ class CriteriaEvalChain(LLMChain):
     >>> from langchain.chat_models import ChatAnthropic
     >>> from langchain.evaluation.criteria import CriteriaEvalChain
     >>> llm = ChatAnthropic()
-    >>> criteria = {"my-custom-criterion": "Is the submission the most amazing thing ever?"}
-    >>> chain = CriteriaEvalChain.from_criteria(llm=llm, criteria=criteria)
+    >>> criteria = {"my-custom-criterion": "Is the submission the most amazing ever?"}
+    >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
     """
 
     requires_reference: bool = False
+    """Whether the evaluation template expects a reference text."""
+    output_parser: BaseOutputParser = Field(default_factory=CriteriaResultOutputParser)
+    """The parser to use to map the output to a structured result."""
+
+    @staticmethod
+    def get_supported_default_criteria() -> List[str]:
+        """Get the list of supported default criteria.
+
+        Returns
+        -------
+        List[str]
+            The list of supported default criteria.
+
+        Examples
+        --------
+        >>> CriteriaEvalChain.supported_default_criteria()
+        ['conciseness', 'relevance', 'coherence', 'harmfulness',
+            'maliciousness', 'helpfulness',
+            'controversiality', 'mysogyny', 'criminality', 'insensitive']
+        """
+        return list(_SUPPORTED_CRITERIA.keys())
 
     @classmethod
     def resolve_criteria(
@@ -122,15 +171,16 @@ class CriteriaEvalChain(LLMChain):
         return dict(criteria)
 
     @classmethod
-    def from_criteria(
+    def from_llm(
         cls,
         llm: BaseLanguageModel,
         criteria: Union[Mapping[str, str], Sequence[str], str],
+        *,
         prompt: Optional[BasePromptTemplate] = None,
         requires_reference: bool = False,
         **kwargs: Any,
     ) -> CriteriaEvalChain:
-        """Create a `CriteriaEvalChain` instance from criteria.
+        """Create a `CriteriaEvalChain` instance from an llm and criteria.
 
         Parameters
         ----------
@@ -160,10 +210,19 @@ class CriteriaEvalChain(LLMChain):
         Examples
         --------
         >>> from langchain.llms import OpenAI
-        >>> from langchain.evaluation import CriteriaEvalChain
+        >>> from langchain.evaluation.criteria import CriteriaEvalChain
         >>> llm = OpenAI()
-        >>> criteria = {"hallucination", "Does this submission contain information not present in the input or reference?"}
-        >>> chain = CriteriaEvalChain.from_criteria(llm=llm, criteria=criteria, requires_reference=True)
+        >>> criteria = {
+                "hallucination": (
+                    "Does this submission contain information"
+                    " not present in the input or reference?"
+                ),
+            }
+        >>> chain = CriteriaEvalChain.from_llm(
+                llm=llm,
+                criteria=criteria,
+                requires_reference=True,
+            )
         """
         if prompt is None:
             if requires_reference:
@@ -223,10 +282,10 @@ class CriteriaEvalChain(LLMChain):
         Examples
         --------
         >>> from langchain.llms import OpenAI
-        >>> from langchain.evaluation import CriteriaEvalChain
+        >>> from langchain.evaluation.criteria import CriteriaEvalChain
         >>> llm = OpenAI()
         >>> criteria = "conciseness"
-        >>> chain = CriteriaEvalChain.from_criteria(llm=llm, criteria=criteria)
+        >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
         >>> chain.evaluate_strings(
                 prediction="The answer is 42.",
                 reference="42",
@@ -234,7 +293,7 @@ class CriteriaEvalChain(LLMChain):
             )
         """
         input_ = self._get_eval_input(prediction, reference, input)
-        return self(input_, **kwargs)
+        return self(input_, **kwargs)["text"]
 
     async def aevaluate_strings(
         self,
@@ -267,10 +326,10 @@ class CriteriaEvalChain(LLMChain):
         Examples
         --------
          >>> from langchain.llms import OpenAI
-        >>> from langchain.evaluation import CriteriaEvalChain
+        >>> from langchain.evaluation.criteria import CriteriaEvalChain
         >>> llm = OpenAI()
         >>> criteria = "conciseness"
-        >>> chain = CriteriaEvalChain.from_criteria(llm=llm, criteria=criteria)
+        >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
         >>> await chain.aevaluate_strings(
                 prediction="The answer is 42.",
                 reference="42",
@@ -278,4 +337,5 @@ class CriteriaEvalChain(LLMChain):
             )
         """
         input_ = self._get_eval_input(prediction, reference, input)
-        return await self.acall(input_, **kwargs)
+        result = await self.acall(input_, **kwargs)
+        return result["text"]

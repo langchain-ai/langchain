@@ -15,14 +15,16 @@ def test_resolve_criteria() -> None:
 
 
 def test_criteria_eval_chain() -> None:
-    chain = CriteriaEvalChain.from_criteria(
-        llm=FakeLLM(queries={"foo": "The meaning of life"}, sequential_responses=True),
+    chain = CriteriaEvalChain.from_llm(
+        llm=FakeLLM(
+            queries={"text": "The meaning of life\nY"}, sequential_responses=True
+        ),
         criteria={"my criterion": "my criterion description"},
     )
     result = chain.evaluate_strings(
         prediction="my prediction", reference="my reference", input="my input"
     )
-    assert result["text"] == "The meaning of life"
+    assert result["reasoning"] == "The meaning of life"
 
 
 def test_implements_string_protocol() -> None:

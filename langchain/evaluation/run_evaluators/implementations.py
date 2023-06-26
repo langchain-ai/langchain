@@ -10,7 +10,10 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.evaluation.agents.trajectory_eval_prompt import (
     EVAL_CHAT_PROMPT as TRAJECTORY_PROMPT,
 )
-from langchain.evaluation.criteria.eval_chain import CriteriaEvalChain
+from langchain.evaluation.criteria.eval_chain import (
+    CriteriaEvalChain,
+    CriteriaResultOutputParser,
+)
 from langchain.evaluation.criteria.prompt import PROMPT as CRITERIA_PROMPT
 from langchain.evaluation.qa.eval_chain import QAEvalChain
 from langchain.evaluation.qa.eval_prompt import PROMPT as QA_DEFAULT_PROMPT
@@ -66,6 +69,10 @@ class ChoicesOutputParser(RunEvaluatorOutputParser):
     evaluation_name: str
     choices_map: Optional[Dict[str, int]] = None
 
+    @property
+    def _type(self) -> str:
+        return "choices_run_eval"
+
     def parse(self, text: str) -> EvaluationResult:
         """Parse the last line of the text and return an evaluation result."""
         lines = text.strip().split()
@@ -118,6 +125,29 @@ def get_qa_evaluator(
     )
 
 
+class CriteriaOutputParser(RunEvaluatorOutputParser):
+    """Parse a criteria results into an evaluation result."""
+
+    evaluation_name: str
+
+    @property
+    def _type(self) -> str:
+        return "criteria"
+
+    def parse(self, parsed_output: Union[str, dict]) -> EvaluationResult:
+        """Parse the last line of the text and return an evaluation result."""
+        if isinstance(parsed_output, str):
+            parsed_output_ = CriteriaResultOutputParser().parse(parsed_output)
+        else:
+            parsed_output_ = parsed_output
+        return EvaluationResult(
+            key=self.evaluation_name,
+            score=parsed_output_.get("score"),
+            value=parsed_output_.get("value"),
+            comment=parsed_output_.get("reasoning"),
+        )
+
+
 def get_criteria_evaluator(
     llm: BaseLanguageModel,
     criteria: Union[Mapping[str, str], Sequence[str], str],
@@ -129,7 +159,6 @@ def get_criteria_evaluator(
     **kwargs: Any,
 ) -> RunEvaluatorChain:
     """Get an eval chain for grading a model's response against a map of criteria."""
-
     input_mapper = kwargs.pop(
         "input_mapper",
         StringRunEvaluatorInputMapper(
@@ -137,15 +166,15 @@ def get_criteria_evaluator(
             prediction_map={prediction_key: "output"},
         ),
     )
+    criteria_ = CriteriaEvalChain.resolve_criteria(criteria)
+    evaluation_name = evaluation_name or " ".join(criteria_.keys())
     parser = kwargs.pop(
         "output_parser",
-        ChoicesOutputParser(
+        CriteriaOutputParser(
             choices_map={"Y": 1, "N": 0}, evaluation_name=evaluation_name
         ),
     )
-    criteria_ = CriteriaEvalChain.resolve_criteria(criteria)
-    evaluation_name = evaluation_name or " ".join(criteria_.keys())
-    eval_chain = CriteriaEvalChain.from_criteria(
+    eval_chain = CriteriaEvalChain.from_llm(
         llm=llm, criteria=criteria_, prompt=prompt, **kwargs
     )
     return RunEvaluatorChain(
@@ -161,6 +190,10 @@ class TrajectoryEvalOutputParser(RunEvaluatorOutputParser):
     """The name assigned to the evaluation feedback."""
     evaluator_info: dict = Field(default_factory=dict)
     """Additional information to log as feedback metadata."""
+
+    @property
+    def _type(self) -> str:
+        return "agent_trajectory_run_eval"
 
     def parse(self, text: str) -> EvaluationResult:
         if "Score:" not in text:

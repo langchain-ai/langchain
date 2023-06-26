@@ -53,3 +53,17 @@ def test_implements_string_evaluator_protocol(
     chain_cls: Type[LLMChain],
 ) -> None:
     assert isinstance(chain_cls, StringEvaluator)
+
+
+@pytest.mark.parametrize("chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain])
+def test_returns_expected_results(
+    chain_cls: Type[LLMChain],
+) -> None:
+    fake_llm = FakeLLM(
+        queries={"text": "The meaning of life\nCORRECT"}, sequential_responses=True
+    )
+    chain = chain_cls.from_llm(fake_llm)  # type: ignore
+    results = chain.evaluate_strings(
+        prediction="my prediction", reference="my reference", input="my input"
+    )
+    assert results["score"] == 1
