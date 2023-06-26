@@ -466,7 +466,8 @@ def run_llm_or_chain(
         callbacks: Optional callbacks to use during the run.
 
     Returns:
-        A list of outputs.
+        Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
+          The outputs of the model or chain.
     """
     if callbacks:
         previous_example_ids = [
