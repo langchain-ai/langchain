@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, Optional
 
+from pydantic import BaseModel
+
 from langchain.schema import BaseOutputParser
 
 
@@ -56,6 +58,36 @@ class GuardrailsOutputParser(BaseOutputParser):
             )
         return cls(
             guard=Guard.from_rail_string(rail_str, num_reasks=num_reasks),
+            api=api,
+            args=args,
+            kwargs=kwargs,
+        )
+
+    @classmethod
+    def from_rail_pydantic(
+        cls,
+        pydantic_model: BaseModel,
+        prompt_template: str,
+        instructions: Optional[str] = None,
+        num_reasks: int = 1,
+        api: Optional[Callable] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> GuardrailsOutputParser:
+        try:
+            from guardrails import Guard
+        except ImportError:
+            raise ValueError(
+                "guardrails-ai package not installed. "
+                "Install it by running `pip install guardrails-ai`."
+            )
+        return cls(
+            guard=Guard.from_pydantic(
+                pydantic_model,
+                prompt=prompt_template,
+                instructions=instructions,
+                num_reasks=num_reasks,
+            ),
             api=api,
             args=args,
             kwargs=kwargs,
