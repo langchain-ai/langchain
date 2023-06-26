@@ -22,6 +22,7 @@ def test_agent_iterator_bad_action() -> None:
     for step in agent_iter:
         outputs.append(step)
 
+    assert isinstance(outputs[-1], dict)
     assert outputs[-1]["output"] == "curses foiled again"
 
 
@@ -36,6 +37,7 @@ def test_agent_iterator_stopped_early() -> None:
         outputs.append(step)
     # NOTE: we don't use agent.run like in the test for the regular agent executor,
     # so the dict structure for outputs stays intact
+    assert isinstance(outputs[-1], dict)
     assert (
         outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
     )
@@ -47,6 +49,7 @@ def test_agent_iterator_stopped_early() -> None:
     outputs = []
     for step in agent_iter:
         outputs.append(step)
+    assert isinstance(outputs[-1], dict)
     assert (
         outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
     )
@@ -65,6 +68,7 @@ async def test_agent_async_iterator_stopped_early() -> None:
     async for step in agent_async_iter:
         outputs.append(step)
 
+    assert isinstance(outputs[-1], dict)
     assert (
         outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
     )

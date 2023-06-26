@@ -1074,7 +1074,7 @@ s
                 return await self._areturn(
                     output, intermediate_steps, run_manager=run_manager
                 )
-
+    
     def __call__(
         self,
         inputs: dict[str, str] | Any,
@@ -1088,7 +1088,6 @@ s
     ) -> dict[str, Any] | Any:
         if iterator:
             from langchain.agents.agent_iterator import AgentExecutorIterator
-
             return AgentExecutorIterator(
                 self,
                 inputs,
