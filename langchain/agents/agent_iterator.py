@@ -6,8 +6,8 @@ from asyncio import CancelledError
 
 from abc import ABC, abstractmethod
 from langchain.input import get_color_mapping
-from langchain.agents import AgentExecutor, Tool
-from langchain.agents.agent import AgentAction, AgentFinish
+from langchain.agents import AgentExecutor
+from langchain.schema import AgentAction, AgentFinish
 from langchain.callbacks.manager import (
     Callbacks, CallbackManager, AsyncCallbackManager
 )
