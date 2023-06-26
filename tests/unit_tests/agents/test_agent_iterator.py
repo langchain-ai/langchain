@@ -1,10 +1,5 @@
-import asyncio
-from typing import Any, List, Mapping, Optional
-
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 from tests.unit_tests.agents.test_agent import _get_agent, FakeListLLM
@@ -74,7 +69,33 @@ def test_agent_iterator_with_callbacks() -> None:
     handler1 = FakeCallbackHandler()
     handler2 = FakeCallbackHandler()
 
-    agent = _get_agent()
+    bad_action_name = "BadAction"
+    responses = [
+        f"I'm turning evil\nAction: {bad_action_name}\nAction Input: misalignment",
+        "Oh well\nFinal Answer: curses foiled again",
+    ]
+    fake_llm = FakeListLLM(responses=responses, callbacks=[handler2])
+
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+        ),
+        Tool(
+            name="Lookup",
+            func=lambda x: x,
+            description="Useful for looking up things in a table",
+        ),
+    ]
+
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True
+    )
+
     agent_iter = agent(inputs="when was langchain made", iterator=True, callbacks=[handler1])
 
     outputs = []
@@ -113,7 +134,32 @@ async def test_agent_async_iterator_with_callbacks() -> None:
     handler1 = FakeCallbackHandler()
     handler2 = FakeCallbackHandler()
 
-    agent = _get_agent()
+    bad_action_name = "BadAction"
+    responses = [
+        f"I'm turning evil\nAction: {bad_action_name}\nAction Input: misalignment",
+        "Oh well\nFinal Answer: curses foiled again",
+    ]
+    fake_llm = FakeListLLM(responses=responses, callbacks=[handler2])
+
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+        ),
+        Tool(
+            name="Lookup",
+            func=lambda x: x,
+            description="Useful for looking up things in a table",
+        ),
+    ]
+
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True
+    )
     agent_async_iter = agent(inputs="when was langchain made", iterator=True, callbacks=[handler1], async_=True)
 
     outputs = []
