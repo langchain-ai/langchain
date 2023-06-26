@@ -4,7 +4,7 @@ import typing as ty
 from abc import ABC, abstractmethod
 from asyncio import CancelledError
 from functools import wraps
-
+from typing import Any, Callable, Dict
 from langchain.agents import AgentExecutor
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager, Callbacks
 from langchain.input import get_color_mapping
@@ -23,13 +23,13 @@ class BaseAgentExecutorIterator(ABC):
 
 
 def rebuild_callback_manager_on_set(
-    setter_method: ty.Callable[..., None]
-) -> ty.Callable[..., None]:
+    setter_method: Callable[..., None]
+) -> Callable[..., None]:
     """Decorator to force setters to rebuild callback mgr"""
 
     @wraps(setter_method)
     def wrapper(
-        self: BaseAgentExecutorIterator, *args: ty.Any, **kwargs: ty.Any
+        self: BaseAgentExecutorIterator, *args: Any, **kwargs: Any
     ) -> None:
         setter_method(self, *args, **kwargs)
         self.build_callback_manager()
@@ -123,7 +123,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         return {tool.name: tool for tool in self.agent_executor.tools}
 
     @property
-    def color_mapping(self) -> ty.Dict[str, str]:
+    def color_mapping(self) -> Dict[str, str]:
         return get_color_mapping(
             [tool.name for tool in self.agent_executor.tools],
             excluded_colors=["green", "red"],
@@ -151,14 +151,14 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             f"Agent Iterations: {self.iterations} ({self.time_elapsed:.2f}s elapsed)"
         )
 
-    def raise_stopiteration(self, output: ty.Any):
+    def raise_stopiteration(self, output: Any):
         """
         Raise a StopIteration exception with the given output.
         """
         logger.debug("Chain end: stop iteration")
         raise StopIteration(output)
 
-    async def raise_stopasynciteration(self, output: ty.Any):
+    async def raise_stopasynciteration(self, output: Any):
         """
         Raise a StopAsyncIteration exception with the given output.
         Close the timeout context manager.
@@ -176,7 +176,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
     def final_outputs(self, outputs):
         # have access to intermediate steps by design in iterator,
         # so return only outputs may as well always be true.
-        final_outputs: dict[str, ty.Any] = self.agent_executor.prep_outputs(
+        final_outputs: dict[str, Any] = self.agent_executor.prep_outputs(
             self.inputs, outputs, return_only_outputs=True
         )
         if self.include_run_info and self.run_manager is not None:
@@ -227,7 +227,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             if self.timeout_manager:
                 await self.timeout_manager.__aenter__()
 
-    def __next__(self) -> dict[str, ty.Any]:
+    def __next__(self) -> dict[str, Any]:
         """
         AgentExecutor               AgentExecutorIterator
         __call__                    (__iter__ ->) __next__
@@ -246,7 +246,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             self.run_manager.on_chain_error(e)
             raise
 
-    async def __anext__(self) -> dict[str, ty.Any]:
+    async def __anext__(self) -> dict[str, Any]:
         """
         AgentExecutor               AgentExecutorIterator
         acall                       (__aiter__ ->) __anext__
@@ -397,7 +397,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         self.final_outputs = output
         return self.final_outputs
 
-    def _call_next(self) -> dict[str, ty.Any]:
+    def _call_next(self) -> dict[str, Any]:
         """
         Perform a single iteration of the synchronous AgentExecutorIterator.
         """
@@ -412,7 +412,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         self.update_iterations()
         return output
 
-    async def _acall_next(self) -> dict[str, ty.Any]:
+    async def _acall_next(self) -> dict[str, Any]:
         """
         Perform a single iteration of the asynchronous AgentExecutorIterator.
         """
