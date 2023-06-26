@@ -161,7 +161,7 @@ def openapi_spec_to_openai_fn(
         method = _name_to_call_map[name]["method"]
         url = _name_to_call_map[name]["url"]
         path_params = fn_args.pop("path_params", {})
-        _format_url(url, path_params)
+        url = _format_url(url, path_params)
         if "data" in fn_args and isinstance(fn_args["data"], dict):
             fn_args["data"] = json.dumps(fn_args["data"])
         _kwargs = {**fn_args, **kwargs}
