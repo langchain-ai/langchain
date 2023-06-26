@@ -10,6 +10,7 @@ from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager, C
 from langchain.input import get_color_mapping
 from langchain.load.dump import dumpd
 from langchain.schema import RUN_KEY, AgentAction, AgentFinish, RunInfo
+from langchain.tools import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 
 logger = logging.getLogger(__name__)
@@ -70,16 +71,8 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         self._inputs = self.agent_executor.prep_inputs(inputs)
 
     @property
-    def callbacks(self):
+    def callbacks(self) -> Callbacks:
         return self._callbacks
-
-    @property
-    def tags(self):
-        return self._tags
-
-    @property
-    def agent_executor(self):
-        return self._agent_executor
 
     @callbacks.setter
     @rebuild_callback_manager_on_set
@@ -87,11 +80,19 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         """When callbacks are changed after __init__, rebuild callback mgr"""
         self._callbacks = callbacks
 
+    @property
+    def tags(self) -> list[str] | None:
+        return self._tags
+
     @tags.setter
     @rebuild_callback_manager_on_set
     def tags(self, tags: list[str] | None) -> None:
         """When tags are changed after __init__, rebuild callback mgr"""
         self._tags = tags
+
+    @property
+    def agent_executor(self) -> AgentExecutor:
+        return self._agent_executor
 
     @agent_executor.setter
     @rebuild_callback_manager_on_set
@@ -118,17 +119,17 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         )
 
     @property
-    def name_to_tool_map(self):
+    def name_to_tool_map(self) -> dict[str, BaseTool]:
         return {tool.name: tool for tool in self.agent_executor.tools}
 
     @property
-    def color_mapping(self):
+    def color_mapping(self) -> ty.Dict[str, str]:
         return get_color_mapping(
             [tool.name for tool in self.agent_executor.tools],
             excluded_colors=["green", "red"],
         )
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the iterator to its initial state, clearing intermediate steps, iterations, and time elapsed.
         """
@@ -140,7 +141,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         self.start_time = time.time()
         self._final_outputs = None
 
-    def update_iterations(self):
+    def update_iterations(self) -> None:
         """
         Increment the number of iterations and update the time elapsed.
         """
