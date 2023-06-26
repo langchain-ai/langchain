@@ -4,10 +4,16 @@ import typing as ty
 from abc import ABC, abstractmethod
 from asyncio import CancelledError
 from functools import wraps
-from typing import Any, Callable, NoReturn, Optional
+from typing import Any, Callable, Coroutine, NoReturn, Optional
 
 from langchain.agents import AgentExecutor
-from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager, Callbacks
+from langchain.callbacks.manager import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
+    CallbackManager,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain.input import get_color_mapping
 from langchain.load.dump import dumpd
 from langchain.schema import RUN_KEY, AgentAction, AgentFinish, RunInfo
@@ -63,6 +69,9 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
 
     _callback_manager: AsyncCallbackManager | CallbackManager
     _inputs: dict[str, str]
+    _final_outputs: Optional[dict[str, str]]
+    run_manager: Optional[AsyncCallbackManagerForChainRun | CallbackManagerForChainRun]
+    timeout_manager: Any  # TODO: Fix a type here; the shim makes it tricky.
 
     @property
     def inputs(self) -> dict[str, str]:
@@ -175,16 +184,19 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         return self._final_outputs
 
     @final_outputs.setter
-    def final_outputs(self, outputs: dict[str, Any]) -> None:
+    def final_outputs(self, outputs: dict[str, Any] | None) -> None:
         # have access to intermediate steps by design in iterator,
         # so return only outputs may as well always be true.
-        final_outputs = self.agent_executor.prep_outputs(
-            self.inputs, outputs, return_only_outputs=True
-        )
-        if self.include_run_info and self.run_manager is not None:
-            logger.debug("Assign run key")
-            final_outputs[RUN_KEY] = RunInfo(run_id=self.run_manager.run_id)
-        self._final_outputs = final_outputs
+
+        self._final_outputs = None
+        if outputs:
+            prepared_outputs: dict[str, Any] = self.agent_executor.prep_outputs(
+                self.inputs, outputs, return_only_outputs=True
+            )
+            if self.include_run_info and self.run_manager is not None:
+                logger.debug("Assign run key")
+                prepared_outputs[RUN_KEY] = RunInfo(run_id=self.run_manager.run_id)
+            self._final_outputs = prepared_outputs
 
     def __iter__(self: "AgentExecutorIterator") -> "AgentExecutorIterator":
         logger.debug("Initialising AgentExecutorIterator")
@@ -275,6 +287,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         """
         Execute the next step in the chain using the AgentExecutor's _take_next_step method.
         """
+        assert isinstance(self.run_manager, (CallbackManagerForChainRun | None))
         return self.agent_executor._take_next_step(
             self.name_to_tool_map,
             self.color_mapping,
@@ -289,6 +302,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         """
         Execute the next step in the chain using the AgentExecutor's _atake_next_step method.
         """
+        assert isinstance(self.run_manager, (AsyncCallbackManagerForChainRun | None))
         return await self.agent_executor._atake_next_step(
             self.name_to_tool_map,
             self.color_mapping,
