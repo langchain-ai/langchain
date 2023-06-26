@@ -1,4 +1,3 @@
-import json
 import os
 import time
 
@@ -11,7 +10,6 @@ from langchain.memory.chat_message_histories.cassandra import (
 from langchain.schema import (
     AIMessage,
     HumanMessage,
-    _message_to_dict,
 )
 
 
