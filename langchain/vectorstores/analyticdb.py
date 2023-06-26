@@ -7,7 +7,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type
 
 from sqlalchemy import REAL, Column, String, Table, create_engine, insert, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSON, TEXT
-from sqlalchemy.engine import Row
+# from sqlalchemy.engine import Row
 
 try:
     from sqlalchemy.orm import declarative_base
