@@ -1,13 +1,12 @@
-"""Test Clarifai API wrapper.
+"""Test Minimax API wrapper.
 In order to run this test, you need to have an account on Minimax.
-You can sign up for at https://api.minimax.chat/
 """
 
 from langchain.llms.minimax import MiniMaxChatCompletion
 
 
 def test_minimax_call() -> None:
-    """Test valid call to clarifai."""
+    """Test valid call to Minimax."""
     llm = MiniMaxChatCompletion()
     output = llm(
         "A chain is a serial assembly of connected pieces, called links, \
