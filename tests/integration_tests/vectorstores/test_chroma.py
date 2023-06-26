@@ -212,7 +212,7 @@ def test_chroma_update_document() -> None:
 
 
 def test_chroma_with_persistence_with_client_settings() -> None:
-    """Test end to end construction and search, with persistence and with client settings."""
+    """Test end to end chromadb flow with persistence and with client settings."""
     try:
         import chromadb
         import chromadb.config
