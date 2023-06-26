@@ -209,8 +209,8 @@ class OneDriveLoader(BaseLoader, BaseModel):
 
     def load(self) -> List[Document]:
         """
-        Loads all supported document files from the specified OneDrive drive a
-        nd returns a list of Document objects.
+        Loads all supported document files from the specified OneDrive drive
+        and return a list of Document objects.
 
         Returns:
             List[Document]: A list of Document objects

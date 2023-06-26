@@ -386,4 +386,4 @@ markers = [
 skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock'
 # Ignore latin etc
 ignore-regex = '.*Stati Uniti.*'
-ignore-words-list = 'momento,collison,ned'
+ignore-words-list = 'momento,collison,ned,foor'

@@ -188,7 +188,7 @@ class Milvus(VectorStore):
                     logger.debug("Using previous connection: %s", con[0])
                     return con[0]
 
-        # Generate a new connection if one doesnt exist
+        # Generate a new connection if one doesn't exist
         alias = uuid4().hex
         try:
             connections.connect(alias=alias, **connection_args)
@@ -527,7 +527,7 @@ class Milvus(VectorStore):
 
         Args:
             query (str): The text being searched.
-            k (int, optional): The amount of results ot return. Defaults to 4.
+            k (int, optional): The amount of results to return. Defaults to 4.
             param (dict): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
@@ -567,7 +567,7 @@ class Milvus(VectorStore):
 
         Args:
             embedding (List[float]): The embedding vector being searched.
-            k (int, optional): The amount of results ot return. Defaults to 4.
+            k (int, optional): The amount of results to return. Defaults to 4.
             param (dict): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.

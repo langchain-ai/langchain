@@ -211,7 +211,7 @@ class PDFMinerLoader(BasePDFLoader):
     def lazy_load(
         self,
     ) -> Iterator[Document]:
-        """Lazily lod documents."""
+        """Lazily load documents."""
         blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
 
