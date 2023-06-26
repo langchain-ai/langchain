@@ -383,6 +383,7 @@ markers = [
 ]
 
 [tool.codespell]
-skip = '.git,*.pdf,*.svg'
-#
-# ignore-words-list = ''
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock'
+# Ignore latin etc
+ignore-regex = '.*Stati Uniti.*'
+ignore-words-list = 'momento,collison,ned'
