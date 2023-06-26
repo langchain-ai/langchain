@@ -5,9 +5,9 @@ https://learn.microsoft.com/en-us/graph/auth/
 """
 
 from datetime import datetime as dt
-from typing import Any, Dict, List, Optional, Type
+from typing import List, Optional, Type
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,

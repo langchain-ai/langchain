@@ -1,9 +1,14 @@
 """O365 tool utils."""
 from __future__ import annotations
 
+import logging
 import os
+from typing import TYPE_CHECKING
 
-from O365 import Account
+if TYPE_CHECKING:
+    from O365 import Account
+
+logger = logging.getLogger(__name__)
 
 
 def clean_body(body: str) -> str:
@@ -23,7 +28,7 @@ def clean_body(body: str) -> str:
             body = " ".join(body.split())
 
             return str(body)
-        except Exception as e:
+        except Exception:
             return str(body)
     except ImportError:
         return str(body)
@@ -31,16 +36,22 @@ def clean_body(body: str) -> str:
 
 def authenticate() -> Account:
     """Authenticate using the Microsoft Grah API"""
+    try:
+        from O365 import Account
+    except ImportError as e:
+        raise ImportError(
+            "Cannot import 0365. Please install the package with `pip install O365`."
+        ) from e
 
     if "CLIENT_ID" in os.environ and "CLIENT_SECRET" in os.environ:
         client_id = os.environ["CLIENT_ID"]
         client_secret = os.environ["CLIENT_SECRET"]
         credentials = (client_id, client_secret)
     else:
-        print(
-            "Error: The CLIENT_ID and CLIENT_SECRET environmental variables have not been set. "
-            "Visit the following link on how to acquire these authorization tokens: "
-            "https://learn.microsoft.com/en-us/graph/auth/"
+        logger.error(
+            "Error: The CLIENT_ID and CLIENT_SECRET environmental variables have not "
+            "been set. Visit the following link on how to acquire these authorization "
+            "tokens: https://learn.microsoft.com/en-us/graph/auth/"
         )
         return None
 

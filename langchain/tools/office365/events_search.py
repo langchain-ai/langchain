@@ -23,20 +23,24 @@ class SearchEventsInput(BaseModel):
     """From https://learn.microsoft.com/en-us/graph/search-query-parameter"""
 
     start_datetime: str = Field(
-        description=" The start datetime for the search query in the following format: "
-        ' YYYY-MM-DDTHH:MM:SS±hh:mm, where "T" separates the date and time '
-        " components, and the time zone offset is specified as ±hh:mm. "
-        ' For example: "2023-06-09T10:30:00+03:00" represents June 9th, '
-        " 2023, at 10:30 AM in a time zone with a positive offset of 3 "
-        " hours from Coordinated Universal Time (UTC).",
+        description=(
+            " The start datetime for the search query in the following format: "
+            ' YYYY-MM-DDTHH:MM:SS±hh:mm, where "T" separates the date and time '
+            " components, and the time zone offset is specified as ±hh:mm. "
+            ' For example: "2023-06-09T10:30:00+03:00" represents June 9th, '
+            " 2023, at 10:30 AM in a time zone with a positive offset of 3 "
+            " hours from Coordinated Universal Time (UTC)."
+        )
     )
     end_datetime: str = Field(
-        description=" The end datetime for the search query in the following format: "
-        ' YYYY-MM-DDTHH:MM:SS±hh:mm, where "T" separates the date and time '
-        " components, and the time zone offset is specified as ±hh:mm. "
-        ' For example: "2023-06-09T10:30:00+03:00" represents June 9th, '
-        " 2023, at 10:30 AM in a time zone with a positive offset of 3 "
-        " hours from Coordinated Universal Time (UTC).",
+        description=(
+            " The end datetime for the search query in the following format: "
+            ' YYYY-MM-DDTHH:MM:SS±hh:mm, where "T" separates the date and time '
+            " components, and the time zone offset is specified as ±hh:mm. "
+            ' For example: "2023-06-09T10:30:00+03:00" represents June 9th, '
+            " 2023, at 10:30 AM in a time zone with a positive offset of 3 "
+            " hours from Coordinated Universal Time (UTC)."
+        )
     )
     max_results: int = Field(
         default=10,
@@ -44,8 +48,11 @@ class SearchEventsInput(BaseModel):
     )
     truncate: bool = Field(
         default=True,
-        description="Whether the event's body is trucated to meet token number limits. Set to False for"
-        " searches that will retrieve very few results, otherwise, set to True",
+        description=(
+            "Whether the event's body is trucated to meet token number limits. Set to "
+            "False for searches that will retrieve very few results, otherwise, set to "
+            "True."
+        ),
     )
 
 

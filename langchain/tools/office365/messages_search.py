@@ -23,17 +23,23 @@ class SearchEmailsInput(BaseModel):
 
     folder: str = Field(
         default=None,
-        description=" If the user wants to search in only one folder, the name of the folder. Default folders"
-        ' are "inbox", "drafts", "sent items", "deleted ttems", but users can search custom folders as well.',
+        description=(
+            " If the user wants to search in only one folder, the name of the folder. "
+            'Default folders are "inbox", "drafts", "sent items", "deleted ttems", but '
+            "users can search custom folders as well."
+        ),
     )
     query: str = Field(
-        description="The Microsoift Graph v1.0 $search query. Example filters include from:sender,"
-        " from:sender, to:recipient, subject:subject, recipients:list_of_recipients,"
-        " body:excitement, importance:high, received>2022-12-01, received<2021-12-01,"
-        " sent>2022-12-01, sent<2021-12-01, hasAttachments:true"
-        " attachment:api-catalog.md, cc:samanthab@contoso.com, bcc:samanthab@contoso.com, body:excitement"
-        " date range example: received:2023-06-08..2023-06-09"
-        " matching example: from:amy OR from:david.",
+        description=(
+            "The Microsoift Graph v1.0 $search query. Example filters include "
+            "from:sender, from:sender, to:recipient, subject:subject, "
+            "recipients:list_of_recipients, body:excitement, importance:high, "
+            "received>2022-12-01, received<2021-12-01, sent>2022-12-01, "
+            "sent<2021-12-01, hasAttachments:true  attachment:api-catalog.md, "
+            "cc:samanthab@contoso.com, bcc:samanthab@contoso.com, body:excitement date "
+            "range example: received:2023-06-08..2023-06-09  matching example: "
+            "from:amy OR from:david."
+        )
     )
     max_results: int = Field(
         default=10,
@@ -41,8 +47,11 @@ class SearchEmailsInput(BaseModel):
     )
     truncate: bool = Field(
         default=True,
-        description="Whether the email body is trucated to meet token number limits. Set to False for"
-        " searches that will retrieve very few results, otherwise, set to True",
+        description=(
+            "Whether the email body is trucated to meet token number limits. Set to "
+            "False for searches that will retrieve very few results, otherwise, set to "
+            "True"
+        ),
     )
 
 
@@ -77,7 +86,7 @@ class O365SearchEmails(O365BaseTool):
         mailbox = self.account.mailbox()
 
         # Pull the folder if the user wants to search in a folder
-        if folder is not "":
+        if folder != "":
             mailbox = mailbox.get_folder(folder_name=folder)
 
         # Retrieve messages based on query
