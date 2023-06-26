@@ -16,6 +16,10 @@ class TrajectoryEval(NamedTuple):
 
 
 class TrajectoryOutputParser(BaseOutputParser):
+    @property
+    def _type(self) -> str:
+        return "agent_trajectory"
+
     def parse(self, text: str) -> TrajectoryEval:
         if "Score:" not in text:
             raise OutputParserException(
