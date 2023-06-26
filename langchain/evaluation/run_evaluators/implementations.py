@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
-from langchainplus_sdk.evaluation import EvaluationResult
-from langchainplus_sdk.schemas import Example, Run, RunTypeEnum
+from langsmith.evaluation import EvaluationResult
+from langsmith.schemas import Example, Run, RunTypeEnum
 from pydantic import BaseModel, Field
 
 from langchain.base_language import BaseLanguageModel

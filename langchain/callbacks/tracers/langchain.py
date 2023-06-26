@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Union
 from uuid import UUID
 
-from langchainplus_sdk import LangChainPlusClient
+from langsmith import Client as LangSmithClient
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import (
@@ -46,7 +46,7 @@ class LangChainTracer(BaseTracer):
         self,
         example_id: Optional[Union[UUID, str]] = None,
         project_name: Optional[str] = None,
-        client: Optional[LangChainPlusClient] = None,
+        client: Optional[LangSmithClient] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer."""
@@ -60,7 +60,7 @@ class LangChainTracer(BaseTracer):
         )
         # set max_workers to 1 to process tasks in order
         self.executor = ThreadPoolExecutor(max_workers=1)
-        self.client = client or LangChainPlusClient()
+        self.client = client or LangSmithClient()
         self._futures: Set[Future] = set()
         global _TRACERS
         _TRACERS.append(self)

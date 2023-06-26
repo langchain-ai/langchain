@@ -4361,22 +4361,6 @@ docs = ["mkdocs", "mkdocs-jupyter", "mkdocs-material", "mkdocstrings[python]"]
 tests = ["doctest", "pytest", "pytest-mock"]
 
 [[package]]
-name = "langchainplus-sdk"
-version = "0.0.17"
-description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
-optional = false
-python-versions = ">=3.8.1,<4.0"
-files = [
-    {file = "langchainplus_sdk-0.0.17-py3-none-any.whl", hash = "sha256:899675fe850bb0829691ce7643d5c3b4425de1535b6f2d6ce1e5f5457ffb05bf"},
-    {file = "langchainplus_sdk-0.0.17.tar.gz", hash = "sha256:6520c864a23dcadbe6fb7233a117347f6acc32725a97758e59354704c50de303"},
-]
-
-[package.dependencies]
-pydantic = ">=1,<2"
-requests = ">=2,<3"
-tenacity = ">=8.1.0,<9.0.0"
-
-[[package]]
 name = "langcodes"
 version = "3.3.0"
 description = "Tools for labeling human languages with IETF language tags"
@@ -4408,6 +4392,22 @@ whylogs = "1.1.45.dev6"
 
 [package.extras]
 all = ["datasets (>=2.12.0,<3.0.0)", "nltk (>=3.8.1,<4.0.0)", "openai (>=0.27.6,<0.28.0)", "sentence-transformers (>=2.2.2,<3.0.0)", "torch"]
+
+[[package]]
+name = "langsmith"
+version = "0.0.1"
+description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = [
+    {file = "langsmith-0.0.1-py3-none-any.whl", hash = "sha256:33003732de7aa2f22c5b002821af1b05456d86f0723ecfc9f238701daec6e45d"},
+    {file = "langsmith-0.0.1.tar.gz", hash = "sha256:0e5401a358901451e76625b98c618f14c97b1f187b4f38215d049b243a2e11c9"},
+]
+
+[package.dependencies]
+pydantic = ">=1,<2"
+requests = ">=2,<3"
+tenacity = ">=8.1.0,<9.0.0"
 
 [[package]]
 name = "lark"
@@ -11771,4 +11771,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6e495e4f58127a5d2001385404b973896e275f5ca71a6ebe856cb114977189d1"
+content-hash = "954c1c58503b17e48de75014771ce8ffe70e84577e0a77ed593f2e8ac290960c"

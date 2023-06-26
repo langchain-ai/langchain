@@ -16,8 +16,8 @@ from typing import (
     Union,
 )
 
-from langchainplus_sdk import LangChainPlusClient
-from langchainplus_sdk.schemas import Example
+from langsmith import Client as LangSmithClient
+from langsmith.schemas import Example
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackHandler
@@ -448,7 +448,7 @@ async def arun_on_dataset(
     num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
-    client: Optional[LangChainPlusClient] = None,
+    client: Optional[LangSmithClient] = None,
     tags: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """
@@ -474,7 +474,7 @@ async def arun_on_dataset(
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
     """
-    client_ = client or LangChainPlusClient()
+    client_ = client or LangSmithClient()
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))
@@ -501,7 +501,7 @@ def run_on_dataset(
     num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
-    client: Optional[LangChainPlusClient] = None,
+    client: Optional[LangSmithClient] = None,
     tags: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Run the chain on a dataset and store traces to the specified project name.
@@ -525,7 +525,7 @@ def run_on_dataset(
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
     """
-    client_ = client or LangChainPlusClient()
+    client_ = client or LangSmithClient()
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))

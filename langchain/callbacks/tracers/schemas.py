@@ -5,8 +5,8 @@ import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from langchainplus_sdk.schemas import RunBase as BaseRunV2
-from langchainplus_sdk.schemas import RunTypeEnum
+from langsmith.schemas import RunBase as BaseRunV2
+from langsmith.schemas import RunTypeEnum
 from pydantic import BaseModel, Field, root_validator
 
 from langchain.schema import LLMResult

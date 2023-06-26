@@ -3,7 +3,7 @@
 from uuid import UUID
 
 import pytest
-from langchainplus_sdk.schemas import Example, Run
+from langsmith.schemas import Example, Run
 
 from langchain.evaluation.run_evaluators import get_criteria_evaluator, get_qa_evaluator
 from tests.unit_tests.llms.fake_llm import FakeLLM
