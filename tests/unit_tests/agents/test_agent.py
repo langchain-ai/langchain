@@ -32,7 +32,7 @@ class FakeListLLM(LLM):
         """Return number of tokens in text."""
         return len(text.split())
     
-    async def _acall(self, *args, **kwargs):
+    async def _acall(self, *args: Any, **kwargs: Any) -> str:
         return self._call(*args, **kwargs)
 
     @property
