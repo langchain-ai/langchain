@@ -1,5 +1,7 @@
 from langchain.chains.openai_functions.openapi import get_openapi_chain
 
+BRANDFETCH_API_KEY = ""
+
 
 def test_openai_opeanapi() -> None:
     chain = get_openapi_chain(
@@ -11,7 +13,7 @@ def test_openai_opeanapi() -> None:
 
 
 def test_openai_opeanapi_headers() -> None:
-    headers = {"Authorization": "Bearer 3oRrWH4nYwHD0u9+wcdaNWHtvwxXVlXZxGF50+r2WWA="}
+    headers = {"Authorization": f"Bearer {BRANDFETCH_API_KEY}"}
     chain = get_openapi_chain(
         "https://app.swaggerhub.com/apis/brandfetch/brandfetch/2.0.0", headers=headers
     )
