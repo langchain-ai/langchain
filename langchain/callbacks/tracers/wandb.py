@@ -104,12 +104,13 @@ def _convert_tool_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
 def _convert_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
     attributes = {**run.extra} if run.extra else {}
     attributes["execution_order"] = run.execution_order
+    end_time = run.end_time if run.end_time is not None else run.start_time
 
     return trace_tree.Span(
         span_id=str(run.id) if run.id is not None else None,
         name=run.serialized.get("name"),
         start_time_ms=int(run.start_time.timestamp() * 1000),
-        end_time_ms=int(run.end_time.timestamp() * 1000),
+        end_time_ms=int(end_time.timestamp() * 1000),
         status_code=trace_tree.StatusCode.SUCCESS
         if run.error is None
         else trace_tree.StatusCode.ERROR,

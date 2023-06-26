@@ -1,8 +1,33 @@
 """Script to run langchain-server locally using docker-compose."""
 import subprocess
 from pathlib import Path
+from typing import List
 
-from langchainplus_sdk.cli.main import get_docker_compose_command
+
+def get_docker_compose_command() -> List[str]:
+    """Get the correct docker compose command for this system."""
+    try:
+        subprocess.check_call(
+            ["docker", "compose", "--version"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return ["docker", "compose"]
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        try:
+            subprocess.check_call(
+                ["docker-compose", "--version"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return ["docker-compose"]
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            raise ValueError(
+                "Neither 'docker compose' nor 'docker-compose'"
+                " commands are available. Please install the Docker"
+                " server following the instructions for your operating"
+                " system at https://docs.docker.com/engine/install/"
+            )
 
 
 def main() -> None:

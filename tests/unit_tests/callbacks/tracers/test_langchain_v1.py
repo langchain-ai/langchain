@@ -583,7 +583,7 @@ def test_convert_run(
         child_execution_order=1,
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
-        session_id=TEST_SESSION_ID,
+        session_id=uuid4(),
         inputs={"prompts": []},
         outputs=LLMResult(generations=[[]]).dict(),
         serialized={},

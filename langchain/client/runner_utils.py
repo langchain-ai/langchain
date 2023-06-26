@@ -6,6 +6,7 @@ import functools
 import logging
 from datetime import datetime
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Coroutine,
@@ -15,9 +16,6 @@ from typing import (
     Optional,
     Union,
 )
-
-from langchainplus_sdk import LangChainPlusClient
-from langchainplus_sdk.schemas import Example
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackHandler
@@ -35,6 +33,11 @@ from langchain.schema import (
     messages_from_dict,
 )
 
+if TYPE_CHECKING:
+    import langsmith
+    from langsmith import Client as LangSmithClient
+    from langsmith.schemas import Example
+
 logger = logging.getLogger(__name__)
 
 MODEL_OR_CHAIN_FACTORY = Union[Callable[[], Chain], BaseLanguageModel]
@@ -42,6 +45,17 @@ MODEL_OR_CHAIN_FACTORY = Union[Callable[[], Chain], BaseLanguageModel]
 
 class InputFormatError(Exception):
     """Raised when input format is invalid."""
+
+
+def _lazy_import_langsmith() -> langsmith:
+    try:
+        import langsmith
+    except ImportError:
+        raise ImportError(
+            "Please install langsmith to use the langchain runner utils."
+            " You can do this by running `pip install langsmith`."
+        )
+    return langsmith
 
 
 def _get_prompts(inputs: Dict[str, Any]) -> List[str]:
@@ -448,7 +462,7 @@ async def arun_on_dataset(
     num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
-    client: Optional[LangChainPlusClient] = None,
+    client: Optional[LangSmithClient] = None,
     tags: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """
@@ -474,7 +488,11 @@ async def arun_on_dataset(
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
     """
-    client_ = client or LangChainPlusClient()
+    if client is not None:
+        client_ = client
+    else:
+        langsmith = _lazy_import_langsmith()
+        client = langsmith.Client()
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))
@@ -501,7 +519,7 @@ def run_on_dataset(
     num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
-    client: Optional[LangChainPlusClient] = None,
+    client: Optional[LangSmithClient] = None,
     tags: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Run the chain on a dataset and store traces to the specified project name.
@@ -525,7 +543,11 @@ def run_on_dataset(
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
     """
-    client_ = client or LangChainPlusClient()
+    if client is not None:
+        client_ = client
+    else:
+        langsmith = _lazy_import_langsmith()
+        client = langsmith.Client()
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))

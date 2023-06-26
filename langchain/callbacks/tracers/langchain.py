@@ -5,10 +5,8 @@ import logging
 import os
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Union
 from uuid import UUID
-
-from langchainplus_sdk import LangChainPlusClient
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import (
@@ -19,9 +17,25 @@ from langchain.callbacks.tracers.schemas import (
 from langchain.env import get_runtime_environment
 from langchain.schema import BaseMessage, messages_to_dict
 
+if TYPE_CHECKING:
+    import langsmith
+    from langsmith import Client as LangSmithClient
+
+
 logger = logging.getLogger(__name__)
 _LOGGED = set()
 _TRACERS: List[LangChainTracer] = []
+
+
+def _lazy_import_langsmith() -> langsmith:
+    try:
+        import langsmith
+    except ImportError:
+        raise ImportError(
+            "Please install langsmith to use the LangChainTracer."
+            " You can do this by running `pip install langsmith`."
+        )
+    return langsmith
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -46,7 +60,7 @@ class LangChainTracer(BaseTracer):
         self,
         example_id: Optional[Union[UUID, str]] = None,
         project_name: Optional[str] = None,
-        client: Optional[LangChainPlusClient] = None,
+        client: Optional[LangSmithClient] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer."""
@@ -60,7 +74,11 @@ class LangChainTracer(BaseTracer):
         )
         # set max_workers to 1 to process tasks in order
         self.executor = ThreadPoolExecutor(max_workers=1)
-        self.client = client or LangChainPlusClient()
+        if client is not None:
+            self.client = client
+        else:
+            langsmith = _lazy_import_langsmith()
+            self.client = langsmith.Client()
         self._futures: Set[Future] = set()
         global _TRACERS
         _TRACERS.append(self)

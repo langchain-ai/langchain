@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional
-
-from langchainplus_sdk import EvaluationResult, RunEvaluator
-from langchainplus_sdk.schemas import Example, Run
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -12,6 +9,18 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.schema import RUN_KEY, BaseOutputParser
+
+if TYPE_CHECKING:
+    from langsmith import EvaluationResult, RunEvaluator
+    from langsmith.schemas import Example, Run
+else:
+    try:
+        from langsmith import EvaluationResult, RunEvaluator
+        from langsmith.schemas import Example, Run
+    except ImportError:
+        from pydantic import BaseModel
+
+        EvaluationResult = BaseModel
 
 
 class RunEvaluatorInputMapper:

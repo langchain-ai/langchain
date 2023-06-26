@@ -1,7 +1,7 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
+from __future__ import annotations
 
-from langchainplus_sdk.evaluation import EvaluationResult
-from langchainplus_sdk.schemas import Example, Run, RunTypeEnum
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Union
+
 from pydantic import BaseModel, Field
 
 from langchain.base_language import BaseLanguageModel
@@ -27,6 +27,16 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import OutputParserException
 from langchain.tools.base import BaseTool
+
+if TYPE_CHECKING:
+    from langsmith import EvaluationResult
+    from langsmith.schemas import Example, Run, RunTypeEnum
+else:
+    try:
+        from langsmith import EvaluationResult
+        from langsmith.schemas import Example, Run, RunTypeEnum
+    except ImportError:
+        pass
 
 _QA_PROMPTS = {
     "qa": QA_DEFAULT_PROMPT,
