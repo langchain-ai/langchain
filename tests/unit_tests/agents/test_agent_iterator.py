@@ -1,8 +1,9 @@
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
+from langchain.llms import FakeListLLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
-
-from tests.unit_tests.agents.test_agent import _get_agent, FakeListLLM
+from tests.unit_tests.test_cache import set_cache_and_teardown
+from tests.unit_tests.agents.test_agent import _get_agent
 import pytest
 from langchain.agents import AgentExecutorIterator
 
@@ -41,6 +42,7 @@ def test_agent_iterator_stopped_early() -> None:
         outputs.append(step)
     assert outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
 
+
 @pytest.mark.asyncio
 async def test_agent_async_iterator_stopped_early() -> None:
     """Test react chain async iterator when max iterations or max execution time is exceeded."""
@@ -64,11 +66,11 @@ async def test_agent_async_iterator_stopped_early() -> None:
 
     assert outputs[-1]["output"] == "Agent stopped due to iteration limit or time limit."
 
-def test_agent_iterator_with_callbacks() -> None:
+
+def test_agent_iterator_with_callbacks(set_cache_and_teardown) -> None:
     """Test react chain iterator with callbacks by setting verbose globally."""
     handler1 = FakeCallbackHandler()
     handler2 = FakeCallbackHandler()
-
     bad_action_name = "BadAction"
     responses = [
         f"I'm turning evil\nAction: {bad_action_name}\nAction Input: misalignment",
@@ -128,8 +130,9 @@ def test_agent_iterator_with_callbacks() -> None:
         == 0
     )
 
+
 @pytest.mark.asyncio
-async def test_agent_async_iterator_with_callbacks() -> None:
+async def test_agent_async_iterator_with_callbacks(set_cache_and_teardown) -> None:
     """Test react chain async iterator with callbacks by setting verbose globally."""
     handler1 = FakeCallbackHandler()
     handler2 = FakeCallbackHandler()
@@ -191,7 +194,8 @@ async def test_agent_async_iterator_with_callbacks() -> None:
         == 0
     )
 
-def test_agent_iterator_properties_and_setters() -> None:
+
+def test_agent_iterator_properties_and_setters(set_cache_and_teardown) -> None:
     """Test properties and setters of AgentExecutorIterator."""
     agent = _get_agent()
     agent_iter = agent(inputs="when was langchain made", iterator=True)
@@ -296,7 +300,6 @@ def test_agent_iterator_custom_stopping_condition() -> None:
 
     assert len(outputs) == 2  # Check if the custom stopping condition is respected
     
-
 
 def test_agent_iterator_failing_tool() -> None:
     """Test AgentExecutorIterator with a tool that raises an exception."""
