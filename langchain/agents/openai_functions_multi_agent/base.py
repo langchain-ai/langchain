@@ -229,6 +229,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
                                         {
                                             "title": t.name,
                                             "type": "object",
+                                            "description": t.description,
                                             "properties": t.args,
                                         }
                                         for t in self.tools
