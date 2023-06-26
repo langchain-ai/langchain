@@ -157,7 +157,7 @@ class BaseConversationalRetrievalChain(Chain):
 
     def save(self, file_path: Union[Path, str]) -> None:
         if self.get_chat_history:
-            raise ValueError("Chain not savable when `get_chat_history` is not None.")
+            raise ValueError("Chain not saveable when `get_chat_history` is not None.")
         super().save(file_path)
 
 

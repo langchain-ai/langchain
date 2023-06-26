@@ -109,7 +109,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
 
     @root_validator(pre=True)
     def validate_naming(cls, values: Dict) -> Dict:
-        """Fix backwards compatability in naming."""
+        """Fix backwards compatibility in naming."""
         if "combine_document_chain" in values:
             values["combine_documents_chain"] = values.pop("combine_document_chain")
         return values

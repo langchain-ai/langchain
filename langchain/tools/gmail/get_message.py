@@ -23,7 +23,7 @@ class GmailGetMessage(GmailBaseTool):
     name: str = "get_gmail_message"
     description: str = (
         "Use this tool to fetch an email by message ID."
-        " Returns the thread ID, snipet, body, subject, and sender."
+        " Returns the thread ID, snippet, body, subject, and sender."
     )
     args_schema: Type[SearchArgsSchema] = SearchArgsSchema
 

@@ -53,7 +53,7 @@ class PipelineAI(LLM, BaseModel):
                 if field_name in extra:
                     raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
-                    f"""{field_name} was transfered to pipeline_kwargs.
+                    f"""{field_name} was transferred to pipeline_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)

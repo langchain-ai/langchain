@@ -26,7 +26,7 @@ class AzureChatOpenAI(ChatOpenAI):
     - ``OPENAI_API_VERSION``
     - ``OPENAI_PROXY``
 
-    For exmaple, if you have `gpt-35-turbo` deployed, with the deployment name
+    For example, if you have `gpt-35-turbo` deployed, with the deployment name
     `35-turbo-dev`, the constructor should look like:
 
     .. code-block:: python

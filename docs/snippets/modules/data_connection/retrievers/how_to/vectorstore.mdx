@@ -44,7 +44,7 @@ retriever = db.as_retriever(search_type="mmr")
 
 
 ```python
-docs = retriever.get_relevant_documents("what did he say abotu ketanji brown jackson")
+docs = retriever.get_relevant_documents("what did he say about ketanji brown jackson")
 ```
 
 ## Similarity Score Threshold Retrieval
@@ -58,7 +58,7 @@ retriever = db.as_retriever(search_type="similarity_score_threshold", search_kwa
 
 
 ```python
-docs = retriever.get_relevant_documents("what did he say abotu ketanji brown jackson")
+docs = retriever.get_relevant_documents("what did he say about ketanji brown jackson")
 ```
 
 ## Specifying top k
@@ -71,7 +71,7 @@ retriever = db.as_retriever(search_kwargs={"k": 1})
 
 
 ```python
-docs = retriever.get_relevant_documents("what did he say abotu ketanji brown jackson")
+docs = retriever.get_relevant_documents("what did he say about ketanji brown jackson")
 ```
 
 

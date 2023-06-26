@@ -175,7 +175,7 @@ class ConfluenceLoader(BaseLoader):
             "key_cert",
         ]:
             errors.append(
-                "You have either ommited require keys or added extra "
+                "You have either omitted require keys or added extra "
                 "keys to the oauth2 dictionary. key values should be "
                 "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']`"
             )

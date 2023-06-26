@@ -350,7 +350,7 @@ class Crawler:
                 if node_input_text_index >= 0 and text_index >= 0:
                     element_node_value = strings[text_index]
 
-            # remove redudant elements
+            # remove redundant elements
             if ancestor_exception and (node_name != "a" and node_name != "button"):
                 continue
 

@@ -130,7 +130,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
                 WHERE session_id = '{self.session_id}' ;"""
             )
         except (Unavailable, ReadTimeout, ReadFailure) as error:
-            logger.error("Unable to Retreive chat history messages from cassadra")
+            logger.error("Unable to Retrieve chat history messages from cassadra")
             raise error
 
         if rows:

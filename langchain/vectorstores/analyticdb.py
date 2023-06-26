@@ -28,7 +28,7 @@ Base = declarative_base()  # type: Any
 class AnalyticDB(VectorStore):
     """VectorStore implementation using AnalyticDB.
 
-    AnalyticDB is a distributed full PostgresSQL syntax cloud-native database.
+    AnalyticDB is a distributed full postgresql syntax cloud-native database.
     - `connection_string` is a postgres connection string.
     - `embedding_function` any embedding function implementing
         `langchain.embeddings.base.Embeddings` interface.

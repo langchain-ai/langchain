@@ -48,7 +48,7 @@ class SearchEmailsInput(BaseModel):
     truncate: bool = Field(
         default=True,
         description=(
-            "Whether the email body is trucated to meet token number limits. Set to "
+            "Whether the email body is truncated to meet token number limits. Set to "
             "False for searches that will retrieve very few results, otherwise, set to "
             "True"
         ),

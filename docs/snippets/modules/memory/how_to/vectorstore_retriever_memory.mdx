@@ -37,7 +37,7 @@ retriever = vectorstore.as_retriever(search_kwargs=dict(k=1))
 memory = VectorStoreRetrieverMemory(retriever=retriever)
 
 # When added to an agent, the memory object can save pertinent information from conversations or used tools
-memory.save_context({"input": "My favorite food is pizza"}, {"output": "thats good to know"})
+memory.save_context({"input": "My favorite food is pizza"}, {"output": "that's good to know"})
 memory.save_context({"input": "My favorite sport is soccer"}, {"output": "..."})
 memory.save_context({"input": "I don't the Celtics"}, {"output": "ok"}) #
 ```
@@ -98,7 +98,7 @@ conversation_with_summary.predict(input="Hi, my name is Perry, what's up?")
     
     Relevant pieces of previous conversation:
     input: My favorite food is pizza
-    output: thats good to know
+    output: that's good to know
     
     (You do not need to use these pieces of information if not relevant)
     
@@ -155,7 +155,7 @@ conversation_with_summary.predict(input="what's my favorite sport?")
 
 
 ```python
-# Even though the language model is stateless, since relavent memory is fetched, it can "reason" about the time.
+# Even though the language model is stateless, since relevant memory is fetched, it can "reason" about the time.
 # Timestamping memories and data is useful in general to let the agent determine temporal relevance
 conversation_with_summary.predict(input="Whats my favorite food")
 ```
@@ -171,7 +171,7 @@ conversation_with_summary.predict(input="Whats my favorite food")
     
     Relevant pieces of previous conversation:
     input: My favorite food is pizza
-    output: thats good to know
+    output: that's good to know
     
     (You do not need to use these pieces of information if not relevant)
     

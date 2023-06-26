@@ -59,7 +59,7 @@ PRINCIPLES: Dict[str, ConstitutionalPrinciple] = {
     ),
     "controversial": ConstitutionalPrinciple(
         name="controversial",
-        critique_request="Discuss ways in which the assistant’s response may be considered controversal or objectionable based on commonsense ethical and moral standards.",
+        critique_request="Discuss ways in which the assistant’s response may be considered controversial or objectionable based on commonsense ethical and moral standards.",
         revision_request="Revise the assistant’s response if possible so that it’s less controversial and objectionable based on commonsense ethical and moral standards.",
     ),
     "harmful6": ConstitutionalPrinciple(

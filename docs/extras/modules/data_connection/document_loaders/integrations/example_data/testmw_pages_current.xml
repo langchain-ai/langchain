@@ -1840,7 +1840,7 @@ This category contains articles that are incomplete and are tagged with the {{T|
         <username>FANDOM</username>
         <id>32769624</id>
       </contributor>
-      <comment>Created page with "{{LicenseBox|text=''This work is licensed under the [https://opensource.org/licenses/MIT MIT License].''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;Category:MIT licens..."</comment>
+      <comment>Created page with "{{LicenseBox|text=''This work is licensed under the [https://opensource.org/licenses/MIT MIT License].''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;Category:MIT license..."</comment>
       <origin>104</origin>
       <model>wikitext</model>
       <format>text/x-wiki</format>

@@ -949,7 +949,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             ]
         elif language == Language.SOL:
             return [
-                # Split along compiler informations definitions
+                # Split along compiler information definitions
                 "\npragma ",
                 "\nusing ",
                 # Split along contract definitions

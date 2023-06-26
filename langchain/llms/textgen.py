@@ -20,7 +20,7 @@ class TextGen(LLM):
     Suggested installation, use one-click installer for your OS:
     https://github.com/oobabooga/text-generation-webui#one-click-installers
 
-    Paremeters below taken from text-generation-webui api example:
+    Parameters below taken from text-generation-webui api example:
     https://github.com/oobabooga/text-generation-webui/blob/main/api-examples/api-example.py
 
     Example:
@@ -148,7 +148,7 @@ class TextGen(LLM):
 
     def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
         """
-        Performs sanity check, preparing paramaters in format needed by textgen.
+        Performs sanity check, preparing parameters in format needed by textgen.
 
         Args:
             stop (Optional[List[str]]): List of stop sequences for textgen.

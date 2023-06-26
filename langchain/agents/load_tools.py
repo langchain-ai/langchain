@@ -89,7 +89,7 @@ def _get_sleep() -> BaseTool:
 
 _BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
     "python_repl": _get_python_repl,
-    "requests": _get_tools_requests_get,  # preserved for backwards compatability
+    "requests": _get_tools_requests_get,  # preserved for backwards compatibility
     "requests_get": _get_tools_requests_get,
     "requests_post": _get_tools_requests_post,
     "requests_patch": _get_tools_requests_patch,

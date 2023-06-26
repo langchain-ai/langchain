@@ -49,7 +49,7 @@ class Vectara(VectorStore):
             or self._vectara_api_key is None
         ):
             logging.warning(
-                "Cant find Vectara credentials, customer_id or corpus_id in "
+                "Can't find Vectara credentials, customer_id or corpus_id in "
                 "environment."
             )
         else:

@@ -190,7 +190,7 @@ class Clarifai(VectorStore):
             Defaults to None.
 
         Returns:
-            List[Document]: List of documents most simmilar to the query text.
+            List[Document]: List of documents most similar to the query text.
         """
         try:
             from clarifai_grpc.grpc.api import resources_pb2, service_pb2

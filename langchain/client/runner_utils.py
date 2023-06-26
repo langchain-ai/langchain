@@ -469,7 +469,7 @@ async def arun_on_dataset(
         verbose: Whether to print progress.
         client: Client to use to read the dataset. If not provided, a new
             client will be created using the credentials in the environment.
-        tags: Tags to add to each run in the sesssion.
+        tags: Tags to add to each run in the session.
 
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
@@ -520,7 +520,7 @@ def run_on_dataset(
         verbose: Whether to print progress.
         client: Client to use to access the dataset. If None, a new client
             will be created using the credentials in the environment.
-        tags: Tags to add to each run in the sesssion.
+        tags: Tags to add to each run in the session.
 
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.

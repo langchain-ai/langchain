@@ -18,12 +18,12 @@ DISTINCT(<column>) - Returns a one-column table that contains the distinct value
 DISTINCT(<table>) - Returns a table by removing duplicate rows from another table or expression.
 
 Aggregation functions, names with a A in it, handle booleans and empty strings in appropriate ways, while the same function without A only uses the numeric values in a column. Functions names with an X in it can include a expression as an argument, this will be evaluated for each row in the table and the result will be used in the regular function calculation, these are the functions:
-COUNT(<column>), COUNTA(<column>), COUNTX(<table>,<expression>), COUNTAX(<table>,<expression>), COUNTROWS([<table>]), COUNTBLANK(<column>), DISTINCTCOUNT(<column>), DISTINCTCOUNTNOBLANK (<column>) - these are all variantions of count functions.
-AVERAGE(<column>), AVERAGEA(<column>), AVERAGEX(<table>,<expression>) - these are all variantions of average functions.
-MAX(<column>), MAXA(<column>), MAXX(<table>,<expression>) - these are all variantions of max functions.
-MIN(<column>), MINA(<column>), MINX(<table>,<expression>) - these are all variantions of min functions.
-PRODUCT(<column>), PRODUCTX(<table>,<expression>) - these are all variantions of product functions.
-SUM(<column>), SUMX(<table>,<expression>) - these are all variantions of sum functions.
+COUNT(<column>), COUNTA(<column>), COUNTX(<table>,<expression>), COUNTAX(<table>,<expression>), COUNTROWS([<table>]), COUNTBLANK(<column>), DISTINCTCOUNT(<column>), DISTINCTCOUNTNOBLANK (<column>) - these are all variations of count functions.
+AVERAGE(<column>), AVERAGEA(<column>), AVERAGEX(<table>,<expression>) - these are all variations of average functions.
+MAX(<column>), MAXA(<column>), MAXX(<table>,<expression>) - these are all variations of max functions.
+MIN(<column>), MINA(<column>), MINX(<table>,<expression>) - these are all variations of min functions.
+PRODUCT(<column>), PRODUCTX(<table>,<expression>) - these are all variations of product functions.
+SUM(<column>), SUMX(<table>,<expression>) - these are all variations of sum functions.
 
 Date and time functions:
 DATE(year, month, day) - Returns a date value that represents the specified year, month, and day.

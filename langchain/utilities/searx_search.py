@@ -322,7 +322,7 @@ class SearxSearchWrapper(BaseModel):
             str: The result of the query.
 
         Raises:
-            ValueError: If an error occured with the query.
+            ValueError: If an error occurred with the query.
 
 
         Example:

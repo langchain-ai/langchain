@@ -39,7 +39,7 @@ class SendMessageSchema(BaseModel):
 class GmailSendMessage(GmailBaseTool):
     name: str = "send_gmail_message"
     description: str = (
-        "Use this tool to send email messages." " The input is the message, recipents"
+        "Use this tool to send email messages." " The input is the message, recipients"
     )
 
     def _prepare_message(

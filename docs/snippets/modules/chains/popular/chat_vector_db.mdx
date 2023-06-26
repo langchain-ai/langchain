@@ -44,7 +44,7 @@ vectorstore = Chroma.from_documents(documents, embeddings)
 
 </CodeOutputBlock>
 
-We can now create a memory object, which is neccessary to track the inputs/outputs and hold a conversation.
+We can now create a memory object, which is necessary to track the inputs/outputs and hold a conversation.
 
 
 ```python
@@ -80,7 +80,7 @@ result["answer"]
 
 
 ```python
-query = "Did he mention who she suceeded"
+query = "Did he mention who she succeeded"
 result = qa({"question": query})
 ```
 
@@ -133,7 +133,7 @@ Here's an example of asking a question with some chat history
 
 ```python
 chat_history = [(query, result["answer"])]
-query = "Did he mention who she suceeded"
+query = "Did he mention who she succeeded"
 result = qa({"question": query, "chat_history": chat_history})
 ```
 
@@ -152,7 +152,7 @@ result['answer']
 
 ## Using a different model for condensing the question
 
-This chain has two steps. First, it condenses the current question and the chat history into a standalone question. This is neccessary to create a standanlone vector to use for retrieval. After that, it does retrieval and then answers the question using retrieval augmented generation with a separate model. Part of the power of the declarative nature of LangChain is that you can easily use a separate language model for each call. This can be useful to use a cheaper and faster model for the simpler task of condensing the question, and then a more expensive model for answering the question. Here is an example of doing so.
+This chain has two steps. First, it condenses the current question and the chat history into a standalone question. This is necessary to create a standanlone vector to use for retrieval. After that, it does retrieval and then answers the question using retrieval augmented generation with a separate model. Part of the power of the declarative nature of LangChain is that you can easily use a separate language model for each call. This can be useful to use a cheaper and faster model for the simpler task of condensing the question, and then a more expensive model for answering the question. Here is an example of doing so.
 
 
 ```python
@@ -178,7 +178,7 @@ result = qa({"question": query, "chat_history": chat_history})
 
 ```python
 chat_history = [(query, result["answer"])]
-query = "Did he mention who she suceeded"
+query = "Did he mention who she succeeded"
 result = qa({"question": query, "chat_history": chat_history})
 ```
 
@@ -352,7 +352,7 @@ result = qa({"question": query, "chat_history": chat_history})
 
 ```python
 chat_history = [(query, result["answer"])]
-query = "Did he mention who she suceeded"
+query = "Did he mention who she succeeded"
 result = qa({"question": query, "chat_history": chat_history})
 ```
 
