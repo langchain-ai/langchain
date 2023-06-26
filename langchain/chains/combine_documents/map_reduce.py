@@ -10,8 +10,8 @@ from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-
-
+from langchain.llms import openai
+max_tokens = openai.BaseOpenAI.modelname_to_contextsize("gpt-3.5-turbo-16k-0613") - 1000
 class CombineDocsProtocol(Protocol):
     """Interface for the combine_docs method."""
 
@@ -132,7 +132,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     def combine_docs(
         self,
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: int = max_tokens,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[str, dict]:
@@ -171,7 +171,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         self,
         results: List[Dict],
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: int = max_tokens,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[List[Document], dict]:
@@ -209,7 +209,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         self,
         results: List[Dict],
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: int = max_tokens,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[str, dict]:
