@@ -226,7 +226,7 @@ class RedisCache(BaseCache):
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
         for gen in return_val:
-            if not isinstance(return_val, Generation):
+            if not isinstance(gen, Generation):
                 raise ValueError(
                     "RedisCache only supports caching of normal LLM generations, "
                     f"got {type(gen)}"
@@ -337,7 +337,7 @@ class RedisSemanticCache(BaseCache):
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
         for gen in return_val:
-            if not isinstance(return_val, Generation):
+            if not isinstance(gen, Generation):
                 raise ValueError(
                     "RedisSemanticCache only supports caching of "
                     f"normal LLM generations, got {type(gen)}"
@@ -455,7 +455,7 @@ class GPTCache(BaseCache):
         and then store the `prompt` and `return_val` in the cache object.
         """
         for gen in return_val:
-            if not isinstance(return_val, Generation):
+            if not isinstance(gen, Generation):
                 raise ValueError(
                     "GPTCache only supports caching of normal LLM generations, "
                     f"got {type(gen)}"
@@ -628,7 +628,7 @@ class MomentoCache(BaseCache):
             Exception: Unexpected response
         """
         for gen in return_val:
-            if not isinstance(return_val, Generation):
+            if not isinstance(gen, Generation):
                 raise ValueError(
                     "Momento only supports caching of normal LLM generations, "
                     f"got {type(gen)}"
