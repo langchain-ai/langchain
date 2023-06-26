@@ -29,9 +29,10 @@ class ZapierNLAWrapper(BaseModel):
     This wrapper supports both API Key and OAuth Credential auth methods. API Key
     is the fastest way to get started using this wrapper.
 
-    Call this wrapper with either `zapier_nla_api_key` or `zapier_nla_oauth_access_token`
-    arguments, or set the `ZAPIER_NLA_API_KEY` environment variable. If both arguments are
-    set, the Access Token will take precedence.
+    Call this wrapper with either `zapier_nla_api_key` or
+    `zapier_nla_oauth_access_token` arguments, or set the `ZAPIER_NLA_API_KEY`
+    environment variable. If both arguments are set, the Access Token will take
+    precedence.
 
     For use-cases where LangChain + Zapier NLA is powering a user-facing application,
     and LangChain needs access to the end-user's connected accounts on Zapier.com,
