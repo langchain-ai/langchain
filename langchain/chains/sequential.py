@@ -62,6 +62,9 @@ class SequentialChain(Chain):
 
         for chain in chains:
             missing_vars = set(chain.input_keys).difference(known_variables)
+            if chain.memory:
+                missing_vars = missing_vars.difference(chain.memory.memory_variables)
+
             if missing_vars:
                 raise ValueError(
                     f"Missing required input keys: {missing_vars}, "
