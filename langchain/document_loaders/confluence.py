@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class ContentFormat(str, Enum):
+    """Enumerator of the content formats of Confluence page."""
+
     STORAGE = "body.storage"
     VIEW = "body.view"
 

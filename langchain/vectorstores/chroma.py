@@ -146,7 +146,7 @@ class Chroma(VectorStore):
         embeddings = None
         if self._embedding_function is not None:
             embeddings = self._embedding_function.embed_documents(list(texts))
-        self._collection.add(
+        self._collection.upsert(
             metadatas=metadatas, embeddings=embeddings, documents=texts, ids=ids
         )
         return ids
@@ -228,7 +228,7 @@ class Chroma(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        return self.similarity_search_with_score(query, k)
+        return self.similarity_search_with_score(query, k, **kwargs)
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -442,3 +442,11 @@ class Chroma(VectorStore):
             client_settings=client_settings,
             client=client,
         )
+
+    def delete(self, ids: List[str]) -> None:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+        self._collection.delete(ids=ids)

@@ -352,10 +352,23 @@ def load_huggingface_tool(
     remote: bool = False,
     **kwargs: Any,
 ) -> BaseTool:
+    """Loads a tool from the HuggingFace Hub.
+
+    Args:
+        task_or_repo_id: Task or model repo id.
+        model_repo_id: Optional model repo id.
+        token: Optional token.
+        remote: Optional remote. Defaults to False.
+        **kwargs:
+
+    Returns:
+        A tool.
+
+    """
     try:
         from transformers import load_tool
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "HuggingFace tools require the libraries `transformers>=4.29.0`"
             " and `huggingface_hub>=0.14.1` to be installed."
             " Please install it with"

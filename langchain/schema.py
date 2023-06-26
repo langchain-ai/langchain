@@ -76,6 +76,11 @@ class Generation(Serializable):
     """May include things like reason for finishing (e.g. in OpenAI)"""
     # TODO: add log probs
 
+    @property
+    def lc_serializable(self) -> bool:
+        """This class is LangChain serializable."""
+        return True
+
 
 class BaseMessage(Serializable):
     """Message object."""
@@ -87,6 +92,11 @@ class BaseMessage(Serializable):
     @abstractmethod
     def type(self) -> str:
         """Type of the message, used for serialization."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        """This class is LangChain serializable."""
+        return True
 
 
 class HumanMessage(BaseMessage):
@@ -145,6 +155,14 @@ def _message_to_dict(message: BaseMessage) -> dict:
 
 
 def messages_to_dict(messages: List[BaseMessage]) -> List[dict]:
+    """Convert messages to dict.
+
+    Args:
+        messages: List of messages to convert.
+
+    Returns:
+        List of dicts.
+    """
     return [_message_to_dict(m) for m in messages]
 
 
@@ -163,6 +181,14 @@ def _message_from_dict(message: dict) -> BaseMessage:
 
 
 def messages_from_dict(messages: List[dict]) -> List[BaseMessage]:
+    """Convert messages from dict.
+
+    Args:
+        messages: List of messages (dicts) to convert.
+
+    Returns:
+        List of messages (BaseMessages).
+    """
     return [_message_from_dict(m) for m in messages]
 
 
@@ -201,8 +227,34 @@ class LLMResult(BaseModel):
     each input could have multiple generations."""
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""
-    run: Optional[RunInfo] = None
+    run: Optional[List[RunInfo]] = None
     """Run metadata."""
+
+    def flatten(self) -> List[LLMResult]:
+        """Flatten generations into a single list."""
+        llm_results = []
+        for i, gen_list in enumerate(self.generations):
+            # Avoid double counting tokens in OpenAICallback
+            if i == 0:
+                llm_results.append(
+                    LLMResult(
+                        generations=[gen_list],
+                        llm_output=self.llm_output,
+                    )
+                )
+            else:
+                if self.llm_output is not None:
+                    llm_output = self.llm_output.copy()
+                    llm_output["token_usage"] = dict()
+                else:
+                    llm_output = None
+                llm_results.append(
+                    LLMResult(
+                        generations=[gen_list],
+                        llm_output=llm_output,
+                    )
+                )
+        return llm_results
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, LLMResult):
@@ -308,6 +360,8 @@ class Document(Serializable):
 
 
 class BaseRetriever(ABC):
+    """Base interface for retrievers."""
+
     @abstractmethod
     def get_relevant_documents(self, query: str) -> List[Document]:
         """Get documents relevant for a query.

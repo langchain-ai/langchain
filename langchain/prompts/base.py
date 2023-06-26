@@ -28,6 +28,14 @@ def jinja2_formatter(template: str, **kwargs: Any) -> str:
 
 
 def validate_jinja2(template: str, input_variables: List[str]) -> None:
+    """
+    Validate that the input variables are valid for the template.
+    Raise an exception if missing or extra variables are found.
+
+    Args:
+        template: The template string.
+        input_variables: The input variables.
+    """
     input_variables_set = set(input_variables)
     valid_variables = _get_jinja2_variables_from_template(template)
     missing_variables = valid_variables - input_variables_set
