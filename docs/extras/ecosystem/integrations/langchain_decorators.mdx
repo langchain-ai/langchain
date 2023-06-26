@@ -122,7 +122,7 @@ await write_me_short_post(topic="old movies")
 
 # Simplified streaming
 
-If we wan't to leverage streaming:
+If we want to leverage streaming:
  - we need to define prompt as async function 
  - turn on the streaming on the decorator, or we can define PromptType with streaming on
  - capture the stream using StreamingContext
@@ -149,7 +149,7 @@ async def write_me_short_post(topic:str, platform:str="twitter", audience:str = 
 
 
 
-# just an arbitrary  function to demonstrate the streaming... wil be some websockets code in the real world
+# just an arbitrary  function to demonstrate the streaming... will be some websockets code in the real world
 tokens=[]
 def capture_stream_func(new_token:str):
     tokens.append(new_token)
