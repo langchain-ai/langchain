@@ -50,3 +50,19 @@ def test_custom_base_prompt_fail() -> None:
             base_prompt=base_prompt,
             api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),
         )
+
+
+def test_wrapper_fails_no_api_key_or_access_token_initialization() -> None:
+    """Test Wrapper requires either an API Key or OAuth Access Token."""
+    with pytest.raises(ValueError):
+        ZapierNLAWrapper()
+
+
+def test_wrapper_api_key_initialization() -> None:
+    """Test Wrapper initializes with an API Key."""
+    ZapierNLAWrapper(zapier_nla_api_key="test")
+
+
+def test_wrapper_access_token_initialization() -> None:
+    """Test Wrapper initializes with an API Key."""
+    ZapierNLAWrapper(zapier_nla_oauth_access_token="test")
