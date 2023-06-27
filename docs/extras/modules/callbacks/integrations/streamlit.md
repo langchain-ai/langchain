@@ -44,13 +44,13 @@ agent in your Streamlit app and simply pass the `StreamlitCallbackHandler` to `a
 thoughts and actions live in your app.
 
 ```python
-from langchain import OpenAI
+from langchain.llms import OpenAI
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import StreamlitCallbackHandler
 import streamlit as st
 
 llm = OpenAI(temperature=0, streaming=True)
-tools = load_tools(["serpapi"], llm=llm)
+tools = load_tools(["ddg-search"])
 agent = initialize_agent(
     tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
 )
@@ -63,7 +63,7 @@ if prompt := st.chat_input():
         st.write(response)
 ```
 
-**Note:** You will need to set `OPENAI_API_KEY` and `SERPAPI_API_KEY` for the above app code to run successfully.
+**Note:** You will need to set `OPENAI_API_KEY` for the above app code to run successfully.
 The easiest way to do this is via [Streamlit secrets.toml](https://docs.streamlit.io/library/advanced-features/secrets-management),
 or any other local ENV management tool.
 
