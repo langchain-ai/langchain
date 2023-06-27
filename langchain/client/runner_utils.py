@@ -613,8 +613,8 @@ async def arun_on_dataset(
         project_name: [Default: None] Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: [Default: False] Whether to print progress.
-        client: [Default: None] Client to use to read the dataset. If not provided, a new
-            client will be created using the credentials in the environment.
+        client: [Default: None] Client to use to read the dataset. If not provided,
+            a new client will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
 
@@ -668,8 +668,8 @@ def run_on_dataset(
         project_name: [Default: None] Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: [Default: False] Whether to print progress.
-        client: [Default: None] Client to use to access the dataset. If None, a new client
-            will be created using the credentials in the environment.
+        client: [Default: None] Client to use to access the dataset. If None,
+            a new client will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
 
