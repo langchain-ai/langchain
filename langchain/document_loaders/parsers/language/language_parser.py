@@ -23,11 +23,16 @@ class LanguageParser(BaseBlobParser):
     """
     Language parser that split code using the respective language syntax.
 
-    Each top-level function and class in the code are loaded into separate documents.
-    Then, an additional document is created with the top-level code, but without the
-    already loaded functions and classes.
+    Each top-level function and class in the code is loaded into separate documents.
+    Furthermore, an extra document is generated, containing the remaining top-level code
+    that excludes the already segmented functions and classes.
 
-    This could improve the accuracy of QA chains over source code.
+    This approach can potentially improve the accuracy of QA models over source code.
+
+    Currently, the supported languages for code parsing are Python and JavaScript.
+
+    The language used for parsing can be configured, along with the minimum number of
+    lines required to activate the splitting based on syntax.
 
     Examples:
 
