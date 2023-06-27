@@ -92,7 +92,7 @@ class ZapierNLAWrapper(BaseModel):
         """Create a url for an action."""
         return self.zapier_nla_api_base + f"exposed/{action_id}/execute/"
 
-    def _create_action_request(
+    def _create_action_request(  # type: ignore[no-untyped-def]
         self,
         action_id: str,
         instructions: str,
