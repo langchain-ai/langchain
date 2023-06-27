@@ -35,5 +35,5 @@ class AirtableLoader(BaseLoader):
             )
 
     def load(self) -> List[Document]:
-        """Lazy load Documents from table."""
+        """Load Documents from table."""
         return list(self.lazy_load())
