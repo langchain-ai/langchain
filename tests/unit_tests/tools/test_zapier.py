@@ -1,5 +1,7 @@
 """Test building the Zapier tool, not running it."""
+from unittest.mock import MagicMock, patch
 import pytest
+import requests
 
 from langchain.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain.tools.zapier.tool import ZapierNLARunAction
@@ -66,3 +68,66 @@ def test_wrapper_api_key_initialization() -> None:
 def test_wrapper_access_token_initialization() -> None:
     """Test Wrapper initializes with an API Key."""
     ZapierNLAWrapper(zapier_nla_oauth_access_token="test")
+
+
+def test_list_raises_401_invalid_api_key() -> None:
+    """Test that a valid error is raised when the API Key is invalid."""
+    mock_response = MagicMock()
+    mock_response.status_code = 401
+    mock_response.raise_for_status.side_effect = requests.HTTPError(
+        "401 Client Error: Unauthorized for url: https://nla.zapier.com/api/v1/exposed/"
+    )
+    mock_session = MagicMock()
+    mock_session.get.return_value = mock_response
+
+    with patch("requests.Session", return_value=mock_session):
+        wrapper = ZapierNLAWrapper(zapier_nla_api_key="test")
+
+        with pytest.raises(requests.HTTPError) as err:
+            wrapper.list()
+
+        assert str(err.value).startswith(
+            "An unauthorized response occurred. Check that your api key is correct. "
+            "Err:"
+        )
+
+
+def test_list_raises_401_invalid_access_token() -> None:
+    """Test that a valid error is raised when the API Key is invalid."""
+    mock_response = MagicMock()
+    mock_response.status_code = 401
+    mock_response.raise_for_status.side_effect = requests.HTTPError(
+        "401 Client Error: Unauthorized for url: https://nla.zapier.com/api/v1/exposed/"
+    )
+    mock_session = MagicMock()
+    mock_session.get.return_value = mock_response
+
+    with patch("requests.Session", return_value=mock_session):
+        wrapper = ZapierNLAWrapper(zapier_nla_oauth_access_token="test")
+
+        with pytest.raises(requests.HTTPError) as err:
+            wrapper.list()
+
+        assert str(err.value).startswith(
+            "An unauthorized response occurred. Check that your access token is "
+            "correct and doesn't need to be refreshed. Err:"
+        )
+
+
+def test_list_raises_other_error() -> None:
+    """Test that a valid error is raised when an unknown HTTP Error occurs."""
+    mock_response = MagicMock()
+    mock_response.status_code = 404
+    mock_response.raise_for_status.side_effect = requests.HTTPError(
+        "404 Client Error: Not found for url"
+    )
+    mock_session = MagicMock()
+    mock_session.get.return_value = mock_response
+
+    with patch("requests.Session", return_value=mock_session):
+        wrapper = ZapierNLAWrapper(zapier_nla_oauth_access_token="test")
+
+        with pytest.raises(requests.HTTPError) as err:
+            wrapper.list()
+
+        assert str(err.value) == "404 Client Error: Not found for url"
