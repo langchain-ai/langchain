@@ -1,5 +1,5 @@
 """Tool for asking human input."""
-
+import asyncio
 from typing import Callable, Optional
 
 from pydantic import Field
@@ -9,6 +9,15 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
 )
 from langchain.tools.base import BaseTool
+
+
+async def _async_input_func(input_func: Callable) -> str:
+    if asyncio.iscoroutinefunction(input_func):
+        # If the input_func is async, await it directly
+        return await input_func()
+    else:
+        # If the input_func is synchronous, run it in an executor
+        return await asyncio.get_event_loop().run_in_executor(None, input_func)
 
 
 def _print_func(text: str) -> None:
@@ -43,4 +52,14 @@ class HumanInputRun(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Human tool asynchronously."""
-        raise NotImplementedError("Human tool does not support async")
+        if asyncio.iscoroutinefunction(self.prompt_func):
+            # If the prompt_func is async, await it directly
+            await self.prompt_func(query)
+        else:
+            # If the prompt_func is synchronous, run it in an executor
+            await asyncio.get_event_loop().run_in_executor(
+                None, self.prompt_func, query
+            )
+
+        # Use the asynchronous input function.
+        return await _async_input_func(self.input_func)
