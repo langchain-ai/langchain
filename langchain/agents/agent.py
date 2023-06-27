@@ -714,6 +714,24 @@ s
         """Save the underlying agent."""
         return self.agent.save(file_path)
 
+    def as_iterable(
+        self,
+        inputs: dict[str, str] | Any,
+        callbacks: Callbacks = None,
+        *,
+        include_run_info: bool = False,
+        async_: bool = False,
+    ) -> AgentExecutorIterator:
+        """Allows iteration over steps taken to reach final output."""
+        return AgentExecutorIterator(
+            self,
+            inputs,
+            callbacks,
+            tags=self.tags,
+            include_run_info=include_run_info,
+            async_=async_,
+        )
+
     @property
     def input_keys(self) -> List[str]:
         """Return the input keys.
@@ -1074,35 +1092,6 @@ s
                 return await self._areturn(
                     output, intermediate_steps, run_manager=run_manager
                 )
-
-    def __call__(
-        self,
-        inputs: dict[str, str] | Any,
-        return_only_outputs: bool = False,
-        callbacks: Callbacks = None,
-        *,
-        tags: list[str] | None = None,
-        include_run_info: bool = False,
-        iterator: bool = False,
-        async_: bool = False,
-    ) -> dict[str, Any] | AgentExecutorIterator:
-        if iterator:
-            return AgentExecutorIterator(
-                self,
-                inputs,
-                callbacks,
-                tags=tags,
-                include_run_info=include_run_info,
-                async_=async_,
-            )
-        else:
-            return super().__call__(
-                inputs,
-                return_only_outputs,
-                callbacks,
-                tags=tags,
-                include_run_info=include_run_info,
-            )
 
     def _get_tool_return(
         self, next_step_output: Tuple[AgentAction, str]
