@@ -7,6 +7,7 @@ from langchain.document_loaders.parsers.language.javascript import JavaScriptSeg
 from langchain.document_loaders.parsers.language.python import PythonSegmenter
 from langchain.text_splitter import Language
 
+
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "py": Language.PYTHON,
     "js": Language.JS,

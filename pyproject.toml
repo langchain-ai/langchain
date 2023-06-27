@@ -315,6 +315,7 @@ extended_testing = [
  "beautifulsoup4",
  "bibtexparser",
  "chardet",
+ "esprima",
  "jq",
  "pdfminer.six",
  "pgvector",
