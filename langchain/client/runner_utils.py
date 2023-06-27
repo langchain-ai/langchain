@@ -24,6 +24,7 @@ from langchainplus_sdk.schemas import Example
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import Callbacks
+from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.evaluation import EvaluatorCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
@@ -241,8 +242,10 @@ async def _arun_llm_or_chain(
 
 async def _gather_with_concurrency(
     n: int,
-    initializer: Callable[[], Coroutine[Any, Any, Optional[LangChainTracer]]],
-    *async_funcs: Callable[[Optional[LangChainTracer], Dict], Coroutine[Any, Any, Any]],
+    initializer: Callable[[], Coroutine[Any, Any, Any]],
+    *async_funcs: Callable[
+        [Sequence[BaseCallbackHandler], Dict], Coroutine[Any, Any, Any]
+    ],
 ) -> List[Any]:
     """
     Run coroutines with a concurrency limit.
@@ -258,37 +261,42 @@ async def _gather_with_concurrency(
     semaphore = asyncio.Semaphore(n)
     job_state = {"num_processed": 0}
 
-    tracer_queue: asyncio.Queue[Optional[LangChainTracer]] = asyncio.Queue()
+    callback_queue: asyncio.Queue[Sequence[BaseCallbackHandler]] = asyncio.Queue()
     for _ in range(n):
-        tracer_queue.put_nowait(await initializer())
+        callback_queue.put_nowait(await initializer())
 
     async def run_coroutine_with_semaphore(
         async_func: Callable[
-            [Optional[LangChainTracer], Dict], Coroutine[Any, Any, Any]
+            [Sequence[BaseCallbackHandler], Dict], Coroutine[Any, Any, Any]
         ]
     ) -> Any:
         async with semaphore:
-            tracer = await tracer_queue.get()
+            callbacks = await callback_queue.get()
             try:
-                result = await async_func(tracer, job_state)
+                result = await async_func(callbacks, job_state)
             finally:
-                tracer_queue.put_nowait(tracer)
+                callback_queue.put_nowait(callbacks)
             return result
 
     results = await asyncio.gather(
         *(run_coroutine_with_semaphore(function) for function in async_funcs)
     )
-    while tracer_queue:
+    while callback_queue:
         try:
-            tracer = tracer_queue.get_nowait()
+            callbacks = callback_queue.get_nowait()
         except asyncio.QueueEmpty:
             break
-        if tracer:
-            tracer.wait_for_futures()
+        for callback in callbacks:
+            if isinstance(callback, (LangChainTracer, EvaluatorCallbackHandler)):
+                callback.wait_for_futures()
     return results
 
 
-async def _tracer_initializer(project_name: Optional[str]) -> Optional[LangChainTracer]:
+async def _callbacks_initializer(
+    project_name: Optional[str],
+    client: LangChainPlusClient,
+    run_evaluators: Sequence[RunEvaluator],
+) -> List[BaseTracer]:
     """
     Initialize a tracer to share across tasks.
 
@@ -298,11 +306,19 @@ async def _tracer_initializer(project_name: Optional[str]) -> Optional[LangChain
     Returns:
         A LangChainTracer instance with an active project.
     """
+    callbacks: List[BaseTracer] = []
     if project_name:
-        tracer = LangChainTracer(project_name=project_name)
-        return tracer
-    else:
-        return None
+        callbacks.append(LangChainTracer(project_name=project_name))
+    if run_evaluators:
+        callbacks.append(
+            EvaluatorCallbackHandler(
+                client=client,
+                evaluators=run_evaluators,
+                # We already have concurrency, don't want to overload the machine
+                max_workers=1,
+            )
+        )
+    return callbacks
 
 
 async def arun_on_examples(
@@ -351,12 +367,9 @@ async def arun_on_examples(
     )
 
     async def process_example(
-        example: Example, tracer: Optional[LangChainTracer], job_state: dict
+        example: Example, callbacks: List[BaseCallbackHandler], job_state: dict
     ) -> None:
         """Process a single example."""
-        callbacks: List[BaseCallbackHandler] = [
-            cb for cb in [tracer, evaluation_handler] if cb
-        ]
         result = await _arun_llm_or_chain(
             example,
             llm_or_chain_factory,
@@ -375,7 +388,12 @@ async def arun_on_examples(
 
     await _gather_with_concurrency(
         concurrency_level,
-        functools.partial(_tracer_initializer, project_name),
+        functools.partial(
+            _callbacks_initializer,
+            project_name=project_name,
+            client=client_,
+            run_evaluators=run_evaluators or [],
+        ),
         *(functools.partial(process_example, e) for e in examples),
     )
     evaluation_handler.wait_for_futures()
