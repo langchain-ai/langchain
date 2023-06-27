@@ -232,7 +232,7 @@ class FAISS(VectorStore):
             docs = [
                 (doc, similarity)
                 for doc, similarity in docs
-                if similarity >= score_threshold
+                if self.relevance_score_fn(similarity) >= score_threshold
             ]
         return docs[:k]
 
