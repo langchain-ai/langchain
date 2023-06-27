@@ -49,14 +49,15 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 safesearch=self.safesearch,
                 timelimit=self.time,
             )
-            if results is None or next(results, None) is None:
+            if results is None:
                 return ["No good DuckDuckGo Search Result was found"]
             snippets = []
             for i, res in enumerate(results, 1):
-                snippets.append(res["body"])
-                if i == self.max_results:
+                if res is not None:
+                    snippets.append(res["body"])
+                if len(snippets) == self.max_results:
                     break
-            return snippets
+        return snippets
 
     def run(self, query: str) -> str:
         snippets = self.get_snippets(query)
@@ -84,7 +85,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 safesearch=self.safesearch,
                 timelimit=self.time,
             )
-            if results is None or next(results, None) is None:
+            if results is None:
                 return [{"Result": "No good DuckDuckGo Search Result was found"}]
 
             def to_metadata(result: Dict) -> Dict[str, str]:
@@ -96,7 +97,8 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
 
             formatted_results = []
             for i, res in enumerate(results, 1):
-                formatted_results.append(to_metadata(res))
-                if i == num_results:
+                if res is not None:
+                    formatted_results.append(to_metadata(res))
+                if len(formatted_results) == num_results:
                     break
-            return formatted_results
+        return formatted_results

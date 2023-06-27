@@ -1,8 +1,7 @@
 """Base classes for comparing the output of two models."""
 from __future__ import annotations
 
-from abc import abstractmethod
-from typing import Any, Optional, Protocol, runtime_checkable
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -12,61 +11,6 @@ from langchain.chains.llm import LLMChain
 from langchain.evaluation.comparison.prompt import PROMPT, PROMPT_WITH_REFERENCE
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser
-
-
-@runtime_checkable
-class PairwiseStringEvaluator(Protocol):
-    """A protocol for evaluating the output of two models."""
-
-    @abstractmethod
-    def evaluate_string_pairs(
-        self,
-        *,
-        output_a: str,
-        output_b: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
-        **kwargs: Any,
-    ) -> dict:
-        """Evaluate the output string pairs.
-
-        Args:
-            output_a (str): The output string from the first model.
-            output_b (str): The output string from the second model.
-            reference (str, optional): The expected output / reference
-                string. Defaults to None.
-            input (str, optional): The input string. Defaults to None.
-            **kwargs (Any): Additional keyword arguments, such
-                as callbacks and optional reference strings.
-
-        Returns:
-            dict: A dictionary containing the preference, scores, and/or
-                other information.
-        """
-
-    async def aevaluate_string_pairs(
-        self,
-        output_a: str,
-        output_b: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
-        **kwargs: Any,
-    ) -> dict:
-        """Evaluate the output string pairs.
-
-        Args:
-            output_a (str): The output string from the first model.
-            output_b (str): The output string from the second model.
-            reference (str, optional): The expected output / reference
-                string. Defaults to None.
-            input (str, optional): The input string. Defaults to None.
-            **kwargs (Any): Additional keyword arguments, such
-                as callbacks and optional reference strings.
-
-        Returns:
-            dict: A dictionary containing the preference, scores, and/or
-                other information.
-        """
 
 
 class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
