@@ -5,7 +5,6 @@ import asyncio
 import json
 import logging
 import time
-import typing as ty
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
@@ -13,6 +12,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 import yaml
 from pydantic import BaseModel, root_validator
 
+from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import InvalidTool
 from langchain.base_language import BaseLanguageModel
@@ -1074,7 +1074,7 @@ s
                 return await self._areturn(
                     output, intermediate_steps, run_manager=run_manager
                 )
-    
+
     def __call__(
         self,
         inputs: dict[str, str] | Any,
@@ -1085,9 +1085,8 @@ s
         include_run_info: bool = False,
         iterator: bool = False,
         async_: bool = False,
-    ) -> dict[str, Any] | Any:
+    ) -> dict[str, Any] | AgentExecutorIterator:
         if iterator:
-            from langchain.agents.agent_iterator import AgentExecutorIterator
             return AgentExecutorIterator(
                 self,
                 inputs,

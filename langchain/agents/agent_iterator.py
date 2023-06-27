@@ -1,12 +1,12 @@
+from __future__ import annotations
+
 import logging
 import time
-import typing as ty
 from abc import ABC, abstractmethod
 from asyncio import CancelledError
 from functools import wraps
-from typing import Any, Callable, Coroutine, NoReturn, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, NoReturn, Optional, Type
 
-from langchain.agents import AgentExecutor
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainRun,
@@ -19,6 +19,9 @@ from langchain.load.dump import dumpd
 from langchain.schema import RUN_KEY, AgentAction, AgentFinish, RunInfo
 from langchain.tools import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
+
+if TYPE_CHECKING:
+    from langchain.agents.agent import AgentExecutor
 
 logger = logging.getLogger(__name__)
 
