@@ -88,7 +88,6 @@ class WebBaseLoader(BaseLoader):
         
         self.session = requests.Session()
         self.session.headers = dict(headers)
-        # Setting for SLL certificat verification.
         self.session.verify = verify_ssl
 
     @property
