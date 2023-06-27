@@ -25,5 +25,6 @@ API Reference
    :maxdepth: 1
    :caption: Additional
 
+   ./modules/evaluation.rst
    ./modules/utilities.rst
    ./modules/experimental.rst
