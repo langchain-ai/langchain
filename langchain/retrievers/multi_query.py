@@ -22,12 +22,12 @@ class LineListOutputParser(PydanticOutputParser):
         return LineList(lines=lines)
 
 
-class MultiQueryRetriever:
+class MultiQueryRetriever(BaseRetriever):
 
     """Given a user query, use an LLM to write a set of `num_queries` queries.
     Retrieve docs for each query. Rake the unique union of all retrieved docs."""
 
-    # Prompt
+    # Default prompt
     DEFAULT_QUERY_PROMPT = PromptTemplate(
         input_variables=["question", "num_queries"],
         template="""You are an AI language model assistant. Your task is 
@@ -64,7 +64,11 @@ class MultiQueryRetriever:
 
     @classmethod
     def from_llm(
-        cls, retriever: BaseRetriever, num_queries: int, llm: BaseLLM
+        cls,
+        retriever: BaseRetriever,
+        num_queries: int,
+        llm: BaseLLM,
+        prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
     ) -> "MultiQueryRetriever":
         """Initialize from llm using default template.
 
@@ -76,7 +80,8 @@ class MultiQueryRetriever:
         Returns:
             MultiQueryRetriever
         """
-        llm_chain = LLMChain(llm=llm, prompt=cls.DEFAULT_QUERY_PROMPT)
+        output_parser = LineListOutputParser()
+        llm_chain = LLMChain(llm=llm, prompt=prompt, output_parser=output_parser)
         return cls(retriever=retriever, num_queries=num_queries, llm_chain=llm_chain)
 
     def get_relevant_documents(self, question: str) -> List[Document]:
@@ -93,6 +98,9 @@ class MultiQueryRetriever:
         unique_documents = self.unique_union(documents)
         return unique_documents
 
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        raise NotImplementedError
+
     def generate_queries(self, question: str) -> List[str]:
         """Generate queries based upon user input.
 
@@ -102,17 +110,13 @@ class MultiQueryRetriever:
         Returns:
             List of LLM generated queries that are similar to the user input
         """
-        response = self.llm_chain.apply(
-            [{"question": question, "num_queries": self.num_queries}]
+        response = self.llm_chain(
+            {"question": question, "num_queries": self.num_queries}
         )
-        # Get the response text
-        response_text = response[0]["text"]
-        # Parse the response
-        output_parser = LineListOutputParser()
-        parsed_output = output_parser.parse(response_text)
         if self.verbose:
-            print(f"Generated queries: {parsed_output.lines}")
-        return parsed_output.lines
+            # This hard-coding of lines will be probalematic
+            print(f"Generated queries: {response['text'].lines}")
+        return response["text"].lines
 
     def retrieve_documents(self, queries: List[str]) -> List[Document]:
         """Run all LLM generated queries.
@@ -125,9 +129,7 @@ class MultiQueryRetriever:
         """
         documents = []
         for query in queries:
-            docs = self.retriever.get_relevant_documents(
-                query
-            )  # assuming this method exists
+            docs = self.retriever.get_relevant_documents(query)
             documents.extend(docs)
         return documents
 
