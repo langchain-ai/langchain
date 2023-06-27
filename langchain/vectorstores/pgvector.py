@@ -4,6 +4,7 @@ from __future__ import annotations
 import enum
 import logging
 import uuid
+import json
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import sqlalchemy
@@ -400,7 +401,7 @@ class PGVector(VectorStore):
             (
                 Document(
                     page_content=result.EmbeddingStore.document,
-                    metadata=result.EmbeddingStore.cmetadata,
+                    metadata=json.loads(result.EmbeddingStore.cmetadata),
                 ),
                 result.distance if self.embedding_function is not None else None,
             )
