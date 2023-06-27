@@ -83,7 +83,9 @@ class LangChainTracer(BaseTracer):
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
-            inputs={"messages": [messages_to_dict(batch) for batch in messages]},
+            inputs={
+                "messages": [[msg.to_json() for msg in batch] for batch in messages]
+            },
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
