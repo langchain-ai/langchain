@@ -63,7 +63,7 @@ def _serialize_inputs(run_inputs: dict) -> Union[dict, list]:
 def _replace_key(
     obj: Dict[str, Any],
     key: str,
-):
+) -> None:
     if key in obj and isinstance(obj[key], list):
         obj[key] = ".".join(obj[key])
 
@@ -72,7 +72,7 @@ def _replace_key(
             _replace_key(v, key)
 
 
-def _scrub_key(obj: Dict[str, Any], key: str):
+def _scrub_key(obj: Dict[str, Any], key: str) -> None:
     if isinstance(obj, dict):
         # the call to `list` is useless for py2 but makes
         # the code py2/py3 compatible
