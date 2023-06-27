@@ -34,8 +34,12 @@ class BibtexLoader(BaseLoader):
 
         Args:
             file_path: Path to the bibtex file.
+            parser: The parser to use. If None, a default parser is used.
             max_docs: Max number of associated documents to load. Use -1 means
                            no limit.
+            max_content_chars: Maximum number of characters to load from the PDF.
+            load_extra_metadata: Whether to load extra metadata from the PDF.
+            file_pattern: Regex pattern to match the file name in the bibtex.
         """
         self.file_path = file_path
         self.parser = parser or BibtexparserWrapper()
@@ -70,9 +74,7 @@ class BibtexLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """Load bibtex file using bibtexparser and get the article texts plus the
-
         article metadata.
-
         See https://bibtexparser.readthedocs.io/en/master/
 
         Returns:

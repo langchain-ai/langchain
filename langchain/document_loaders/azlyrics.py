@@ -9,7 +9,7 @@ class AZLyricsLoader(WebBaseLoader):
     """Loader that loads AZLyrics webpages."""
 
     def load(self) -> List[Document]:
-        """Load webpage."""
+        """Load webpages into Documents."""
         soup = self.scrape()
         title = soup.title.text
         lyrics = soup.find_all("div", {"class": ""})[2].text
