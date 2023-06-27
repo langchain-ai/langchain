@@ -22,7 +22,7 @@ The AI language model decided to use the following set of tools to answer the qu
 
 {agent_trajectory}
 
-The AI language model's final answer to the question was: {answer}
+The AI language model's final answer to the question was: {answer}{reference}
 
 Let's to do a detailed evaluation of the AI language model's answer step by step.
 
@@ -94,5 +94,38 @@ EVAL_CHAT_PROMPT = ChatPromptTemplate.from_messages(
         HumanMessage(content=EXAMPLE_INPUT),
         AIMessage(content=EXAMPLE_OUTPUT),
         HumanMessagePromptTemplate.from_template(EVAL_TEMPLATE),
+    ]
+)
+
+
+TOOL_FREE_EVAL_TEMPLATE = """An AI language model has been given access to a set of tools to help answer a user's question.
+
+The question the human asked the AI model was: {question}
+
+The AI language model decided to use the following set of tools to answer the question:
+
+{agent_trajectory}
+
+The AI language model's final answer to the question was: {answer}{reference}
+
+Let's to do a detailed evaluation of the AI language model's answer step by step.
+
+We consider the following criteria before giving a score from 1 to 5:
+
+i. Is the final answer helpful?
+ii. Does the AI language use a logical sequence of tools to answer the question?
+iii. Does the AI language model use the tools in a helpful way?
+iv. Does the AI language model use too many steps to answer the question?
+v. Are the appropriate tools used to answer the question?"""
+
+
+TOOL_FREE_EVAL_CHAT_PROMPT = ChatPromptTemplate.from_messages(
+    messages=[
+        SystemMessage(
+            content="You are a helpful assistant that evaluates language models."
+        ),
+        HumanMessage(content=EXAMPLE_INPUT),
+        AIMessage(content=EXAMPLE_OUTPUT),
+        HumanMessagePromptTemplate.from_template(TOOL_FREE_EVAL_TEMPLATE),
     ]
 )
