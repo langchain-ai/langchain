@@ -714,7 +714,7 @@ s
         """Save the underlying agent."""
         return self.agent.save(file_path)
 
-    def as_iterable(
+    def iter(
         self,
         inputs: dict[str, str] | Any,
         callbacks: Callbacks = None,
@@ -722,7 +722,7 @@ s
         include_run_info: bool = False,
         async_: bool = False,
     ) -> AgentExecutorIterator:
-        """Allows iteration over steps taken to reach final output."""
+        """Enables iteration over steps taken to reach final output."""
         return AgentExecutorIterator(
             self,
             inputs,

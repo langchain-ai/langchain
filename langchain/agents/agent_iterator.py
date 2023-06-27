@@ -121,7 +121,8 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
 
     def build_callback_manager(self) -> None:
         """
-        Create and configure the callback manager based on the current callbacks and tags.
+        Create and configure the callback manager based on the current
+        callbacks and tags.
         """
         CallbackMgr: Type[AsyncCallbackManager] | Type[CallbackManager] = (
             AsyncCallbackManager if self.async_ else CallbackManager
@@ -147,9 +148,10 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
 
     def reset(self) -> None:
         """
-        Reset the iterator to its initial state, clearing intermediate steps, iterations, and time elapsed.
+        Reset the iterator to its initial state, clearing intermediate steps,
+        iterations, and time elapsed.
         """
-        logger.debug(f"(Re)setting AgentExecutorIterator to fresh state")
+        logger.debug("(Re)setting AgentExecutorIterator to fresh state")
         self.intermediate_steps: list[tuple[AgentAction, str]] = []
         self.iterations = 0
         # maybe better to start these on the first __anext__ call?
@@ -295,7 +297,8 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         self, run_manager: Optional[CallbackManagerForChainRun]
     ) -> AgentFinish | list[tuple[AgentAction, str]]:
         """
-        Execute the next step in the chain using the AgentExecutor's _take_next_step method.
+        Execute the next step in the chain using the
+        AgentExecutor's _take_next_step method.
         """
         return self.agent_executor._take_next_step(
             self.name_to_tool_map,
@@ -309,7 +312,8 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         self, run_manager: Optional[AsyncCallbackManagerForChainRun]
     ) -> (AgentFinish | list[tuple[AgentAction, str]]):
         """
-        Execute the next step in the chain using the AgentExecutor's _atake_next_step method.
+        Execute the next step in the chain using the
+        AgentExecutor's _atake_next_step method.
         """
         return await self.agent_executor._atake_next_step(
             self.name_to_tool_map,
@@ -325,12 +329,13 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         run_manager: Optional[CallbackManagerForChainRun],
     ) -> dict[str, Any] | dict[str, list[tuple[AgentAction, str]]]:
         """
-        Process the output of the next step, handling AgentFinish and tool return cases.
+        Process the output of the next step,
+        handling AgentFinish and tool return cases.
         """
         logger.debug("Processing output of Agent loop step")
         if isinstance(next_step_output, AgentFinish):
             logger.debug(
-                f"Hit AgentFinish: _return -> on_chain_end -> run final output logic"
+                "Hit AgentFinish: _return -> on_chain_end -> run final output logic"
             )
             output = self.agent_executor._return(
                 next_step_output, self.intermediate_steps, run_manager=run_manager
@@ -365,12 +370,13 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         run_manager: Optional[AsyncCallbackManagerForChainRun],
     ) -> (dict[str, Any] | dict[str, list[tuple[AgentAction, str]]]):
         """
-        Process the output of the next async step, handling AgentFinish and tool return cases.
+        Process the output of the next async step,
+        handling AgentFinish and tool return cases.
         """
         logger.debug("Processing output of async Agent loop step")
         if isinstance(next_step_output, AgentFinish):
             logger.debug(
-                f"Hit AgentFinish: _areturn -> on_chain_end -> run final output logic"
+                "Hit AgentFinish: _areturn -> on_chain_end -> run final output logic"
             )
             output = await self.agent_executor._areturn(
                 next_step_output, self.intermediate_steps, run_manager=run_manager

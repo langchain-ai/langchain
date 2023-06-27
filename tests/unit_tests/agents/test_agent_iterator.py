@@ -1,5 +1,3 @@
-from typing import Any
-
 import pytest
 
 from langchain.agents import (
@@ -12,13 +10,12 @@ from langchain.agents.tools import Tool
 from langchain.llms import FakeListLLM
 from tests.unit_tests.agents.test_agent import _get_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
-from tests.unit_tests.test_cache import set_cache_and_teardown
 
 
 def test_agent_iterator_bad_action() -> None:
     """Test react chain iterator when bad action given."""
     agent = _get_agent()
-    agent_iter = agent.as_iterable(inputs="when was langchain made")
+    agent_iter = agent.iter(inputs="when was langchain made")
 
     outputs = []
     for step in agent_iter:
@@ -29,10 +26,13 @@ def test_agent_iterator_bad_action() -> None:
 
 
 def test_agent_iterator_stopped_early() -> None:
-    """Test react chain iterator when max iterations or max execution time is exceeded."""
+    """
+    Test react chain iterator when max iterations or
+    max execution time is exceeded.
+    """
     # iteration limit
     agent = _get_agent(max_iterations=1)
-    agent_iter = agent.as_iterable(inputs="when was langchain made")
+    agent_iter = agent.iter(inputs="when was langchain made")
 
     outputs = []
     for step in agent_iter:
@@ -46,7 +46,7 @@ def test_agent_iterator_stopped_early() -> None:
 
     # execution time limit
     agent = _get_agent(max_execution_time=1e-5)
-    agent_iter = agent.as_iterable(inputs="when was langchain made")
+    agent_iter = agent.iter(inputs="when was langchain made")
 
     outputs = []
     for step in agent_iter:
@@ -59,10 +59,13 @@ def test_agent_iterator_stopped_early() -> None:
 
 @pytest.mark.asyncio
 async def test_agent_async_iterator_stopped_early() -> None:
-    """Test react chain async iterator when max iterations or max execution time is exceeded."""
+    """
+    Test react chain async iterator when max iterations or
+    max execution time is exceeded.
+    """
     # iteration limit
     agent = _get_agent(max_iterations=1)
-    agent_async_iter = agent.as_iterable(inputs="when was langchain made", async_=True)
+    agent_async_iter = agent.iter(inputs="when was langchain made", async_=True)
 
     outputs = []
     assert isinstance(agent_async_iter, AgentExecutorIterator)
@@ -76,7 +79,7 @@ async def test_agent_async_iterator_stopped_early() -> None:
 
     # execution time limit
     agent = _get_agent(max_execution_time=1e-5)
-    agent_async_iter = agent.as_iterable(inputs="when was langchain made", async_=True)
+    agent_async_iter = agent.iter(inputs="when was langchain made", async_=True)
     assert isinstance(agent_async_iter, AgentExecutorIterator)
 
     outputs = []
@@ -88,7 +91,7 @@ async def test_agent_async_iterator_stopped_early() -> None:
     )
 
 
-def test_agent_iterator_with_callbacks(set_cache_and_teardown: Any) -> None:
+def test_agent_iterator_with_callbacks() -> None:
     """Test react chain iterator with callbacks by setting verbose globally."""
     handler1 = FakeCallbackHandler()
     handler2 = FakeCallbackHandler()
@@ -97,7 +100,7 @@ def test_agent_iterator_with_callbacks(set_cache_and_teardown: Any) -> None:
         f"I'm turning evil\nAction: {bad_action_name}\nAction Input: misalignment",
         "Oh well\nFinal Answer: curses foiled again",
     ]
-    fake_llm = FakeListLLM(responses=responses, callbacks=[handler2])
+    fake_llm = FakeListLLM(cache=False, responses=responses, callbacks=[handler2])
 
     tools = [
         Tool(
@@ -115,9 +118,7 @@ def test_agent_iterator_with_callbacks(set_cache_and_teardown: Any) -> None:
     agent = initialize_agent(
         tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
-    agent_iter = agent.as_iterable(
-        inputs="when was langchain made", callbacks=[handler1]
-    )
+    agent_iter = agent.iter(inputs="when was langchain made", callbacks=[handler1])
 
     outputs = []
     for step in agent_iter:
@@ -151,7 +152,7 @@ def test_agent_iterator_with_callbacks(set_cache_and_teardown: Any) -> None:
 
 
 @pytest.mark.asyncio
-async def test_agent_async_iterator_with_callbacks(set_cache_and_teardown: Any) -> None:
+async def test_agent_async_iterator_with_callbacks() -> None:
     """Test react chain async iterator with callbacks by setting verbose globally."""
     handler1 = FakeCallbackHandler()
     handler2 = FakeCallbackHandler()
@@ -161,7 +162,7 @@ async def test_agent_async_iterator_with_callbacks(set_cache_and_teardown: Any) 
         f"I'm turning evil\nAction: {bad_action_name}\nAction Input: misalignment",
         "Oh well\nFinal Answer: curses foiled again",
     ]
-    fake_llm = FakeListLLM(responses=responses, callbacks=[handler2])
+    fake_llm = FakeListLLM(cache=False, responses=responses, callbacks=[handler2])
 
     tools = [
         Tool(
@@ -179,7 +180,7 @@ async def test_agent_async_iterator_with_callbacks(set_cache_and_teardown: Any) 
     agent = initialize_agent(
         tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
-    agent_async_iter = agent.as_iterable(
+    agent_async_iter = agent.iter(
         inputs="when was langchain made",
         callbacks=[handler1],
         async_=True,
@@ -216,11 +217,11 @@ async def test_agent_async_iterator_with_callbacks(set_cache_and_teardown: Any) 
     )
 
 
-def test_agent_iterator_properties_and_setters(set_cache_and_teardown: Any) -> None:
+def test_agent_iterator_properties_and_setters() -> None:
     """Test properties and setters of AgentExecutorIterator."""
     agent = _get_agent()
     agent.tags = None
-    agent_iter = agent.as_iterable(inputs="when was langchain made")
+    agent_iter = agent.iter(inputs="when was langchain made")
 
     assert isinstance(agent_iter, AgentExecutorIterator)
     assert isinstance(agent_iter.inputs, dict)
@@ -245,7 +246,7 @@ def test_agent_iterator_properties_and_setters(set_cache_and_teardown: Any) -> N
 def test_agent_iterator_reset() -> None:
     """Test reset functionality of AgentExecutorIterator."""
     agent = _get_agent()
-    agent_iter = agent.as_iterable(inputs="when was langchain made")
+    agent_iter = agent.iter(inputs="when was langchain made")
     assert isinstance(agent_iter, AgentExecutorIterator)
 
     # Perform one iteration
@@ -268,7 +269,7 @@ def test_agent_iterator_reset() -> None:
 def test_agent_iterator_output_structure() -> None:
     """Test the output structure of AgentExecutorIterator."""
     agent = _get_agent()
-    agent_iter = agent.as_iterable(inputs="when was langchain made")
+    agent_iter = agent.iter(inputs="when was langchain made")
 
     for step in agent_iter:
         assert isinstance(step, dict)
@@ -284,7 +285,7 @@ def test_agent_iterator_output_structure() -> None:
 async def test_agent_async_iterator_output_structure() -> None:
     """Test the async output structure of AgentExecutorIterator."""
     agent = _get_agent()
-    agent_async_iter = agent.as_iterable(inputs="when was langchain made", async_=True)
+    agent_async_iter = agent.iter(inputs="when was langchain made", async_=True)
 
     assert isinstance(agent_async_iter, AgentExecutorIterator)
     async for step in agent_async_iter:
@@ -300,7 +301,7 @@ async def test_agent_async_iterator_output_structure() -> None:
 def test_agent_iterator_empty_input() -> None:
     """Test AgentExecutorIterator with empty input."""
     agent = _get_agent()
-    agent_iter = agent.as_iterable(inputs="")
+    agent_iter = agent.iter(inputs="")
 
     outputs = []
     for step in agent_iter:
@@ -350,7 +351,7 @@ def test_agent_iterator_failing_tool() -> None:
         tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
 
-    agent_iter = agent.as_iterable(inputs="when was langchain made")
+    agent_iter = agent.iter(inputs="when was langchain made")
     assert isinstance(agent_iter, AgentExecutorIterator)
     # initialise iterator
     iter(agent_iter)

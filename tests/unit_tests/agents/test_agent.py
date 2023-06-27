@@ -52,7 +52,7 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
         f"I'm turning evil\nAction: {bad_action_name}\nAction Input: misalignment",
         "Oh well\nFinal Answer: curses foiled again",
     ]
-    fake_llm = FakeListLLM(responses=responses)
+    fake_llm = FakeListLLM(cache=False, responses=responses)
 
     tools = [
         Tool(
