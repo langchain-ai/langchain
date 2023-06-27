@@ -1,14 +1,18 @@
 """Base classes for comparing the output of two models."""
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from pydantic import Field
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
-from langchain.evaluation.comparison.prompt import PROMPT, PROMPT_WITH_REFERENCE
+from langchain.evaluation.comparison.prompt import (
+    PROMPT,
+    PROMPT_WITH_REFERENCE,
+    EQUIVALENCE_PROMPT,
+)
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser
 
@@ -85,34 +89,45 @@ class PairwiseStringEvalChain(LLMChain):
         cls,
         *,
         llm: BaseLanguageModel,
-        prompt: Optional[PromptTemplate] = None,
-        require_reference: bool = False,
+        prompt: Optional[Union[PromptTemplate, str]] = None,
         **kwargs: Any,
     ) -> PairwiseStringEvalChain:
         """Initialize the PairwiseStringEvalChain from an LLM.
 
         Args:
             llm (BaseLanguageModel): The LLM to use.
-            prompt (PromptTemplate, optional): The prompt to use.
-            require_reference (bool, optional): Whether to require a reference
-                string. Defaults to False.
+            prompt (Optional[Union[PromptTemplate, str]], optional):
+                The prompt to use. Defaults to None.
+                - If None or "default", the default prompt will be used,
+                    which does not use reference labels to return whether
+                    A is preferred to B.
+                - If "with_reference", the chain will use reference labels
+                    to return whether A is preferred to B.
+                - If "equivalence", the prompt will return whether the outputs
+                    of A and B share the same meaning.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
             PairwiseStringEvalChain: The initialized PairwiseStringEvalChain.
         """
         expected_input_vars = {"output_a", "output_b", "input"}
-        if prompt is None:
-            if require_reference:
-                expected_input_vars.add("reference")
-                prompt_ = PROMPT_WITH_REFERENCE
-            else:
-                prompt_ = PROMPT
-        else:
-            if require_reference:
+        if isinstance(prompt, PromptTemplate):
+            if "reference" in prompt.input_variables:
                 expected_input_vars.add("reference")
             prompt_ = prompt
-
+        elif prompt is None or prompt == "default":
+            prompt_ = PROMPT
+        elif prompt == "with_reference":
+            expected_input_vars.add("reference")
+            prompt_ = PROMPT_WITH_REFERENCE
+        elif prompt == "equivalence":
+            prompt_ = EQUIVALENCE_PROMPT
+        else:
+            raise ValueError(
+                f"Invalid prompt: {prompt}. "
+                "Prompt must be one of None, 'default', 'with_reference', "
+                "or 'equivalence'."
+            )
         if expected_input_vars != set(prompt_.input_variables):
             raise ValueError(
                 f"Input variables should be {expected_input_vars}, "
