@@ -2,37 +2,21 @@
 
 This chain is used to evaluate ReAct style agents by reasoning about
 the sequence of actions taken and their outcomes. It uses a language model
-chain (LLMChain) to generate generate the reasoning and scores
-
-Attributes:
-    agent_tools (List[BaseTool]): A list of tools used by the agent.
-    eval_chain (LLMChain): The language model chain used for evaluation.
-    output_parser (TrajectoryOutputParser): The output parser used to parse the output.
-    return_reasoning (bool): Whether to return the reasoning along with the score.
-
-Examples:
-    # Create a TrajectoryEvalChain object
-    chain = TrajectoryEvalChain.from_llm(llm=llm, tools=agent_tools, return_reasoning=True)
-
-    # Evaluate a trajectory
-    result = chain.evaluate_agent_trajectory(input="What is the capital of France?",
-                                       agent_trajectory=[(action1, output1), (action2, output2)],
-                                       output="Paris")
-
-    # Asynchronously evaluate a trajectory
-    result = await chain.aevaluate_agent_trajectory(input="What is the capital of France?",
-                                              agent_trajectory=[(action1, output1), (action2, output2)],
-                                              output="Paris")
+chain (LLMChain) to generate the reasoning and scores.
 """
 
 from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
 from pydantic import Field
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models.base import BaseChatModel
 from langchain.evaluation.agents.trajectory_eval_prompt import (
     EVAL_CHAT_PROMPT,
     TOOL_FREE_EVAL_CHAT_PROMPT,
@@ -88,23 +72,43 @@ class TrajectoryOutputParser(BaseOutputParser):
 class TrajectoryEvalChain(Chain):
     """A chain for evaluating ReAct style agents.
 
-    This chain is used to evaluate ReAct style agents by running a trajectory of
-    actions and generating a score based on the output.
+    This chain is used to evaluate ReAct style agents by reasoning about
+    the sequence of actions taken and their outcomes.
 
-    Examples:
-        chain = TrajectoryEvalChain.from_llm(llm, agent_tools, output_parser, return_reasoning)
+    Example:
+    >>> from langchain.agents import AgentType, initialize_agent
+    >>> from langchain.chat_models import ChatOpenAI
+    >>> from langchain.evaluation import TrajectoryEvalChain
+    >>> from langchain.tools import tool
 
-        result = chain.evaluate_agent_trajectory(
-            input="What is the capital of France?",
-            agent_trajectory=[(action1, output1), (action2, output2)],
-            output="Paris",
-        )
+    >>> @tool
+    >>> def geography_answers(country: str, question: str) -> str:
+    >>>     \"\"\"Very helpful answers to geography questions.\"\"\"
+    >>>     return f"{country}? IDK - We may never know {question}."
 
-        result = await chain.aevaluate_agent_trajectory(
-            input="What is the capital of France?",
-            agent_trajectory=[(action1, output1), (action2, output2)],
-            output="Paris",
-        )
+    >>> llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
+    >>> agent = initialize_agent(
+    >>>     tools=[geography_answers],
+    >>>     llm=llm,
+    >>>     agent=AgentType.OPENAI_FUNCTIONS,
+    >>>     return_intermediate_steps=True,
+    >>> )
+
+    >>> question = "How many dwell in the largest minor region in Argentina?"
+    >>> response = agent(question)
+
+    >>> eval_chain = TrajectoryEvalChain.from_llm(
+    >>>     llm=llm, agent_tools=[geography_answers], return_reasoning=True
+    >>> )
+
+    >>> result = eval_chain.evaluate_agent_trajectory(
+    >>>     input=question,
+    >>>     agent_trajectory=response["intermediate_steps"],
+    >>>     output=response["output"],
+    >>>     reference="Paris",
+    >>> )
+    >>> result["score"]
+    ... 0
     """
 
     agent_tools: Optional[List[BaseTool]] = None
@@ -177,7 +181,7 @@ The correct answer to the question is: {reference}"""
     @classmethod
     def from_llm(
         cls,
-        llm: ChatOpenAI,
+        llm: BaseChatModel,
         agent_tools: Optional[Sequence[BaseTool]] = None,
         output_parser: Optional[TrajectoryOutputParser] = None,
         return_reasoning: bool = False,
@@ -185,10 +189,13 @@ The correct answer to the question is: {reference}"""
         """Create a TrajectoryEvalChain object from a language model chain.
 
         Args:
-            llm (ChatOpenAI): The language model chain.
-            agent_tools (Optional[Sequence[BaseTool]]): A list of tools used by the agent.
-            output_parser (Optional[TrajectoryOutputParser]): The output parser used to parse the output.
-            return_reasoning (bool): Whether to return the reasoning along with the score.
+            llm (BaseChatModel): The language model chain.
+            agent_tools (Optional[Sequence[BaseTool]]): A list of tools
+                available tothe agent.
+            output_parser (Optional[TrajectoryOutputParser]): The output parser
+                used to parse the chain output into a score.
+            return_reasoning (bool): Whether to return the
+                reasoning along with the score.
 
         Returns:
             TrajectoryEvalChain: The TrajectoryEvalChain object.
@@ -234,7 +241,8 @@ The correct answer to the question is: {reference}"""
 
         Args:
             inputs (Dict[str, str]): The input values for the chain.
-            run_manager (Optional[CallbackManagerForChainRun]): The callback manager for the chain run.
+            run_manager (Optional[CallbackManagerForChainRun]): The callback
+                manager for the chain run.
 
         Returns:
             Dict[str, Any]: The output values of the chain.
@@ -253,13 +261,14 @@ The correct answer to the question is: {reference}"""
     async def _acall(
         self,
         inputs: Dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Run the chain and generate the output.
 
         Args:
             inputs (Dict[str, str]): The input values for the chain.
-            run_manager (Optional[CallbackManagerForChainRun]): The callback manager for the chain run.
+            run_manager (Optional[CallbackManagerForChainRun]): The callback
+                manager for the chain run.
 
         Returns:
             Dict[str, Any]: The output values of the chain.
@@ -282,12 +291,15 @@ The correct answer to the question is: {reference}"""
         agent_trajectory: Union[str, List[Tuple[AgentAction, str]]],
         output: str,
         reference: Optional[str] = None,
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> dict:
         """Evaluate a trajectory.
 
         Args:
             input (str): The input question.
-            agent_trajectory (Union[str, List[Tuple[AgentAction, str]]]): The agent trajectory.
+            agent_trajectory (Union[str, List[Tuple[AgentAction, str]]]):
+                The intermediate steps forming the agent trajectory.
             output (str): The expected output.
             reference (Optional[str]): The reference answer.
 
@@ -300,7 +312,7 @@ The correct answer to the question is: {reference}"""
             "answer": output,
             "reference": self._format_reference(reference),
         }
-        return self(inputs=inputs, reference=reference)
+        return self(inputs=inputs, callbacks=callbacks, **kwargs)
 
     async def aevaluate_agent_trajectory(
         self,
@@ -309,12 +321,15 @@ The correct answer to the question is: {reference}"""
         agent_trajectory: Union[str, List[Tuple[AgentAction, str]]],
         output: str,
         reference: Optional[str] = None,
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate a trajectory.
 
         Args:
             input (str): The input question.
-            agent_trajectory (Union[str, List[Tuple[AgentAction, str]]]): The agent trajectory.
+            agent_trajectory (Union[str, List[Tuple[AgentAction, str]]]):
+                The intermediate steps forming the agent trajectory.
             output (str): The expected output.
             reference (Optional[str]): The reference answer.
 
@@ -327,4 +342,8 @@ The correct answer to the question is: {reference}"""
             "answer": output,
             "reference": self._format_reference(reference),
         }
-        return await self.acall(inputs=inputs, reference=reference)
+        return await self.acall(
+            inputs=inputs,
+            callbacks=callbacks,
+            **kwargs,
+        )
