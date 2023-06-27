@@ -23,7 +23,7 @@ def mock_connector_id():  # type: ignore
 class TestPsychicLoader:
     MOCK_API_KEY = "api_key"
     MOCK_CONNECTOR_ID = "notion"
-    MOCK_CONNECTION_ID = "connection_id"
+    MOCK_ACCOUNT_ID = "account_id"
 
     def test_psychic_loader_initialization(
         self, mock_psychic: MagicMock, mock_connector_id: MagicMock
@@ -31,7 +31,7 @@ class TestPsychicLoader:
         PsychicLoader(
             api_key=self.MOCK_API_KEY,
             connector_id=self.MOCK_CONNECTOR_ID,
-            connection_id=self.MOCK_CONNECTION_ID,
+            account_id=self.MOCK_ACCOUNT_ID,
         )
 
         mock_psychic.assert_called_once_with(secret_key=self.MOCK_API_KEY)
@@ -57,7 +57,7 @@ class TestPsychicLoader:
         psychic_loader = PsychicLoader(
             api_key=self.MOCK_API_KEY,
             connector_id=self.MOCK_CONNECTOR_ID,
-            connection_id=self.MOCK_CONNECTION_ID,
+            account_id=self.MOCK_ACCOUNT_ID,
         )
         psychic_loader.psychic = mock_psychic
         return psychic_loader
