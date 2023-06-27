@@ -75,7 +75,7 @@ class ZapierNLAWrapper(BaseModel):
                 return await response.json()
 
     def _create_action_payload(  # type: ignore[no-untyped-def]
-        self, instructions: str, params: Optional[Dict], preview_only=False
+        self, instructions: str, params: Optional[Dict] = None, preview_only=False
     ) -> Dict:
         """Create a payload for an action."""
         data = params if params else {}
@@ -93,9 +93,13 @@ class ZapierNLAWrapper(BaseModel):
         return self.zapier_nla_api_base + f"exposed/{action_id}/execute/"
 
     def _create_action_request(
-        self, action_id: str, instructions: str, params: Optional[Dict] = None
+        self,
+        action_id: str,
+        instructions: str,
+        params: Optional[Dict] = None,
+        preview_only=False,
     ) -> Request:
-        data = self._create_action_payload(instructions, params)
+        data = self._create_action_payload(instructions, params, preview_only)
         return Request(
             "POST",
             self._create_action_url(action_id),
@@ -217,7 +221,7 @@ class ZapierNLAWrapper(BaseModel):
         session = self._get_session()
         params = params if params else {}
         params.update({"preview_only": True})
-        request = self._create_action_request(action_id, instructions, params)
+        request = self._create_action_request(action_id, instructions, params, True)
         response = session.send(session.prepare_request(request))
         response.raise_for_status()
         return response.json()["input_params"]
