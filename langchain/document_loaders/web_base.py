@@ -104,7 +104,7 @@ class WebBaseLoader(BaseLoader):
             for i in range(retries):
                 try:
                     async with session.get(
-                        url, ssl=self.session.verify, headers=self.session.headers
+                        url, headers=self.session.headers, ssl=self.session.verify
                     ) as response:
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:
