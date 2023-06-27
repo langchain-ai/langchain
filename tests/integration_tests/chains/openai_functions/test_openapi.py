@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 from langchain.chains.openai_functions.openapi import get_openapi_chain
-from langchain.utilities.openapi import OpenAPISpec
 
 
 def test_openai_opeanapi() -> None:
@@ -21,6 +20,6 @@ def test_openai_opeanapi_headers() -> None:
         Path(__file__).parents[2] / "examples/brandfetch-brandfetch-2.0.0-resolved.json"
     )
     chain = get_openapi_chain(file_path, headers=headers)
-    output = chain.run("I want to know about nike.com")
+    output = chain.run("I want to know about nike.comgg")
 
     assert isinstance(output, str)
