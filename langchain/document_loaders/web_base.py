@@ -50,6 +50,9 @@ class WebBaseLoader(BaseLoader):
     requests_kwargs: Dict[str, Any] = {}
     """kwargs for requests"""
 
+    raise_for_status: bool = False
+    """Raise an exception if http status code denotes an error."""
+
     bs_get_text_kwargs: Dict[str, Any] = {}
     """kwargs for beatifulsoup4 get_text"""
 
@@ -189,6 +192,8 @@ class WebBaseLoader(BaseLoader):
         self._check_parser(parser)
 
         html_doc = self.session.get(url, verify=self.verify, **self.requests_kwargs)
+        if self.raise_for_status:
+            html_doc.raise_for_status()
         html_doc.encoding = html_doc.apparent_encoding
         return BeautifulSoup(html_doc.text, parser)
 
