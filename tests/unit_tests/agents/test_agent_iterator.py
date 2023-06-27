@@ -11,6 +11,7 @@ from langchain.llms import FakeListLLM
 from tests.unit_tests.agents.test_agent import _get_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 from tests.unit_tests.test_cache import set_cache_and_teardown
+from typing import Any
 
 
 def test_agent_iterator_bad_action() -> None:
@@ -65,6 +66,7 @@ async def test_agent_async_iterator_stopped_early() -> None:
     )
 
     outputs = []
+    assert isinstance(agent_async_iter, AgentExecutorIterator)
     async for step in agent_async_iter:
         outputs.append(step)
 
@@ -78,6 +80,7 @@ async def test_agent_async_iterator_stopped_early() -> None:
     agent_async_iter = agent(
         inputs="when was langchain made", iterator=True, async_=True
     )
+    assert isinstance(agent_async_iter, AgentExecutorIterator)
 
     outputs = []
     async for step in agent_async_iter:
@@ -88,7 +91,7 @@ async def test_agent_async_iterator_stopped_early() -> None:
     )
 
 
-def test_agent_iterator_with_callbacks(set_cache_and_teardown) -> None:
+def test_agent_iterator_with_callbacks(set_cache_and_teardown: Any) -> None:
     """Test react chain iterator with callbacks by setting verbose globally."""
     handler1 = FakeCallbackHandler()
     handler2 = FakeCallbackHandler()
@@ -123,7 +126,7 @@ def test_agent_iterator_with_callbacks(set_cache_and_teardown) -> None:
     outputs = []
     for step in agent_iter:
         outputs.append(step)
-
+    assert isinstance(outputs[-1], dict)
     assert outputs[-1]["output"] == "curses foiled again"
 
     # 1 top level chain run runs, 2 LLMChain runs, 2 LLM runs, 1 tool run
@@ -152,7 +155,7 @@ def test_agent_iterator_with_callbacks(set_cache_and_teardown) -> None:
 
 
 @pytest.mark.asyncio
-async def test_agent_async_iterator_with_callbacks(set_cache_and_teardown) -> None:
+async def test_agent_async_iterator_with_callbacks(set_cache_and_teardown: Any) -> None:
     """Test react chain async iterator with callbacks by setting verbose globally."""
     handler1 = FakeCallbackHandler()
     handler2 = FakeCallbackHandler()
@@ -186,6 +189,7 @@ async def test_agent_async_iterator_with_callbacks(set_cache_and_teardown) -> No
         callbacks=[handler1],
         async_=True,
     )
+    assert isinstance(agent_async_iter, AgentExecutorIterator)
 
     outputs = []
     async for step in agent_async_iter:
@@ -217,17 +221,18 @@ async def test_agent_async_iterator_with_callbacks(set_cache_and_teardown) -> No
     )
 
 
-def test_agent_iterator_properties_and_setters(set_cache_and_teardown) -> None:
+def test_agent_iterator_properties_and_setters(set_cache_and_teardown: Any) -> None:
     """Test properties and setters of AgentExecutorIterator."""
     agent = _get_agent()
     agent_iter = agent(inputs="when was langchain made", iterator=True)
 
+    assert isinstance(agent_iter, AgentExecutorIterator)
     assert isinstance(agent_iter.inputs, dict)
     assert isinstance(agent_iter.callbacks, type(None))
     assert isinstance(agent_iter.tags, type(None))
     assert isinstance(agent_iter.agent_executor, AgentExecutor)
 
-    agent_iter.inputs = "New input"
+    agent_iter.inputs = "New input" # type: ignore
     assert isinstance(agent_iter.inputs, dict)
 
     agent_iter.callbacks = [FakeCallbackHandler()]
@@ -245,6 +250,7 @@ def test_agent_iterator_reset() -> None:
     """Test reset functionality of AgentExecutorIterator."""
     agent = _get_agent()
     agent_iter = agent(inputs="when was langchain made", iterator=True)
+    assert isinstance(agent_iter, AgentExecutorIterator)
 
     # Perform one iteration
     next(agent_iter)
@@ -286,6 +292,7 @@ async def test_agent_async_iterator_output_structure() -> None:
         inputs="when was langchain made", iterator=True, async_=True
     )
 
+    assert isinstance(agent_async_iter, AgentExecutorIterator)
     async for step in agent_async_iter:
         assert isinstance(step, dict)
         if "intermediate_steps" in step:
@@ -305,6 +312,7 @@ def test_agent_iterator_empty_input() -> None:
     for step in agent_iter:
         outputs.append(step)
 
+    assert isinstance(outputs[-1], dict)
     assert outputs[-1]["output"]  # Check if there is an output
 
 
@@ -349,7 +357,7 @@ def test_agent_iterator_failing_tool() -> None:
     )
 
     agent_iter = agent(inputs="when was langchain made", iterator=True)
-
+    assert isinstance(agent_iter, AgentExecutorIterator)
     # initialise iterator
     iter(agent_iter)
 

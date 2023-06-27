@@ -199,6 +199,7 @@ def test_agent_tool_return_direct_in_intermediate_steps() -> None:
     )
 
     resp = agent("when was langchain made")
+    assert isinstance(resp, dict)
     assert resp["output"] == "misalignment"
     assert len(resp["intermediate_steps"]) == 1
     action, _action_intput = resp["intermediate_steps"][0]
