@@ -54,7 +54,7 @@ class WebBaseLoader(BaseLoader):
         self,
         web_path: Union[str, List[str]],
         header_template: Optional[dict] = None,
-        verify: Optional[bool] = True,
+        verify_ssl: Optional[bool] = None,
     ):
         """Initialize with webpage path."""
 
@@ -66,16 +66,12 @@ class WebBaseLoader(BaseLoader):
         elif isinstance(web_path, List):
             self.web_paths = web_path
 
-        self.session = requests.Session()
         try:
             import bs4  # noqa:F401
         except ImportError:
             raise ValueError(
                 "bs4 package not found, please install it with " "`pip install bs4`"
             )
-
-        # Choose to verify
-        self.verify = verify
 
         headers = header_template or default_header_template
         if not headers.get("User-Agent"):
@@ -89,7 +85,11 @@ class WebBaseLoader(BaseLoader):
                     "To get a realistic header for requests, "
                     "`pip install fake_useragent`."
                 )
+        
+        self.session = requests.Session()
         self.session.headers = dict(headers)
+        # Setting for SLL certificat verification.
+        self.session.verify = verify_ssl
 
     @property
     def web_path(self) -> str:
@@ -100,17 +100,11 @@ class WebBaseLoader(BaseLoader):
     async def _fetch(
         self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
     ) -> str:
-        # For SiteMap SSL verification
-        if not self.requests_kwargs.get("verify", True):
-            connector = aiohttp.TCPConnector(ssl=False)
-        else:
-            connector = None
-
-        async with aiohttp.ClientSession(connector=connector) as session:
+        async with aiohttp.ClientSession() as session:
             for i in range(retries):
                 try:
                     async with session.get(
-                        url, headers=self.session.headers
+                        url, ssl=self.session.verify, headers=self.session.headers
                     ) as response:
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:
@@ -185,7 +179,7 @@ class WebBaseLoader(BaseLoader):
 
         self._check_parser(parser)
 
-        html_doc = self.session.get(url, verify=self.verify, **self.requests_kwargs)
+        html_doc = self.session.get(url, **self.requests_kwargs)
         html_doc.encoding = html_doc.apparent_encoding
         return BeautifulSoup(html_doc.text, parser)
 
