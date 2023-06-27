@@ -51,15 +51,13 @@ class PromptLaboratory:
             templates: list of Strings to experiment with
             llm: llm or chat model you want to do experiment on.
         """
-        if llm is None:
-            llm = OpenAI(**kwargs)
         prompts = [PromptTemplate.from_template(template) for template in templates]
         if names is not None:
             if len(names) != len(prompts):
                 raise ValueError("Length of prompts does not match length of names.")
         else:
             names = ["PROMPT_" + str(i) for i in range(0, len(templates))]
-        return cls(prompts, names, llm)
+        return cls(llm, prompts, names)
 
     def compare(self, input_variables: Dict[str, Any]) -> None:
         """Compare model outputs on input variables.
