@@ -151,7 +151,11 @@ async def test_apreview(mocker) -> None:
     mockObj.assert_called_once_with(
         "POST",
         "http://localhost:8080/v1/exposed/random_action_id/execute/",
-        json={"instructions": "some instructions", "preview_only": True, "test": "test"},
+        json={
+            "instructions": "some instructions",
+            "preview_only": True,
+            "test": "test",
+        },
     )
 
 
