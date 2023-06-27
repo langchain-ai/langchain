@@ -11,7 +11,6 @@ from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseOutputParser
 
-
 _SUPPORTED_CRITERIA = {
     "conciseness": "Is the submission concise and to the point?",
     "relevance": "Is the submission referring to a real quote from the text?",
@@ -167,8 +166,8 @@ class CriteriaEvalChain(LLMChain):
                         f" {type(criterion).__name__}, {criterion}"
                     )
         else:
-            criteria_ = criteria
-        return dict(criteria_)
+            criteria_ = dict(criteria)
+        return criteria_
 
     @classmethod
     def from_llm(
