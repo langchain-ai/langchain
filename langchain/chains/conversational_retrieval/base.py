@@ -111,14 +111,22 @@ class BaseConversationalRetrievalChain(Chain):
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        answer = self.combine_docs_chain.run(
-            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
-        )
+        
+        combine_inputs_arg = dict(input_documents=docs, **new_inputs)
+        combine_kwargs = dict(inputs=combine_inputs_arg, callbacks=_run_manager.get_child())
+        if 'tags' in combine_inputs_arg:
+            combine_kwargs['tags'] = combine_inputs_arg.pop('tags')
+        answer_info = self.combine_docs_chain(**combine_kwargs)
+        answer = answer_info[self.combine_docs_chain.output_key]
+        
         output: Dict[str, Any] = {self.output_key: answer}
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
             output["generated_question"] = new_question
+        if self.combine_docs_chain.return_intermediate_steps:
+            output['combine_intermediate_steps'] = answer_info.get('intermediate_steps')
+            
         return output
 
     @abstractmethod
