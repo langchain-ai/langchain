@@ -258,11 +258,15 @@ class CharacterTextSplitter(TextSplitter):
 
 
 class LineType(TypedDict):
+    """Line type as typed dict."""
+
     metadata: Dict[str, str]
     content: str
 
 
 class HeaderType(TypedDict):
+    """Header type as typed dict."""
+
     level: int
     name: str
     data: str
