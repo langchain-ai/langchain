@@ -127,8 +127,22 @@ class ZapierNLAWrapper(BaseModel):
         https://nla.zapier.com/docs/using-the-api#ai-guessing)
         """
         session = self._get_session()
-        response = session.get(self.zapier_nla_api_base + "exposed/")
-        response.raise_for_status()
+        try:
+            response = session.get(self.zapier_nla_api_base + "exposed/")
+            response.raise_for_status()
+        except requests.HTTPError as http_err:
+            if response.status_code == 401:
+                if self.zapier_nla_oauth_access_token:
+                    raise requests.HTTPError(
+                        f"An unauthorized response occurred. Check that your "
+                        f"access token is correct and doesn't need to be "
+                        f"refreshed. Err: {http_err}"
+                    )
+                raise requests.HTTPError(
+                    f"An unauthorized response occurred. Check that your api "
+                    f"key is correct. Err: {http_err}"
+                )
+            raise http_err
         return response.json()["results"]
 
     def run(
