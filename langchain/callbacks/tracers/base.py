@@ -1,6 +1,7 @@
 """Base interfaces for tracing runs."""
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
@@ -9,6 +10,8 @@ from uuid import UUID
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
 from langchain.schema import LLMResult
+
+logger = logging.getLogger(__name__)
 
 
 class TracerException(Exception):
@@ -41,9 +44,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             if parent_run:
                 self._add_child_run(parent_run, run)
             else:
-                raise TracerException(
-                    f"Parent run with UUID {run.parent_run_id} not found."
-                )
+                logger.warning(f"Parent run with UUID {run.parent_run_id} not found.")
         self.run_map[str(run.id)] = run
 
     def _end_trace(self, run: Run) -> None:
@@ -53,10 +54,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
         else:
             parent_run = self.run_map.get(str(run.parent_run_id))
             if parent_run is None:
-                raise TracerException(
-                    f"Parent run with UUID {run.parent_run_id} not found."
-                )
-            if (
+                logger.warning(f"Parent run with UUID {run.parent_run_id} not found.")
+            elif (
                 run.child_execution_order is not None
                 and parent_run.child_execution_order is not None
                 and run.child_execution_order > parent_run.child_execution_order
@@ -71,7 +70,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         parent_run = self.run_map.get(parent_run_id)
         if parent_run is None:
-            raise TracerException(f"Parent run with UUID {parent_run_id} not found.")
+            logger.warning(f"Parent run with UUID {parent_run_id} not found.")
+            return 1
         if parent_run.child_execution_order is None:
             raise TracerException(
                 f"Parent run with UUID {parent_run_id} has no child execution order."
