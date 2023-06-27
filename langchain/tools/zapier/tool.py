@@ -142,11 +142,15 @@ class ZapierNLARunAction(BaseTool):
 
     async def _arun(
         self,
-        _: str,
+        instructions: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
-        raise NotImplementedError("ZapierNLAListActions does not support async")
+        return await self.api_wrapper.arun_as_str(
+            self.action_id,
+            instructions,
+            self.params,
+        )
 
 
 ZapierNLARunAction.__doc__ = (
@@ -184,7 +188,7 @@ class ZapierNLAListActions(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
-        raise NotImplementedError("ZapierNLAListActions does not support async")
+        return await self.api_wrapper.alist_as_str()
 
 
 ZapierNLAListActions.__doc__ = (
