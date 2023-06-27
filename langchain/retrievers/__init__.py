@@ -15,6 +15,7 @@ from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.milvus import MilvusRetriever
 from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetriever
+from langchain.retrievers.prompt_engineer import PromptEngineerRetriever
 from langchain.retrievers.pupmed import PubMedRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
@@ -44,6 +45,7 @@ __all__ = [
     "MetalRetriever",
     "MilvusRetriever",
     "PineconeHybridSearchRetriever",
+    "PromptEngineerRetriever",
     "PubMedRetriever",
     "RemoteLangChainRetriever",
     "SVMRetriever",
