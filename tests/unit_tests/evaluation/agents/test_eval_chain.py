@@ -82,3 +82,32 @@ def test_trajectory_eval_chain_no_tools(
         reference="Paris",
     )
     assert res["score"] == 1
+
+
+def test_old_api_works(intermediate_steps: List[Tuple[AgentAction, str]]) -> None:
+    llm = FakeLLM(
+        queries={
+            "a": "Trajectory good\nScore: 5",
+            "b": "Trajectory not good\nScore: 1",
+        },
+        sequential_responses=True,
+    )
+    chain = TrajectoryEvalChain.from_llm(llm=llm)  # type: ignore
+    res = chain(
+        {
+            "question": "What is your favorite food?",
+            "agent_trajectory": intermediate_steps,
+            "answer": "I like pie.",
+        }
+    )
+    assert res["score"] == 5
+
+    res = chain(
+        {
+            "question": "What is your favorite food?",
+            "agent_trajectory": intermediate_steps,
+            "answer": "I like pie.",
+            "reference": "Paris",
+        }
+    )
+    assert res["score"] == 1
