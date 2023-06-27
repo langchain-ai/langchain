@@ -124,7 +124,8 @@ class BaseConversationalRetrievalChain(Chain):
             output["source_documents"] = docs
         if self.return_generated_question:
             output["generated_question"] = new_question
-        if self.combine_docs_chain.return_intermediate_steps:
+        if hasattr(self.combine_docs_chain, 'return_intermediate_steps') and \
+        self.combine_docs_chain.return_intermediate_steps:
             output['combine_intermediate_steps'] = answer_info.get('intermediate_steps')
             
         return output
