@@ -134,9 +134,10 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                 extra_info[key] = document.metadata[key]
         if self.return_intermediate_steps:
             extra_info["intermediate_steps"] = results
-        
-        if document.metadata.get('source'):
-            output[self.answer_key] = f"""{output[self.answer_key]}\nSOURCES: {document.metadata.get('source')}"""
+
+        source = document.metadata.get('source')
+        if source is not None:
+            output[self.answer_key] = f"""{output[self.answer_key]}\nSOURCES: {source}"""
         
         return output[self.answer_key], extra_info
 
