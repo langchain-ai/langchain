@@ -162,7 +162,7 @@ class ApifyWrapper(BaseModel):
             dataset_id=task_call["defaultDatasetId"],
             dataset_mapping_function=dataset_mapping_function,
         )
-    
+
     async def acall_actor_task(
         self,
         task_id: str,
