@@ -2,13 +2,12 @@ from typing import Iterator, List, Optional, Set
 from urllib.parse import urlparse
 
 import requests
-from bs4 import BeautifulSoup
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-class RecusiveUrlLoader(BaseLoader):
+class RecursiveUrlLoader(BaseLoader):
     """Loader that loads all child links from a given url."""
 
     def __init__(self, url: str, exclude_dirs: Optional[str] = None) -> None:
@@ -20,6 +19,13 @@ class RecusiveUrlLoader(BaseLoader):
         self, url: str, visited: Optional[Set[str]] = None
     ) -> Set[str]:
         """Recursively get all child links starting with the path of the input URL."""
+
+        try:
+            from bs4 import BeautifulSoup
+        except ImportError:
+            raise ImportError(
+                "The BeautifulSoup package is required for the RecursiveUrlLoader."
+            )
 
         # Construct the base and parent URLs
         parsed_url = urlparse(url)

@@ -16,6 +16,7 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 if TYPE_CHECKING:
     import chromadb
     import chromadb.config
+    from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
@@ -228,7 +229,7 @@ class Chroma(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        return self.similarity_search_with_score(query, k)
+        return self.similarity_search_with_score(query, k, **kwargs)
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -316,17 +317,43 @@ class Chroma(VectorStore):
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
 
-    def get(self, include: Optional[List[str]] = None) -> Dict[str, Any]:
+    def get(
+        self,
+        ids: Optional[OneOrMany[ID]] = None,
+        where: Optional[Where] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        where_document: Optional[WhereDocument] = None,
+        include: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         """Gets the collection.
 
         Args:
-            include (Optional[List[str]]): List of fields to include from db.
-                Defaults to None.
+            ids: The ids of the embeddings to get. Optional.
+            where: A Where type dict used to filter results by.
+                   E.g. `{"color" : "red", "price": 4.20}`. Optional.
+            limit: The number of documents to return. Optional.
+            offset: The offset to start returning results from.
+                    Useful for paging results with limit. Optional.
+            where_document: A WhereDocument type dict used to filter by the documents.
+                            E.g. `{$contains: {"text": "hello"}}`. Optional.
+            include: A list of what to include in the results.
+                     Can contain `"embeddings"`, `"metadatas"`, `"documents"`.
+                     Ids are always included.
+                     Defaults to `["metadatas", "documents"]`. Optional.
         """
+        kwargs = {
+            "ids": ids,
+            "where": where,
+            "limit": limit,
+            "offset": offset,
+            "where_document": where_document,
+        }
+
         if include is not None:
-            return self._collection.get(include=include)
-        else:
-            return self._collection.get()
+            kwargs["include"] = include
+
+        return self._collection.get(**kwargs)
 
     def persist(self) -> None:
         """Persist the collection.
