@@ -58,6 +58,7 @@ class WebBaseLoader(BaseLoader):
         web_path: Union[str, List[str]],
         header_template: Optional[dict] = None,
         verify: Optional[bool] = True,
+        proxies: Optional[dict] = None,
     ):
         """Initialize with webpage path."""
 
@@ -93,6 +94,9 @@ class WebBaseLoader(BaseLoader):
                     "`pip install fake_useragent`."
                 )
         self.session.headers = dict(headers)
+
+        if proxies:
+            self.session.proxies.update(proxies)
 
     @property
     def web_path(self) -> str:
