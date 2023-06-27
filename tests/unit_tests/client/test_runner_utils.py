@@ -14,9 +14,11 @@ from langchain.client.runner_utils import (
     InputFormatError,
     _get_messages,
     _get_prompts,
+    _wrap_chain,
     arun_on_dataset,
     run_llm,
 )
+from tests.unit_tests.chains.test_base import FakeChain
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -208,3 +210,14 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             for uuid_ in uuids
         }
         assert results["results"] == expected
+
+
+def test_wrap_chain() -> None:
+    chain = FakeChain()
+    result = _wrap_chain(chain)
+    assert callable(result)
+    assert result().__class__ == FakeChain
+
+    result2 = _wrap_chain(result)
+    assert callable(result2)
+    assert result2().__class__ == FakeChain
