@@ -117,10 +117,12 @@ def get_qa_evaluator(
             choices_map={"CORRECT": 1, "INCORRECT": 0},
         ),
     )
+    tags = kwargs.pop("tags", [])
     return RunEvaluatorChain(
         eval_chain=eval_chain,
         input_mapper=input_mapper,
         output_parser=output_parser,
+        tags=tags + [evaluation_name],
         **kwargs,
     )
 
@@ -174,6 +176,7 @@ def get_criteria_evaluator(
             choices_map={"Y": 1, "N": 0}, evaluation_name=evaluation_name
         ),
     )
+    tags = kwargs.pop("tags", [])
     eval_chain = CriteriaEvalChain.from_llm(
         llm=llm, criteria=criteria_, prompt=prompt, **kwargs
     )
@@ -181,6 +184,7 @@ def get_criteria_evaluator(
         eval_chain=eval_chain,
         input_mapper=input_mapper,
         output_parser=parser,
+        tags=tags + [evaluation_name],
         **kwargs,
     )
 
@@ -303,9 +307,11 @@ def get_trajectory_evaluator(
         TrajectoryEvalOutputParser(evaluation_name=evaluation_name),
     )
     eval_chain = LLMChain(llm=llm, prompt=prompt, **kwargs)
+    tags = kwargs.pop("tags", [])
     return RunEvaluatorChain(
         eval_chain=eval_chain,
         input_mapper=input_mapper,
         output_parser=parser,
+        tags=tags + [evaluation_name],
         **kwargs,
     )
