@@ -38,6 +38,21 @@ async def test_openai_callback() -> None:
     assert cb.total_tokens == total_tokens
 
 
+def test_openai_callback_batch_llm() -> None:
+    llm = OpenAI(temperature=0)
+    with get_openai_callback() as cb:
+        llm.generate(["What is the square root of 4?", "What is the square root of 4?"])
+
+    assert cb.total_tokens > 0
+    total_tokens = cb.total_tokens
+
+    with get_openai_callback() as cb:
+        llm("What is the square root of 4?")
+        llm("What is the square root of 4?")
+
+    assert cb.total_tokens == total_tokens
+
+
 def test_openai_callback_agent() -> None:
     llm = OpenAI(temperature=0)
     tools = load_tools(["serpapi", "llm-math"], llm=llm)

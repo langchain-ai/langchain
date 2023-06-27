@@ -19,6 +19,15 @@ DEBUG = False
 
 
 def has_mul_sub_str(s: str, *args: Any) -> bool:
+    """
+    Check if a string has multiple substrings.
+    Args:
+        s: The string to check
+        *args: The substrings to check for in the string
+
+    Returns:
+        bool: True if all substrings are present in the string, False otherwise
+    """
     for a in args:
         if a not in s:
             return False
@@ -26,11 +35,25 @@ def has_mul_sub_str(s: str, *args: Any) -> bool:
 
 
 def debug_output(s: Any) -> None:
+    """
+    Print a debug message if DEBUG is True.
+    Args:
+        s: The message to print
+    """
     if DEBUG:
         print(s)
 
 
 def get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
+    """
+    Get a named result from a query.
+    Args:
+        connection: The connection to the database
+        query: The query to execute
+
+    Returns:
+        List[dict[str, Any]]: The result of the query
+    """
     cursor = connection.cursor()
     cursor.execute(query)
     columns = cursor.description

@@ -75,6 +75,16 @@ class DuckDuckGoSearchResults(BaseTool):
 
 
 def DuckDuckGoSearchTool(*args: Any, **kwargs: Any) -> DuckDuckGoSearchRun:
+    """
+    Deprecated. Use DuckDuckGoSearchRun instead.
+
+    Args:
+        *args:
+        **kwargs:
+
+    Returns:
+        DuckDuckGoSearchRun
+    """
     warnings.warn(
         "DuckDuckGoSearchTool will be deprecated in the future. "
         "Please use DuckDuckGoSearchRun instead.",

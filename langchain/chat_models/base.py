@@ -17,7 +17,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
-from langchain.load.dump import dumpd
+from langchain.load.dump import dumpd, dumps
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -35,6 +35,7 @@ def _get_verbosity() -> bool:
 
 
 class BaseChatModel(BaseLanguageModel, ABC):
+    cache: Optional[bool] = None
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
@@ -61,6 +62,25 @@ class BaseChatModel(BaseLanguageModel, ABC):
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         return {}
 
+    def _get_invocation_params(
+        self,
+        stop: Optional[List[str]] = None,
+    ) -> dict:
+        params = self.dict()
+        params["stop"] = stop
+        return params
+
+    def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
+        if self.lc_serializable:
+            params = {**kwargs, **{"stop": stop}}
+            param_string = str(sorted([(k, v) for k, v in params.items()]))
+            llm_string = dumps(self)
+            return llm_string + "---" + param_string
+        else:
+            params = self._get_invocation_params(stop=stop)
+            params = {**params, **kwargs}
+            return str(sorted([(k, v) for k, v in params.items()]))
+
     def generate(
         self,
         messages: List[List[BaseMessage]],
@@ -71,9 +91,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         **kwargs: Any,
     ) -> LLMResult:
         """Top Level call"""
-
-        params = self.dict()
-        params["stop"] = stop
+        params = self._get_invocation_params(stop=stop)
         options = {"stop": stop}
 
         callback_manager = CallbackManager.configure(
@@ -83,29 +101,37 @@ class BaseChatModel(BaseLanguageModel, ABC):
             tags,
             self.tags,
         )
-        run_manager = callback_manager.on_chat_model_start(
+        run_managers = callback_manager.on_chat_model_start(
             dumpd(self), messages, invocation_params=params, options=options
         )
-
-        new_arg_supported = inspect.signature(self._generate).parameters.get(
-            "run_manager"
-        )
-        try:
-            results = [
-                self._generate(m, stop=stop, run_manager=run_manager, **kwargs)
-                if new_arg_supported
-                else self._generate(m, stop=stop)
-                for m in messages
-            ]
-        except (KeyboardInterrupt, Exception) as e:
-            run_manager.on_llm_error(e)
-            raise e
+        results = []
+        for i, m in enumerate(messages):
+            try:
+                results.append(
+                    self._generate_with_cache(
+                        m,
+                        stop=stop,
+                        run_manager=run_managers[i] if run_managers else None,
+                        **kwargs,
+                    )
+                )
+            except (KeyboardInterrupt, Exception) as e:
+                if run_managers:
+                    run_managers[i].on_llm_error(e)
+                raise e
+        flattened_outputs = [
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)
+            for res in results
+        ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
-        run_manager.on_llm_end(output)
-        if run_manager:
-            output.run = RunInfo(run_id=run_manager.run_id)
+        if run_managers:
+            run_infos = []
+            for manager, flattened_output in zip(run_managers, flattened_outputs):
+                manager.on_llm_end(flattened_output)
+                run_infos.append(RunInfo(run_id=manager.run_id))
+            output.run = run_infos
         return output
 
     async def agenerate(
@@ -118,8 +144,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         **kwargs: Any,
     ) -> LLMResult:
         """Top Level call"""
-        params = self.dict()
-        params["stop"] = stop
+        params = self._get_invocation_params(stop=stop)
         options = {"stop": stop}
 
         callback_manager = AsyncCallbackManager.configure(
@@ -129,31 +154,62 @@ class BaseChatModel(BaseLanguageModel, ABC):
             tags,
             self.tags,
         )
-        run_manager = await callback_manager.on_chat_model_start(
+
+        run_managers = await callback_manager.on_chat_model_start(
             dumpd(self), messages, invocation_params=params, options=options
         )
 
-        new_arg_supported = inspect.signature(self._agenerate).parameters.get(
-            "run_manager"
+        results = await asyncio.gather(
+            *[
+                self._agenerate_with_cache(
+                    m,
+                    stop=stop,
+                    run_manager=run_managers[i] if run_managers else None,
+                    **kwargs,
+                )
+                for i, m in enumerate(messages)
+            ],
+            return_exceptions=True,
         )
-        try:
-            results = await asyncio.gather(
-                *[
-                    self._agenerate(m, stop=stop, run_manager=run_manager, **kwargs)
-                    if new_arg_supported
-                    else self._agenerate(m, stop=stop)
-                    for m in messages
-                ]
-            )
-        except (KeyboardInterrupt, Exception) as e:
-            await run_manager.on_llm_error(e)
-            raise e
+        exceptions = []
+        for i, res in enumerate(results):
+            if isinstance(res, Exception):
+                if run_managers:
+                    await run_managers[i].on_llm_error(res)
+                exceptions.append(res)
+        if exceptions:
+            if run_managers:
+                await asyncio.gather(
+                    *[
+                        run_manager.on_llm_end(
+                            LLMResult(
+                                generations=[res.generations], llm_output=res.llm_output
+                            )
+                        )
+                        for run_manager, res in zip(run_managers, results)
+                        if not isinstance(res, Exception)
+                    ]
+                )
+            raise exceptions[0]
+        flattened_outputs = [
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)
+            for res in results
+        ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
-        await run_manager.on_llm_end(output)
-        if run_manager:
-            output.run = RunInfo(run_id=run_manager.run_id)
+        await asyncio.gather(
+            *[
+                run_manager.on_llm_end(flattened_output)
+                for run_manager, flattened_output in zip(
+                    run_managers, flattened_outputs
+                )
+            ]
+        )
+        if run_managers:
+            output.run = [
+                RunInfo(run_id=run_manager.run_id) for run_manager in run_managers
+            ]
         return output
 
     def generate_prompt(
@@ -177,6 +233,84 @@ class BaseChatModel(BaseLanguageModel, ABC):
         return await self.agenerate(
             prompt_messages, stop=stop, callbacks=callbacks, **kwargs
         )
+
+    def _generate_with_cache(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        new_arg_supported = inspect.signature(self._generate).parameters.get(
+            "run_manager"
+        )
+        disregard_cache = self.cache is not None and not self.cache
+        if langchain.llm_cache is None or disregard_cache:
+            # This happens when langchain.cache is None, but self.cache is True
+            if self.cache is not None and self.cache:
+                raise ValueError(
+                    "Asked to cache, but no cache found at `langchain.cache`."
+                )
+            if new_arg_supported:
+                return self._generate(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                )
+            else:
+                return self._generate(messages, stop=stop, **kwargs)
+        else:
+            llm_string = self._get_llm_string(stop=stop, **kwargs)
+            prompt = dumps(messages)
+            cache_val = langchain.llm_cache.lookup(prompt, llm_string)
+            if isinstance(cache_val, list):
+                return ChatResult(generations=cache_val)
+            else:
+                if new_arg_supported:
+                    result = self._generate(
+                        messages, stop=stop, run_manager=run_manager, **kwargs
+                    )
+                else:
+                    result = self._generate(messages, stop=stop, **kwargs)
+                langchain.llm_cache.update(prompt, llm_string, result.generations)
+                return result
+
+    async def _agenerate_with_cache(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        new_arg_supported = inspect.signature(self._agenerate).parameters.get(
+            "run_manager"
+        )
+        disregard_cache = self.cache is not None and not self.cache
+        if langchain.llm_cache is None or disregard_cache:
+            # This happens when langchain.cache is None, but self.cache is True
+            if self.cache is not None and self.cache:
+                raise ValueError(
+                    "Asked to cache, but no cache found at `langchain.cache`."
+                )
+            if new_arg_supported:
+                return await self._agenerate(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                )
+            else:
+                return await self._agenerate(messages, stop=stop, **kwargs)
+        else:
+            llm_string = self._get_llm_string(stop=stop, **kwargs)
+            prompt = dumps(messages)
+            cache_val = langchain.llm_cache.lookup(prompt, llm_string)
+            if isinstance(cache_val, list):
+                return ChatResult(generations=cache_val)
+            else:
+                if new_arg_supported:
+                    result = await self._agenerate(
+                        messages, stop=stop, run_manager=run_manager, **kwargs
+                    )
+                else:
+                    result = await self._agenerate(messages, stop=stop, **kwargs)
+                langchain.llm_cache.update(prompt, llm_string, result.generations)
+                return result
 
     @abstractmethod
     def _generate(
