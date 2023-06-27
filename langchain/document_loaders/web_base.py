@@ -54,7 +54,7 @@ class WebBaseLoader(BaseLoader):
         self,
         web_path: Union[str, List[str]],
         header_template: Optional[dict] = None,
-        verify_ssl: Optional[bool] = None,
+        verify_ssl: Optional[bool] = True,
     ):
         """Initialize with webpage path."""
 
@@ -104,7 +104,9 @@ class WebBaseLoader(BaseLoader):
             for i in range(retries):
                 try:
                     async with session.get(
-                        url, headers=self.session.headers, ssl=self.session.verify
+                        url,
+                        headers=self.session.headers,
+                        ssl=None if self.session.verify else False
                     ) as response:
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:
