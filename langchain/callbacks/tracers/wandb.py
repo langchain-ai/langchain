@@ -1,16 +1,8 @@
 """A Tracer Implementation that records activity to Weights & Biases."""
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    TypedDict,
-    Union,
-)
+import copy
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypedDict, Union
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
@@ -68,6 +60,59 @@ def _serialize_inputs(run_inputs: dict) -> Union[dict, list]:
         return run_inputs
 
 
+def _replace_key(
+    obj: Dict[str, Any],
+    key: str,
+):
+    if key in obj and isinstance(obj[key], list):
+        obj[key] = ".".join(obj[key])
+
+    for k, v in obj.items():
+        if isinstance(v, dict):
+            _replace_key(v, key)
+
+
+def _scrub_key(obj: Dict[str, Any], key: str):
+    if isinstance(obj, dict):
+        # the call to `list` is useless for py2 but makes
+        # the code py2/py3 compatible
+        for k in list(obj.keys()):
+            if k == key or "api_key" in k.lower():
+                del obj[k]
+            else:
+                _scrub_key(obj[k], key)
+    elif isinstance(obj, list):
+        for i in reversed(range(len(obj))):
+            if obj[i] == key or "api_key" in obj[i].lower():
+                del obj[i]
+            else:
+                _scrub_key(obj[i], key)
+
+    else:
+        # neither a dict nor a list, do nothing
+        pass
+
+
+def _safely_convert_model_to_dict(run: Run) -> Dict[str, Any]:
+    try:
+        serialized = copy.deepcopy(run.serialized)
+        model_dict = {f"{run.execution_order}_{run.name}": serialized}
+        for child_run in run.child_runs:
+            serialized = child_run.serialized.copy()
+            model_dict[f"{child_run.execution_order}_{child_run.name}"] = serialized
+        _replace_key(model_dict, "id")
+        _scrub_key(model_dict, "lc")
+        _scrub_key(model_dict, "type")
+        model_dict = dict(
+            sorted(model_dict.items(), key=lambda x: int(x[0].split("_")[0]))
+        )
+        return model_dict
+    except Exception as e:
+        if PRINT_WARNINGS:
+            print(f"WARNING: Failed to serialize model: {e}")
+        return {}
+
+
 def _convert_chain_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
     base_span = _convert_run_to_wb_span(trace_tree, run)
 
@@ -80,7 +125,7 @@ def _convert_chain_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
     ]
     base_span.span_kind = (
         trace_tree.SpanKind.AGENT
-        if "agent" in run.serialized.get("name", "").lower()
+        if "agent" in run.name.lower()
         else trace_tree.SpanKind.CHAIN
     )
 
@@ -107,7 +152,7 @@ def _convert_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
 
     return trace_tree.Span(
         span_id=str(run.id) if run.id is not None else None,
-        name=run.serialized.get("name"),
+        name=run.name,
         start_time_ms=int(run.start_time.timestamp() * 1000),
         end_time_ms=int(run.end_time.timestamp() * 1000),
         status_code=trace_tree.StatusCode.SUCCESS
@@ -201,7 +246,7 @@ class WandbTracer(BaseTracer):
         except ImportError as e:
             raise ImportError(
                 "Could not import wandb python package."
-                "Please install it with `pip install wandb`."
+                "Please install it with `pip install -U wandb`."
             ) from e
         self._wandb = wandb
         self._trace_tree = trace_tree
@@ -229,13 +274,7 @@ class WandbTracer(BaseTracer):
                 )
             return
 
-        model_dict = None
-
-        # TODO: Add something like this once we have a way to get the clean serialized
-        # parent dict from a run:
-        # serialized_parent = safely_get_span_producing_model(run)
-        # if serialized_parent is not None:
-        #   model_dict = safely_convert_model_to_dict(serialized_parent)
+        model_dict = _safely_convert_model_to_dict(run)
 
         model_trace = self._trace_tree.WBTraceTree(
             root_span=root_span,
