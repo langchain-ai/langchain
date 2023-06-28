@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
@@ -60,7 +61,13 @@ class DeepInfra(LLM):
         """Return type of llm."""
         return "deepinfra"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Call out to DeepInfra's inference API endpoint.
 
         Args:
@@ -76,19 +83,34 @@ class DeepInfra(LLM):
                 response = di("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
+        _model_kwargs = {**_model_kwargs, **kwargs}
+        # HTTP headers for authorization
+        headers = {
+            "Authorization": f"bearer {self.deepinfra_api_token}",
+            "Content-Type": "application/json",
+        }
 
-        res = requests.post(
-            f"https://api.deepinfra.com/v1/inference/{self.model_id}",
-            headers={
-                "Authorization": f"bearer {self.deepinfra_api_token}",
-                "Content-Type": "application/json",
-            },
-            json={"input": prompt, **_model_kwargs},
-        )
+        try:
+            res = requests.post(
+                f"https://api.deepinfra.com/v1/inference/{self.model_id}",
+                headers=headers,
+                json={"input": prompt, **_model_kwargs},
+            )
+        except requests.exceptions.RequestException as e:
+            raise ValueError(f"Error raised by inference endpoint: {e}")
 
         if res.status_code != 200:
-            raise ValueError("Error raised by inference API")
-        text = res.json()[0]["generated_text"]
+            raise ValueError(
+                "Error raised by inference API HTTP code: %s, %s"
+                % (res.status_code, res.text)
+            )
+        try:
+            t = res.json()
+            text = t["results"][0]["generated_text"]
+        except requests.exceptions.JSONDecodeError as e:
+            raise ValueError(
+                f"Error raised by inference API: {e}.\nResponse: {res.text}"
+            )
 
         if stop is not None:
             # I believe this is required since the stop tokens

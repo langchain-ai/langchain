@@ -46,6 +46,8 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     control_log_additive: Optional[bool] = True
     """Apply controls on prompt items by adding the log(control_factor) 
     to attention scores."""
+    aleph_alpha_api_key: Optional[str] = None
+    """API key for Aleph Alpha API."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -147,6 +149,7 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
     queries are embedded with a SemanticRepresentation.Symmetric
     Example:
         .. code-block:: python
+
             from aleph_alpha import AlephAlphaSymmetricSemanticEmbedding
 
             embeddings = AlephAlphaAsymmetricSemanticEmbedding()

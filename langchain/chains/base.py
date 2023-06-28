@@ -1,32 +1,59 @@
 """Base interface that all chains should implement."""
+import inspect
 import json
+import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
-from pydantic import BaseModel, Field, validator
+from pydantic import Field, root_validator, validator
 
 import langchain
-from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.schema import BaseMemory
+from langchain.callbacks.manager import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
+    CallbackManager,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
+from langchain.load.dump import dumpd
+from langchain.load.serializable import Serializable
+from langchain.schema import RUN_KEY, BaseMemory, RunInfo
 
 
 def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class Chain(BaseModel, ABC):
+class Chain(Serializable, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[BaseMemory] = None
-    callback_manager: BaseCallbackManager = Field(
-        default_factory=get_callback_manager, exclude=True
-    )
-    verbose: bool = Field(
-        default_factory=_get_verbosity
-    )  # Whether to print the response text
+    """Optional memory object. Defaults to None.
+    Memory is a class that gets called at the start 
+    and at the end of every chain. At the start, memory loads variables and passes
+    them along in the chain. At the end, it saves any returned variables.
+    There are many different types of memory - please see memory docs 
+    for the full catalog."""
+    callbacks: Callbacks = Field(default=None, exclude=True)
+    """Optional list of callback handlers (or callback manager). Defaults to None.
+    Callback handlers are called throughout the lifecycle of a call to a chain,
+    starting with on_chain_start, ending with on_chain_end or on_chain_error.
+    Each custom chain can optionally call additional callback methods, see Callback docs
+    for full details."""
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    """Deprecated, use `callbacks` instead."""
+    verbose: bool = Field(default_factory=_get_verbosity)
+    """Whether or not run in verbose mode. In verbose mode, some intermediate logs
+    will be printed to the console. Defaults to `langchain.verbose` value."""
+    tags: Optional[List[str]] = None
+    """Optional list of tags associated with the chain. Defaults to None
+    These tags will be associated with each call to this chain,
+    and passed as arguments to the handlers defined in `callbacks`.
+    You can use these to eg identify a specific instance of a chain with its use case.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -37,15 +64,16 @@ class Chain(BaseModel, ABC):
     def _chain_type(self) -> str:
         raise NotImplementedError("Saving not supported for this chain type.")
 
-    @validator("callback_manager", pre=True, always=True)
-    def set_callback_manager(
-        cls, callback_manager: Optional[BaseCallbackManager]
-    ) -> BaseCallbackManager:
-        """If callback manager is None, set it.
-
-        This allows users to pass in None as callback manager, which is a nice UX.
-        """
-        return callback_manager or get_callback_manager()
+    @root_validator()
+    def raise_deprecation(cls, values: Dict) -> Dict:
+        """Raise deprecation warning if callback_manager is used."""
+        if values.get("callback_manager") is not None:
+            warnings.warn(
+                "callback_manager is deprecated. Please use callbacks instead.",
+                DeprecationWarning,
+            )
+            values["callbacks"] = values.pop("callback_manager", None)
+        return values
 
     @validator("verbose", pre=True, always=True)
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
@@ -68,29 +96,41 @@ class Chain(BaseModel, ABC):
     def output_keys(self) -> List[str]:
         """Output keys this chain expects."""
 
-    def _validate_inputs(self, inputs: Dict[str, str]) -> None:
+    def _validate_inputs(self, inputs: Dict[str, Any]) -> None:
         """Check that all inputs are present."""
         missing_keys = set(self.input_keys).difference(inputs)
         if missing_keys:
             raise ValueError(f"Missing some input keys: {missing_keys}")
 
-    def _validate_outputs(self, outputs: Dict[str, str]) -> None:
-        if set(outputs) != set(self.output_keys):
-            raise ValueError(
-                f"Did not get output keys that were expected. "
-                f"Got: {set(outputs)}. Expected: {set(self.output_keys)}."
-            )
+    def _validate_outputs(self, outputs: Dict[str, Any]) -> None:
+        missing_keys = set(self.output_keys).difference(outputs)
+        if missing_keys:
+            raise ValueError(f"Missing some output keys: {missing_keys}")
 
     @abstractmethod
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
         """Run the logic of this chain and return the output."""
 
-    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
         """Run the logic of this chain and return the output."""
         raise NotImplementedError("Async call not supported for this chain type.")
 
     def __call__(
-        self, inputs: Union[Dict[str, Any], Any], return_only_outputs: bool = False
+        self,
+        inputs: Union[Dict[str, Any], Any],
+        return_only_outputs: bool = False,
+        callbacks: Callbacks = None,
+        *,
+        tags: Optional[List[str]] = None,
+        include_run_info: bool = False,
     ) -> Dict[str, Any]:
         """Run the logic of this chain and add to output if desired.
 
@@ -101,24 +141,45 @@ class Chain(BaseModel, ABC):
                 response. If True, only new keys generated by this chain will be
                 returned. If False, both input keys and new keys generated by this
                 chain will be returned. Defaults to False.
-
+            callbacks: Callbacks to use for this chain run. If not provided, will
+                use the callbacks provided to the chain.
+            include_run_info: Whether to include run info in the response. Defaults
+                to False.
         """
         inputs = self.prep_inputs(inputs)
-        self.callback_manager.on_chain_start(
-            {"name": self.__class__.__name__},
+        callback_manager = CallbackManager.configure(
+            callbacks, self.callbacks, self.verbose, tags, self.tags
+        )
+        new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self),
             inputs,
-            verbose=self.verbose,
         )
         try:
-            outputs = self._call(inputs)
+            outputs = (
+                self._call(inputs, run_manager=run_manager)
+                if new_arg_supported
+                else self._call(inputs)
+            )
         except (KeyboardInterrupt, Exception) as e:
-            self.callback_manager.on_chain_error(e, verbose=self.verbose)
+            run_manager.on_chain_error(e)
             raise e
-        self.callback_manager.on_chain_end(outputs, verbose=self.verbose)
-        return self.prep_outputs(inputs, outputs, return_only_outputs)
+        run_manager.on_chain_end(outputs)
+        final_outputs: Dict[str, Any] = self.prep_outputs(
+            inputs, outputs, return_only_outputs
+        )
+        if include_run_info:
+            final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
+        return final_outputs
 
     async def acall(
-        self, inputs: Union[Dict[str, Any], Any], return_only_outputs: bool = False
+        self,
+        inputs: Union[Dict[str, Any], Any],
+        return_only_outputs: bool = False,
+        callbacks: Callbacks = None,
+        *,
+        tags: Optional[List[str]] = None,
+        include_run_info: bool = False,
     ) -> Dict[str, Any]:
         """Run the logic of this chain and add to output if desired.
 
@@ -129,34 +190,36 @@ class Chain(BaseModel, ABC):
                 response. If True, only new keys generated by this chain will be
                 returned. If False, both input keys and new keys generated by this
                 chain will be returned. Defaults to False.
-
+            callbacks: Callbacks to use for this chain run. If not provided, will
+                use the callbacks provided to the chain.
+            include_run_info: Whether to include run info in the response. Defaults
+                to False.
         """
         inputs = self.prep_inputs(inputs)
-        if self.callback_manager.is_async:
-            await self.callback_manager.on_chain_start(
-                {"name": self.__class__.__name__},
-                inputs,
-                verbose=self.verbose,
-            )
-        else:
-            self.callback_manager.on_chain_start(
-                {"name": self.__class__.__name__},
-                inputs,
-                verbose=self.verbose,
-            )
+        callback_manager = AsyncCallbackManager.configure(
+            callbacks, self.callbacks, self.verbose, tags, self.tags
+        )
+        new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
+        run_manager = await callback_manager.on_chain_start(
+            dumpd(self),
+            inputs,
+        )
         try:
-            outputs = await self._acall(inputs)
+            outputs = (
+                await self._acall(inputs, run_manager=run_manager)
+                if new_arg_supported
+                else await self._acall(inputs)
+            )
         except (KeyboardInterrupt, Exception) as e:
-            if self.callback_manager.is_async:
-                await self.callback_manager.on_chain_error(e, verbose=self.verbose)
-            else:
-                self.callback_manager.on_chain_error(e, verbose=self.verbose)
+            await run_manager.on_chain_error(e)
             raise e
-        if self.callback_manager.is_async:
-            await self.callback_manager.on_chain_end(outputs, verbose=self.verbose)
-        else:
-            self.callback_manager.on_chain_end(outputs, verbose=self.verbose)
-        return self.prep_outputs(inputs, outputs, return_only_outputs)
+        await run_manager.on_chain_end(outputs)
+        final_outputs: Dict[str, Any] = self.prep_outputs(
+            inputs, outputs, return_only_outputs
+        )
+        if include_run_info:
+            final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
+        return final_outputs
 
     def prep_outputs(
         self,
@@ -195,32 +258,58 @@ class Chain(BaseModel, ABC):
         self._validate_inputs(inputs)
         return inputs
 
-    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+    def apply(
+        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
+    ) -> List[Dict[str, str]]:
         """Call the chain on all inputs in the list."""
-        return [self(inputs) for inputs in input_list]
+        return [self(inputs, callbacks=callbacks) for inputs in input_list]
 
-    def run(self, *args: Any, **kwargs: Any) -> str:
-        """Run the chain as text in, text out or multiple variables, text out."""
+    @property
+    def _run_output_key(self) -> str:
         if len(self.output_keys) != 1:
             raise ValueError(
                 f"`run` not supported when there is not exactly "
                 f"one output key. Got {self.output_keys}."
             )
+        return self.output_keys[0]
+
+    def run(
+        self,
+        *args: Any,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Run the chain as text in, text out or multiple variables, text out."""
+        # Run at start to make sure this is possible/defined
+        _output_key = self._run_output_key
 
         if args and not kwargs:
             if len(args) != 1:
                 raise ValueError("`run` supports only one positional argument.")
-            return self(args[0])[self.output_keys[0]]
+            return self(args[0], callbacks=callbacks, tags=tags)[_output_key]
 
         if kwargs and not args:
-            return self(kwargs)[self.output_keys[0]]
+            return self(kwargs, callbacks=callbacks, tags=tags)[_output_key]
+
+        if not kwargs and not args:
+            raise ValueError(
+                "`run` supported with either positional arguments or keyword arguments,"
+                " but none were provided."
+            )
 
         raise ValueError(
             f"`run` supported with either positional arguments or keyword arguments"
             f" but not both. Got args: {args} and kwargs: {kwargs}."
         )
 
-    async def arun(self, *args: Any, **kwargs: Any) -> str:
+    async def arun(
+        self,
+        *args: Any,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> str:
         """Run the chain as text in, text out or multiple variables, text out."""
         if len(self.output_keys) != 1:
             raise ValueError(
@@ -231,10 +320,14 @@ class Chain(BaseModel, ABC):
         if args and not kwargs:
             if len(args) != 1:
                 raise ValueError("`run` supports only one positional argument.")
-            return (await self.acall(args[0]))[self.output_keys[0]]
+            return (await self.acall(args[0], callbacks=callbacks, tags=tags))[
+                self.output_keys[0]
+            ]
 
         if kwargs and not args:
-            return (await self.acall(kwargs))[self.output_keys[0]]
+            return (await self.acall(kwargs, callbacks=callbacks, tags=tags))[
+                self.output_keys[0]
+            ]
 
         raise ValueError(
             f"`run` supported with either positional arguments or keyword arguments"

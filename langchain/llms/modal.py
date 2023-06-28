@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -21,6 +22,7 @@ class Modal(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import Modal
             modal = Modal(endpoint_url="")
 
@@ -69,9 +71,16 @@ class Modal(LLM):
         """Return type of llm."""
         return "modal"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Call to Modal endpoint."""
         params = self.model_kwargs or {}
+        params = {**params, **kwargs}
         response = requests.post(
             url=self.endpoint_url,
             headers={

@@ -3,9 +3,9 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.schema import BaseMemory
+from langchain.schema import RUN_KEY, BaseMemory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -25,11 +25,9 @@ class FakeMemory(BaseMemory):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Pass."""
-        pass
 
     def clear(self) -> None:
         """Pass."""
-        pass
 
 
 class FakeChain(Chain):
@@ -49,7 +47,11 @@ class FakeChain(Chain):
         """Output key of bar."""
         return self.the_output_keys
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         if self.be_correct:
             return {"bar": "baz"}
         else:
@@ -68,6 +70,15 @@ def test_bad_outputs() -> None:
     chain = FakeChain(be_correct=False)
     with pytest.raises(ValueError):
         chain({"foo": "baz"})
+
+
+def test_run_info() -> None:
+    """Test that run_info is returned properly when specified"""
+    chain = FakeChain()
+    output = chain({"foo": "bar"}, include_run_info=True)
+    assert "foo" in output
+    assert "bar" in output
+    assert RUN_KEY in output
 
 
 def test_correct_call() -> None:
@@ -143,25 +154,10 @@ def test_run_with_callback() -> None:
     """Test run method works when callback manager is passed."""
     handler = FakeCallbackHandler()
     chain = FakeChain(
-        callback_manager=CallbackManager(handlers=[handler]), verbose=True
+        callbacks=[handler],
     )
     output = chain.run("bar")
     assert output == "baz"
     assert handler.starts == 1
     assert handler.ends == 1
-    assert handler.errors == 0
-
-
-def test_run_with_callback_not_verbose() -> None:
-    """Test run method works when callback manager is passed and not verbose."""
-    import langchain
-
-    langchain.verbose = False
-
-    handler = FakeCallbackHandler()
-    chain = FakeChain(callback_manager=CallbackManager(handlers=[handler]))
-    output = chain.run("bar")
-    assert output == "baz"
-    assert handler.starts == 0
-    assert handler.ends == 0
     assert handler.errors == 0

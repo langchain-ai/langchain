@@ -4,6 +4,7 @@ https://github.com/karpathy/randomfun/blob/master/knn_vs_svm.ipynb"""
 
 from __future__ import annotations
 
+import concurrent.futures
 from typing import Any, List, Optional
 
 import numpy as np
@@ -14,10 +15,22 @@ from langchain.schema import BaseRetriever, Document
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
-    return np.array([embeddings.embed_query(split) for split in contexts])
+    """
+    Create an index of embeddings for a list of contexts.
+    Args:
+        contexts: List of contexts to embed.
+        embeddings: Embeddings model to use.
+
+    Returns:
+        Index of embeddings.
+    """
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        return np.array(list(executor.map(embeddings.embed_query, contexts)))
 
 
 class SVMRetriever(BaseRetriever, BaseModel):
+    """SVM Retriever."""
+
     embeddings: Embeddings
     index: Any
     texts: List[str]

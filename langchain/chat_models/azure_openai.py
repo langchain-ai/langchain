@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Mapping
 
 from pydantic import root_validator
 
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.schema import ChatResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -23,11 +24,13 @@ class AzureChatOpenAI(ChatOpenAI):
     - ``OPENAI_API_KEY``
     - ``OPENAI_API_BASE``
     - ``OPENAI_API_VERSION``
+    - ``OPENAI_PROXY``
 
     For exmaple, if you have `gpt-35-turbo` deployed, with the deployment name
     `35-turbo-dev`, the constructor should look like:
 
     .. code-block:: python
+
         AzureChatOpenAI(
             deployment_name="35-turbo-dev",
             openai_api_version="2023-03-15-preview",
@@ -45,47 +48,48 @@ class AzureChatOpenAI(ChatOpenAI):
     openai_api_version: str = ""
     openai_api_key: str = ""
     openai_organization: str = ""
+    openai_proxy: str = ""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        openai_api_key = get_from_dict_or_env(
+        values["openai_api_key"] = get_from_dict_or_env(
             values,
             "openai_api_key",
             "OPENAI_API_KEY",
         )
-        openai_api_base = get_from_dict_or_env(
+        values["openai_api_base"] = get_from_dict_or_env(
             values,
             "openai_api_base",
             "OPENAI_API_BASE",
         )
-        openai_api_version = get_from_dict_or_env(
+        values["openai_api_version"] = get_from_dict_or_env(
             values,
             "openai_api_version",
             "OPENAI_API_VERSION",
         )
-        openai_api_type = get_from_dict_or_env(
+        values["openai_api_type"] = get_from_dict_or_env(
             values,
             "openai_api_type",
             "OPENAI_API_TYPE",
         )
-        openai_organization = get_from_dict_or_env(
+        values["openai_organization"] = get_from_dict_or_env(
             values,
             "openai_organization",
             "OPENAI_ORGANIZATION",
             default="",
         )
+        values["openai_proxy"] = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",
+        )
         try:
             import openai
 
-            openai.api_type = openai_api_type
-            openai.api_base = openai_api_base
-            openai.api_version = openai_api_version
-            openai.api_key = openai_api_key
-            if openai_organization:
-                openai.organization = openai_organization
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
@@ -110,3 +114,29 @@ class AzureChatOpenAI(ChatOpenAI):
             **super()._default_params,
             "engine": self.deployment_name,
         }
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {**self._default_params}
+
+    @property
+    def _invocation_params(self) -> Mapping[str, Any]:
+        openai_creds = {
+            "api_type": self.openai_api_type,
+            "api_version": self.openai_api_version,
+        }
+        return {**openai_creds, **super()._invocation_params}
+
+    @property
+    def _llm_type(self) -> str:
+        return "azure-openai-chat"
+
+    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+        for res in response["choices"]:
+            if res.get("finish_reason", None) == "content_filter":
+                raise ValueError(
+                    "Azure has not provided the response due to a content"
+                    " filter being triggered"
+                )
+        return super()._create_chat_result(response)

@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Tuple
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
     format_document,
@@ -85,29 +86,31 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
                 )
         return values
 
-    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
+    def combine_docs(
+        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
+    ) -> Tuple[str, dict]:
         """Combine by mapping first chain over all, then stuffing into final chain."""
         inputs = self._construct_initial_inputs(docs, **kwargs)
-        res = self.initial_llm_chain.predict(**inputs)
+        res = self.initial_llm_chain.predict(callbacks=callbacks, **inputs)
         refine_steps = [res]
         for doc in docs[1:]:
             base_inputs = self._construct_refine_inputs(doc, res)
             inputs = {**base_inputs, **kwargs}
-            res = self.refine_llm_chain.predict(**inputs)
+            res = self.refine_llm_chain.predict(callbacks=callbacks, **inputs)
             refine_steps.append(res)
         return self._construct_result(refine_steps, res)
 
     async def acombine_docs(
-        self, docs: List[Document], **kwargs: Any
+        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
         """Combine by mapping first chain over all, then stuffing into final chain."""
         inputs = self._construct_initial_inputs(docs, **kwargs)
-        res = await self.initial_llm_chain.apredict(**inputs)
+        res = await self.initial_llm_chain.apredict(callbacks=callbacks, **inputs)
         refine_steps = [res]
         for doc in docs[1:]:
             base_inputs = self._construct_refine_inputs(doc, res)
             inputs = {**base_inputs, **kwargs}
-            res = await self.refine_llm_chain.apredict(**inputs)
+            res = await self.refine_llm_chain.apredict(callbacks=callbacks, **inputs)
             refine_steps.append(res)
         return self._construct_result(refine_steps, res)
 

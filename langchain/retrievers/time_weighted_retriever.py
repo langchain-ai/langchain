@@ -1,6 +1,6 @@
 """Retriever that combines embedding similarity with recency in retrieving values."""
+import datetime
 from copy import deepcopy
-from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
@@ -9,13 +9,13 @@ from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 
-def _get_hours_passed(time: datetime, ref_time: datetime) -> float:
+def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> float:
     """Get the hours passed between two datetime objects."""
     return (time - ref_time).total_seconds() / 3600
 
 
 class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
-    """Retriever combining embededing similarity with recency."""
+    """Retriever combining embedding similarity with recency."""
 
     vectorstore: VectorStore
     """The vectorstore to store documents and determine salience."""
@@ -51,7 +51,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         self,
         document: Document,
         vector_relevance: Optional[float],
-        current_time: datetime,
+        current_time: datetime.datetime,
     ) -> float:
         """Return the combined score for a document."""
         hours_passed = _get_hours_passed(
@@ -74,14 +74,15 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         )
         results = {}
         for fetched_doc, relevance in docs_and_scores:
-            buffer_idx = fetched_doc.metadata["buffer_idx"]
-            doc = self.memory_stream[buffer_idx]
-            results[buffer_idx] = (doc, relevance)
+            if "buffer_idx" in fetched_doc.metadata:
+                buffer_idx = fetched_doc.metadata["buffer_idx"]
+                doc = self.memory_stream[buffer_idx]
+                results[buffer_idx] = (doc, relevance)
         return results
 
     def get_relevant_documents(self, query: str) -> List[Document]:
         """Return documents that are relevant to the query."""
-        current_time = datetime.now()
+        current_time = datetime.datetime.now()
         docs_and_scores = {
             doc.metadata["buffer_idx"]: (doc, self.default_salience)
             for doc in self.memory_stream[-self.k :]
@@ -95,7 +96,6 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         rescored_docs.sort(key=lambda x: x[1], reverse=True)
         result = []
         # Ensure frequently accessed memories aren't forgotten
-        current_time = datetime.now()
         for doc, _ in rescored_docs[: self.k]:
             # TODO: Update vector store doc once `update` method is exposed.
             buffered_doc = self.memory_stream[doc.metadata["buffer_idx"]]
@@ -109,7 +109,9 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""
-        current_time = kwargs.get("current_time", datetime.now())
+        current_time = kwargs.get("current_time")
+        if current_time is None:
+            current_time = datetime.datetime.now()
         # Avoid mutating input documents
         dup_docs = [deepcopy(d) for d in documents]
         for i, doc in enumerate(dup_docs):
@@ -125,7 +127,9 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         self, documents: List[Document], **kwargs: Any
     ) -> List[str]:
         """Add documents to vectorstore."""
-        current_time = kwargs.get("current_time", datetime.now())
+        current_time = kwargs.get("current_time")
+        if current_time is None:
+            current_time = datetime.datetime.now()
         # Avoid mutating input documents
         dup_docs = [deepcopy(d) for d in documents]
         for i, doc in enumerate(dup_docs):

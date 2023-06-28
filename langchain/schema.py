@@ -2,9 +2,25 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeVar
+from dataclasses import dataclass
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+)
+from uuid import UUID
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
+
+from langchain.load.serializable import Serializable
+
+RUN_KEY = "__run"
 
 
 def get_buffer_string(
@@ -19,19 +35,26 @@ def get_buffer_string(
             role = ai_prefix
         elif isinstance(m, SystemMessage):
             role = "System"
+        elif isinstance(m, FunctionMessage):
+            role = "Function"
         elif isinstance(m, ChatMessage):
             role = m.role
         else:
             raise ValueError(f"Got unsupported message type: {m}")
-        string_messages.append(f"{role}: {m.content}")
+        message = f"{role}: {m.content}"
+        if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
+            message += f"{m.additional_kwargs['function_call']}"
+        string_messages.append(message)
+
     return "\n".join(string_messages)
 
 
-class AgentAction(NamedTuple):
+@dataclass
+class AgentAction:
     """Agent's action to take."""
 
     tool: str
-    tool_input: str
+    tool_input: Union[str, dict]
     log: str
 
 
@@ -42,7 +65,7 @@ class AgentFinish(NamedTuple):
     log: str
 
 
-class Generation(BaseModel):
+class Generation(Serializable):
     """Output of a single generation."""
 
     text: str
@@ -53,8 +76,13 @@ class Generation(BaseModel):
     """May include things like reason for finishing (e.g. in OpenAI)"""
     # TODO: add log probs
 
+    @property
+    def lc_serializable(self) -> bool:
+        """This class is LangChain serializable."""
+        return True
 
-class BaseMessage(BaseModel):
+
+class BaseMessage(Serializable):
     """Message object."""
 
     content: str
@@ -65,9 +93,16 @@ class BaseMessage(BaseModel):
     def type(self) -> str:
         """Type of the message, used for serialization."""
 
+    @property
+    def lc_serializable(self) -> bool:
+        """This class is LangChain serializable."""
+        return True
+
 
 class HumanMessage(BaseMessage):
     """Type of message that is spoken by the human."""
+
+    example: bool = False
 
     @property
     def type(self) -> str:
@@ -77,6 +112,8 @@ class HumanMessage(BaseMessage):
 
 class AIMessage(BaseMessage):
     """Type of message that is spoken by the AI."""
+
+    example: bool = False
 
     @property
     def type(self) -> str:
@@ -91,6 +128,15 @@ class SystemMessage(BaseMessage):
     def type(self) -> str:
         """Type of the message, used for serialization."""
         return "system"
+
+
+class FunctionMessage(BaseMessage):
+    name: str
+
+    @property
+    def type(self) -> str:
+        """Type of the message, used for serialization."""
+        return "function"
 
 
 class ChatMessage(BaseMessage):
@@ -109,6 +155,14 @@ def _message_to_dict(message: BaseMessage) -> dict:
 
 
 def messages_to_dict(messages: List[BaseMessage]) -> List[dict]:
+    """Convert messages to dict.
+
+    Args:
+        messages: List of messages to convert.
+
+    Returns:
+        List of dicts.
+    """
     return [_message_to_dict(m) for m in messages]
 
 
@@ -127,6 +181,14 @@ def _message_from_dict(message: dict) -> BaseMessage:
 
 
 def messages_from_dict(messages: List[dict]) -> List[BaseMessage]:
+    """Convert messages from dict.
+
+    Args:
+        messages: List of messages (dicts) to convert.
+
+    Returns:
+        List of messages (BaseMessages).
+    """
     return [_message_from_dict(m) for m in messages]
 
 
@@ -140,6 +202,12 @@ class ChatGeneration(Generation):
     def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         values["text"] = values["message"].content
         return values
+
+
+class RunInfo(BaseModel):
+    """Class that contains all relevant metadata for a Run."""
+
+    run_id: UUID
 
 
 class ChatResult(BaseModel):
@@ -159,9 +227,45 @@ class LLMResult(BaseModel):
     each input could have multiple generations."""
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""
+    run: Optional[List[RunInfo]] = None
+    """Run metadata."""
+
+    def flatten(self) -> List[LLMResult]:
+        """Flatten generations into a single list."""
+        llm_results = []
+        for i, gen_list in enumerate(self.generations):
+            # Avoid double counting tokens in OpenAICallback
+            if i == 0:
+                llm_results.append(
+                    LLMResult(
+                        generations=[gen_list],
+                        llm_output=self.llm_output,
+                    )
+                )
+            else:
+                if self.llm_output is not None:
+                    llm_output = self.llm_output.copy()
+                    llm_output["token_usage"] = dict()
+                else:
+                    llm_output = None
+                llm_results.append(
+                    LLMResult(
+                        generations=[gen_list],
+                        llm_output=llm_output,
+                    )
+                )
+        return llm_results
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, LLMResult):
+            return NotImplemented
+        return (
+            self.generations == other.generations
+            and self.llm_output == other.llm_output
+        )
 
 
-class PromptValue(BaseModel, ABC):
+class PromptValue(Serializable, ABC):
     @abstractmethod
     def to_string(self) -> str:
         """Return prompt as string."""
@@ -171,52 +275,12 @@ class PromptValue(BaseModel, ABC):
         """Return prompt as messages."""
 
 
-class BaseLanguageModel(BaseModel, ABC):
-    @abstractmethod
-    def generate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
-    ) -> LLMResult:
-        """Take in a list of prompt values and return an LLMResult."""
-
-    @abstractmethod
-    async def agenerate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
-    ) -> LLMResult:
-        """Take in a list of prompt values and return an LLMResult."""
-
-    def get_num_tokens(self, text: str) -> int:
-        """Get the number of tokens present in the text."""
-        # TODO: this method may not be exact.
-        # TODO: this method may differ based on model (eg codex).
-        try:
-            from transformers import GPT2TokenizerFast
-        except ImportError:
-            raise ValueError(
-                "Could not import transformers python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please install it with `pip install transformers`."
-            )
-        # create a GPT-3 tokenizer instance
-        tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
-        # tokenize the text using the GPT-3 tokenizer
-        tokenized_text = tokenizer.tokenize(text)
-
-        # calculate the number of tokens in the tokenized text
-        return len(tokenized_text)
-
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
-        """Get the number of tokens in the message."""
-        return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
-
-
-class BaseMemory(BaseModel, ABC):
+class BaseMemory(Serializable, ABC):
     """Base interface for memory in chains."""
 
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     @property
@@ -252,25 +316,18 @@ class BaseChatMessageHistory(ABC):
             class FileChatMessageHistory(BaseChatMessageHistory):
                 storage_path:  str
                 session_id: str
-               
+
                @property
                def messages(self):
                    with open(os.path.join(storage_path, session_id), 'r:utf-8') as f:
                        messages = json.loads(f.read())
-                    return messages_from_dict(messages)     
-                
-               def add_user_message(self, message: str):
-                   message_ = HumanMessage(content=message)
-                   messages = self.messages.append(_message_to_dict(_message))
+                    return messages_from_dict(messages)
+
+               def add_message(self, message: BaseMessage) -> None:
+                   messages = self.messages.append(_message_to_dict(message))
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        json.dump(f, messages)
                
-               def add_ai_message(self, message: str):
-                   message_ = AIMessage(content=message)
-                   messages = self.messages.append(_message_to_dict(_message))
-                   with open(os.path.join(storage_path, session_id), 'w') as f:
-                       json.dump(f, messages)
-                       
                def clear(self):
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        f.write("[]")
@@ -278,20 +335,24 @@ class BaseChatMessageHistory(ABC):
 
     messages: List[BaseMessage]
 
-    @abstractmethod
     def add_user_message(self, message: str) -> None:
         """Add a user message to the store"""
+        self.add_message(HumanMessage(content=message))
 
-    @abstractmethod
     def add_ai_message(self, message: str) -> None:
         """Add an AI message to the store"""
+        self.add_message(AIMessage(content=message))
+
+    def add_message(self, message: BaseMessage) -> None:
+        """Add a self-created message to the store"""
+        raise NotImplementedError
 
     @abstractmethod
     def clear(self) -> None:
         """Remove all messages from the store"""
 
 
-class Document(BaseModel):
+class Document(Serializable):
     """Interface for interacting with a document."""
 
     page_content: str
@@ -299,6 +360,8 @@ class Document(BaseModel):
 
 
 class BaseRetriever(ABC):
+    """Base interface for retrievers."""
+
     @abstractmethod
     def get_relevant_documents(self, query: str) -> List[Document]:
         """Get documents relevant for a query.
@@ -330,17 +393,26 @@ Memory = BaseMemory
 T = TypeVar("T")
 
 
-class BaseOutputParser(BaseModel, ABC, Generic[T]):
+class BaseLLMOutputParser(Serializable, ABC, Generic[T]):
+    @abstractmethod
+    def parse_result(self, result: List[Generation]) -> T:
+        """Parse LLM Result."""
+
+
+class BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T]):
     """Class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
     """
 
+    def parse_result(self, result: List[Generation]) -> T:
+        return self.parse(result[0].text)
+
     @abstractmethod
     def parse(self, text: str) -> T:
         """Parse the output of an LLM call.
 
-        A method which takes in a string (assumed output of language model )
+        A method which takes in a string (assumed output of a language model )
         and parses it into some structure.
 
         Args:
@@ -373,7 +445,10 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
     @property
     def _type(self) -> str:
         """Return the type key."""
-        raise NotImplementedError
+        raise NotImplementedError(
+            f"_type property is not implemented in class {self.__class__.__name__}."
+            " This is required for serialization."
+        )
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of output parser."""
@@ -382,7 +457,22 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
         return output_parser_dict
 
 
-class OutputParserException(Exception):
+class NoOpOutputParser(BaseOutputParser[str]):
+    """Output parser that just returns the text as is."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    @property
+    def _type(self) -> str:
+        return "default"
+
+    def parse(self, text: str) -> str:
+        return text
+
+
+class OutputParserException(ValueError):
     """Exception that output parsers should raise to signify a parsing error.
 
     This exists to differentiate parsing errors from other code or execution errors
@@ -391,4 +481,36 @@ class OutputParserException(Exception):
     errors will be raised.
     """
 
-    pass
+    def __init__(
+        self,
+        error: Any,
+        observation: str | None = None,
+        llm_output: str | None = None,
+        send_to_llm: bool = False,
+    ):
+        super(OutputParserException, self).__init__(error)
+        if send_to_llm:
+            if observation is None or llm_output is None:
+                raise ValueError(
+                    "Arguments 'observation' & 'llm_output'"
+                    " are required if 'send_to_llm' is True"
+                )
+        self.observation = observation
+        self.llm_output = llm_output
+        self.send_to_llm = send_to_llm
+
+
+class BaseDocumentTransformer(ABC):
+    """Base interface for transforming documents."""
+
+    @abstractmethod
+    def transform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Transform a list of documents."""
+
+    @abstractmethod
+    async def atransform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Asynchronously transform a list of documents."""

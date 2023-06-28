@@ -1,6 +1,7 @@
 """Loader that uses unstructured to load files."""
+import collections
 from abc import ABC, abstractmethod
-from typing import IO, Any, List
+from typing import IO, Any, Dict, List, Sequence, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -23,6 +24,15 @@ def satisfies_min_unstructured_version(min_version: str) -> bool:
     return unstructured_version_tuple >= min_version_tuple
 
 
+def validate_unstructured_version(min_unstructured_version: str) -> None:
+    """Raises an error if the unstructured version does not exceed the
+    specified minimum."""
+    if not satisfies_min_unstructured_version(min_unstructured_version):
+        raise ValueError(
+            f"unstructured>={min_unstructured_version} is required in this loader."
+        )
+
+
 class UnstructuredBaseLoader(BaseLoader, ABC):
     """Loader that uses unstructured to load files."""
 
@@ -35,7 +45,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )
-        _valid_modes = {"single", "elements"}
+        _valid_modes = {"single", "elements", "paged"}
         if mode not in _valid_modes:
             raise ValueError(
                 f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
@@ -70,6 +80,31 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 if hasattr(element, "category"):
                     metadata["category"] = element.category
                 docs.append(Document(page_content=str(element), metadata=metadata))
+        elif self.mode == "paged":
+            text_dict: Dict[int, str] = {}
+            meta_dict: Dict[int, Dict] = {}
+
+            for idx, element in enumerate(elements):
+                metadata = self._get_metadata()
+                if hasattr(element, "metadata"):
+                    metadata.update(element.metadata.to_dict())
+                page_number = metadata.get("page_number", 1)
+
+                # Check if this page_number already exists in docs_dict
+                if page_number not in text_dict:
+                    # If not, create new entry with initial text and metadata
+                    text_dict[page_number] = str(element) + "\n\n"
+                    meta_dict[page_number] = metadata
+                else:
+                    # If exists, append to text and update the metadata
+                    text_dict[page_number] += str(element) + "\n\n"
+                    meta_dict[page_number].update(metadata)
+
+            # Convert the dict to a list of Document objects
+            docs = [
+                Document(page_content=text_dict[key], metadata=meta_dict[key])
+                for key in text_dict.keys()
+            ]
         elif self.mode == "single":
             metadata = self._get_metadata()
             text = "\n\n".join([str(el) for el in elements])
@@ -83,7 +118,10 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load files."""
 
     def __init__(
-        self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
+        self,
+        file_path: Union[str, List[str]],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
         self.file_path = file_path
@@ -98,10 +136,86 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
         return {"source": self.file_path}
 
 
+def get_elements_from_api(
+    file_path: Union[str, List[str], None] = None,
+    file: Union[IO, Sequence[IO], None] = None,
+    api_url: str = "https://api.unstructured.io/general/v0/general",
+    api_key: str = "",
+    **unstructured_kwargs: Any,
+) -> List:
+    """Retrieves a list of elements from the Unstructured API."""
+    if isinstance(file, collections.abc.Sequence) or isinstance(file_path, list):
+        from unstructured.partition.api import partition_multiple_via_api
+
+        _doc_elements = partition_multiple_via_api(
+            filenames=file_path,
+            files=file,
+            api_key=api_key,
+            api_url=api_url,
+            **unstructured_kwargs,
+        )
+
+        elements = []
+        for _elements in _doc_elements:
+            elements.extend(_elements)
+
+        return elements
+    else:
+        from unstructured.partition.api import partition_via_api
+
+        return partition_via_api(
+            filename=file_path,
+            file=file,
+            api_key=api_key,
+            api_url=api_url,
+            **unstructured_kwargs,
+        )
+
+
+class UnstructuredAPIFileLoader(UnstructuredFileLoader):
+    """Loader that uses the unstructured web API to load files."""
+
+    def __init__(
+        self,
+        file_path: Union[str, List[str]] = "",
+        mode: str = "single",
+        url: str = "https://api.unstructured.io/general/v0/general",
+        api_key: str = "",
+        **unstructured_kwargs: Any,
+    ):
+        """Initialize with file path."""
+
+        if isinstance(file_path, str):
+            validate_unstructured_version(min_unstructured_version="0.6.2")
+        else:
+            validate_unstructured_version(min_unstructured_version="0.6.3")
+
+        self.url = url
+        self.api_key = api_key
+
+        super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
+
+    def _get_metadata(self) -> dict:
+        return {"source": self.file_path}
+
+    def _get_elements(self) -> List:
+        return get_elements_from_api(
+            file_path=self.file_path,
+            api_key=self.api_key,
+            api_url=self.url,
+            **self.unstructured_kwargs,
+        )
+
+
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load file IO objects."""
 
-    def __init__(self, file: IO, mode: str = "single", **unstructured_kwargs: Any):
+    def __init__(
+        self,
+        file: Union[IO, Sequence[IO]],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
+    ):
         """Initialize with file path."""
         self.file = file
         super().__init__(mode=mode, **unstructured_kwargs)
@@ -113,3 +227,35 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
     def _get_metadata(self) -> dict:
         return {}
+
+
+class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
+    """Loader that uses the unstructured web API to load file IO objects."""
+
+    def __init__(
+        self,
+        file: Union[IO, Sequence[IO]],
+        mode: str = "single",
+        url: str = "https://api.unstructured.io/general/v0/general",
+        api_key: str = "",
+        **unstructured_kwargs: Any,
+    ):
+        """Initialize with file path."""
+
+        if isinstance(file, collections.abc.Sequence):
+            validate_unstructured_version(min_unstructured_version="0.6.3")
+        if file:
+            validate_unstructured_version(min_unstructured_version="0.6.2")
+
+        self.url = url
+        self.api_key = api_key
+
+        super().__init__(file=file, mode=mode, **unstructured_kwargs)
+
+    def _get_elements(self) -> List:
+        return get_elements_from_api(
+            file=self.file,
+            api_key=self.api_key,
+            api_url=self.url,
+            **self.unstructured_kwargs,
+        )

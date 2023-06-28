@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
 
@@ -42,13 +43,20 @@ class ManifestWrapper(LLM):
         """Return type of llm."""
         return "manifest"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Call out to LLM through Manifest."""
         if stop is not None and len(stop) != 1:
             raise NotImplementedError(
                 f"Manifest currently only supports a single stop token, got {stop}"
             )
-        kwargs = self.llm_kwargs or {}
+        params = self.llm_kwargs or {}
+        params = {**params, **kwargs}
         if stop is not None:
-            kwargs["stop_token"] = stop
-        return self.client.run(prompt, **kwargs)
+            params["stop_token"] = stop
+        return self.client.run(prompt, **params)

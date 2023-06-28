@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
 
@@ -21,6 +22,7 @@ class GooseAI(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import GooseAI
             gooseai = GooseAI(model_name="gpt-neo-20b")
 
@@ -99,7 +101,7 @@ class GooseAI(LLM):
             openai.api_base = "https://api.goose.ai/v1"
             values["client"] = openai.Completion
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
@@ -130,13 +132,21 @@ class GooseAI(LLM):
         """Return type of llm."""
         return "gooseai"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Call the GooseAI API."""
         params = self._default_params
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
+
+        params = {**params, **kwargs}
 
         response = self.client.create(engine=self.model_name, prompt=prompt, **params)
         text = response.choices[0].text

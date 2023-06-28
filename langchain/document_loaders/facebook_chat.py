@@ -27,31 +27,16 @@ class FacebookChatLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
-        try:
-            import pandas as pd
-        except ImportError:
-            raise ValueError(
-                "pandas is needed for Facebook chat loader, "
-                "please install with `pip install pandas`"
-            )
         p = Path(self.file_path)
 
         with open(p, encoding="utf8") as f:
             d = json.load(f)
 
-        normalized_messages = pd.json_normalize(d["messages"])
-        df_normalized_messages = pd.DataFrame(normalized_messages)
-
-        # Only keep plain text messages
-        # (no services, nor links, hashtags, code, bold ...)
-        df_filtered = df_normalized_messages[
-            (df_normalized_messages.content.apply(lambda x: type(x) == str))
-        ]
-
-        df_filtered = df_filtered[["timestamp_ms", "content", "sender_name"]]
-
-        text = df_filtered.apply(concatenate_rows, axis=1).str.cat(sep="")
-
+        text = "".join(
+            concatenate_rows(message)
+            for message in d["messages"]
+            if message.get("content") and isinstance(message["content"], str)
+        )
         metadata = {"source": str(p)}
 
         return [Document(page_content=text, metadata=metadata)]

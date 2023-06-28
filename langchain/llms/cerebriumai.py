@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
@@ -22,6 +23,7 @@ class CerebriumAI(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import CerebriumAI
             cerebrium = CerebriumAI(endpoint_url="")
 
@@ -81,7 +83,13 @@ class CerebriumAI(LLM):
         """Return type of llm."""
         return "cerebriumai"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Call to CerebriumAI endpoint."""
         try:
             from cerebrium import model_api_request
@@ -93,7 +101,9 @@ class CerebriumAI(LLM):
 
         params = self.model_kwargs or {}
         response = model_api_request(
-            self.endpoint_url, {"prompt": prompt, **params}, self.cerebriumai_api_key
+            self.endpoint_url,
+            {"prompt": prompt, **params, **kwargs},
+            self.cerebriumai_api_key,
         )
         text = response["data"]["result"]
         if stop is not None:

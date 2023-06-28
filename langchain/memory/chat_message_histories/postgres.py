@@ -3,10 +3,8 @@ import logging
 from typing import List
 
 from langchain.schema import (
-    AIMessage,
     BaseChatMessageHistory,
     BaseMessage,
-    HumanMessage,
     _message_to_dict,
     messages_from_dict,
 )
@@ -17,6 +15,8 @@ DEFAULT_CONNECTION_STRING = "postgresql://postgres:mypassword@localhost/chat_his
 
 
 class PostgresChatMessageHistory(BaseChatMessageHistory):
+    """Chat message history stored in a Postgres database."""
+
     def __init__(
         self,
         session_id: str,
@@ -55,13 +55,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         messages = messages_from_dict(items)
         return messages
 
-    def add_user_message(self, message: str) -> None:
-        self.append(HumanMessage(content=message))
-
-    def add_ai_message(self, message: str) -> None:
-        self.append(AIMessage(content=message))
-
-    def append(self, message: BaseMessage) -> None:
+    def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in PostgreSQL"""
         from psycopg import sql
 

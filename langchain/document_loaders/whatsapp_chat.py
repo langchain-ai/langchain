@@ -26,19 +26,38 @@ class WhatsAppChatLoader(BaseLoader):
         with open(p, encoding="utf8") as f:
             lines = f.readlines()
 
-        message_line_regex = (
-            r"(\d{1,2}/\d{1,2}/\d{2,4}, "
-            r"\d{1,2}:\d{1,2}[ _]?(?:AM|PM)?) - "
-            r"(.*?): (.*)"
-        )
+        message_line_regex = r"""
+            \[?
+            (
+                \d{1,4}
+                [\/.]
+                \d{1,2}
+                [\/.]
+                \d{1,4}
+                ,\s
+                \d{1,2}
+                :\d{2}
+                (?:
+                    :\d{2}
+                )?
+                (?:[\s_](?:AM|PM))?
+            )
+            \]?
+            [\s-]*
+            ([~\w\s]+)
+            [:]+
+            \s
+            (.+)
+        """
+        ignore_lines = ["This message was deleted", "<Media omitted>"]
         for line in lines:
             result = re.match(
-                message_line_regex,
-                line.strip(),
+                message_line_regex, line.strip(), flags=re.VERBOSE | re.IGNORECASE
             )
             if result:
                 date, sender, text = result.groups()
-                text_content += concatenate_rows(date, sender, text)
+                if text not in ignore_lines:
+                    text_content += concatenate_rows(date, sender, text)
 
         metadata = {"source": str(p)}
 

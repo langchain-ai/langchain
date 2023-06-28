@@ -10,7 +10,7 @@ Overall, Assistant is a powerful system that can help with a wide range of tasks
 FORMAT_INSTRUCTIONS = """RESPONSE FORMAT INSTRUCTIONS
 ----------------------------
 
-When responding to me please, please output a response in one of two formats:
+When responding to me, please output a response in one of two formats:
 
 **Option 1:**
 Use this if you want the human to use a tool.
@@ -18,7 +18,7 @@ Markdown code snippet formatted in the following schema:
 
 ```json
 {{{{
-    "action": string \\ The action to take. Must be one of {tool_names}
+    "action": string, \\ The action to take. Must be one of {tool_names}
     "action_input": string \\ The input to the action
 }}}}
 ```

@@ -8,6 +8,12 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
@@ -15,16 +21,32 @@ from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, BaseRetriever, Document
+from langchain.schema import BaseMessage, BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
+# Depending on the memory type and configuration, the chat history format may differ.
+# This needs to be consolidated.
+CHAT_TURN_TYPE = Union[Tuple[str, str], BaseMessage]
 
-def _get_chat_history(chat_history: List[Tuple[str, str]]) -> str:
+
+_ROLE_MAP = {"human": "Human: ", "ai": "Assistant: "}
+
+
+def _get_chat_history(chat_history: List[CHAT_TURN_TYPE]) -> str:
     buffer = ""
-    for human_s, ai_s in chat_history:
-        human = "Human: " + human_s
-        ai = "Assistant: " + ai_s
-        buffer += "\n" + "\n".join([human, ai])
+    for dialogue_turn in chat_history:
+        if isinstance(dialogue_turn, BaseMessage):
+            role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
+            buffer += f"\n{role_prefix}{dialogue_turn.content}"
+        elif isinstance(dialogue_turn, tuple):
+            human = "Human: " + dialogue_turn[0]
+            ai = "Assistant: " + dialogue_turn[1]
+            buffer += "\n" + "\n".join([human, ai])
+        else:
+            raise ValueError(
+                f"Unsupported chat history format: {type(dialogue_turn)}."
+                f" Full chat history: {chat_history} "
+            )
     return buffer
 
 
@@ -35,7 +57,8 @@ class BaseConversationalRetrievalChain(Chain):
     question_generator: LLMChain
     output_key: str = "answer"
     return_source_documents: bool = False
-    get_chat_history: Optional[Callable[[Tuple[str, str]], str]] = None
+    return_generated_question: bool = False
+    get_chat_history: Optional[Callable[[CHAT_TURN_TYPE], str]] = None
     """Return the source documents."""
 
     class Config:
@@ -59,20 +82,28 @@ class BaseConversationalRetrievalChain(Chain):
         _output_keys = [self.output_key]
         if self.return_source_documents:
             _output_keys = _output_keys + ["source_documents"]
+        if self.return_generated_question:
+            _output_keys = _output_keys + ["generated_question"]
         return _output_keys
 
     @abstractmethod
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
         """Get docs."""
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs["question"]
         get_chat_history = self.get_chat_history or _get_chat_history
         chat_history_str = get_chat_history(inputs["chat_history"])
 
         if chat_history_str:
+            callbacks = _run_manager.get_child()
             new_question = self.question_generator.run(
-                question=question, chat_history=chat_history_str
+                question=question, chat_history=chat_history_str, callbacks=callbacks
             )
         else:
             new_question = question
@@ -80,23 +111,33 @@ class BaseConversationalRetrievalChain(Chain):
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        answer = self.combine_docs_chain.run(input_documents=docs, **new_inputs)
+        answer = self.combine_docs_chain.run(
+            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+        )
+        output: Dict[str, Any] = {self.output_key: answer}
         if self.return_source_documents:
-            return {self.output_key: answer, "source_documents": docs}
-        else:
-            return {self.output_key: answer}
+            output["source_documents"] = docs
+        if self.return_generated_question:
+            output["generated_question"] = new_question
+        return output
 
     @abstractmethod
     async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
         """Get docs."""
 
-    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs["question"]
         get_chat_history = self.get_chat_history or _get_chat_history
         chat_history_str = get_chat_history(inputs["chat_history"])
         if chat_history_str:
+            callbacks = _run_manager.get_child()
             new_question = await self.question_generator.arun(
-                question=question, chat_history=chat_history_str
+                question=question, chat_history=chat_history_str, callbacks=callbacks
             )
         else:
             new_question = question
@@ -104,11 +145,15 @@ class BaseConversationalRetrievalChain(Chain):
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        answer = await self.combine_docs_chain.arun(input_documents=docs, **new_inputs)
+        answer = await self.combine_docs_chain.arun(
+            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+        )
+        output: Dict[str, Any] = {self.output_key: answer}
         if self.return_source_documents:
-            return {self.output_key: answer, "source_documents": docs}
-        else:
-            return {self.output_key: answer}
+            output["source_documents"] = docs
+        if self.return_generated_question:
+            output["generated_question"] = new_question
+        return output
 
     def save(self, file_path: Union[Path, str]) -> None:
         if self.get_chat_history:
@@ -156,21 +201,35 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         llm: BaseLanguageModel,
         retriever: BaseRetriever,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
-        qa_prompt: Optional[BasePromptTemplate] = None,
         chain_type: str = "stuff",
+        verbose: bool = False,
+        condense_question_llm: Optional[BaseLanguageModel] = None,
+        combine_docs_chain_kwargs: Optional[Dict] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
         """Load chain from LLM."""
+        combine_docs_chain_kwargs = combine_docs_chain_kwargs or {}
         doc_chain = load_qa_chain(
             llm,
             chain_type=chain_type,
-            prompt=qa_prompt,
+            verbose=verbose,
+            callbacks=callbacks,
+            **combine_docs_chain_kwargs,
         )
-        condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
+
+        _llm = condense_question_llm or llm
+        condense_question_chain = LLMChain(
+            llm=_llm,
+            prompt=condense_question_prompt,
+            verbose=verbose,
+            callbacks=callbacks,
+        )
         return cls(
             retriever=retriever,
             combine_docs_chain=doc_chain,
             question_generator=condense_question_chain,
+            callbacks=callbacks,
             **kwargs,
         )
 
@@ -210,20 +269,26 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         llm: BaseLanguageModel,
         vectorstore: VectorStore,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
-        qa_prompt: Optional[BasePromptTemplate] = None,
         chain_type: str = "stuff",
+        combine_docs_chain_kwargs: Optional[Dict] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
         """Load chain from LLM."""
+        combine_docs_chain_kwargs = combine_docs_chain_kwargs or {}
         doc_chain = load_qa_chain(
             llm,
             chain_type=chain_type,
-            prompt=qa_prompt,
+            callbacks=callbacks,
+            **combine_docs_chain_kwargs,
         )
-        condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
+        condense_question_chain = LLMChain(
+            llm=llm, prompt=condense_question_prompt, callbacks=callbacks
+        )
         return cls(
             vectorstore=vectorstore,
             combine_docs_chain=doc_chain,
             question_generator=condense_question_chain,
+            callbacks=callbacks,
             **kwargs,
         )

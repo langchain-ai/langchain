@@ -1,7 +1,8 @@
 """Web base loader class."""
 import asyncio
 import logging
-from typing import Any, List, Optional, Union
+import warnings
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 import aiohttp
 import requests
@@ -46,8 +47,21 @@ class WebBaseLoader(BaseLoader):
     default_parser: str = "html.parser"
     """Default parser to use for BeautifulSoup."""
 
+    requests_kwargs: Dict[str, Any] = {}
+    """kwargs for requests"""
+
+    raise_for_status: bool = False
+    """Raise an exception if http status code denotes an error."""
+
+    bs_get_text_kwargs: Dict[str, Any] = {}
+    """kwargs for beatifulsoup4 get_text"""
+
     def __init__(
-        self, web_path: Union[str, List[str]], header_template: Optional[dict] = None
+        self,
+        web_path: Union[str, List[str]],
+        header_template: Optional[dict] = None,
+        verify: Optional[bool] = True,
+        proxies: Optional[dict] = None,
     ):
         """Initialize with webpage path."""
 
@@ -67,17 +81,25 @@ class WebBaseLoader(BaseLoader):
                 "bs4 package not found, please install it with " "`pip install bs4`"
             )
 
-        try:
-            from fake_useragent import UserAgent
+        # Choose to verify
+        self.verify = verify
 
-            headers = header_template or default_header_template
-            headers["User-Agent"] = UserAgent().random
-            self.session.headers = dict(headers)
-        except ImportError:
-            logger.info(
-                "fake_useragent not found, using default user agent."
-                "To get a realistic header for requests, `pip install fake_useragent`."
-            )
+        headers = header_template or default_header_template
+        if not headers.get("User-Agent"):
+            try:
+                from fake_useragent import UserAgent
+
+                headers["User-Agent"] = UserAgent().random
+            except ImportError:
+                logger.info(
+                    "fake_useragent not found, using default user agent."
+                    "To get a realistic header for requests, "
+                    "`pip install fake_useragent`."
+                )
+        self.session.headers = dict(headers)
+
+        if proxies:
+            self.session.proxies.update(proxies)
 
     @property
     def web_path(self) -> str:
@@ -85,10 +107,32 @@ class WebBaseLoader(BaseLoader):
             raise ValueError("Multiple webpaths found.")
         return self.web_paths[0]
 
-    async def _fetch(self, url: str) -> str:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=self.session.headers) as response:
-                return await response.text()
+    async def _fetch(
+        self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
+    ) -> str:
+        # For SiteMap SSL verification
+        if not self.requests_kwargs.get("verify", True):
+            connector = aiohttp.TCPConnector(ssl=False)
+        else:
+            connector = None
+
+        async with aiohttp.ClientSession(connector=connector) as session:
+            for i in range(retries):
+                try:
+                    async with session.get(
+                        url, headers=self.session.headers, verify=self.verify
+                    ) as response:
+                        return await response.text()
+                except aiohttp.ClientConnectionError as e:
+                    if i == retries - 1:
+                        raise
+                    else:
+                        logger.warning(
+                            f"Error fetching {url} with attempt "
+                            f"{i + 1}/{retries}: {e}. Retrying..."
+                        )
+                        await asyncio.sleep(cooldown * backoff**i)
+        raise ValueError("retry count exceeded")
 
     async def _fetch_with_rate_limit(
         self, url: str, semaphore: asyncio.Semaphore
@@ -103,7 +147,15 @@ class WebBaseLoader(BaseLoader):
         for url in urls:
             task = asyncio.ensure_future(self._fetch_with_rate_limit(url, semaphore))
             tasks.append(task)
-        return await asyncio.gather(*tasks)
+        try:
+            from tqdm.asyncio import tqdm_asyncio
+
+            return await tqdm_asyncio.gather(
+                *tasks, desc="Fetching pages", ascii=True, mininterval=1
+            )
+        except ImportError:
+            warnings.warn("For better logging of progress, `pip install tqdm`")
+            return await asyncio.gather(*tasks)
 
     @staticmethod
     def _check_parser(parser: str) -> None:
@@ -143,7 +195,10 @@ class WebBaseLoader(BaseLoader):
 
         self._check_parser(parser)
 
-        html_doc = self.session.get(url)
+        html_doc = self.session.get(url, verify=self.verify, **self.requests_kwargs)
+        if self.raise_for_status:
+            html_doc.raise_for_status()
+        html_doc.encoding = html_doc.apparent_encoding
         return BeautifulSoup(html_doc.text, parser)
 
     def scrape(self, parser: Union[str, None] = None) -> Any:
@@ -154,16 +209,17 @@ class WebBaseLoader(BaseLoader):
 
         return self._scrape(self.web_path, parser)
 
-    def load(self) -> List[Document]:
-        """Load text from the url(s) in web_path."""
-        docs = []
+    def lazy_load(self) -> Iterator[Document]:
+        """Lazy load text from the url(s) in web_path."""
         for path in self.web_paths:
             soup = self._scrape(path)
-            text = soup.get_text()
+            text = soup.get_text(**self.bs_get_text_kwargs)
             metadata = _build_metadata(soup, path)
-            docs.append(Document(page_content=text, metadata=metadata))
+            yield Document(page_content=text, metadata=metadata)
 
-        return docs
+    def load(self) -> List[Document]:
+        """Load text from the url(s) in web_path."""
+        return list(self.lazy_load())
 
     def aload(self) -> List[Document]:
         """Load text from the urls in web_path async into Documents."""
@@ -172,7 +228,7 @@ class WebBaseLoader(BaseLoader):
         docs = []
         for i in range(len(results)):
             soup = results[i]
-            text = soup.get_text()
+            text = soup.get_text(**self.bs_get_text_kwargs)
             metadata = _build_metadata(soup, self.web_paths[i])
             docs.append(Document(page_content=text, metadata=metadata))
 

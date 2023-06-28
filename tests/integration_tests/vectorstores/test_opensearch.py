@@ -23,6 +23,22 @@ def test_opensearch() -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_similarity_search_with_score() -> None:
+    """Test similarity search with score using Approximate Search."""
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts,
+        FakeEmbeddings(),
+        metadatas=metadatas,
+        opensearch_url=DEFAULT_OPENSEARCH_URL,
+    )
+    output = docsearch.similarity_search_with_score("foo", k=2)
+    assert output == [
+        (Document(page_content="foo", metadata={"page": 0}), 1.0),
+        (Document(page_content="bar", metadata={"page": 1}), 0.5),
+    ]
+
+
 def test_opensearch_with_custom_field_name() -> None:
     """Test indexing and search using custom vector field and text field name."""
     docsearch = OpenSearchVectorSearch.from_texts(
@@ -164,3 +180,36 @@ def test_appx_search_with_boolean_filter() -> None:
         "foo", k=3, boolean_filter=boolean_filter_val, subquery_clause="should"
     )
     assert output == [Document(page_content="bar")]
+
+
+def test_appx_search_with_lucene_filter() -> None:
+    """Test Approximate Search with Lucene Filter."""
+    lucene_filter_val = {"bool": {"must": [{"term": {"text": "bar"}}]}}
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts, FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL, engine="lucene"
+    )
+    output = docsearch.similarity_search("foo", k=3, lucene_filter=lucene_filter_val)
+    assert output == [Document(page_content="bar")]
+
+
+def test_opensearch_with_custom_field_name_appx_true() -> None:
+    """Test Approximate Search with custom field name appx true."""
+    text_input = ["add", "test", "text", "method"]
+    docsearch = OpenSearchVectorSearch.from_texts(
+        text_input,
+        FakeEmbeddings(),
+        opensearch_url=DEFAULT_OPENSEARCH_URL,
+        is_appx_search=True,
+    )
+    output = docsearch.similarity_search("add", k=1)
+    assert output == [Document(page_content="add")]
+
+
+def test_opensearch_with_custom_field_name_appx_false() -> None:
+    """Test Approximate Search with custom field name appx true."""
+    text_input = ["add", "test", "text", "method"]
+    docsearch = OpenSearchVectorSearch.from_texts(
+        text_input, FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL
+    )
+    output = docsearch.similarity_search("add", k=1)
+    assert output == [Document(page_content="add")]

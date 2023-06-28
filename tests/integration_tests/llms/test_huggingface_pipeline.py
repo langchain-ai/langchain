@@ -27,6 +27,15 @@ def test_huggingface_pipeline_text2text_generation() -> None:
     assert isinstance(output, str)
 
 
+def text_huggingface_pipeline_summarization() -> None:
+    """Test valid call to HuggingFace summarization model."""
+    llm = HuggingFacePipeline.from_model_id(
+        model_id="facebook/bart-large-cnn", task="summarization"
+    )
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+
 def test_saving_loading_llm(tmp_path: Path) -> None:
     """Test saving/loading an HuggingFaceHub LLM."""
     llm = HuggingFacePipeline.from_model_id(

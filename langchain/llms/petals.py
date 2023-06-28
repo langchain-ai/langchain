@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
@@ -22,6 +23,7 @@ class Petals(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import petals
             petals = Petals()
 
@@ -130,9 +132,16 @@ class Petals(LLM):
         """Return type of llm."""
         return "petals"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Call the Petals API."""
         params = self._default_params
+        params = {**params, **kwargs}
         inputs = self.tokenizer(prompt, return_tensors="pt")["input_ids"]
         outputs = self.client.generate(inputs, **params)
         text = self.tokenizer.decode(outputs[0])

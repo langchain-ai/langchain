@@ -36,7 +36,7 @@ class SerpAPIWrapper(BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import SerpAPIWrapper
+            from langchain.utilities import SerpAPIWrapper
             serpapi = SerpAPIWrapper()
     """
 
@@ -76,8 +76,24 @@ class SerpAPIWrapper(BaseModel):
             )
         return values
 
-    async def arun(self, query: str) -> str:
-        """Use aiohttp to run query through SerpAPI and parse result."""
+    async def arun(self, query: str, **kwargs: Any) -> str:
+        """Run query through SerpAPI and parse result async."""
+        return self._process_response(await self.aresults(query))
+
+    def run(self, query: str, **kwargs: Any) -> str:
+        """Run query through SerpAPI and parse result."""
+        return self._process_response(self.results(query))
+
+    def results(self, query: str) -> dict:
+        """Run query through SerpAPI and return the raw result."""
+        params = self.get_params(query)
+        with HiddenPrints():
+            search = self.search_engine(params)
+            res = search.get_dict()
+        return res
+
+    async def aresults(self, query: str) -> dict:
+        """Use aiohttp to run query through SerpAPI and return the results async."""
 
         def construct_url_and_params() -> Tuple[str, Dict[str, str]]:
             params = self.get_params(query)
@@ -97,18 +113,6 @@ class SerpAPIWrapper(BaseModel):
             async with self.aiosession.get(url, params=params) as response:
                 res = await response.json()
 
-        return self._process_response(res)
-
-    def run(self, query: str) -> str:
-        """Run query through SerpAPI and parse result."""
-        return self._process_response(self.results(query))
-
-    def results(self, query: str) -> dict:
-        """Run query through SerpAPI and return the raw result."""
-        params = self.get_params(query)
-        with HiddenPrints():
-            search = self.search_engine(params)
-            res = search.get_dict()
         return res
 
     def get_params(self, query: str) -> Dict[str, str]:
@@ -125,6 +129,8 @@ class SerpAPIWrapper(BaseModel):
         """Process response from SerpAPI."""
         if "error" in res.keys():
             raise ValueError(f"Got error from SerpAPI: {res['error']}")
+        if "answer_box" in res.keys() and type(res["answer_box"]) == list:
+            res["answer_box"] = res["answer_box"][0]
         if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():
             toret = res["answer_box"]["answer"]
         elif "answer_box" in res.keys() and "snippet" in res["answer_box"].keys():
@@ -140,12 +146,19 @@ class SerpAPIWrapper(BaseModel):
         ):
             toret = res["sports_results"]["game_spotlight"]
         elif (
+            "shopping_results" in res.keys()
+            and "title" in res["shopping_results"][0].keys()
+        ):
+            toret = res["shopping_results"][:3]
+        elif (
             "knowledge_graph" in res.keys()
             and "description" in res["knowledge_graph"].keys()
         ):
             toret = res["knowledge_graph"]["description"]
         elif "snippet" in res["organic_results"][0].keys():
             toret = res["organic_results"][0]["snippet"]
+        elif "link" in res["organic_results"][0].keys():
+            toret = res["organic_results"][0]["link"]
 
         else:
             toret = "No good search result found"

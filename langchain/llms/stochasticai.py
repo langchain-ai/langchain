@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
@@ -80,7 +81,13 @@ class StochasticAI(LLM):
         """Return type of llm."""
         return "stochasticai"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Call out to StochasticAI's complete endpoint.
 
         Args:
@@ -96,6 +103,7 @@ class StochasticAI(LLM):
                 response = StochasticAI("Tell me a joke.")
         """
         params = self.model_kwargs or {}
+        params = {**params, **kwargs}
         response_post = requests.post(
             url=self.api_url,
             json={"prompt": prompt, "params": params},

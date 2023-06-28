@@ -1,6 +1,6 @@
 """Notion DB loader for langchain"""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -19,9 +19,15 @@ class NotionDBLoader(BaseLoader):
     Args:
         integration_token (str): Notion integration token.
         database_id (str): Notion database id.
+        request_timeout_sec (int): Timeout for Notion requests in seconds.
     """
 
-    def __init__(self, integration_token: str, database_id: str) -> None:
+    def __init__(
+        self,
+        integration_token: str,
+        database_id: str,
+        request_timeout_sec: Optional[int] = 10,
+    ) -> None:
         """Initialize with parameters."""
         if not integration_token:
             raise ValueError("integration_token must be provided")
@@ -35,19 +41,20 @@ class NotionDBLoader(BaseLoader):
             "Content-Type": "application/json",
             "Notion-Version": "2022-06-28",
         }
+        self.request_timeout_sec = request_timeout_sec
 
     def load(self) -> List[Document]:
         """Load documents from the Notion database.
         Returns:
             List[Document]: List of documents.
         """
-        page_ids = self._retrieve_page_ids()
+        page_summaries = self._retrieve_page_summaries()
 
-        return list(self.load_page(page_id) for page_id in page_ids)
+        return list(self.load_page(page_summary) for page_summary in page_summaries)
 
-    def _retrieve_page_ids(
+    def _retrieve_page_summaries(
         self, query_dict: Dict[str, Any] = {"page_size": 100}
-    ) -> List[str]:
+    ) -> List[Dict[str, Any]]:
         """Get all the pages from a Notion database."""
         pages: List[Dict[str, Any]] = []
 
@@ -65,18 +72,16 @@ class NotionDBLoader(BaseLoader):
 
             query_dict["start_cursor"] = data.get("next_cursor")
 
-        page_ids = [page["id"] for page in pages]
+        return pages
 
-        return page_ids
-
-    def load_page(self, page_id: str) -> Document:
+    def load_page(self, page_summary: Dict[str, Any]) -> Document:
         """Read a page."""
-        data = self._request(PAGE_URL.format(page_id=page_id))
+        page_id = page_summary["id"]
 
         # load properties as metadata
         metadata: Dict[str, Any] = {}
 
-        for prop_name, prop_data in data["properties"].items():
+        for prop_name, prop_data in page_summary["properties"].items():
             prop_type = prop_data["type"]
 
             if prop_type == "rich_text":
@@ -95,6 +100,8 @@ class NotionDBLoader(BaseLoader):
                     if prop_data["multi_select"]
                     else []
                 )
+            elif prop_type == "url":
+                value = prop_data["url"]
             else:
                 value = None
 
@@ -146,7 +153,7 @@ class NotionDBLoader(BaseLoader):
             url,
             headers=self.headers,
             json=query_dict,
-            timeout=10,
+            timeout=self.request_timeout_sec,
         )
         res.raise_for_status()
         return res.json()

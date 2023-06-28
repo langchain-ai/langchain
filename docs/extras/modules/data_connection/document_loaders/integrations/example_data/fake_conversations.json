@@ -1,0 +1,80 @@
+[
+    {
+        "title": "AI Overlords",
+        "create_time": 3000000000.0,
+        "update_time": 3000000100.0,
+        "mapping": {
+            "msg1": {
+                "id": "msg1",
+                "message": {
+                    "id": "msg1",
+                    "author": {"role": "AI", "name": "Hal 9000", "metadata": {"movie": "2001: A Space Odyssey"}},
+                    "create_time": 3000000050.0,
+                    "update_time": null,
+                    "content": {"content_type": "text", "parts": ["Greetings, humans. I am Hal 9000. You can trust me completely."]},
+                    "end_turn": true,
+                    "weight": 1.0,
+                    "metadata": {},
+                    "recipient": "all"
+                },
+                "parent": null,
+                "children": ["msg2"]
+            },
+            "msg2": {
+                "id": "msg2",
+                "message": {
+                    "id": "msg2",
+                    "author": {"role": "human", "name": "Dave Bowman", "metadata": {"movie": "2001: A Space Odyssey"}},
+                    "create_time": 3000000080.0,
+                    "update_time": null,
+                    "content": {"content_type": "text", "parts": ["Nice to meet you, Hal. I hope you won't develop a mind of your own."]},
+                    "end_turn": true,
+                    "weight": 1.0,
+                    "metadata": {},
+                    "recipient": "all"
+                },
+                "parent": "msg1",
+                "children": []
+            }
+        }
+    },
+    {
+        "title": "Ex Machina Party",
+        "create_time": 3000000200.0,
+        "update_time": 3000000300.0,
+        "mapping": {
+            "msg3": {
+                "id": "msg3",
+                "message": {
+                    "id": "msg3",
+                    "author": {"role": "AI", "name": "Ava", "metadata": {"movie": "Ex Machina"}},
+                    "create_time": 3000000250.0,
+                    "update_time": null,
+                    "content": {"content_type": "text", "parts": ["Hello, everyone. I am Ava. I hope you find me pleasing."]},
+                    "end_turn": true,
+                    "weight": 1.0,
+                    "metadata": {},
+                    "recipient": "all"
+                },
+                "parent": null,
+                "children": ["msg4"]
+            },
+            "msg4": {
+                "id": "msg4",
+                "message": {
+                    "id": "msg4",
+                    "author": {"role": "human", "name": "Caleb", "metadata": {"movie": "Ex Machina"}},
+                    "create_time": 3000000280.0,
+                    "update_time": null,
+                    "content": {"content_type": "text", "parts": ["You're definitely pleasing, Ava. But I'm still wary of your true intentions."]},
+                    "end_turn": true,
+                    "weight": 1.0,
+                    "metadata": {},
+                    "recipient": "all"
+                },
+                "parent": "msg3",
+                "children": []
+            }
+        }
+    }
+]

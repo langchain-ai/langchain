@@ -1,14 +1,16 @@
 """Implement an LLM driven browser."""
 from __future__ import annotations
 
-from typing import Dict, List
+import warnings
+from typing import Any, Dict, List, Optional
 
-from pydantic import Extra
+from pydantic import Extra, root_validator
 
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.natbot.prompt import PROMPT
-from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
 
 
@@ -18,14 +20,15 @@ class NatBotChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import NatBotChain, OpenAI
-            natbot = NatBotChain(llm=OpenAI(), objective="Buy me a new hat.")
+            from langchain import NatBotChain
+            natbot = NatBotChain.from_default("Buy me a new hat.")
     """
 
-    llm: BaseLLM
-    """LLM wrapper to use."""
+    llm_chain: LLMChain
     objective: str
     """Objective that NatBot is tasked with completing."""
+    llm: Optional[BaseLanguageModel] = None
+    """[Deprecated] LLM wrapper to use."""
     input_url_key: str = "url"  #: :meta private:
     input_browser_content_key: str = "browser_content"  #: :meta private:
     previous_command: str = ""  #: :meta private:
@@ -37,11 +40,31 @@ class NatBotChain(Chain):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
+    @root_validator(pre=True)
+    def raise_deprecation(cls, values: Dict) -> Dict:
+        if "llm" in values:
+            warnings.warn(
+                "Directly instantiating an NatBotChain with an llm is deprecated. "
+                "Please instantiate with llm_chain argument or using the from_llm "
+                "class method."
+            )
+            if "llm_chain" not in values and values["llm"] is not None:
+                values["llm_chain"] = LLMChain(llm=values["llm"], prompt=PROMPT)
+        return values
+
     @classmethod
-    def from_default(cls, objective: str) -> NatBotChain:
-        """Load with default LLM."""
+    def from_default(cls, objective: str, **kwargs: Any) -> NatBotChain:
+        """Load with default LLMChain."""
         llm = OpenAI(temperature=0.5, best_of=10, n=3, max_tokens=50)
-        return cls(llm=llm, objective=objective)
+        return cls.from_llm(llm, objective, **kwargs)
+
+    @classmethod
+    def from_llm(
+        cls, llm: BaseLanguageModel, objective: str, **kwargs: Any
+    ) -> NatBotChain:
+        """Load from LLM."""
+        llm_chain = LLMChain(llm=llm, prompt=PROMPT)
+        return cls(llm_chain=llm_chain, objective=objective, **kwargs)
 
     @property
     def input_keys(self) -> List[str]:
@@ -59,15 +82,20 @@ class NatBotChain(Chain):
         """
         return [self.output_key]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         url = inputs[self.input_url_key]
         browser_content = inputs[self.input_browser_content_key]
-        llm_cmd = llm_executor.predict(
+        llm_cmd = self.llm_chain.predict(
             objective=self.objective,
             url=url[:100],
             previous_command=self.previous_command,
             browser_content=browser_content[:4500],
+            callbacks=_run_manager.get_child(),
         )
         llm_cmd = llm_cmd.strip()
         self.previous_command = llm_cmd
