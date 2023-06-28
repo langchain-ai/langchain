@@ -82,7 +82,6 @@ def _bulk_ingest_embeddings(
     text_field: str = "text",
     mapping: Optional[Dict] = None,
     max_chunk_bytes: Optional[int] = 1 * 1024 * 1024,
-
 ) -> List[str]:
     """Bulk Ingest Embeddings into given index."""
     if not mapping:
