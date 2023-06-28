@@ -50,6 +50,9 @@ class WebBaseLoader(BaseLoader):
     requests_kwargs: Dict[str, Any] = {}
     """kwargs for requests"""
 
+    raise_for_status: bool = False
+    """Raise an exception if http status code denotes an error."""
+
     bs_get_text_kwargs: Dict[str, Any] = {}
     """kwargs for beatifulsoup4 get_text"""
 
@@ -58,6 +61,7 @@ class WebBaseLoader(BaseLoader):
         web_path: Union[str, List[str]],
         header_template: Optional[dict] = None,
         verify: Optional[bool] = True,
+        proxies: Optional[dict] = None,
     ):
         """Initialize with webpage path."""
 
@@ -93,6 +97,9 @@ class WebBaseLoader(BaseLoader):
                     "`pip install fake_useragent`."
                 )
         self.session.headers = dict(headers)
+
+        if proxies:
+            self.session.proxies.update(proxies)
 
     @property
     def web_path(self) -> str:
@@ -189,6 +196,8 @@ class WebBaseLoader(BaseLoader):
         self._check_parser(parser)
 
         html_doc = self.session.get(url, verify=self.verify, **self.requests_kwargs)
+        if self.raise_for_status:
+            html_doc.raise_for_status()
         html_doc.encoding = html_doc.apparent_encoding
         return BeautifulSoup(html_doc.text, parser)
 
