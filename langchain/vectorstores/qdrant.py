@@ -149,7 +149,7 @@ class Qdrant(VectorStore):
             # Generate the embeddings for all the texts in a batch
             batch_embeddings = self._embed_texts(batch_texts)
             if self.vector_name is not None:
-                batch_embeddings = {self.vector_name: batch_embeddings}
+                batch_embeddings = {self.vector_name: batch_embeddings}  # type: ignore[assignment]
 
             points = rest.Batch.construct(
                 ids=batch_ids,
@@ -392,7 +392,7 @@ class Qdrant(VectorStore):
 
         query_vector = embedding
         if self.vector_name is not None:
-            query_vector = (self.vector_name, embedding)
+            query_vector = (self.vector_name, embedding)  # type: ignore[assignment]
 
         results = self.client.search(
             collection_name=self.collection_name,
@@ -466,7 +466,7 @@ class Qdrant(VectorStore):
         """
         query_vector = self._embed_query(query)
         if self.vector_name is not None:
-            query_vector = (self.vector_name, query_vector)
+            query_vector = (self.vector_name, query_vector)  # type: ignore[assignment]
 
         results = self.client.search(
             collection_name=self.collection_name,
@@ -508,7 +508,7 @@ class Qdrant(VectorStore):
         distance_func: str = "Cosine",
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
-        vector_name: str = VECTOR_NAME,
+        vector_name: Optional[str] = VECTOR_NAME,
         batch_size: int = 64,
         shard_number: Optional[int] = None,
         replication_factor: Optional[int] = None,
@@ -662,7 +662,7 @@ class Qdrant(VectorStore):
         # If vector name was provided, we're going to use the named vectors feature
         # with just a single vector.
         if vector_name is not None:
-            vectors_config = {
+            vectors_config = {  # type: ignore[assignment]
                 vector_name: vectors_config,
             }
 
@@ -692,7 +692,7 @@ class Qdrant(VectorStore):
             # Generate the embeddings for all the texts in a batch
             batch_embeddings = embedding.embed_documents(batch_texts)
             if vector_name is not None:
-                batch_embeddings = {vector_name: batch_embeddings}
+                batch_embeddings = {vector_name: batch_embeddings}  # type: ignore[assignment]
 
             points = rest.Batch.construct(
                 ids=batch_ids,

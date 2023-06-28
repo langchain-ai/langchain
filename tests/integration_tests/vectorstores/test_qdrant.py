@@ -364,7 +364,7 @@ def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) ->
     collection_name = "test"
     vectors_config = rest.VectorParams(size=10, distance=rest.Distance.COSINE)
     if vector_name is not None:
-        vectors_config = {vector_name: vectors_config}
+        vectors_config = {vector_name: vectors_config}  # type: ignore[assignment]
     client.recreate_collection(collection_name, vectors_config=vectors_config)
 
     vec_store = Qdrant(
@@ -453,7 +453,7 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
 
 
 @pytest.mark.parametrize("vector_name", ["custom-vector"])
-def test_qdrant_from_texts_stores_embeddings_as_named_vectors(vector_name: str):
+def test_qdrant_from_texts_stores_embeddings_as_named_vectors(vector_name: str) -> None:
     """Test end to end Qdrant.from_texts stores named vectors if name is provided."""
     from qdrant_client import QdrantClient
 
@@ -471,13 +471,13 @@ def test_qdrant_from_texts_stores_embeddings_as_named_vectors(vector_name: str):
         client = QdrantClient(path=str(tmpdir))
         assert 5 == client.count("test").count
         assert all(
-            vector_name in point.vector
+            vector_name in point.vector  # type: ignore[operator]
             for point in client.scroll(collection_name, with_vectors=True)[0]
         )
 
 
 @pytest.mark.parametrize("vector_name", ["custom-vector"])
-def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str):
+def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -> None:
     """Test end to end Qdrant.add_texts stores named vectors if name is provided."""
     from qdrant_client import QdrantClient
 
@@ -501,6 +501,6 @@ def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str):
 
     assert 5 == client.count("test").count
     assert all(
-        vector_name in point.vector
+        vector_name in point.vector  # type: ignore[operator]
         for point in client.scroll(collection_name, with_vectors=True)[0]
     )
