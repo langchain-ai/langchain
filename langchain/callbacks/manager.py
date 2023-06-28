@@ -379,8 +379,8 @@ class BaseRunManager(RunManagerMixin):
         handlers: List[BaseCallbackHandler],
         inheritable_handlers: List[BaseCallbackHandler],
         parent_run_id: Optional[UUID] = None,
-        tags: List[str],
-        inheritable_tags: List[str],
+        tags: List[str]=[],
+        inheritable_tags: List[str]=[],
     ) -> None:
         """Initialize the run manager.
 
