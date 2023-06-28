@@ -5,6 +5,7 @@ from uuid import UUID
 
 from langchainplus_sdk import LangChainPlusClient, RunEvaluator
 
+from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 
@@ -47,6 +48,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         max_workers: Optional[int] = None,
         client: Optional[LangChainPlusClient] = None,
         example_id: Optional[Union[UUID, str]] = None,
+        project_name: Optional[str] = None,
         **kwargs: Any
     ) -> None:
         super().__init__(**kwargs)
@@ -59,6 +61,23 @@ class EvaluatorCallbackHandler(BaseTracer):
             max_workers=max(max_workers or len(evaluators), 1)
         )
         self.futures: Set[Future] = set()
+        self.project_name = project_name
+
+    def _evaluate_in_project(self, run: Run, evaluator: RunEvaluator) -> None:
+        """Evaluate the run in the project.
+
+        Parameters
+        ----------
+        run : Run
+            The run to be evaluated.
+        evaluator : RunEvaluator
+            The evaluator to use for evaluating the run.
+
+        """
+        if self.project_name is None:
+            return self.client.evaluate_run(run, evaluator)
+        with tracing_v2_enabled(project_name=self.project_name):
+            return self.client.evaluate_run(run, evaluator)
 
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.
@@ -73,7 +92,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         run_.reference_example_id = self.example_id
         for evaluator in self.evaluators:
             self.futures.add(
-                self.executor.submit(self.client.evaluate_run, run_, evaluator)
+                self.executor.submit(self._evaluate_in_project, run_, evaluator)
             )
 
     def wait_for_futures(self) -> None:
