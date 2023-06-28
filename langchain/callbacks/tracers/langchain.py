@@ -93,6 +93,22 @@ class LangChainTracer(BaseTracer):
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
 
+    def on_llm_new_token(
+        self,
+        token: str,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run on new LLM token. Only available when streaming is enabled."""
+        run_id_ = str(run_id)
+        if run_id_ not in self.run_map:
+            return
+        run = self.run_map[run_id_]
+        if "time_to_first_token" not in run.extra:
+            run.extra["time_to_first_token"] = datetime.utcnow() - run.start_time
+
     def _persist_run(self, run: Run) -> None:
         """The Langchain Tracer uses Post/Patch rather than persist."""
 
