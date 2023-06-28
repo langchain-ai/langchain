@@ -113,6 +113,8 @@ from langchain.document_loaders.telegram import (
     TelegramChatApiLoader,
     TelegramChatFileLoader,
 )
+from langchain.document_loaders.tencent_cos_directory import TencentCOSDirectoryLoader
+from langchain.document_loaders.tencent_cos_file import TencentCOSFileLoader
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain.document_loaders.toml import TomlLoader
@@ -243,6 +245,8 @@ __all__ = [
     "SnowflakeLoader",
     "SpreedlyLoader",
     "StripeLoader",
+    "TencentCOSDirectoryLoader",
+    "TencentCOSFileLoader",
     "TelegramChatApiLoader",
     "TelegramChatFileLoader",
     "TelegramChatLoader",
