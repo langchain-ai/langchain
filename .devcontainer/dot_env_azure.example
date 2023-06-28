@@ -1,0 +1,5 @@
+OPENAI_API_KEY=PUT-KEY-HERE
+OPENAI_API_TYPE=azure
+OPENAI_API_VERSION=2023-05-15
+OPENAI_API_BASE=https://boris-test.openai.azure.com/
+AZURE_DEPLOYMENT_NAME=boris-text-davinci-003

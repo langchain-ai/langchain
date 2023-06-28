@@ -1,0 +1,8 @@
+# exclude everything
+.env_azure
+.env_openai
+langchain-packages/*
+
+# exception to the rule
+!langchain-packages/.gitkeep 
+

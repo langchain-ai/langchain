@@ -1,0 +1,14 @@
+110c110
+< azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
+---
+> # azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
+337,340c337,340
+< [[tool.poetry.source]]
+< name = "azure-sdk-dev"
+< url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/"
+< secondary = true
+---
+> #[[tool.poetry.source]]
+> #name = "azure-sdk-dev"
+> #url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/"
+> #secondary = true

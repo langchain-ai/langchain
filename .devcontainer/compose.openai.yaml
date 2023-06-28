@@ -1,0 +1,5 @@
+services:
+  langchain:
+    container_name: langchain_openai
+    env_file:
+      - .env_openai

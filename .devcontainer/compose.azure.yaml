@@ -1,0 +1,5 @@
+services:
+  langchain:
+    container_name: langchain_azure
+    env_file:
+      - .env_azure

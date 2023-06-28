@@ -1,0 +1,26 @@
+services:
+  langchain:
+    container_name: langchain
+    build:
+      dockerfile: cpal.Dockerfile
+      context: ..
+    # keep container alive
+    tty: true
+    environment:
+      - PYTHONBREAKPOINT=ipdb.set_trace
+    ports:
+      - 8888:8888
+    command: > 
+      bash -c "cd .. && jupyter lab --ip='*' --no-browser --NotebookApp.token='' --NotebookApp.password=''"
+    volumes:
+      # `bind volume` so container can read host's src code
+      - ..:/workspaces
+      # `named volume` so host can read container packages
+      - langchain-packages:/home/vscode/langchain-py-env/lib/python3.11/site-packages
+
+volumes:
+  langchain-packages: 
+    driver_opts:
+      type: none 
+      device: /Users/borisdev/workspace/langchain/.devcontainer/langchain-packages
+      o: bind
