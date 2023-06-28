@@ -18,7 +18,7 @@ from langchain.client.runner_utils import (
     arun_on_dataset,
     run_llm,
 )
-from tests.unit_tests.chains.test_base import FakeChain
+from tests.unit_tests.chains.test_base import FakeChain, FakeMemory
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -221,3 +221,7 @@ def test_wrap_chain() -> None:
     result2 = _wrap_chain(result)
     assert callable(result2)
     assert result2().__class__ == FakeChain
+
+    with pytest.raises(ValueError):
+        chain_with_memory = FakeChain(memory=FakeMemory())
+        _wrap_chain(chain_with_memory)

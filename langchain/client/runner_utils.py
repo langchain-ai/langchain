@@ -508,9 +508,13 @@ def _wrap_chain(
 ) -> MODEL_OR_CHAIN_FACTORY:
     if isinstance(llm_or_chain_factory, Chain):
         if llm_or_chain_factory.memory is not None:
-            logger.warning(
-                f"Attempting to run a chain with memory {llm_or_chain_factory}. "
-                "This will lead to issues reproducing results."
+            raise ValueError(
+                f"Attempting to run a chain that uses memory: {llm_or_chain_factory}. "
+                "This will lead to issues reproducing results. To fix, pass in"
+                " a chain _factory_ to construct it instead:\n"
+                "def create_chain():\n"
+                "    return MyChain(..., memory=MyMemory())\n"
+                "run_on_dataset(..., llm_or_chain_factory=create_chain)\n"
             )
         chain = llm_or_chain_factory
         return lambda: chain
