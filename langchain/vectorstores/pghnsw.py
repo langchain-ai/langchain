@@ -313,7 +313,8 @@ class HNSWVectoreStore(VectorStore):
     ) -> List[Tuple[Document, float]]:
         with Session(self._conn) as session:
             collection = self.get_collection(session)
-            session.execute(sqlalchemy.text("SET enable_seqscan = off;"))
+            set_enable_seqscan_stmt = sqlalchemy.text("SET enable_seqscan = off")
+            session.execute(set_enable_seqscan_stmt)
             if not collection:
                 raise ValueError("Collection not found")
 
