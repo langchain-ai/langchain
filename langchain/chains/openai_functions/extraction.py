@@ -61,7 +61,7 @@ def create_extraction_chain_pydantic(
 
     openai_schema = pydantic_schema.schema()
     openai_schema = _resolve_schema_references(
-        openai_schema, openai_schema["definitions"]
+        openai_schema, openai_schema.get("definitions", {})
     )
 
     function = _get_extraction_function(openai_schema)
