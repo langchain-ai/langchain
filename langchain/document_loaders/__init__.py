@@ -63,6 +63,7 @@ from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.iugu import IuguLoader
 from langchain.document_loaders.joplin import JoplinLoader
 from langchain.document_loaders.json_loader import JSONLoader
+from langchain.document_loaders.larksuite import LarkSuiteDocLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.mastodon import MastodonTootsLoader
 from langchain.document_loaders.max_compute import MaxComputeLoader
@@ -113,6 +114,8 @@ from langchain.document_loaders.telegram import (
     TelegramChatApiLoader,
     TelegramChatFileLoader,
 )
+from langchain.document_loaders.tencent_cos_directory import TencentCOSDirectoryLoader
+from langchain.document_loaders.tencent_cos_file import TencentCOSFileLoader
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain.document_loaders.toml import TomlLoader
@@ -202,6 +205,7 @@ __all__ = [
     "IuguLoader",
     "JSONLoader",
     "JoplinLoader",
+    "LarkSuiteDocLoader",
     "MWDumpLoader",
     "MastodonTootsLoader",
     "MathpixPDFLoader",
@@ -243,6 +247,8 @@ __all__ = [
     "SnowflakeLoader",
     "SpreedlyLoader",
     "StripeLoader",
+    "TencentCOSDirectoryLoader",
+    "TencentCOSFileLoader",
     "TelegramChatApiLoader",
     "TelegramChatFileLoader",
     "TelegramChatLoader",
