@@ -32,16 +32,17 @@ class TextWithHighLights(BaseModel, extra=Extra.allow):
     Highlights: Optional[Any]
 
 
+class AdditionalResultAttributeValue(BaseModel, extra=Extra.allow):
+    TextWithHighlightsValue: TextWithHighLights
+
+
 class AdditionalResultAttribute(BaseModel, extra=Extra.allow):
     Key: str
     ValueType: Literal["TEXT_WITH_HIGHLIGHTS_VALUE"]
-    Value: Optional[TextWithHighLights]
+    Value: AdditionalResultAttributeValue
 
     def get_value_text(self) -> str:
-        if not self.Value:
-            return ""
-        else:
-            return self.Value.Text
+        return self.Value.TextWithHighlightsValue.Text
 
 
 class QueryResultItem(BaseModel, extra=Extra.allow):
