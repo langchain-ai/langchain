@@ -354,7 +354,12 @@ class Pinecone(VectorStore):
             pinecone.Index(index_name), embedding.embed_query, text_key, namespace
         )
 
-    def delete(self, ids: List[str] = None, filter: Optional[dict] = None, namespace: Optional[str] = None) -> None:
+    def delete(self,
+            ids: Optional[List[str]] = None,
+            delete_all: Optional[bool] = None,
+            namespace: Optional[str] = None,
+            filter: Optional[dict] = None,
+            **kwargs) -> Dict[str, Any]:
         """Delete by vector IDs or filter.
         Args:
             ids: List of ids to delete.
@@ -364,13 +369,14 @@ class Pinecone(VectorStore):
         if namespace is None:
             namespace = self._namespace
 
-        if ids is not None:
-            # This is the maximum number of IDs that can be deleted
+        if delete_all:
+            return self._index.delete(delete_all=True, namespace=namespace, **kwargs)
+        elif ids is not None:
             chunk_size = 1000
             for i in range(0, len(ids), chunk_size):
                 chunk = ids[i : i + chunk_size]
-                self._index.delete(ids=chunk, namespace=namespace)
+                return self._index.delete(ids=chunk, namespace=namespace, **kwargs)
         elif filter is not None:
-            self._index.delete(filter=filter, namespace=namespace)
+            return self._index.delete(filter=filter, namespace=namespace, **kwargs)
         else:
-            raise ValueError("Either ids or filter must be provided.")
+            raise ValueError("Either ids, delete_all, or filter must be provided.")
