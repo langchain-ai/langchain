@@ -91,6 +91,21 @@ class QueryResult:
     distance: float
 
 class HNSWVectoreStore(VectorStore):
+    """
+    VectorStore implementation using Postgres and the HNSW extension.
+    - `connection_string` is a postgres connection string.
+    - `embedding_function` any embedding function implementing
+        `langchain.embeddings.base.Embeddings` interface.
+    - `collection_name` is the name of the collection to use. (default: langchain)
+        - NOTE: This is not the name of the table, but the name of the collection.
+            The tables will be created when initializing the store (if not exists)
+            So, make sure the user has the right permissions to create tables.
+    - `distance_strategy` is the distance strategy to use. (default: EUCLIDEAN)
+        - `EUCLIDEAN` is the euclidean distance.
+    - `pre_delete_collection` if True, will delete the collection if it exists.
+        (default: False)
+        - Useful for testing.
+    """
     def __init__(
         self,
         connection_string: str,
@@ -112,6 +127,7 @@ class HNSWVectoreStore(VectorStore):
         self,
     ) -> None:
         self._conn = self.connect()
+        self.create_hnsw_extension()
         self.create_tables_if_not_exists()
         self.create_collection()
 
@@ -120,10 +136,10 @@ class HNSWVectoreStore(VectorStore):
         conn = engine.connect()
         return conn
 
-    def create_vector_extension(self) -> None:
+    def create_hnsw_extension(self) -> None:
         try:
             with Session(self._conn) as session:
-                statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
+                statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS hnsw")
                 session.execute(statement)
                 session.commit()
         except Exception as e:
@@ -147,7 +163,6 @@ class HNSWVectoreStore(VectorStore):
 
     def create_hnsw_index(self, max_elements = 10000,  dims = ADA_TOKEN_COUNT, m = 8, ef_construction = 16, ef_search = 16):
         # Define the SQL queries for creating the HNSW extension and index
-        create_extension_query = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS hnsw;")
         create_index_query = sqlalchemy.text(
             "CREATE INDEX IF NOT EXISTS langchain_pg_embedding_idx ON langchain_pg_embedding USING hnsw (embedding) WITH (maxelements = {}, dims={}, m={}, efconstruction={}, efsearch={});"
             .format(max_elements, dims, m, ef_construction, ef_search, ADA_TOKEN_COUNT)
@@ -156,8 +171,6 @@ class HNSWVectoreStore(VectorStore):
         # Execute the queries
         try:
             with Session(self._conn) as session:
-                # Create the HNSW extension
-                session.execute(create_extension_query)
                 # Create the HNSW index
                 session.execute(create_index_query)
                 session.commit()
@@ -300,6 +313,7 @@ class HNSWVectoreStore(VectorStore):
     ) -> List[Tuple[Document, float]]:
         with Session(self._conn) as session:
             collection = self.get_collection(session)
+            session.execute(sqlalchemy.text("SET enable_seqscan = off;"))
             if not collection:
                 raise ValueError("Collection not found")
 
