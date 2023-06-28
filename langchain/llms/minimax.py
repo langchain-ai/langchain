@@ -1,9 +1,9 @@
-"""Wrapper around MiniMaxChatCompletion API."""
+"""Wrapper around MiniMaxCompletion API."""
 import logging
 import requests
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import Extra, Field, root_validator
+from pydantic import Extra, BaseModel, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -12,22 +12,7 @@ from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
-
-class MiniMaxChatCompletion(LLM):
-    """Wrapper around Minimax large language models.
-
-    To use, you should have the environment variable ``MINIMAX_GROUP_ID`` and
-    ``MINIMAX_API_KEY`` set with your API token, or pass it as a named parameter to
-    the constructor.
-
-    Example:
-        .. code-block:: python
-
-            from langchain.llms import MiniMaxChatCompletion
-            llm = MiniMaxChatCompletion(model_name="abab5-chat")
-
-    """
-
+class _MinimaxCommon(BaseModel):
     client: Any
 
     model_name: str = "abab5-chat"
@@ -37,9 +22,7 @@ class MiniMaxChatCompletion(LLM):
     """What sampling temperature to use"""
 
     tokens_to_generate: int = 256
-    """The maximum number of tokens to generate in the completion.
-    -1 returns as many tokens as possible given the prompt and
-    the models maximal context size."""
+    """The maximum number of tokens to generate in the completion."""
 
     top_p: float = 0.95
     """Total probability mass of tokens to consider at each step."""
@@ -85,6 +68,21 @@ class MiniMaxChatCompletion(LLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "minimax"
+
+class MiniMaxCompletion(_MinimaxCommon, LLM):
+    """Wrapper around Minimax large language models.
+
+    To use, you should have the environment variable ``MINIMAX_GROUP_ID`` and
+    ``MINIMAX_API_KEY`` set with your API token, or pass it as a named parameter to
+    the constructor.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import MiniMaxCompletion
+            llm = MiniMaxCompletion(model_name="abab5-chat")
+
+    """
 
     def _call(
         self,

@@ -5,6 +5,7 @@ from langchain.chat_models.google_palm import ChatGooglePalm
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.chat_models.vertexai import ChatVertexAI
+from langchain.chat_models.minimax import MiniMaxChat
 
 __all__ = [
     "ChatOpenAI",
@@ -14,4 +15,5 @@ __all__ = [
     "ChatAnthropic",
     "ChatGooglePalm",
     "ChatVertexAI",
+    "MiniMaxChat",
 ]
