@@ -38,15 +38,14 @@ class TestPsychicLoader:
         mock_connector_id.assert_called_once_with(self.MOCK_CONNECTOR_ID)
 
     def test_psychic_loader_load_data(self, mock_psychic: MagicMock) -> None:
-        from psychicapi import GetDocumentsResponse
+        mock_get_documents_response = MagicMock()
+        mock_get_documents_response.documents = [
+            self._get_mock_document("123"),
+            self._get_mock_document("456"),
+        ]
+        mock_get_documents_response.next_page_cursor = None
 
-        mock_psychic.get_documents.return_value = GetDocumentsResponse(
-            documents=[
-                self._get_mock_document("123"),
-                self._get_mock_document("456"),
-            ],
-            next_page_cursor=None,
-        )
+        mock_psychic.get_documents.return_value = mock_get_documents_response
 
         psychic_loader = self._get_mock_psychic_loader(mock_psychic)
 
