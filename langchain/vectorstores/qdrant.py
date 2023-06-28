@@ -571,6 +571,9 @@ class Qdrant(VectorStore):
             metadata_payload_key:
                 A payload key used to store the metadata of the document.
                 Default: "metadata"
+            vector_name:
+                Name of the vector to be used internally in Qdrant.
+                Default: None
             batch_size:
                 How many vectors upload per-request.
                 Default: 64
