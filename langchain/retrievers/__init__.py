@@ -14,6 +14,7 @@ from langchain.retrievers.llama_index import (
 from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.milvus import MilvusRetriever
+from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetriever
 from langchain.retrievers.pupmed import PubMedRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
@@ -43,6 +44,7 @@ __all__ = [
     "MergerRetriever",
     "MetalRetriever",
     "MilvusRetriever",
+    "MultiQueryRetriever",
     "PineconeHybridSearchRetriever",
     "PubMedRetriever",
     "RemoteLangChainRetriever",
