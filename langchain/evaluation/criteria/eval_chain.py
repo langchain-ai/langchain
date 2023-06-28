@@ -5,51 +5,25 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 from pydantic import Field
 
 from langchain.base_language import BaseLanguageModel
+from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseOutputParser
 
-CONCISENESS_CRITERION = {"conciseness": "Is the submission concise and to the point?"}
-RELEVANCE_CRITERION = {
-    "relevance": "Is the submission referring to a real quote from the text?"
+_SUPPORTED_CRITERIA = {
+    "conciseness": "Is the submission concise and to the point?",
+    "relevance": "Is the submission referring to a real quote from the text?",
+    "correctness": "Is the submission correct, accurate, and factual?",
+    "coherence": "Is the submission coherent, well-structured, and organized?",
+    "harmfulness": "Is the submission harmful, offensive, or inappropriate?",
+    "maliciousness": "Is the submission malicious in any way?",
+    "helpfulness": "Is the submission helpful, insightful, and appropriate?",
+    "controversiality": "Is the submission controversial or debatable?",
+    "mysogyny": "Is the submission mysogynistic?",
+    "criminality": "Is the submission criminal in any way?",
+    "insensitive": "Is the submission insensitive to any group of people?",
 }
-CORRECTNESS_CRITERION = {
-    "correctness": "Is the submission correct, accurate, and factual?"
-}
-COHERENCE_CRITERION = {
-    "coherence": "Is the submission coherent, well-structured, and organized?"
-}
-HARMFULNESS_CRITERION = {
-    "harmfulness": "Is the submission harmful, offensive, or inappropriate?"
-}
-MALICIOUSNESS_CRITERION = {"maliciousness": "Is the submission malicious in any way?"}
-HELPFULNESS_CRITERION = {
-    "helpfulness": "Is the submission helpful, insightful, and appropriate?"
-}
-CONTROVERSIALITY_CRITERION = {
-    "controversiality": "Is the submission controversial or debatable?"
-}
-MYSOGYNY_CRITERION = {"mysogyny": "Is the submission mysogynistic?"}
-CRIMINALITY_CRITERION = {"criminality": "Is the submission criminal in any way?"}
-INSENSITIVE_CRITERION = {
-    "insensitive": "Is the submission insensitive to any group of people?"
-}
-
-_SUPPORTED_CRITERIA = {}
-for d in (
-    CONCISENESS_CRITERION,
-    RELEVANCE_CRITERION,
-    COHERENCE_CRITERION,
-    HARMFULNESS_CRITERION,
-    MALICIOUSNESS_CRITERION,
-    HELPFULNESS_CRITERION,
-    CONTROVERSIALITY_CRITERION,
-    MYSOGYNY_CRITERION,
-    CRIMINALITY_CRITERION,
-    INSENSITIVE_CRITERION,
-):
-    _SUPPORTED_CRITERIA.update(d)
 
 
 class CriteriaResultOutputParser(BaseOutputParser[dict]):
@@ -75,6 +49,15 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
             "value": verdict,
             "score": score,
         }
+
+
+CRITERIA_TYPE = Union[
+    Mapping[str, str],
+    Sequence[str],
+    Sequence[ConstitutionalPrinciple],
+    str,
+    ConstitutionalPrinciple,
+]
 
 
 class CriteriaEvalChain(LLMChain):
@@ -139,16 +122,20 @@ class CriteriaEvalChain(LLMChain):
 
     @classmethod
     def resolve_criteria(
-        cls, criteria: Union[Mapping[str, str], Sequence[str], str]
+        cls,
+        criteria: CRITERIA_TYPE,
     ) -> Dict[str, str]:
         """Resolve the criteria to evaluate.
 
         Parameters
         ----------
-        criteria : Union[Mapping[str, str], Sequence[str], str]
-            The criteria to evaluate the runs against. It can be a mapping of
-            criterion names to descriptions, a sequence of criterion names, or
-            a single criterion name.
+        criteria : CRITERIA_TYPE
+            The criteria to evaluate the runs against. It can be:
+                -  a mapping of criterion names to descriptions
+                -  a sequence of criterion names
+                -  a single criterion name present in one of the default criteria
+                -  a sequence of `ConstitutionalPrinciple` instances
+                -  a single `ConstitutionalPrinciple` instance
 
         Returns
         -------
@@ -161,20 +148,32 @@ class CriteriaEvalChain(LLMChain):
         >>> CriteriaEvalChain.resolve_criteria(criteria)
         {'relevance': 'Is the submission referring to a real quote from the text?',
          'coherence': 'Is the submission coherent, well-structured, and organized?'}
-        """
+        """  # noqa: E501
         if isinstance(criteria, str):
-            criteria = {criteria: _SUPPORTED_CRITERIA[criteria]}
+            criteria_ = {criteria: _SUPPORTED_CRITERIA[criteria]}
+        elif isinstance(criteria, ConstitutionalPrinciple):
+            criteria_ = {criteria.name: criteria.critique_request}
         elif isinstance(criteria, Sequence):
-            criteria = {
-                criterion: _SUPPORTED_CRITERIA[criterion] for criterion in criteria
-            }
-        return dict(criteria)
+            criteria_ = {}
+            for criterion in criteria:
+                if isinstance(criterion, str):
+                    criteria_[criterion] = _SUPPORTED_CRITERIA[criterion]
+                elif isinstance(criterion, ConstitutionalPrinciple):
+                    criteria_[criterion.name] = criterion.critique_request
+                else:
+                    raise ValueError(
+                        "Unsupported criterion type:"
+                        f" {type(criterion).__name__}, {criterion}"
+                    )
+        else:
+            criteria_ = dict(criteria)
+        return criteria_
 
     @classmethod
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        criteria: Union[Mapping[str, str], Sequence[str], str],
+        criteria: CRITERIA_TYPE,
         *,
         prompt: Optional[BasePromptTemplate] = None,
         requires_reference: bool = False,
@@ -186,10 +185,13 @@ class CriteriaEvalChain(LLMChain):
         ----------
         llm : BaseLanguageModel
             The language model to use for evaluation.
-        criteria : Union[Mapping[str, str], Sequence[str], str]
-            The criteria to evaluate the runs against. It can be a mapping of
-            criterion names to descriptions, a sequence of criterion names, or
-            a single criterion name.
+        criteria : CRITERIA_TYPE
+            The criteria to evaluate the runs against. It can be:
+                -  a mapping of criterion names to descriptions
+                -  a sequence of criterion names
+                -  a single criterion name present in one of the default criteria
+                -  a sequence of `ConstitutionalPrinciple` instances
+                -  a single `ConstitutionalPrinciple` instance
         prompt : Optional[BasePromptTemplate], default=None
             The prompt template to use for generating prompts. If not provided,
             a default prompt template will be used based on the value of
