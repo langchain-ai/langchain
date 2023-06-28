@@ -8,7 +8,9 @@ from langchain.document_loaders.base import BaseLoader
 class PsychicLoader(BaseLoader):
     """Loader that loads documents from Psychic.dev."""
 
-    def __init__(self, api_key: str, account_id: str, connector_id: Optional[str] = None):
+    def __init__(
+        self, api_key: str, account_id: str, connector_id: Optional[str] = None
+    ):
         """Initialize with API key, connector id, and account id."""
 
         try:
@@ -24,7 +26,9 @@ class PsychicLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
 
-        psychic_docs = self.psychic.get_documents(connector_id=self.connector_id, account_id=self.account_id)
+        psychic_docs = self.psychic.get_documents(
+            connector_id=self.connector_id, account_id=self.account_id
+        )
         return [
             Document(
                 page_content=doc["content"],
@@ -32,4 +36,3 @@ class PsychicLoader(BaseLoader):
             )
             for doc in psychic_docs.documents
         ]
-
