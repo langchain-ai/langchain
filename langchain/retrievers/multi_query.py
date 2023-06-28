@@ -3,11 +3,13 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-from langchain import LLMChain
-from langchain.llms import BaseLLM
-from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts import PromptTemplate
+from langchain.chains.llm import LLMChain
+from langchain.llms.base import BaseLLM
+from langchain.output_parsers.pydantic import PydanticOutputParser
+from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseRetriever, Document
+
+logging.basicConfig(level=logging.INFO)
 
 
 class LineList(BaseModel):
@@ -34,8 +36,6 @@ DEFAULT_QUERY_PROMPT = PromptTemplate(
     of distance-based similarity search. Provide these alternative 
     questions seperated by newlines. Original question: {question}""",
 )
-
-logging.basicConfig(level=logging.INFO)
 
 
 class MultiQueryRetriever(BaseRetriever):
