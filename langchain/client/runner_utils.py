@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import inspect
 import logging
 from datetime import datetime
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Coroutine,
     Dict,
@@ -15,6 +17,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Tuple,
     Union,
 )
 
@@ -41,11 +44,41 @@ from langchain.schema import (
 
 logger = logging.getLogger(__name__)
 
-MODEL_OR_CHAIN_FACTORY = Union[Callable[[], Chain], BaseLanguageModel]
+MODEL_OR_CHAIN_FACTORY = Union[
+    Callable[[], Chain],
+    BaseLanguageModel,
+    Callable[[Dict], Dict],
+    Callable[[Dict], Awaitable[Dict]],
+]
+
+
+def is_chain_factory(model: MODEL_OR_CHAIN_FACTORY) -> bool:
+    """Check if a callback is a chain factory."""
+    return (
+        not isinstance(model, BaseLanguageModel)
+        and inspect.isfunction(model)
+        and len(inspect.signature(model).parameters) == 0
+        and isinstance(model(), Chain)
+    )
+
+
+def get_model_split(
+    model: MODEL_OR_CHAIN_FACTORY,
+) -> Tuple[Optional[BaseLanguageModel], Optional[Callable[[], Chain]], Optional[Any]]:
+    if isinstance(model, BaseLanguageModel):
+        return model, None, None
+    elif is_chain_factory(model):
+        return None, model, None  # type: ignore
+    else:
+        return None, None, model
 
 
 class InputFormatError(Exception):
     """Raised when the input format is invalid."""
+
+
+class IllegalModelError(Exception):
+    """Raised when the model is not allowed to run."""
 
 
 def _get_prompts(inputs: Dict[str, Any]) -> List[str]:
@@ -186,9 +219,11 @@ async def _arun_llm(
 
 async def _arun_llm_or_chain(
     example: Example,
-    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     n_repetitions: int,
     *,
+    llm: Optional[BaseLanguageModel] = None,
+    chain_factory: Optional[Callable[[], Chain]] = None,
+    model: Optional[Callable[[Dict], Awaitable[Dict]]] = None,
     tags: Optional[List[str]] = None,
     callbacks: Optional[List[BaseCallbackHandler]] = None,
 ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
@@ -197,8 +232,10 @@ async def _arun_llm_or_chain(
 
     Args:
         example: The example to run.
-        llm_or_chain_factory: The Chain or language model constructor to run.
         n_repetitions: The number of times to run the model on each example.
+        llm: The language model to run.
+        chain_factory: The chain factory to run.
+        model: The model to run.
         tags: Optional tags to add to the run.
         callbacks: Optional callbacks to use during the run.
 
@@ -217,19 +254,28 @@ async def _arun_llm_or_chain(
     outputs = []
     for _ in range(n_repetitions):
         try:
-            if isinstance(llm_or_chain_factory, BaseLanguageModel):
+            if llm is not None:
                 output: Any = await _arun_llm(
-                    llm_or_chain_factory,
+                    llm,
                     example.inputs,
                     tags=tags,
                     callbacks=callbacks,
                 )
-            else:
-                chain = llm_or_chain_factory()
+            elif model is not None:
+                output = await model(example.inputs)
+            elif chain_factory is not None:
+                chain = chain_factory()
                 output = await chain.acall(
                     example.inputs, callbacks=callbacks, tags=tags
                 )
+            else:
+                raise IllegalModelError(
+                    "Must specify either llm, chain_factory, or "
+                    "a coroutine that accepts an inputs dictionary"
+                )
             outputs.append(output)
+        except IllegalModelError:
+            raise
         except Exception as e:
             logger.warning(f"Chain failed for example {example.id}. Error: {e}")
             outputs.append({"Error": str(e)})
@@ -365,6 +411,7 @@ async def arun_on_examples(
     evaluation_handler = EvaluatorCallbackHandler(
         evaluators=run_evaluators or [], client=client_
     )
+    llm, chain_factory, model = get_model_split(llm_or_chain_factory)
 
     async def process_example(
         example: Example, callbacks: List[BaseCallbackHandler], job_state: dict
@@ -372,8 +419,10 @@ async def arun_on_examples(
         """Process a single example."""
         result = await _arun_llm_or_chain(
             example,
-            llm_or_chain_factory,
             num_repetitions,
+            llm=llm,
+            chain_factory=chain_factory,
+            model=model,
             tags=tags,
             callbacks=callbacks,
         )
@@ -449,9 +498,11 @@ def run_llm(
 
 def run_llm_or_chain(
     example: Example,
-    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     n_repetitions: int,
     *,
+    llm: Optional[BaseLanguageModel] = None,
+    chain_factory: Optional[Callable[[], Chain]] = None,
+    model: Optional[Callable[[dict], dict]] = None,
     tags: Optional[List[str]] = None,
     callbacks: Optional[List[BaseCallbackHandler]] = None,
 ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
@@ -460,8 +511,10 @@ def run_llm_or_chain(
 
     Args:
         example: The example to run.
-        llm_or_chain_factory: The Chain or language model constructor to run.
         n_repetitions: The number of times to run the model on each example.
+        llm: The language model to run.
+        chain_factory: The Chain constructor to run.
+        model: The model to run.
         tags: Optional tags to add to the run.
         callbacks: Optional callbacks to use during the run.
 
@@ -480,14 +533,20 @@ def run_llm_or_chain(
     outputs = []
     for _ in range(n_repetitions):
         try:
-            if isinstance(llm_or_chain_factory, BaseLanguageModel):
-                output: Any = run_llm(
-                    llm_or_chain_factory, example.inputs, callbacks, tags=tags
-                )
-            else:
-                chain = llm_or_chain_factory()
+            if llm is not None:
+                output: Any = run_llm(llm, example.inputs, callbacks, tags=tags)
+            elif model is not None:
+                output = model(example.inputs)
+            elif chain_factory is not None:
+                chain = chain_factory()
                 output = chain(example.inputs, callbacks=callbacks, tags=tags)
+            else:
+                raise IllegalModelError(
+                    "Either llm, chain_factory or model must be provided."
+                )
             outputs.append(output)
+        except IllegalModelError as e:
+            raise e
         except Exception as e:
             logger.warning(f"Chain failed for example {example.id}. Error: {e}")
             outputs.append({"Error": str(e)})
@@ -540,12 +599,15 @@ def run_on_examples(
     evalution_handler = EvaluatorCallbackHandler(
         evaluators=run_evaluators or [], client=client_
     )
+    llm, chain_factory, model = get_model_split(llm_or_chain_factory)
     callbacks: List[BaseCallbackHandler] = [tracer, evalution_handler]
     for i, example in enumerate(examples):
         result = run_llm_or_chain(
             example,
-            llm_or_chain_factory,
             num_repetitions,
+            llm=llm,
+            chain_factory=chain_factory,
+            model=model,
             tags=tags,
             callbacks=callbacks,
         )
@@ -578,8 +640,10 @@ def _get_project_name(
     current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     if isinstance(llm_or_chain_factory, BaseLanguageModel):
         model_name = llm_or_chain_factory.__class__.__name__
+    elif is_chain_factory(llm_or_chain_factory):
+        model_name = llm_or_chain_factory().__class__.__name__  # type: ignore[call-arg]
     else:
-        model_name = llm_or_chain_factory().__class__.__name__
+        model_name = ""
     dataset_prefix = f"{dataset_name}-" if dataset_name else ""
     return f"{dataset_prefix}{model_name}-{current_time}"
 
