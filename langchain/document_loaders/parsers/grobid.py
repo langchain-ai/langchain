@@ -1,13 +1,11 @@
-from typing import Any, Iterator, Mapping, Optional
-
-import requests
+from typing import Iterator
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.schema import Document
 
 
-class GrobidParser:
+class GrobidParser(BaseBlobParser):
 
     """Loads a PDF with pypdf and chunks at character level."""
 
@@ -28,7 +26,7 @@ class GrobidParser:
         chunks = []
         for section in sections:
             sect = section.find("head")
-            if sect != None:
+            if sect is not None:
                 for i, paragraph in enumerate(section.find_all("p")):
                     chunk_bboxes = []
                     paragraph_text = []
@@ -47,7 +45,7 @@ class GrobidParser:
                                 }
                             )
                         chunk_bboxes.append(sbboxes)
-                        if segment_sentences == True:
+                        if segment_sentences is True:
                             fpage, lpage = sbboxes[0]["page"], sbboxes[-1]["page"]
                             sentence_dict = {
                                 "text": sentence.text,
@@ -58,7 +56,7 @@ class GrobidParser:
                                 "pages": (fpage, lpage),
                             }
                             chunks.append(sentence_dict)
-                    if segment_sentences != True:
+                    if segment_sentences is not True:
                         fpage, lpage = (
                             chunk_bboxes[0][0]["page"],
                             chunk_bboxes[-1][-1]["page"],

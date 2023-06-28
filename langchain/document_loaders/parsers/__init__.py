@@ -12,6 +12,7 @@ from langchain.document_loaders.parsers.pdf import (
 
 __all__ = [
     "BS4HTMLParser",
+    "GrobidParser",
     "LanguageParser",
     "OpenAIWhisperParser",
     "PDFMinerParser",
