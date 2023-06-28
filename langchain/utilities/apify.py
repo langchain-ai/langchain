@@ -132,7 +132,7 @@ class ApifyWrapper(BaseModel):
         memory_mbytes: Optional[int] = None,
         timeout_secs: Optional[int] = None,
     ) -> ApifyDatasetLoader:
-        """Run a saved Actor task on the Apify platform and wait for results to be ready.
+        """Run a saved Actor task on Apify and wait for results to be ready.
 
         Args:
             task_id (str): The ID or name of the task on the Apify platform.
@@ -173,7 +173,7 @@ class ApifyWrapper(BaseModel):
         memory_mbytes: Optional[int] = None,
         timeout_secs: Optional[int] = None,
     ) -> ApifyDatasetLoader:
-        """Run a saved Actor task on the Apify platform and wait for results to be ready.
+        """Run a saved Actor task on Apify and wait for results to be ready.
 
         Args:
             task_id (str): The ID or name of the task on the Apify platform.
