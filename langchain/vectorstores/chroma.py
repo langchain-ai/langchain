@@ -200,7 +200,7 @@ class Chroma(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
-        Return docs most similar to embedding vector and similary score.
+        Return docs most similar to embedding vector and similarity score.
 
         Args:
             embedding (List[float]): Embedding to look up documents similar to.
