@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from pydantic import BaseModel, Field
@@ -22,27 +23,29 @@ class LineListOutputParser(PydanticOutputParser):
         return LineList(lines=lines)
 
 
+# Default prompt
+DEFAULT_QUERY_PROMPT = PromptTemplate(
+    input_variables=["question"],
+    template="""You are an AI language model assistant. Your task is 
+    to generate 3 different versions of the given user 
+    question to retrieve relevant documents from a vector  database. 
+    By generating multiple perspectives on the user question, 
+    your goal is to help the user overcome some of the limitations 
+    of distance-based similarity search. Provide these alternative 
+    questions seperated by newlines. Original question: {question}""",
+)
+
+logging.basicConfig(level=logging.INFO)
+
+
 class MultiQueryRetriever(BaseRetriever):
 
-    """Given a user query, use an LLM to write a set of `num_queries` queries.
+    """Given a user query, use an LLM to write a set of queries.
     Retrieve docs for each query. Rake the unique union of all retrieved docs."""
-
-    # Default prompt
-    DEFAULT_QUERY_PROMPT = PromptTemplate(
-        input_variables=["question", "num_queries"],
-        template="""You are an AI language model assistant. Your task is 
-        to generate {num_queries} different versions of the given user 
-        question to retrieve relevant documents from a vector  database. 
-        By generating multiple perspectives on the user question, 
-        your goal is to help the user overcome some of the limitations 
-        of distance-based similarity search. Provide these alternative 
-        questions seperated by newlines. Original question: {question}""",
-    )
 
     def __init__(
         self,
         retriever: BaseRetriever,
-        num_queries: int,
         llm_chain: LLMChain,
         verbose: bool = True,
         parser_key: str = "lines",
@@ -51,7 +54,6 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             retriever: retriever to query documents from
-            num_queries: number of queries for the LLM to generate
             llm_chain: llm_chain for query generation
             verbose: show the queries that we generated to the user
             parser_key: attribute name for the parsed output
@@ -60,7 +62,6 @@ class MultiQueryRetriever(BaseRetriever):
             MultiQueryRetriever
         """
         self.retriever = retriever
-        self.num_queries = num_queries
         self.llm_chain = llm_chain
         self.verbose = verbose
         self.parser_key = parser_key
@@ -69,7 +70,6 @@ class MultiQueryRetriever(BaseRetriever):
     def from_llm(
         cls,
         retriever: BaseRetriever,
-        num_queries: int,
         llm: BaseLLM,
         prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
         parser_key: str = "lines",
@@ -78,7 +78,6 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             retriever: retriever to query documents from
-            num_queries: number of queries for the LLM to generate
             llm: llm for query generation using DEFAULT_QUERY_PROMPT
 
         Returns:
@@ -88,7 +87,6 @@ class MultiQueryRetriever(BaseRetriever):
         llm_chain = LLMChain(llm=llm, prompt=prompt, output_parser=output_parser)
         return cls(
             retriever=retriever,
-            num_queries=num_queries,
             llm_chain=llm_chain,
             parser_key=parser_key,
         )
@@ -119,13 +117,10 @@ class MultiQueryRetriever(BaseRetriever):
         Returns:
             List of LLM generated queries that are similar to the user input
         """
-        response = self.llm_chain(
-            {"question": question, "num_queries": self.num_queries}
-        )
+        response = self.llm_chain({"question": question})
         lines = getattr(response["text"], self.parser_key, [])
         if self.verbose:
-            # This hard-coding of lines will be probalematic
-            print(f"Generated queries: {lines}")
+            logging.info(f"Generated queries: {lines}")
         return lines
 
     def retrieve_documents(self, queries: List[str]) -> List[Document]:
@@ -153,6 +148,7 @@ class MultiQueryRetriever(BaseRetriever):
             List of unique retrived Documents
         """
         # Create a dictionary with page_content as keys to remove duplicates
+        # TODO: Add Document ID property (e.g., UUID)
         unique_documents_dict = {
             (doc.page_content, tuple(sorted(doc.metadata.items()))): doc
             for doc in documents
