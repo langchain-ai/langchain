@@ -7,7 +7,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class TwilioAPIWrapper(BaseModel):
-    """Sms Client using Twilio.
+    """Messaging Client using Twilio.
 
     To use, you should have the ``twilio`` python package installed,
     and the environment variables ``TWILIO_ACCOUNT_SID``, ``TWILIO_AUTH_TOKEN``, and

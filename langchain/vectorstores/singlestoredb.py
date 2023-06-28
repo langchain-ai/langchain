@@ -33,6 +33,7 @@ ORDERING_DIRECTIVE: dict = {
 class SingleStoreDB(VectorStore):
     """
     This class serves as a Pythonic interface to the SingleStore DB database.
+
     The prerequisite for using this class is the installation of the ``singlestoredb``
     Python package.
 
@@ -444,6 +445,8 @@ class SingleStoreDB(VectorStore):
 
 
 class SingleStoreDBRetriever(VectorStoreRetriever):
+    """Retriever for SingleStoreDB vector stores."""
+
     vectorstore: SingleStoreDB
     k: int = 4
     allowed_search_types: ClassVar[Collection[str]] = ("similarity",)

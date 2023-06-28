@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 
 
 class VespaRetriever(BaseRetriever):
+    """Retriever that uses the Vespa."""
+
     def __init__(
         self,
         app: Vespa,
