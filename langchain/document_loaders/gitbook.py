@@ -28,7 +28,9 @@ class GitbookLoader(WebBaseLoader):
             load_all_paths: If set to True, all relative paths in the navbar
                 are loaded instead of only `web_page`.
             base_url: If `load_all_paths` is True, the relative paths are
-                appended to this base url. Defaults to `web_page` if not set.
+                appended to this base url. Defaults to `web_page`.
+            content_selector: The CSS selector for the content to load.
+                Defaults to "main".
         """
         self.base_url = base_url or web_page
         if self.base_url.endswith("/"):

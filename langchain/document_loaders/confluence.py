@@ -33,8 +33,9 @@ class ContentFormat(str, Enum):
 
 
 class ConfluenceLoader(BaseLoader):
-    """
-    Load Confluence pages. Port of https://llamahub.ai/l/confluence
+    """Load Confluence pages.
+
+    Port of https://llamahub.ai/l/confluence
     This currently supports username/api_key, Oauth2 login or personal access token
     authentication.
 
@@ -175,7 +176,7 @@ class ConfluenceLoader(BaseLoader):
             "key_cert",
         ]:
             errors.append(
-                "You have either ommited require keys or added extra "
+                "You have either omitted require keys or added extra "
                 "keys to the oauth2 dictionary. key values should be "
                 "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']`"
             )
@@ -340,10 +341,10 @@ class ConfluenceLoader(BaseLoader):
         """Paginate the various methods to retrieve groups of pages.
 
         Unfortunately, due to page size, sometimes the Confluence API
-        doesn't match the limit value. If `limit` is  >100 confluence
+        doesn't match the limit value. If `limit` is >100 confluence
         seems to cap the response to 100. Also, due to the Atlassian Python
         package, we don't get the "next" values from the "_links" key because
-        they only return the value from the results key. So here, the pagination
+        they only return the value from the result key. So here, the pagination
         starts from 0 and goes until the max_pages, getting the `limit` number
         of pages with each request. We have to manually check if there
         are more docs based on the length of the returned list of pages, rather than

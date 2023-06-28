@@ -13,6 +13,14 @@ class UnstructuredExcelLoader(UnstructuredFileLoader):
     def __init__(
         self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
     ):
+        """
+
+        Args:
+            file_path: The path to the Microsoft Excel file.
+            mode: The mode to use when partitioning the file. See unstructured docs
+              for more info. Optional. Defaults to "single".
+            **unstructured_kwargs: Keyword arguments to pass to unstructured.
+        """
         validate_unstructured_version(min_unstructured_version="0.6.7")
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 

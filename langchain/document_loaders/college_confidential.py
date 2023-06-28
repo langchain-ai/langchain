@@ -9,7 +9,7 @@ class CollegeConfidentialLoader(WebBaseLoader):
     """Loader that loads College Confidential webpages."""
 
     def load(self) -> List[Document]:
-        """Load webpage."""
+        """Load webpages as Documents."""
         soup = self.scrape()
         text = soup.select_one("main[class='skin-handler']").text
         metadata = {"source": self.web_path}

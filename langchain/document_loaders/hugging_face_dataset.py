@@ -1,4 +1,4 @@
-"""Loader that loads HuggingFace datasets."""
+"""Loads HuggingFace datasets."""
 from typing import Iterator, List, Mapping, Optional, Sequence, Union
 
 from langchain.docstore.document import Document
@@ -6,7 +6,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class HuggingFaceDatasetLoader(BaseLoader):
-    """Loading logic for loading documents from the Hugging Face Hub."""
+    """Load Documents from the Hugging Face Hub."""
 
     def __init__(
         self,
@@ -27,14 +27,15 @@ class HuggingFaceDatasetLoader(BaseLoader):
 
         Args:
             path: Path or name of the dataset.
-            page_content_column: Page content column name.
+            page_content_column: Page content column name. Default is "text".
             name: Name of the dataset configuration.
             data_dir: Data directory of the dataset configuration.
             data_files: Path(s) to source data file(s).
             cache_dir: Directory to read/write data.
             keep_in_memory: Whether to copy the dataset in-memory.
             save_infos: Save the dataset information (checksums/size/splits/...).
-            use_auth_token: Bearer token for remote files on the Datasets Hub.
+              Default is False.
+            use_auth_token: Bearer token for remote files on the Dataset Hub.
             num_proc: Number of processes.
         """
 

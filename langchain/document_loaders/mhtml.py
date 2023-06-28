@@ -1,4 +1,4 @@
-"""Loader to load MHTML files, enriching metadata with page title."""
+"""Load MHTML files, enriching metadata with page title."""
 
 import email
 import logging
@@ -21,11 +21,18 @@ class MHTMLLoader(BaseLoader):
         get_text_separator: str = "",
     ) -> None:
         """Initialise with path, and optionally, file encoding to use, and any kwargs
-        to pass to the BeautifulSoup object."""
+        to pass to the BeautifulSoup object.
+
+        Args:
+            file_path: The path to the file to load.
+            open_encoding: The encoding to use when opening the file.
+            bs_kwargs: soup kwargs to pass to the BeautifulSoup object.
+            get_text_separator: The separator to use when getting text from the soup.
+        """
         try:
             import bs4  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "beautifulsoup4 package not found, please install it with "
                 "`pip install beautifulsoup4`"
             )

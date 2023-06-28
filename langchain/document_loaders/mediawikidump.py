@@ -32,12 +32,17 @@ class MWDumpLoader(BaseLoader):
     """
 
     def __init__(self, file_path: str, encoding: Optional[str] = "utf8"):
-        """Initialize with file path."""
+        """Initialize with a file path.
+
+        Args:
+            file_path: XML local file path
+            encoding: Charset encoding, defaults to "utf8"
+        """
         self.file_path = file_path
         self.encoding = encoding
 
     def load(self) -> List[Document]:
-        """Load from file path."""
+        """Load from a file path."""
         import mwparserfromhell
         import mwxml
 

@@ -1,4 +1,4 @@
-"""Loader that loads Markdown files."""
+"""Loads Markdown files."""
 from typing import List
 
 from langchain.document_loaders.unstructured import UnstructuredFileLoader

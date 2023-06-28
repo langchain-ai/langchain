@@ -35,6 +35,8 @@ class BaseGitHubLoader(BaseLoader, BaseModel, ABC):
 
 
 class GitHubIssuesLoader(BaseGitHubLoader):
+    """Load issues of a GitHub repository."""
+
     include_prs: bool = True
     """If True include Pull Requests in results, otherwise ignore them."""
     milestone: Union[int, Literal["*", "none"], None] = None
@@ -159,6 +161,7 @@ class GitHubIssuesLoader(BaseGitHubLoader):
 
     @property
     def query_params(self) -> str:
+        """Create query parameters for GitHub API."""
         labels = ",".join(self.labels) if self.labels else self.labels
         query_params_dict = {
             "milestone": self.milestone,
@@ -179,4 +182,5 @@ class GitHubIssuesLoader(BaseGitHubLoader):
 
     @property
     def url(self) -> str:
+        """Create URL for GitHub API."""
         return f"https://api.github.com/repos/{self.repo}/issues?{self.query_params}"

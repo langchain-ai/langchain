@@ -1,4 +1,4 @@
-"""Loading logic for loading documents from a GCS file."""
+"""Load documents from a GCS file."""
 import os
 import tempfile
 from typing import List
@@ -9,10 +9,16 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class GCSFileLoader(BaseLoader):
-    """Loading logic for loading documents from GCS."""
+    """Load Documents from a GCS file."""
 
     def __init__(self, project_name: str, bucket: str, blob: str):
-        """Initialize with bucket and key name."""
+        """Initialize with bucket and key name.
+
+        Args:
+            project_name: The name of the project to load
+            bucket: The name of the GCS bucket.
+            blob: The name of the GCS blob to load.
+        """
         self.bucket = bucket
         self.blob = blob
         self.project_name = project_name
@@ -22,7 +28,7 @@ class GCSFileLoader(BaseLoader):
         try:
             from google.cloud import storage
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import google-cloud-storage python package. "
                 "Please install it with `pip install google-cloud-storage`."
             )

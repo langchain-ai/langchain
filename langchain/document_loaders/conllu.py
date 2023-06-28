@@ -10,11 +10,11 @@ class CoNLLULoader(BaseLoader):
     """Load CoNLL-U files."""
 
     def __init__(self, file_path: str):
-        """Initialize with file path."""
+        """Initialize with a file path."""
         self.file_path = file_path
 
     def load(self) -> List[Document]:
-        """Load from file path."""
+        """Load from a file path."""
         with open(self.file_path, encoding="utf8") as f:
             tsv = list(csv.reader(f, delimiter="\t"))
 
