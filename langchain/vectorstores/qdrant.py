@@ -149,7 +149,9 @@ class Qdrant(VectorStore):
             # Generate the embeddings for all the texts in a batch
             batch_embeddings = self._embed_texts(batch_texts)
             if self.vector_name is not None:
-                batch_embeddings = {self.vector_name: batch_embeddings}  # type: ignore[assignment]
+                batch_embeddings = {  # type: ignore[assignment]
+                    self.vector_name: batch_embeddings
+                }
 
             points = rest.Batch.construct(
                 ids=batch_ids,
@@ -692,7 +694,9 @@ class Qdrant(VectorStore):
             # Generate the embeddings for all the texts in a batch
             batch_embeddings = embedding.embed_documents(batch_texts)
             if vector_name is not None:
-                batch_embeddings = {vector_name: batch_embeddings}  # type: ignore[assignment]
+                batch_embeddings = {  # type: ignore[assignment]
+                    vector_name: batch_embeddings
+                }
 
             points = rest.Batch.construct(
                 ids=batch_ids,
