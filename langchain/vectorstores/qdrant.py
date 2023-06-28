@@ -52,6 +52,7 @@ class Qdrant(VectorStore):
 
     CONTENT_KEY = "page_content"
     METADATA_KEY = "metadata"
+    VECTOR_NAME = None
 
     def __init__(
         self,
@@ -60,6 +61,7 @@ class Qdrant(VectorStore):
         embeddings: Optional[Embeddings] = None,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
+        vector_name: Optional[str] = VECTOR_NAME,
         embedding_function: Optional[Callable] = None,  # deprecated
     ):
         """Initialize with necessary components."""
@@ -94,6 +96,7 @@ class Qdrant(VectorStore):
         self.collection_name = collection_name
         self.content_payload_key = content_payload_key or self.CONTENT_KEY
         self.metadata_payload_key = metadata_payload_key or self.METADATA_KEY
+        self.vector_name = vector_name or self.VECTOR_NAME
 
         if embedding_function is not None:
             warnings.warn(
@@ -143,19 +146,23 @@ class Qdrant(VectorStore):
             batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
             batch_ids = list(islice(ids_iterator, batch_size))
 
-            self.client.upsert(
-                collection_name=self.collection_name,
-                points=rest.Batch.construct(
-                    ids=batch_ids,
-                    vectors=self._embed_texts(batch_texts),
-                    payloads=self._build_payloads(
-                        batch_texts,
-                        batch_metadatas,
-                        self.content_payload_key,
-                        self.metadata_payload_key,
-                    ),
+            # Generate the embeddings for all the texts in a batch
+            batch_embeddings = self._embed_texts(batch_texts)
+            if self.vector_name is not None:
+                batch_embeddings = {self.vector_name: batch_embeddings}
+
+            points = rest.Batch.construct(
+                ids=batch_ids,
+                vectors=batch_embeddings,
+                payloads=self._build_payloads(
+                    batch_texts,
+                    batch_metadatas,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
                 ),
             )
+
+            self.client.upsert(collection_name=self.collection_name, points=points)
 
             added_ids.extend(batch_ids)
 
@@ -315,7 +322,6 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-
         results = self.similarity_search_with_score_by_vector(
             embedding,
             k,
@@ -373,7 +379,6 @@ class Qdrant(VectorStore):
             distance in float for each.
             Lower score represents more similarity.
         """
-
         if filter is not None and isinstance(filter, dict):
             warnings.warn(
                 "Using dict as a `filter` is deprecated. Please use qdrant-client "
@@ -384,9 +389,14 @@ class Qdrant(VectorStore):
             qdrant_filter = self._qdrant_filter_from_dict(filter)
         else:
             qdrant_filter = filter
+
+        query_vector = embedding
+        if self.vector_name is not None:
+            query_vector = (self.vector_name, embedding)
+
         results = self.client.search(
             collection_name=self.collection_name,
-            query_vector=embedding,
+            query_vector=query_vector,
             query_filter=qdrant_filter,
             search_params=search_params,
             limit=k,
@@ -454,18 +464,20 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        query_vector = self._embed_query(query)
+        if self.vector_name is not None:
+            query_vector = (self.vector_name, query_vector)
 
-        embedding = self._embed_query(query)
         results = self.client.search(
             collection_name=self.collection_name,
-            query_vector=embedding,
+            query_vector=query_vector,
             with_payload=True,
             with_vectors=True,
             limit=fetch_k,
         )
         embeddings = [result.vector for result in results]
         mmr_selected = maximal_marginal_relevance(
-            np.array(embedding), embeddings, k=k, lambda_mult=lambda_mult
+            np.array(query_vector), embeddings, k=k, lambda_mult=lambda_mult
         )
         return [
             self._document_from_scored_point(
@@ -496,6 +508,7 @@ class Qdrant(VectorStore):
         distance_func: str = "Cosine",
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
+        vector_name: str = VECTOR_NAME,
         batch_size: int = 64,
         shard_number: Optional[int] = None,
         replication_factor: Optional[int] = None,
@@ -638,12 +651,21 @@ class Qdrant(VectorStore):
             **kwargs,
         )
 
+        vectors_config = rest.VectorParams(
+            size=vector_size,
+            distance=rest.Distance[distance_func],
+        )
+
+        # If vector name was provided, we're going to use the named vectors feature
+        # with just a single vector.
+        if vector_name is not None:
+            vectors_config = {
+                vector_name: vectors_config,
+            }
+
         client.recreate_collection(
             collection_name=collection_name,
-            vectors_config=rest.VectorParams(
-                size=vector_size,
-                distance=rest.Distance[distance_func],
-            ),
+            vectors_config=vectors_config,
             shard_number=shard_number,
             replication_factor=replication_factor,
             write_consistency_factor=write_consistency_factor,
@@ -666,20 +688,21 @@ class Qdrant(VectorStore):
 
             # Generate the embeddings for all the texts in a batch
             batch_embeddings = embedding.embed_documents(batch_texts)
+            if vector_name is not None:
+                batch_embeddings = {vector_name: batch_embeddings}
 
-            client.upsert(
-                collection_name=collection_name,
-                points=rest.Batch.construct(
-                    ids=batch_ids,
-                    vectors=batch_embeddings,
-                    payloads=cls._build_payloads(
-                        batch_texts,
-                        batch_metadatas,
-                        content_payload_key,
-                        metadata_payload_key,
-                    ),
+            points = rest.Batch.construct(
+                ids=batch_ids,
+                vectors=batch_embeddings,
+                payloads=cls._build_payloads(
+                    batch_texts,
+                    batch_metadatas,
+                    content_payload_key,
+                    metadata_payload_key,
                 ),
             )
+
+            client.upsert(collection_name=collection_name, points=points)
 
         return cls(
             client=client,
@@ -687,6 +710,7 @@ class Qdrant(VectorStore):
             embeddings=embedding,
             content_payload_key=content_payload_key,
             metadata_payload_key=metadata_payload_key,
+            vector_name=vector_name,
         )
 
     @classmethod
