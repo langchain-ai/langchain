@@ -1,4 +1,5 @@
 """Base interface that all chains should implement."""
+import asyncio
 import inspect
 import json
 import warnings
@@ -180,6 +181,8 @@ class Chain(Serializable, ABC):
         *,
         tags: Optional[List[str]] = None,
         include_run_info: bool = False,
+        timeout: Optional[float] = None,
+        abort_signal: Optional[asyncio.Future] = None,
     ) -> Dict[str, Any]:
         """Run the logic of this chain and add to output if desired.
 
@@ -194,6 +197,9 @@ class Chain(Serializable, ABC):
                 use the callbacks provided to the chain.
             include_run_info: Whether to include run info in the response. Defaults
                 to False.
+            timeout: Maximum time to wait for the chain to complete. When timeout ms
+            is hit, the chain is automatically cancelled. Defaults to indefinite.
+            abort_signal: To cancel the chain run externally. Defaults to None.
         """
         inputs = self.prep_inputs(inputs)
         callback_manager = AsyncCallbackManager.configure(
@@ -204,12 +210,38 @@ class Chain(Serializable, ABC):
             dumpd(self),
             inputs,
         )
+
+        # wrap chain call logic in an async task
+        task = asyncio.create_task(
+            self._acall(inputs, run_manager=run_manager)
+            if new_arg_supported
+            else self._acall(inputs)
+        )
         try:
-            outputs = (
-                await self._acall(inputs, run_manager=run_manager)
-                if new_arg_supported
-                else await self._acall(inputs)
+            # await three possible tasks, return the first to complete
+            # task 1: the original task
+            # task 2: task that completes when timeout is hit (only if timeout is passed in, otherwise never complete)
+            # task 3: a future called abort_signal, which completes when manually triggered externally (otherwise never complete)
+            tasks_to_await = {
+                task,
+                asyncio.sleep(timeout) if timeout else asyncio.Future(),
+                abort_signal if abort_signal else asyncio.Future(),
+            }
+            # done contains complete futures, pending contains incomplete futures
+            done, pending = await asyncio.wait(
+                tasks_to_await, return_when=asyncio.FIRST_COMPLETED
             )
+            # cancel all pending futures first
+            for t in pending:
+                t.cancel()
+            # if task is done, return its result
+            if task in done:
+                outputs = task.result()
+            elif abort_signal and abort_signal in done:
+                raise Exception("Chain call operation aborted manually.")
+            else:
+                raise asyncio.TimeoutError()
+
         except (KeyboardInterrupt, Exception) as e:
             await run_manager.on_chain_error(e)
             raise e
