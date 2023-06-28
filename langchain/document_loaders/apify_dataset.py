@@ -50,5 +50,5 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
 
     def load(self) -> List[Document]:
         """Load documents."""
-        dataset_items = self.apify_client.dataset(self.dataset_id).list_items().items
+        dataset_items = self.apify_client.dataset(self.dataset_id).list_items(clean=True).items
         return list(map(self.dataset_mapping_function, dataset_items))
