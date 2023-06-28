@@ -1,7 +1,8 @@
 """Tools for interacting with a Power BI dataset."""
 import logging
-from typing import Any, Dict, Optional, Tuple
 from time import perf_counter
+from typing import Any, Dict, Optional, Tuple
+
 from pydantic import Field, validator
 
 from langchain.callbacks.manager import (
