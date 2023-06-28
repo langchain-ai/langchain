@@ -5,7 +5,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class AirtableLoader(BaseLoader):
-    """Loader that loads local airbyte json files."""
+    """Loader for Airtable tables."""
 
     def __init__(self, api_token: str, table_id: str, base_id: str):
         """Initialize with API token and the IDs for table and base"""
@@ -14,7 +14,7 @@ class AirtableLoader(BaseLoader):
         self.base_id = base_id
 
     def lazy_load(self) -> Iterator[Document]:
-        """Load Table."""
+        """Lazy load records from table."""
 
         from pyairtable import Table
 

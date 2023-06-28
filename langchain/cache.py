@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import json
+import logging
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import (
@@ -11,8 +12,8 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -31,13 +32,17 @@ except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.embeddings.base import Embeddings
+from langchain.load.dump import dumps
+from langchain.load.load import loads
 from langchain.schema import Generation
 from langchain.vectorstores.redis import Redis as RedisVectorstore
+
+logger = logging.getLogger(__file__)
 
 if TYPE_CHECKING:
     import momento
 
-RETURN_VAL_TYPE = List[Generation]
+RETURN_VAL_TYPE = Sequence[Generation]
 
 
 def _hash(_input: str) -> str:
@@ -147,13 +152,24 @@ class SQLAlchemyCache(BaseCache):
         with Session(self.engine) as session:
             rows = session.execute(stmt).fetchall()
             if rows:
-                return [Generation(text=row[0]) for row in rows]
+                try:
+                    return [loads(row[0]) for row in rows]
+                except Exception:
+                    logger.warning(
+                        "Retrieving a cache value that could not be deserialized "
+                        "properly. This is likely due to the cache being in an "
+                        "older format. Please recreate your cache to avoid this "
+                        "error."
+                    )
+                    # In a previous life we stored the raw text directly
+                    # in the table, so assume it's in that format.
+                    return [Generation(text=row[0]) for row in rows]
         return None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update based on prompt and llm_string."""
         items = [
-            self.cache_schema(prompt=prompt, llm=llm_string, response=gen.text, idx=i)
+            self.cache_schema(prompt=prompt, llm=llm_string, response=dumps(gen), idx=i)
             for i, gen in enumerate(return_val)
         ]
         with Session(self.engine) as session, session.begin():
@@ -163,7 +179,7 @@ class SQLAlchemyCache(BaseCache):
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
         with Session(self.engine) as session:
-            session.execute(self.cache_schema.delete())
+            session.query(self.cache_schema).delete()
 
 
 class SQLiteCache(SQLAlchemyCache):
@@ -209,6 +225,12 @@ class RedisCache(BaseCache):
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "RedisCache only supports caching of normal LLM generations, "
+                    f"got {type(gen)}"
+                )
         # Write to a Redis HASH
         key = self._key(prompt, llm_string)
         self.redis.hset(
@@ -314,6 +336,12 @@ class RedisSemanticCache(BaseCache):
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "RedisSemanticCache only supports caching of "
+                    f"normal LLM generations, got {type(gen)}"
+                )
         llm_cache = self._get_llm_cache(llm_string)
         # Write to vectorstore
         metadata = {
@@ -426,6 +454,12 @@ class GPTCache(BaseCache):
         First, retrieve the corresponding cache object using the `llm_string` parameter,
         and then store the `prompt` and `return_val` in the cache object.
         """
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "GPTCache only supports caching of normal LLM generations, "
+                    f"got {type(gen)}"
+                )
         from gptcache.adapter.api import put
 
         _gptcache = self._get_gptcache(llm_string)
@@ -567,7 +601,7 @@ class MomentoCache(BaseCache):
         """
         from momento.responses import CacheGet
 
-        generations = []
+        generations: RETURN_VAL_TYPE = []
 
         get_response = self.cache_client.get(
             self.cache_name, self.__key(prompt, llm_string)
@@ -593,6 +627,12 @@ class MomentoCache(BaseCache):
             SdkException: Momento service or network error
             Exception: Unexpected response
         """
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "Momento only supports caching of normal LLM generations, "
+                    f"got {type(gen)}"
+                )
         key = self.__key(prompt, llm_string)
         value = _dump_generations_to_json(return_val)
         set_response = self.cache_client.set(self.cache_name, key, value, self.ttl)

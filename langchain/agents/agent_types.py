@@ -2,6 +2,8 @@ from enum import Enum
 
 
 class AgentType(str, Enum):
+    """Enumerator with the Agent types."""
+
     ZERO_SHOT_REACT_DESCRIPTION = "zero-shot-react-description"
     REACT_DOCSTORE = "react-docstore"
     SELF_ASK_WITH_SEARCH = "self-ask-with-search"
@@ -12,3 +14,4 @@ class AgentType(str, Enum):
         "structured-chat-zero-shot-react-description"
     )
     OPENAI_FUNCTIONS = "openai-functions"
+    OPENAI_MULTI_FUNCTIONS = "openai-multi-functions"
