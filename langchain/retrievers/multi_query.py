@@ -45,6 +45,7 @@ class MultiQueryRetriever(BaseRetriever):
         num_queries: int,
         llm_chain: LLMChain,
         verbose: bool = True,
+        parser_key: str = "lines",
     ) -> None:
         """Initialize MultiQueryRetriever.
 
@@ -53,6 +54,7 @@ class MultiQueryRetriever(BaseRetriever):
             num_queries: number of queries for the LLM to generate
             llm_chain: llm_chain for query generation
             verbose: show the queries that we generated to the user
+            parser_key: attribute name for the parsed output
 
         Returns:
             MultiQueryRetriever
@@ -61,6 +63,7 @@ class MultiQueryRetriever(BaseRetriever):
         self.num_queries = num_queries
         self.llm_chain = llm_chain
         self.verbose = verbose
+        self.parser_key = parser_key
 
     @classmethod
     def from_llm(
@@ -69,6 +72,7 @@ class MultiQueryRetriever(BaseRetriever):
         num_queries: int,
         llm: BaseLLM,
         prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
+        parser_key: str = "lines",
     ) -> "MultiQueryRetriever":
         """Initialize from llm using default template.
 
@@ -82,7 +86,12 @@ class MultiQueryRetriever(BaseRetriever):
         """
         output_parser = LineListOutputParser()
         llm_chain = LLMChain(llm=llm, prompt=prompt, output_parser=output_parser)
-        return cls(retriever=retriever, num_queries=num_queries, llm_chain=llm_chain)
+        return cls(
+            retriever=retriever,
+            num_queries=num_queries,
+            llm_chain=llm_chain,
+            parser_key=parser_key,
+        )
 
     def get_relevant_documents(self, question: str) -> List[Document]:
         """Get relevated documents given a user query.
@@ -113,10 +122,11 @@ class MultiQueryRetriever(BaseRetriever):
         response = self.llm_chain(
             {"question": question, "num_queries": self.num_queries}
         )
+        lines = getattr(response["text"], self.parser_key, [])
         if self.verbose:
             # This hard-coding of lines will be probalematic
-            print(f"Generated queries: {response['text'].lines}")
-        return response["text"].lines
+            print(f"Generated queries: {lines}")
+        return lines
 
     def retrieve_documents(self, queries: List[str]) -> List[Document]:
         """Run all LLM generated queries.
@@ -143,6 +153,10 @@ class MultiQueryRetriever(BaseRetriever):
             List of unique retrived Documents
         """
         # Create a dictionary with page_content as keys to remove duplicates
-        unique_documents_dict = {doc.page_content: doc for doc in documents}
+        unique_documents_dict = {
+            (doc.page_content, tuple(sorted(doc.metadata.items()))): doc
+            for doc in documents
+        }
+
         unique_documents = list(unique_documents_dict.values())
         return unique_documents
