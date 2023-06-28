@@ -46,7 +46,6 @@ class Vectara(VectorStore):
         if (
             self._vectara_customer_id is None
             or self._vectara_corpus_id is None
-            or self._vectara_api_key is None
         ):
             logging.warning(
                 "Cant find Vectara credentials, customer_id or corpus_id in "
