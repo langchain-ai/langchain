@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import copy
+import importlib
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypedDict, Union
 
+import langchain
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
 
@@ -17,15 +19,116 @@ if TYPE_CHECKING:
 PRINT_WARNINGS = True
 
 
-def _convert_lc_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
-    if run.run_type == RunTypeEnum.llm:
-        return _convert_llm_run_to_wb_span(trace_tree, run)
-    elif run.run_type == RunTypeEnum.chain:
-        return _convert_chain_run_to_wb_span(trace_tree, run)
-    elif run.run_type == RunTypeEnum.tool:
-        return _convert_tool_run_to_wb_span(trace_tree, run)
+def _serialize_inputs(run_inputs: dict) -> Union[dict, list]:
+    if "input_documents" in run_inputs:
+        docs = run_inputs["input_documents"]
+        return [doc.json() for doc in docs]
     else:
-        return _convert_run_to_wb_span(trace_tree, run)
+        return run_inputs
+
+
+def _maybe_replace_key(
+    obj: Dict[str, Any],
+    key: str,
+) -> None:
+    if key in obj and isinstance(obj[key], list):
+        obj[key] = ".".join(obj[key])
+
+    for k, v in obj.items():
+        if isinstance(v, dict):
+            _maybe_replace_key(v, key)
+
+
+def _maybe_scrub_key(obj: Dict[str, Any], key: str) -> None:
+    if isinstance(obj, dict):
+        # the call to `list` is useless for py2 but makes
+        # the code py2/py3 compatible
+        for k in list(obj.keys()):
+            if k == key or "api_key" in k.lower():
+                del obj[k]
+            else:
+                _maybe_scrub_key(obj[k], key)
+    elif isinstance(obj, list):
+        for i in reversed(range(len(obj))):
+            if obj[i] == key or "api_key" in obj[i].lower():
+                del obj[i]
+            else:
+                _maybe_scrub_key(obj[i], key)
+
+    else:
+        # neither a dict nor a list, do nothing
+        pass
+
+
+def _load_class_from_name(module_name: str, class_name: str) -> Any:
+    # load the module, will raise ImportError if module cannot be loaded
+    m = importlib.import_module(module_name)
+    # get the class, will raise AttributeError if class cannot be found
+    c = getattr(m, class_name)
+    return c
+
+
+def _maybe_infer_kind_from_id(id_value: str) -> str:
+    id_value_splits = id_value.rsplit(".", 1)
+    if len(id_value_splits) == 2:
+        module_name, class_name = id_value_splits
+        id_value = _load_class_from_name(module_name, class_name)
+    else:
+        return "unknown"
+    if issubclass(id_value, langchain.agents.agent.AgentExecutor):
+        return "agentexecutor"
+    elif issubclass(id_value, langchain.chains.base.Chain):
+        return "llm_chain"
+    elif issubclass(id_value, langchain.llms.base.BaseLLM):
+        return "llm"
+    elif issubclass(id_value, langchain.prompts.prompt.PromptTemplate):
+        return "prompt"
+    else:
+        return "unknown"
+
+
+def _identify_kind_and_add_key(d: Dict[str, Any]) -> Any:
+    if isinstance(d, dict):
+        for key, value in d.items():
+            if isinstance(value, dict):
+                if "id" in value:
+                    value["_kind"] = _maybe_infer_kind_from_id(value["id"])
+                elif "name" in value:
+                    value["_kind"] = value["name"]
+                _identify_kind_and_add_key(value)  # Recursive call for dictionary value
+            elif isinstance(value, list):
+                for item in value:
+                    _identify_kind_and_add_key(
+                        item
+                    )  # Recursive call for each item in the list
+    elif isinstance(d, list):
+        for item in d:
+            _identify_kind_and_add_key(item)  # Recursive call for each item in the list
+
+
+def _safely_convert_model_to_dict(run: Run) -> Dict[str, Any]:
+    try:
+        serialized = copy.deepcopy(run.serialized)
+        serialized["_kind"] = run.run_type.value
+
+        model_dict = {f"{run.execution_order}_{run.name}": serialized}
+
+        for child_run in run.child_runs:
+            serialized = copy.deepcopy(child_run.serialized)
+            serialized["_kind"] = child_run.run_type.value
+            model_dict[f"{child_run.execution_order}_{child_run.name}"] = serialized
+
+        _maybe_replace_key(model_dict, "id")
+        for key in ("lc", "type"):
+            _maybe_scrub_key(model_dict, key)
+
+        _identify_kind_and_add_key(model_dict)
+
+        return model_dict
+    except Exception as e:
+        if PRINT_WARNINGS:
+            print(f"WARNING: Failed to serialize model: {e}")
+        return {}
 
 
 def _convert_llm_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
@@ -50,67 +153,6 @@ def _convert_llm_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
     base_span.span_kind = trace_tree.SpanKind.LLM
 
     return base_span
-
-
-def _serialize_inputs(run_inputs: dict) -> Union[dict, list]:
-    if "input_documents" in run_inputs:
-        docs = run_inputs["input_documents"]
-        return [doc.json() for doc in docs]
-    else:
-        return run_inputs
-
-
-def _replace_key(
-    obj: Dict[str, Any],
-    key: str,
-) -> None:
-    if key in obj and isinstance(obj[key], list):
-        obj[key] = ".".join(obj[key])
-
-    for k, v in obj.items():
-        if isinstance(v, dict):
-            _replace_key(v, key)
-
-
-def _scrub_key(obj: Dict[str, Any], key: str) -> None:
-    if isinstance(obj, dict):
-        # the call to `list` is useless for py2 but makes
-        # the code py2/py3 compatible
-        for k in list(obj.keys()):
-            if k == key or "api_key" in k.lower():
-                del obj[k]
-            else:
-                _scrub_key(obj[k], key)
-    elif isinstance(obj, list):
-        for i in reversed(range(len(obj))):
-            if obj[i] == key or "api_key" in obj[i].lower():
-                del obj[i]
-            else:
-                _scrub_key(obj[i], key)
-
-    else:
-        # neither a dict nor a list, do nothing
-        pass
-
-
-def _safely_convert_model_to_dict(run: Run) -> Dict[str, Any]:
-    try:
-        serialized = copy.deepcopy(run.serialized)
-        model_dict = {f"{run.execution_order}_{run.name}": serialized}
-        for child_run in run.child_runs:
-            serialized = child_run.serialized.copy()
-            model_dict[f"{child_run.execution_order}_{child_run.name}"] = serialized
-        _replace_key(model_dict, "id")
-        _scrub_key(model_dict, "lc")
-        _scrub_key(model_dict, "type")
-        model_dict = dict(
-            sorted(model_dict.items(), key=lambda x: int(x[0].split("_")[0]))
-        )
-        return model_dict
-    except Exception as e:
-        if PRINT_WARNINGS:
-            print(f"WARNING: Failed to serialize model: {e}")
-        return {}
 
 
 def _convert_chain_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
@@ -144,6 +186,17 @@ def _convert_tool_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
     base_span.span_kind = trace_tree.SpanKind.TOOL
 
     return base_span
+
+
+def _convert_lc_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
+    if run.run_type == RunTypeEnum.llm:
+        return _convert_llm_run_to_wb_span(trace_tree, run)
+    elif run.run_type == RunTypeEnum.chain:
+        return _convert_chain_run_to_wb_span(trace_tree, run)
+    elif run.run_type == RunTypeEnum.tool:
+        return _convert_tool_run_to_wb_span(trace_tree, run)
+    else:
+        return _convert_run_to_wb_span(trace_tree, run)
 
 
 def _convert_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
