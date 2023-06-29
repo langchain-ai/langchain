@@ -37,7 +37,7 @@ def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
         else:
             import faiss
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import faiss python package. "
             "Please install it with `pip install faiss` "
             "or `pip install faiss-cpu` (depending on Python version)."
@@ -320,11 +320,18 @@ class FAISS(VectorStore):
             query, k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
-    
+
     def max_marginal_relevance_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4
+        self,
+        embedding: List[float],
+        *,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
-        """Return docs selected using the maximal marginal relevance.
+        """Return docs and their similarity scores selected using the maximal marginal
+            relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
@@ -332,20 +339,44 @@ class FAISS(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-
+            fetch_k: Number of Documents to fetch before filtering to
+                     pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
-            List of Documents selected by maximal marginal relevance and score for each.
+            List of Documents and similarity scores selected by maximal marginal
+                relevance and score for each.
         """
-        scores, indices = self.index.search(np.array([embedding], dtype=np.float32), k)
+        scores, indices = self.index.search(
+            np.array([embedding], dtype=np.float32),
+            fetch_k if filter is None else fetch_k * 2,
+        )
+        if filter is not None:
+            filtered_indices = []
+            for i in indices[0]:
+                if i == -1:
+                    # This happens when not enough docs are returned.
+                    continue
+                _id = self.index_to_docstore_id[i]
+                doc = self.docstore.search(_id)
+                if not isinstance(doc, Document):
+                    raise ValueError(f"Could not find document for id {_id}, got {doc}")
+                if all(doc.metadata.get(key) == value for key, value in filter.items()):
+                    filtered_indices.append(i)
+            indices = np.array([filtered_indices])
         # -1 happens when not enough docs are returned.
         embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]
         mmr_selected = maximal_marginal_relevance(
-            np.array([embedding], dtype=np.float32), embeddings, k=k
+            np.array([embedding], dtype=np.float32),
+            embeddings,
+            k=k,
+            lambda_mult=lambda_mult,
         )
         selected_indices = [indices[0][i] for i in mmr_selected]
         selected_scores = [scores[0][i] for i in mmr_selected]
-        docs = []
+        docs_and_scores = []
         for i, score in zip(selected_indices, selected_scores):
             if i == -1:
                 # This happens when not enough docs are returned.
@@ -354,8 +385,8 @@ class FAISS(VectorStore):
             doc = self.docstore.search(_id)
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            docs.append((doc, score))
-        return docs
+            docs_and_scores.append((doc, score))
+        return docs_and_scores
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -383,43 +414,10 @@ class FAISS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        _, indices = self.index.search(
-            np.array([embedding], dtype=np.float32),
-            fetch_k if filter is None else fetch_k * 2,
+        docs_and_scores = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, filter=filter
         )
-        if filter is not None:
-            filtered_indices = []
-            for i in indices[0]:
-                if i == -1:
-                    # This happens when not enough docs are returned.
-                    continue
-                _id = self.index_to_docstore_id[i]
-                doc = self.docstore.search(_id)
-                if not isinstance(doc, Document):
-                    raise ValueError(f"Could not find document for id {_id}, got {doc}")
-                if all(doc.metadata.get(key) == value for key, value in filter.items()):
-                    filtered_indices.append(i)
-            indices = np.array([filtered_indices])
-        # -1 happens when not enough docs are returned.
-        embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]
-        mmr_selected = maximal_marginal_relevance(
-            np.array([embedding], dtype=np.float32),
-            embeddings,
-            k=k,
-            lambda_mult=lambda_mult,
-        )
-        selected_indices = [indices[0][i] for i in mmr_selected]
-        docs = []
-        for i in selected_indices:
-            if i == -1:
-                # This happens when not enough docs are returned.
-                continue
-            _id = self.index_to_docstore_id[i]
-            doc = self.docstore.search(_id)
-            if not isinstance(doc, Document):
-                raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            docs.append(doc)
-        return docs
+        return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search(
         self,
@@ -450,8 +448,8 @@ class FAISS(VectorStore):
         embedding = self.embedding_function(query)
         docs = self.max_marginal_relevance_search_by_vector(
             embedding,
-            k,
-            fetch_k,
+            k=k,
+            fetch_k=fetch_k,
             lambda_mult=lambda_mult,
             filter=filter,
             **kwargs,
