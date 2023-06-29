@@ -48,17 +48,14 @@ class StringRunEvaluatorInputMapper(RunEvaluatorInputMapper, BaseModel):
         """Maps the Run and Optional[Example] to a dictionary"""
         if run.outputs is None and self.prediction_map:
             raise ValueError(f"Run {run.id} has no outputs.")
+        if self.answer_map and (not example or not example.outputs):
+            raise ValueError("This evaluator requires references, but none were given.")
         outputs = run.outputs or {}
-        data = {value: outputs.get(key) for key, value in self.prediction_map.items()}
-        data.update(
-            {value: run.inputs.get(key) for key, value in self.input_map.items()}
-        )
+        data = {value: outputs[key] for key, value in self.prediction_map.items()}
+        data.update({value: run.inputs[key] for key, value in self.input_map.items()})
         if self.answer_map and example and example.outputs:
             data.update(
-                {
-                    value: example.outputs.get(key)
-                    for key, value in self.answer_map.items()
-                }
+                {value: example.outputs[key] for key, value in self.answer_map.items()}
             )
         return data
 
@@ -77,7 +74,7 @@ class ChoicesOutputParser(RunEvaluatorOutputParser):
         """Parse the last line of the text and return an evaluation result."""
         lines = text.strip().split()
         value = lines[-1].strip()
-        score = self.choices_map.get(value, 0) if self.choices_map else None
+        score = self.choices_map.get(value) if self.choices_map else None
         comment = " ".join(lines[:-1]) if len(lines) > 1 else None
         return EvaluationResult(
             key=self.evaluation_name,
@@ -144,9 +141,9 @@ class CriteriaOutputParser(RunEvaluatorOutputParser):
             parsed_output_ = parsed_output
         return EvaluationResult(
             key=self.evaluation_name,
-            score=parsed_output_.get("score"),
-            value=parsed_output_.get("value"),
-            comment=parsed_output_.get("reasoning"),
+            score=parsed_output_["score"],
+            value=parsed_output_["value"],
+            comment=parsed_output_["reasoning"],
         )
 
 
