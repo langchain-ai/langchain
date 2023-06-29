@@ -4,10 +4,10 @@ from __future__ import annotations
 import enum
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import sqlalchemy
-from pgvector.sqlalchemy import Vector
+from pydantic import Field
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Session, declarative_base, relationship
 
@@ -16,11 +16,20 @@ from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
+if TYPE_CHECKING:
+    from pgvector.sqlalchemy import Vector
+
 Base = declarative_base()  # type: Any
 
 
 ADA_TOKEN_COUNT = 1536
 _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
+
+
+def _get_default() -> sqlalchemy.Column:
+    from pgvector.sqlalchemy import Vector
+
+    return sqlalchemy.Column(Vector(ADA_TOKEN_COUNT))
 
 
 class BaseModel(Base):
@@ -79,7 +88,7 @@ class EmbeddingStore(BaseModel):
     )
     collection = relationship(CollectionStore, back_populates="embeddings")
 
-    embedding: Vector = sqlalchemy.Column(Vector(ADA_TOKEN_COUNT))
+    embedding: Vector = Field(default_factory=_get_default)
     document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     cmetadata = sqlalchemy.Column(JSON, nullable=True)
 
