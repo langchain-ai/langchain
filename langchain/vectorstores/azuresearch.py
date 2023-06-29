@@ -28,7 +28,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever
 from langchain.utils import get_from_env
-from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.base import SearchType, VectorStore
 
 logger = logging.getLogger()
 
@@ -172,7 +172,7 @@ class AzureSearch(VectorStore):
         azure_search_key: str,
         index_name: str,
         embedding_function: Callable,
-        search_type: str = "hybrid",
+        search_type: SearchType = SearchType.HYBRID,
         semantic_configuration_name: Optional[str] = None,
         semantic_query_language: str = "en-us",
         **kwargs: Any,
@@ -246,11 +246,11 @@ class AzureSearch(VectorStore):
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         search_type = kwargs.get("search_type", self.search_type)
-        if search_type == "similarity":
+        if search_type == SearchType.SIMILARITY:
             docs = self.vector_search(query, k=k, **kwargs)
-        elif search_type == "hybrid":
+        elif search_type == SearchType.HYBRID:
             docs = self.hybrid_search(query, k=k, **kwargs)
-        elif search_type == "semantic_hybrid":
+        elif search_type == SearchType.SEMANTIC_HYBRID:
             docs = self.semantic_hybrid_search(query, k=k, **kwargs)
         else:
             raise ValueError(f"search_type of {search_type} not allowed.")
@@ -477,8 +477,13 @@ class AzureSearch(VectorStore):
 
 class AzureSearchVectorStoreRetriever(BaseRetriever, BaseModel):
     vectorstore: AzureSearch
-    search_type: str = "hybrid"
+    search_type: SearchType = SearchType.HYBRID
     k: int = 4
+    allowed_search_types = (
+        SearchType.SIMILARITY,
+        SearchType.HYBRID,
+        SearchType.SEMANTIC_HYBRID,
+    )
 
     class Config:
         """Configuration for this pydantic object."""
@@ -490,7 +495,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever, BaseModel):
         """Validate search type."""
         if "search_type" in values:
             search_type = values["search_type"]
-            if search_type not in ("similarity", "hybrid", "semantic_hybrid"):
+            if search_type not in cls.allowed_search_types:
                 raise ValueError(f"search_type of {search_type} not allowed.")
         return values
 
@@ -500,11 +505,11 @@ class AzureSearchVectorStoreRetriever(BaseRetriever, BaseModel):
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> List[Document]:
-        if self.search_type == "similarity":
+        if self.search_type == SearchType.SIMILARITY:
             docs = self.vectorstore.vector_search(query, k=self.k)
-        elif self.search_type == "hybrid":
+        elif self.search_type == SearchType.HYBRID:
             docs = self.vectorstore.hybrid_search(query, k=self.k)
-        elif self.search_type == "semantic_hybrid":
+        elif self.search_type == SearchType.SEMANTIC_HYBRID:
             docs = self.vectorstore.semantic_hybrid_search(query, k=self.k)
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
