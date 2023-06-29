@@ -37,7 +37,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
         self.runs[run_id] = {
             "messages": [self._create_message_dicts(m)[0] for m in messages],
             "invocation_params": kwargs.get("invocation_params", {}),
-            "name": kwargs.get("invocation_params", {}).get("_type", "No Type"),
+            "name": ".".join(serialized["id"]),
             "request_start_time": datetime.datetime.now().timestamp(),
             "tags": tags,
         }
@@ -55,7 +55,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
         self.runs[run_id] = {
             "prompts": prompts,
             "invocation_params": kwargs.get("invocation_params", {}),
-            "name": kwargs.get("invocation_params", {}).get("_type", "No Type"),
+            "name": ".".join(serialized["id"]),
             "request_start_time": datetime.datetime.now().timestamp(),
             "tags": tags,
         }
@@ -80,19 +80,22 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
                 "llm_output": response.llm_output,
             }
             model_params = run_info.get("invocation_params", {})
-            if run_info.get("name") == "openai-chat":
-                function_name = f"langchain.chat.{run_info.get('name')}"
-                model_input = run_info.get("messages", [])[i]
-                model_response = [self._convert_message_to_dict(generation.message)]
-            else:
-                function_name = f"langchain.{run_info.get('name')}"
-                model_input = [run_info.get("prompts", [])[i]]
-                model_response = resp
+            is_chat_model = run_info.get("messages", None) != None
+            model_input = (
+                run_info.get("messages", [])[i]
+                if is_chat_model
+                else [run_info.get("prompts", [])[i]]
+            )
+            model_response = (
+                [self._convert_message_to_dict(generation.message)]
+                if is_chat_model
+                else resp
+            )
 
             from promptlayer.utils import get_api_key, promptlayer_api_request
 
             pl_request_id = promptlayer_api_request(
-                function_name,
+                run_info.get("name"),
                 "langchain",
                 model_input,
                 model_params,
