@@ -58,14 +58,6 @@ class AnalyticDB(VectorStore):
         self.logger = logger or logging.getLogger(__name__)
         self.__post_init__()
 
-        try:
-            from sqlalchemy.engine import Row
-        except ImportError:
-            raise ImportError(
-                "Could not import Row from sqlalchemy.engine. "
-                "Please 'pip install sqlalchemy>=1.4'."
-            )
-
     def __post_init__(
         self,
     ) -> None:
@@ -274,7 +266,7 @@ class AnalyticDB(VectorStore):
                 "Could not import Row from sqlalchemy.engine. "
                 "Please 'pip install sqlalchemy>=1.4'."
             )
-            
+
         filter_condition = ""
         if filter is not None:
             conditions = [
