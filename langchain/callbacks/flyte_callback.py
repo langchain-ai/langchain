@@ -249,7 +249,10 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.metrics["errors"] += 1
 
     def on_chat_model_start(
-        self, serialized: Dict[str, Any], messages: List[List[BaseMessage]]
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        **kwargs: Any,
     ):
         """Run when a chat model starts running."""
         pass
