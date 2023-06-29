@@ -226,9 +226,10 @@ async def _arun_llm_or_chain(
                 )
             else:
                 chain = llm_or_chain_factory()
-                output = await chain.acall(
-                    example.inputs, callbacks=callbacks, tags=tags
-                )
+                inputs_ = example.inputs
+                if len(inputs_) == 1:
+                    inputs_ = next(iter(inputs_.values()))
+                output = await chain.acall(inputs_, callbacks=callbacks, tags=tags)
             outputs.append(output)
         except Exception as e:
             logger.warning(f"Chain failed for example {example.id}. Error: {e}")
@@ -486,7 +487,10 @@ def run_llm_or_chain(
                 )
             else:
                 chain = llm_or_chain_factory()
-                output = chain(example.inputs, callbacks=callbacks, tags=tags)
+                inputs_ = example.inputs
+                if len(inputs_) == 1:
+                    inputs_ = next(iter(inputs_.values()))
+                output = chain(inputs_, callbacks=callbacks, tags=tags)
             outputs.append(output)
         except Exception as e:
             logger.warning(f"Chain failed for example {example.id}. Error: {e}")
