@@ -110,6 +110,7 @@ class Cassandra(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        batch_size: int = 16,
         ttl_seconds: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -119,6 +120,7 @@ class Cassandra(VectorStore):
             texts (Iterable[str]): Texts to add to the vectorstore.
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
             ids (Optional[List[str]], optional): Optional list of IDs.
+            batch_size (int): Number of concurrent requests to send to the server.
             ttl_seconds (Optional[int], optional): Optional time-to-live for the added texts.
 
         Returns:
@@ -134,20 +136,20 @@ class Cassandra(VectorStore):
         #
         embedding_vectors = self.embedding.embed_documents(_texts)
         #
-        futures = [
-            self.table.put_async(
-                document=text,
-                embedding_vector=embedding_vector,
-                document_id=text_id,
-                metadata=metadata,
-                ttl_seconds=ttl_seconds,
-            )
-            for text, embedding_vector, text_id, metadata in zip(
-                _texts, embedding_vectors, ids, metadatas
-            )
-        ]
-        for future in futures:
-            future.result()
+        for i in range(0, len(_texts), batch_size):
+            batch_texts = _texts[i: i + batch_size]
+            batch_embedding_vectors = embedding_vectors[i: i + batch_size]
+            batch_ids = ids[i: i + batch_size]
+            batch_metadatas = metadatas[i: i + batch_size]
+
+            futures = [
+                self.table.put_async(text, embedding_vector, text_id, metadata, ttl_seconds)
+                for text, embedding_vector, text_id, metadata in zip(
+                    batch_texts, batch_embedding_vectors, batch_ids, batch_metadatas
+                )
+            ]
+            for future in futures:
+                future.result()
         return ids
 
     # id-returning search facilities
@@ -356,6 +358,7 @@ class Cassandra(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        batch_size: int = 16,
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from raw texts.
@@ -382,6 +385,7 @@ class Cassandra(VectorStore):
         cls: Type[CVST],
         documents: List[Document],
         embedding: Embeddings,
+        batch_size: int = 16,
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from a document list.
