@@ -219,3 +219,51 @@ def test_load_empty_jsonlines(mocker: MockerFixture) -> None:
     result = loader.load()
 
     assert result == []
+
+
+@pytest.mark.parametrize(
+    "patch_func,patch_func_value,kwargs",
+    (
+        # JSON content.
+        (
+            "pathlib.Path.read_text",
+            '[{"text": "value1"}, {"text": "value2"}]',
+            {"jq_schema": ".[]", "content_key": "text"},
+        ),
+        # JSON Lines content.
+        (
+            "pathlib.Path.open",
+            io.StringIO(
+                """
+                {"text": "value1"}
+                {"text": "value2"}
+                """
+            ),
+            {"jq_schema": ".", "content_key": "text", "json_lines": True},
+        ),
+    ),
+)
+def test_json_meta(patch_func, patch_func_value, kwargs, mocker):
+    mocker.patch("builtins.open", mocker.mock_open())
+    mocker.patch(patch_func, return_value=patch_func_value)
+
+    file_path = "/workspaces/langchain/test.json"
+    expected_docs = [
+        Document(
+            page_content="value1",
+            metadata={"source": file_path, "seq_num": 1, "x": "value1-meta"},
+        ),
+        Document(
+            page_content="value2",
+            metadata={"source": file_path, "seq_num": 2, "x": "value2-meta"},
+        ),
+    ]
+
+    def metadata_func(record: dict, metadata: dict):
+        metadata["x"] = f"{record['text']}-meta"
+        return metadata
+
+    loader = JSONLoader(file_path=file_path, metadata_func=metadata_func, **kwargs)
+    result = loader.load()
+
+    assert result == expected_docs
