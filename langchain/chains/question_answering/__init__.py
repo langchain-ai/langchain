@@ -86,7 +86,7 @@ def _load_stuff_chain(
 
 def _load_map_reduce_chain(
     llm: BaseLanguageModel,
-    question_prompt: Optional[BasePromptTemplate] = None,
+    prompt: Optional[BasePromptTemplate] = None,
     combine_prompt: Optional[BasePromptTemplate] = None,
     combine_document_variable_name: str = "summaries",
     map_reduce_document_variable_name: str = "context",
@@ -99,7 +99,7 @@ def _load_map_reduce_chain(
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     _question_prompt = (
-        question_prompt or map_reduce_prompt.QUESTION_PROMPT_SELECTOR.get_prompt(llm)
+        prompt or map_reduce_prompt.QUESTION_PROMPT_SELECTOR.get_prompt(llm)
     )
     _combine_prompt = (
         combine_prompt or map_reduce_prompt.COMBINE_PROMPT_SELECTOR.get_prompt(llm)
@@ -162,9 +162,9 @@ def _load_map_reduce_chain(
 
 def _load_refine_chain(
     llm: BaseLanguageModel,
-    question_prompt: Optional[BasePromptTemplate] = None,
+    prompt: Optional[BasePromptTemplate] = None,
     refine_prompt: Optional[BasePromptTemplate] = None,
-    document_variable_name: str = "context_str",
+    document_variable_name: str = "context",
     initial_response_name: str = "existing_answer",
     refine_llm: Optional[BaseLanguageModel] = None,
     verbose: Optional[bool] = None,
@@ -173,7 +173,7 @@ def _load_refine_chain(
     **kwargs: Any,
 ) -> RefineDocumentsChain:
     _question_prompt = (
-        question_prompt or refine_prompts.QUESTION_PROMPT_SELECTOR.get_prompt(llm)
+        prompt or refine_prompts.QUESTION_PROMPT_SELECTOR.get_prompt(llm)
     )
     _refine_prompt = refine_prompt or refine_prompts.REFINE_PROMPT_SELECTOR.get_prompt(
         llm
