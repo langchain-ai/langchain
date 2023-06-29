@@ -8,7 +8,7 @@ from langchain.vectorstores.annoy import Annoy
 from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.awadb import AwaDB
 from langchain.vectorstores.azuresearch import AzureSearch
-from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.base import SearchType, VectorStore
 from langchain.vectorstores.cassandra import Cassandra
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.clarifai import Clarifai
@@ -77,6 +77,7 @@ __all__ = [
     "Redis",
     "Rockset",
     "SKLearnVectorStore",
+    "SearchType",
     "SingleStoreDB",
     "StarRocks",
     "SupabaseVectorStore",

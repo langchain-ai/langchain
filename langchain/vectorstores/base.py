@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import warnings
 from abc import ABC, abstractmethod
+from enum import Enum
 from functools import partial
 from typing import (
     Any,
@@ -30,6 +31,12 @@ from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever
 
 VST = TypeVar("VST", bound="VectorStore")
+
+
+class SearchType(str, Enum):
+    SIMILARITY = "similarity"
+    SIMILARITY_SCORE_THRESHOLD = "similarity_score_threshold"
+    MMR = "mmr"
 
 
 class VectorStore(ABC):
@@ -105,11 +112,13 @@ class VectorStore(ABC):
         metadatas = [doc.metadata for doc in documents]
         return await self.aadd_texts(texts, metadatas, **kwargs)
 
-    def search(self, query: str, search_type: str, **kwargs: Any) -> List[Document]:
+    def search(
+        self, query: str, search_type: SearchType, **kwargs: Any
+    ) -> List[Document]:
         """Return docs most similar to query using specified search type."""
-        if search_type == "similarity":
+        if search_type == SearchType.SIMILARITY:
             return self.similarity_search(query, **kwargs)
-        elif search_type == "mmr":
+        elif search_type == SearchType.MMR:
             return self.max_marginal_relevance_search(query, **kwargs)
         else:
             raise ValueError(
@@ -118,12 +127,12 @@ class VectorStore(ABC):
             )
 
     async def asearch(
-        self, query: str, search_type: str, **kwargs: Any
+        self, query: str, search_type: SearchType, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query using specified search type."""
-        if search_type == "similarity":
+        if search_type == SearchType.SIMILARITY:
             return await self.asimilarity_search(query, **kwargs)
-        elif search_type == "mmr":
+        elif search_type == SearchType.MMR:
             return await self.amax_marginal_relevance_search(query, **kwargs)
         else:
             raise ValueError(
@@ -375,13 +384,9 @@ class VectorStore(ABC):
 
 class VectorStoreRetriever(BaseRetriever, BaseModel):
     vectorstore: VectorStore
-    search_type: str = "similarity"
+    search_type: SearchType = SearchType.SIMILARITY
     search_kwargs: dict = Field(default_factory=dict)
-    allowed_search_types: ClassVar[Collection[str]] = (
-        "similarity",
-        "similarity_score_threshold",
-        "mmr",
-    )
+    allowed_search_types: ClassVar[Collection[SearchType]] = [st for st in SearchType]
 
     class Config:
         """Configuration for this pydantic object."""
@@ -397,7 +402,7 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
                 f"search_type of {search_type} not allowed. Valid values are: "
                 f"{cls.allowed_search_types}"
             )
-        if search_type == "similarity_score_threshold":
+        if search_type == SearchType.SIMILARITY_SCORE_THRESHOLD:
             score_threshold = values["search_kwargs"].get("score_threshold")
             if (score_threshold is None) or (not isinstance(score_threshold, float)):
                 raise ValueError(
@@ -409,16 +414,16 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
     def _get_relevant_documents(
         self, query: str, *, run_manager: Optional[CallbackManagerForRetrieverRun]
     ) -> List[Document]:
-        if self.search_type == "similarity":
+        if self.search_type == SearchType.SIMILARITY:
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
-        elif self.search_type == "similarity_score_threshold":
+        elif self.search_type == SearchType.SIMILARITY_SCORE_THRESHOLD:
             docs_and_similarities = (
                 self.vectorstore.similarity_search_with_relevance_scores(
                     query, **self.search_kwargs
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
-        elif self.search_type == "mmr":
+        elif self.search_type == SearchType.MMR:
             docs = self.vectorstore.max_marginal_relevance_search(
                 query, **self.search_kwargs
             )
@@ -429,18 +434,18 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: Optional[AsyncCallbackManagerForRetrieverRun]
     ) -> List[Document]:
-        if self.search_type == "similarity":
+        if self.search_type == SearchType.SIMILARITY:
             docs = await self.vectorstore.asimilarity_search(
                 query, **self.search_kwargs
             )
-        elif self.search_type == "similarity_score_threshold":
+        elif self.search_type == SearchType.SIMILARITY_SCORE_THRESHOLD:
             docs_and_similarities = (
                 await self.vectorstore.asimilarity_search_with_relevance_scores(
                     query, **self.search_kwargs
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
-        elif self.search_type == "mmr":
+        elif self.search_type == SearchType.MMR:
             docs = await self.vectorstore.amax_marginal_relevance_search(
                 query, **self.search_kwargs
             )
