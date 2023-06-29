@@ -12,8 +12,8 @@ Example:
     >>> chain = PairwiseStringEvalChain.from_llm(llm=llm)
     >>> result = chain.evaluate_string_pairs(
     ...     input = "What is the chemical formula for water?",
-    ...     output_a = "H2O",
-    ...     output_b = (
+    ...     prediction = "H2O",
+    ...     prediction_b = (
     ...        "The chemical formula for water is H2O, which means"
     ...        " there are two hydrogen atoms and one oxygen atom."
     ...     referenc = "The chemical formula for water is H2O.",
