@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
@@ -10,14 +9,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
+from langchain.vectorstores import SearchType
 from langchain.vectorstores.utils import maximal_marginal_relevance
-
-
-class SearchType(str, Enum):
-    """Enumerator of the types of search to perform."""
-
-    similarity = "similarity"
-    mmr = "mmr"
 
 
 class DocArrayRetriever(BaseRetriever, BaseModel):
@@ -44,7 +37,7 @@ class DocArrayRetriever(BaseRetriever, BaseModel):
     embeddings: Embeddings
     search_field: str
     content_field: str
-    search_type: SearchType = SearchType.similarity
+    search_type: SearchType = SearchType.SIMILARITY
     top_k: int = 1
     filters: Optional[Any] = None
 
@@ -69,9 +62,9 @@ class DocArrayRetriever(BaseRetriever, BaseModel):
         """
         query_emb = np.array(self.embeddings.embed_query(query))
 
-        if self.search_type == SearchType.similarity:
+        if self.search_type == SearchType.SIMILARITY:
             results = self._similarity_search(query_emb)
-        elif self.search_type == SearchType.mmr:
+        elif self.search_type == SearchType.MMR:
             results = self._mmr_search(query_emb)
         else:
             raise ValueError(
