@@ -17,7 +17,7 @@ import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.base import SearchType, VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -153,7 +153,7 @@ class SupabaseVectorStore(VectorStore):
                     metadata=search.get("metadata", {}),  # type: ignore
                     page_content=search.get("content", ""),
                 ),
-                search.get("similarity", 0.0),
+                search.get(SearchType.SIMILARITY, 0.0),
             )
             for search in res.data
             if search.get("content")
@@ -173,7 +173,7 @@ class SupabaseVectorStore(VectorStore):
                     metadata=search.get("metadata", {}),  # type: ignore
                     page_content=search.get("content", ""),
                 ),
-                search.get("similarity", 0.0),
+                search.get(SearchType.SIMILARITY, 0.0),
                 # Supabase returns a vector type as its string represation (!).
                 # This is a hack to convert the string to numpy array.
                 np.fromstring(
