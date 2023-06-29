@@ -267,6 +267,14 @@ class AnalyticDB(VectorStore):
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
         # Add the filter if provided
+        try:
+            from sqlalchemy.engine import Row
+        except ImportError:
+            raise ImportError(
+                "Could not import Row from sqlalchemy.engine. "
+                "Please 'pip install sqlalchemy>=1.4'."
+            )
+            
         filter_condition = ""
         if filter is not None:
             conditions = [
