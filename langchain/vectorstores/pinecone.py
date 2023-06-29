@@ -5,9 +5,12 @@ import logging
 import uuid
 from typing import Any, Callable, Iterable, List, Optional, Tuple
 
+import numpy as np
+
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +160,93 @@ class Pinecone(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        return self.similarity_search_with_score(query, k)
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[dict] = None,
+        namespace: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        if namespace is None:
+            namespace = self._namespace
+        results = self._index.query(
+            [embedding],
+            top_k=fetch_k,
+            include_values=True,
+            include_metadata=True,
+            namespace=namespace,
+            filter=filter,
+        )
+        mmr_selected = maximal_marginal_relevance(
+            np.array([embedding], dtype=np.float32),
+            [item["values"] for item in results["matches"]],
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+        selected = [results["matches"][i]["metadata"] for i in mmr_selected]
+        return [
+            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)
+            for metadata in selected
+        ]
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[dict] = None,
+        namespace: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        embedding = self._embedding_function(query)
+        return self.max_marginal_relevance_search_by_vector(
+            embedding, k, fetch_k, lambda_mult, filter, namespace
+        )
+
     @classmethod
     def from_texts(
         cls,
@@ -263,3 +353,17 @@ class Pinecone(VectorStore):
         return cls(
             pinecone.Index(index_name), embedding.embed_query, text_key, namespace
         )
+
+    def delete(self, ids: List[str], namespace: Optional[str] = None) -> None:
+        """Delete by vector IDs.
+        Args:
+            ids: List of ids to delete.
+        """
+
+        # This is the maximum number of IDs that can be deleted
+        if namespace is None:
+            namespace = self._namespace
+        chunk_size = 1000
+        for i in range(0, len(ids), chunk_size):
+            chunk = ids[i : i + chunk_size]
+            self._index.delete(ids=chunk, namespace=namespace)

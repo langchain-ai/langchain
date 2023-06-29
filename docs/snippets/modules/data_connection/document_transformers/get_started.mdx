@@ -1,0 +1,47 @@
+The default recommended text splitter is the RecursiveCharacterTextSplitter. This text splitter takes a list of characters. It tries to create chunks based on splitting on the first character, but if any chunks are too large it then moves onto the next character, and so forth. By default the characters it tries to split on are `["\n\n", "\n", " ", ""]`
+
+In addition to controlling which characters you can split on, you can also control a few other things:
+
+- `length_function`: how the length of chunks is calculated. Defaults to just counting number of characters, but it's pretty common to pass a token counter here.
+- `chunk_size`: the maximum size of your chunks (as measured by the length function).
+- `chunk_overlap`: the maximum overlap between chunks. It can be nice to have some overlap to maintain some continuity between chunks (eg do a sliding window).
+- `add_start_index`: whether to include the starting position of each chunk within the original document in the metadata.
+
+
+```python
+# This is a long document we can split up.
+with open('../../state_of_the_union.txt') as f:
+    state_of_the_union = f.read()
+```
+
+
+```python
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+```
+
+
+```python
+text_splitter = RecursiveCharacterTextSplitter(
+    # Set a really small chunk size, just to show.
+    chunk_size = 100,
+    chunk_overlap  = 20,
+    length_function = len,
+    add_start_index = True,
+)
+```
+
+
+```python
+texts = text_splitter.create_documents([state_of_the_union])
+print(texts[0])
+print(texts[1])
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    page_content='Madam Speaker, Madam Vice President, our First Lady and Second Gentleman. Members of Congress and' metadata={'start_index': 0}
+    page_content='of Congress and the Cabinet. Justices of the Supreme Court. My fellow Americans.' metadata={'start_index': 82}
+```
+
+</CodeOutputBlock>

@@ -19,6 +19,13 @@ else:
 
 
 def lazy_import_playwright_browsers() -> Tuple[Type[AsyncBrowser], Type[SyncBrowser]]:
+    """
+    Lazy import playwright browsers.
+
+    Returns:
+        Tuple[Type[AsyncBrowser], Type[SyncBrowser]]:
+            AsyncBrowser and SyncBrowser classes.
+    """
     try:
         from playwright.async_api import Browser as AsyncBrowser  # noqa: F401
         from playwright.sync_api import Browser as SyncBrowser  # noqa: F401

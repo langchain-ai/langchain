@@ -98,7 +98,7 @@ class ConstitutionalChain(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         response = self.chain.run(
             **inputs,
-            callbacks=_run_manager.get_child(),
+            callbacks=_run_manager.get_child("original"),
         )
         initial_response = response
         input_prompt = self.chain.prompt.format(**inputs)
@@ -116,7 +116,7 @@ class ConstitutionalChain(Chain):
                 input_prompt=input_prompt,
                 output_from_model=response,
                 critique_request=constitutional_principle.critique_request,
-                callbacks=_run_manager.get_child(),
+                callbacks=_run_manager.get_child("critique"),
             )
             critique = self._parse_critique(
                 output_string=raw_critique,
@@ -137,7 +137,7 @@ class ConstitutionalChain(Chain):
                 critique_request=constitutional_principle.critique_request,
                 critique=critique,
                 revision_request=constitutional_principle.revision_request,
-                callbacks=_run_manager.get_child(),
+                callbacks=_run_manager.get_child("revision"),
             ).strip()
             response = revision
             critiques_and_revisions.append((critique, revision))

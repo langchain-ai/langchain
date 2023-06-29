@@ -46,7 +46,7 @@ def _create_weaviate_client(**kwargs: Any) -> Any:
     except ImportError:
         raise ValueError(
             "Could not import weaviate python  package. "
-            "Please install it with `pip instal weaviate-client`"
+            "Please install it with `pip install weaviate-client`"
         )
 
     auth = (
@@ -142,10 +142,20 @@ class Weaviate(VectorStore):
                     for key, val in metadatas[i].items():
                         data_properties[key] = _json_serializable(val)
 
-                _id = batch.add_data_object(
+                # Allow for ids (consistent w/ other methods)
+                # # Or uuids (backwards compatble w/ existing arg)
+                # If the UUID of one of the objects already exists
+                # then the existing object will be replaced by the new object.
+                _id = get_valid_uuid(uuid4())
+                if "uuids" in kwargs:
+                    _id = kwargs["uuids"][i]
+                elif "ids" in kwargs:
+                    _id = kwargs["ids"][i]
+
+                batch.add_data_object(
                     data_object=data_properties,
                     class_name=self._index_name,
-                    uuid=kwargs["uuids"][i] if "uuids" in kwargs else None,
+                    uuid=_id,
                     vector=embeddings[i] if embeddings else None,
                 )
                 ids.append(_id)
@@ -462,3 +472,14 @@ class Weaviate(VectorStore):
             relevance_score_fn=relevance_score_fn,
             by_text=by_text,
         )
+
+    def delete(self, ids: List[str]) -> None:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+
+        # TODO: Check if this can be done in bulk
+        for id in ids:
+            self._client.data_object.delete(uuid=id)
