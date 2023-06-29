@@ -36,8 +36,8 @@ class JSONLoader(BaseLoader):
             metadata_func (Callable[Dict, Dict]): A function that takes in the JSON
                 object extracted by the jq_schema and the default metadata and returns
                 a dict of the updated metadata.
-            text_content (bool): Boolean flag to indicates whether the content is in
-                string format, default to True
+            text_content (bool): Boolean flag to indicate whether the content is in
+                string format, default to True.
         """
         try:
             import jq  # noqa:F401
