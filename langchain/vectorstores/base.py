@@ -34,9 +34,11 @@ VST = TypeVar("VST", bound="VectorStore")
 
 
 class SearchType(str, Enum):
+    HYBRID = "hybrid"
+    MMR = "mmr"
+    SEMANTIC_HYBRID = "semantic_hybrid"
     SIMILARITY = "similarity"
     SIMILARITY_SCORE_THRESHOLD = "similarity_score_threshold"
-    MMR = "mmr"
 
 
 class VectorStore(ABC):
