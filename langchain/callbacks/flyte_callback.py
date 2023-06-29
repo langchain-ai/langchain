@@ -113,7 +113,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             try:
                 self.nlp = spacy.load("en_core_web_sm")
             except OSError:
-                print(
+                raise OSError(
                     "To download the en_core_web_sm model, \
                     run the following command in your terminal: \
                     `python -m spacy download en_core_web_sm` command."
