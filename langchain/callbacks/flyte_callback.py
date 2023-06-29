@@ -108,6 +108,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self.action_records: list = []
 
+        self.nlp = None
         if spacy:
             try:
                 self.nlp = spacy.load("en_core_web_sm")
@@ -117,8 +118,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                     run the following command in your terminal: \
                     `python -m spacy download en_core_web_sm` command."
                 )
-        else:
-            self.nlp = None
 
         self.metrics = {
             "step": 0,
