@@ -1,5 +1,6 @@
 """Tools for interacting with a Power BI dataset."""
 import logging
+from time import perf_counter
 from typing import Any, Dict, Optional, Tuple
 
 from pydantic import Field, validator
@@ -93,9 +94,18 @@ class QueryPowerBITool(BaseTool):
         if query == "I cannot answer this":
             self.session_cache[tool_input] = query
             return self.session_cache[tool_input]
-        logger.info("Query: %s", query)
+        logger.info("PBI Query: %s", query)
+        start_time = perf_counter()
         pbi_result = self.powerbi.run(command=query)
+        end_time = perf_counter()
+        logger.debug("PBI Result: %s", pbi_result)
+        logger.debug(f"PBI Query duration: {end_time - start_time:0.6f}")
         result, error = self._parse_output(pbi_result)
+        if error is not None and "TokenExpired" in error:
+            self.session_cache[
+                tool_input
+            ] = "Authentication token expired or invalid, please try reauthenticate."
+            return self.session_cache[tool_input]
 
         iterations = kwargs.get("iterations", 0)
         if error and iterations < self.max_iterations:
@@ -137,9 +147,18 @@ class QueryPowerBITool(BaseTool):
         if query == "I cannot answer this":
             self.session_cache[tool_input] = query
             return self.session_cache[tool_input]
-        logger.info("Query: %s", query)
+        logger.info("PBI Query: %s", query)
+        start_time = perf_counter()
         pbi_result = await self.powerbi.arun(command=query)
+        end_time = perf_counter()
+        logger.debug("PBI Result: %s", pbi_result)
+        logger.debug(f"PBI Query duration: {end_time - start_time:0.6f}")
         result, error = self._parse_output(pbi_result)
+        if error is not None and "TokenExpired" in error:
+            self.session_cache[
+                tool_input
+            ] = "Authentication token expired or invalid, please try reauthenticate."
+            return self.session_cache[tool_input]
 
         iterations = kwargs.get("iterations", 0)
         if error and iterations < self.max_iterations:

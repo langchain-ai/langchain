@@ -15,6 +15,8 @@ DEFAULT_CONNECTION_STRING = "postgresql://postgres:mypassword@localhost/chat_his
 
 
 class PostgresChatMessageHistory(BaseChatMessageHistory):
+    """Chat message history stored in a Postgres database."""
+
     def __init__(
         self,
         session_id: str,

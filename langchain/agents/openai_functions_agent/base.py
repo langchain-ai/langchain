@@ -69,7 +69,7 @@ def _create_function_message(
     """
     if not isinstance(observation, str):
         try:
-            content = json.dumps(observation)
+            content = json.dumps(observation, ensure_ascii=False)
         except Exception:
             content = str(observation)
     else:
@@ -236,7 +236,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = await self.llm.apredict_messages(
-            messages, functions=self.functions
+            messages, functions=self.functions, callbacks=callbacks
         )
         agent_decision = _parse_ai_message(predicted_message)
         return agent_decision
@@ -290,7 +290,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools."""
         if not isinstance(llm, ChatOpenAI):
-            raise ValueError("Only supported with OpenAI models.")
+            raise ValueError("Only supported with ChatOpenAI models.")
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,
             system_message=system_message,

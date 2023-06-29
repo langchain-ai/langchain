@@ -1,9 +1,14 @@
 """Wrapper around Google VertexAI models."""
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+import asyncio
+from concurrent.futures import Executor, ThreadPoolExecutor
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
 
 from pydantic import BaseModel, root_validator
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utilities.vertexai import (
@@ -13,6 +18,10 @@ from langchain.utilities.vertexai import (
 
 if TYPE_CHECKING:
     from vertexai.language_models._language_models import _LanguageModel
+
+
+def is_codey_model(model_name: str) -> bool:
+    return "code" in model_name
 
 
 class _VertexAICommon(BaseModel):
@@ -25,10 +34,10 @@ class _VertexAICommon(BaseModel):
     "Token limit determines the maximum amount of text output from one prompt."
     top_p: float = 0.95
     "Tokens are selected from most probable to least until the sum of their "
-    "probabilities equals the top-p value."
+    "probabilities equals the top-p value. Top-p is ignored for Codey models."
     top_k: int = 40
     "How the model selects tokens for output, the next token is selected from "
-    "among the top-k most probable tokens."
+    "among the top-k most probable tokens. Top-k is ignored for Codey models."
     stop: Optional[List[str]] = None
     "Optional list of stop words to use when generating."
     project: Optional[str] = None
@@ -39,16 +48,29 @@ class _VertexAICommon(BaseModel):
     "The default custom credentials (google.auth.credentials.Credentials) to use "
     "when making API calls. If not provided, credentials will be ascertained from "
     "the environment."
+    request_parallelism: int = 5
+    "The amount of parallelism allowed for requests issued to VertexAI models. "
+    "Default is 5."
+    task_executor: ClassVar[Optional[Executor]] = None
+
+    @property
+    def is_codey_model(self) -> bool:
+        return is_codey_model(self.model_name)
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        base_params = {
-            "temperature": self.temperature,
-            "max_output_tokens": self.max_output_tokens,
-            "top_k": self.top_k,
-            "top_p": self.top_p,
-        }
-        return {**base_params}
+        if self.is_codey_model:
+            return {
+                "temperature": self.temperature,
+                "max_output_tokens": self.max_output_tokens,
+            }
+        else:
+            return {
+                "temperature": self.temperature,
+                "max_output_tokens": self.max_output_tokens,
+                "top_k": self.top_k,
+                "top_p": self.top_p,
+            }
 
     def _predict(
         self, prompt: str, stop: Optional[List[str]] = None, **kwargs: Any
@@ -69,6 +91,12 @@ class _VertexAICommon(BaseModel):
         return "vertexai"
 
     @classmethod
+    def _get_task_executor(cls, request_parallelism: int = 5) -> Executor:
+        if cls.task_executor is None:
+            cls.task_executor = ThreadPoolExecutor(max_workers=request_parallelism)
+        return cls.task_executor
+
+    @classmethod
     def _try_init_vertexai(cls, values: Dict) -> None:
         allowed_params = ["project", "location", "credentials"]
         params = {k: v for k, v in values.items() if k in allowed_params}
@@ -80,23 +108,54 @@ class VertexAI(_VertexAICommon, LLM):
     """Wrapper around Google Vertex AI large language models."""
 
     model_name: str = "text-bison"
+    "The name of the Vertex AI large language model."
     tuned_model_name: Optional[str] = None
-    "The name of a tuned model, if it's provided, model_name is ignored."
+    "The name of a tuned model. If provided, model_name is ignored."
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         cls._try_init_vertexai(values)
+        tuned_model_name = values.get("tuned_model_name")
+        model_name = values["model_name"]
         try:
-            from vertexai.preview.language_models import TextGenerationModel
+            if tuned_model_name or not is_codey_model(model_name):
+                from vertexai.preview.language_models import TextGenerationModel
+
+                if tuned_model_name:
+                    values["client"] = TextGenerationModel.get_tuned_model(
+                        tuned_model_name
+                    )
+                else:
+                    values["client"] = TextGenerationModel.from_pretrained(model_name)
+            else:
+                from vertexai.preview.language_models import CodeGenerationModel
+
+                values["client"] = CodeGenerationModel.from_pretrained(model_name)
         except ImportError:
             raise_vertex_import_error()
-        tuned_model_name = values.get("tuned_model_name")
-        if tuned_model_name:
-            values["client"] = TextGenerationModel.get_tuned_model(tuned_model_name)
-        else:
-            values["client"] = TextGenerationModel.from_pretrained(values["model_name"])
         return values
+
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Call Vertex model to get predictions based on the prompt.
+
+        Args:
+            prompt: The prompt to pass into the model.
+            stop: A list of stop words (optional).
+            run_manager: A callback manager for async interaction with LLMs.
+
+        Returns:
+            The string generated by the model.
+        """
+        return await asyncio.wrap_future(
+            self._get_task_executor().submit(self._predict, prompt, stop)
+        )
 
     def _call(
         self,
