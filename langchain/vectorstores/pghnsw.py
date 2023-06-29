@@ -161,11 +161,11 @@ class HNSWVectoreStore(VectorStore):
                 session, self.collection_name, cmetadata=self.collection_metadata
             )
 
-    def create_hnsw_index(self, max_elements = 10000,  dims = ADA_TOKEN_COUNT, m = 8, ef_construction = 16, ef_search = 16):
+    def create_hnsw_index(self, max_elements: int = 10000, dims: int = ADA_TOKEN_COUNT, m: int = 8, ef_construction: int = 16, ef_search: int = 16) -> None:    
         # Define the SQL queries for creating the HNSW extension and index
         create_index_query = sqlalchemy.text(
             "CREATE INDEX IF NOT EXISTS langchain_pg_embedding_idx ON langchain_pg_embedding USING hnsw (embedding) WITH (maxelements = {}, dims={}, m={}, efconstruction={}, efsearch={});"
-            .format(max_elements, dims, m, ef_construction, ef_search, ADA_TOKEN_COUNT)
+            .format(max_elements, dims, m, ef_construction, ef_search)
         )
 
         # Execute the queries
