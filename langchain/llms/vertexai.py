@@ -141,6 +141,7 @@ class VertexAI(_VertexAICommon, LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call Vertex model to get predictions based on the prompt.
 
