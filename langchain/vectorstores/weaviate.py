@@ -124,10 +124,9 @@ class Weaviate(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """
-        Upload texts with metadata (properties) to Weaviate.
-        Pass "uuids" list to set custom IDs or overwrite existing texts
-        """
+        """Upload texts with metadata (properties) to Weaviate."""
+        from weaviate.util import get_valid_uuid
+
         ids = []
         embeddings: Optional[List[List[float]]] = None
         if self._embedding:
