@@ -7,7 +7,7 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, Iterator, List, Mapping, Optional
+from typing import Any, Iterator, List, Mapping, Optional, Union
 from urllib.parse import urlparse
 
 import requests
@@ -98,7 +98,7 @@ class PyPDFLoader(BasePDFLoader):
     Loader also stores page numbers in metadatas.
     """
 
-    def __init__(self, file_path: str, password: Optional[str] = None) -> None:
+    def __init__(self, file_path: str, password: Optional[Union[str, bytes]] = None) -> None:
         """Initialize with file path."""
         try:
             import pypdf  # noqa:F401
