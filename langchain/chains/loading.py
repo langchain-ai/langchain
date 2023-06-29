@@ -401,7 +401,7 @@ def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
     )
 
 
-def _load_mlflow_retriever_evaluator(config: dict, **kwargs: Any) -> Retriever:
+def _load_mlflow_retriever_evaluator(config: dict, **kwargs: Any) -> MlflowRetrieverEvaluator:
     if "retriever" in kwargs:
         retriever = kwargs.pop("retriever")
     else:
