@@ -1,3 +1,4 @@
+import logging
 from copy import deepcopy
 from typing import Any, Dict, List, Union
 
@@ -10,6 +11,8 @@ from langchain.callbacks.utils import (
     import_textstat,
 )
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+
+logger = logging.getLogger(__name__)
 
 
 def import_flytekit() -> None:
@@ -91,19 +94,31 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         import_flytekit()
         self.pandas = import_pandas()
-        spacy = import_spacy()
+
+        spacy = None
+        try:
+            spacy = import_spacy()
+        except ImportError:
+            logger.warning(
+                "Spacy library is not installed. \
+                Some functionalities may be limited."
+            )
+
         super().__init__()
 
         self.action_records: list = []
 
-        try:
-            self.nlp = spacy.load("en_core_web_sm")
-        except OSError:
-            print(
-                "To download the en_core_web_sm model, \
-                run the following command in your terminal: \
-                `python -m spacy download en_core_web_sm` command."
-            )
+        if spacy:
+            try:
+                self.nlp = spacy.load("en_core_web_sm")
+            except OSError:
+                print(
+                    "To download the en_core_web_sm model, \
+                    run the following command in your terminal: \
+                    `python -m spacy download en_core_web_sm` command."
+                )
+        else:
+            self.nlp = None
 
         self.metrics = {
             "step": 0,
@@ -186,35 +201,46 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(flatten_dict(response.llm_output or {}))
         resp.update(self.metrics)
 
-        all_complexity_metrics = []
+        self.deck.append(self.markdown_renderer().to_html("### LLM End"))
+        self.deck.append(self.table_renderer().to_html(self.pandas.DataFrame([resp])))
 
         for generations in response.generations:
             for generation in generations:
                 generation_resp = deepcopy(resp)
                 generation_resp.update(flatten_dict(generation.dict()))
-                generation_resp.update(
-                    analyze_text(
-                        generation.text,
-                        nlp=self.nlp,
+                if self.nlp:
+                    generation_resp.update(
+                        analyze_text(
+                            generation.text,
+                            nlp=self.nlp,
+                        )
                     )
-                )
-                complexity_metrics: Dict[str, float] = generation_resp.pop("text_complexity_metrics")  # type: ignore  # noqa: E501
-                all_complexity_metrics.append(complexity_metrics)
 
-                dependency_tree = generation_resp["dependency_tree"]
+                    complexity_metrics: Dict[str, float] = generation_resp.pop("text_complexity_metrics")  # type: ignore  # noqa: E501
+                    self.deck.append(
+                        self.markdown_renderer().to_html("#### Text Complexity Metrics")
+                    )
+                    self.deck.append(
+                        self.table_renderer().to_html(
+                            self.pandas.DataFrame([complexity_metrics])
+                        )
+                        + "\n"
+                    )
 
-        self.deck.append(self.markdown_renderer().to_html("### LLM End"))
-        self.deck.append(self.table_renderer().to_html(self.pandas.DataFrame([resp])))
-        self.deck.append(
-            self.markdown_renderer().to_html("#### Text Complexity Metrics")
-        )
-        self.deck.append(
-            self.table_renderer().to_html(
-                self.pandas.DataFrame.from_records(all_complexity_metrics)
-            )
-        )
-        self.deck.append(self.markdown_renderer().to_html("#### Dependency Tree"))
-        self.deck.append(dependency_tree)
+                    dependency_tree = generation_resp["dependency_tree"]
+                    self.deck.append(
+                        self.markdown_renderer().to_html("#### Dependency Tree")
+                    )
+                    self.deck.append(dependency_tree)
+
+                    entities = generation_resp["entities"]
+                    self.deck.append(self.markdown_renderer().to_html("#### Entities"))
+                    self.deck.append(entities)
+                else:
+                    self.deck.append(
+                        self.markdown_renderer().to_html("#### Generated Response")
+                    )
+                    self.deck.append(self.markdown_renderer().to_html(generation.text))
 
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
