@@ -8,6 +8,12 @@ from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
+import boto3
+import os
+import time
+import uuid
+from botocore.exceptions import ClientError
+
 INPUT_TYPE = TypeVar("INPUT_TYPE", bound=Union[str, List[str]])
 OUTPUT_TYPE = TypeVar("OUTPUT_TYPE", bound=Union[str, List[List[float]]])
 
@@ -242,6 +248,116 @@ class SagemakerEndpoint(LLM):
             )
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
+
+        text = self.content_handler.transform_output(response["Body"])
+        if stop is not None:
+            # This is a bit hacky, but I can't figure out a better way to enforce
+            # stop tokens when making calls to the sagemaker endpoint.
+            text = enforce_stop_tokens(text, stop)
+
+        return text
+
+
+class SagemakerAsyncEndpoint(SagemakerEndpoint):
+    input_bucket: str = ""
+    input_prefix: str = ""
+    max_request_timeout: int = 90
+    s3_client: Any
+    sm_client: Any
+    
+    def __init__(self, input_bucket:str="", input_prefix:str="", max_request_timeout:int=90, **kwargs):
+        """
+        Initialize a Sagemaker asynchronous endpoint connector in Langchain
+        Args:
+            input_bucket: S3 bucket name where input files are stored.
+            input_prefix: S3 prefix where input files are stored.
+            max_request_timeout: Maximum timeout for the request in seconds - also used to validate if endpoint is in cold start
+            kwargs: Keyword arguments to pass to the SagemakerEndpoint class.
+        """
+        super().__init__(**kwargs)
+        region = self.region_name
+        account = boto3.client("sts").get_caller_identity()["Account"]
+        self.input_bucket = f'sagemaker-{region}-{account}' if input_bucket == "" else input_bucket
+        self.input_prefix = f'async-endpoint-outputs/{self.endpoint_name}' if input_prefix == "" else input_prefix
+        self.max_request_timeout = max_request_timeout
+        self.s3_client = boto3.client("s3")
+        self.sm_client = boto3.client("sagemaker")
+        
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Call out to Sagemaker asynchronous inference endpoint.
+        Args:
+            prompt: The prompt to use for the inference.
+            stop: The stop tokens to use for the inference.
+            run_manager: The run manager to use for the inference.
+            kwargs: Keyword arguments to pass to the SagemakerEndpoint class.
+        Returns:
+            The output from the Sagemaker asynchronous inference endpoint.
+        """
+        # Parse the SagemakerEndpoint class arguments
+        _model_kwargs = self.model_kwargs or {}
+        _model_kwargs = {**_model_kwargs, **kwargs}
+        _endpoint_kwargs = self.endpoint_kwargs or {}
+        
+        # Transform the input to match SageMaker expectations
+        body = self.content_handler.transform_input(prompt, _model_kwargs)
+        content_type = self.content_handler.content_type
+        accepts = self.content_handler.accepts
+
+        # Verify if the endpoint is running
+        response = self.sm_client.describe_endpoint(
+            EndpointName=self.endpoint_name
+        )
+        endpoint_is_running = response["ProductionVariants"][0]["CurrentInstanceCount"] > 0
+
+        # If the endpoint is not running, send an empty request to "wake up" the endpoint
+        test_data = b""
+        test_key = os.path.join(self.input_prefix, "test")
+        self.s3_client.put_object(Body=test_data, Bucket=self.input_bucket, Key=test_key)
+        if not endpoint_is_running:
+            self.client.invoke_endpoint_async(
+                EndpointName=self.endpoint_name,
+                InputLocation="s3://{}/{}".format(self.input_bucket, test_key),
+                ContentType=content_type,
+                Accept=accepts,
+                InvocationTimeoutSeconds=self.max_request_timeout, # timeout of 60 seconds to detect if it's not running yet
+                **_endpoint_kwargs,
+            )
+            raise Exception("Endpoint is not running - check back in ~10 minutes.")
+        
+        # Send request to the async endpoint
+        request_key = f"request-{str(uuid.uuid4())}"
+        self.s3_client.put_object(Body=body, Bucket=self.input_bucket, Key=request_key)
+        response = self.client.invoke_endpoint_async(
+            EndpointName=self.endpoint_name,
+            InputLocation="s3://{}/{}".format(self.input_bucket, request_key),
+            ContentType=content_type,
+            Accept=accepts,
+            InvocationTimeoutSeconds=self.max_request_timeout, # timeout 
+            **_endpoint_kwargs,
+        )
+        
+        # Read the bytes of the file from S3 in output_url with Boto3
+        output_url = response["OutputLocation"]
+        output_prefix = "/".join(output_url.split("/")[3:])
+        while True:
+            try:
+                response = self.s3_client.get_object(Bucket=self.input_bucket, Key=output_prefix)
+                break
+            except ClientError as ex:
+                if ex.response['Error']['Code'] == 'NoSuchKey':
+                    print("Waiting for file to be generated...")
+                    time.sleep(5)
+                    next
+                else:
+                    raise
+            except Exception as e:
+                raise ValueError(f"Error raised by inference endpoint: {e}")
 
         text = self.content_handler.transform_output(response["Body"])
         if stop is not None:
