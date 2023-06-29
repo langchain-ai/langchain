@@ -13,6 +13,7 @@ from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.sequential import SequentialChain
 from langchain.chat_models import ChatOpenAI
+from langchain.input import get_colored_text
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.prompts import ChatPromptTemplate
 from langchain.tools import APIOperation
@@ -77,7 +78,7 @@ def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -
             schema = spec.get_schema(media_type_schema)
         if p.description and not schema.description:
             schema.description = p.description
-        properties[p.name] = schema.dict(exclude_none=True)
+        properties[p.name] = json.loads(schema.json(exclude_none=True))
         if p.required:
             required.append(p.name)
     return {"type": "object", "properties": properties, "required": required}
@@ -127,15 +128,19 @@ def openapi_spec_to_openai_fn(
             request_body = spec.get_request_body_for_operation(op)
             # TODO: Support more MIME types.
             if request_body and request_body.content:
-                media_types = []
-                for media_type in request_body.content.values():
-                    if media_type.media_type_schema:
-                        schema = spec.get_schema(media_type.media_type_schema)
-                        media_types.append(schema.dict(exclude_none=True))
+                media_types = {}
+                for media_type, media_type_object in request_body.content.items():
+                    if media_type_object.media_type_schema:
+                        schema = spec.get_schema(media_type_object.media_type_schema)
+                        media_types[media_type] = json.loads(
+                            schema.json(exclude_none=True)
+                        )
                 if len(media_types) == 1:
-                    request_args["data"] = media_types[0]
+                    media_type, schema_dict = list(media_types.items())[0]
+                    key = "json" if media_type == "application/json" else "data"
+                    request_args[key] = schema_dict
                 elif len(media_types) > 1:
-                    request_args["data"] = {"anyOf": media_types}
+                    request_args["data"] = {"anyOf": list(media_types.values())}
 
             api_op = APIOperation.from_openapi_spec(spec, path, method)
             fn = {
@@ -152,14 +157,30 @@ def openapi_spec_to_openai_fn(
                 "url": api_op.base_url + api_op.path,
             }
 
-    def default_call_api(name: str, fn_args: dict, **kwargs: Any) -> Any:
+    def default_call_api(
+        name: str,
+        fn_args: dict,
+        headers: Optional[dict] = None,
+        params: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> Any:
         method = _name_to_call_map[name]["method"]
         url = _name_to_call_map[name]["url"]
         path_params = fn_args.pop("path_params", {})
-        _format_url(url, path_params)
+        url = _format_url(url, path_params)
         if "data" in fn_args and isinstance(fn_args["data"], dict):
             fn_args["data"] = json.dumps(fn_args["data"])
         _kwargs = {**fn_args, **kwargs}
+        if headers is not None:
+            if "headers" in _kwargs:
+                _kwargs["headers"].update(headers)
+            else:
+                _kwargs["headers"] = headers
+        if params is not None:
+            if "params" in _kwargs:
+                _kwargs["params"].update(params)
+            else:
+                _kwargs["params"] = params
         return requests.request(method, url, **_kwargs)
 
     return functions, default_call_api
@@ -184,8 +205,13 @@ class SimpleRequestChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Run the logic of this chain and return the output."""
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         name = inputs["function"].pop("name")
         args = inputs["function"].pop("arguments")
+        _pretty_name = get_colored_text(name, "green")
+        _pretty_args = get_colored_text(json.dumps(args, indent=2), "green")
+        _text = f"Calling endpoint {_pretty_name} with arguments:\n" + _pretty_args
+        _run_manager.on_text(_text)
         api_response: Response = self.request_method(name, args)
         if api_response.status_code != 200:
             response = (
@@ -206,6 +232,11 @@ def get_openapi_chain(
     llm: Optional[BaseLanguageModel] = None,
     prompt: Optional[BasePromptTemplate] = None,
     request_chain: Optional[Chain] = None,
+    llm_kwargs: Optional[Dict] = None,
+    verbose: bool = False,
+    headers: Optional[Dict] = None,
+    params: Optional[Dict] = None,
+    **kwargs: Any,
 ) -> SequentialChain:
     """Create a chain for querying an API from a OpenAPI spec.
 
@@ -242,10 +273,19 @@ def get_openapi_chain(
         llm_kwargs={"functions": openai_fns},
         output_parser=JsonOutputFunctionsParser(args_only=False),
         output_key="function",
+        verbose=verbose,
+        **(llm_kwargs or {}),
     )
-    request_chain = request_chain or SimpleRequestChain(request_method=call_api_fn)
+    request_chain = request_chain or SimpleRequestChain(
+        request_method=lambda name, args: call_api_fn(
+            name, args, headers=headers, params=params
+        ),
+        verbose=verbose,
+    )
     return SequentialChain(
         chains=[llm_chain, request_chain],
         input_variables=llm_chain.input_keys,
         output_variables=["response"],
+        verbose=verbose,
+        **kwargs,
     )

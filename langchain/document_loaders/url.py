@@ -16,6 +16,7 @@ class UnstructuredURLLoader(BaseLoader):
         urls: List[str],
         continue_on_failure: bool = True,
         mode: str = "single",
+        show_progress_bar: bool = False,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
@@ -51,6 +52,7 @@ class UnstructuredURLLoader(BaseLoader):
         self.continue_on_failure = continue_on_failure
         self.headers = headers
         self.unstructured_kwargs = unstructured_kwargs
+        self.show_progress_bar = show_progress_bar
 
     def _validate_mode(self, mode: str) -> None:
         _valid_modes = {"single", "elements"}
@@ -83,7 +85,21 @@ class UnstructuredURLLoader(BaseLoader):
         from unstructured.partition.html import partition_html
 
         docs: List[Document] = list()
-        for url in self.urls:
+        if self.show_progress_bar:
+            try:
+                from tqdm import tqdm
+            except ImportError as e:
+                raise ImportError(
+                    "Package tqdm must be installed if show_progress_bar=True. "
+                    "Please install with 'pip install tqdm' or set "
+                    "show_progress_bar=False."
+                ) from e
+
+            urls = tqdm(self.urls)
+        else:
+            urls = self.urls
+
+        for url in urls:
             try:
                 if self.__is_non_html_available():
                     if self.__is_headers_available_for_non_html():

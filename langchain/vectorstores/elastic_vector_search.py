@@ -158,6 +158,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         refresh_indices: bool = True,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -179,7 +180,7 @@ class ElasticVectorSearch(VectorStore, ABC):
                 "Please install it with `pip install elasticsearch`."
             )
         requests = []
-        ids = []
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
         embeddings = self.embedding.embed_documents(list(texts))
         dim = len(embeddings[0])
         mapping = _default_text_mapping(dim)
@@ -194,16 +195,14 @@ class ElasticVectorSearch(VectorStore, ABC):
 
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
-            _id = str(uuid.uuid4())
             request = {
                 "_op_type": "index",
                 "_index": self.index_name,
                 "vector": embeddings[i],
                 "text": text,
                 "metadata": metadata,
-                "_id": _id,
+                "_id": ids[i],
             }
-            ids.append(_id)
             requests.append(request)
         bulk(self.client, requests)
 
@@ -317,6 +316,17 @@ class ElasticVectorSearch(VectorStore, ABC):
                 index=index_name, body={"query": script_query, "size": size}
             )
         return response
+
+    def delete(self, ids: List[str]) -> None:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+
+        # TODO: Check if this can be done in bulk
+        for id in ids:
+            self.client.delete(index=self.index_name, id=id)
 
 
 class ElasticKnnSearch(ElasticVectorSearch):

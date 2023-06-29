@@ -15,11 +15,23 @@ from langchain.schema import BaseRetriever, Document
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
+    """
+    Create an index of embeddings for a list of contexts.
+
+    Args:
+        contexts: List of contexts to embed.
+        embeddings: Embeddings model to use.
+
+    Returns:
+        Index of embeddings.
+    """
     with concurrent.futures.ThreadPoolExecutor() as executor:
         return np.array(list(executor.map(embeddings.embed_query, contexts)))
 
 
 class KNNRetriever(BaseRetriever, BaseModel):
+    """KNN Retriever."""
+
     embeddings: Embeddings
     index: Any
     texts: List[str]

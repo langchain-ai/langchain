@@ -123,6 +123,22 @@ def load_query_constructor_chain(
     enable_limit: bool = False,
     **kwargs: Any,
 ) -> LLMChain:
+    """
+    Load a query constructor chain.
+    Args:
+        llm: BaseLanguageModel to use for the chain.
+        document_contents: The contents of the document to be queried.
+        attribute_info: A list of AttributeInfo objects describing
+            the attributes of the document.
+        examples: Optional list of examples to use for the chain.
+        allowed_comparators: An optional list of allowed comparators.
+        allowed_operators: An optional list of allowed operators.
+        enable_limit: Whether to enable the limit operator. Defaults to False.
+        **kwargs:
+
+    Returns:
+        A LLMChain that can be used to construct queries.
+    """
     prompt = _get_prompt(
         document_contents,
         attribute_info,

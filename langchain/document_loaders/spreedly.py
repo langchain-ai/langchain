@@ -20,6 +20,8 @@ SPREEDLY_ENDPOINTS = {
 
 
 class SpreedlyLoader(BaseLoader):
+    """Loader that fetches data from Spreedly API."""
+
     def __init__(self, access_token: str, resource: str) -> None:
         self.access_token = access_token
         self.resource = resource

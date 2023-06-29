@@ -1,4 +1,5 @@
 """Base interface for large language models to expose."""
+import asyncio
 import inspect
 import json
 import warnings
@@ -151,6 +152,39 @@ class BaseLLM(BaseLanguageModel, ABC):
             prompt_strings, stop=stop, callbacks=callbacks, **kwargs
         )
 
+    def _generate_helper(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]],
+        run_managers: List[CallbackManagerForLLMRun],
+        new_arg_supported: bool,
+        **kwargs: Any,
+    ) -> LLMResult:
+        try:
+            output = (
+                self._generate(
+                    prompts,
+                    stop=stop,
+                    # TODO: support multiple run managers
+                    run_manager=run_managers[0] if run_managers else None,
+                    **kwargs,
+                )
+                if new_arg_supported
+                else self._generate(prompts, stop=stop)
+            )
+        except (KeyboardInterrupt, Exception) as e:
+            for run_manager in run_managers:
+                run_manager.on_llm_error(e)
+            raise e
+        flattened_outputs = output.flatten()
+        for manager, flattened_output in zip(run_managers, flattened_outputs):
+            manager.on_llm_end(flattened_output)
+        if run_managers:
+            output.run = [
+                RunInfo(run_id=run_manager.run_id) for run_manager in run_managers
+            ]
+        return output
+
     def generate(
         self,
         prompts: List[str],
@@ -161,8 +195,6 @@ class BaseLLM(BaseLanguageModel, ABC):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        # If string is passed in directly no errors will be raised but outputs will
-        # not make sense.
         if not isinstance(prompts, list):
             raise ValueError(
                 "Argument 'prompts' is expected to be of type List[str], received"
@@ -185,59 +217,76 @@ class BaseLLM(BaseLanguageModel, ABC):
             "run_manager"
         )
         if langchain.llm_cache is None or disregard_cache:
-            # This happens when langchain.cache is None, but self.cache is True
             if self.cache is not None and self.cache:
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            run_manager = callback_manager.on_llm_start(
+            run_managers = callback_manager.on_llm_start(
                 dumpd(self), prompts, invocation_params=params, options=options
             )
-            try:
-                output = (
-                    self._generate(
-                        prompts, stop=stop, run_manager=run_manager, **kwargs
-                    )
-                    if new_arg_supported
-                    else self._generate(prompts, stop=stop, **kwargs)
-                )
-            except (KeyboardInterrupt, Exception) as e:
-                run_manager.on_llm_error(e)
-                raise e
-            run_manager.on_llm_end(output)
-            if run_manager:
-                output.run = RunInfo(run_id=run_manager.run_id)
+            output = self._generate_helper(
+                prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+            )
             return output
         if len(missing_prompts) > 0:
-            run_manager = callback_manager.on_llm_start(
-                dumpd(self),
-                missing_prompts,
-                invocation_params=params,
-                options=options,
+            run_managers = callback_manager.on_llm_start(
+                dumpd(self), missing_prompts, invocation_params=params, options=options
             )
-            try:
-                new_results = (
-                    self._generate(
-                        missing_prompts, stop=stop, run_manager=run_manager, **kwargs
-                    )
-                    if new_arg_supported
-                    else self._generate(missing_prompts, stop=stop, **kwargs)
-                )
-            except (KeyboardInterrupt, Exception) as e:
-                run_manager.on_llm_error(e)
-                raise e
-            run_manager.on_llm_end(new_results)
+            new_results = self._generate_helper(
+                missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+            )
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
-            run_info = None
-            if run_manager:
-                run_info = RunInfo(run_id=run_manager.run_id)
+            run_info = (
+                [RunInfo(run_id=run_manager.run_id) for run_manager in run_managers]
+                if run_managers
+                else None
+            )
         else:
             llm_output = {}
             run_info = None
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
+
+    async def _agenerate_helper(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]],
+        run_managers: List[AsyncCallbackManagerForLLMRun],
+        new_arg_supported: bool,
+        **kwargs: Any,
+    ) -> LLMResult:
+        try:
+            output = (
+                await self._agenerate(
+                    prompts,
+                    stop=stop,
+                    run_manager=run_managers[0] if run_managers else None,
+                    **kwargs,
+                )
+                if new_arg_supported
+                else await self._agenerate(prompts, stop=stop)
+            )
+        except (KeyboardInterrupt, Exception) as e:
+            await asyncio.gather(
+                *[run_manager.on_llm_error(e) for run_manager in run_managers]
+            )
+            raise e
+        flattened_outputs = output.flatten()
+        await asyncio.gather(
+            *[
+                run_manager.on_llm_end(flattened_output)
+                for run_manager, flattened_output in zip(
+                    run_managers, flattened_outputs
+                )
+            ]
+        )
+        if run_managers:
+            output.run = [
+                RunInfo(run_id=run_manager.run_id) for run_manager in run_managers
+            ]
+        return output
 
     async def agenerate(
         self,
@@ -266,54 +315,32 @@ class BaseLLM(BaseLanguageModel, ABC):
             "run_manager"
         )
         if langchain.llm_cache is None or disregard_cache:
-            # This happens when langchain.cache is None, but self.cache is True
             if self.cache is not None and self.cache:
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            run_manager = await callback_manager.on_llm_start(
+            run_managers = await callback_manager.on_llm_start(
                 dumpd(self), prompts, invocation_params=params, options=options
             )
-            try:
-                output = (
-                    await self._agenerate(
-                        prompts, stop=stop, run_manager=run_manager, **kwargs
-                    )
-                    if new_arg_supported
-                    else await self._agenerate(prompts, stop=stop, **kwargs)
-                )
-            except (KeyboardInterrupt, Exception) as e:
-                await run_manager.on_llm_error(e, verbose=self.verbose)
-                raise e
-            await run_manager.on_llm_end(output, verbose=self.verbose)
-            if run_manager:
-                output.run = RunInfo(run_id=run_manager.run_id)
+            output = await self._agenerate_helper(
+                prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+            )
             return output
         if len(missing_prompts) > 0:
-            run_manager = await callback_manager.on_llm_start(
-                dumpd(self),
-                missing_prompts,
-                invocation_params=params,
-                options=options,
+            run_managers = await callback_manager.on_llm_start(
+                dumpd(self), missing_prompts, invocation_params=params, options=options
             )
-            try:
-                new_results = (
-                    await self._agenerate(
-                        missing_prompts, stop=stop, run_manager=run_manager, **kwargs
-                    )
-                    if new_arg_supported
-                    else await self._agenerate(missing_prompts, stop=stop, **kwargs)
-                )
-            except (KeyboardInterrupt, Exception) as e:
-                await run_manager.on_llm_error(e)
-                raise e
-            await run_manager.on_llm_end(new_results)
+            new_results = await self._agenerate_helper(
+                missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+            )
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
-            run_info = None
-            if run_manager:
-                run_info = RunInfo(run_id=run_manager.run_id)
+            run_info = (
+                [RunInfo(run_id=run_manager.run_id) for run_manager in run_managers]
+                if run_managers
+                else None
+            )
         else:
             llm_output = {}
             run_info = None
