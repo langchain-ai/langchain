@@ -1373,14 +1373,14 @@ graph = ["gremlinpython (==3.4.6)"]
 
 [[package]]
 name = "cassio"
-version = "0.0.6"
+version = "0.0.7"
 description = "A framework-agnostic Python library to seamlessly integrate Apache Cassandra with ML/LLM/genAI workloads."
 category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "cassio-0.0.6-py3-none-any.whl", hash = "sha256:44bc9cad86dd703b363a2eb99337a68f63d2d6c9c5f234ab1aae6a0223fc6aaf"},
-    {file = "cassio-0.0.6.tar.gz", hash = "sha256:3b4fc218dc93c973e1a31e984583dbd15debbdfaf1bb93a6971d046ecc9bd50c"},
+    {file = "cassio-0.0.7-py3-none-any.whl", hash = "sha256:394d8ca18076f051543917e46c06a61d43679c22c0ddf2717308259fcb3d7452"},
+    {file = "cassio-0.0.7.tar.gz", hash = "sha256:68b3b036f6de64e728f91538ba81a3f0eb4cf217320ab4bf50bb7135bac9a903"},
 ]
 
 [package.dependencies]
