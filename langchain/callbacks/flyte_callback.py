@@ -40,7 +40,7 @@ def analyze_text(
 
     Returns:
         (dict): A dictionary containing the complexity metrics and visualization
-            files serialized to  HTML string.
+            files serialized to HTML string.
     """
     resp: Dict[str, Any] = {}
     textstat = import_textstat()
