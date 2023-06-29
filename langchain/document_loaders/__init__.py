@@ -51,7 +51,6 @@ from langchain.document_loaders.git import GitLoader
 from langchain.document_loaders.gitbook import GitbookLoader
 from langchain.document_loaders.github import GitHubIssuesLoader
 from langchain.document_loaders.googledrive import GoogleDriveLoader
-from langchain.document_loaders.grobid import GrobidLoader
 from langchain.document_loaders.gutenberg import GutenbergLoader
 from langchain.document_loaders.hn import HNLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
@@ -284,5 +283,4 @@ __all__ = [
     "WikipediaLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
-    "GrobidLoader",
 ]
