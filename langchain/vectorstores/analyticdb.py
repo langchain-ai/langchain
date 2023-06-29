@@ -7,7 +7,6 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type
 
 from sqlalchemy import REAL, Column, String, Table, create_engine, insert, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSON, TEXT
-from sqlalchemy.engine import Row
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -260,6 +259,14 @@ class AnalyticDB(VectorStore):
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
         # Add the filter if provided
+        try:
+            from sqlalchemy.engine import Row
+        except ImportError:
+            raise ImportError(
+                "Could not import Row from sqlalchemy.engine. "
+                "Please 'pip install sqlalchemy>=1.4'."
+            )
+
         filter_condition = ""
         if filter is not None:
             conditions = [
