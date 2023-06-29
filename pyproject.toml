@@ -306,6 +306,7 @@ all = [
     "tigrisdb",
     "nebula3-python",
     "awadb",
+    "esprima",
     "octoai-sdk",
 ]
 
