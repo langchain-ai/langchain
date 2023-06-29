@@ -13,7 +13,7 @@ from langchain.chains.base import Chain
 from langchain.schema import BaseRetriever, Document
 
 
-class Retriever(Chain):
+class MlflowRetrieverEvaluator(Chain):
     input_key: str = "query"  #: :meta private:
     output_key: str = "source_documents"  #: :meta private:
     retriever: BaseRetriever = Field(exclude=True)
@@ -56,7 +56,7 @@ class Retriever(Chain):
         Example:
         .. code-block:: python
 
-        chain = Retriever(retriever=...)
+        chain = MlflowRetrieverEvaluator(retriever=...)
         res = chain({'query': 'This is my query'})
         docs = res['source_documents']
         """
@@ -80,7 +80,7 @@ class Retriever(Chain):
         Example:
         .. code-block:: python
 
-        chain = Retriever(retriever=...)
+        chain = MlflowRetrieverEvaluator(retriever=...)
         res = chain({'query': 'This is my query'})
         docs = res['source_documents']
         """
@@ -91,4 +91,4 @@ class Retriever(Chain):
     @property
     def _chain_type(self) -> str:
         """Return the chain type."""
-        return "retriever"
+        return "mlflow_retriever_evaluator"

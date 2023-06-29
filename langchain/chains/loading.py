@@ -22,7 +22,7 @@ from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
-from langchain.chains.retriever import Retriever
+from langchain.chains.mlflow_retriever_evaluator import MlflowRetrieverEvaluator
 from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.llms.loading import load_llm, load_llm_from_config
 from langchain.prompts.loading import (
@@ -401,12 +401,12 @@ def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
     )
 
 
-def _load_retriever(config: dict, **kwargs: Any) -> Retriever:
+def _load_mlflow_retriever_evaluator(config: dict, **kwargs: Any) -> Retriever:
     if "retriever" in kwargs:
         retriever = kwargs.pop("retriever")
     else:
         raise ValueError("`retriever` must be present.")
-    return Retriever(
+    return MlflowRetrieverEvaluator(
         retriever=retriever,
         **config,
     )
@@ -525,7 +525,7 @@ type_to_loader_dict = {
     "vector_db_qa": _load_vector_db_qa,
     "retrieval_qa": _load_retrieval_qa,
     "graph_cypher_chain": _load_graph_cypher_chain,
-    "retriever": _load_retriever,
+    "mlflow_retriever_evaluator": _load_mlflow_retriever_evaluator,
 }
 
 
