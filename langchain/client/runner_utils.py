@@ -237,10 +237,13 @@ async def _arun_llm_or_chain(
                 )
             else:
                 chain = llm_or_chain_factory()
-                inputs = (
-                    input_mapper(example.inputs) if input_mapper else example.inputs
-                )
-                output = await chain.acall(inputs, callbacks=callbacks, tags=tags)
+                if input_mapper is not None:
+                    inputs_ = input_mapper(example.inputs)
+                else:
+                    inputs_ = example.inputs
+                    if len(inputs_) == 1:
+                        inputs_ = next(iter(inputs_.values()))
+                output = await chain.acall(inputs_, callbacks=callbacks, tags=tags)
             outputs.append(output)
         except Exception as e:
             logger.warning(f"Chain failed for example {example.id}. Error: {e}")
@@ -515,14 +518,13 @@ def run_llm_or_chain(
                 )
             else:
                 chain = llm_or_chain_factory()
-                inputs = (
-                    input_mapper(example.inputs) if input_mapper else example.inputs
-                )
-                output = chain(
-                    inputs,
-                    callbacks=callbacks,
-                    tags=tags,
-                )
+                if input_mapper is not None:
+                    inputs_ = input_mapper(example.inputs)
+                else:
+                    inputs_ = example.inputs
+                    if len(inputs_) == 1:
+                        inputs_ = next(iter(inputs_.values()))
+                output = chain(inputs_, callbacks=callbacks, tags=tags)
             outputs.append(output)
         except Exception as e:
             logger.warning(f"Chain failed for example {example.id}. Error: {e}")

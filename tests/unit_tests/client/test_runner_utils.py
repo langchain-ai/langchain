@@ -19,6 +19,7 @@ from langchain.client.runner_utils import (
     run_llm,
     run_llm_or_chain,
 )
+from langchain.schema import LLMResult
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -81,7 +82,7 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
     example = Example(
         id=uuid.uuid4(),
         created_at=_CREATED_AT,
-        inputs={"the wrong input": "1"},
+        inputs={"the wrong input": "1", "another key": "2"},
         outputs={"output": "2"},
         dataset_id=str(uuid.uuid4()),
     )
@@ -114,7 +115,7 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
     assert "Error" in bad_result[0]
 
     # Try with LLM
-    def llm_input_mapper(inputs: dict) -> dict:
+    def llm_input_mapper(inputs: dict) -> List[str]:
         assert "the wrong input" in inputs
         return ["the right input"]
 
@@ -123,7 +124,9 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         example, mock_llm, n_repetitions=1, input_mapper=llm_input_mapper
     )
     assert len(result) == 1
-    assert result[0].generations[0][0].text == "somenumber"
+    llm_result = result[0]
+    assert isinstance(llm_result, LLMResult)
+    assert llm_result.generations[0][0].text == "somenumber"
 
 
 @pytest.mark.parametrize(
