@@ -21,7 +21,7 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 from langchain.prompts import PromptTemplate
 from langchain.schema import BaseRetriever, Document
-from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.base import SearchType, VectorStore
 
 
 class BaseRetrievalQA(Chain):
@@ -233,7 +233,7 @@ class VectorDBQA(BaseRetrievalQA):
     """Vector Database to connect to."""
     k: int = 4
     """Number of documents to query for."""
-    search_type: str = "similarity"
+    search_type: SearchType = SearchType.SIMILARITY
     """Search type to use over vectorstore. `similarity` or `mmr`."""
     search_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
@@ -251,7 +251,7 @@ class VectorDBQA(BaseRetrievalQA):
         """Validate search type."""
         if "search_type" in values:
             search_type = values["search_type"]
-            if search_type not in ("similarity", "mmr"):
+            if search_type not in (SearchType.SIMILARITY, SearchType.MMR):
                 raise ValueError(f"search_type of {search_type} not allowed.")
         return values
 
@@ -262,11 +262,11 @@ class VectorDBQA(BaseRetrievalQA):
         run_manager: CallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
-        if self.search_type == "similarity":
+        if self.search_type == SearchType.SIMILARITY:
             docs = self.vectorstore.similarity_search(
                 question, k=self.k, **self.search_kwargs
             )
-        elif self.search_type == "mmr":
+        elif self.search_type == SearchType.MMR:
             docs = self.vectorstore.max_marginal_relevance_search(
                 question, k=self.k, **self.search_kwargs
             )
