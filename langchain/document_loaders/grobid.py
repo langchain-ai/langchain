@@ -4,7 +4,8 @@ import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.parsers.grobid import GrobidParser
+from langchain.document_loaders.blob_loaders import Blob
+from langchain.text_splitter import GrobidSplitter
 
 
 class ServerUnavailableException(Exception):
@@ -58,11 +59,11 @@ class GrobidLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazy_load file."""
-        parser = GrobidParser()
         if self.xml_data is None:
             return iter([])
         assert self.xml_data is not None
-        return parser.lazy_parse(self.file_path, self.xml_data, self.segment_sentences)
+        splitter = GrobidSplitter(self.file_path, self.xml_data, self.segment_sentences)
+        return splitter.split_text()
 
     def load(self) -> List[Document]:
         """Load file."""
