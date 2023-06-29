@@ -28,8 +28,9 @@ from flytekit import ImageSpec, task
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import FlyteCallbackHandler
 from langchain.chains import LLMChain
-from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
+from langchain.schema import HumanMessage
 ```
 
 Set up the necessary environment variables to utilize the OpenAI API and Serp API:
@@ -77,12 +78,12 @@ The following examples demonstrate tasks related to OpenAI LLM, chains and agent
 ```python
 @task(disable_deck=False, container_image=custom_image)
 def langchain_llm() -> str:
-    llm = OpenAI(
+    llm = ChatOpenAI(
         model_name="gpt-3.5-turbo",
-        temperature=0,
+        temperature=0.2,
         callbacks=[FlyteCallbackHandler()],
     )
-    return llm("Tell me a joke")
+    return llm([HumanMessage(content="Tell me a joke")]).content
 ```
 
 ### Chain
@@ -93,7 +94,7 @@ def langchain_chain() -> list[dict[str, str]]:
     template = """You are a playwright. Given the title of play, it is your job to write a synopsis for that title.
 Title: {title}
 Playwright: This is a synopsis for the above play:"""
-    llm = OpenAI(
+    llm = ChatOpenAI(
         model_name="gpt-3.5-turbo",
         temperature=0,
         callbacks=[FlyteCallbackHandler()],
@@ -131,7 +132,7 @@ def langchain_agent() -> str:
         verbose=True,
     )
     return agent.run(
-        "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"
+        "Who is Leonardo DiCaprio's girlfriend? Could you calculate her current age and raise it to the power of 0.43?"
     )
 ```
 

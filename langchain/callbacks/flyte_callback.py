@@ -101,7 +101,8 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         except ImportError:
             logger.warning(
                 "Spacy library is not installed. \
-                Some functionalities may be limited."
+                It may result in the inability to log \
+                certain metrics that can be captured with Spacy."
             )
 
         super().__init__()
