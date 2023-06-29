@@ -98,7 +98,7 @@ class PyPDFLoader(BasePDFLoader):
     Loader also stores page numbers in metadatas.
     """
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str, password: Optional[str] = None) -> None:
         """Initialize with file path."""
         try:
             import pypdf  # noqa:F401
@@ -106,7 +106,7 @@ class PyPDFLoader(BasePDFLoader):
             raise ImportError(
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
-        self.parser = PyPDFParser()
+        self.parser = PyPDFParser(password=password)
         super().__init__(file_path)
 
     def load(self) -> List[Document]:
