@@ -1,3 +1,5 @@
+import io
+
 import pytest
 from pytest import raises
 from pytest_mock import MockerFixture
@@ -133,3 +135,87 @@ def test_load_invalid_test_content(mocker: MockerFixture) -> None:
 
     with raises(ValueError):
         loader.load()
+
+
+def test_load_jsonlines(mocker: MockerFixture) -> None:
+    file_path = "/workspaces/langchain/test.json"
+    expected_docs = [
+        Document(
+            page_content="value1",
+            metadata={"source": file_path, "seq_num": 1},
+        ),
+        Document(
+            page_content="value2",
+            metadata={"source": file_path, "seq_num": 2},
+        ),
+    ]
+
+    mocker.patch(
+        "pathlib.Path.open",
+        return_value=io.StringIO(
+            """
+            {"text": "value1"}
+            {"text": "value2"}
+            """
+        ),
+    )
+
+    loader = JSONLoader(
+        file_path=file_path, jq_schema=".", content_key="text", json_lines=True
+    )
+    result = loader.load()
+
+    assert result == expected_docs
+
+
+@pytest.mark.parametrize(
+    "params",
+    (
+        {"jq_schema": ".[].text"},
+        {"jq_schema": ".[]", "content_key": "text"},
+    ),
+)
+def test_load_jsonlines_list(params, mocker: MockerFixture) -> None:
+    file_path = "/workspaces/langchain/test.json"
+    expected_docs = [
+        Document(
+            page_content="value1",
+            metadata={"source": file_path, "seq_num": 1},
+        ),
+        Document(
+            page_content="value2",
+            metadata={"source": file_path, "seq_num": 2},
+        ),
+        Document(
+            page_content="value3",
+            metadata={"source": file_path, "seq_num": 3},
+        ),
+        Document(
+            page_content="value4",
+            metadata={"source": file_path, "seq_num": 4},
+        ),
+    ]
+
+    mocker.patch(
+        "pathlib.Path.open",
+        return_value=io.StringIO(
+            """
+            [{"text": "value1"}, {"text": "value2"}]
+            [{"text": "value3"}, {"text": "value4"}]
+            """
+        ),
+    )
+
+    loader = JSONLoader(file_path=file_path, json_lines=True, **params)
+    result = loader.load()
+
+    assert result == expected_docs
+
+
+def test_load_empty_jsonlines(mocker: MockerFixture) -> None:
+    mocker.patch("pathlib.Path.open", return_value=io.StringIO(""))
+
+    loader = JSONLoader(file_path="file_path", jq_schema=".[].text", json_lines=True)
+    result = loader.load()
+
+    assert result == []
