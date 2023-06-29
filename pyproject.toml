@@ -303,6 +303,7 @@ all = [
     "tigrisdb",
     "nebula3-python",
     "awadb",
+    "arthurai"
 ]
 
 # An extra used to be able to add extended testing.

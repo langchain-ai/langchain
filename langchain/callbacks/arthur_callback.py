@@ -1,4 +1,7 @@
+from collections import defaultdict
+from datetime import datetime
 import numpy as np
+import pytz
 from time import time
 from typing import Any, Dict, List, Optional, Union
 import uuid
@@ -35,10 +38,6 @@ class ArthurCallbackHandler(BaseCallbackHandler):
         from arthurai import ArthurAI
         from arthurai.common.constants import InputType, OutputType, Stage, ValueType
         from arthurai.common.exceptions import ResponseClientError
-        from arthurai.util import generate_timestamps
-        
-        # save the Arthur timestamp function to be used to create valid inference timestamps in on_llm_end()
-        self.timestamp_fn = generate_timestamps
                 
         # connect to Arthur               
         if arthur_login is None:
@@ -72,23 +71,34 @@ class ArthurCallbackHandler(BaseCallbackHandler):
             self.token_likelihood_attr = [x for x in self.arthur_model.get_attributes()
                            if x.value_type==ValueType.TokenLikelihoods][0].name
         
-        # prepare callback data defaults to be updated in on_llm_start()
+        # prepare callback data defaults to be updated in on_llm_start() and on_llm_end()
         self.input_texts: List = []
         self.on_llm_start_time: float = -1.0
+        self.run_map = defaultdict(dict)
         
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """On LLM start, save the input prompts"""
-        self.input_texts = prompts
-        self.on_llm_start_time = time()
+        run_id = kwargs['run_id']
+        self.run_map[run_id]['input_texts'] = prompts
+        self.run_map[run_id]['start_time'] = time()
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """On LLM end, send data to Arthur."""
-        
+
+        run_id = kwargs['run_id']
+
+        # get the run params from this run ID, 
+        # or raise an error if this run ID has no corresponding metadata in self.run_map
+        try:
+            run_map_data = self.run_map[run_id]
+        except KeyError as e:
+            raise KeyError("This function has been called with a run_id that was never registered in on_llm_start(). Restart and try running the LLM again") from e
+
         # mark the duration time between on_llm_start() and on_llm_end()
-        time_from_start_to_end = time() - self.on_llm_start_time
+        time_from_start_to_end = time() - run_map_data['start_time']
         
         # create inferences to log to Arthur
         inferences = []
@@ -97,17 +107,17 @@ class ArthurCallbackHandler(BaseCallbackHandler):
 
                 inference = {
                     'partner_inference_id': str(uuid.uuid4()),
-                    'inference_timestamp': self.timestamp_fn(2, '1h', 'now', 'h')[1],
-                    self.input_attr: self.input_texts[i], 
+                    'inference_timestamp': datetime.now(tz=pytz.UTC),
+                    self.input_attr: run_map_data['input_texts'][i], 
                     self.output_attr: generation.text,
                 }
 
                 if generation.generation_info is not None:
                     
-                    # add finish reason to the inference if the ArthurModel was registered to monitor finish_reason
-                    finish_reason = generation.generation_info[FINISH_REASON]
-                    if FINISH_REASON in self.attr_names:
-                        inference[FINISH_REASON] = finish_reason
+                    # add finish reason to the inference 
+                    # if generation info contains a finish reason and if the ArthurModel was registered to monitor finish_reason
+                    if FINISH_REASON in generation.generation_info and FINISH_REASON in self.attr_names:
+                        inference[FINISH_REASON] = generation.generation_info[FINISH_REASON]
                     
                     # add token likelihoods data to the inference if the ArthurModel was registered to monitor token likelihoods
                     logprobs_data = generation.generation_info["logprobs"]
@@ -117,7 +127,6 @@ class ArthurCallbackHandler(BaseCallbackHandler):
                         inference[self.token_likelihood_attr] = likelihoods
                 
                 # add token usage counts to the inference if the ArthurModel was registered to monitor token usage
-                print('\n\n\n RESPONSE', response, '\n*****\n')
                 if isinstance(response.llm_output, dict) and TOKEN_USAGE in response.llm_output:
                     token_usage = response.llm_output[TOKEN_USAGE]
                     if PROMPT_TOKENS in token_usage and PROMPT_TOKENS in self.attr_names:
