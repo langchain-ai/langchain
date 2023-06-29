@@ -5,8 +5,9 @@ from pytest_mock import MockerFixture
 from langchain.docstore.document import Document
 from langchain.document_loaders.json_loader import JSONLoader
 
+pytestmark = pytest.mark.requires("jq")
 
-@pytest.mark.requires("jq")
+
 def test_load_valid_string_content(mocker: MockerFixture) -> None:
     file_path = "/workspaces/langchain/test.json"
     expected_docs = [
@@ -19,9 +20,12 @@ def test_load_valid_string_content(mocker: MockerFixture) -> None:
             metadata={"source": file_path, "seq_num": 2},
         ),
     ]
+
     mocker.patch("builtins.open", mocker.mock_open())
-    mock_csv_reader = mocker.patch("pathlib.Path.read_text")
-    mock_csv_reader.return_value = '[{"text": "value1"}, {"text": "value2"}]'
+    mocker.patch(
+        "pathlib.Path.read_text",
+        return_value='[{"text": "value1"}, {"text": "value2"}]',
+    )
 
     loader = JSONLoader(file_path=file_path, jq_schema=".[].text", text_content=True)
     result = loader.load()
@@ -29,7 +33,6 @@ def test_load_valid_string_content(mocker: MockerFixture) -> None:
     assert result == expected_docs
 
 
-@pytest.mark.requires("jq")
 def test_load_valid_dict_content(mocker: MockerFixture) -> None:
     file_path = "/workspaces/langchain/test.json"
     expected_docs = [
@@ -42,11 +45,14 @@ def test_load_valid_dict_content(mocker: MockerFixture) -> None:
             metadata={"source": file_path, "seq_num": 2},
         ),
     ]
+
     mocker.patch("builtins.open", mocker.mock_open())
-    mock_csv_reader = mocker.patch("pathlib.Path.read_text")
-    mock_csv_reader.return_value = """
-        [{"text": "value1"}, {"text": "value2"}]
-    """
+    mocker.patch(
+        "pathlib.Path.read_text",
+        return_value="""
+            [{"text": "value1"}, {"text": "value2"}]
+        """,
+    )
 
     loader = JSONLoader(file_path=file_path, jq_schema=".[]", text_content=False)
     result = loader.load()
@@ -54,7 +60,6 @@ def test_load_valid_dict_content(mocker: MockerFixture) -> None:
     assert result == expected_docs
 
 
-@pytest.mark.requires("jq")
 def test_load_valid_bool_content(mocker: MockerFixture) -> None:
     file_path = "/workspaces/langchain/test.json"
     expected_docs = [
@@ -67,13 +72,16 @@ def test_load_valid_bool_content(mocker: MockerFixture) -> None:
             metadata={"source": file_path, "seq_num": 2},
         ),
     ]
+
     mocker.patch("builtins.open", mocker.mock_open())
-    mock_csv_reader = mocker.patch("pathlib.Path.read_text")
-    mock_csv_reader.return_value = """
-        [
-            {"flag": false}, {"flag": true}
-        ]
-    """
+    mocker.patch(
+        "pathlib.Path.read_text",
+        return_value="""
+            [
+                {"flag": false}, {"flag": true}
+            ]
+        """,
+    )
 
     loader = JSONLoader(file_path=file_path, jq_schema=".[].flag", text_content=False)
     result = loader.load()
@@ -81,7 +89,6 @@ def test_load_valid_bool_content(mocker: MockerFixture) -> None:
     assert result == expected_docs
 
 
-@pytest.mark.requires("jq")
 def test_load_valid_numeric_content(mocker: MockerFixture) -> None:
     file_path = "/workspaces/langchain/test.json"
     expected_docs = [
@@ -94,13 +101,16 @@ def test_load_valid_numeric_content(mocker: MockerFixture) -> None:
             metadata={"source": file_path, "seq_num": 2},
         ),
     ]
+
     mocker.patch("builtins.open", mocker.mock_open())
-    mock_csv_reader = mocker.patch("pathlib.Path.read_text")
-    mock_csv_reader.return_value = """
-        [
-            {"num": 99}, {"num": 99.5}
-        ]
-    """
+    mocker.patch(
+        "pathlib.Path.read_text",
+        return_value="""
+            [
+                {"num": 99}, {"num": 99.5}
+            ]
+        """,
+    )
 
     loader = JSONLoader(file_path=file_path, jq_schema=".[].num", text_content=False)
     result = loader.load()
@@ -108,14 +118,16 @@ def test_load_valid_numeric_content(mocker: MockerFixture) -> None:
     assert result == expected_docs
 
 
-@pytest.mark.requires("jq")
 def test_load_invalid_test_content(mocker: MockerFixture) -> None:
     file_path = "/workspaces/langchain/test.json"
+
     mocker.patch("builtins.open", mocker.mock_open())
-    mock_csv_reader = mocker.patch("pathlib.Path.read_text")
-    mock_csv_reader.return_value = """
-        [{"text": "value1"}, {"text": "value2"}]
-    """
+    mocker.patch(
+        "pathlib.Path.read_text",
+        return_value="""
+            [{"text": "value1"}, {"text": "value2"}]
+        """,
+    )
 
     loader = JSONLoader(file_path=file_path, jq_schema=".[]", text_content=True)
 
