@@ -14,7 +14,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
+from langchain.vectorstores.base import SearchType, VectorStore, VectorStoreRetriever
 
 
 class DistanceStrategy(str, enum.Enum):
@@ -448,12 +448,12 @@ class SingleStoreDBRetriever(VectorStoreRetriever):
 
     vectorstore: SingleStoreDB
     k: int = 4
-    allowed_search_types: ClassVar[Collection[str]] = ("similarity",)
+    allowed_search_types: ClassVar[Collection[SearchType]] = (SearchType.SIMILARITY,)
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: Optional[CallbackManagerForRetrieverRun]
     ) -> List[Document]:
-        if self.search_type == "similarity":
+        if self.search_type == SearchType.SIMILARITY:
             docs = self.vectorstore.similarity_search(query, k=self.k)
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
