@@ -466,7 +466,8 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        query_vector = self._embed_query(query)
+        query_embedding = self._embed_query(query)
+        query_vector = query_embedding
         if self.vector_name is not None:
             query_vector = (self.vector_name, query_vector)  # type: ignore[assignment]
 
@@ -477,9 +478,14 @@ class Qdrant(VectorStore):
             with_vectors=True,
             limit=fetch_k,
         )
-        embeddings = [result.vector for result in results]
+        embeddings = [
+            result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
+            if self.vector_name is not None
+            else result.vector
+            for result in results
+        ]
         mmr_selected = maximal_marginal_relevance(
-            np.array(query_vector), embeddings, k=k, lambda_mult=lambda_mult
+            np.array(query_embedding), embeddings, k=k, lambda_mult=lambda_mult
         )
         return [
             self._document_from_scored_point(

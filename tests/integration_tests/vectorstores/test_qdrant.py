@@ -168,7 +168,10 @@ def test_qdrant_similarity_search_filters(batch_size: int) -> None:
     ]
 
 
-def test_qdrant_similarity_search_with_relevance_score_no_threshold() -> None:
+@pytest.mark.parametrize("vector_name", [None, "my-vector"])
+def test_qdrant_similarity_search_with_relevance_score_no_threshold(
+    vector_name: Optional[str],
+) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [
@@ -180,6 +183,7 @@ def test_qdrant_similarity_search_with_relevance_score_no_threshold() -> None:
         ConsistentFakeEmbeddings(),
         metadatas=metadatas,
         location=":memory:",
+        vector_name=vector_name,
     )
     output = docsearch.similarity_search_with_relevance_scores(
         "foo", k=3, score_threshold=None
@@ -282,8 +286,12 @@ def test_qdrant_similarity_search_filters_with_qdrant_filters() -> None:
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "test_content"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "test_metadata"])
+@pytest.mark.parametrize("vector_name", [None, "my-vector"])
 def test_qdrant_max_marginal_relevance_search(
-    batch_size: int, content_payload_key: str, metadata_payload_key: str
+    batch_size: int,
+    content_payload_key: str,
+    metadata_payload_key: str,
+    vector_name: Optional[str],
 ) -> None:
     """Test end to end construction and MRR search."""
     texts = ["foo", "bar", "baz"]
@@ -296,6 +304,7 @@ def test_qdrant_max_marginal_relevance_search(
         content_payload_key=content_payload_key,
         metadata_payload_key=metadata_payload_key,
         batch_size=batch_size,
+        vector_name=vector_name,
     )
     output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
     assert output == [
