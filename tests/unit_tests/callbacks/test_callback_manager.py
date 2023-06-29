@@ -1,12 +1,15 @@
 """Test CallbackManager."""
-from typing import List, Tuple
+import contextvars
+import random
+from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
 
 import pytest
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import AgentAction, AgentFinish, BaseMessage, LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,
@@ -263,3 +266,106 @@ def test_callback_manager_configure(monkeypatch: pytest.MonkeyPatch) -> None:
         handler4,
     ]
     assert isinstance(async_configured_manager, AsyncCallbackManager)
+
+
+@pytest.mark.asyncio
+async def test_run_inline_async_callback_manager() -> None:
+    """When run_inline=True, async callback manager should run hooks in the main context."""
+
+    ctxvar = contextvars.ContextVar("var")
+
+    class CallbackHandler(BaseCallbackHandler):
+        """Example callback handler testing that hooks are ran in the main context."""
+
+        run_inline = True
+        last_observed_ctxval = None
+
+        def _hook(self, *_args, new_ctxval=None, **kwargs) -> None:
+            self.last_observed_ctxval = ctxvar.get()
+            ctxvar.set(new_ctxval)
+
+        def on_chat_model_start(self, *args, **kwargs) -> None:
+            self._hook(*args, **kwargs)
+
+        def on_llm_start(self, *args, **kwargs) -> None:
+            self._hook(*args, **kwargs)
+
+        def on_llm_end(self, *args, **kwargs) -> None:
+            self._hook(*args, **kwargs)
+
+        def on_llm_error(self, *args, **kwargs) -> None:
+            self._hook(*args, **kwargs)
+
+    ctxvar.set(0)
+
+    handler = CallbackHandler()
+    manager = AsyncCallbackManager(handlers=[handler])
+
+    run_managers = await manager.on_llm_start({}, ["prompt"], new_ctxval=1)
+    assert handler.last_observed_ctxval == 0, "on_llm_start should see the original value"
+    assert ctxvar.get() == 1, "on_llm_start should set the new value observable from this context"
+
+    for run_manager in run_managers:
+        await run_manager.on_llm_end(LLMResult(generations=[]), new_ctxval=2)
+    assert handler.last_observed_ctxval == 1
+    assert ctxvar.get() == 2, "on_llm_end should set the new value observable from this context"
+
+    for run_manager in run_managers:
+        await run_manager.on_llm_error(LLMResult(generations=[]), new_ctxval=3)
+    assert handler.last_observed_ctxval == 2
+    assert ctxvar.get() == 3, "on_llm_end should set the new value observable from this context"
+
+    await manager.on_chat_model_start({}, ["prompt"], new_ctxval=4)
+    assert handler.last_observed_ctxval == 3, "on_chat_model_start should see the original value"
+    assert ctxvar.get() == 4, "on_chat_model_start should set the new value observable from this context"
+
+
+def test_run_inline_callback_manager() -> None:
+    """When run_inline=True, callback manager should run hooks in the main context."""
+
+    ctxvar = contextvars.ContextVar("var")
+
+    class CallbackHandler(BaseCallbackHandler):
+        """Example callback handler testing that hooks are ran in the main context."""
+
+        run_inline = True
+        last_observed_ctxval = None
+
+        def _hook(self, *_args, new_ctxval=None, **kwargs) -> None:
+            self.last_observed_ctxval = ctxvar.get()
+            ctxvar.set(new_ctxval)
+
+        def on_chat_model_start(self, *args, **kwargs) -> None:
+            self._hook(*args, **kwargs)
+
+        def on_llm_start(self, *args, **kwargs) -> None:
+            self._hook(*args, **kwargs)
+
+        def on_llm_end(self, *args, **kwargs) -> None:
+            self._hook(*args, **kwargs)
+
+        def on_llm_error(self, *args, **kwargs) -> None:
+            self._hook(*args, **kwargs)
+
+    ctxvar.set(0)
+
+    handler = CallbackHandler()
+    manager = CallbackManager(handlers=[handler])
+
+    run_managers = manager.on_llm_start({}, ["prompt"], new_ctxval=1)
+    assert handler.last_observed_ctxval == 0, "on_llm_start should see the original value"
+    assert ctxvar.get() == 1, "on_llm_start should set the new value observable from this context"
+
+    for run_manager in run_managers:
+        run_manager.on_llm_end(LLMResult(generations=[]), new_ctxval=2)
+    assert handler.last_observed_ctxval == 1
+    assert ctxvar.get() == 2, "on_llm_end should set the new value observable from this context"
+
+    for run_manager in run_managers:
+        run_manager.on_llm_error(LLMResult(generations=[]), new_ctxval=3)
+    assert handler.last_observed_ctxval == 2
+    assert ctxvar.get() == 3, "on_llm_end should set the new value observable from this context"
+
+    manager.on_chat_model_start({}, ["prompt"], new_ctxval=4)
+    assert handler.last_observed_ctxval == 3, "on_chat_model_start should see the original value"
+    assert ctxvar.get() == 4, "on_chat_model_start should set the new value observable from this context"
