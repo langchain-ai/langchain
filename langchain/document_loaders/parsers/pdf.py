@@ -9,12 +9,15 @@ from langchain.schema import Document
 class PyPDFParser(BaseBlobParser):
     """Loads a PDF with pypdf and chunks at character level."""
 
+    def __init__(self, password: Optional[str] = None):
+        self.password = password
+
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
         import pypdf
 
         with blob.as_bytes_io() as pdf_file_obj:
-            pdf_reader = pypdf.PdfReader(pdf_file_obj)
+            pdf_reader = pypdf.PdfReader(pdf_file_obj, password=self.password)
             yield from [
                 Document(
                     page_content=page.extract_text(),
