@@ -53,15 +53,16 @@ NEBULAGRAPH_EXTRA_INSTRUCTIONS = """
 Instructions:
 
 First, generate cypher then convert it to NebulaGraph Cypher dialect(rather than standard):
-1. it requires explicit label specification when referring to node properties: v.`Foo`.name
-2. it uses double equals sign for comparison: `==` rather than `=`
+1. it requires explicit label specification only when referring to node properties: v.`Foo`.name
+2. note explicit label specification is not needed for edge properties, so it's e.name instead of e.`Bar`.name
+3. it uses double equals sign for comparison: `==` rather than `=`
 For instance:
 ```diff
-< MATCH (p:person)-[:directed]->(m:movie) WHERE m.name = 'The Godfather II'
-< RETURN p.name;
+< MATCH (p:person)-[e:directed]->(m:movie) WHERE m.name = 'The Godfather II'
+< RETURN p.name, e.year, m.name;
 ---
-> MATCH (p:`person`)-[:directed]->(m:`movie`) WHERE m.`movie`.`name` == 'The Godfather II'
-> RETURN p.`person`.`name`;
+> MATCH (p:`person`)-[e:directed]->(m:`movie`) WHERE m.`movie`.`name` == 'The Godfather II'
+> RETURN p.`person`.`name`, e.year, m.`movie`.`name`;
 ```\n"""
 
 NGQL_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
