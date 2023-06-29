@@ -34,6 +34,7 @@ from langchain.llms.manifest import ManifestWrapper
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
+from langchain.llms.octoai_endpoint import OctoAIEndpoint
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
