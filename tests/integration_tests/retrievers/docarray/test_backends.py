@@ -4,6 +4,7 @@ import pytest
 from vcr.request import Request
 
 from langchain.retrievers import DocArrayRetriever
+from langchain.vestorstores import SearchType
 from tests.integration_tests.retrievers.docarray.fixtures import (  # noqa: F401
     init_elastic,
     init_hnsw,
@@ -57,7 +58,7 @@ def test_backends(request: Request, backend: Any) -> None:
         index=index,
         embeddings=embeddings,
         search_field="title_embedding",
-        search_type="mmr",
+        search_type=SearchType.MMR,
         content_field="title",
         filters=filter_query,
     )

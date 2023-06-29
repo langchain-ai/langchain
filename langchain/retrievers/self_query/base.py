@@ -24,6 +24,7 @@ from langchain.vectorstores import (
     MyScale,
     Pinecone,
     Qdrant,
+    SearchType,
     VectorStore,
     Weaviate,
 )
@@ -59,7 +60,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
     """The underlying vector store from which documents will be retrieved."""
     llm_chain: LLMChain
     """The LLMChain for generating the vector store queries."""
-    search_type: str = "similarity"
+    search_type: SearchType = SearchType.SIMILARITY
     """The search type to perform on the vector store."""
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass in to the vector store search."""
