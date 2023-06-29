@@ -1,7 +1,6 @@
 """Wrapper around OctoAI APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
-from octoai import client
 from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
@@ -12,7 +11,9 @@ from langchain.utils import get_from_dict_or_env
 
 class OctoAIEndpoint(LLM):
     """Wrapper around OctoAI Inference Endpoints.
-    OctoAIEndpoint is a class to interact with OctoAI Compute Service large language model endpoints.
+
+    OctoAIEndpoint is a class to interact with OctoAI
+     Compute Service large language model endpoints.
 
     To use, you should have the ``octoai`` python package installed, and the
     environment variable ``OCTOAI_API_TOKEN`` set with your API token, or pass
@@ -102,6 +103,8 @@ class OctoAIEndpoint(LLM):
 
         try:
             # Initialize the OctoAI client
+            from octoai import client
+
             octoai_client = client.Client(token=self.octoai_api_token)
 
             # Send the request using the OctoAI client

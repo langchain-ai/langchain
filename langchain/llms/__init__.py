@@ -104,6 +104,7 @@ __all__ = [
     "StochasticAI",
     "VertexAI",
     "Writer",
+    "OctoAIEndpoint",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
