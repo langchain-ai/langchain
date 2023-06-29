@@ -10,7 +10,7 @@ from langchain.callbacks.utils import (
     import_spacy,
     import_textstat,
 )
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import AgentAction, AgentFinish, BaseMessage, LLMResult
 
 logger = logging.getLogger(__name__)
 
@@ -247,6 +247,12 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         """Run when LLM errors."""
         self.metrics["step"] += 1
         self.metrics["errors"] += 1
+
+    def on_chat_model_start(
+        self, serialized: Dict[str, Any], messages: List[List[BaseMessage]]
+    ):
+        """Run when a chat model starts running."""
+        pass
 
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
