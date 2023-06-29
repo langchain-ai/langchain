@@ -258,6 +258,25 @@ class SagemakerEndpoint(LLM):
         return text
 
 
+# Wait until the prediction is generated
+def wait_inference_file(bucket, prefix, s3_client=None):
+    while True:
+        try:
+            s3_client = boto3.client("s3") if s3_client==None else s3_client
+            response = s3_client.get_object(Bucket=bucket, Key=prefix)
+            break
+        except ClientError as ex:
+            if ex.response['Error']['Code'] == 'NoSuchKey':
+                print("Waiting for file to be generated...")
+                time.sleep(5)
+                next
+            else:
+                raise
+        except Exception as e:
+            print(e.__dict__)
+            raise
+    return response
+
 class SagemakerAsyncEndpoint(SagemakerEndpoint):
     input_bucket: str = ""
     input_prefix: str = ""
@@ -310,9 +329,7 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
         accepts = self.content_handler.accepts
 
         # Verify if the endpoint is running
-        response = self.sm_client.describe_endpoint(
-            EndpointName=self.endpoint_name
-        )
+        response = self.sm_client.describe_endpoint(EndpointName=self.endpoint_name)
         endpoint_is_running = response["ProductionVariants"][0]["CurrentInstanceCount"] > 0
 
         # If the endpoint is not running, send an empty request to "wake up" the endpoint
@@ -329,9 +346,11 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
                 **_endpoint_kwargs,
             )
             raise Exception("Endpoint is not running - check back in ~10 minutes.")
+        else:
+            print("Endpoint is running! Proceeding to inference.")
         
         # Send request to the async endpoint
-        request_key = f"request-{str(uuid.uuid4())}"
+        request_key = os.path.join(self.input_prefix, f"request-{str(uuid.uuid4())}")
         self.s3_client.put_object(Body=body, Bucket=self.input_bucket, Key=request_key)
         response = self.client.invoke_endpoint_async(
             EndpointName=self.endpoint_name,
@@ -345,20 +364,7 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
         # Read the bytes of the file from S3 in output_url with Boto3
         output_url = response["OutputLocation"]
         output_prefix = "/".join(output_url.split("/")[3:])
-        while True:
-            try:
-                response = self.s3_client.get_object(Bucket=self.input_bucket, Key=output_prefix)
-                break
-            except ClientError as ex:
-                if ex.response['Error']['Code'] == 'NoSuchKey':
-                    print("Waiting for file to be generated...")
-                    time.sleep(5)
-                    next
-                else:
-                    raise
-            except Exception as e:
-                raise ValueError(f"Error raised by inference endpoint: {e}")
-
+        response = wait_inference_file(self.input_bucket, output_prefix, self.s3_client)
         text = self.content_handler.transform_output(response["Body"])
         if stop is not None:
             # This is a bit hacky, but I can't figure out a better way to enforce
