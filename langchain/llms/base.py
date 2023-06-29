@@ -82,6 +82,10 @@ class BaseLLM(BaseLanguageModel, ABC):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     tags: Optional[List[str]] = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
+    async_timeout: Optional[float] = Field(default=None, exclude=True)
+    """Specify a timeout for the run in milliseconds."""
+    abort_signal: Optional[asyncio.Future] = Field(default=None, exclude=True)
+    """Adding support for aborting a run from outside of the BaseLLM."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -258,16 +262,41 @@ class BaseLLM(BaseLanguageModel, ABC):
         **kwargs: Any,
     ) -> LLMResult:
         try:
-            output = (
-                await self._agenerate(
+            coroutine = (
+                self._agenerate(
                     prompts,
                     stop=stop,
                     run_manager=run_managers[0] if run_managers else None,
                     **kwargs,
                 )
                 if new_arg_supported
-                else await self._agenerate(prompts, stop=stop)
+                else self._agenerate(prompts, stop=stop)
             )
+            task = asyncio.create_task(coroutine)
+            tasks_to_await = {
+                task,
+                self.abort_signal if self.abort_signal else asyncio.Future(),
+            }
+            done, pending = await asyncio.wait(
+                tasks_to_await,
+                timeout=self.async_timeout,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            for t in pending:
+                t.cancel()
+
+            output = None
+            for t in done:
+                if isinstance(t, asyncio.Task) and t.result() is not None:
+                    output = t.result()
+                    break
+
+            if output is None:
+                if self.abort_signal and self.abort_signal in done:
+                    raise Exception("LLM call operation aborted manually.")
+                else:
+                    raise asyncio.TimeoutError()
+
         except (KeyboardInterrupt, Exception) as e:
             await asyncio.gather(
                 *[run_manager.on_llm_error(e) for run_manager in run_managers]
@@ -323,7 +352,11 @@ class BaseLLM(BaseLanguageModel, ABC):
                 dumpd(self), prompts, invocation_params=params, options=options
             )
             output = await self._agenerate_helper(
-                prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+                prompts,
+                stop,
+                run_managers,
+                bool(new_arg_supported),
+                **kwargs,
             )
             return output
         if len(missing_prompts) > 0:
@@ -331,7 +364,11 @@ class BaseLLM(BaseLanguageModel, ABC):
                 dumpd(self), missing_prompts, invocation_params=params, options=options
             )
             new_results = await self._agenerate_helper(
-                missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+                missing_prompts,
+                stop,
+                run_managers,
+                bool(new_arg_supported),
+                **kwargs,
             )
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
