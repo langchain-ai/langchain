@@ -18,6 +18,7 @@ from typing import (
     Tuple,
     Type,
 )
+from warnings import warn
 
 import numpy as np
 from pydantic import BaseModel, root_validator
@@ -29,7 +30,7 @@ from langchain.callbacks.manager import (
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
+from langchain.vectorstores.base import SearchType, VectorStore, VectorStoreRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -601,7 +602,7 @@ class Redis(VectorStore):
 
 class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
     vectorstore: Redis
-    search_type: str = "similarity"
+    search_type: SearchType = SearchType.SIMILARITY
     k: int = 4
     score_threshold: float = 0.4
 
@@ -622,9 +623,18 @@ class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
     def _get_relevant_documents(
         self, query: str, *, run_manager: Optional[CallbackManagerForRetrieverRun]
     ) -> List[Document]:
-        if self.search_type == "similarity":
+        if self.search_type == SearchType.SIMILARITY:
             docs = self.vectorstore.similarity_search(query, k=self.k)
         elif self.search_type == "similarity_limit":
+            warning_msg = (
+                "Search type 'similarity_limit' is deprecated. Use "
+                "'SearchType.SIMILARITY_SCORE_THRESHOLD' instead."
+            )
+            warn(warning_msg, DeprecationWarning, stacklevel=2)
+            docs = self.vectorstore.similarity_search_limit_score(
+                query, k=self.k, score_threshold=self.score_threshold
+            )
+        elif self.search_type == SearchType.SIMILARITY_SCORE_THRESHOLD:
             docs = self.vectorstore.similarity_search_limit_score(
                 query, k=self.k, score_threshold=self.score_threshold
             )
