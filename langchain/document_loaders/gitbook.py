@@ -1,4 +1,4 @@
-"""Loader that loads GitBook."""
+"""Loads GitBook."""
 from typing import Any, List, Optional
 from urllib.parse import urljoin, urlparse
 

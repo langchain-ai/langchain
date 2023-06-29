@@ -1,4 +1,4 @@
-"""Loader that loads Org-Mode files."""
+"""Loads Org-Mode files."""
 from typing import Any, List
 
 from langchain.document_loaders.unstructured import (
@@ -13,6 +13,14 @@ class UnstructuredOrgModeLoader(UnstructuredFileLoader):
     def __init__(
         self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
     ):
+        """
+
+        Args:
+            file_path: The path to the file to load.
+            mode: The mode to load the file from. Default is "single".
+            **unstructured_kwargs: Any additional keyword arguments to pass
+                to the unstructured.
+        """
         validate_unstructured_version(min_unstructured_version="0.7.9")
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 
