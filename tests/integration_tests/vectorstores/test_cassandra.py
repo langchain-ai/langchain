@@ -145,7 +145,7 @@ def test_cassandra_delete() -> None:
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 1
 
-    docsearch.delete("not-existing")
+    docsearch.delete(["not-existing"])
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 1
 
