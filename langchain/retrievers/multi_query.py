@@ -9,7 +9,7 @@ from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseRetriever, Document
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class LineList(BaseModel):
@@ -120,7 +120,7 @@ class MultiQueryRetriever(BaseRetriever):
         response = self.llm_chain({"question": question})
         lines = getattr(response["text"], self.parser_key, [])
         if self.verbose:
-            logging.info(f"Generated queries: {lines}")
+            logger.info(f"Generated queries: {lines}")
         return lines
 
     def retrieve_documents(self, queries: List[str]) -> List[Document]:
