@@ -169,14 +169,14 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         example: Example,
         llm_or_chain: Union[BaseLanguageModel, Chain],
         n_repetitions: int,
-        tracer: Any,
         tags: Optional[List[str]] = None,
+        callbacks: Optional[Any] = None,
     ) -> List[Dict[str, Any]]:
         return [
             {"result": f"Result for example {example.id}"} for _ in range(n_repetitions)
         ]
 
-    def mock_create_session(*args: Any, **kwargs: Any) -> None:
+    def mock_create_project(*args: Any, **kwargs: Any) -> None:
         pass
 
     with mock.patch.object(
@@ -186,7 +186,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     ), mock.patch(
         "langchain.client.runner_utils._arun_llm_or_chain", new=mock_arun_chain
     ), mock.patch.object(
-        LangChainPlusClient, "create_session", new=mock_create_session
+        LangChainPlusClient, "create_project", new=mock_create_project
     ):
         client = LangChainPlusClient(api_url="http://localhost:1984", api_key="123")
         chain = mock.MagicMock()
@@ -195,7 +195,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             dataset_name="test",
             llm_or_chain_factory=lambda: chain,
             concurrency_level=2,
-            session_name="test_session",
+            project_name="test_project",
             num_repetitions=num_repetitions,
             client=client,
         )

@@ -64,6 +64,14 @@ class QuestionAnswer(BaseModel):
 
 
 def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
+    """Create a citation fuzzy match chain.
+
+    Args:
+        llm: Language model to use for the chain.
+
+    Returns:
+        Chain (LLMChain) that can be used to answer questions with citations.
+    """
     output_parser = PydanticOutputFunctionsParser(pydantic_schema=QuestionAnswer)
     schema = QuestionAnswer.schema()
     function = {
