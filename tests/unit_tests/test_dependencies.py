@@ -79,6 +79,8 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
 def test_imports() -> None:
     """Test that you can import all top level things okay."""
+    from langchain.agents import OpenAIFunctionsAgent  # noqa: F401
+    from langchain.callbacks import OpenAICallbackHandler  # noqa: F401
     from langchain.chains import LLMChain  # noqa: F401
     from langchain.chat_models import ChatOpenAI  # noqa: F401
     from langchain.document_loaders import BSHTMLLoader  # noqa: F401
