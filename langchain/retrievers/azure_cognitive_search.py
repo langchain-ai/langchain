@@ -90,7 +90,7 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
         self,
         query: str,
         *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         search_results = self._search(query)
@@ -104,7 +104,7 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
         self,
         query: str,
         *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         search_results = await self._asearch(query)

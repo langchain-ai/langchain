@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Sequence
+from typing import TYPE_CHECKING, Dict, Optional, Sequence
 
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import Callbacks
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.schema import Document
 from langchain.utils import get_from_dict_or_env
@@ -48,7 +49,10 @@ class CohereRerank(BaseDocumentCompressor):
         return values
 
     def compress_documents(
-        self, documents: Sequence[Document], query: str
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         if len(documents) == 0:  # to avoid empty api call
             return []
@@ -65,6 +69,9 @@ class CohereRerank(BaseDocumentCompressor):
         return final_results
 
     async def acompress_documents(
-        self, documents: Sequence[Document], query: str
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         raise NotImplementedError

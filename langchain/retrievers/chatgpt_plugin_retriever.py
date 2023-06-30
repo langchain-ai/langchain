@@ -29,7 +29,7 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
         self,
         query: str,
         *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         url, json, headers = self._create_request(query)
@@ -48,7 +48,7 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
         self,
         query: str,
         *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         url, json, headers = self._create_request(query)

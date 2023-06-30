@@ -953,10 +953,13 @@ class AsyncCallbackManagerForRetrieverRun(
 ):
     """Async callback manager for retriever run."""
 
-    def get_child(self) -> AsyncCallbackManager:
+    def get_child(self, tag: Optional[str] = None) -> AsyncCallbackManager:
         """Get a child callback manager."""
         manager = AsyncCallbackManager([], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
+        manager.add_tags(self.inheritable_tags)
+        if tag is not None:
+            manager.add_tags([tag], False)
         return manager
 
     async def on_retriever_end(
@@ -1190,7 +1193,12 @@ class CallbackManager(BaseCallbackManager):
         )
 
         return CallbackManagerForRetrieverRun(
-            run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
+            run_id=run_id,
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
         )
 
     @classmethod
@@ -1451,7 +1459,12 @@ class AsyncCallbackManager(BaseCallbackManager):
         )
 
         return AsyncCallbackManagerForRetrieverRun(
-            run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
+            run_id=run_id,
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
         )
 
     @classmethod

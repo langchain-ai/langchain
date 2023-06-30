@@ -61,7 +61,7 @@ class ZepRetriever(BaseRetriever):
         self,
         query: str,
         *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        run_manager: CallbackManagerForRetrieverRun,
         metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -81,7 +81,7 @@ class ZepRetriever(BaseRetriever):
         self,
         query: str,
         *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
         metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> List[Document]:

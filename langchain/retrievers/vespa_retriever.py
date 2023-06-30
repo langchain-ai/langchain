@@ -59,7 +59,7 @@ class VespaRetriever(BaseRetriever):
         self,
         query: str,
         *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         body = self._query_body.copy()
@@ -70,7 +70,7 @@ class VespaRetriever(BaseRetriever):
         self,
         query: str,
         *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError

@@ -89,7 +89,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         self,
         query: str,
         *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         """Return documents that are relevant to the query."""
@@ -118,7 +118,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         self,
         query: str,
         *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         """Return documents that are relevant to the query."""

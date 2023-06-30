@@ -19,7 +19,7 @@ class LlamaIndexRetriever(BaseRetriever, BaseModel):
         self,
         query: str,
         *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         """Get documents relevant for a query."""
@@ -63,7 +63,7 @@ class LlamaIndexGraphRetriever(BaseRetriever, BaseModel):
         self,
         query: str,
         *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         """Get documents relevant for a query."""
@@ -99,7 +99,7 @@ class LlamaIndexGraphRetriever(BaseRetriever, BaseModel):
         self,
         query: str,
         *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError("LlamaIndexGraphRetriever does not support async")

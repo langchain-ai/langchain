@@ -91,7 +91,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         self,
         query: str,
         *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        run_manager: CallbackManagerForRetrieverRun,
         where_filter: Optional[Dict[str, object]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -115,7 +115,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         self,
         query: str,
         *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
         where_filter: Optional[Dict[str, object]] = None,
         **kwargs: Any,
     ) -> List[Document]:

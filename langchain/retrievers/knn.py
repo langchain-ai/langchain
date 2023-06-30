@@ -59,7 +59,7 @@ class KNNRetriever(BaseRetriever, BaseModel):
         self,
         query: str,
         *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         query_embeds = np.array(self.embeddings.embed_query(query))
@@ -87,7 +87,7 @@ class KNNRetriever(BaseRetriever, BaseModel):
         self,
         query: str,
         *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError

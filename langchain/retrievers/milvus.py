@@ -47,19 +47,18 @@ class MilvusRetriever(BaseRetriever):
         self,
         query: str,
         *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
-        run_manager_ = run_manager or CallbackManagerForRetrieverRun.get_noop_manager()
         return self.retriever.get_relevant_documents(
-            query, run_manager=run_manager_.get_child(), **kwargs
+            query, run_manager=run_manager.get_child(), **kwargs
         )
 
     async def _aget_relevant_documents(
         self,
         query: str,
         *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError

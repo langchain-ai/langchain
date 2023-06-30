@@ -414,7 +414,7 @@ class BaseRetriever(ABC):
         self,
         query: str,
         *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         """Get documents relevant for a query.
@@ -430,7 +430,7 @@ class BaseRetriever(ABC):
         self,
         query: str,
         *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
         """Get documents relevant for a query.
@@ -468,7 +468,7 @@ class BaseRetriever(ABC):
             elif self._expects_other_args:
                 result = self._get_relevant_documents(query, **kwargs)
             else:
-                result = self._get_relevant_documents(query)
+                result = self._get_relevant_documents(query)  # type: ignore[call-arg]
         except Exception as e:
             run_manager.on_retriever_error(e)
             raise e
@@ -506,7 +506,7 @@ class BaseRetriever(ABC):
             elif self._expects_other_args:
                 result = await self._aget_relevant_documents(query, **kwargs)
             else:
-                result = await self._aget_relevant_documents(query)
+                result = await self._aget_relevant_documents(query)  # type: ignore[call-arg]
         except Exception as e:
             await run_manager.on_retriever_error(e)
             raise e
