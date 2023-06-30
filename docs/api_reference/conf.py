@@ -45,7 +45,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
-    "myst_nb",
     "sphinx_copybutton",
     "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",
@@ -58,13 +57,8 @@ autodoc_pydantic_config_members = False
 autodoc_pydantic_model_show_config_summary = False
 autodoc_pydantic_model_show_validator_members = False
 autodoc_pydantic_model_show_validator_summary = False
-# autodoc_pydantic_model_show_field_summary = True
-# autodoc_pydantic_model_members = False
-# autodoc_pydantic_model_undoc_members = False
-# autodoc_pydantic_model_hide_paramlist = True
 autodoc_pydantic_model_signature_prefix = "class"
 autodoc_pydantic_field_signature_prefix = "param"
-# autodoc_pydantic_model_summary_list_order = "bysource"
 autodoc_member_order = "groupwise"
 autoclass_content = "both"
 autodoc_typehints_format = "short"
@@ -94,12 +88,11 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "scikit-learn-modern"
 html_theme_path = ["themes"]
 
-html_theme_options = {
-    "path_to_docs": "docs",
-    "repository_url": "https://github.com/hwchase17/langchain",
-    "use_repository_button": True,
-    # "style_nav_header_background": "white"
-}
+# redirects dictionary maps from old links to new links
+html_additional_pages = {}
+redirects = {"index": "api_reference",}
+for old_link in redirects:
+    html_additional_pages[old_link] = "redirects.html"
 
 html_context = {
     "display_github": True,  # Integrate GitHub
@@ -107,6 +100,7 @@ html_context = {
     "github_repo": "langchain",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
+    "redirects": redirects
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -119,10 +113,9 @@ html_static_path = ["_static"]
 html_css_files = [
     "css/custom.css",
 ]
+html_use_index=False
+# Not showing the search summary makes the search page load faster.
+html_show_search_summary = False
 
-html_js_files = [
-    "js/mendablesearch.js",
-]
-
-nb_execution_mode = "off"
 myst_enable_extensions = ["colon_fence"]
+

@@ -5,4 +5,4 @@ LangChain API
 .. toctree::
     :maxdepth: 2
 
-    api_ref.rst
+    api_reference.rst

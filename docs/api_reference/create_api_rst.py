@@ -1,74 +1,95 @@
+"""Script for auto-generating api_reference.rst"""
 import glob
+from pathlib import Path
 import re
 
-members = {}
-for py in glob.glob("../langchain/**/*.py", recursive=True):
-    mod = py[len("../langchain/"):].split(".")[0].replace("/", ".")
-    top_level = mod.split(".")[0]
-    if top_level not in members:
-        members[top_level] = {"classes": [], "functions": []}
-    with open(py) as f:
-        for l in f.readlines():
-            cls = re.findall(r"^class ([^_].*)\(", l)
-            members[top_level]["classes"].extend([mod + "." + c for c in cls])
-            func = re.findall(r"^def ([^_].*)\(", l)
-            members[top_level]["functions"].extend([mod + "." + f for f in func])
 
-full_doc = """\
-.. _api_ref:
+ROOT_DIR = Path(__file__).parents[2].absolute()
+PKG_DIR = ROOT_DIR / "langchain"
+WRITE_FILE = Path(__file__).parent / "api_reference.rst"
+
+
+def load_members() -> dict:
+    members: dict = {}
+    for py in glob.glob(str(PKG_DIR) + "/**/*.py", recursive=True):
+        module = py[len(str(PKG_DIR)) + 1:].replace(".py", "").replace("/", ".")
+        top_level = module.split(".")[0]
+        if top_level not in members:
+            members[top_level] = {"classes": [], "functions": []}
+        with open(py, "r") as f:
+            for l in f.readlines():
+                cls = re.findall(r"^class ([^_].*)\(", l)
+                members[top_level]["classes"].extend([module + "." + c for c in cls])
+                func = re.findall(r"^def ([^_].*)\(", l)
+                members[top_level]["functions"].extend([module + "." + f for f in func])
+    return members
+
+
+def construct_doc(members: dict) -> str:
+    full_doc = """\
+.. _api_reference:
 
 =============
 API Reference
 =============
 
 """
-for mod, _members in sorted(members.items(), key=lambda kv: kv[0]):
-    classes = _members["classes"]
-    functions = _members["functions"]
-    if not (classes or functions):
-        continue
+    for module, _members in sorted(members.items(), key=lambda kv: kv[0]):
+        classes = _members["classes"]
+        functions = _members["functions"]
+        if not (classes or functions):
+            continue
 
-    mod_title = mod.replace("_", " ").title()
-    if mod_title == "Llms":
-        mod_title = mod_title.upper()
-    section = f":mod:`langchain.{mod}`: {mod_title}"
-    full_doc += f"""\
+        module_title = module.replace("_", " ").title()
+        if module_title == "Llms":
+            module_title = "LLMs"
+        section = f":mod:`langchain.{module}`: {module_title}"
+        full_doc += f"""\
 {section}
 {'=' * (len(section) + 1)}
 
-.. automodule:: langchain.{mod}
+.. automodule:: langchain.{module}
     :no-members:
     :no-inherited-members:
 
 """
 
-    if classes:
-        cstring = "\n    ".join(sorted(classes))
-        full_doc += f"""\
+        if classes:
+            cstring = "\n    ".join(sorted(classes))
+            full_doc += f"""\
 Classes
 --------------
 .. currentmodule:: langchain
 
 .. autosummary::
-    :toctree: {mod}
+    :toctree: {module}
     :template: class.rst
 
     {cstring}
 
 """
-    if functions:
-        fstring = "\n    ".join(sorted(functions))
-        full_doc += f"""\
+        if functions:
+            fstring = "\n    ".join(sorted(functions))
+            full_doc += f"""\
 Functions
 --------------
 .. currentmodule:: langchain
 
 .. autosummary::
-    :toctree: {mod}
+    :toctree: {module}
 
     {fstring}
 
 """
+    return full_doc
 
-with open("./api_ref.rst", "w") as f:
-    f.write(full_doc)
+
+def main() -> None:
+    members = load_members()
+    full_doc = construct_doc(members)
+    with open(WRITE_FILE, "w") as f:
+        f.write(full_doc)
+
+
+if __name__ == "__main__":
+    main()
