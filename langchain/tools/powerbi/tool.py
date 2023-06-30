@@ -206,8 +206,8 @@ class QueryPowerBITool(BaseTool):
             too_long, length = self._result_too_large(result)
             if too_long:
                 return (
-                    None,
                     f"Result too large, please try to be more specific or use the `TOPN` function. The result is {length} tokens long, the limit is {self.output_token_limit} tokens.",
+                    None,
                 )
             return json_to_md(pbi_result["results"][0]["tables"][0]["rows"]), None
 
