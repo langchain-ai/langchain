@@ -1,6 +1,9 @@
+"""FlyteKit callback handler."""
+from __future__ import annotations
+
 import logging
 from copy import deepcopy
-from typing import Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
@@ -10,15 +13,19 @@ from langchain.callbacks.utils import (
     import_spacy,
     import_textstat,
 )
-from langchain.schema import AgentAction, AgentFinish, BaseMessage, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
+
+if TYPE_CHECKING:
+    import flytekit
+    from flytekitplugins.deck import renderer
 
 logger = logging.getLogger(__name__)
 
 
-def import_flytekit() -> None:
+def import_flytekit() -> Tuple[flytekit, renderer]:
     try:
         import flytekit  # noqa: F401
-        import flytekitplugins.deck.renderer  # noqa: F401
+        from flytekitplugins.deck import renderer  # noqa: F401
     except ImportError:
         raise ImportError(
             "To use the flyte callback manager you need"
@@ -26,6 +33,7 @@ def import_flytekit() -> None:
             "packages installed. Please install them with `pip install flytekit`"
             "and `pip install flytekitplugins-deck-standard`."
         )
+    return flytekit, renderer
 
 
 def analyze_text(
@@ -92,7 +100,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     def __init__(self) -> None:
         """Initialize callback handler."""
 
-        import_flytekit()
+        flytekit, renderer = import_flytekit()
         self.pandas = import_pandas()
 
         spacy = None
@@ -120,43 +128,10 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                     `python -m spacy download en_core_web_sm` command."
                 )
 
-        self.metrics = {
-            "step": 0,
-            "starts": 0,
-            "ends": 0,
-            "errors": 0,
-            "text_ctr": 0,
-            "chain_starts": 0,
-            "chain_ends": 0,
-            "llm_starts": 0,
-            "llm_ends": 0,
-            "llm_streams": 0,
-            "tool_starts": 0,
-            "tool_ends": 0,
-            "agent_ends": 0,
-        }
+        self.table_renderer = renderer.TableRenderer
+        self.markdown_renderer = renderer.MarkdownRenderer
 
-        self.records: Dict[str, Any] = {
-            "on_llm_start_records": [],
-            "on_llm_token_records": [],
-            "on_llm_end_records": [],
-            "on_chain_start_records": [],
-            "on_chain_end_records": [],
-            "on_tool_start_records": [],
-            "on_tool_end_records": [],
-            "on_text_records": [],
-            "on_agent_finish_records": [],
-            "on_agent_action_records": [],
-            "action_records": [],
-        }
-
-        from flytekit import Deck
-        from flytekitplugins.deck.renderer import MarkdownRenderer, TableRenderer
-
-        self.table_renderer = TableRenderer
-        self.markdown_renderer = MarkdownRenderer
-
-        self.deck = Deck(
+        self.deck = flytekit.Deck(
             "LangChain Metrics",
             self.markdown_renderer().to_html("## LangChain Metrics"),
         )
@@ -166,14 +141,14 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     ) -> None:
         """Run when LLM starts."""
 
-        self.metrics["step"] += 1
-        self.metrics["llm_starts"] += 1
-        self.metrics["starts"] += 1
+        self.step += 1
+        self.llm_starts += 1
+        self.starts += 1
 
         resp: Dict[str, Any] = {}
         resp.update({"action": "on_llm_start"})
         resp.update(flatten_dict(serialized))
-        resp.update(self.metrics)
+        resp.update(self.get_custom_callback_meta())
 
         prompt_responses = []
         for prompt in prompts:
@@ -188,18 +163,17 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run when LLM generates a new token."""
-        pass
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
-        self.metrics["step"] += 1
-        self.metrics["llm_ends"] += 1
-        self.metrics["ends"] += 1
+        self.step += 1
+        self.llm_ends += 1
+        self.ends += 1
 
         resp: Dict[str, Any] = {}
         resp.update({"action": "on_llm_end"})
         resp.update(flatten_dict(response.llm_output or {}))
-        resp.update(self.metrics)
+        resp.update(self.get_custom_callback_meta())
 
         self.deck.append(self.markdown_renderer().to_html("### LLM End"))
         self.deck.append(self.table_renderer().to_html(self.pandas.DataFrame([resp])))
@@ -246,30 +220,21 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when LLM errors."""
-        self.metrics["step"] += 1
-        self.metrics["errors"] += 1
-
-    def on_chat_model_start(
-        self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
-        **kwargs: Any,
-    ):
-        """Run when a chat model starts running."""
-        pass
+        self.step += 1
+        self.errors += 1
 
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Run when chain starts running."""
-        self.metrics["step"] += 1
-        self.metrics["chain_starts"] += 1
-        self.metrics["starts"] += 1
+        self.step += 1
+        self.chain_starts += 1
+        self.starts += 1
 
         resp: Dict[str, Any] = {}
         resp.update({"action": "on_chain_start"})
         resp.update(flatten_dict(serialized))
-        resp.update(self.metrics)
+        resp.update(self.get_custom_callback_meta())
 
         chain_input = ",".join([f"{k}={v}" for k, v in inputs.items()])
         input_resp = deepcopy(resp)
@@ -282,14 +247,14 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
-        self.metrics["step"] += 1
-        self.metrics["chain_ends"] += 1
-        self.metrics["ends"] += 1
+        self.step += 1
+        self.chain_ends += 1
+        self.ends += 1
 
         resp: Dict[str, Any] = {}
         chain_output = ",".join([f"{k}={v}" for k, v in outputs.items()])
         resp.update({"action": "on_chain_end", "outputs": chain_output})
-        resp.update(self.metrics)
+        resp.update(self.get_custom_callback_meta())
 
         self.deck.append(self.markdown_renderer().to_html("### Chain End"))
         self.deck.append(
@@ -300,21 +265,21 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when chain errors."""
-        self.metrics["step"] += 1
-        self.metrics["errors"] += 1
+        self.step += 1
+        self.errors += 1
 
     def on_tool_start(
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
-        self.metrics["step"] += 1
-        self.metrics["tool_starts"] += 1
-        self.metrics["starts"] += 1
+        self.step += 1
+        self.tool_starts += 1
+        self.starts += 1
 
         resp: Dict[str, Any] = {}
         resp.update({"action": "on_tool_start", "input_str": input_str})
         resp.update(flatten_dict(serialized))
-        resp.update(self.metrics)
+        resp.update(self.get_custom_callback_meta())
 
         self.deck.append(self.markdown_renderer().to_html("### Tool Start"))
         self.deck.append(
@@ -323,13 +288,13 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
-        self.metrics["step"] += 1
-        self.metrics["tool_ends"] += 1
-        self.metrics["ends"] += 1
+        self.step += 1
+        self.tool_ends += 1
+        self.ends += 1
 
         resp: Dict[str, Any] = {}
         resp.update({"action": "on_tool_end", "output": output})
-        resp.update(self.metrics)
+        resp.update(self.get_custom_callback_meta())
 
         self.deck.append(self.markdown_renderer().to_html("### Tool End"))
         self.deck.append(
@@ -340,19 +305,19 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when tool errors."""
-        self.metrics["step"] += 1
-        self.metrics["errors"] += 1
+        self.step += 1
+        self.errors += 1
 
     def on_text(self, text: str, **kwargs: Any) -> None:
         """
         Run when agent is ending.
         """
-        self.metrics["step"] += 1
-        self.metrics["text_ctr"] += 1
+        self.step += 1
+        self.text_ctr += 1
 
         resp: Dict[str, Any] = {}
         resp.update({"action": "on_text", "text": text})
-        resp.update(self.metrics)
+        resp.update(self.get_custom_callback_meta())
 
         self.deck.append(self.markdown_renderer().to_html("### On Text"))
         self.deck.append(
@@ -361,9 +326,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent ends running."""
-        self.metrics["step"] += 1
-        self.metrics["agent_ends"] += 1
-        self.metrics["ends"] += 1
+        self.step += 1
+        self.agent_ends += 1
+        self.ends += 1
 
         resp: Dict[str, Any] = {}
         resp.update(
@@ -373,7 +338,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 "log": finish.log,
             }
         )
-        resp.update(self.metrics)
+        resp.update(self.get_custom_callback_meta())
 
         self.deck.append(self.markdown_renderer().to_html("### Agent Finish"))
         self.deck.append(
@@ -382,9 +347,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
-        self.metrics["step"] += 1
-        self.metrics["tool_starts"] += 1
-        self.metrics["starts"] += 1
+        self.step += 1
+        self.tool_starts += 1
+        self.starts += 1
 
         resp: Dict[str, Any] = {}
         resp.update(
@@ -395,7 +360,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 "log": action.log,
             }
         )
-        resp.update(self.metrics)
+        resp.update(self.get_custom_callback_meta())
 
         self.deck.append(self.markdown_renderer().to_html("### Agent Action"))
         self.deck.append(
