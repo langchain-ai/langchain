@@ -81,7 +81,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
                 "llm_output": response.llm_output,
             }
             model_params = run_info.get("invocation_params", {})
-            is_chat_model = run_info.get("messages", None) != None
+            is_chat_model = run_info.get("messages", None) is not None
             model_input = (
                 run_info.get("messages", [])[i]
                 if is_chat_model
@@ -105,7 +105,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
                 run_info.get("request_start_time"),
                 run_info.get("request_end_time"),
                 get_api_key(),
-                return_pl_id=bool(self.pl_id_callback != None),
+                return_pl_id=bool(self.pl_id_callback is not None),
                 metadata={
                     "_langchain_run_id": str(run_id),
                     "_langchain_parent_run_id": str(parent_run_id),
