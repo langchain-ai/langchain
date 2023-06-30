@@ -93,9 +93,9 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
         from promptlayer.utils import get_api_key, promptlayer_api_request
 
         run_info = self.runs.get(run_id, {})
-        run_info["request_end_time"] = datetime.datetime.now().timestamp()
         if not run_info:
             return
+        run_info["request_end_time"] = datetime.datetime.now().timestamp()
         for i in range(len(response.generations)):
             generation = response.generations[i][0]
 
