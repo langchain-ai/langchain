@@ -105,7 +105,7 @@ class TrajectoryEvalChain(Chain):
             result = eval_chain.evaluate_agent_trajectory(
                 input=question,
                 agent_trajectory=response["intermediate_steps"],
-                output=response["output"],
+                prediction=response["output"],
                 reference="Paris",
             )
             print(result["score"])
@@ -325,9 +325,9 @@ The following is the expected answer. Use this to measure correctness:
     def evaluate_agent_trajectory(
         self,
         *,
+        prediction: str,
         input: str,
         agent_trajectory: Union[str, List[Tuple[AgentAction, str]]],
-        output: str,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
@@ -338,7 +338,7 @@ The following is the expected answer. Use this to measure correctness:
             input (str): The input question.
             agent_trajectory (Union[str, List[Tuple[AgentAction, str]]]):
                 The intermediate steps forming the agent trajectory.
-            output (str): The expected output.
+            prediction (str): The expected prediction.
             reference (Optional[str]): The reference answer.
 
         Returns:
@@ -347,7 +347,7 @@ The following is the expected answer. Use this to measure correctness:
         inputs = {
             "question": input,
             "agent_trajectory": self.get_agent_trajectory(agent_trajectory),
-            "answer": output,
+            "answer": prediction,
             "reference": self._format_reference(reference),
         }
         return self(inputs=inputs, callbacks=callbacks, **kwargs)
@@ -355,9 +355,9 @@ The following is the expected answer. Use this to measure correctness:
     async def aevaluate_agent_trajectory(
         self,
         *,
+        prediction: str,
         input: str,
         agent_trajectory: Union[str, List[Tuple[AgentAction, str]]],
-        output: str,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
@@ -368,7 +368,7 @@ The following is the expected answer. Use this to measure correctness:
             input (str): The input question.
             agent_trajectory (Union[str, List[Tuple[AgentAction, str]]]):
                 The intermediate steps forming the agent trajectory.
-            output (str): The expected output.
+            prediction (str): The expected prediction.
             reference (Optional[str]): The reference answer.
 
         Returns:
@@ -377,7 +377,7 @@ The following is the expected answer. Use this to measure correctness:
         inputs = {
             "question": input,
             "agent_trajectory": self.get_agent_trajectory(agent_trajectory),
-            "answer": output,
+            "answer": prediction,
             "reference": self._format_reference(reference),
         }
         return await self.acall(
