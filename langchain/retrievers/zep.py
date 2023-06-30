@@ -20,13 +20,14 @@ class ZepRetriever(BaseRetriever):
     histories, and exposes them via simple, low-latency APIs.
 
     For server installation instructions, see:
-    https://getzep.github.io/deployment/quickstart/
+    https://docs.getzep.com/deployment/quickstart/
     """
 
     def __init__(
         self,
         session_id: str,
         url: str,
+        api_key: Optional[str] = None,
         top_k: Optional[int] = None,
     ):
         try:
@@ -37,7 +38,7 @@ class ZepRetriever(BaseRetriever):
                 "Please install it with `pip install zep-python`."
             )
 
-        self.zep_client = ZepClient(base_url=url)
+        self.zep_client = ZepClient(base_url=url, api_key=api_key)
         self.session_id = session_id
         self.top_k = top_k
 
