@@ -11864,4 +11864,8 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
+<<<<<<< HEAD
 content-hash = "58c9e6f608d813f021134c9ff93eb554608d1f5759aec912110a89f549e541a3"
+=======
+content-hash = "76fa32e4bab024d7238da8fdf272e0e88f25fdb4fdbacad58c2d196a0bf55e70"
+>>>>>>> 21b38bb38 (update poetry.lock)
