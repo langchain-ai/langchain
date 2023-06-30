@@ -1,4 +1,6 @@
 """ArthurAI's Callback Handler."""
+from __future__ import annotations
+
 import os
 import uuid
 from collections import defaultdict
