@@ -6,8 +6,8 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import (
     AIMessage,
     BaseMessage,
-    ChatMessage,
     ChatGeneration,
+    ChatMessage,
     HumanMessage,
     LLMResult,
     SystemMessage,
