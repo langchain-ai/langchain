@@ -58,7 +58,7 @@ class JSONLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load and return documents from the JSON file."""
-        docs = []
+        docs: List[Document] = []
         if self._json_lines:
             with self.file_path.open(encoding="utf-8") as f:
                 for line in f:
@@ -69,7 +69,7 @@ class JSONLoader(BaseLoader):
             self._parse(self.file_path.read_text(), docs)
         return docs
 
-    def _parse(self, content: str, docs: List[Document]):
+    def _parse(self, content: str, docs: List[Document]) -> None:
         """Convert given content to documents."""
         data = self._jq_schema.input(json.loads(content))
 

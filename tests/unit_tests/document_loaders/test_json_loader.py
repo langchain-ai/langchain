@@ -1,4 +1,5 @@
 import io
+from typing import Dict, Any
 
 import pytest
 from pytest import raises
@@ -175,7 +176,7 @@ def test_load_jsonlines(mocker: MockerFixture) -> None:
         {"jq_schema": ".[]", "content_key": "text"},
     ),
 )
-def test_load_jsonlines_list(params, mocker: MockerFixture) -> None:
+def test_load_jsonlines_list(params: Dict, mocker: MockerFixture) -> None:
     file_path = "/workspaces/langchain/test.json"
     expected_docs = [
         Document(
@@ -243,7 +244,9 @@ def test_load_empty_jsonlines(mocker: MockerFixture) -> None:
         ),
     ),
 )
-def test_json_meta(patch_func, patch_func_value, kwargs, mocker):
+def test_json_meta(
+    patch_func: str, patch_func_value: Any, kwargs: Dict, mocker: MockerFixture
+) -> None:
     mocker.patch("builtins.open", mocker.mock_open())
     mocker.patch(patch_func, return_value=patch_func_value)
 
@@ -259,7 +262,7 @@ def test_json_meta(patch_func, patch_func_value, kwargs, mocker):
         ),
     ]
 
-    def metadata_func(record: dict, metadata: dict):
+    def metadata_func(record: Dict, metadata: Dict) -> Dict:
         metadata["x"] = f"{record['text']}-meta"
         return metadata
 
