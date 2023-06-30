@@ -21,6 +21,9 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         url: str = "redis://localhost:6379/0",
         key_prefix: str = "message_store:",
         ttl: Optional[int] = None,
+        db: int | None=...,
+        password: str | None=...,
+        port: int | None=...,
     ):
         try:
             import redis
@@ -31,7 +34,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
             )
 
         try:
-            self.redis_client = redis.Redis.from_url(url=url)
+            self.redis_client = redis.Redis.from_url(url=url,db=db,password=password,port=port)
         except redis.exceptions.ConnectionError as error:
             logger.error(error)
 
