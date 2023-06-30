@@ -114,8 +114,6 @@ html_css_files = [
     "css/custom.css",
 ]
 html_use_index=False
-# Not showing the search summary makes the search page load faster.
-html_show_search_summary = False
 
 myst_enable_extensions = ["colon_fence"]
 
