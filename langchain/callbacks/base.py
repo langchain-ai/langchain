@@ -10,16 +10,6 @@ from langchain.schema import AgentAction, AgentFinish, BaseMessage, Document, LL
 class RetrieverManagerMixin:
     """Mixin for Retriever callbacks."""
 
-    def on_retriever_start(
-        self,
-        query: str,
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """Run when Retriever starts running."""
-
     def on_retriever_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
@@ -172,6 +162,16 @@ class CallbackManagerMixin:
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement `on_chat_model_start`"
         )
+
+    def on_retriever_start(
+        self,
+        query: str,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when Retriever starts running."""
 
     def on_chain_start(
         self,
