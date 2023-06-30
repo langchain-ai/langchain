@@ -1,15 +1,34 @@
 """Base callback handler that can be used to handle callbacks in langchain."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    BaseMessage,
-    LLMResult,
-)
+from langchain.schema import AgentAction, AgentFinish, BaseMessage, Document, LLMResult
+
+
+class RetrieverManagerMixin:
+    """Mixin for Retriever callbacks."""
+
+    def on_retriever_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when Retriever errors."""
+
+    def on_retriever_end(
+        self,
+        documents: Sequence[Document],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when Retriever ends running."""
 
 
 class LLMManagerMixin:
@@ -144,6 +163,16 @@ class CallbackManagerMixin:
             f"{self.__class__.__name__} does not implement `on_chat_model_start`"
         )
 
+    def on_retriever_start(
+        self,
+        query: str,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when Retriever starts running."""
+
     def on_chain_start(
         self,
         serialized: Dict[str, Any],
@@ -187,6 +216,7 @@ class BaseCallbackHandler(
     LLMManagerMixin,
     ChainManagerMixin,
     ToolManagerMixin,
+    RetrieverManagerMixin,
     CallbackManagerMixin,
     RunManagerMixin,
 ):
@@ -209,6 +239,11 @@ class BaseCallbackHandler(
     @property
     def ignore_agent(self) -> bool:
         """Whether to ignore agent callbacks."""
+        return False
+
+    @property
+    def ignore_retriever(self) -> bool:
+        """Whether to ignore retriever callbacks."""
         return False
 
     @property
@@ -370,6 +405,36 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run on agent end."""
+
+    async def on_retriever_start(
+        self,
+        query: str,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run on retriever start."""
+
+    async def on_retriever_end(
+        self,
+        documents: Sequence[Document],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run on retriever end."""
+
+    async def on_retriever_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run on retriever error."""
 
 
 class BaseCallbackManager(CallbackManagerMixin):

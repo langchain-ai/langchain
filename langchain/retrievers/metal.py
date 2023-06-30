@@ -1,5 +1,9 @@
 from typing import Any, List, Optional
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.schema import BaseRetriever, Document
 
 
@@ -17,7 +21,13 @@ class MetalRetriever(BaseRetriever):
         self.client: Metal = client
         self.params = params or {}
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         results = self.client.search({"text": query}, **self.params)
         final_results = []
         for r in results["data"]:
@@ -25,5 +35,11 @@ class MetalRetriever(BaseRetriever):
             final_results.append(Document(page_content=r["text"], metadata=metadata))
         return final_results
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError
