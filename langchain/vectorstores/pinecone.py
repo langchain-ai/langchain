@@ -355,11 +355,11 @@ class Pinecone(VectorStore):
         )
         
     def delete(self,
-            ids: Optional[List[str]] = None,
-            delete_all: Optional[bool] = None,
-            namespace: Optional[str] = None,
-            filter: Optional[dict] = None,
-            **kwargs) -> None:
+                ids: Optional[List[str]] = None,
+                delete_all: Optional[bool] = None,
+                namespace: Optional[str] = None,
+                filter: Optional[dict] = None,
+                **kwargs) -> None:
         """Delete by vector IDs or filter.
         Args:
             ids: List of ids to delete.
