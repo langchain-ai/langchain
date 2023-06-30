@@ -1,0 +1,16 @@
+{%- extends "basic/search.html" %}
+{% block extrahead %}
+  <script type="text/javascript" src="{{ pathto('_static/underscore.js', 1) }}"></script>
+  <script type="text/javascript" src="{{ pathto('searchindex.js', 1) }}" defer></script>
+  <script type="text/javascript" src="{{ pathto('_static/doctools.js', 1) }}"></script>
+  <script type="text/javascript" src="{{ pathto('_static/language_data.js', 1) }}"></script>
+  <script type="text/javascript" src="{{ pathto('_static/searchtools.js', 1) }}"></script>
+  <!-- <script type="text/javascript" src="{{ pathto('_static/sphinx_highlight.js', 1) }}"></script> -->
+  <script type="text/javascript">
+    $(document).ready(function() {
+      if (!Search.out) {
+        Search.init();
+      }
+    });
+  </script>
+{% endblock %}
