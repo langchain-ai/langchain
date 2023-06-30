@@ -4,7 +4,7 @@ import uuid
 from collections import defaultdict
 from datetime import datetime
 from time import time
-from typing import Any, DefaultDict, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Union
 
 import numpy as np
 import pytz
@@ -12,11 +12,29 @@ import pytz
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
+if TYPE_CHECKING:
+    import arthurai
+
 PROMPT_TOKENS = "prompt_tokens"
 COMPLETION_TOKENS = "completion_tokens"
 TOKEN_USAGE = "token_usage"
 FINISH_REASON = "finish_reason"
 DURATION = "duration"
+
+
+def _lazy_load_arthur() -> arthurai:
+    """Lazy load Arthur."""
+    try:
+        import arthurai
+    except ImportError as e:
+        raise ImportError(
+            "To use the ArthurCallbackHandler you need the"
+            " `arthurai` package. Please install it with"
+            " `pip install arthurai`.",
+            e,
+        )
+
+    return arthurai
 
 
 class ArthurCallbackHandler(BaseCallbackHandler):
@@ -42,9 +60,11 @@ class ArthurCallbackHandler(BaseCallbackHandler):
         """Initialize callback handler."""
 
         super().__init__()
-        from arthurai import ArthurAI
-        from arthurai.common.constants import Stage, ValueType
-        from arthurai.common.exceptions import ResponseClientError
+        arthurai = _lazy_load_arthur()
+        ArthurAI = arthurai.ArthurAI
+        Stage = arthurai.common.constants.Stage
+        ValueType = arthurai.common.constants.ValueType
+        ResponseClientError = arthurai.common.exceptions.ResponseClientError
 
         # connect to Arthur
         if arthur_login is None:
@@ -205,27 +225,22 @@ class ArthurCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """On chain start, do nothing."""
-        pass
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """On chain end, do nothing."""
-        pass
 
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Do nothing when LLM outputs an error."""
-        pass
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """On new token, pass."""
-        pass
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Do nothing when LLM chain outputs an error."""
-        pass
 
     def on_tool_start(
         self,
@@ -234,11 +249,9 @@ class ArthurCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Do nothing when tool starts."""
-        pass
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Do nothing when agent takes a specific action."""
-        pass
 
     def on_tool_end(
         self,
@@ -248,18 +261,14 @@ class ArthurCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Do nothing when tool ends."""
-        pass
 
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Do nothing when tool outputs an error."""
-        pass
 
     def on_text(self, text: str, **kwargs: Any) -> None:
         """Do nothing"""
-        pass
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Do nothing"""
-        pass
