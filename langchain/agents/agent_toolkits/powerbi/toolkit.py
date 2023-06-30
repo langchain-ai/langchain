@@ -34,23 +34,18 @@ class PowerBIToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
+        prompt_template = PromptTemplate(
+            template=QUESTION_TO_QUERY,
+            input_variables=["tool_input", "tables", "schemas", "examples"],
+        )
+
+        chain_args = {'llm': self.llm, 'prompt': prompt_template}
+
         if self.callback_manager:
-            chain = LLMChain(
-                llm=self.llm,
-                callback_manager=self.callback_manager,
-                prompt=PromptTemplate(
-                    template=QUESTION_TO_QUERY,
-                    input_variables=["tool_input", "tables", "schemas", "examples"],
-                ),
-            )
-        else:
-            chain = LLMChain(
-                llm=self.llm,
-                prompt=PromptTemplate(
-                    template=QUESTION_TO_QUERY,
-                    input_variables=["tool_input", "tables", "schemas", "examples"],
-                ),
-            )
+            chain_args['callback_manager'] = self.callback_manager
+
+        chain = LLMChain(**chain_args)
+        
         return [
             QueryPowerBITool(
                 llm_chain=chain,

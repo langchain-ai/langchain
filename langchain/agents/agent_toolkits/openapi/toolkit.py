@@ -39,7 +39,7 @@ class RequestsToolkit(BaseToolkit):
 
 
 class OpenAPIToolkit(BaseToolkit):
-    """Toolkit for interacting with a OpenAPI api."""
+    """Toolkit for interacting with an OpenAPI API."""
 
     json_agent: AgentExecutor
     requests_wrapper: TextRequestsWrapper

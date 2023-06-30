@@ -1,1 +1,1 @@
-"""Gmail toolkit."""
+"""Office365 toolkit."""

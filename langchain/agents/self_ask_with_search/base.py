@@ -1,4 +1,4 @@
-"""Chain that does self ask with search."""
+"""Chain that does self-ask with search."""
 from typing import Any, Sequence, Union
 
 from pydantic import Field
@@ -59,7 +59,7 @@ class SelfAskWithSearchAgent(Agent):
 
 
 class SelfAskWithSearchChain(AgentExecutor):
-    """Chain that does self ask with search.
+    """Chain that does self-ask with search.
 
     Example:
         .. code-block:: python
