@@ -150,7 +150,7 @@ class ArthurCallbackHandler(BaseCallbackHandler):
                 " Make sure the ID corresponds to a model that is currently"
                 " registered with your Arthur account."
             )
-        return cls(model_id, arthur_model)
+        return cls(arthur_model)
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
