@@ -21,14 +21,14 @@ After giving your rationale, make your final decision using this format:\
 [/QUESTION]
 
 [RESPONSE A]
-{output_a}
+{prediction}
 [/RESPONSE A]
 
 [RESPONSE B]
-{output_b}
+{prediction_b}
 [/RESPONSE B]"""
 PROMPT = PromptTemplate(
-    input_variables=["input", "output_a", "output_b"], template=template
+    input_variables=["input", "prediction", "prediction_b"], template=template
 )
 
 template = """Act as a fair judge and rate the two responses to the question below.\
@@ -52,13 +52,14 @@ After giving your rationale, make your final decision using this format:\
 [/QUESTION]
 
 [RESPONSE A]
-{output_a}
+{prediction}
 [/RESPONSE A]
 
 [RESPONSE B]
-{output_b}
+{prediction_b}
 [/RESPONSE B]"""
 
 PROMPT_WITH_REFERENCE = PromptTemplate(
-    input_variables=["input", "output_a", "output_b", "reference"], template=template
+    input_variables=["input", "prediction", "prediction_b", "reference"],
+    template=template,
 )
