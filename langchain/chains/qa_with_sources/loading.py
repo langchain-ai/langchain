@@ -1,4 +1,6 @@
 """Load question answering with sources chains."""
+from __future__ import annotations
+
 from typing import Any, Mapping, Optional, Protocol
 
 from langchain.base_language import BaseLanguageModel
