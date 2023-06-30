@@ -11,11 +11,12 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
 
 import toml
+
+sys.path.insert(0, os.path.abspath("."))
 
 with open("../../pyproject.toml") as f:
     data = toml.load(f)
@@ -45,11 +46,9 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
-    "myst_nb",
     "sphinx_copybutton",
     "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",
-    "sphinx_tabs.tabs",
 ]
 source_suffix = [".rst"]
 
@@ -59,24 +58,22 @@ autodoc_pydantic_config_members = False
 autodoc_pydantic_model_show_config_summary = False
 autodoc_pydantic_model_show_validator_members = False
 autodoc_pydantic_model_show_validator_summary = False
-autodoc_pydantic_model_show_field_summary = False
-autodoc_pydantic_model_members = False
-autodoc_pydantic_model_undoc_members = False
-autodoc_pydantic_model_hide_paramlist = False
 autodoc_pydantic_model_signature_prefix = "class"
-autodoc_pydantic_field_signature_prefix = "attribute"
-autodoc_pydantic_model_summary_list_order = "bysource"
-autodoc_member_order = "bysource"
+autodoc_pydantic_field_signature_prefix = "param"
+autodoc_member_order = "groupwise"
+autoclass_content = "both"
+autodoc_typehints_format = "short"
+
 autodoc_default_options = {
     "members": True,
     "show-inheritance": True,
-    "undoc_members": True,
-    "inherited_members": "BaseModel",
+    "inherited-members": "BaseModel",
+    "undoc-members": True,
+    "special-members": "__call__",
 }
-autodoc_typehints = "description"
-
+# autodoc_typehints = "description"
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
+templates_path = ["templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -89,14 +86,16 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "scikit-learn-modern"
+html_theme_path = ["themes"]
 
-html_theme_options = {
-    "path_to_docs": "docs",
-    "repository_url": "https://github.com/hwchase17/langchain",
-    "use_repository_button": True,
-    # "style_nav_header_background": "white"
+# redirects dictionary maps from old links to new links
+html_additional_pages = {}
+redirects = {
+    "index": "api_reference",
 }
+for old_link in redirects:
+    html_additional_pages[old_link] = "redirects.html"
 
 html_context = {
     "display_github": True,  # Integrate GitHub
@@ -104,6 +103,7 @@ html_context = {
     "github_repo": "langchain",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
+    "redirects": redirects,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -116,10 +116,9 @@ html_static_path = ["_static"]
 html_css_files = [
     "css/custom.css",
 ]
+html_use_index = False
 
-html_js_files = [
-    "js/mendablesearch.js",
-]
-
-nb_execution_mode = "off"
 myst_enable_extensions = ["colon_fence"]
+
+# generate autosummary even if no references
+autosummary_generate = True
