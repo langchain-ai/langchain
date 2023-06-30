@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from langchainplus_sdk import EvaluationResult, RunEvaluator
 from langchainplus_sdk.schemas import Example, Run
+from pydantic import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -16,6 +17,13 @@ from langchain.schema import RUN_KEY, BaseOutputParser
 
 class RunEvaluatorInputMapper:
     """Map the inputs of a run to the inputs of an evaluation."""
+
+    @property
+    def output_keys(self) -> List[str]:
+        """The keys of the output of the input mapper."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} must implement output_keys"
+        )
 
     @abstractmethod
     def map(self, run: Run, example: Optional[Example] = None) -> Dict[str, Any]:
@@ -43,12 +51,25 @@ class RunEvaluatorChain(Chain, RunEvaluator):
     output_parser: RunEvaluatorOutputParser
     """Parse the output of the eval chain into feedback."""
 
+    @root_validator
+    def validate_mapper_keys(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate that the input mapper and eval chain have matching keys."""
+        input_mapper: RunEvaluatorInputMapper = values["input_mapper"]
+        eval_chain: Chain = values["eval_chain"]
+        if set(input_mapper.output_keys) != set(eval_chain.input_keys):
+            raise ValueError(
+                f"Input mapper output_keys ({input_mapper.output_keys}) "
+                f"must match eval_chain input_keys ({eval_chain.input_keys})"
+            )
+
     @property
     def input_keys(self) -> List[str]:
+        """The keys of the input of the evaluation chain."""
         return ["run", "example"]
 
     @property
     def output_keys(self) -> List[str]:
+        """The keys of the output of the evaluation chain."""
         return ["feedback"]
 
     def _call(

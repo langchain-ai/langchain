@@ -44,6 +44,15 @@ class StringRunEvaluatorInputMapper(RunEvaluatorInputMapper, BaseModel):
     answer_map: Optional[Dict[str, str]] = None
     """Map from example outputs to the evaluation inputs."""
 
+    @property
+    def output_keys(self) -> List[str]:
+        """The keys of the output of the input mapper."""
+        return (
+            list(self.prediction_map.values())
+            + list(self.input_map.values())
+            + (list(self.answer_map.values()) if self.answer_map else [])
+        )
+
     def map(self, run: Run, example: Optional[Example] = None) -> Dict[str, Any]:
         """Maps the Run and Optional[Example] to a dictionary"""
         if run.outputs is None and self.prediction_map:
@@ -236,6 +245,10 @@ class TrajectoryInputMapper(RunEvaluatorInputMapper, BaseModel):
     """The key to load from the tool executor's run input dictionary."""
     tool_output_key: str = "output"
     """The key to load from the tool executor's run output dictionary."""
+
+    @property
+    def output_keys(self) -> List[str]:
+        return ["tool_descriptions", "question", "agent_trajectory", "answer"]
 
     def map(self, run: Run, example: Optional[Example] = None) -> Dict[str, str]:
         """Maps the Run and Optional[Example] to a dictionary"""
