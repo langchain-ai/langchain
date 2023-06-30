@@ -45,6 +45,7 @@ from langchain.llms.replicate import Replicate
 from langchain.llms.rwkv import RWKV
 from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.self_hosted import SelfHostedPipeline
+from langchain.llms.self_hosted_api import SelfHostedApi
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
 from langchain.llms.textgen import TextGen
@@ -99,6 +100,7 @@ __all__ = [
     "Replicate",
     "SagemakerEndpoint",
     "SelfHostedHuggingFaceLLM",
+    "SelfHostedApi",
     "SelfHostedPipeline",
     "StochasticAI",
     "VertexAI",
@@ -147,6 +149,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "rwkv": RWKV,
     "sagemaker_endpoint": SagemakerEndpoint,
     "self_hosted": SelfHostedPipeline,
+    "self_hosted_api": SelfHostedApi,
     "self_hosted_hugging_face": SelfHostedHuggingFaceLLM,
     "stochasticai": StochasticAI,
     "vertexai": VertexAI,
