@@ -13,7 +13,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('.'))
+
+sys.path.insert(0, os.path.abspath("."))
 
 import toml
 
@@ -90,7 +91,9 @@ html_theme_path = ["themes"]
 
 # redirects dictionary maps from old links to new links
 html_additional_pages = {}
-redirects = {"index": "api_reference",}
+redirects = {
+    "index": "api_reference",
+}
 for old_link in redirects:
     html_additional_pages[old_link] = "redirects.html"
 
@@ -100,7 +103,7 @@ html_context = {
     "github_repo": "langchain",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
-    "redirects": redirects
+    "redirects": redirects,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -113,7 +116,9 @@ html_static_path = ["_static"]
 html_css_files = [
     "css/custom.css",
 ]
-html_use_index=False
+html_use_index = False
 
 myst_enable_extensions = ["colon_fence"]
 
+# generate autosummary even if no references
+autosummary_generate = True
