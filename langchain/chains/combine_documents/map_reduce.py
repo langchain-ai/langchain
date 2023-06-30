@@ -113,7 +113,10 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     @property
     def collapse_document_chain(self) -> BaseCombineDocumentsChain:
         if isinstance(self.reduce_document_chain, ReduceDocumentsChain):
-            return self.reduce_document_chain.collapse_document_chain
+            if self.reduce_document_chain.collapse_document_chain:
+                return self.reduce_document_chain.collapse_document_chain
+            else:
+                return self.reduce_document_chain.combine_document_chain
         else:
             raise ValueError(
                 f"`reduce_document_chain` is of type "

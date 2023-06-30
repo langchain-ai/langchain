@@ -25,6 +25,7 @@ from langchain.schema import BasePromptTemplate
 __all__ = [
     "AIMessagePromptTemplate",
     "BaseChatPromptTemplate",
+    "BasePromptTemplate",
     "ChatMessagePromptTemplate",
     "ChatPromptTemplate",
     "FewShotPromptTemplate",

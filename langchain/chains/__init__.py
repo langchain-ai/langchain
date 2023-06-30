@@ -56,7 +56,6 @@ from langchain.chains.sql_database.base import (
     SQLDatabaseSequentialChain,
 )
 from langchain.chains.transform import TransformChain
-from langchain.schema import format_document
 
 __all__ = [
     "APIChain",

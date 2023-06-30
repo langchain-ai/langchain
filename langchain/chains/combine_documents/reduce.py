@@ -18,6 +18,13 @@ class CombineDocsProtocol(Protocol):
         """Interface for the combine_docs method."""
 
 
+class AsyncCombineDocsProtocol(Protocol):
+    """Interface for the combine_docs method."""
+
+    async def __call__(self, docs: List[Document], **kwargs: Any) -> str:
+        """Async nterface for the combine_docs method."""
+
+
 def _split_list_of_docs(
     docs: List[Document], length_func: Callable, token_max: int, **kwargs: Any
 ) -> List[List[Document]]:
@@ -61,7 +68,7 @@ def _collapse_docs(
 
 async def _acollapse_docs(
     docs: List[Document],
-    combine_document_func: CombineDocsProtocol,
+    combine_document_func: AsyncCombineDocsProtocol,
     **kwargs: Any,
 ) -> Document:
     result = await combine_document_func(docs, **kwargs)
@@ -217,7 +224,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             )
             result_docs = []
             for docs in new_result_doc_list:
-                new_doc = _collapse_docs(docs, _collapse_docs_func, **kwargs)
+                new_doc = await _acollapse_docs(docs, _collapse_docs_func, **kwargs)
                 result_docs.append(new_doc)
             num_tokens = length_func(result_docs, **kwargs)
         return result_docs, {}
