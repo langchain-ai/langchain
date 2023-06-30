@@ -1,7 +1,7 @@
 """Tools for interacting with a Power BI dataset."""
 import logging
 from time import perf_counter
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 
 from pydantic import Field, validator
 
@@ -19,7 +19,22 @@ from langchain.tools.powerbi.prompt import (
 )
 from langchain.utilities.powerbi import PowerBIDataset, json_to_md
 
+if TYPE_CHECKING:
+    import tiktoken
+
 logger = logging.getLogger(__name__)
+
+
+def _import_tiktoken() -> Any:
+    try:
+        import tiktoken
+    except ImportError:
+        raise ValueError(
+            "Could not import tiktoken python package. "
+            "This is needed in order to calculate get_token_ids. "
+            "Please install it with `pip install tiktoken`."
+        )
+    return tiktoken
 
 
 class QueryPowerBITool(BaseTool):
@@ -37,6 +52,8 @@ class QueryPowerBITool(BaseTool):
     examples: Optional[str] = DEFAULT_FEWSHOT_EXAMPLES
     session_cache: Dict[str, Any] = Field(default_factory=dict, exclude=True)
     max_iterations: int = 5
+    output_token_limit: int = 4000
+    tiktoken_model_name: Optional[str] = None  # "cl100k_base"
 
     class Config:
         """Configuration for this pydantic object."""
@@ -183,7 +200,14 @@ class QueryPowerBITool(BaseTool):
             if len(pbi_result["results"][0]["tables"][0]["rows"]) == 0:
                 return (
                     None,
-                    "0 results found, are you sure all the filters and the values are correct?",
+                    "0 results found, are you sure all the filters and the values are correct (don't make stuff up)?",
+                )
+            result = json_to_md(pbi_result["results"][0]["tables"][0]["rows"])
+            too_long, length = self._result_too_large(result)
+            if too_long:
+                return (
+                    None,
+                    f"Result too large, please try to be more specific or use the `TOPN` function. The result is {length} tokens long, the limit is {self.output_token_limit} tokens.",
                 )
             return json_to_md(pbi_result["results"][0]["tables"][0]["rows"]), None
 
@@ -195,6 +219,17 @@ class QueryPowerBITool(BaseTool):
                 return None, pbi_result["error"]["pbi.error"]["details"][0]["detail"]
             return None, pbi_result["error"]
         return None, "Unknown error"
+
+    def _result_too_large(self, result: str) -> Tuple[bool, int]:
+        """Tokenize the output of the query."""
+        if self.tiktoken_model_name:
+            _import_tiktoken()
+            logger.info("Tiktokenizing result")
+            encoding = tiktoken.encoding_for_model(self.tiktoken_model_name)
+            length = len(encoding.encode(result))
+            logger.info("Result length: %s", length)
+            return length > self.output_token_limit, length
+        return False, 0
 
 
 class InfoPowerBITool(BaseTool):

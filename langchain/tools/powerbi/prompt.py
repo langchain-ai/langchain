@@ -14,6 +14,7 @@ VAR <name> = <expression> - Stores the result of an expression as a named variab
 
 FILTER(<table>,<filter>) - Returns a table that represents a subset of another table or expression, where <filter> is a Boolean expression that is to be evaluated for each row of the table. For example, [Amount] > 0 or [Region] = "France"
 ROW(<name>, <expression>) - Returns a table with a single row containing values that result from the expressions given to each column.
+TOPN(<n>, <table>, <OrderBy_Expression>, <Order>) - Returns a table with the top n rows from the specified table, sorted by the specified expression, in the order specified by 0 for descending, 1 for ascending, the default is 0. Multiple OrderBy_Expressions and Order pairs can be given, separated by a comma.
 DISTINCT(<column>) - Returns a one-column table that contains the distinct values from the specified column. In other words, duplicate values are removed and only unique values are returned. This function cannot be used to Return values into a cell or column on a worksheet; rather, you nest the DISTINCT function within a formula, to get a list of distinct values that can be passed to another function and then counted, summed, or used for other operations.
 DISTINCT(<table>) - Returns a table by removing duplicate rows from another table or expression.
 
