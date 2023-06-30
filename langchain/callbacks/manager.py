@@ -26,6 +26,7 @@ from langchain.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
     ChainManagerMixin,
+    EmbeddingsManagerMixin,
     LLMManagerMixin,
     RunManagerMixin,
     ToolManagerMixin,
@@ -531,6 +532,52 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         )
 
 
+class CallbackManagerForEmbeddingsRun(RunManager, EmbeddingsManagerMixin):
+    """Callback manager for embeddings run."""
+
+    def on_embeddings_end(
+        self,
+        embeddings: List[List[float]],
+        **kwargs: Any,
+    ) -> Any:
+        """Run when embeddings are generated.
+
+        Args:
+            embeddings (List[List[float]]): The generated embeddings.
+        Returns:
+            Any: The result of the callback.
+        """
+        _handle_event(
+            self.handlers,
+            "on_embeddings_end",
+            "ignore_embeddings",
+            embeddings,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+    def on_embeddings_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        **kwargs: Any,
+    ) -> None:
+        """Run when embeddings errors.
+
+        Args:
+            error (Exception or KeyboardInterrupt): The error.
+        """
+        _handle_event(
+            self.handlers,
+            "on_embeddings_error",
+            "ignore_embeddings",
+            error,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+
 class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     """Async callback manager for LLM run."""
 
@@ -781,6 +828,52 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
         )
 
 
+class AsyncCallbackManagerForEmbeddingsRun(RunManager, EmbeddingsManagerMixin):
+    """Callback manager for embeddings run."""
+
+    async def on_embeddings_end(
+        self,
+        embeddings: List[List[float]],
+        **kwargs: Any,
+    ) -> Any:
+        """Run when embeddings are generated.
+
+        Args:
+            embeddings (List[List[float]]): The generated embeddings.
+        Returns:
+            Any: The result of the callback.
+        """
+        _ahandle_event(
+            self.handlers,
+            "on_embeddings_end",
+            "ignore_embeddings",
+            embeddings,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+    async def on_embeddings_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        **kwargs: Any,
+    ) -> None:
+        """Run when embeddings errors.
+
+        Args:
+            error (Exception or KeyboardInterrupt): The error.
+        """
+        _ahandle_event(
+            self.handlers,
+            "on_embeddings_error",
+            "ignore_embeddings",
+            error,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+
 class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
     """Callback manager for tool run."""
 
@@ -987,6 +1080,47 @@ class CallbackManager(BaseCallbackManager):
                     inheritable_handlers=self.inheritable_handlers,
                     parent_run_id=self.parent_run_id,
                     tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                )
+            )
+
+        return managers
+
+    def on_embeddings_start(
+        self,
+        serialized: Dict[str, Any],
+        texts: List[str],
+        **kwargs: Any,
+    ) -> List[CallbackManagerForEmbeddingsRun]:
+        """Run when embeddings model starts running.
+
+        Args:
+            serialized (Dict[str, Any]): The serialized embeddings model.
+            texts (List[str]): The list of texts.
+        Returns:
+            List[CallbackManagerForEmbeddingsRun]: A callback manager for each
+                text as an embeddings run.
+        """
+        managers = []
+        for text in texts:
+            run_id_ = uuid4()
+            _handle_event(
+                self.handlers,
+                "on_embeddings_start",
+                "ignore_embeddings",
+                serialized,
+                [text],
+                run_id=run_id_,
+                parent_run_id=self.parent_run_id,
+                **kwargs,
+            )
+
+            managers.append(
+                CallbackManagerForEmbeddingsRun(
+                    run_id=run_id_,
+                    handlers=self.handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
                     inheritable_tags=self.inheritable_tags,
                 )
             )
@@ -1219,6 +1353,51 @@ class AsyncCallbackManager(BaseCallbackManager):
                     inheritable_handlers=self.inheritable_handlers,
                     parent_run_id=self.parent_run_id,
                     tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                )
+            )
+
+        await asyncio.gather(*tasks)
+        return managers
+
+    async def on_embeddings_start(
+        self,
+        serialized: Dict[str, Any],
+        texts: List[str],
+        **kwargs: Any,
+    ) -> List[AsyncCallbackManagerForEmbeddingsRun]:
+        """Run when embeddings model starts running.
+
+        Args:
+            serialized (Dict[str, Any]): The serialized embeddings model.
+            texts (List[str]): The list of texts.
+        Returns:
+            List[CallbackManagerForEmbeddingsRun]: A callback manager for each
+                text as an embeddings run.
+        """
+        tasks = []
+        managers = []
+        for text in texts:
+            run_id_ = uuid4()
+            tasks.append(
+                _ahandle_event(
+                    self.handlers,
+                    "on_embeddings_start",
+                    "ignore_embeddings",
+                    serialized,
+                    [text],
+                    run_id=run_id_,
+                    parent_run_id=self.parent_run_id,
+                    **kwargs,
+                )
+            )
+
+            managers.append(
+                AsyncCallbackManagerForEmbeddingsRun(
+                    run_id=run_id_,
+                    handlers=self.handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
                     inheritable_tags=self.inheritable_tags,
                 )
             )
