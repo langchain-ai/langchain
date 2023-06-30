@@ -309,6 +309,7 @@ all = [
     "awadb",
     "esprima",
     "octoai-sdk",
+    "arthurai"
 ]
 
 # An extra used to be able to add extended testing.
