@@ -14,9 +14,9 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("."))
-
 import toml
+
+sys.path.insert(0, os.path.abspath("."))
 
 with open("../../pyproject.toml") as f:
     data = toml.load(f)

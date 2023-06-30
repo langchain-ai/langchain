@@ -1,8 +1,7 @@
 """Script for auto-generating api_reference.rst"""
 import glob
-from pathlib import Path
 import re
-
+from pathlib import Path
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
 PKG_DIR = ROOT_DIR / "langchain"
@@ -12,15 +11,15 @@ WRITE_FILE = Path(__file__).parent / "api_reference.rst"
 def load_members() -> dict:
     members: dict = {}
     for py in glob.glob(str(PKG_DIR) + "/**/*.py", recursive=True):
-        module = py[len(str(PKG_DIR)) + 1:].replace(".py", "").replace("/", ".")
+        module = py[len(str(PKG_DIR)) + 1 :].replace(".py", "").replace("/", ".")
         top_level = module.split(".")[0]
         if top_level not in members:
             members[top_level] = {"classes": [], "functions": []}
         with open(py, "r") as f:
-            for l in f.readlines():
-                cls = re.findall(r"^class ([^_].*)\(", l)
+            for line in f.readlines():
+                cls = re.findall(r"^class ([^_].*)\(", line)
                 members[top_level]["classes"].extend([module + "." + c for c in cls])
-                func = re.findall(r"^def ([^_].*)\(", l)
+                func = re.findall(r"^def ([^_].*)\(", line)
                 members[top_level]["functions"].extend([module + "." + f for f in func])
     return members
 
