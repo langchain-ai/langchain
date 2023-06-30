@@ -244,6 +244,8 @@ def json_to_md(
     table_name: Optional[str] = None,
 ) -> str:
     """Converts a JSON object to a markdown table."""
+    if len(json_contents) == 0:
+        return ""
     output_md = ""
     headers = json_contents[0].keys()
     for header in headers:

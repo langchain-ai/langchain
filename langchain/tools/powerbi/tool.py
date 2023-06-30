@@ -180,6 +180,11 @@ class QueryPowerBITool(BaseTool):
     ) -> Tuple[Optional[str], Optional[str]]:
         """Parse the output of the query to a markdown table."""
         if "results" in pbi_result:
+            if len(pbi_result["results"][0]["tables"][0]["rows"]) == 0:
+                return (
+                    None,
+                    "0 results found, are you sure all the filters and the values are correct?",
+                )
             return json_to_md(pbi_result["results"][0]["tables"][0]["rows"]), None
 
         if "error" in pbi_result:
