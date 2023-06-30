@@ -24,6 +24,7 @@ from langchain.embeddings.llamacpp import LlamaCppEmbeddings
 from langchain.embeddings.minimax import MiniMaxEmbeddings
 from langchain.embeddings.modelscope_hub import ModelScopeEmbeddings
 from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
+from langchain.embeddings.octoai_embeddings import OctoAIEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
 from langchain.embeddings.self_hosted import SelfHostedEmbeddings
@@ -64,6 +65,7 @@ __all__ = [
     "DeepInfraEmbeddings",
     "DashScopeEmbeddings",
     "EmbaasEmbeddings",
+    "OctoAIEmbeddings",
 ]
 
 

@@ -58,6 +58,7 @@ def _collapse_docs(
                 combined_metadata[k] = str(v)
     return Document(page_content=result, metadata=combined_metadata)
 
+
 async def _acollapse_docs(
     docs: List[Document],
     combine_document_func: CombineDocsProtocol,

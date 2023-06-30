@@ -611,17 +611,12 @@ description = "The AI Native database for embedding vectors"
 optional = true
 python-versions = ">=3.7"
 files = [
-    {file = "awadb-0.3.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:871e2b10c79348d44522b8430af1ed1ad2632322c74abc20d8a3154de242da96"},
     {file = "awadb-0.3.3-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:daebc108103c8cace41dfb3235fcfdda28ea48e6cd6548b6072f7ad49b64274b"},
     {file = "awadb-0.3.3-cp311-cp311-macosx_10_13_universal2.whl", hash = "sha256:2bb3ca2f943448060b1bba4395dd99e2218d7f2149507a8fdfa7a3fd4cfe97ec"},
-    {file = "awadb-0.3.3-cp311-cp311-macosx_10_13_x86_64.whl", hash = "sha256:83e92963cde54a4382b0c299939865ce12e145853637642bc8e6eb22bf689386"},
-    {file = "awadb-0.3.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:6f249b04f38840146a5c17ffcd0f4da1bb00a39b8882c96e042acf58045faca2"},
     {file = "awadb-0.3.3-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:7b99662af9f7b58e217661a70c295e40605900552bec6d8e9553d90dbf19c5c1"},
     {file = "awadb-0.3.3-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:94be44e587f28fa26b2cade0b6f4c04689f50cb0c07183db5ee50e48fe2e9ae3"},
     {file = "awadb-0.3.3-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:314929dc3a8d25c0f234a2b86c920543050f4eb298a6f68bd2c97c9fe3fb6224"},
-    {file = "awadb-0.3.3-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:35d8f580973e137864d2e00edbc7369cd01cf72b673d60fe902c7b3f983c76e9"},
     {file = "awadb-0.3.3-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:8bfccff1c7373899153427d93d96a97ae5371e8a6f09ff4dcbd28fb9f3f63ff4"},
-    {file = "awadb-0.3.3-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:c791bdd0646ec620c8b0fa026915780ebf78c16169cd9da81f54409553ec0114"},
     {file = "awadb-0.3.3-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:810021a90b873f668d8ab63e2c2747b2b2835bf0ae25f4223b6c94f06faffea4"},
 ]
 
@@ -4115,7 +4110,6 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
 files = [
     {file = "jsonpointer-2.4-py2.py3-none-any.whl", hash = "sha256:15d51bba20eea3165644553647711d150376234112651b4f1811022aecad7d7a"},
-    {file = "jsonpointer-2.4.tar.gz", hash = "sha256:585cee82b70211fa9e6043b7bb89db6e1aa49524340dde8ad6b63206ea689d88"},
 ]
 
 [[package]]
@@ -6045,13 +6039,13 @@ pydantic = ">=1.8.2"
 
 [[package]]
 name = "openllm"
-version = "0.1.10"
+version = "0.1.19"
 description = "OpenLLM: REST/gRPC API server for running any open Large-Language Model - StableLM, Llama, Alpaca, Dolly, Flan-T5, Custom"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "openllm-0.1.10-py3-none-any.whl", hash = "sha256:1ef9187cdabc4aea6ae127cd8cc43afb0dd1ab7e48dd22e173dedb1bba685511"},
-    {file = "openllm-0.1.10.tar.gz", hash = "sha256:708048eeb1ffb8caac18e67e09f5ba65410eabf4ac3e706c336fd7420793661e"},
+    {file = "openllm-0.1.19-py3-none-any.whl", hash = "sha256:b0b3fefc978879382e780615adc8f3932644014db0b77c5c9ec16b54ade0e7fd"},
+    {file = "openllm-0.1.19.tar.gz", hash = "sha256:fbb91294d17f9ff1496f4871208e2bdfed5f51e48e7e4bbc1803209983b1cc00"},
 ]
 
 [package.dependencies]
@@ -6067,12 +6061,13 @@ transformers = {version = ">=4.29.0", extras = ["accelerate", "tokenizers", "tor
 typing-extensions = "*"
 
 [package.extras]
-agents = ["diffusers", "soundfile", "transformers[agents]"]
-all = ["openllm[agents]", "openllm[chatglm]", "openllm[falcon]", "openllm[fine-tune]", "openllm[flan-t5]", "openllm[openai]", "openllm[starcoder]"]
+agents = ["diffusers", "soundfile", "transformers[agents] (>=4.30)"]
+all = ["openllm[agents]", "openllm[chatglm]", "openllm[falcon]", "openllm[fine-tune]", "openllm[flan-t5]", "openllm[mpt]", "openllm[openai]", "openllm[starcoder]"]
 chatglm = ["cpm-kernels", "sentencepiece"]
 falcon = ["einops", "safetensors", "xformers"]
-fine-tune = ["accelerate", "bitsandbytes", "datasets", "deepspeed", "peft"]
+fine-tune = ["accelerate", "bitsandbytes", "datasets", "deepspeed", "peft", "trl"]
 flan-t5 = ["flax", "jax", "jaxlib", "keras", "tensorflow"]
+mpt = ["triton"]
 openai = ["openai", "tiktoken"]
 starcoder = ["bitsandbytes"]
 
@@ -10756,6 +10751,17 @@ files = [
 cryptography = ">=35.0.0"
 
 [[package]]
+name = "types-pytz"
+version = "2023.3.0.0"
+description = "Typing stubs for pytz"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-pytz-2023.3.0.0.tar.gz", hash = "sha256:ecdc70d543aaf3616a7e48631543a884f74205f284cefd6649ddf44c6a820aac"},
+    {file = "types_pytz-2023.3.0.0-py3-none-any.whl", hash = "sha256:4fc2a7fbbc315f0b6630e0b899fd6c743705abe1094d007b0e612d10da15e0f3"},
+]
+
+[[package]]
 name = "types-pyyaml"
 version = "6.0.12.10"
 description = "Typing stubs for PyYAML"
@@ -11852,4 +11858,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "269a4f85c8905ffd03475a5631a6fb909e92bc62669695c95342b26ee8a6ba1f"
+content-hash = "76fa32e4bab024d7238da8fdf272e0e88f25fdb4fdbacad58c2d196a0bf55e70"

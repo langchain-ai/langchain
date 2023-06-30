@@ -20,6 +20,15 @@ class VespaRetriever(BaseRetriever):
         content_field: str,
         metadata_fields: Optional[Sequence[str]] = None,
     ):
+        """
+
+        Args:
+            app: Vespa client.
+            body: query body.
+            content_field: result field with document contents.
+            metadata_fields: result fields to include in document metadata.
+
+        """
         self._application = app
         self._query_body = body
         self._content_field = content_field
