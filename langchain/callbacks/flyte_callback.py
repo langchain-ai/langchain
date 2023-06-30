@@ -98,7 +98,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def __init__(self) -> None:
         """Initialize callback handler."""
-
+        import_textstat()  # Raise error since it is required
         flytekit, renderer = import_flytekit()
         self.pandas = import_pandas()
 
@@ -119,10 +119,11 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             try:
                 self.nlp = spacy.load("en_core_web_sm")
             except OSError:
-                raise OSError(
-                    "To download the en_core_web_sm model, \
-                    run the following command in your terminal: \
-                    `python -m spacy download en_core_web_sm` command."
+                logger.warning(
+                    "FlyteCallbackHandler uses spacy's en_core_web_sm model"
+                    " for certain metrics. To download,"
+                    " run the following command in your terminal:"
+                    " `python -m spacy download en_core_web_sm` command."
                 )
 
         self.table_renderer = renderer.TableRenderer
