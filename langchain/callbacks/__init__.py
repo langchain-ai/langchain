@@ -16,6 +16,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.callbacks.mlflow_callback import MlflowCallbackHandler
 from langchain.callbacks.openai_info import OpenAICallbackHandler
+from langchain.callbacks.promptlayer_callback import PromptLayerCallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -30,6 +31,7 @@ __all__ = [
     "AimCallbackHandler",
     "ArgillaCallbackHandler",
     "ArizeCallbackHandler",
+    "PromptLayerCallbackHandler",
     "ArthurCallbackHandler",
     "ClearMLCallbackHandler",
     "CometCallbackHandler",
