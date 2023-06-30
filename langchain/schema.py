@@ -173,8 +173,7 @@ class SystemMessage(BaseMessage):
 
 
 class FunctionMessage(BaseMessage):
-    """A Message for passing the result of executing a function back to a model.
-    """
+    """A Message for passing the result of executing a function back to a model."""
 
     name: str
     """The name of the function that was executed."""
