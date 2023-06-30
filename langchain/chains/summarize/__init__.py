@@ -8,7 +8,7 @@ from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.summarize import map_reduce_prompt, refine_prompts, stuff_prompt
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
 
 
 class LoadingCallable(Protocol):

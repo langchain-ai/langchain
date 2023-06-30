@@ -6,8 +6,7 @@ from pydantic import Extra, Field, root_validator
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.memory.buffer import ConversationBufferMemory
-from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseMemory
+from langchain.schema import BaseMemory, BasePromptTemplate
 
 
 class ConversationChain(LLMChain):

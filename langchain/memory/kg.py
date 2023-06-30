@@ -12,9 +12,9 @@ from langchain.memory.prompt import (
     KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
 )
 from langchain.memory.utils import get_prompt_input_key
-from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import (
     BaseMessage,
+    BasePromptTemplate,
     SystemMessage,
     get_buffer_string,
 )

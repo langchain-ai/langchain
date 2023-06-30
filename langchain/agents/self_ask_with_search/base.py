@@ -10,7 +10,7 @@ from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
 from langchain.base_language import BaseLanguageModel
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
 from langchain.tools.base import BaseTool
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper

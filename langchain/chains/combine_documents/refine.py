@@ -13,8 +13,8 @@ from langchain.chains.combine_documents.base import (
 )
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema import BasePromptTemplate
 
 
 def _get_default_document_prompt() -> PromptTemplate:
