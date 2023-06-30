@@ -132,7 +132,7 @@ def test_similarity_search(deeplake_datastore: DeepLake, distance_metric: str) -
         "foo", k=1, distance_metric=distance_metric
     )
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
-    
+
     tql_query = f"SELECT * WHERE id=='{deeplake_datastore.vectorstore.dataset.id[0].numpy()[0]}'"
     with pytest.raises(ValueError):
         output = deeplake_datastore.similarity_search(

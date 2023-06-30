@@ -181,11 +181,14 @@ class DeepLake(VectorStore):
         if metadatas is None:
             metadatas = [{}] * len(list(texts))
 
+        if not isinstance(texts, list):
+            texts = list(texts)
+
         if texts is None:
             raise ValueError("`texts` parameter shouldn't be None.")
         elif len(texts) == 0:
             raise ValueError("`texts` parameter shouldn't be empty.")
-        
+
         return self.vectorstore.add(
             text=texts,
             metadata=metadatas,
@@ -201,8 +204,8 @@ class DeepLake(VectorStore):
         self,
         tql_query: Optional[str],
         exec_option: Optional[str] = None,
-        **kwargs,
-    ) -> Any[List[Document], List[Tuple[Document, float]]]:
+        **kwargs: Any,
+    ) -> List[Document]:
         """Function for performing tql_search.
 
         Args:
@@ -221,7 +224,9 @@ class DeepLake(VectorStore):
             return_score (bool): Return score with document. Default is False.
 
         Returns:
-            List[Document] - A list of documents
+            Tuple[List[Document], List[Tuple[Document, float]]] - A tuple of two lists.
+                The first list contains Documents, and the second list contains
+                tuples of Document and float score.
 
         Raises:
             ValueError: If return_score is True but some condition is not met.
@@ -240,7 +245,7 @@ class DeepLake(VectorStore):
             )
             for text, metadata in zip(texts, metadatas)
         ]
-        
+
         if kwargs:
             unsupported_argument = next(iter(kwargs))
             if kwargs[unsupported_argument] is not False:
@@ -809,8 +814,8 @@ class DeepLake(VectorStore):
     def delete_dataset(self) -> None:
         """Delete the collection."""
         self.delete(delete_all=True)
-        
-    def ds(self):
+
+    def ds(self) -> Any:
         logger.warning(
             "this method is deprecated and will be removed, "
             "better to use `db.vectorstore.dataset` instead."
