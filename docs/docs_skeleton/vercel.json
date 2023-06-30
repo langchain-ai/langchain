@@ -2077,6 +2077,10 @@
       "destination": "/docs/modules/data_connection/retrievers/integrations:path*"
     },
     {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/:path*",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/:path*"
+    },
+    {
       "source": "/en/latest/modules/indexes/:path*",
       "destination": "/docs/modules/data_connection/:path*"
     },
