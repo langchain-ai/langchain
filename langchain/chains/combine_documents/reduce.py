@@ -1,4 +1,4 @@
-"""Combining documents by mapping a chain over them first, then combining results."""
+"""Combine many documents together by recursively reducing them."""
 
 from __future__ import annotations
 
