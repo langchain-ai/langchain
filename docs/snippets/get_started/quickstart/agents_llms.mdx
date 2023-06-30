@@ -1,0 +1,37 @@
+```python
+from langchain.agents import AgentType, initialize_agent, load_tools
+from langchain.llms import OpenAI
+
+# The language model we're going to use to control the agent.
+llm = OpenAI(temperature=0)
+
+# The tools we'll give the Agent access to. Note that the 'llm-math' tool uses an LLM, so we need to pass that in.
+tools = load_tools(["serpapi", "llm-math"], llm=llm)
+
+# Finally, let's initialize an agent with the tools, the language model, and the type of agent we want to use.
+agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
+
+# Let's test it out!
+agent.run("What was the high temperature in SF yesterday in Fahrenheit? What is that number raised to the .023 power?")
+```
+```pycon
+> Entering new AgentExecutor chain...
+
+Thought: I need to find the temperature first, then use the calculator to raise it to the .023 power.
+Action: Search
+Action Input: "High temperature in SF yesterday"
+Observation: San Francisco Temperature Yesterday. Maximum temperature yesterday: 57 °F (at 1:56 pm) Minimum temperature yesterday: 49 °F (at 1:56 am) Average temperature ...
+
+Thought: I now have the temperature, so I can use the calculator to raise it to the .023 power.
+Action: Calculator
+Action Input: 57^.023
+Observation: Answer: 1.0974509573251117
+
+Thought: I now know the final answer
+Final Answer: The high temperature in SF yesterday in Fahrenheit raised to the .023 power is 1.0974509573251117.
+
+> Finished chain.
+```
+```pycon
+The high temperature in SF yesterday in Fahrenheit raised to the .023 power is 1.0974509573251117.
+```

@@ -21,6 +21,17 @@ logger = logging.getLogger(__name__)
 
 
 def create_message_model(table_name, DynamicBase):  # type: ignore
+    """
+    Create a message model for a given table name.
+    Args:
+        table_name: The name of the table to use.
+        DynamicBase: The base class to use for the model.
+
+    Returns:
+        The model class.
+
+    """
+
     # Model decleared inside a function to have a dynamic table name
     class Message(DynamicBase):
         __tablename__ = table_name
@@ -32,6 +43,8 @@ def create_message_model(table_name, DynamicBase):  # type: ignore
 
 
 class SQLChatMessageHistory(BaseChatMessageHistory):
+    """Chat message history stored in an SQL database."""
+
     def __init__(
         self,
         session_id: str,

@@ -183,6 +183,11 @@ class RetrievalQA(BaseRetrievalQA):
     async def _aget_docs(self, question: str) -> List[Document]:
         return await self.retriever.aget_relevant_documents(question)
 
+    @property
+    def _chain_type(self) -> str:
+        """Return the chain type."""
+        return "retrieval_qa"
+
 
 class VectorDBQA(BaseRetrievalQA):
     """Chain for question-answering against a vector database."""

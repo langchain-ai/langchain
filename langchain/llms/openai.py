@@ -20,7 +20,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Extra, Field, root_validator
+from pydantic import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -123,6 +123,14 @@ async def acompletion_with_retry(
 class BaseOpenAI(BaseLLM):
     """Wrapper around OpenAI large language models."""
 
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"openai_api_key": "OPENAI_API_KEY"}
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     client: Any  #: :meta private:
     model_name: str = Field("text-davinci-003", alias="model")
     """Model name to use."""
@@ -163,6 +171,16 @@ class BaseOpenAI(BaseLLM):
     """Set of special tokens that are allowed。"""
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
+    tiktoken_model_name: Optional[str] = None
+    """The model name to pass to tiktoken when using this class. 
+    Tiktoken is used to count the number of tokens in documents to constrain 
+    them to be under a certain limit. By default, when set to None, this will 
+    be the same as the embedding model name. However, there are some cases 
+    where you may want to use this Embedding class with a model name not 
+    supported by tiktoken. This can include when using Azure embeddings or 
+    when using one of the many model providers that expose an OpenAI-like 
+    API but with different models. In those cases, in order to avoid erroring 
+    when tiktoken is called, you can specify a model name to use here."""
 
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
@@ -179,7 +197,6 @@ class BaseOpenAI(BaseLLM):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.ignore
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -211,22 +228,22 @@ class BaseOpenAI(BaseLLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        openai_api_key = get_from_dict_or_env(
+        values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        openai_api_base = get_from_dict_or_env(
+        values["openai_api_base"] = get_from_dict_or_env(
             values,
             "openai_api_base",
             "OPENAI_API_BASE",
             default="",
         )
-        openai_proxy = get_from_dict_or_env(
+        values["openai_proxy"] = get_from_dict_or_env(
             values,
             "openai_proxy",
             "OPENAI_PROXY",
             default="",
         )
-        openai_organization = get_from_dict_or_env(
+        values["openai_organization"] = get_from_dict_or_env(
             values,
             "openai_organization",
             "OPENAI_ORGANIZATION",
@@ -235,13 +252,6 @@ class BaseOpenAI(BaseLLM):
         try:
             import openai
 
-            openai.api_key = openai_api_key
-            if openai_api_base:
-                openai.api_base = openai_api_base
-            if openai_organization:
-                openai.organization = openai_organization
-            if openai_proxy:
-                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
             values["client"] = openai.Completion
         except ImportError:
             raise ImportError(
@@ -280,6 +290,7 @@ class BaseOpenAI(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         """Call out to OpenAI's endpoint with k unique prompts.
 
@@ -297,6 +308,7 @@ class BaseOpenAI(BaseLLM):
         """
         # TODO: write a unit test for this
         params = self._invocation_params
+        params = {**params, **kwargs}
         sub_prompts = self.get_sub_prompts(params, prompts, stop)
         choices = []
         token_usage: Dict[str, int] = {}
@@ -333,9 +345,11 @@ class BaseOpenAI(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         """Call out to OpenAI's endpoint async with k unique prompts."""
         params = self._invocation_params
+        params = {**params, **kwargs}
         sub_prompts = self.get_sub_prompts(params, prompts, stop)
         choices = []
         token_usage: Dict[str, int] = {}
@@ -452,7 +466,16 @@ class BaseOpenAI(BaseLLM):
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
-        return self._default_params
+        openai_creds: Dict[str, Any] = {
+            "api_key": self.openai_api_key,
+            "api_base": self.openai_api_base,
+            "organization": self.openai_organization,
+        }
+        if self.openai_proxy:
+            import openai
+
+            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
+        return {**openai_creds, **self._default_params}
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -478,7 +501,13 @@ class BaseOpenAI(BaseLLM):
                 "Please install it with `pip install tiktoken`."
             )
 
-        enc = tiktoken.encoding_for_model(self.model_name)
+        model_name = self.tiktoken_model_name or self.model_name
+        try:
+            enc = tiktoken.encoding_for_model(model_name)
+        except KeyError:
+            logger.warning("Warning: model not found. Using cl100k_base encoding.")
+            model = "cl100k_base"
+            enc = tiktoken.get_encoding(model)
 
         return enc.encode(
             text,
@@ -486,7 +515,8 @@ class BaseOpenAI(BaseLLM):
             disallowed_special=self.disallowed_special,
         )
 
-    def modelname_to_contextsize(self, modelname: str) -> int:
+    @staticmethod
+    def modelname_to_contextsize(modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
 
         Args:
@@ -503,10 +533,15 @@ class BaseOpenAI(BaseLLM):
         model_token_mapping = {
             "gpt-4": 8192,
             "gpt-4-0314": 8192,
+            "gpt-4-0613": 8192,
             "gpt-4-32k": 32768,
             "gpt-4-32k-0314": 32768,
+            "gpt-4-32k-0613": 32768,
             "gpt-3.5-turbo": 4096,
             "gpt-3.5-turbo-0301": 4096,
+            "gpt-3.5-turbo-0613": 4096,
+            "gpt-3.5-turbo-16k": 16385,
+            "gpt-3.5-turbo-16k-0613": 16385,
             "text-ada-001": 2049,
             "ada": 2049,
             "text-babbage-001": 2040,
@@ -536,6 +571,11 @@ class BaseOpenAI(BaseLLM):
 
         return context_size
 
+    @property
+    def max_context_size(self) -> int:
+        """Get max context size for this model."""
+        return self.modelname_to_contextsize(self.model_name)
+
     def max_tokens_for_prompt(self, prompt: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a prompt.
 
@@ -551,10 +591,7 @@ class BaseOpenAI(BaseLLM):
                 max_tokens = openai.max_token_for_prompt("Tell me a joke.")
         """
         num_tokens = self.get_num_tokens(prompt)
-
-        # get max context size for model by name
-        max_size = self.modelname_to_contextsize(self.model_name)
-        return max_size - num_tokens
+        return self.max_context_size - num_tokens
 
 
 class OpenAI(BaseOpenAI):
@@ -596,6 +633,22 @@ class AzureOpenAI(BaseOpenAI):
 
     deployment_name: str = ""
     """Deployment name to use."""
+    openai_api_type: str = "azure"
+    openai_api_version: str = ""
+
+    @root_validator()
+    def validate_azure_settings(cls, values: Dict) -> Dict:
+        values["openai_api_version"] = get_from_dict_or_env(
+            values,
+            "openai_api_version",
+            "OPENAI_API_VERSION",
+        )
+        values["openai_api_type"] = get_from_dict_or_env(
+            values,
+            "openai_api_type",
+            "OPENAI_API_TYPE",
+        )
+        return values
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -606,7 +659,12 @@ class AzureOpenAI(BaseOpenAI):
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
-        return {**{"engine": self.deployment_name}, **super()._invocation_params}
+        openai_params = {
+            "engine": self.deployment_name,
+            "api_type": self.openai_api_type,
+            "api_version": self.openai_api_version,
+        }
+        return {**openai_params, **super()._invocation_params}
 
     @property
     def _llm_type(self) -> str:
@@ -649,11 +707,6 @@ class OpenAIChat(BaseLLM):
     """Set of special tokens that are allowed。"""
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.ignore
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -748,8 +801,10 @@ class OpenAIChat(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         messages, params = self._get_chat_params(prompts, stop)
+        params = {**params, **kwargs}
         if self.streaming:
             response = ""
             params["stream"] = True
@@ -781,8 +836,10 @@ class OpenAIChat(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         messages, params = self._get_chat_params(prompts, stop)
+        params = {**params, **kwargs}
         if self.streaming:
             response = ""
             params["stream"] = True

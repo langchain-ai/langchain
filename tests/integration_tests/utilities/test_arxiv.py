@@ -66,6 +66,24 @@ def test_load_returns_limited_docs() -> None:
     assert_docs(docs)
 
 
+def test_load_returns_limited_doc_content_chars() -> None:
+    """Test that returns limited doc_content_chars_max"""
+
+    doc_content_chars_max = 100
+    api_client = ArxivAPIWrapper(doc_content_chars_max=doc_content_chars_max)
+    docs = api_client.load("1605.08386")
+    assert len(docs[0].page_content) == doc_content_chars_max
+
+
+def test_load_returns_unlimited_doc_content_chars() -> None:
+    """Test that returns unlimited doc_content_chars_max"""
+
+    doc_content_chars_max = None
+    api_client = ArxivAPIWrapper(doc_content_chars_max=doc_content_chars_max)
+    docs = api_client.load("1605.08386")
+    assert len(docs[0].page_content) == 54337
+
+
 def test_load_returns_full_set_of_metadata() -> None:
     """Test that returns several docs"""
     api_client = ArxivAPIWrapper(load_max_docs=1, load_all_available_meta=True)

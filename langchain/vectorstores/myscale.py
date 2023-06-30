@@ -17,6 +17,15 @@ logger = logging.getLogger()
 
 
 def has_mul_sub_str(s: str, *args: Any) -> bool:
+    """
+    Check if a string contains multiple substrings.
+    Args:
+        s: string to check.
+        *args: substrings to check.
+
+    Returns:
+        True if all substrings are in the string, False otherwise.
+    """
     for a in args:
         if a not in s:
             return False

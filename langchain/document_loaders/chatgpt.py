@@ -8,6 +8,15 @@ from langchain.document_loaders.base import BaseLoader
 
 
 def concatenate_rows(message: dict, title: str) -> str:
+    """
+    Combine message information in a readable format ready to be used.
+    Args:
+        message: Message to be concatenated
+        title: Title of the conversation
+
+    Returns:
+        Concatenated message
+    """
     if not message:
         return ""
 

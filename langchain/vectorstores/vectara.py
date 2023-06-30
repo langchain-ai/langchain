@@ -55,6 +55,8 @@ class Vectara(VectorStore):
         else:
             logging.debug(f"Using corpus id {self._vectara_corpus_id}")
         self._session = requests.Session()  # to reuse connections
+        adapter = requests.adapters.HTTPAdapter(max_retries=3)
+        self._session.mount("http://", adapter)
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
@@ -95,19 +97,15 @@ class Vectara(VectorStore):
             return False
         return True
 
-    def _index_doc(self, doc_id: str, text: str, metadata: dict) -> bool:
+    def _index_doc(self, doc: dict) -> bool:
         request: dict[str, Any] = {}
         request["customer_id"] = self._vectara_customer_id
         request["corpus_id"] = self._vectara_corpus_id
-        request["document"] = {
-            "document_id": doc_id,
-            "metadataJson": json.dumps(metadata),
-            "section": [{"text": text, "metadataJson": json.dumps(metadata)}],
-        }
+        request["document"] = doc
 
         response = self._session.post(
             headers=self._get_post_headers(),
-            url="https://api.vectara.io/v1/index",
+            url="https://api.vectara.io/v1/core/index",
             data=json.dumps(request),
             timeout=30,
             verify=True,
@@ -138,22 +136,33 @@ class Vectara(VectorStore):
             List of ids from adding the texts into the vectorstore.
 
         """
-        ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
-        for i, doc in enumerate(texts):
-            doc_id = ids[i]
-            metadata = metadatas[i] if metadatas else {}
-            succeeded = self._index_doc(doc_id, doc, metadata)
-            if not succeeded:
-                self._delete_doc(doc_id)
-                self._index_doc(doc_id, doc, metadata)
-        return ids
+        doc_hash = md5()
+        for t in texts:
+            doc_hash.update(t.encode())
+        doc_id = doc_hash.hexdigest()
+        if metadatas is None:
+            metadatas = [{} for _ in texts]
+        doc = {
+            "document_id": doc_id,
+            "metadataJson": json.dumps({"source": "langchain"}),
+            "parts": [
+                {"text": text, "metadataJson": json.dumps(md)}
+                for text, md in zip(texts, metadatas)
+            ],
+        }
+        succeeded = self._index_doc(doc)
+        if not succeeded:
+            self._delete_doc(doc_id)
+            self._index_doc(doc)
+        return [doc_id]
 
     def similarity_search_with_score(
         self,
         query: str,
         k: int = 5,
-        alpha: float = 0.025,
+        lambda_val: float = 0.025,
         filter: Optional[str] = None,
+        n_sentence_context: int = 0,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return Vectara documents most similar to query, along with scores.
@@ -161,42 +170,45 @@ class Vectara(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 5.
-            alpha: parameter for hybrid search (called "lambda" in Vectara
-                documentation).
+            lambda_val: lexical match parameter for hybrid search.
             filter: Dictionary of argument(s) to filter on metadata. For example a
                 filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview
                 for more details.
+            n_sentence_context: number of sentences before/after the matching segment
+                to add
 
         Returns:
             List of Documents most similar to the query and score for each.
         """
+        data = json.dumps(
+            {
+                "query": [
+                    {
+                        "query": query,
+                        "start": 0,
+                        "num_results": k,
+                        "context_config": {
+                            "sentences_before": n_sentence_context,
+                            "sentences_after": n_sentence_context,
+                        },
+                        "corpus_key": [
+                            {
+                                "customer_id": self._vectara_customer_id,
+                                "corpus_id": self._vectara_corpus_id,
+                                "metadataFilter": filter,
+                                "lexical_interpolation_config": {"lambda": lambda_val},
+                            }
+                        ],
+                    }
+                ]
+            }
+        )
+
         response = self._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
-            data=json.dumps(
-                {
-                    "query": [
-                        {
-                            "query": query,
-                            "start": 0,
-                            "num_results": k,
-                            "context_config": {
-                                "sentences_before": 3,
-                                "sentences_after": 3,
-                            },
-                            "corpus_key": [
-                                {
-                                    "customer_id": self._vectara_customer_id,
-                                    "corpus_id": self._vectara_corpus_id,
-                                    "metadataFilter": filter,
-                                    "lexical_interpolation_config": {"lambda": alpha},
-                                }
-                            ],
-                        }
-                    ]
-                }
-            ),
+            data=data,
             timeout=10,
         )
 
@@ -231,8 +243,9 @@ class Vectara(VectorStore):
         self,
         query: str,
         k: int = 5,
-        alpha: float = 0.025,
+        lambda_val: float = 0.025,
         filter: Optional[str] = None,
+        n_sentence_context: int = 0,
         **kwargs: Any,
     ) -> List[Document]:
         """Return Vectara documents most similar to query, along with scores.
@@ -244,12 +257,19 @@ class Vectara(VectorStore):
                 filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview for more
                 details.
+            n_sentence_context: number of sentences before/after the matching segment
+                to add
 
         Returns:
             List of Documents most similar to the query
         """
         docs_and_scores = self.similarity_search_with_score(
-            query, k=k, alpha=alpha, filter=filter, **kwargs
+            query,
+            k=k,
+            lambda_val=lambda_val,
+            filter=filter,
+            n_sentence_context=n_sentence_context,
+            **kwargs,
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -286,15 +306,22 @@ class Vectara(VectorStore):
 
 class VectaraRetriever(VectorStoreRetriever):
     vectorstore: Vectara
-    search_kwargs: dict = Field(default_factory=lambda: {"alpha": 0.025, "k": 5})
+    search_kwargs: dict = Field(
+        default_factory=lambda: {
+            "lambda_val": 0.025,
+            "k": 5,
+            "filter": "",
+            "n_sentence_context": "0",
+        }
+    )
     """Search params.
         k: Number of Documents to return. Defaults to 5.
-        alpha: parameter for hybrid search (called "lambda" in Vectara
-            documentation).
+        lambda_val: lexical match parameter for hybrid search.
         filter: Dictionary of argument(s) to filter on metadata. For example a
             filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
             https://docs.vectara.com/docs/search-apis/sql/filter-overview
             for more details.
+        n_sentence_context: number of sentences before/after the matching segment to add
     """
 
     def add_texts(
