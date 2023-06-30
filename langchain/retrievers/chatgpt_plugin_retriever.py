@@ -38,7 +38,10 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
         docs = []
         for d in results:
             content = d.pop("text")
-            docs.append(Document(page_content=content, metadata=d))
+            metadata = d.pop("metadata", d)
+            if metadata.get("source_id"):
+                metadata["source"] = metadata.pop("source_id")
+            docs.append(Document(page_content=content, metadata=metadata))
         return docs
 
     async def _aget_relevant_documents(
@@ -64,7 +67,10 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
         docs = []
         for d in results:
             content = d.pop("text")
-            docs.append(Document(page_content=content, metadata=d))
+            metadata = d.pop("metadata", d)
+            if metadata.get("source_id"):
+                metadata["source"] = metadata.pop("source_id")
+            docs.append(Document(page_content=content, metadata=metadata))
         return docs
 
     def _create_request(self, query: str) -> tuple[str, dict, dict]:

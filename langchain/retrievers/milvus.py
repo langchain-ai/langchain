@@ -1,5 +1,5 @@
 """Milvus Retriever"""
-
+import warnings
 from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import (
@@ -13,7 +13,9 @@ from langchain.vectorstores.milvus import Milvus
 # TODO: Update to MilvusClient + Hybrid Search when available
 
 
-class MilvusRetreiver(BaseRetriever):
+class MilvusRetriever(BaseRetriever):
+    """Retriever that uses the Milvus API."""
+
     def __init__(
         self,
         embedding_function: Embeddings,
@@ -61,3 +63,21 @@ class MilvusRetreiver(BaseRetriever):
         **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError
+
+
+def MilvusRetreiver(*args: Any, **kwargs: Any) -> MilvusRetriever:
+    """Deprecated MilvusRetreiver. Please use MilvusRetriever ('i' before 'e') instead.
+
+    Args:
+        *args:
+        **kwargs:
+
+    Returns:
+        MilvusRetriever
+    """
+    warnings.warn(
+        "MilvusRetreiver will be deprecated in the future. "
+        "Please use MilvusRetriever ('i' before 'e') instead.",
+        DeprecationWarning,
+    )
+    return MilvusRetriever(*args, **kwargs)

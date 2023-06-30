@@ -14,6 +14,14 @@ from langchain.schema import BaseRetriever, Document
 
 
 def hash_text(text: str) -> str:
+    """Hash a text using SHA256.
+
+    Args:
+        text: Text to hash.
+
+    Returns:
+        Hashed text.
+    """
     return str(hashlib.sha256(text.encode("utf-8")).hexdigest())
 
 
@@ -25,6 +33,18 @@ def create_index(
     ids: Optional[List[str]] = None,
     metadatas: Optional[List[dict]] = None,
 ) -> None:
+    """
+    Create a Pinecone index from a list of contexts.
+    Modifies the index argument in-place.
+
+    Args:
+        contexts: List of contexts to embed.
+        index: Pinecone index to use.
+        embeddings: Embeddings model to use.
+        sparse_encoder: Sparse encoder to use.
+        ids: List of ids to use for the documents.
+        metadatas: List of metadata to use for the documents.
+    """
     batch_size = 32
     _iterator = range(0, len(contexts), batch_size)
     try:

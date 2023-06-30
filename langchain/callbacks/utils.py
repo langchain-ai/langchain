@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterable, Tuple, Union
 
 
 def import_spacy() -> Any:
+    """Import the spacy python package and raise an error if it is not installed."""
     try:
         import spacy
     except ImportError:
@@ -15,6 +16,7 @@ def import_spacy() -> Any:
 
 
 def import_pandas() -> Any:
+    """Import the pandas python package and raise an error if it is not installed."""
     try:
         import pandas
     except ImportError:
@@ -26,6 +28,7 @@ def import_pandas() -> Any:
 
 
 def import_textstat() -> Any:
+    """Import the textstat python package and raise an error if it is not installed."""
     try:
         import textstat
     except ImportError:

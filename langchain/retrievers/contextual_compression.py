@@ -48,8 +48,11 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         docs = self.base_retriever.get_relevant_documents(
             query, callbacks=run_manager_.get_child(), **kwargs
         )
-        compressed_docs = self.base_compressor.compress_documents(docs, query)
-        return list(compressed_docs)
+        if docs:
+            compressed_docs = self.base_compressor.compress_documents(docs, query)
+            return list(compressed_docs)
+        else:
+            return []
 
     async def _aget_relevant_documents(
         self,
@@ -72,5 +75,10 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         docs = await self.base_retriever.aget_relevant_documents(
             query, callbacks=run_manager_.get_child(), **kwargs
         )
-        compressed_docs = await self.base_compressor.acompress_documents(docs, query)
-        return list(compressed_docs)
+        if docs:
+            compressed_docs = await self.base_compressor.acompress_documents(
+                docs, query
+            )
+            return list(compressed_docs)
+        else:
+            return []
