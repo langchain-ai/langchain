@@ -7,6 +7,7 @@ from langchain.schema import (
     AIMessage,
     BaseMessage,
     ChatMessage,
+    ChatGeneration,
     HumanMessage,
     LLMResult,
     SystemMessage,
@@ -88,7 +89,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
             )
             model_response = (
                 [self._convert_message_to_dict(generation.message)]
-                if is_chat_model
+                if is_chat_model and isinstance(generation, ChatGeneration)
                 else resp
             )
 
