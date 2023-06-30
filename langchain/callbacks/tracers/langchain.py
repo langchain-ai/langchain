@@ -180,6 +180,24 @@ class LangChainTracer(BaseTracer):
             self.executor.submit(self._update_run_single, run.copy(deep=True))
         )
 
+    def _on_retriever_start(self, run: Run) -> None:
+        """Process the Retriever Run upon start."""
+        self._futures.add(
+            self.executor.submit(self._persist_run_single, run.copy(deep=True))
+        )
+
+    def _on_retriever_end(self, run: Run) -> None:
+        """Process the Retriever Run."""
+        self._futures.add(
+            self.executor.submit(self._update_run_single, run.copy(deep=True))
+        )
+
+    def _on_retriever_error(self, run: Run) -> None:
+        """Process the Retriever Run upon error."""
+        self._futures.add(
+            self.executor.submit(self._update_run_single, run.copy(deep=True))
+        )
+
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
         futures = list(self._futures)

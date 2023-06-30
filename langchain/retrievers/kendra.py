@@ -3,6 +3,10 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Extra
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
@@ -257,7 +261,12 @@ class AmazonKendraRetriever(BaseRetriever):
             docs = r_result.get_top_k_docs(top_k)
         return docs
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         """Run search on Kendra index and get top k documents
 
         Example:
@@ -269,5 +278,10 @@ class AmazonKendraRetriever(BaseRetriever):
         docs = self._kendra_query(query, self.top_k, self.attribute_filter)
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError("Async version is not implemented for Kendra yet.")

@@ -141,6 +141,22 @@ def test_ignore_agent() -> None:
     assert handler2.errors == 1
 
 
+def test_ignore_retriever() -> None:
+    """Test the ignore retriever param for callback handlers."""
+    handler1 = FakeCallbackHandler(ignore_retriever_=True)
+    handler2 = FakeCallbackHandler()
+    manager = CallbackManager(handlers=[handler1, handler2])
+    run_manager = manager.on_retriever_start("")
+    run_manager.on_retriever_end([])
+    run_manager.on_retriever_error(Exception())
+    assert handler1.starts == 0
+    assert handler1.ends == 0
+    assert handler1.errors == 0
+    assert handler2.starts == 1
+    assert handler2.ends == 1
+    assert handler2.errors == 1
+
+
 @pytest.mark.asyncio
 async def test_async_callback_manager() -> None:
     """Test the AsyncCallbackManager."""
