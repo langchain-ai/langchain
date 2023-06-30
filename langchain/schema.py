@@ -411,13 +411,9 @@ class BaseRetriever(ABC):
 
     @abstractmethod
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
-        """Get documents relevant for a query.
+        """Get documents relevant to a query.
         Args:
             query: string to find relevant documents for
             run_manager: The callbacks handler to use
@@ -433,7 +429,7 @@ class BaseRetriever(ABC):
         run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
-        """Get documents relevant for a query.
+        """Asynchronously get documents relevant to a query.
         Args:
             query: string to find relevant documents for
             run_manager: The callbacks handler to use
@@ -444,7 +440,7 @@ class BaseRetriever(ABC):
     def get_relevant_documents(
         self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
     ) -> List[Document]:
-        """Retrieve documents.
+        """Retrieve documents relevant to a query.
         Args:
             query: string to find relevant documents for
             callbacks: Callback manager or list of callbacks
@@ -482,7 +478,7 @@ class BaseRetriever(ABC):
     async def aget_relevant_documents(
         self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
     ) -> List[Document]:
-        """Get documents relevant for a query.
+        """Asynchronously get documents relevant to a query.
         Args:
             query: string to find relevant documents for
             callbacks: Callback manager or list of callbacks
@@ -506,7 +502,9 @@ class BaseRetriever(ABC):
             elif self._expects_other_args:
                 result = await self._aget_relevant_documents(query, **kwargs)
             else:
-                result = await self._aget_relevant_documents(query)  # type: ignore[call-arg]
+                result = await self._aget_relevant_documents(
+                    query,  # type: ignore[call-arg]
+                )
         except Exception as e:
             await run_manager.on_retriever_error(e)
             raise e
