@@ -379,8 +379,8 @@ class BaseRunManager(RunManagerMixin):
         handlers: List[BaseCallbackHandler],
         inheritable_handlers: List[BaseCallbackHandler],
         parent_run_id: Optional[UUID] = None,
-        tags: List[str],
-        inheritable_tags: List[str],
+        tags: Optional[List[str]] = None,
+        inheritable_tags: Optional[List[str]] = None,
     ) -> None:
         """Initialize the run manager.
 
@@ -391,15 +391,15 @@ class BaseRunManager(RunManagerMixin):
                 The list of inheritable handlers.
             parent_run_id (UUID, optional): The ID of the parent run.
                 Defaults to None.
-            tags (List[str]): The list of tags.
-            inheritable_tags (List[str]): The list of inheritable tags.
+            tags (Optional[List[str]]): The list of tags.
+            inheritable_tags (Optional[List[str]]): The list of inheritable tags.
         """
         self.run_id = run_id
         self.handlers = handlers
         self.inheritable_handlers = inheritable_handlers
-        self.tags = tags
-        self.inheritable_tags = inheritable_tags
         self.parent_run_id = parent_run_id
+        self.tags = tags or []
+        self.inheritable_tags = inheritable_tags or []
 
     @classmethod
     def get_noop_manager(cls: Type[BRM]) -> BRM:
