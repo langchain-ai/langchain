@@ -114,8 +114,6 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         super().__init__()
 
-        self.action_records: list = []
-
         self.nlp = None
         if spacy:
             try:
