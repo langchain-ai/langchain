@@ -191,7 +191,10 @@ class Vectara(VectorStore):
         doc_id = doc_hash.hexdigest()
         if metadatas is None:
             metadatas = [{} for _ in texts]
-        doc_metadata['source'] = 'langchain'
+        if doc_metadata:
+            doc_metadata['source'] = 'langchain'
+        else:
+            doc_metadata = {'source': 'langchain'}
         doc = {
             "document_id": doc_id,
             "metadataJson": json.dumps(doc_metadata),
