@@ -24,7 +24,7 @@ class DocArrayRetriever(BaseRetriever, BaseModel):
     InMemoryExactNNIndex, HnswDocumentIndex, QdrantDocumentIndex,
     ElasticDocIndex, and WeaviateDocumentIndex.
 
-    Attributes:
+    Args:
         index: One of the above-mentioned index instances
         embeddings: Embedding model to represent text as vectors
         search_field: Field to consider for searching in the documents.
