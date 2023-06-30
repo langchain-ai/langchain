@@ -31,7 +31,6 @@ __all__ = [
     "AimCallbackHandler",
     "ArgillaCallbackHandler",
     "ArizeCallbackHandler",
-    "AsyncIteratorCallbackHandler",
     "PromptLayerCallbackHandler",
     "ArthurCallbackHandler",
     "ClearMLCallbackHandler",
