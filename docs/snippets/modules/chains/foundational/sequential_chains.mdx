@@ -100,7 +100,7 @@ template = """You are a playwright. Given the title of play and the era it is se
 Title: {title}
 Era: {era}
 Playwright: This is a synopsis for the above play:"""
-prompt_template = PromptTemplate(input_variables=["title", 'era'], template=template)
+prompt_template = PromptTemplate(input_variables=["title", "era"], template=template)
 synopsis_chain = LLMChain(llm=llm, prompt=prompt_template, output_key="synopsis")
 ```
 

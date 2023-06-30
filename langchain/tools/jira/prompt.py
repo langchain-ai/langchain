@@ -32,3 +32,10 @@ JIRA_CATCH_ALL_PROMPT = """
     self.jira.projects()
     For more information on the Jira API, refer to https://atlassian-python-api.readthedocs.io/jira.html
     """
+
+JIRA_CONFLUENCE_PAGE_CREATE_PROMPT = """This tool is a wrapper around atlassian-python-api's Confluence 
+atlassian-python-api API, useful when you need to create a Confluence page. The input to this tool is a dictionary 
+specifying the fields of the Confluence page, and will be passed into atlassian-python-api's Confluence `create_page` 
+function. For example, to create a page in the DEMO space titled "This is the title" with body "This is the body. You can use 
+<strong>HTML tags</strong>!", you would pass in the following dictionary: {{"space": "DEMO", "title":"This is the 
+title","body":"This is the body. You can use <strong>HTML tags</strong>!"}} """

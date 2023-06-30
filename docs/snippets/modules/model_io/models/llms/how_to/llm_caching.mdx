@@ -14,7 +14,7 @@ from langchain.cache import InMemoryCache
 langchain.llm_cache = InMemoryCache()
 
 # The first time, it is not yet in cache, so it should take longer
-llm("Tell me a joke")
+llm.predict("Tell me a joke")
 ```
 
 <CodeOutputBlock lang="python">
@@ -32,7 +32,7 @@ llm("Tell me a joke")
 
 ```python
 # The second time it is, so it goes faster
-llm("Tell me a joke")
+llm.predict("Tell me a joke")
 ```
 
 <CodeOutputBlock lang="python">
@@ -64,7 +64,7 @@ langchain.llm_cache = SQLiteCache(database_path=".langchain.db")
 
 ```python
 # The first time, it is not yet in cache, so it should take longer
-llm("Tell me a joke")
+llm.predict("Tell me a joke")
 ```
 
 <CodeOutputBlock lang="python">
@@ -82,7 +82,7 @@ llm("Tell me a joke")
 
 ```python
 # The second time it is, so it goes faster
-llm("Tell me a joke")
+llm.predict("Tell me a joke")
 ```
 
 <CodeOutputBlock lang="python">
