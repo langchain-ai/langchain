@@ -124,7 +124,7 @@ class Vectara(VectorStore):
 
     def add_files(
         self,
-        files: Iterable[str],
+        files_list: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -133,14 +133,14 @@ class Vectara(VectorStore):
         This method provides a way to use that API in LangChain
 
         Args:
-            files: Iterable of strings, each representing a local file path. Files could be text, HTML, PDF, markdown, doc/docx, ppt/pptx, etc. see API docs for full list
+            files_list: Iterable of strings, each representing a local file path. Files could be text, HTML, PDF, markdown, doc/docx, ppt/pptx, etc. see API docs for full list
             metadatas: Optional list of metadatas associated with each file
 
         Returns:
-            List of ids associated with each of the files
+            List of ids associated with each of the files indexed
         """
         doc_ids = []
-        for inx, file in enumerate(files):
+        for inx, file in enumerate(files_list):
             if os.path.exists(file) == False:
                 logging.error(f"File {file} does not exist, skipping")
                 continue
