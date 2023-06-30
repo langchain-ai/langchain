@@ -1,6 +1,7 @@
 """Integration test for JIRA API Wrapper."""
 from langchain.utilities.jira import JiraAPIWrapper
 
+
 def test_search() -> None:
     """Test for Searching issues on JIRA"""
     jql = "project = TP"
@@ -41,12 +42,11 @@ def test_create_confluence_page() -> None:
     assert "type" in output
     assert "page" in output
 
+
 def test_other() -> None:
     """Non-exhaustive test for accessing other JIRA API methods"""
     jira = JiraAPIWrapper()
-    other_get_projects_dict = (
-        '{"function":"projects"}'
-    )
+    other_get_projects_dict = '{"function":"projects"}'
 
     output = jira.run("other", other_get_projects_dict)
     assert jira.parse_projects(output) == jira.run("get_projects", "")

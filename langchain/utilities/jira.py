@@ -195,8 +195,8 @@ class JiraAPIWrapper(BaseModel):
                 "json is not installed. Please install it with `pip install json`"
             )
         params = json.loads(query)
-        jira_function = getattr(self.jira, params['function'])
-        return jira_function(*params.get('args', []), **params.get('kwargs', {}))
+        jira_function = getattr(self.jira, params["function"])
+        return jira_function(*params.get("args", []), **params.get("kwargs", {}))
 
     def run(self, mode: str, query: str) -> str:
         if mode == "jql":
