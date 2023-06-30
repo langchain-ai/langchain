@@ -1,5 +1,5 @@
 """Simple in memory docstore in the form of a dict."""
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 from langchain.docstore.base import AddableMixin, Docstore
 from langchain.docstore.document import Document
@@ -8,9 +8,9 @@ from langchain.docstore.document import Document
 class InMemoryDocstore(Docstore, AddableMixin):
     """Simple in memory docstore in the form of a dict."""
 
-    def __init__(self, _dict: Dict[str, Document]):
+    def __init__(self, _dict: Optional[Dict[str, Document]] = None):
         """Initialize with dict."""
-        self._dict = _dict
+        self._dict = _dict if _dict is not None else {}
 
     def add(self, texts: Dict[str, Document]) -> None:
         """Add texts to in memory dictionary."""
