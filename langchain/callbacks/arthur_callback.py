@@ -16,6 +16,7 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 if TYPE_CHECKING:
     import arthurai
+    from arthurai.core.models import ArthurModel
 
 PROMPT_TOKENS = "prompt_tokens"
 COMPLETION_TOKENS = "completion_tokens"
@@ -54,49 +55,14 @@ class ArthurCallbackHandler(BaseCallbackHandler):
 
     def __init__(
         self,
-        model_id: str,
-        arthur_url: Optional[str] = "https://app.arthur.ai",
-        arthur_login: Optional[str] = None,
-        arthur_password: Optional[str] = None,
+        arthur_model: ArthurModel,
     ) -> None:
         """Initialize callback handler."""
-
         super().__init__()
         arthurai = _lazy_load_arthur()
-        ArthurAI = arthurai.ArthurAI
         Stage = arthurai.common.constants.Stage
         ValueType = arthurai.common.constants.ValueType
-        ResponseClientError = arthurai.common.exceptions.ResponseClientError
-
-        # connect to Arthur
-        if arthur_login is None:
-            try:
-                arthur_api_key = os.environ["ARTHUR_API_KEY"]
-            except KeyError:
-                raise ValueError(
-                    "No Arthur authentication provided. Either give"
-                    " a login to the ArthurCallbackHandler"
-                    " or set an ARTHUR_API_KEY as an environment variable."
-                )
-            arthur = ArthurAI(url=arthur_url, access_key=arthur_api_key)
-        else:
-            if arthur_password is None:
-                arthur = ArthurAI(url=arthur_url, login=arthur_login)
-            else:
-                arthur = ArthurAI(
-                    url=arthur_url, login=arthur_login, password=arthur_password
-                )
-
-        # get model from Arthur by the provided model ID
-        try:
-            self.arthur_model = arthur.get_model(model_id)
-        except ResponseClientError:
-            raise ValueError(
-                f"Was unable to retrieve model with id {model_id} from Arthur."
-                " Make sure the ID corresponds to a model that is currently"
-                " registered with your Arthur account."
-            )
-
+        self.arthur_model = arthur_model
         # save the attributes of this model to be used when preparing
         # inferences to log to Arthur in on_llm_end()
         self.attr_names = set([a.name for a in self.arthur_model.get_attributes()])
@@ -130,6 +96,61 @@ class ArthurCallbackHandler(BaseCallbackHandler):
             ][0].name
 
         self.run_map: DefaultDict[str, Any] = defaultdict(dict)
+
+    @classmethod
+    def from_credentials(
+        cls,
+        model_id: str,
+        arthur_url: Optional[str] = "https://app.arthur.ai",
+        arthur_login: Optional[str] = None,
+        arthur_password: Optional[str] = None,
+    ) -> ArthurCallbackHandler:
+        """Initialize callback handler from Arthur credentials.
+
+        Args:
+            model_id (str): The ID of the arthur model to log to.
+            arthur_url (str, optional): The URL of the Arthur instance to log to.
+                Defaults to "https://app.arthur.ai".
+            arthur_login (str, optional): The login to use to connect to Arthur.
+                Defaults to None.
+            arthur_password (str, optional): The password to use to connect to
+                Arthur. Defaults to None.
+
+        Returns:
+            ArthurCallbackHandler: The initialized callback handler.
+        """
+        arthurai = _lazy_load_arthur()
+        ArthurAI = arthurai.ArthurAI
+        ResponseClientError = arthurai.common.exceptions.ResponseClientError
+
+        # connect to Arthur
+        if arthur_login is None:
+            try:
+                arthur_api_key = os.environ["ARTHUR_API_KEY"]
+            except KeyError:
+                raise ValueError(
+                    "No Arthur authentication provided. Either give"
+                    " a login to the ArthurCallbackHandler"
+                    " or set an ARTHUR_API_KEY as an environment variable."
+                )
+            arthur = ArthurAI(url=arthur_url, access_key=arthur_api_key)
+        else:
+            if arthur_password is None:
+                arthur = ArthurAI(url=arthur_url, login=arthur_login)
+            else:
+                arthur = ArthurAI(
+                    url=arthur_url, login=arthur_login, password=arthur_password
+                )
+        # get model from Arthur by the provided model ID
+        try:
+            arthur_model = arthur.get_model(model_id)
+        except ResponseClientError:
+            raise ValueError(
+                f"Was unable to retrieve model with id {model_id} from Arthur."
+                " Make sure the ID corresponds to a model that is currently"
+                " registered with your Arthur account."
+            )
+        return cls(model_id, arthur_model)
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
