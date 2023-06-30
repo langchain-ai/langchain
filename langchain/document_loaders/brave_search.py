@@ -8,7 +8,7 @@ from langchain.utilities.brave_search import BraveSearchWrapper
 class BraveSearchLoader(BaseLoader):
     """Loads a query result from Brave Search engine into a list of Documents."""
 
-    def __init__(self, query: str, api_key: str, search_kwargs: dict = Optional[dict]):
+    def __init__(self, query: str, api_key: str, search_kwargs: Optional[dict] = None):
         """Initializes the BraveLoader.
 
         Args:
@@ -18,7 +18,7 @@ class BraveSearchLoader(BaseLoader):
         """
         self.query = query
         self.api_key = api_key
-        self.search_kwargs = search_kwargs
+        self.search_kwargs = search_kwargs or {}
 
     def load(self) -> List[Document]:
         brave_client = BraveSearchWrapper(

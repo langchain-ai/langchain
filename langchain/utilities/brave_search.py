@@ -50,7 +50,7 @@ class BraveSearchWrapper(BaseModel):
             for item in results
         ]
 
-    def _search_request(self, query) -> List[dict]:
+    def _search_request(self, query: str) -> List[dict]:
         headers = {
             "X-Subscription-Token": self.api_key,
             "Accept": "application/json",
