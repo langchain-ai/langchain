@@ -52,7 +52,6 @@ def analyze_text(
     """
     resp: Dict[str, Any] = {}
     textstat = import_textstat()
-    spacy = import_spacy()
     text_complexity_metrics = {
         "flesch_reading_ease": textstat.flesch_reading_ease(text),
         "flesch_kincaid_grade": textstat.flesch_kincaid_grade(text),
@@ -74,8 +73,8 @@ def analyze_text(
     resp.update(text_complexity_metrics)
 
     if nlp is not None:
+        spacy = import_spacy()
         doc = nlp(text)
-
         dep_out = spacy.displacy.render(  # type: ignore
             doc, style="dep", jupyter=False, page=True
         )
