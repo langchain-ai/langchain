@@ -137,13 +137,15 @@ class Cassandra(VectorStore):
         embedding_vectors = self.embedding.embed_documents(_texts)
         #
         for i in range(0, len(_texts), batch_size):
-            batch_texts = _texts[i: i + batch_size]
-            batch_embedding_vectors = embedding_vectors[i: i + batch_size]
-            batch_ids = ids[i: i + batch_size]
-            batch_metadatas = metadatas[i: i + batch_size]
+            batch_texts = _texts[i : i + batch_size]
+            batch_embedding_vectors = embedding_vectors[i : i + batch_size]
+            batch_ids = ids[i : i + batch_size]
+            batch_metadatas = metadatas[i : i + batch_size]
 
             futures = [
-                self.table.put_async(text, embedding_vector, text_id, metadata, ttl_seconds)
+                self.table.put_async(
+                    text, embedding_vector, text_id, metadata, ttl_seconds
+                )
                 for text, embedding_vector, text_id, metadata in zip(
                     batch_texts, batch_embedding_vectors, batch_ids, batch_metadatas
                 )
