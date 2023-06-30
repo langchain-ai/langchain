@@ -86,7 +86,6 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """Combining documents by recursively reducing them.
 
     This involves
-
     - combine_document_chain
     - collapse_document_chain
 
@@ -98,6 +97,54 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     be passed to `combine_document_chain` in one go. In this case,
     `collapse_document_chain` is called recursively on as big of groups of documents
     as are allowed.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.chains import (
+                StuffDocumentsChain, LLMChain, ReduceDocumentsChain
+            )
+            from langchain.prompts import PromptTemplate
+            from langchain.llms import OpenAI
+
+            # This controls how each document will be formatted. Specifically,
+            # it will be passed to `format_document` - see that function for more
+            # details.
+            document_prompt = PromptTemplate(
+                input_variables=["page_content"],
+                 template="{page_content}"
+            )
+            document_variable_name = "context"
+            llm = OpenAI()
+            # The prompt here should take as an input variable the
+            # `document_variable_name`
+            prompt = PromptTemplate.from_template(
+                "Summarize this content: {context}"
+            )
+            llm_chain = LLMChain(llm=llm, prompt=prompt)
+            combine_document_chain = StuffDocumentsChain(
+                llm_chain=llm_chain,
+                document_prompt=document_prompt,
+                document_variable_name=document_variable_name
+            )
+            chain = ReduceDocumentsChain(
+                combine_document_chain=combine_document_chain,
+            )
+            # If we wanted to, we could also pass in collapse_document_chain
+            # which is specifically aimed at collapsing documents BEFORE
+            # the final call.
+            prompt = PromptTemplate.from_template(
+                "Collapse this content: {context}"
+            )
+            collapse_document_chain = StuffDocumentsChain(
+                llm_chain=llm_chain,
+                document_prompt=document_prompt,
+                document_variable_name=document_variable_name
+            )
+            chain = ReduceDocumentsChain(
+                combine_document_chain=combine_document_chain,
+                collapse_document_chain=collapse_document_chain,
+            )
     """
 
     combine_document_chain: BaseCombineDocumentsChain

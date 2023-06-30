@@ -14,7 +14,48 @@ from langchain.output_parsers.regex import RegexParser
 
 
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):
-    """Combining documents by mapping a chain over them, then reranking results."""
+    """Combining documents by mapping a chain over them, then reranking results.
+
+    This algorithm calls an LLMChain on each input document. The LLMChain is expected
+    to have an OutputParser that parses the result into both an answer (`answer_key`)
+    and a score (`rank_key`). The answer with the highest score is then returned.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.chains import StuffDocumentsChain, LLMChain
+            from langchain.prompts import PromptTemplate
+            from langchain.llms import OpenAI
+            from langchain.output_parsers.regex import RegexParser
+
+            document_variable_name = "context"
+            llm = OpenAI()
+            # The prompt here should take as an input variable the
+            # `document_variable_name`
+            # The actual prompt will need to be a lot more complex, this is just
+            # an example.
+            prompt_template = (
+                "Use the following context to tell me the chemical formula "
+                "for water. Output both your answer and a score of how confident "
+                "you are. Context: {content}"
+            )
+            output_parser = RegexParser(
+                regex=r"(.*?)\nScore: (.*)",
+                output_keys=["answer", "score"],
+            )
+            prompt = PromptTemplate(
+                template=prompt_template,
+                input_variables=["context"],
+                output_parser=output_parser,
+            )
+            llm_chain = LLMChain(llm=llm, prompt=prompt)
+            chain = MapRerankDocumentsChain(
+                llm_chain=llm_chain,
+                document_variable_name=document_variable_name,
+                rank_key="score",
+                answer_key="answer",
+            )
+    """
 
     llm_chain: LLMChain
     """Chain to apply to each document individually."""
@@ -26,7 +67,10 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     answer_key: str
     """Key in output of llm_chain to return as answer."""
     metadata_keys: Optional[List[str]] = None
+    """Additional metadata from the chosen document to return."""
     return_intermediate_steps: bool = False
+    """Return intermediate steps.
+    Intermediate steps include the results of calling llm_chain on each document."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -96,6 +140,16 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         """Combine documents in a map rerank manner.
 
         Combine by mapping first chain over all documents, then reranking the results.
+
+        Args:
+            docs: List of documents to combine
+            callbacks: Callbacks to be passed through
+            **kwargs: additional parameters to be passed to LLM calls (like other
+                input variables besides the documents)
+
+        Returns:
+            The first element returned is the single string output. The second
+            element returned is a dictionary of other keys to return.
         """
         results = self.llm_chain.apply_and_parse(
             # FYI - this is parallelized and so it is fast.
@@ -110,6 +164,16 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         """Combine documents in a map rerank manner.
 
         Combine by mapping first chain over all documents, then reranking the results.
+
+        Args:
+            docs: List of documents to combine
+            callbacks: Callbacks to be passed through
+            **kwargs: additional parameters to be passed to LLM calls (like other
+                input variables besides the documents)
+
+        Returns:
+            The first element returned is the single string output. The second
+            element returned is a dictionary of other keys to return.
         """
         results = await self.llm_chain.aapply_and_parse(
             # FYI - this is parallelized and so it is fast.
