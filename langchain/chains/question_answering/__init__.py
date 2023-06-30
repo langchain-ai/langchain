@@ -16,7 +16,7 @@ from langchain.chains.question_answering import (
     refine_prompts,
     stuff_prompt,
 )
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
 
 
 class LoadingCallable(Protocol):

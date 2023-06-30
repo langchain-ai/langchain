@@ -5,12 +5,12 @@ from typing import Any, List
 import pytest
 
 from langchain import PromptTemplate
-from langchain.chains.combine_documents.base import format_document
-from langchain.chains.combine_documents.map_reduce import (
+from langchain.chains.combine_documents.reduce import (
     _collapse_docs,
     _split_list_of_docs,
 )
 from langchain.docstore.document import Document
+from langchain.schema import format_document
 
 
 def _fake_docs_len_func(docs: List[Document]) -> int:

@@ -26,7 +26,6 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
@@ -34,6 +33,7 @@ from langchain.schema import (
     AgentFinish,
     BaseMessage,
     BaseOutputParser,
+    BasePromptTemplate,
     OutputParserException,
 )
 from langchain.tools.base import BaseTool

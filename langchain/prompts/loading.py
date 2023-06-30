@@ -8,10 +8,9 @@ from typing import Union
 import yaml
 
 from langchain.output_parsers.regex import RegexParser
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseLLMOutputParser, NoOpOutputParser
+from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, NoOpOutputParser
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"

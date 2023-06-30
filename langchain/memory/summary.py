@@ -8,10 +8,10 @@ from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
-from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import (
     BaseChatMessageHistory,
     BaseMessage,
+    BasePromptTemplate,
     SystemMessage,
     get_buffer_string,
 )

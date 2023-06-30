@@ -16,7 +16,6 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -28,6 +27,7 @@ from langchain.schema import (
     AIMessage,
     BaseMessage,
     BaseOutputParser,
+    BasePromptTemplate,
     HumanMessage,
 )
 from langchain.tools.base import BaseTool

@@ -2,74 +2,39 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
+from typing import Any, Dict, List, Tuple
 
 from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 
 
-class CombineDocsProtocol(Protocol):
-    """Interface for the combine_docs method."""
-
-    def __call__(self, docs: List[Document], **kwargs: Any) -> str:
-        """Interface for the combine_docs method."""
-
-
-def _split_list_of_docs(
-    docs: List[Document], length_func: Callable, token_max: int, **kwargs: Any
-) -> List[List[Document]]:
-    new_result_doc_list = []
-    _sub_result_docs = []
-    for doc in docs:
-        _sub_result_docs.append(doc)
-        _num_tokens = length_func(_sub_result_docs, **kwargs)
-        if _num_tokens > token_max:
-            if len(_sub_result_docs) == 1:
-                raise ValueError(
-                    "A single document was longer than the context length,"
-                    " we cannot handle this."
-                )
-            if len(_sub_result_docs) == 2:
-                raise ValueError(
-                    "A single document was so long it could not be combined "
-                    "with another document, we cannot handle this."
-                )
-            new_result_doc_list.append(_sub_result_docs[:-1])
-            _sub_result_docs = _sub_result_docs[-1:]
-    new_result_doc_list.append(_sub_result_docs)
-    return new_result_doc_list
-
-
-def _collapse_docs(
-    docs: List[Document],
-    combine_document_func: CombineDocsProtocol,
-    **kwargs: Any,
-) -> Document:
-    result = combine_document_func(docs, **kwargs)
-    combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
-    for doc in docs[1:]:
-        for k, v in doc.metadata.items():
-            if k in combined_metadata:
-                combined_metadata[k] += f", {v}"
-            else:
-                combined_metadata[k] = str(v)
-    return Document(page_content=result, metadata=combined_metadata)
-
-
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
-    """Combining documents by mapping a chain over them, then combining results."""
+    """Combining documents by mapping a chain over them, then combining results.
+
+    We first call `llm_chain` on each document individually, passing in the
+    `page_content` and any other kwargs. This is the `map` step.
+
+    We then process the results of that `map` step in a `reduce` step. The `reduce`
+    step involves two other chains:
+
+    - combine_document_chain
+    - collapse_document_chain
+
+    `combine_document_chain` is ALWAYS provided. This is final chain that is called.
+    We pass all previous results to this chain, and the output of this chain is
+    returned as a final result.
+    """
 
     llm_chain: LLMChain
     """Chain to apply to each document individually."""
-    combine_document_chain: BaseCombineDocumentsChain
-    """Chain to use to combine results of applying llm_chain to documents."""
-    collapse_document_chain: Optional[BaseCombineDocumentsChain] = None
-    """Chain to use to collapse intermediary results if needed.
-    If None, will use the combine_document_chain."""
+    reduce_document_chain: BaseCombineDocumentsChain
+    """Chain to use to reduce the results of applying `llm_chain` to each doc.
+    This typically either a ReduceDocumentChain or StuffDocumentChain."""
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
@@ -92,6 +57,29 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @root_validator(pre=True)
+    def get_reduce_chain(cls, values: Dict) -> Dict:
+        """For backwards compatibility."""
+        if "combine_document_chain" in values:
+            if "reduce_chain" in values:
+                raise ValueError(
+                    "Both `reduce_document_chain` and `combine_document_chain` "
+                    "cannot be provided at the same time. `combine_document_chain` "
+                    "is deprecated, please only provide `reduce_document_chain`"
+                )
+            combine_chain = values["combine_document_chain"]
+            collapse_chain = values.get("collapse_document_chain")
+            reduce_chain = ReduceDocumentsChain(
+                combine_document_chain=combine_chain,
+                collapse_document_chain=collapse_chain,
+            )
+            values["reduce_document_chain"] = reduce_chain
+            del values["combine_document_chain"]
+            if "collapse_document_chain" in values:
+                del values["collapse_document_chain"]
+
+        return values
 
     @root_validator(pre=True)
     def get_return_intermediate_steps(cls, values: Dict) -> Dict:
@@ -123,11 +111,26 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         return values
 
     @property
-    def _collapse_chain(self) -> BaseCombineDocumentsChain:
-        if self.collapse_document_chain is not None:
-            return self.collapse_document_chain
+    def collapse_document_chain(self) -> BaseCombineDocumentsChain:
+        if isinstance(self.reduce_document_chain, ReduceDocumentsChain):
+            return self.reduce_document_chain.collapse_document_chain
         else:
-            return self.combine_document_chain
+            raise ValueError(
+                f"`reduce_document_chain` is of type "
+                f"{type(self.reduce_document_chain)} so it does not have "
+                f"this attribute."
+            )
+
+    @property
+    def combine_document_chain(self) -> BaseCombineDocumentsChain:
+        if isinstance(self.reduce_document_chain, ReduceDocumentsChain):
+            return self.reduce_document_chain.combine_document_chain
+        else:
+            raise ValueError(
+                f"`reduce_document_chain` is of type "
+                f"{type(self.reduce_document_chain)} so it does not have "
+                f"this attribute."
+            )
 
     def combine_docs(
         self,
@@ -146,9 +149,19 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
             callbacks=callbacks,
         )
-        return self._process_results(
-            results, docs, token_max, callbacks=callbacks, **kwargs
+        question_result_key = self.llm_chain.output_key
+        result_docs = [
+            Document(page_content=r[question_result_key], metadata=docs[i].metadata)
+            # This uses metadata from the docs, and the textual results from `results`
+            for i, r in enumerate(results)
+        ]
+        result, extra_return_dict = self.reduce_document_chain.combine_docs(
+            result_docs, callbacks=callbacks, **kwargs
         )
+        if self.return_intermediate_steps:
+            _results = [r[self.llm_chain.output_key] for r in results]
+            extra_return_dict["intermediate_steps"] = _results
+        return result, extra_return_dict
 
     async def acombine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
@@ -163,78 +176,19 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
             callbacks=callbacks,
         )
-        return await self._aprocess_results(
-            results, docs, callbacks=callbacks, **kwargs
-        )
-
-    def _process_results_common(
-        self,
-        results: List[Dict],
-        docs: List[Document],
-        token_max: int = 3000,
-        callbacks: Callbacks = None,
-        **kwargs: Any,
-    ) -> Tuple[List[Document], dict]:
         question_result_key = self.llm_chain.output_key
         result_docs = [
             Document(page_content=r[question_result_key], metadata=docs[i].metadata)
             # This uses metadata from the docs, and the textual results from `results`
             for i, r in enumerate(results)
         ]
-        length_func = self.combine_document_chain.prompt_length
-        num_tokens = length_func(result_docs, **kwargs)
-
-        def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
-            return self._collapse_chain.run(
-                input_documents=docs, callbacks=callbacks, **kwargs
-            )
-
-        while num_tokens is not None and num_tokens > token_max:
-            new_result_doc_list = _split_list_of_docs(
-                result_docs, length_func, token_max, **kwargs
-            )
-            result_docs = []
-            for docs in new_result_doc_list:
-                new_doc = _collapse_docs(docs, _collapse_docs_func, **kwargs)
-                result_docs.append(new_doc)
-            num_tokens = length_func(result_docs, **kwargs)
+        result, extra_return_dict = await self.reduce_document_chain.acombine_docs(
+            result_docs, callbacks=callbacks, **kwargs
+        )
         if self.return_intermediate_steps:
             _results = [r[self.llm_chain.output_key] for r in results]
-            extra_return_dict = {"intermediate_steps": _results}
-        else:
-            extra_return_dict = {}
-        return result_docs, extra_return_dict
-
-    def _process_results(
-        self,
-        results: List[Dict],
-        docs: List[Document],
-        token_max: int = 3000,
-        callbacks: Callbacks = None,
-        **kwargs: Any,
-    ) -> Tuple[str, dict]:
-        result_docs, extra_return_dict = self._process_results_common(
-            results, docs, token_max, callbacks=callbacks, **kwargs
-        )
-        output = self.combine_document_chain.run(
-            input_documents=result_docs, callbacks=callbacks, **kwargs
-        )
-        return output, extra_return_dict
-
-    async def _aprocess_results(
-        self,
-        results: List[Dict],
-        docs: List[Document],
-        callbacks: Callbacks = None,
-        **kwargs: Any,
-    ) -> Tuple[str, dict]:
-        result_docs, extra_return_dict = self._process_results_common(
-            results, docs, callbacks=callbacks, **kwargs
-        )
-        output = await self.combine_document_chain.arun(
-            input_documents=result_docs, callbacks=callbacks, **kwargs
-        )
-        return output, extra_return_dict
+            extra_return_dict["intermediate_steps"] = _results
+        return result, extra_return_dict
 
     @property
     def _chain_type(self) -> str:

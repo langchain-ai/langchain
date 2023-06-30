@@ -11,7 +11,6 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
@@ -23,6 +22,7 @@ from langchain.schema import (
     AgentFinish,
     AIMessage,
     BaseMessage,
+    BasePromptTemplate,
     FunctionMessage,
     OutputParserException,
     SystemMessage,
