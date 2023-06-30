@@ -905,10 +905,13 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
 class CallbackManagerForRetrieverRun(RunManager, RetrieverManagerMixin):
     """Callback manager for retriever run."""
 
-    def get_child(self) -> CallbackManager:
+    def get_child(self, tag: Optional[str] = None) -> CallbackManager:
         """Get a child callback manager."""
         manager = CallbackManager([], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
+        manager.add_tags(self.inheritable_tags)
+        if tag is not None:
+            manager.add_tags([tag], False)
         return manager
 
     def on_retriever_end(
