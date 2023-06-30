@@ -1,5 +1,8 @@
+"""Callback handler for promptlayer."""
+from __future__ import annotations
+
 import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
@@ -13,16 +16,34 @@ from langchain.schema import (
     SystemMessage,
 )
 
+if TYPE_CHECKING:
+    import promptlayer
+
+
+def _lazy_import_promptlayer() -> promptlayer:
+    """Lazy import promptlayer to avoid circular imports."""
+    try:
+        import promptlayer
+    except ImportError:
+        raise ImportError(
+            "The PromptLayerCallbackHandler requires the promptlayer package. "
+            " Please install it with `pip install promptlayer`."
+        )
+    return promptlayer
+
 
 class PromptLayerCallbackHandler(BaseCallbackHandler):
+    """Callback handler for promptlayer."""
+
     def __init__(
         self,
         pl_id_callback: Optional[Callable[..., Any]] = None,
         pl_tags: Optional[List[str]] = [],
     ) -> None:
+        """Initialize the PromptLayerCallbackHandler."""
+        _lazy_import_promptlayer()
         self.pl_id_callback = pl_id_callback
         self.pl_tags = pl_tags
-
         self.runs: Dict[UUID, Dict[str, Any]] = {}
 
     def on_chat_model_start(
@@ -69,6 +90,8 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
+        from promptlayer.utils import get_api_key, promptlayer_api_request
+
         run_info = self.runs.get(run_id, {})
         run_info["request_end_time"] = datetime.datetime.now().timestamp()
         if not run_info:
@@ -92,8 +115,6 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
                 if is_chat_model and isinstance(generation, ChatGeneration)
                 else resp
             )
-
-            from promptlayer.utils import get_api_key, promptlayer_api_request
 
             pl_request_id = promptlayer_api_request(
                 run_info.get("name"),
