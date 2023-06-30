@@ -111,8 +111,9 @@ class Generation(Serializable):
 
 
 class BaseMessage(Serializable):
-    """The base abstract Message class. Messages are the inputs and outputs of
-    ChatModels.
+    """The base abstract Message class.
+
+    Messages are the inputs and outputs of ChatModels.
     """
 
     content: str
@@ -172,8 +173,7 @@ class SystemMessage(BaseMessage):
 
 
 class FunctionMessage(BaseMessage):
-    """A Message for passing the outputs of an executed function back to the OpenAI
-    function calling API.
+    """A Message for passing the result of executing a function back to a model.
     """
 
     name: str
@@ -532,9 +532,7 @@ T = TypeVar("T")
 
 
 class BaseLLMOutputParser(Serializable, ABC, Generic[T]):
-    """Abstract base class for parsing the outputs of a language model to match a given
-    structure/format.
-    """
+    """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
     def parse_result(self, result: List[Generation]) -> T:
