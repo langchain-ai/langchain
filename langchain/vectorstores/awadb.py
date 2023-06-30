@@ -27,7 +27,7 @@ class AwaDB(VectorStore):
     def __init__(
         self,
         table_name: str = _DEFAULT_TABLE_NAME,
-        embedding_model: Optional[Embeddings] = None,
+        embedding: Optional[Embeddings] = None,
         log_and_data_dir: Optional[str] = None,
         client: Optional[awadb.Client] = None,
     ) -> None:
@@ -55,8 +55,8 @@ class AwaDB(VectorStore):
 
         self.awadb_client.Create(table_name)
         self.table2embeddings: dict[str, Embeddings] = {}
-        if embedding_model is not None:
-            self.table2embeddings[table_name] = embedding_model
+        if embedding is not None:
+            self.table2embeddings[table_name] = embedding
         self.using_table_name = table_name
 
     def add_texts(
@@ -319,7 +319,7 @@ class AwaDB(VectorStore):
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
         table_name: str = _DEFAULT_TABLE_NAME,
-        logging_and_data_dir: Optional[str] = None,
+        log_and_data_dir: Optional[str] = None,
         client: Optional[awadb.Client] = None,
         **kwargs: Any,
     ) -> AwaDB:
@@ -330,7 +330,7 @@ class AwaDB(VectorStore):
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             table_name (str): Name of the table to create.
-            logging_and_data_dir (Optional[str]): Directory of logging and persistence.
+            log_and_data_dir (Optional[str]): Directory of logging and persistence.
             client (Optional[awadb.Client]): AwaDB client
 
         Returns:
@@ -338,8 +338,8 @@ class AwaDB(VectorStore):
         """
         awadb_client = cls(
             table_name=table_name,
-            embedding_model=embedding,
-            log_and_data_dir=logging_and_data_dir,
+            embedding=embedding,
+            log_and_data_dir=log_and_data_dir,
             client=client,
         )
         awadb_client.add_texts(texts=texts, metadatas=metadatas)
@@ -351,19 +351,19 @@ class AwaDB(VectorStore):
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         table_name: str = _DEFAULT_TABLE_NAME,
-        logging_and_data_dir: Optional[str] = None,
+        log_and_data_dir: Optional[str] = None,
         client: Optional[awadb.Client] = None,
         **kwargs: Any,
     ) -> AwaDB:
         """Create an AwaDB vectorstore from a list of documents.
 
-        If a logging_and_data_dir specified, the table will be persisted there.
+        If a log_and_data_dir specified, the table will be persisted there.
 
         Args:
             documents (List[Document]): List of documents to add to the vectorstore.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             table_name (str): Name of the table to create.
-            logging_and_data_dir (Optional[str]): Directory to persist the table.
+            log_and_data_dir (Optional[str]): Directory to persist the table.
             client (Optional[awadb.Client]): AwaDB client
 
         Returns:
@@ -376,6 +376,6 @@ class AwaDB(VectorStore):
             embedding=embedding,
             metadatas=metadatas,
             table_name=table_name,
-            logging_and_data_dir=logging_and_data_dir,
+            log_and_data_dir=log_and_data_dir,
             client=client,
         )

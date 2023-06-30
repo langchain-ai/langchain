@@ -3,6 +3,7 @@ from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21
 from langchain.llms.aleph_alpha import AlephAlpha
+from langchain.llms.amazon_api_gateway import AmazonAPIGateway
 from langchain.llms.anthropic import Anthropic
 from langchain.llms.anyscale import Anyscale
 from langchain.llms.aviary import Aviary
@@ -33,6 +34,7 @@ from langchain.llms.manifest import ManifestWrapper
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
+from langchain.llms.octoai_endpoint import OctoAIEndpoint
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
@@ -53,6 +55,7 @@ from langchain.llms.writer import Writer
 __all__ = [
     "AI21",
     "AlephAlpha",
+    "AmazonAPIGateway",
     "Anthropic",
     "Anyscale",
     "Aviary",
@@ -101,11 +104,14 @@ __all__ = [
     "StochasticAI",
     "VertexAI",
     "Writer",
+    "OctoAIEndpoint",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ai21": AI21,
     "aleph_alpha": AlephAlpha,
+    "amazon_api_gateway": AmazonAPIGateway,
+    "amazon_bedrock": Bedrock,
     "anthropic": Anthropic,
     "anyscale": Anyscale,
     "aviary": Aviary,

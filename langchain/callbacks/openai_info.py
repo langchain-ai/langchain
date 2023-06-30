@@ -1,8 +1,8 @@
 """Callback Handler that prints to std out."""
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {
     # GPT-4 input
@@ -32,6 +32,7 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-3.5-turbo-16k-completion": 0.004,
     "gpt-3.5-turbo-16k-0613-completion": 0.004,
     # Others
+    "gpt-35-turbo": 0.002,  # Azure OpenAI version of ChatGPT
     "text-ada-001": 0.0004,
     "ada": 0.0004,
     "text-babbage-001": 0.0005,
@@ -95,7 +96,7 @@ def get_openai_token_cost_for_model(
             f"Unknown model: {model_name}. Please provide a valid OpenAI model name."
             "Known models are: " + ", ".join(MODEL_COST_PER_1K_TOKENS.keys())
         )
-    return MODEL_COST_PER_1K_TOKENS[model_name] * num_tokens / 1000
+    return MODEL_COST_PER_1K_TOKENS[model_name] * (num_tokens / 1000)
 
 
 class OpenAICallbackHandler(BaseCallbackHandler):
@@ -151,64 +152,6 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         self.total_tokens += token_usage.get("total_tokens", 0)
         self.prompt_tokens += prompt_tokens
         self.completion_tokens += completion_tokens
-
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
-        """Do nothing."""
-        pass
-
-    def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
-    ) -> None:
-        """Print out that we are entering a chain."""
-        pass
-
-    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
-        """Print out that we finished a chain."""
-        pass
-
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
-        """Do nothing."""
-        pass
-
-    def on_tool_start(
-        self,
-        serialized: Dict[str, Any],
-        input_str: str,
-        **kwargs: Any,
-    ) -> None:
-        """Print out the log in specified color."""
-        pass
-
-    def on_tool_end(
-        self,
-        output: str,
-        color: Optional[str] = None,
-        observation_prefix: Optional[str] = None,
-        llm_prefix: Optional[str] = None,
-        **kwargs: Any,
-    ) -> None:
-        """If not the final action, print out observation."""
-        pass
-
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
-        """Do nothing."""
-        pass
-
-    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
-        """Run on agent action."""
-        pass
-
-    def on_agent_finish(
-        self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
-    ) -> None:
-        """Run on agent end."""
-        pass
 
     def __copy__(self) -> "OpenAICallbackHandler":
         """Return a copy of the callback handler."""

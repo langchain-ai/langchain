@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
@@ -33,6 +32,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
         self.prompt_tokens = 0
         self.completion_tokens = 0
         self.total_tokens = 0
+        self.step = 0
 
         from arize.pandas.embeddings import EmbeddingGenerator, UseCases
         from arize.pandas.logger import Client
@@ -84,11 +84,10 @@ class ArizeCallbackHandler(BaseCallbackHandler):
                 self.total_tokens
             ) = self.completion_tokens = 0  # assign default value
 
-        i = 0
-
         for generations in response.generations:
             for generation in generations:
-                prompt = self.prompt_records[i]
+                prompt = self.prompt_records[self.step]
+                self.step = self.step + 1
                 prompt_embedding = pd.Series(
                     self.generator.generate_embeddings(
                         text_col=pd.Series(prompt.replace("\n", " "))
@@ -102,7 +101,6 @@ class ArizeCallbackHandler(BaseCallbackHandler):
                         text_col=pd.Series(generation.text.replace("\n", " "))
                     ).reset_index(drop=True)
                 )
-                str(uuid.uuid4())
                 pred_timestamp = datetime.now().timestamp()
 
                 # Define the columns and data
@@ -164,8 +162,6 @@ class ArizeCallbackHandler(BaseCallbackHandler):
                     print("✅ Successfully logged data to Arize!")
                 else:
                     print(f'❌ Logging failed "{response_from_arize.text}"')
-
-                i = i + 1
 
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
