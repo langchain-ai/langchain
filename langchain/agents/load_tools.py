@@ -14,6 +14,7 @@ from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
 from langchain.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
+from langchain.tools.pubmed.tool import PubmedQueryRun
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
@@ -33,10 +34,12 @@ from langchain.tools.requests.tool import (
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.shell.tool import ShellTool
+from langchain.tools.sleep.tool import SleepTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain.utilities import ArxivAPIWrapper
+from langchain.utilities import PubMedAPIWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
@@ -80,6 +83,10 @@ def _get_terminal() -> BaseTool:
     return ShellTool()
 
 
+def _get_sleep() -> BaseTool:
+    return SleepTool()
+
+
 _BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
     "python_repl": _get_python_repl,
     "requests": _get_tools_requests_get,  # preserved for backwards compatability
@@ -89,6 +96,7 @@ _BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
     "requests_put": _get_tools_requests_put,
     "requests_delete": _get_tools_requests_delete,
     "terminal": _get_terminal,
+    "sleep": _get_sleep,
 }
 
 
@@ -198,6 +206,10 @@ def _get_arxiv(**kwargs: Any) -> BaseTool:
     return ArxivQueryRun(api_wrapper=ArxivAPIWrapper(**kwargs))
 
 
+def _get_pupmed(**kwargs: Any) -> BaseTool:
+    return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
+
+
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return GoogleSerperRun(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
 
@@ -302,6 +314,10 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_arxiv,
         ["top_k_results", "load_max_docs", "load_all_available_meta"],
     ),
+    "pupmed": (
+        _get_pupmed,
+        ["top_k_results", "load_max_docs", "load_all_available_meta"],
+    ),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
     "awslambda": (
         _get_lambda_api,
@@ -336,10 +352,23 @@ def load_huggingface_tool(
     remote: bool = False,
     **kwargs: Any,
 ) -> BaseTool:
+    """Loads a tool from the HuggingFace Hub.
+
+    Args:
+        task_or_repo_id: Task or model repo id.
+        model_repo_id: Optional model repo id.
+        token: Optional token.
+        remote: Optional remote. Defaults to False.
+        **kwargs:
+
+    Returns:
+        A tool.
+
+    """
     try:
         from transformers import load_tool
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "HuggingFace tools require the libraries `transformers>=4.29.0`"
             " and `huggingface_hub>=0.14.1` to be installed."
             " Please install it with"

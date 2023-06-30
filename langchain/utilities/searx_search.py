@@ -3,11 +3,11 @@
 SearxNG is a privacy-friendly free metasearch engine that aggregates results from
 `multiple search engines
 <https://docs.searxng.org/admin/engines/configured_engines.html>`_ and databases and
-supports the `OpenSearch 
+supports the `OpenSearch
 <https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md>`_
 specification.
 
-More detailes on the installtion instructions `here. <../../integrations/searx.html>`_
+More details on the installation instructions `here. <../../integrations/searx.html>`_
 
 For the search API refer to https://docs.searxng.org/dev/search_api.html
 
@@ -40,7 +40,7 @@ Searching
 
 Use the :meth:`run() <SearxSearchWrapper.run>` and
 :meth:`results() <SearxSearchWrapper.results>` methods to query the searx API.
-Other methods are are available for convenience.
+Other methods are available for convenience.
 
 :class:`SearxResults` is a convenience wrapper around the raw json result.
 
@@ -120,7 +120,8 @@ Public searxNG instances often use a rate limiter for API usage, so you might wa
 use a self hosted instance and disable the rate limiter.
 
 If you are self-hosting an instance you can customize the rate limiter for your
-own network as described `here <https://github.com/searxng/searxng/pull/2129>`_.
+own network as described
+`here <https://docs.searxng.org/src/searx.botdetection.html#limiter-src>`_.
 
 
 For a list of public SearxNG instances see https://searx.space/
@@ -321,7 +322,7 @@ class SearxSearchWrapper(BaseModel):
             str: The result of the query.
 
         Raises:
-            ValueError: If an error occured with the query.
+            ValueError: If an error occurred with the query.
 
 
         Example:
@@ -415,32 +416,21 @@ class SearxSearchWrapper(BaseModel):
 
         Args:
             query: The query to search for.
-
             query_suffix: Extra suffix appended to the query.
-
             num_results: Limit the number of results to return.
-
             engines: List of engines to use for the query.
-
             categories: List of categories to use for the query.
-
             **kwargs: extra parameters to pass to the searx API.
 
         Returns:
             Dict with the following keys:
-
             {
                 snippet:  The description of the result.
-
                 title:  The title of the result.
-
                 link: The link to the result.
-
                 engines: The engines used for the result.
-
                 category: Searx category of the result.
             }
-
 
         """
         _params = {

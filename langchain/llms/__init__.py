@@ -3,12 +3,18 @@ from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21
 from langchain.llms.aleph_alpha import AlephAlpha
+from langchain.llms.amazon_api_gateway import AmazonAPIGateway
 from langchain.llms.anthropic import Anthropic
 from langchain.llms.anyscale import Anyscale
+from langchain.llms.aviary import Aviary
+from langchain.llms.azureml_endpoint import AzureMLOnlineEndpoint
 from langchain.llms.bananadev import Banana
 from langchain.llms.base import BaseLLM
+from langchain.llms.baseten import Baseten
 from langchain.llms.beam import Beam
+from langchain.llms.bedrock import Bedrock
 from langchain.llms.cerebriumai import CerebriumAI
+from langchain.llms.clarifai import Clarifai
 from langchain.llms.cohere import Cohere
 from langchain.llms.ctransformers import CTransformers
 from langchain.llms.databricks import Databricks
@@ -24,10 +30,13 @@ from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain.llms.human import HumanInputLLM
 from langchain.llms.llamacpp import LlamaCpp
+from langchain.llms.manifest import ManifestWrapper
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
+from langchain.llms.octoai_endpoint import OctoAIEndpoint
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
+from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
 from langchain.llms.petals import Petals
 from langchain.llms.pipelineai import PipelineAI
@@ -39,91 +48,111 @@ from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
+from langchain.llms.textgen import TextGen
 from langchain.llms.vertexai import VertexAI
 from langchain.llms.writer import Writer
 
 __all__ = [
-    "Anthropic",
+    "AI21",
     "AlephAlpha",
+    "AmazonAPIGateway",
+    "Anthropic",
     "Anyscale",
+    "Aviary",
+    "AzureMLOnlineEndpoint",
+    "AzureOpenAI",
     "Banana",
+    "Baseten",
     "Beam",
-    "CerebriumAI",
-    "Cohere",
+    "Bedrock",
     "CTransformers",
+    "CerebriumAI",
+    "Clarifai",
+    "Cohere",
     "Databricks",
     "DeepInfra",
+    "FakeListLLM",
     "ForefrontAI",
+    "GPT4All",
     "GooglePalm",
     "GooseAI",
-    "GPT4All",
+    "HuggingFaceEndpoint",
+    "HuggingFaceHub",
+    "HuggingFacePipeline",
+    "HuggingFaceTextGenInference",
+    "HumanInputLLM",
     "LlamaCpp",
+    "TextGen",
+    "ManifestWrapper",
     "Modal",
     "MosaicML",
     "NLPCloud",
     "OpenAI",
     "OpenAIChat",
+    "OpenLLM",
     "OpenLM",
     "Petals",
     "PipelineAI",
-    "HuggingFaceEndpoint",
-    "HuggingFaceHub",
-    "SagemakerEndpoint",
-    "HuggingFacePipeline",
-    "AI21",
-    "AzureOpenAI",
-    "Replicate",
-    "SelfHostedPipeline",
-    "SelfHostedHuggingFaceLLM",
+    "PredictionGuard",
     "PromptLayerOpenAI",
     "PromptLayerOpenAIChat",
-    "StochasticAI",
-    "Writer",
     "RWKV",
-    "PredictionGuard",
-    "HumanInputLLM",
-    "HuggingFaceTextGenInference",
-    "FakeListLLM",
+    "Replicate",
+    "SagemakerEndpoint",
+    "SelfHostedHuggingFaceLLM",
+    "SelfHostedPipeline",
+    "StochasticAI",
     "VertexAI",
+    "Writer",
+    "OctoAIEndpoint",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ai21": AI21,
     "aleph_alpha": AlephAlpha,
+    "amazon_api_gateway": AmazonAPIGateway,
+    "amazon_bedrock": Bedrock,
     "anthropic": Anthropic,
     "anyscale": Anyscale,
+    "aviary": Aviary,
+    "azure": AzureOpenAI,
+    "azureml_endpoint": AzureMLOnlineEndpoint,
     "bananadev": Banana,
+    "baseten": Baseten,
     "beam": Beam,
     "cerebriumai": CerebriumAI,
+    "clarifai": Clarifai,
     "cohere": Cohere,
     "ctransformers": CTransformers,
     "databricks": Databricks,
     "deepinfra": DeepInfra,
+    "fake-list": FakeListLLM,
     "forefrontai": ForefrontAI,
     "google_palm": GooglePalm,
     "gooseai": GooseAI,
     "gpt4all": GPT4All,
-    "huggingface_hub": HuggingFaceHub,
     "huggingface_endpoint": HuggingFaceEndpoint,
+    "huggingface_hub": HuggingFaceHub,
+    "huggingface_pipeline": HuggingFacePipeline,
+    "huggingface_textgen_inference": HuggingFaceTextGenInference,
+    "human-input": HumanInputLLM,
     "llamacpp": LlamaCpp,
+    "textgen": TextGen,
     "modal": Modal,
     "mosaic": MosaicML,
-    "sagemaker_endpoint": SagemakerEndpoint,
     "nlpcloud": NLPCloud,
-    "human-input": HumanInputLLM,
     "openai": OpenAI,
     "openlm": OpenLM,
     "petals": Petals,
     "pipelineai": PipelineAI,
-    "huggingface_pipeline": HuggingFacePipeline,
-    "azure": AzureOpenAI,
     "replicate": Replicate,
+    "rwkv": RWKV,
+    "sagemaker_endpoint": SagemakerEndpoint,
     "self_hosted": SelfHostedPipeline,
     "self_hosted_hugging_face": SelfHostedHuggingFaceLLM,
     "stochasticai": StochasticAI,
-    "writer": Writer,
-    "rwkv": RWKV,
-    "huggingface_textgen_inference": HuggingFaceTextGenInference,
-    "fake-list": FakeListLLM,
     "vertexai": VertexAI,
+    "openllm": OpenLLM,
+    "openllm_client": OpenLLM,
+    "writer": Writer,
 }

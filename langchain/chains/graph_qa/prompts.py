@@ -49,10 +49,52 @@ CYPHER_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"], template=CYPHER_GENERATION_TEMPLATE
 )
 
+NEBULAGRAPH_EXTRA_INSTRUCTIONS = """
+Instructions:
+
+First, generate cypher then convert it to NebulaGraph Cypher dialect(rather than standard):
+1. it requires explicit label specification only when referring to node properties: v.`Foo`.name
+2. note explicit label specification is not needed for edge properties, so it's e.name instead of e.`Bar`.name
+3. it uses double equals sign for comparison: `==` rather than `=`
+For instance:
+```diff
+< MATCH (p:person)-[e:directed]->(m:movie) WHERE m.name = 'The Godfather II'
+< RETURN p.name, e.year, m.name;
+---
+> MATCH (p:`person`)-[e:directed]->(m:`movie`) WHERE m.`movie`.`name` == 'The Godfather II'
+> RETURN p.`person`.`name`, e.year, m.`movie`.`name`;
+```\n"""
+
+NGQL_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
+    "Generate Cypher", "Generate NebulaGraph Cypher"
+).replace("Instructions:", NEBULAGRAPH_EXTRA_INSTRUCTIONS)
+
+NGQL_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "question"], template=NGQL_GENERATION_TEMPLATE
+)
+
+KUZU_EXTRA_INSTRUCTIONS = """
+Instructions:
+
+Generate statement with Kùzu Cypher dialect (rather than standard):
+1. do not use `WHERE EXISTS` clause to check the existence of a property because Kùzu database has a fixed schema.
+2. do not omit relationship pattern. Always use `()-[]->()` instead of `()->()`.
+3. do not include any notes or comments even if the statement does not produce the expected result.
+```\n"""
+
+KUZU_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
+    "Generate Cypher", "Generate Kùzu Cypher"
+).replace("Instructions:", KUZU_EXTRA_INSTRUCTIONS)
+
+KUZU_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "question"], template=KUZU_GENERATION_TEMPLATE
+)
+
 CYPHER_QA_TEMPLATE = """You are an assistant that helps to form nice and human understandable answers.
-The information part contains the provided information that you can use to construct an answer.
+The information part contains the provided information that you must use to construct an answer.
 The provided information is authorative, you must never doubt it or try to use your internal knowledge to correct it.
-Make it sound like the information are coming from an AI assistant, but don't add any information.
+Make the answer sound as a response to the question. Do not mention that you based the result on the given information.
+If the provided information is empty, say that you don't know the answer.
 Information:
 {context}
 

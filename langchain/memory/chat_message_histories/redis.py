@@ -3,10 +3,8 @@ import logging
 from typing import List, Optional
 
 from langchain.schema import (
-    AIMessage,
     BaseChatMessageHistory,
     BaseMessage,
-    HumanMessage,
     _message_to_dict,
     messages_from_dict,
 )
@@ -15,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class RedisChatMessageHistory(BaseChatMessageHistory):
+    """Chat message history stored in a Redis database."""
+
     def __init__(
         self,
         session_id: str,
@@ -52,13 +52,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         messages = messages_from_dict(items)
         return messages
 
-    def add_user_message(self, message: str) -> None:
-        self.append(HumanMessage(content=message))
-
-    def add_ai_message(self, message: str) -> None:
-        self.append(AIMessage(content=message))
-
-    def append(self, message: BaseMessage) -> None:
+    def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in Redis"""
         self.redis_client.lpush(self.key, json.dumps(_message_to_dict(message)))
         if self.ttl:

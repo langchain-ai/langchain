@@ -18,6 +18,8 @@ STRIPE_ENDPOINTS = {
 
 
 class StripeLoader(BaseLoader):
+    """Loader that fetches data from Stripe."""
+
     def __init__(self, resource: str, access_token: Optional[str] = None) -> None:
         self.resource = resource
         access_token = access_token or get_from_env(

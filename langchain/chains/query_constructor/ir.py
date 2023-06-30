@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Union
 
 from pydantic import BaseModel
 
@@ -13,6 +13,20 @@ class Visitor(ABC):
 
     allowed_comparators: Optional[Sequence[Comparator]] = None
     allowed_operators: Optional[Sequence[Operator]] = None
+
+    def _validate_func(self, func: Union[Operator, Comparator]) -> None:
+        if isinstance(func, Operator) and self.allowed_operators is not None:
+            if func not in self.allowed_operators:
+                raise ValueError(
+                    f"Received disallowed operator {func}. Allowed "
+                    f"comparators are {self.allowed_operators}"
+                )
+        if isinstance(func, Comparator) and self.allowed_comparators is not None:
+            if func not in self.allowed_comparators:
+                raise ValueError(
+                    f"Received disallowed comparator {func}. Allowed "
+                    f"comparators are {self.allowed_comparators}"
+                )
 
     @abstractmethod
     def visit_operation(self, operation: Operation) -> Any:
@@ -46,17 +60,23 @@ class Expr(BaseModel):
 
 
 class Operator(str, Enum):
+    """Enumerator of the operations."""
+
     AND = "and"
     OR = "or"
     NOT = "not"
 
 
 class Comparator(str, Enum):
+    """Enumerator of the comparison operators."""
+
     EQ = "eq"
     GT = "gt"
     GTE = "gte"
     LT = "lt"
     LTE = "lte"
+    CONTAIN = "contain"
+    LIKE = "like"
 
 
 class FilterDirective(Expr, ABC):

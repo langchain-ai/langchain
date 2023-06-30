@@ -20,12 +20,17 @@ class FakeListLLM(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Increment counter, and then return response in that index."""
         self.i += 1
         print(f"=== Mock Response #{self.i} ===")
         print(self.responses[self.i])
         return self.responses[self.i]
+
+    def get_num_tokens(self, text: str) -> int:
+        """Return number of tokens in text."""
+        return len(text.split())
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

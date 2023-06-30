@@ -92,6 +92,9 @@ class GPT4All(LLM):
     """Leave (n_ctx * context_erase) tokens
     starting from beginning if the context has run out."""
 
+    allow_download: bool = False
+    """If model does not exist in ~/.cache/gpt4all/, download it."""
+
     client: Any = None  #: :meta private:
 
     class Config:
@@ -131,24 +134,32 @@ class GPT4All(LLM):
         """Validate that the python package exists in the environment."""
         try:
             from gpt4all import GPT4All as GPT4AllModel
-
-            full_path = values["model"]
-            model_path, delimiter, model_name = full_path.rpartition("/")
-            model_path += delimiter
-
-            values["client"] = GPT4AllModel(
-                model_name=model_name,
-                model_path=model_path or None,
-                model_type=values["backend"],
-                allow_download=False,
-            )
-            values["backend"] = values["client"].model.model_type
-
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import gpt4all python package. "
                 "Please install it with `pip install gpt4all`."
             )
+
+        full_path = values["model"]
+        model_path, delimiter, model_name = full_path.rpartition("/")
+        model_path += delimiter
+
+        values["client"] = GPT4AllModel(
+            model_name,
+            model_path=model_path or None,
+            model_type=values["backend"],
+            allow_download=values["allow_download"],
+        )
+        if values["n_threads"] is not None:
+            # set n_threads
+            values["client"].model.set_thread_count(values["n_threads"])
+
+        try:
+            values["backend"] = values["client"].model_type
+        except AttributeError:
+            # The below is for compatibility with GPT4All Python bindings <= 0.2.3.
+            values["backend"] = values["client"].model.model_type
+
         return values
 
     @property
@@ -172,6 +183,7 @@ class GPT4All(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         r"""Call out to GPT4All's generate method.
 
@@ -192,7 +204,8 @@ class GPT4All(LLM):
         if run_manager:
             text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
         text = ""
-        for token in self.client.generate(prompt, **self._default_params()):
+        params = {**self._default_params(), **kwargs}
+        for token in self.client.generate(prompt, **params):
             if text_callback:
                 text_callback(token)
             text += token

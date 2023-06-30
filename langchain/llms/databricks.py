@@ -114,7 +114,7 @@ def get_default_api_token() -> str:
     """Gets the default Databricks personal access token.
     Raises an error if the token cannot be automatically determined.
     """
-    if api_token := os.getenv("DATABRICKS_API_TOKEN"):
+    if api_token := os.getenv("DATABRICKS_TOKEN"):
         return api_token
     try:
         api_token = get_repl_context().apiToken
@@ -123,7 +123,7 @@ def get_default_api_token() -> str:
     except Exception as e:
         raise ValueError(
             "api_token was not set and cannot be automatically inferred. Set "
-            f"environment variable 'DATABRICKS_API_TOKEN'. Received error: {e}"
+            f"environment variable 'DATABRICKS_TOKEN'. Received error: {e}"
         )
     # TODO: support Databricks CLI profile
     return api_token
@@ -186,7 +186,7 @@ class Databricks(LLM):
     """Databricks personal access token.
     If not provided, the default value is determined by
 
-    * the ``DATABRICKS_API_TOKEN`` environment variable if present, or
+    * the ``DATABRICKS_TOKEN`` environment variable if present, or
     * an automatically generated temporary token if running inside a Databricks
       notebook attached to an interactive cluster in "single user" or
       "no isolation shared" mode.
@@ -303,12 +303,14 @@ class Databricks(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Queries the LLM endpoint with the given prompt and stop sequence."""
 
         # TODO: support callbacks
 
         request = {"prompt": prompt, "stop": stop}
+        request.update(kwargs)
         if self.model_kwargs:
             request.update(self.model_kwargs)
 

@@ -1,8 +1,9 @@
 """Generic utility functions."""
 import contextlib
 import datetime
+import importlib
 import os
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from requests import HTTPError, Response
 
@@ -65,6 +66,14 @@ def raise_for_status_with_text(response: Response) -> None:
 
 
 def stringify_value(val: Any) -> str:
+    """Stringify a value.
+
+    Args:
+        val: The value to stringify.
+
+    Returns:
+        str: The stringified value.
+    """
     if isinstance(val, str):
         return val
     elif isinstance(val, dict):
@@ -76,10 +85,22 @@ def stringify_value(val: Any) -> str:
 
 
 def stringify_dict(data: dict) -> str:
+    """Stringify a dictionary.
+
+    Args:
+        data: The dictionary to stringify.
+
+    Returns:
+        str: The stringified dictionary.
+    """
     text = ""
     for key, value in data.items():
         text += key + ": " + stringify_value(value) + "\n"
     return text
+
+
+def comma_list(items: List[Any]) -> str:
+    return ", ".join(str(item) for item in items)
 
 
 @contextlib.contextmanager
@@ -111,3 +132,18 @@ def mock_now(dt_value):  # type: ignore
         yield datetime.datetime
     finally:
         datetime.datetime = real_datetime
+
+
+def guard_import(
+    module_name: str, *, pip_name: Optional[str] = None, package: Optional[str] = None
+) -> Any:
+    """Dynamically imports a module and raises a helpful exception if the module is not
+    installed."""
+    try:
+        module = importlib.import_module(module_name, package)
+    except ImportError:
+        raise ImportError(
+            f"Could not import {module_name} python package. "
+            f"Please install it with `pip install {pip_name or module_name}`."
+        )
+    return module

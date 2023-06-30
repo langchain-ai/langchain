@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from langchain.schema import (
     AIMessage,
@@ -11,7 +11,7 @@ from langchain.schema import (
 )
 
 if TYPE_CHECKING:
-    from zep_python import Memory, Message, NotFoundError, SearchResult
+    from zep_python import Memory, MemorySearchResult, Message, NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -116,13 +116,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
             return None
         return zep_memory
 
-    def add_user_message(self, message: str) -> None:
-        self.append(HumanMessage(content=message))
-
-    def add_ai_message(self, message: str) -> None:
-        self.append(AIMessage(content=message))
-
-    def append(self, message: BaseMessage) -> None:
+    def add_message(self, message: BaseMessage) -> None:
         """Append the message to the Zep memory history"""
         from zep_python import Memory, Message
 
@@ -136,11 +130,15 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
 
         self.zep_client.add_memory(self.session_id, zep_memory)
 
-    def search(self, query: str, limit: Optional[int] = None) -> List[SearchResult]:
+    def search(
+        self, query: str, metadata: Optional[Dict] = None, limit: Optional[int] = None
+    ) -> List[MemorySearchResult]:
         """Search Zep memory for messages matching the query"""
-        from zep_python import SearchPayload
+        from zep_python import MemorySearchPayload
 
-        payload: SearchPayload = SearchPayload(text=query)
+        payload: MemorySearchPayload = MemorySearchPayload(
+            text=query, metadata=metadata
+        )
 
         return self.zep_client.search_memory(self.session_id, payload, limit=limit)
 

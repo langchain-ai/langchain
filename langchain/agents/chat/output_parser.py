@@ -1,8 +1,8 @@
+import json
 from typing import Union
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS
-from langchain.output_parsers.json import parse_json_markdown
 from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 FINAL_ANSWER_ACTION = "Final Answer:"
@@ -13,16 +13,26 @@ class ChatOutputParser(AgentOutputParser):
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        if FINAL_ANSWER_ACTION in text:
+        includes_answer = FINAL_ANSWER_ACTION in text
+        try:
+            action = text.split("```")[1]
+            response = json.loads(action.strip())
+            includes_action = "action" in response
+            if includes_answer and includes_action:
+                raise OutputParserException(
+                    "Parsing LLM output produced a final answer "
+                    f"and a parse-able action: {text}"
+                )
+            return AgentAction(
+                response["action"], response.get("action_input", {}), text
+            )
+
+        except Exception:
+            if not includes_answer:
+                raise OutputParserException(f"Could not parse LLM output: {text}")
             return AgentFinish(
                 {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
             )
-        try:
-            response = parse_json_markdown(text)
-            return AgentAction(response["action"], response["action_input"], text)
-
-        except Exception:
-            raise OutputParserException(f"Could not parse LLM output: {text}")
 
     @property
     def _type(self) -> str:

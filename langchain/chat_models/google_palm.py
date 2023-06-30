@@ -36,6 +36,8 @@ logger = logging.getLogger(__name__)
 
 
 class ChatGooglePalmError(Exception):
+    """Error raised when there is an issue with the Google PaLM API."""
+
     pass
 
 
@@ -280,6 +282,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         prompt = _messages_to_prompt_dict(messages)
 
@@ -291,6 +294,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
             top_p=self.top_p,
             top_k=self.top_k,
             candidate_count=self.n,
+            **kwargs,
         )
 
         return _response_to_result(response, stop)
@@ -300,6 +304,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         prompt = _messages_to_prompt_dict(messages)
 

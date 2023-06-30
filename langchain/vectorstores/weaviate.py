@@ -46,7 +46,7 @@ def _create_weaviate_client(**kwargs: Any) -> Any:
     except ImportError:
         raise ValueError(
             "Could not import weaviate python  package. "
-            "Please install it with `pip instal weaviate-client`"
+            "Please install it with `pip install weaviate-client`"
         )
 
     auth = (
@@ -135,11 +135,15 @@ class Weaviate(VectorStore):
                     for key, val in metadatas[i].items():
                         data_properties[key] = _json_serializable(val)
 
+                # Allow for ids (consistent w/ other methods)
+                # # Or uuids (backwards compatble w/ existing arg)
                 # If the UUID of one of the objects already exists
                 # then the existing object will be replaced by the new object.
-                _id = (
-                    kwargs["uuids"][i] if "uuids" in kwargs else get_valid_uuid(uuid4())
-                )
+                _id = get_valid_uuid(uuid4())
+                if "uuids" in kwargs:
+                    _id = kwargs["uuids"][i]
+                elif "ids" in kwargs:
+                    _id = kwargs["ids"][i]
 
                 if self._embedding is not None:
                     vector = self._embedding.embed_documents([text])[0]
@@ -314,6 +318,11 @@ class Weaviate(VectorStore):
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
+        """
+        Return list of documents most similar to the query
+        text and cosine distance in float for each.
+        Lower score represents more similarity.
+        """
         if self._embedding is None:
             raise ValueError(
                 "_embedding cannot be None for similarity_search_with_score"
@@ -460,3 +469,14 @@ class Weaviate(VectorStore):
             relevance_score_fn=relevance_score_fn,
             by_text=by_text,
         )
+
+    def delete(self, ids: List[str]) -> None:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+
+        # TODO: Check if this can be done in bulk
+        for id in ids:
+            self._client.data_object.delete(uuid=id)

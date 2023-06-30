@@ -6,8 +6,12 @@ from langchain.embeddings.aleph_alpha import (
     AlephAlphaAsymmetricSemanticEmbedding,
     AlephAlphaSymmetricSemanticEmbedding,
 )
+from langchain.embeddings.bedrock import BedrockEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
+from langchain.embeddings.dashscope import DashScopeEmbeddings
+from langchain.embeddings.deepinfra import DeepInfraEmbeddings
 from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
+from langchain.embeddings.embaas import EmbaasEmbeddings
 from langchain.embeddings.fake import FakeEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.huggingface import (
@@ -20,6 +24,7 @@ from langchain.embeddings.llamacpp import LlamaCppEmbeddings
 from langchain.embeddings.minimax import MiniMaxEmbeddings
 from langchain.embeddings.modelscope_hub import ModelScopeEmbeddings
 from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
+from langchain.embeddings.octoai_embeddings import OctoAIEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
 from langchain.embeddings.self_hosted import SelfHostedEmbeddings
@@ -56,6 +61,11 @@ __all__ = [
     "GooglePalmEmbeddings",
     "MiniMaxEmbeddings",
     "VertexAIEmbeddings",
+    "BedrockEmbeddings",
+    "DeepInfraEmbeddings",
+    "DashScopeEmbeddings",
+    "EmbaasEmbeddings",
+    "OctoAIEmbeddings",
 ]
 
 

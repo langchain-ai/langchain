@@ -14,11 +14,12 @@ line_template = '\t"{name}": {type}  // {description}'
 class ResponseSchema(BaseModel):
     name: str
     description: str
+    type: str = "string"
 
 
 def _get_sub_string(schema: ResponseSchema) -> str:
     return line_template.format(
-        name=schema.name, description=schema.description, type="string"
+        name=schema.name, description=schema.description, type=schema.type
     )
 
 

@@ -7,13 +7,33 @@ from langchain.input import get_bolded_text, get_colored_text
 
 
 def try_json_stringify(obj: Any, fallback: str) -> str:
+    """
+    Try to stringify an object to JSON.
+    Args:
+        obj: Object to stringify.
+        fallback: Fallback string to return if the object cannot be stringified.
+
+    Returns:
+        A JSON string if the object can be stringified, otherwise the fallback string.
+
+    """
     try:
-        return json.dumps(obj, indent=2)
+        return json.dumps(obj, indent=2, ensure_ascii=False)
     except Exception:
         return fallback
 
 
 def elapsed(run: Any) -> str:
+    """Get the elapsed time of a run.
+
+    Args:
+        run: any object with a start_time and end_time attribute.
+
+    Returns:
+        A string with the elapsed time in seconds or
+            milliseconds if time is less than a second.
+
+    """
     elapsed_time = run.end_time - run.start_time
     milliseconds = elapsed_time.total_seconds() * 1000
     if milliseconds < 1000:
@@ -22,6 +42,8 @@ def elapsed(run: Any) -> str:
 
 
 class ConsoleCallbackHandler(BaseTracer):
+    """Tracer that prints to the console."""
+
     name = "console_callback_handler"
 
     def _persist_run(self, run: Run) -> None:
