@@ -194,7 +194,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             docs, token_max, callbacks=callbacks, **kwargs
         )
         return self.combine_document_chain.combine_docs(
-            input_documents=result_docs, callbacks=callbacks, **kwargs
+            docs=result_docs, callbacks=callbacks, **kwargs
         )
 
     async def acombine_docs(
@@ -219,7 +219,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             docs, callbacks=callbacks, **kwargs
         )
         return await self.combine_document_chain.acombine_docs(
-            input_documents=result_docs, callbacks=callbacks, **kwargs
+            docs=result_docs, callbacks=callbacks, **kwargs
         )
 
     def _collapse(
