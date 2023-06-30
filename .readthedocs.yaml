@@ -9,6 +9,9 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
+  jobs:
+    pre_build:
+      - python docs/api_reference/create_api_rst.py
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:

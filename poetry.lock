@@ -1309,6 +1309,21 @@ cle = ["cryptography (>=35.0)"]
 graph = ["gremlinpython (==3.4.6)"]
 
 [[package]]
+name = "cassio"
+version = "0.0.6"
+description = "A framework-agnostic Python library to seamlessly integrate Apache Cassandra with ML/LLM/genAI workloads."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "cassio-0.0.6-py3-none-any.whl", hash = "sha256:44bc9cad86dd703b363a2eb99337a68f63d2d6c9c5f234ab1aae6a0223fc6aaf"},
+    {file = "cassio-0.0.6.tar.gz", hash = "sha256:3b4fc218dc93c973e1a31e984583dbd15debbdfaf1bb93a6971d046ecc9bd50c"},
+]
+
+[package.dependencies]
+cassandra-driver = ">=3.28.0"
+numpy = ">=1.0"
+
+[[package]]
 name = "catalogue"
 version = "2.0.8"
 description = "Super lightweight function registries for your library"
@@ -2429,6 +2444,16 @@ files = [
 ]
 
 [[package]]
+name = "esprima"
+version = "4.0.1"
+description = "ECMAScript parsing infrastructure for multipurpose analysis in Python"
+optional = true
+python-versions = "*"
+files = [
+    {file = "esprima-4.0.1.tar.gz", hash = "sha256:08db1a876d3c2910db9cfaeb83108193af5411fc3a3a66ebefacd390d21323ee"},
+]
+
+[[package]]
 name = "exceptiongroup"
 version = "1.1.1"
 description = "Backport of PEP 654 (exception groups)"
@@ -2492,21 +2517,24 @@ files = [
 
 [[package]]
 name = "fastapi"
-version = "0.97.0"
+version = "0.95.2"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "fastapi-0.97.0-py3-none-any.whl", hash = "sha256:95d757511c596409930bd20673358d4a4d709004edb85c5d24d6ffc48fabcbf2"},
-    {file = "fastapi-0.97.0.tar.gz", hash = "sha256:b53248ee45f64f19bb7600953696e3edf94b0f7de94df1e5433fc5c6136fa986"},
+    {file = "fastapi-0.95.2-py3-none-any.whl", hash = "sha256:d374dbc4ef2ad9b803899bd3360d34c534adc574546e25314ab72c0c4411749f"},
+    {file = "fastapi-0.95.2.tar.gz", hash = "sha256:4d9d3e8c71c73f11874bcf5e33626258d143252e329a01002f767306c64fb982"},
 ]
 
 [package.dependencies]
-pydantic = ">=1.7.4,<1.8 || >1.8,<1.8.1 || >1.8.1,<2.0.0"
+pydantic = ">=1.6.2,<1.7 || >1.7,<1.7.1 || >1.7.1,<1.7.2 || >1.7.2,<1.7.3 || >1.7.3,<1.8 || >1.8,<1.8.1 || >1.8.1,<2.0.0"
 starlette = ">=0.27.0,<0.28.0"
 
 [package.extras]
 all = ["email-validator (>=1.1.1)", "httpx (>=0.23.0)", "itsdangerous (>=1.1.0)", "jinja2 (>=2.11.2)", "orjson (>=3.2.1)", "python-multipart (>=0.0.5)", "pyyaml (>=5.3.1)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0)", "uvicorn[standard] (>=0.12.0)"]
+dev = ["pre-commit (>=2.17.0,<3.0.0)", "ruff (==0.0.138)", "uvicorn[standard] (>=0.12.0,<0.21.0)"]
+doc = ["mdx-include (>=1.4.1,<2.0.0)", "mkdocs (>=1.1.2,<2.0.0)", "mkdocs-markdownextradata-plugin (>=0.1.7,<0.3.0)", "mkdocs-material (>=8.1.4,<9.0.0)", "pyyaml (>=5.3.1,<7.0.0)", "typer-cli (>=0.0.13,<0.0.14)", "typer[all] (>=0.6.1,<0.8.0)"]
+test = ["anyio[trio] (>=3.2.1,<4.0.0)", "black (==23.1.0)", "coverage[toml] (>=6.5.0,<8.0)", "databases[sqlite] (>=0.3.2,<0.7.0)", "email-validator (>=1.1.1,<2.0.0)", "flask (>=1.1.2,<3.0.0)", "httpx (>=0.23.0,<0.24.0)", "isort (>=5.0.6,<6.0.0)", "mypy (==0.982)", "orjson (>=3.2.1,<4.0.0)", "passlib[bcrypt] (>=1.7.2,<2.0.0)", "peewee (>=3.13.3,<4.0.0)", "pytest (>=7.1.3,<8.0.0)", "python-jose[cryptography] (>=3.3.0,<4.0.0)", "python-multipart (>=0.0.5,<0.0.7)", "pyyaml (>=5.3.1,<7.0.0)", "ruff (==0.0.138)", "sqlalchemy (>=1.3.18,<1.4.43)", "types-orjson (==3.6.2)", "types-ujson (==5.7.0.1)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0,<6.0.0)"]
 
 [[package]]
 name = "fastjsonschema"
@@ -5910,6 +5938,29 @@ signals = ["blinker (>=1.4.0)"]
 signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
+name = "octoai-sdk"
+version = "0.1.1"
+description = "A runtime library for OctoAI."
+optional = true
+python-versions = ">=3.8.1,<4.0.0"
+files = [
+    {file = "octoai_sdk-0.1.1-py3-none-any.whl", hash = "sha256:9b02aaa060e0c1295918653e290bb64c65dea9f8649983c86f0ab2d8e530a8df"},
+    {file = "octoai_sdk-0.1.1.tar.gz", hash = "sha256:e4aa32b18b7b2bd8553eada0f59953aec8b799b65ee9b59958c16686aa32773f"},
+]
+
+[package.dependencies]
+click = ">=8.1.3,<9.0.0"
+fastapi = ">=0.95.2,<0.96.0"
+httpx = ">=0.24.0,<0.25.0"
+numpy = ">=1.24.3,<2.0.0"
+pillow = ">=9.5.0,<10.0.0"
+pydantic = ">=1.10.8,<2.0.0"
+pyyaml = ">=6.0,<7.0"
+soundfile = ">=0.12.1,<0.13.0"
+types-pyyaml = ">=6.0.12.10,<7.0.0.0"
+uvicorn = ">=0.22.0,<0.23.0"
+
+[[package]]
 name = "onnxruntime"
 version = "1.15.1"
 description = "ONNX Runtime is a runtime accelerator for Machine Learning models"
@@ -5988,13 +6039,13 @@ pydantic = ">=1.8.2"
 
 [[package]]
 name = "openllm"
-version = "0.1.10"
+version = "0.1.19"
 description = "OpenLLM: REST/gRPC API server for running any open Large-Language Model - StableLM, Llama, Alpaca, Dolly, Flan-T5, Custom"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "openllm-0.1.10-py3-none-any.whl", hash = "sha256:1ef9187cdabc4aea6ae127cd8cc43afb0dd1ab7e48dd22e173dedb1bba685511"},
-    {file = "openllm-0.1.10.tar.gz", hash = "sha256:708048eeb1ffb8caac18e67e09f5ba65410eabf4ac3e706c336fd7420793661e"},
+    {file = "openllm-0.1.19-py3-none-any.whl", hash = "sha256:b0b3fefc978879382e780615adc8f3932644014db0b77c5c9ec16b54ade0e7fd"},
+    {file = "openllm-0.1.19.tar.gz", hash = "sha256:fbb91294d17f9ff1496f4871208e2bdfed5f51e48e7e4bbc1803209983b1cc00"},
 ]
 
 [package.dependencies]
@@ -6010,12 +6061,13 @@ transformers = {version = ">=4.29.0", extras = ["accelerate", "tokenizers", "tor
 typing-extensions = "*"
 
 [package.extras]
-agents = ["diffusers", "soundfile", "transformers[agents]"]
-all = ["openllm[agents]", "openllm[chatglm]", "openllm[falcon]", "openllm[fine-tune]", "openllm[flan-t5]", "openllm[openai]", "openllm[starcoder]"]
+agents = ["diffusers", "soundfile", "transformers[agents] (>=4.30)"]
+all = ["openllm[agents]", "openllm[chatglm]", "openllm[falcon]", "openllm[fine-tune]", "openllm[flan-t5]", "openllm[mpt]", "openllm[openai]", "openllm[starcoder]"]
 chatglm = ["cpm-kernels", "sentencepiece"]
 falcon = ["einops", "safetensors", "xformers"]
-fine-tune = ["accelerate", "bitsandbytes", "datasets", "deepspeed", "peft"]
+fine-tune = ["accelerate", "bitsandbytes", "datasets", "deepspeed", "peft", "trl"]
 flan-t5 = ["flax", "jax", "jaxlib", "keras", "tensorflow"]
+mpt = ["triton"]
 openai = ["openai", "tiktoken"]
 starcoder = ["bitsandbytes"]
 
@@ -7090,13 +7142,13 @@ test = ["enum34", "ipaddress", "mock", "pywin32", "wmi"]
 
 [[package]]
 name = "psychicapi"
-version = "0.5"
-description = "Psychic.dev is an open-source universal data connector for knowledgebases."
+version = "0.8.0"
+description = "Psychic.dev is an open-source data integration platform for LLMs. This is the Python client for Psychic"
 optional = true
 python-versions = "*"
 files = [
-    {file = "psychicapi-0.5-py3-none-any.whl", hash = "sha256:30637abbecd6c9ebafbceb7c1230987f7ef3af2ca7054f3322ae80f9cbf46039"},
-    {file = "psychicapi-0.5.tar.gz", hash = "sha256:a2106ef8e3a286f85aa2c26c6d1a778e15009391b3b5e2dd864447c8e7f85942"},
+    {file = "psychicapi-0.8.0-py2-none-any.whl", hash = "sha256:4f8e776eb9bc7e3f9243021cff1d840f60aa7923bb2a941d0a37dfc5936b5fa3"},
+    {file = "psychicapi-0.8.0.tar.gz", hash = "sha256:6af053734c848f0c9865f430794c9a8a48b5f9f72663247b11647829d1dbc27f"},
 ]
 
 [package.dependencies]
@@ -9194,6 +9246,29 @@ files = [
 ]
 
 [[package]]
+name = "soundfile"
+version = "0.12.1"
+description = "An audio library based on libsndfile, CFFI and NumPy"
+optional = true
+python-versions = "*"
+files = [
+    {file = "soundfile-0.12.1-py2.py3-none-any.whl", hash = "sha256:828a79c2e75abab5359f780c81dccd4953c45a2c4cd4f05ba3e233ddf984b882"},
+    {file = "soundfile-0.12.1-py2.py3-none-macosx_10_9_x86_64.whl", hash = "sha256:d922be1563ce17a69582a352a86f28ed8c9f6a8bc951df63476ffc310c064bfa"},
+    {file = "soundfile-0.12.1-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:bceaab5c4febb11ea0554566784bcf4bc2e3977b53946dda2b12804b4fe524a8"},
+    {file = "soundfile-0.12.1-py2.py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:2dc3685bed7187c072a46ab4ffddd38cef7de9ae5eb05c03df2ad569cf4dacbc"},
+    {file = "soundfile-0.12.1-py2.py3-none-manylinux_2_31_x86_64.whl", hash = "sha256:074247b771a181859d2bc1f98b5ebf6d5153d2c397b86ee9e29ba602a8dfe2a6"},
+    {file = "soundfile-0.12.1-py2.py3-none-win32.whl", hash = "sha256:59dfd88c79b48f441bbf6994142a19ab1de3b9bb7c12863402c2bc621e49091a"},
+    {file = "soundfile-0.12.1-py2.py3-none-win_amd64.whl", hash = "sha256:0d86924c00b62552b650ddd28af426e3ff2d4dc2e9047dae5b3d8452e0a49a77"},
+    {file = "soundfile-0.12.1.tar.gz", hash = "sha256:e8e1017b2cf1dda767aef19d2fd9ee5ebe07e050d430f77a0a7c66ba08b8cdae"},
+]
+
+[package.dependencies]
+cffi = ">=1.0"
+
+[package.extras]
+numpy = ["numpy"]
+
+[[package]]
 name = "soupsieve"
 version = "2.4.1"
 description = "A modern CSS selector implementation for Beautiful Soup."
@@ -10676,6 +10751,17 @@ files = [
 cryptography = ">=35.0.0"
 
 [[package]]
+name = "types-pytz"
+version = "2023.3.0.0"
+description = "Typing stubs for pytz"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-pytz-2023.3.0.0.tar.gz", hash = "sha256:ecdc70d543aaf3616a7e48631543a884f74205f284cefd6649ddf44c6a820aac"},
+    {file = "types_pytz-2023.3.0.0-py3-none-any.whl", hash = "sha256:4fc2a7fbbc315f0b6630e0b899fd6c743705abe1094d007b0e612d10da15e0f3"},
+]
+
+[[package]]
 name = "types-pyyaml"
 version = "6.0.12.10"
 description = "Typing stubs for PyYAML"
@@ -11756,13 +11842,14 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "octoai-sdk", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "azure-search-documents", "openai"]
 clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "chardet", "gql", "html2text", "jq", "lxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "requests-toolbelt", "scikit-learn", "streamlit", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "gql", "html2text", "jq", "lxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "requests-toolbelt", "scikit-learn", "streamlit", "telethon", "tqdm", "zep-python"]
+javascript = ["esprima"]
 llms = ["anthropic", "clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
 qdrant = ["qdrant-client"]
@@ -11771,4 +11858,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6e495e4f58127a5d2001385404b973896e275f5ca71a6ebe856cb114977189d1"
+content-hash = "76fa32e4bab024d7238da8fdf272e0e88f25fdb4fdbacad58c2d196a0bf55e70"

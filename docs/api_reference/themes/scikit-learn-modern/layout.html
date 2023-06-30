@@ -1,0 +1,142 @@
+{# TEMPLATE VAR SETTINGS #}
+{%- set url_root = pathto('', 1) %}
+{%- if url_root == '#' %}{% set url_root = '' %}{% endif %}
+{%- if not embedded and docstitle %}
+  {%- set titlesuffix = " &mdash; "|safe + docstitle|e %}
+{%- else %}
+  {%- set titlesuffix = "" %}
+{%- endif %}
+{%- set lang_attr = 'en' %}
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="{{ lang_attr }}" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="{{ lang_attr }}" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  {{ metatags }}
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  {% block htmltitle %}
+  <title>{{ title|striptags|e }}{{ titlesuffix }}</title>
+  {% endblock %}
+  <link rel="canonical" href="http://scikit-learn.org/stable/{{pagename}}.html" />
+
+  {% if favicon_url %}
+  <link rel="shortcut icon" href="{{ favicon_url|e }}"/>
+  {% endif %}
+
+  <link rel="stylesheet" href="{{ pathto('_static/css/vendor/bootstrap.min.css', 1) }}" type="text/css" />
+  {%- for css in css_files %}
+    {%- if css|attr("rel") %}
+  <link rel="{{ css.rel }}" href="{{ pathto(css.filename, 1) }}" type="text/css"{% if css.title is not none %} title="{{ css.title }}"{% endif %} />
+    {%- else %}
+  <link rel="stylesheet" href="{{ pathto(css, 1) }}" type="text/css" />
+    {%- endif %}
+  {%- endfor %}
+  <link rel="stylesheet" href="{{ pathto('_static/' + style, 1) }}" type="text/css" />
+<script id="documentation_options" data-url_root="{{ pathto('', 1) }}" src="{{ pathto('_static/documentation_options.js', 1) }}"></script>
+<script src="{{ pathto('_static/jquery.js', 1) }}"></script>
+{%- block extrahead %} {% endblock %}
+</head>
+<body>
+{% include "nav.html" %}
+{%- block content %}
+<div class="d-flex" id="sk-doc-wrapper">
+    <input type="checkbox" name="sk-toggle-checkbox" id="sk-toggle-checkbox">
+    <label id="sk-sidemenu-toggle" class="sk-btn-toggle-toc btn sk-btn-primary" for="sk-toggle-checkbox">Toggle Menu</label>
+    <div id="sk-sidebar-wrapper" class="border-right">
+      <div class="sk-sidebar-toc-wrapper">
+        <div class="btn-group w-100 mb-2" role="group" aria-label="rellinks">
+          {%- if prev %}
+            <a href="{{ prev.link|e }}" role="button" class="btn sk-btn-rellink py-1" sk-rellink-tooltip="{{ prev.title|striptags }}">Prev</a>
+          {%- else %}
+            <a href="#" role="button" class="btn sk-btn-rellink py-1 disabled"">Prev</a>
+          {%- endif %}
+          {%- if parents -%}
+            <a href="{{ parents[-1].link|e }}" role="button" class="btn sk-btn-rellink py-1" sk-rellink-tooltip="{{ parents[-1].title|striptags }}">Up</a>
+          {%- else %}
+            <a href="#" role="button" class="btn sk-btn-rellink disabled py-1">Up</a>
+          {%- endif %}
+          {%- if next %}
+            <a href="{{ next.link|e }}" role="button" class="btn sk-btn-rellink py-1" sk-rellink-tooltip="{{ next.title|striptags }}">Next</a>
+          {%- else %}
+            <a href="#" role="button" class="btn sk-btn-rellink py-1 disabled"">Next</a>
+          {%- endif %}
+        </div>
+        {%- if pagename != "install" %}
+        <div class="alert alert-warning p-1 mb-2" role="alert">
+          <p class="text-center mb-0">
+          <strong>LangChain {{ release }}</strong><br/>
+          </p>
+        </div>
+        {%- endif %}
+            {%- if meta and meta['parenttoc']|tobool %}
+            <div class="sk-sidebar-toc">
+            {% set nav = get_nav_object(maxdepth=3, collapse=True, numbered=True) %}
+              <ul>
+              {% for main_nav_item in nav %}
+              {% if main_nav_item.active %}
+              <li>
+                <a href="{{ main_nav_item.url }}" class="sk-toc-active">{{ main_nav_item.title }}</a>
+              </li>
+              <ul>
+              {% for nav_item in main_nav_item.children %}
+                <li>
+                  <a href="{{ nav_item.url }}" class="{% if nav_item.active %}sk-toc-active{% endif %}">{{ nav_item.title }}</a>
+                  {% if nav_item.children %}
+                  <ul>
+                    {% for inner_child in nav_item.children %}
+                      <li class="sk-toctree-l3">
+                        <a href="{{ inner_child.url }}">{{ inner_child.title }}</a>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                  {% endif %}
+                </li>
+              {% endfor %}
+              </ul>
+              {% endif %}
+              {% endfor %}
+              </ul>
+            </div>
+            {%- elif meta and meta['globalsidebartoc']|tobool %}
+            <div class="sk-sidebar-toc sk-sidebar-global-toc">
+              {{ toctree(maxdepth=2, titles_only=True) }}
+            </div>
+            {%- else %}
+            <div class="sk-sidebar-toc">
+              {{ toc }}
+            </div>
+            {%- endif %}
+      </div>
+    </div>
+    <div id="sk-page-content-wrapper">
+      <div class="sk-page-content container-fluid body px-md-3" role="main">
+        {% block body %}{% endblock %}
+      </div>
+    <div class="container">
+      <footer class="sk-content-footer">
+        {%- if pagename != 'index' %}
+        {%- if show_copyright %}
+          {%- if hasdoc('copyright') %}
+            {% trans path=pathto('copyright'), copyright=copyright|e %}&copy; {{ copyright }}.{% endtrans %}
+          {%- else %}
+            {% trans copyright=copyright|e %}&copy; {{ copyright }}.{% endtrans %}
+          {%- endif %}
+        {%- endif %}
+        {%- if last_updated %}
+          {% trans last_updated=last_updated|e %}Last updated on {{ last_updated }}.{% endtrans %}
+        {%- endif %}
+        {%- if show_source and has_source and sourcename %}
+          <a href="{{ pathto('_sources/' + sourcename, true)|e }}" rel="nofollow">{{ _('Show this page source') }}</a>
+        {%- endif %}
+        {%- endif %}
+      </footer>
+    </div>
+  </div>
+</div>
+{%- endblock %}
+<script src="{{ pathto('_static/js/vendor/bootstrap.min.js', 1) }}"></script>
+{% include "javascript.html" %}
+</body>
+</html>
