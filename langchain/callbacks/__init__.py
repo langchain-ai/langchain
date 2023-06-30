@@ -3,6 +3,7 @@
 from langchain.callbacks.aim_callback import AimCallbackHandler
 from langchain.callbacks.argilla_callback import ArgillaCallbackHandler
 from langchain.callbacks.arize_callback import ArizeCallbackHandler
+from langchain.callbacks.arthur_callback import ArthurCallbackHandler
 from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
 from langchain.callbacks.file import FileCallbackHandler
@@ -22,9 +23,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.callbacks.streaming_stdout_final_only import (
     FinalStreamingStdOutCallbackHandler,
 )
-
-# now streamlit requires Python >=3.7, !=3.9.7 So, it is commented out here.
-# from langchain.callbacks.streamlit import StreamlitCallbackHandler
+from langchain.callbacks.streamlit import LLMThoughtLabeler, StreamlitCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
 
@@ -34,18 +33,20 @@ __all__ = [
     "ArizeCallbackHandler",
     "AsyncIteratorCallbackHandler",
     "PromptLayerCallbackHandler",
+    "ArthurCallbackHandler",
     "ClearMLCallbackHandler",
     "CometCallbackHandler",
     "FileCallbackHandler",
-    "FinalStreamingStdOutCallbackHandler",
     "HumanApprovalCallbackHandler",
     "InfinoCallbackHandler",
     "MlflowCallbackHandler",
     "OpenAICallbackHandler",
     "StdOutCallbackHandler",
+    "AsyncIteratorCallbackHandler",
     "StreamingStdOutCallbackHandler",
-    # now streamlit requires Python >=3.7, !=3.9.7 So, it is commented out here.
-    # "StreamlitCallbackHandler",
+    "FinalStreamingStdOutCallbackHandler",
+    "LLMThoughtLabeler",
+    "StreamlitCallbackHandler",
     "WandbCallbackHandler",
     "WhyLabsCallbackHandler",
     "get_openai_callback",

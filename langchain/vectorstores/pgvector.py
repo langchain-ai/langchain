@@ -93,6 +93,8 @@ class QueryResult:
 
 
 class DistanceStrategy(str, enum.Enum):
+    """Enumerator of the Distance strategies."""
+
     EUCLIDEAN = EmbeddingStore.embedding.l2_distance
     COSINE = EmbeddingStore.embedding.cosine_distance
     MAX_INNER_PRODUCT = EmbeddingStore.embedding.max_inner_product

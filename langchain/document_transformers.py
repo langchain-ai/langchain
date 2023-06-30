@@ -30,6 +30,14 @@ class _DocumentWithState(Document):
 def get_stateful_documents(
     documents: Sequence[Document],
 ) -> Sequence[_DocumentWithState]:
+    """Convert a list of documents to a list of documents with state.
+
+    Args:
+        documents: The documents to convert.
+
+    Returns:
+        A list of documents with state.
+    """
     return [_DocumentWithState.from_document(doc) for doc in documents]
 
 

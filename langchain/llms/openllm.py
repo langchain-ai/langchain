@@ -166,11 +166,13 @@ class OpenLLM(LLM):
             # Runner with embedded when running the server. Instead, we will only set
             # the init_local here so that LangChain users can still use the LLM
             # in-process. Wrt to BentoML users, setting embedded=False is the expected
-            # behaviour to invoke the runners remotely
+            # behaviour to invoke the runners remotely.
+            # We need to also enable ensure_available to download and setup the model.
             runner = openllm.Runner(
                 model_name=model_name,
                 model_id=model_id,
                 init_local=embedded,
+                ensure_available=True,
                 **llm_kwargs,
             )
             super().__init__(

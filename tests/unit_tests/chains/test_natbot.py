@@ -28,6 +28,9 @@ class FakeLLM(LLM):
         """Return type of llm."""
         return "fake"
 
+    def get_num_tokens(self, text: str) -> int:
+        return len(text.split())
+
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         return {}
