@@ -121,7 +121,8 @@ class Cassandra(VectorStore):
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
             ids (Optional[List[str]], optional): Optional list of IDs.
             batch_size (int): Number of concurrent requests to send to the server.
-            ttl_seconds (Optional[int], optional): Optional time-to-live for the added texts.
+            ttl_seconds (Optional[int], optional): Optional time-to-live
+                for the added texts.
 
         Returns:
             List[str]: List of IDs of the added texts.
