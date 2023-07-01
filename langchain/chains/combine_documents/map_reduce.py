@@ -116,11 +116,11 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     def get_reduce_chain(cls, values: Dict) -> Dict:
         """For backwards compatibility."""
         if "combine_document_chain" in values:
-            if "reduce_document_chain" in values:
+            if "reduce_documents_chain" in values:
                 raise ValueError(
                     "Both `reduce_document_chain` and `combine_document_chain` "
                     "cannot be provided at the same time. `combine_document_chain` "
-                    "is deprecated, please only provide `reduce_document_chain`"
+                    "is deprecated, please only provide `reduce_documents_chain`"
                 )
             combine_chain = values["combine_document_chain"]
             collapse_chain = values.get("collapse_document_chain")
@@ -128,7 +128,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 combine_document_chain=combine_chain,
                 collapse_document_chain=collapse_chain,
             )
-            values["reduce_document_chain"] = reduce_chain
+            values["reduce_documents_chain"] = reduce_chain
             del values["combine_document_chain"]
             if "collapse_document_chain" in values:
                 del values["collapse_document_chain"]
