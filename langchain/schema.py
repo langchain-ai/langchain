@@ -809,8 +809,7 @@ def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
         format_document(doc, prompt)
         >>> "Page 1: This is a joke"
     """
-    base_info = {"page_content": doc.page_content}
-    base_info.update(doc.metadata)
+    base_info = {"page_content": doc.page_content, **doc.metadata}
     missing_metadata = set(prompt.input_variables).difference(base_info)
     if len(missing_metadata) > 0:
         required_metadata = [

@@ -86,7 +86,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     llm_chain: LLMChain
     """Chain to apply to each document individually."""
-    reduce_document_chain: BaseCombineDocumentsChain
+    reduce_documents_chain: BaseCombineDocumentsChain
     """Chain to use to reduce the results of applying `llm_chain` to each doc.
     This typically either a ReduceDocumentChain or StuffDocumentChain."""
     document_variable_name: str
@@ -116,7 +116,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     def get_reduce_chain(cls, values: Dict) -> Dict:
         """For backwards compatibility."""
         if "combine_document_chain" in values:
-            if "reduce_chain" in values:
+            if "reduce_document_chain" in values:
                 raise ValueError(
                     "Both `reduce_document_chain` and `combine_document_chain` "
                     "cannot be provided at the same time. `combine_document_chain` "
@@ -166,26 +166,26 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     @property
     def collapse_document_chain(self) -> BaseCombineDocumentsChain:
-        if isinstance(self.reduce_document_chain, ReduceDocumentsChain):
-            if self.reduce_document_chain.collapse_document_chain:
-                return self.reduce_document_chain.collapse_document_chain
+        if isinstance(self.reduce_documents_chain, ReduceDocumentsChain):
+            if self.reduce_documents_chain.collapse_document_chain:
+                return self.reduce_documents_chain.collapse_document_chain
             else:
-                return self.reduce_document_chain.combine_document_chain
+                return self.reduce_documents_chain.combine_document_chain
         else:
             raise ValueError(
                 f"`reduce_document_chain` is of type "
-                f"{type(self.reduce_document_chain)} so it does not have "
+                f"{type(self.reduce_documents_chain)} so it does not have "
                 f"this attribute."
             )
 
     @property
     def combine_document_chain(self) -> BaseCombineDocumentsChain:
-        if isinstance(self.reduce_document_chain, ReduceDocumentsChain):
-            return self.reduce_document_chain.combine_document_chain
+        if isinstance(self.reduce_documents_chain, ReduceDocumentsChain):
+            return self.reduce_documents_chain.combine_document_chain
         else:
             raise ValueError(
                 f"`reduce_document_chain` is of type "
-                f"{type(self.reduce_document_chain)} so it does not have "
+                f"{type(self.reduce_documents_chain)} so it does not have "
                 f"this attribute."
             )
 
@@ -201,7 +201,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         Combine by mapping first chain over all documents, then reducing the results.
         This reducing can be done recursively if needed (if there are many documents).
         """
-        results = self.llm_chain.apply(
+        map_results = self.llm_chain.apply(
             # FYI - this is parallelized and so it is fast.
             [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
             callbacks=callbacks,
@@ -210,14 +210,14 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         result_docs = [
             Document(page_content=r[question_result_key], metadata=docs[i].metadata)
             # This uses metadata from the docs, and the textual results from `results`
-            for i, r in enumerate(results)
+            for i, r in enumerate(map_results)
         ]
-        result, extra_return_dict = self.reduce_document_chain.combine_docs(
+        result, extra_return_dict = self.reduce_documents_chain.combine_docs(
             result_docs, callbacks=callbacks, **kwargs
         )
         if self.return_intermediate_steps:
-            _results = [r[self.llm_chain.output_key] for r in results]
-            extra_return_dict["intermediate_steps"] = _results
+            intermediate_steps = [r[question_result_key] for r in map_results]
+            extra_return_dict["intermediate_steps"] = intermediate_steps
         return result, extra_return_dict
 
     async def acombine_docs(
@@ -228,7 +228,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         Combine by mapping first chain over all documents, then reducing the results.
         This reducing can be done recursively if needed (if there are many documents).
         """
-        results = await self.llm_chain.aapply(
+        map_results = await self.llm_chain.aapply(
             # FYI - this is parallelized and so it is fast.
             [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
             callbacks=callbacks,
@@ -237,14 +237,14 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         result_docs = [
             Document(page_content=r[question_result_key], metadata=docs[i].metadata)
             # This uses metadata from the docs, and the textual results from `results`
-            for i, r in enumerate(results)
+            for i, r in enumerate(map_results)
         ]
-        result, extra_return_dict = await self.reduce_document_chain.acombine_docs(
+        result, extra_return_dict = await self.reduce_documents_chain.acombine_docs(
             result_docs, callbacks=callbacks, **kwargs
         )
         if self.return_intermediate_steps:
-            _results = [r[self.llm_chain.output_key] for r in results]
-            extra_return_dict["intermediate_steps"] = _results
+            intermediate_steps = [r[question_result_key] for r in map_results]
+            extra_return_dict["intermediate_steps"] = intermediate_steps
         return result, extra_return_dict
 
     @property

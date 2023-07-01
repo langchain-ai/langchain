@@ -39,11 +39,6 @@ def _split_list_of_docs(
                     "A single document was longer than the context length,"
                     " we cannot handle this."
                 )
-            if len(_sub_result_docs) == 2:
-                raise ValueError(
-                    "A single document was so long it could not be combined "
-                    "with another document, we cannot handle this."
-                )
             new_result_doc_list.append(_sub_result_docs[:-1])
             _sub_result_docs = _sub_result_docs[-1:]
     new_result_doc_list.append(_sub_result_docs)
