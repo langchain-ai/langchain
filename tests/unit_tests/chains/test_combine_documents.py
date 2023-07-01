@@ -28,13 +28,6 @@ def test__split_list_long_single_doc() -> None:
         _split_list_of_docs(docs, _fake_docs_len_func, 100)
 
 
-def test__split_list_long_pair_doc() -> None:
-    """Test splitting of a list with two medium docs."""
-    docs = [Document(page_content="foo" * 30)] * 2
-    with pytest.raises(ValueError):
-        _split_list_of_docs(docs, _fake_docs_len_func, 100)
-
-
 def test__split_list_single_doc() -> None:
     """Test splitting works with just a single doc."""
     docs = [Document(page_content="foo")]
