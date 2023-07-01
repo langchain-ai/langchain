@@ -11,6 +11,7 @@ from langchain.load.serializable import Serializable
 from langchain.prompts.base import StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
+    BasePromptTemplate,
     PromptValue,
 )
 from langchain.schema.messages import (
@@ -21,7 +22,6 @@ from langchain.schema.messages import (
     SystemMessage,
     get_buffer_string,
 )
-from langchain.schema.prompt import BasePromptTemplate
 
 
 class BaseMessagePromptTemplate(Serializable, ABC):

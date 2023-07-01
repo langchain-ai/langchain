@@ -42,7 +42,7 @@ from langchain.prompts import (
     Prompt,
     PromptTemplate,
 )
-from langchain.schema import BasePromptTemplate
+from langchain.schema.prompt_template import BasePromptTemplate
 from langchain.sql_database import SQLDatabase
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
