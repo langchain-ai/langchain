@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
-from pydantic import Field
+from pydantic import Extra, Field
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
+from langchain.evaluation.schema import StringEvaluator
 from langchain.schema import BaseOutputParser, BasePromptTemplate
 
 _SUPPORTED_CRITERIA = {
@@ -59,7 +60,7 @@ CRITERIA_TYPE = Union[
 ]
 
 
-class CriteriaEvalChain(LLMChain):
+class CriteriaEvalChain(StringEvaluator, LLMChain):
     """LLM Chain for evaluating runs against criteria.
 
     Parameters
@@ -101,6 +102,11 @@ class CriteriaEvalChain(LLMChain):
     output_parser: BaseOutputParser = Field(default_factory=CriteriaResultOutputParser)
     """The parser to use to map the output to a structured result."""
 
+    class Config:
+        """Configuration for the QAEvalChain."""
+
+        extra = Extra.ignore
+
     @staticmethod
     def get_supported_default_criteria() -> List[str]:
         """Get the list of supported default criteria.
@@ -122,7 +128,7 @@ class CriteriaEvalChain(LLMChain):
     @classmethod
     def resolve_criteria(
         cls,
-        criteria: CRITERIA_TYPE,
+        criteria: Optional[CRITERIA_TYPE],
     ) -> Dict[str, str]:
         """Resolve the criteria to evaluate.
 
@@ -148,6 +154,10 @@ class CriteriaEvalChain(LLMChain):
         {'relevance': 'Is the submission referring to a real quote from the text?',
          'coherence': 'Is the submission coherent, well-structured, and organized?'}
         """  # noqa: E501
+        if criteria is None:
+            return {
+                "helpfulness": _SUPPORTED_CRITERIA["helpfulness"],
+            }
         if isinstance(criteria, str):
             criteria_ = {criteria: _SUPPORTED_CRITERIA[criteria]}
         elif isinstance(criteria, ConstitutionalPrinciple):
@@ -172,7 +182,7 @@ class CriteriaEvalChain(LLMChain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        criteria: CRITERIA_TYPE,
+        criteria: Optional[CRITERIA_TYPE] = None,
         *,
         prompt: Optional[BasePromptTemplate] = None,
         requires_reference: bool = False,
@@ -184,7 +194,7 @@ class CriteriaEvalChain(LLMChain):
         ----------
         llm : BaseLanguageModel
             The language model to use for evaluation.
-        criteria : CRITERIA_TYPE
+        criteria : CRITERIA_TYPE - default=None for "helpfulness"
             The criteria to evaluate the runs against. It can be:
                 -  a mapping of criterion names to descriptions
                 -  a sequence of criterion names

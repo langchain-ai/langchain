@@ -9,6 +9,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
 from pydantic import Field
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -186,10 +187,11 @@ The following is the expected answer. Use this to measure correctness:
     @classmethod
     def from_llm(
         cls,
-        llm: BaseChatModel,
+        llm: BaseLanguageModel,
         agent_tools: Optional[Sequence[BaseTool]] = None,
         output_parser: Optional[TrajectoryOutputParser] = None,
         return_reasoning: bool = False,
+        **kwargs: Any,
     ) -> "TrajectoryEvalChain":
         """Create a TrajectoryEvalChain object from a language model chain.
 
@@ -205,6 +207,10 @@ The following is the expected answer. Use this to measure correctness:
         Returns:
             TrajectoryEvalChain: The TrajectoryEvalChain object.
         """
+        if not isinstance(llm, BaseChatModel):
+            raise NotImplementedError(
+                "Only chat models supported by the current trajectory eval"
+            )
         if agent_tools:
             prompt = EVAL_CHAT_PROMPT
         else:
@@ -215,6 +221,7 @@ The following is the expected answer. Use this to measure correctness:
             return_reasoning=return_reasoning,
             eval_chain=eval_chain,
             output_parser=output_parser or TrajectoryOutputParser(),
+            **kwargs,
         )
 
     @property

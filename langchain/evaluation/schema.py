@@ -1,10 +1,11 @@
 """Interfaces to be implemented by general evaluators."""
-from abc import abstractmethod
-from typing import Any, Optional, Protocol, runtime_checkable
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from typing import Any, Optional
 
 
-@runtime_checkable
-class StringEvaluator(Protocol):
+class StringEvaluator(ABC):
     """Protocol for evaluating strings."""
 
     @abstractmethod
@@ -54,8 +55,7 @@ class StringEvaluator(Protocol):
         )
 
 
-@runtime_checkable
-class PairwiseStringEvaluator(Protocol):
+class PairwiseStringEvaluator(ABC):
     """A protocol for comparing the output of two models."""
 
     @abstractmethod
@@ -86,6 +86,7 @@ class PairwiseStringEvaluator(Protocol):
 
     async def aevaluate_string_pairs(
         self,
+        *,
         prediction: str,
         prediction_b: str,
         reference: Optional[str] = None,
