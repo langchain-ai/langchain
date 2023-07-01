@@ -145,7 +145,7 @@ class Vectara(VectorStore):
                 logging.error(f"File {file} does not exist, skipping")
                 continue
             md = metadatas[inx] if metadatas else {}
-            files = { "file": (file, open(file, 'rb')), "doc_metadata": json.dumps(md) }
+            files: dict = { "file": (file, open(file, 'rb')), "doc_metadata": json.dumps(md) }
             headers = self._get_post_headers()
             headers.pop("Content-Type")
             response = self._session.post(
