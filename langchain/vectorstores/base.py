@@ -27,7 +27,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever
+from langchain.schema import Retriever
 
 VST = TypeVar("VST", bound="VectorStore")
 
@@ -374,7 +374,7 @@ class VectorStore(ABC):
         return VectorStoreRetriever(vectorstore=self, **kwargs)
 
 
-class VectorStoreRetriever(BaseRetriever, BaseModel):
+class VectorStoreRetriever(Retriever, BaseModel):
     vectorstore: VectorStore
     search_type: str = "similarity"
     search_kwargs: dict = Field(default_factory=dict)
@@ -408,11 +408,7 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
         return values
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
-        **kwargs: Any,
+        self, query: str, *, run_manager: Optional[CallbackManagerForRetrieverRun]
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
@@ -432,11 +428,7 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
         return docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
-        **kwargs: Any,
+        self, query: str, *, run_manager: Optional[AsyncCallbackManagerForRetrieverRun]
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = await self.vectorstore.asimilarity_search(

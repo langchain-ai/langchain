@@ -8,7 +8,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.schema import BaseRetriever
+from langchain.schema import Retriever
 
 
 def clean_excerpt(excerpt: str) -> str:
@@ -148,7 +148,7 @@ class RetrieveResult(BaseModel, extra=Extra.allow):
         return docs
 
 
-class AmazonKendraRetriever(BaseRetriever):
+class AmazonKendraRetriever(Retriever):
     """Retriever class to query documents from Amazon Kendra Index.
 
     Args:
@@ -264,8 +264,8 @@ class AmazonKendraRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         """Run search on Kendra index and get top k documents
 
@@ -281,7 +281,7 @@ class AmazonKendraRetriever(BaseRetriever):
     async def _aget_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError("Async version is not implemented for Kendra yet.")

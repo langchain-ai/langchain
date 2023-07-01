@@ -9,7 +9,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever, Document
+from langchain.schema import Document, Retriever
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 
@@ -20,7 +20,7 @@ class SearchType(str, Enum):
     mmr = "mmr"
 
 
-class DocArrayRetriever(BaseRetriever, BaseModel):
+class DocArrayRetriever(Retriever, BaseModel):
     """
     Retriever class for DocArray Document Indices.
 
@@ -56,8 +56,8 @@ class DocArrayRetriever(BaseRetriever, BaseModel):
     def _get_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         """Get documents relevant for a query.
 
@@ -213,7 +213,7 @@ class DocArrayRetriever(BaseRetriever, BaseModel):
     async def _aget_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError

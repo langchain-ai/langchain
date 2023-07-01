@@ -15,7 +15,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever, Document
+from langchain.schema import Document, Retriever
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
@@ -32,7 +32,7 @@ def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
         return np.array(list(executor.map(embeddings.embed_query, contexts)))
 
 
-class SVMRetriever(BaseRetriever, BaseModel):
+class SVMRetriever(Retriever, BaseModel):
     """SVM Retriever."""
 
     embeddings: Embeddings
@@ -55,11 +55,7 @@ class SVMRetriever(BaseRetriever, BaseModel):
         return cls(embeddings=embeddings, index=index, texts=texts, **kwargs)
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         from sklearn import svm
 
@@ -98,10 +94,6 @@ class SVMRetriever(BaseRetriever, BaseModel):
         return top_k_results
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError

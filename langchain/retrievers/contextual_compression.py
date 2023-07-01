@@ -5,8 +5,7 @@ from typing import Any, List
 from pydantic import BaseModel, Extra
 
 from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
+    Callbacks,
 )
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
@@ -29,12 +28,8 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+    def get_relevant_documents(
+        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
     ) -> List[Document]:
         """Get documents relevant for a query.
 
@@ -45,22 +40,18 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
             Sequence of relevant documents
         """
         docs = self.base_retriever.get_relevant_documents(
-            query, callbacks=run_manager.get_child(), **kwargs
+            query, callbacks=callbacks, **kwargs
         )
         if docs:
             compressed_docs = self.base_compressor.compress_documents(
-                docs, query, callbacks=run_manager.get_child()
+                docs, query, callbacks=callbacks
             )
             return list(compressed_docs)
         else:
             return []
 
-    async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+    async def aget_relevant_documents(
+        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
     ) -> List[Document]:
         """Get documents relevant for a query.
 
@@ -71,11 +62,11 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
             List of relevant documents
         """
         docs = await self.base_retriever.aget_relevant_documents(
-            query, callbacks=run_manager.get_child(), **kwargs
+            query, callbacks=callbacks, **kwargs
         )
         if docs:
             compressed_docs = await self.base_compressor.acompress_documents(
-                docs, query, callbacks=run_manager.get_child()
+                docs, query, callbacks=callbacks
             )
             return list(compressed_docs)
         else:

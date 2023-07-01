@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
+from langchain.schema import Document, Retriever
 
 if TYPE_CHECKING:
     from zep_python import MemorySearchResult
 
 
-class ZepRetriever(BaseRetriever):
+class ZepRetriever(Retriever):
     """A Retriever implementation for the Zep long-term memory store. Search your
     user's long-term chat history with Zep.
 
@@ -64,7 +64,6 @@ class ZepRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
         metadata: Optional[Dict] = None,
-        **kwargs: Any,
     ) -> List[Document]:
         from zep_python import MemorySearchPayload
 
@@ -84,7 +83,6 @@ class ZepRetriever(BaseRetriever):
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
         metadata: Optional[Dict] = None,
-        **kwargs: Any,
     ) -> List[Document]:
         from zep_python import MemorySearchPayload
 

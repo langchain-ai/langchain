@@ -13,10 +13,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
+from langchain.schema import Document, Retriever
 
 
-class TFIDFRetriever(BaseRetriever, BaseModel):
+class TFIDFRetriever(Retriever, BaseModel):
     vectorizer: Any
     docs: List[Document]
     tfidf_array: Any
@@ -64,11 +64,7 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
         )
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         from sklearn.metrics.pairwise import cosine_similarity
 
@@ -82,10 +78,6 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
         return return_docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError

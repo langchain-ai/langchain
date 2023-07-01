@@ -18,7 +18,7 @@ from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
-from langchain.schema import BaseRetriever, Document
+from langchain.schema import Document, Retriever
 from langchain.vectorstores import (
     Chroma,
     MyScale,
@@ -51,7 +51,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     return BUILTIN_TRANSLATORS[vectorstore_cls]()
 
 
-class SelfQueryRetriever(BaseRetriever, BaseModel):
+class SelfQueryRetriever(Retriever, BaseModel):
     """Retriever that wraps around a vector store and uses an LLM to generate
     the vector store queries."""
 
@@ -84,11 +84,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         return values
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant for a query.
 
@@ -121,11 +117,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         return docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun],
-        **kwargs: Any,
+        self, query: str, *, run_manager: Optional[AsyncCallbackManagerForRetrieverRun]
     ) -> List[Document]:
         raise NotImplementedError
 

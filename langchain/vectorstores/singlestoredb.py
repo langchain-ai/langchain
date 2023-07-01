@@ -451,11 +451,7 @@ class SingleStoreDBRetriever(VectorStoreRetriever):
     allowed_search_types: ClassVar[Collection[str]] = ("similarity",)
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
-        **kwargs: Any,
+        self, query: str, *, run_manager: Optional[CallbackManagerForRetrieverRun]
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, k=self.k)
@@ -464,11 +460,7 @@ class SingleStoreDBRetriever(VectorStoreRetriever):
         return docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
-        **kwargs: Any,
+        self, query: str, *, run_manager: Optional[AsyncCallbackManagerForRetrieverRun]
     ) -> List[Document]:
         raise NotImplementedError(
             "SingleStoreDBVectorStoreRetriever does not support async"

@@ -3,8 +3,7 @@ import warnings
 from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
+    Callbacks,
 )
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
@@ -43,23 +42,15 @@ class ZillizRetriever(BaseRetriever):
         """
         self.store.add_texts(texts, metadatas)
 
-    def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+    def get_relevant_documents(
+        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
     ) -> List[Document]:
         return self.retriever.get_relevant_documents(
-            query, run_manager=run_manager.get_child(), **kwargs
+            query, callbacks=callbacks, **kwargs
         )
 
-    async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+    async def aget_relevant_documents(
+        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
     ) -> List[Document]:
         raise NotImplementedError
 

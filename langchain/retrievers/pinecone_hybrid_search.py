@@ -10,7 +10,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever, Document
+from langchain.schema import Document, Retriever
 
 
 def hash_text(text: str) -> str:
@@ -98,7 +98,7 @@ def create_index(
         index.upsert(vectors)
 
 
-class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
+class PineconeHybridSearchRetriever(Retriever, BaseModel):
     embeddings: Embeddings
     """description"""
     sparse_encoder: Any
@@ -143,11 +143,7 @@ class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
         return values
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         from pinecone_text.hybrid import hybrid_convex_scale
 
@@ -174,10 +170,6 @@ class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
         return final_result
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError

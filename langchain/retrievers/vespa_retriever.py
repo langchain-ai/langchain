@@ -9,13 +9,13 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
+from langchain.schema import Document, Retriever
 
 if TYPE_CHECKING:
     from vespa.application import Vespa
 
 
-class VespaRetriever(BaseRetriever):
+class VespaRetriever(Retriever):
     """Retriever that uses the Vespa."""
 
     def __init__(
@@ -65,22 +65,14 @@ class VespaRetriever(BaseRetriever):
         return docs
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         body = self._query_body.copy()
         body["query"] = query
         return self._query(body)
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError
 

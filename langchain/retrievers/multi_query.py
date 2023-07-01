@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List
+from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -11,7 +11,7 @@ from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseRetriever, Document
+from langchain.schema import BaseRetriever, Document, Retriever
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ DEFAULT_QUERY_PROMPT = PromptTemplate(
 )
 
 
-class MultiQueryRetriever(BaseRetriever):
+class MultiQueryRetriever(Retriever):
 
     """Given a user query, use an LLM to write a set of queries.
     Retrieve docs for each query. Rake the unique union of all retrieved docs."""
@@ -73,7 +73,7 @@ class MultiQueryRetriever(BaseRetriever):
     @classmethod
     def from_llm(
         cls,
-        retriever: BaseRetriever,
+        retriever: Retriever,
         llm: BaseLLM,
         prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
         parser_key: str = "lines",
@@ -98,8 +98,8 @@ class MultiQueryRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         """Get relevated documents given a user query.
 
@@ -117,8 +117,8 @@ class MultiQueryRetriever(BaseRetriever):
     async def _aget_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError
 
