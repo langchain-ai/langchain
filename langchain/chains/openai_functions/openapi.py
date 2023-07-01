@@ -232,7 +232,7 @@ def get_openapi_chain(
     llm: Optional[BaseLanguageModel] = None,
     prompt: Optional[BasePromptTemplate] = None,
     request_chain: Optional[Chain] = None,
-    llm_kwargs: Optional[Dict] = None,
+    llm_chain_kwargs: Optional[Dict] = None,
     verbose: bool = False,
     headers: Optional[Dict] = None,
     params: Optional[Dict] = None,
@@ -274,7 +274,7 @@ def get_openapi_chain(
         output_parser=JsonOutputFunctionsParser(args_only=False),
         output_key="function",
         verbose=verbose,
-        **(llm_kwargs or {}),
+        **(llm_chain_kwargs or {}),
     )
     request_chain = request_chain or SimpleRequestChain(
         request_method=lambda name, args: call_api_fn(
