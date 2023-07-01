@@ -86,7 +86,7 @@ class SelfHostedApi(LLM):
         extra = Extra.forbid
 
     @root_validator
-    def prompt_key_in_input_schema(cls, values):
+    def prompt_key_in_input_schema(cls, values: dict) -> dict:
         """Validator ensuring the prompt key is in the input schema (if it exists)"""
         prompt_key = values.get("prompt_key")
         input_schema = values.get("input_schema")
@@ -98,13 +98,13 @@ class SelfHostedApi(LLM):
             return values
 
     @root_validator
-    def response_key_in_output_schema(cls, values):
+    def response_key_in_output_schema(cls, values: dict) -> dict:
         # TODO: Verify nested key existence in schema at instance creation time
 
         return values
 
     @root_validator
-    def model_kwargs_in_input_schema(cls, values):
+    def model_kwargs_in_input_schema(cls, values: dict) -> dict:
         """Validator ensuring the keys in model kwargs are present in the input schema"""
         model_kwargs = values.get("model_kwargs")
         input_schema = values.get("input_schema")
@@ -118,7 +118,7 @@ class SelfHostedApi(LLM):
             return values
 
     @root_validator
-    def task_must_be_valid(cls, values):
+    def task_must_be_valid(cls, values: dict) -> dict:
         """Validator ensuring the task is valid"""
         task = values.get("task")
         if task not in VALID_TASKS:
@@ -156,18 +156,28 @@ class SelfHostedApi(LLM):
     ) -> str:
         """Call the API with the prompt and return the response"""
 
-        if kwargs:
+        if kwargs and self.input_schema is not None:
             if not all(k in self.input_schema.schema()["properties"] for k in kwargs):
                 raise ValueError("kwargs must be in input schema")
 
         model_kwargs = self.model_kwargs or {}
+
+        #convert model_kwargs and kwargs keys to string
+        try:
+            for key in model_kwargs.keys():
+                key = str(key)
+            for key in kwargs.keys():
+                key = str(key)
+        except Exception as e:
+            raise ValueError(f"Error converting model_kwargs or kwargs keys to string: {e}")
+
         if self.input_schema is not None:
             if (
                 self.input_schema.schema()["properties"][self.prompt_key]["type"]
                 == "string"
             ):
                 input_model = self.input_schema(
-                    **{self.prompt_key: prompt, **model_kwargs, **kwargs}
+                    **{str(self.prompt_key): prompt, **model_kwargs, **kwargs}
                 )
                 request_body = input_model.dict()
             elif (
