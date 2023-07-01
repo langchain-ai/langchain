@@ -20,6 +20,7 @@ from langchain.prompts.chat import (
 from langchain.schema import (
     AgentAction,
     AgentFinish,
+    BasePromptTemplate,
     OutputParserException,
 )
 from langchain.schema.messages import (
@@ -28,7 +29,6 @@ from langchain.schema.messages import (
     FunctionMessage,
     SystemMessage,
 )
-from langchain.schema.prompt import BasePromptTemplate
 from langchain.tools import BaseTool
 from langchain.tools.convert_to_openai import format_tool_to_openai_function
 

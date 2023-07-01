@@ -22,9 +22,8 @@ from langchain.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import AgentAction, BaseOutputParser
+from langchain.schema import AgentAction, BaseOutputParser, BasePromptTemplate
 from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
-from langchain.schema.prompt import BasePromptTemplate
 from langchain.tools.base import BaseTool
 
 
