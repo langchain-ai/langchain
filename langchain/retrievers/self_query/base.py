@@ -1,11 +1,15 @@
 """Retriever that generates and executes structured queries over its own data source."""
+
 from typing import Any, Dict, List, Optional, Type, cast
 
 from pydantic import BaseModel, Field, root_validator
 
 from langchain import LLMChain
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import Callbacks
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.chains.query_constructor.base import load_query_constructor_chain
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
@@ -79,8 +83,12 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
             )
         return values
 
-    def get_relevant_documents(
-        self, query: str, callbacks: Callbacks = None
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         """Get documents relevant for a query.
 
@@ -93,7 +101,9 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         inputs = self.llm_chain.prep_inputs({"query": query})
         structured_query = cast(
             StructuredQuery,
-            self.llm_chain.predict_and_parse(callbacks=callbacks, **inputs),
+            self.llm_chain.predict_and_parse(
+                callbacks=run_manager.get_child(), **inputs
+            ),
         )
         if self.verbose:
             print(structured_query)
@@ -110,7 +120,13 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         docs = self.vectorstore.search(new_query, self.search_type, **search_kwargs)
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun],
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError
 
     @classmethod

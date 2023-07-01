@@ -7,6 +7,7 @@ from langchain.callbacks.arthur_callback import ArthurCallbackHandler
 from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
 from langchain.callbacks.file import FileCallbackHandler
+from langchain.callbacks.flyte_callback import FlyteCallbackHandler
 from langchain.callbacks.human import HumanApprovalCallbackHandler
 from langchain.callbacks.infino_callback import InfinoCallbackHandler
 from langchain.callbacks.manager import (
@@ -51,4 +52,5 @@ __all__ = [
     "get_openai_callback",
     "tracing_enabled",
     "wandb_tracing_enabled",
+    "FlyteCallbackHandler",
 ]
