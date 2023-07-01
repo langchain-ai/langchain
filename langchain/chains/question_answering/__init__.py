@@ -12,9 +12,11 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import (
     map_reduce_prompt,
-    map_rerank_prompt,
     refine_prompts,
     stuff_prompt,
+)
+from langchain.chains.question_answering.map_rerank_prompt import (
+    PROMPT as MAP_RERANK_PROMPT,
 )
 from langchain.prompts.base import BasePromptTemplate
 
@@ -30,7 +32,7 @@ class LoadingCallable(Protocol):
 
 def _load_map_rerank_chain(
     llm: BaseLanguageModel,
-    prompt: BasePromptTemplate = map_rerank_prompt.PROMPT,
+    prompt: BasePromptTemplate = MAP_RERANK_PROMPT,
     verbose: bool = False,
     document_variable_name: str = "context",
     rank_key: str = "score",
