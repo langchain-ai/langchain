@@ -21,7 +21,9 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
-from langchain.schema import BaseMessage, BasePromptTemplate, BaseRetriever, Document
+from langchain.schema import BaseRetriever, Document
+from langchain.schema.messages import BaseMessage
+from langchain.schema.prompt import BasePromptTemplate
 from langchain.vectorstores.base import VectorStore
 
 # Depending on the memory type and configuration, the chat history format may differ.

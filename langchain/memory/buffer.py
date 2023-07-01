@@ -4,7 +4,7 @@ from pydantic import root_validator
 
 from langchain.memory.chat_memory import BaseChatMemory, BaseMemory
 from langchain.memory.utils import get_prompt_input_key
-from langchain.schema import get_buffer_string
+from langchain.schema.messages import get_buffer_string
 
 
 class ConversationBufferMemory(BaseChatMemory):
