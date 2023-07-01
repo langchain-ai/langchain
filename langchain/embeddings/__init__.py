@@ -33,6 +33,7 @@ from langchain.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceInstructEmbeddings,
 )
 from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from langchain.embeddings.spacy_embeddings import SpacyEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain.embeddings.vertexai import VertexAIEmbeddings
 
@@ -66,6 +67,7 @@ __all__ = [
     "DashScopeEmbeddings",
     "EmbaasEmbeddings",
     "OctoAIEmbeddings",
+    "SpacyEmbeddings",
 ]
 
 
