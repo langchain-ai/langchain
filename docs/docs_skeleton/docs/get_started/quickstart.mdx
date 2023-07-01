@@ -138,7 +138,7 @@ The chains and agents we've looked at so far have been stateless, but for many a
 
 The Memory module gives you a way to maintain application state. The base Memory interface is simple: it lets you update state given the latest run inputs and outputs and it lets you modify (or contextualize) the next input using the stored state.
 
-There are a number of built-in memory systems. The simplest of these are is a buffer memory which just prepends the last few inputs/outputs to the current input - we will use this in the example below.
+There are a number of built-in memory systems. The simplest of these is a buffer memory which just prepends the last few inputs/outputs to the current input - we will use this in the example below.
 
 import MemoryLLM from "@snippets/get_started/quickstart/memory_llms.mdx"
 import MemoryChatModel from "@snippets/get_started/quickstart/memory_chat_models.mdx"
