@@ -1,4 +1,5 @@
 """Fake Embedding class for testing purposes."""
+import math
 from typing import List
 
 from langchain.embeddings.base import Embeddings
@@ -45,3 +46,29 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
         if text not in self.known_texts:
             return [float(1.0)] * 9 + [float(0.0)]
         return [float(1.0)] * 9 + [float(self.known_texts.index(text))]
+
+
+class AngularTwoDimensionalEmbeddings(Embeddings):
+    """
+    From angles (as strings in units of pi) to unit embedding vectors on a circle.
+    """
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """
+        Make a list of texts into a list of embedding vectors.
+        """
+        return [self.embed_query(text) for text in texts]
+
+    def embed_query(self, text: str) -> List[float]:
+        """
+        Convert input text to a 'vector' (list of floats).
+        If the text is a number, use it as the angle for the
+        unit vector in units of pi.
+        Any other input text becomes the singular result [0, 0] !
+        """
+        try:
+            angle = float(text)
+            return [math.cos(angle * math.pi), math.sin(angle * math.pi)]
+        except ValueError:
+            # Assume: just test string, no attention is paid to values.
+            return [0.0, 0.0]

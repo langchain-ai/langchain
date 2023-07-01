@@ -61,9 +61,10 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
     test_group_deps = sorted(poetry_conf["group"]["test"]["dependencies"])
 
     assert test_group_deps == [
-        "duckdb-engine",  # Should be removed
+        "duckdb-engine",
         "freezegun",
-        "lark",  # Should be removed
+        "lark",
+        "pandas",
         "pytest",
         "pytest-asyncio",
         "pytest-cov",
@@ -78,6 +79,8 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
 def test_imports() -> None:
     """Test that you can import all top level things okay."""
+    from langchain.agents import OpenAIFunctionsAgent  # noqa: F401
+    from langchain.callbacks import OpenAICallbackHandler  # noqa: F401
     from langchain.chains import LLMChain  # noqa: F401
     from langchain.chat_models import ChatOpenAI  # noqa: F401
     from langchain.document_loaders import BSHTMLLoader  # noqa: F401

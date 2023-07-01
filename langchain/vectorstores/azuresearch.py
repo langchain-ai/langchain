@@ -20,6 +20,10 @@ from typing import (
 import numpy as np
 from pydantic import BaseModel, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever
@@ -243,11 +247,11 @@ class AzureSearch(VectorStore):
     ) -> List[Document]:
         search_type = kwargs.get("search_type", self.search_type)
         if search_type == "similarity":
-            docs = self.vector_search(query, k=k)
+            docs = self.vector_search(query, k=k, **kwargs)
         elif search_type == "hybrid":
-            docs = self.hybrid_search(query, k=k)
+            docs = self.hybrid_search(query, k=k, **kwargs)
         elif search_type == "semantic_hybrid":
-            docs = self.semantic_hybrid_search(query, k=k)
+            docs = self.semantic_hybrid_search(query, k=k, **kwargs)
         else:
             raise ValueError(f"search_type of {search_type} not allowed.")
         return docs
@@ -490,7 +494,12 @@ class AzureSearchVectorStoreRetriever(BaseRetriever, BaseModel):
                 raise ValueError(f"search_type of {search_type} not allowed.")
         return values
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.vector_search(query, k=self.k)
         elif self.search_type == "hybrid":
@@ -501,7 +510,12 @@ class AzureSearchVectorStoreRetriever(BaseRetriever, BaseModel):
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError(
             "AzureSearchVectorStoreRetriever does not support async"
         )

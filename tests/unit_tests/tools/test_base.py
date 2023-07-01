@@ -19,6 +19,7 @@ from langchain.tools.base import (
     StructuredTool,
     ToolException,
 )
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 def test_unnamed_decorator() -> None:
@@ -231,7 +232,7 @@ def test_structured_args_decorator_no_infer_schema() -> None:
     assert isinstance(structured_tool_input, BaseTool)
     assert structured_tool_input.name == "structured_tool_input"
     args = {"arg1": 1, "arg2": 0.001, "opt_arg": {"foo": "bar"}}
-    with pytest.raises(ValueError):
+    with pytest.raises(ToolException):
         assert structured_tool_input.run(args)
 
 
@@ -391,6 +392,64 @@ def test_empty_args_decorator() -> None:
     assert empty_tool_input.name == "empty_tool_input"
     assert empty_tool_input.args == {}
     assert empty_tool_input.run({}) == "the empty result"
+
+
+def test_tool_from_function_with_run_manager() -> None:
+    """Test run of tool when using run_manager."""
+
+    def foo(bar: str, callbacks: Optional[CallbackManagerForToolRun] = None) -> str:
+        """Docstring
+        Args:
+            bar: str
+        """
+        assert callbacks is not None
+        return "foo" + bar
+
+    handler = FakeCallbackHandler()
+    tool = Tool.from_function(foo, name="foo", description="Docstring")
+
+    assert tool.run(tool_input={"bar": "bar"}, run_manager=[handler]) == "foobar"
+    assert tool.run("baz", run_manager=[handler]) == "foobaz"
+
+
+def test_structured_tool_from_function_with_run_manager() -> None:
+    """Test args and schema of structured tool when using callbacks."""
+
+    def foo(
+        bar: int, baz: str, callbacks: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        """Docstring
+        Args:
+            bar: int
+            baz: str
+        """
+        assert callbacks is not None
+        return str(bar) + baz
+
+    handler = FakeCallbackHandler()
+    structured_tool = StructuredTool.from_function(foo)
+
+    assert structured_tool.args == {
+        "bar": {"title": "Bar", "type": "integer"},
+        "baz": {"title": "Baz", "type": "string"},
+    }
+
+    assert structured_tool.args_schema.schema() == {
+        "properties": {
+            "bar": {"title": "Bar", "type": "integer"},
+            "baz": {"title": "Baz", "type": "string"},
+        },
+        "title": "fooSchemaSchema",
+        "type": "object",
+        "required": ["bar", "baz"],
+    }
+
+    assert (
+        structured_tool.run(
+            tool_input={"bar": "10", "baz": "baz"}, run_manger=[handler]
+        )
+        == "10baz"
+    )
 
 
 def test_named_tool_decorator() -> None:

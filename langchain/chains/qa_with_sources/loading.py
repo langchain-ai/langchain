@@ -1,4 +1,6 @@
 """Load question answering with sources chains."""
+from __future__ import annotations
+
 from typing import Any, Mapping, Optional, Protocol
 
 from langchain.base_language import BaseLanguageModel
@@ -13,7 +15,9 @@ from langchain.chains.qa_with_sources import (
     refine_prompts,
     stuff_prompt,
 )
-from langchain.chains.question_answering import map_rerank_prompt
+from langchain.chains.question_answering.map_rerank_prompt import (
+    PROMPT as MAP_RERANK_PROMPT,
+)
 from langchain.prompts.base import BasePromptTemplate
 
 
@@ -28,7 +32,7 @@ class LoadingCallable(Protocol):
 
 def _load_map_rerank_chain(
     llm: BaseLanguageModel,
-    prompt: BasePromptTemplate = map_rerank_prompt.PROMPT,
+    prompt: BasePromptTemplate = MAP_RERANK_PROMPT,
     verbose: bool = False,
     document_variable_name: str = "context",
     rank_key: str = "score",

@@ -18,6 +18,14 @@ INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
 
 def extract_cypher(text: str) -> str:
+    """
+    Extract Cypher code from a text.
+    Args:
+        text: Text to extract Cypher code from.
+
+    Returns:
+        Cypher code extracted from the text.
+    """
     # The pattern to find Cypher code enclosed in triple backticks
     pattern = r"```(.*?)```"
 
@@ -58,6 +66,10 @@ class GraphCypherQAChain(Chain):
         """
         _output_keys = [self.output_key]
         return _output_keys
+
+    @property
+    def _chain_type(self) -> str:
+        return "graph_cypher_chain"
 
     @classmethod
     def from_llm(

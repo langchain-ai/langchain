@@ -1,5 +1,5 @@
 """Module contains common parsers for PDFs."""
-from typing import Any, Iterator, Mapping, Optional
+from typing import Any, Iterator, Mapping, Optional, Union
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
@@ -9,12 +9,15 @@ from langchain.schema import Document
 class PyPDFParser(BaseBlobParser):
     """Loads a PDF with pypdf and chunks at character level."""
 
+    def __init__(self, password: Optional[Union[str, bytes]] = None):
+        self.password = password
+
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
         import pypdf
 
         with blob.as_bytes_io() as pdf_file_obj:
-            pdf_reader = pypdf.PdfReader(pdf_file_obj)
+            pdf_reader = pypdf.PdfReader(pdf_file_obj, password=self.password)
             yield from [
                 Document(
                     page_content=page.extract_text(),

@@ -1,6 +1,7 @@
 """Chain for chatting with a vector database."""
 from __future__ import annotations
 
+import inspect
 import warnings
 from abc import abstractmethod
 from pathlib import Path
@@ -87,7 +88,13 @@ class BaseConversationalRetrievalChain(Chain):
         return _output_keys
 
     @abstractmethod
-    def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+    def _get_docs(
+        self,
+        question: str,
+        inputs: Dict[str, Any],
+        *,
+        run_manager: CallbackManagerForChainRun,
+    ) -> List[Document]:
         """Get docs."""
 
     def _call(
@@ -107,7 +114,13 @@ class BaseConversationalRetrievalChain(Chain):
             )
         else:
             new_question = question
-        docs = self._get_docs(new_question, inputs)
+        accepts_run_manager = (
+            "run_manager" in inspect.signature(self._get_docs).parameters
+        )
+        if accepts_run_manager:
+            docs = self._get_docs(new_question, inputs, run_manager=_run_manager)
+        else:
+            docs = self._get_docs(new_question, inputs)  # type: ignore[call-arg]
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
@@ -122,7 +135,13 @@ class BaseConversationalRetrievalChain(Chain):
         return output
 
     @abstractmethod
-    async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+    async def _aget_docs(
+        self,
+        question: str,
+        inputs: Dict[str, Any],
+        *,
+        run_manager: AsyncCallbackManagerForChainRun,
+    ) -> List[Document]:
         """Get docs."""
 
     async def _acall(
@@ -141,7 +160,14 @@ class BaseConversationalRetrievalChain(Chain):
             )
         else:
             new_question = question
-        docs = await self._aget_docs(new_question, inputs)
+        accepts_run_manager = (
+            "run_manager" in inspect.signature(self._aget_docs).parameters
+        )
+        if accepts_run_manager:
+            docs = await self._aget_docs(new_question, inputs, run_manager=_run_manager)
+        else:
+            docs = await self._aget_docs(new_question, inputs)  # type: ignore[call-arg]
+
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
@@ -187,12 +213,30 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
 
         return docs[:num_docs]
 
-    def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
-        docs = self.retriever.get_relevant_documents(question)
+    def _get_docs(
+        self,
+        question: str,
+        inputs: Dict[str, Any],
+        *,
+        run_manager: CallbackManagerForChainRun,
+    ) -> List[Document]:
+        """Get docs."""
+        docs = self.retriever.get_relevant_documents(
+            question, callbacks=run_manager.get_child()
+        )
         return self._reduce_tokens_below_limit(docs)
 
-    async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
-        docs = await self.retriever.aget_relevant_documents(question)
+    async def _aget_docs(
+        self,
+        question: str,
+        inputs: Dict[str, Any],
+        *,
+        run_manager: AsyncCallbackManagerForChainRun,
+    ) -> List[Document]:
+        """Get docs."""
+        docs = await self.retriever.aget_relevant_documents(
+            question, callbacks=run_manager.get_child()
+        )
         return self._reduce_tokens_below_limit(docs)
 
     @classmethod
@@ -253,14 +297,28 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         )
         return values
 
-    def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+    def _get_docs(
+        self,
+        question: str,
+        inputs: Dict[str, Any],
+        *,
+        run_manager: CallbackManagerForChainRun,
+    ) -> List[Document]:
+        """Get docs."""
         vectordbkwargs = inputs.get("vectordbkwargs", {})
         full_kwargs = {**self.search_kwargs, **vectordbkwargs}
         return self.vectorstore.similarity_search(
             question, k=self.top_k_docs_for_context, **full_kwargs
         )
 
-    async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+    async def _aget_docs(
+        self,
+        question: str,
+        inputs: Dict[str, Any],
+        *,
+        run_manager: AsyncCallbackManagerForChainRun,
+    ) -> List[Document]:
+        """Get docs."""
         raise NotImplementedError("ChatVectorDBChain does not support async")
 
     @classmethod
