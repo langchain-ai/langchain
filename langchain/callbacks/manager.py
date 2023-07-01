@@ -41,11 +41,10 @@ from langchain.callbacks.tracers.wandb import WandbTracer
 from langchain.schema import (
     AgentAction,
     AgentFinish,
-    BaseMessage,
     Document,
     LLMResult,
-    get_buffer_string,
 )
+from langchain.schema.messages import BaseMessage, get_buffer_string
 
 logger = logging.getLogger(__name__)
 Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
