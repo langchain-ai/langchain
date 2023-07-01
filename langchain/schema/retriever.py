@@ -3,14 +3,16 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import Any, List
+from typing import TYPE_CHECKING, Any, List
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-    Callbacks,
-)
 from langchain.schema.document import Document
+
+if TYPE_CHECKING:
+    from langchain.callbacks.manager import (
+        AsyncCallbackManagerForRetrieverRun,
+        CallbackManagerForRetrieverRun,
+        Callbacks,
+    )
 
 
 class BaseRetriever(ABC):
