@@ -145,18 +145,26 @@ class Vectara(VectorStore):
                 logging.error(f"File {file} does not exist, skipping")
                 continue
             md = metadatas[inx] if metadatas else {}
-            files: dict = { "file": (file, open(file, 'rb')), "doc_metadata": json.dumps(md) }
+            files: dict = {
+                "file": (file, open(file, "rb")),
+                "doc_metadata": json.dumps(md),
+            }
             headers = self._get_post_headers()
             headers.pop("Content-Type")
             response = self._session.post(
                 f"https://api.vectara.io/upload?c={self._vectara_customer_id}&o={self._vectara_corpus_id}&d=True",
-                files=files, verify=True, headers=headers)
+                files=files,
+                verify=True,
+                headers=headers,
+            )
 
             if response.status_code == 409:
-                doc_id = response.json()['document']['documentId']
-                logging.info(f"File {file} already exists on Vectara (doc_id={doc_id}), skipping")
+                doc_id = response.json()["document"]["documentId"]
+                logging.info(
+                    f"File {file} already exists on Vectara (doc_id={doc_id}), skipping"
+                )
             elif response.status_code == 200:
-                doc_id = response.json()['document']['documentId']
+                doc_id = response.json()["document"]["documentId"]
                 doc_ids.append(doc_id)
             else:
                 logging.info(f"Error indexing file {file}: {response.json()}")
@@ -175,7 +183,7 @@ class Vectara(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-            doc_metadata: optional metadata for the document 
+            doc_metadata: optional metadata for the document
 
         This function indexes all the input text strings in the Vectara corpus as a single Vectara document,
         Where each input text is considered a "part" and the metadata are associated with each part.
@@ -192,9 +200,9 @@ class Vectara(VectorStore):
         if metadatas is None:
             metadatas = [{} for _ in texts]
         if doc_metadata:
-            doc_metadata['source'] = 'langchain'
+            doc_metadata["source"] = "langchain"
         else:
-            doc_metadata = {'source': 'langchain'}
+            doc_metadata = {"source": "langchain"}
         doc = {
             "document_id": doc_id,
             "metadataJson": json.dumps(doc_metadata),
@@ -204,11 +212,13 @@ class Vectara(VectorStore):
             ],
         }
         success_str = self._index_doc(doc)
-        if success_str == 'E_ALREADY_EXISTS':
+        if success_str == "E_ALREADY_EXISTS":
             self._delete_doc(doc_id)
             self._index_doc(doc)
-        elif success_str == 'E_NO_PERMISSIONS':
-            print("No permissions to add document to Vectara. Check your corpus ID, customer ID and API key")
+        elif success_str == "E_NO_PERMISSIONS":
+            print(
+                "No permissions to add document to Vectara. Check your corpus ID, customer ID and API key"
+            )
         return [doc_id]
 
     def similarity_search_with_score(
@@ -351,7 +361,7 @@ class Vectara(VectorStore):
         """
         # Note: Vectara generates its own embeddings, so we ignore the provided
         # embeddings (required by interface)
-        doc_metadata = kwargs.pop('doc_metadata', {})
+        doc_metadata = kwargs.pop("doc_metadata", {})
         vectara = cls(**kwargs)
         vectara.add_texts(texts, metadatas, doc_metadata=doc_metadata, **kwargs)
         return vectara
@@ -408,7 +418,10 @@ class VectaraRetriever(VectorStoreRetriever):
     """
 
     def add_texts(
-        self, texts: List[str], metadatas: Optional[List[dict]] = None, doc_metadata: Optional[dict] = {},
+        self,
+        texts: List[str],
+        metadatas: Optional[List[dict]] = None,
+        doc_metadata: Optional[dict] = {},
     ) -> None:
         """Add text to the Vectara vectorstore.
 

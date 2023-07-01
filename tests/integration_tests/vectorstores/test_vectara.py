@@ -9,6 +9,7 @@ import urllib.request
 # 2. Create an API_KEY for this corpus with permissions for query and indexing
 # 3. Setup environment variables: VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
 
+
 def get_abbr(s: str) -> str:
     words = s.split(" ")  # Split the string into words
     first_letters = [word[0] for word in words]  # Extract the first letter of each word
@@ -23,33 +24,41 @@ def test_vectara_add_documents() -> None:
     docsearch: Vectara = Vectara.from_texts(
         texts,
         embedding=FakeEmbeddings(),
-        metadatas=[{"abbr": "gg", "test_num": "1"}, {"abbr": "rag", "test_num": "1"}, {"abbr": "dp", "test_num": "1"}],
-        doc_metadata = {"test_num": "1"}
+        metadatas=[
+            {"abbr": "gg", "test_num": "1"},
+            {"abbr": "rag", "test_num": "1"},
+            {"abbr": "dp", "test_num": "1"},
+        ],
+        doc_metadata={"test_num": "1"},
     )
 
     # then add some additional documents
     new_texts = ["large language model", "information retrieval", "question answering"]
     docsearch.add_documents(
         [Document(page_content=t, metadata={"abbr": get_abbr(t)}) for t in new_texts],
-        doc_metadata = {"test_num": "1"}
+        doc_metadata={"test_num": "1"},
     )
 
     # finally do a similarity search to see if all works okay
     output = docsearch.similarity_search(
-        "large language model", k=2, n_sentence_context=0, filter="doc.test_num = 1",
+        "large language model",
+        k=2,
+        n_sentence_context=0,
+        filter="doc.test_num = 1",
     )
     assert output[0].page_content == "large language model"
     assert output[0].metadata == {"abbr": "llm"}
     assert output[1].page_content == "information retrieval"
     assert output[1].metadata == {"abbr": "ir"}
 
+
 def test_vectara_from_files() -> None:
     """Test end to end construction and search."""
 
     # download documents to local storage and then upload as files
     urls = [
-        'https://arxiv.org/pdf/1706.03762.pdf',     # attention paper
-        'https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/Final-DengYu-NOW-Book-DeepLearn2013-ForLecturesJuly2.docx', # deep learning book
+        "https://arxiv.org/pdf/1706.03762.pdf",  # attention paper
+        "https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/Final-DengYu-NOW-Book-DeepLearn2013-ForLecturesJuly2.docx",  # deep learning book
     ]
     files_list = []
     for url in urls:
@@ -65,7 +74,13 @@ def test_vectara_from_files() -> None:
 
     # finally do a similarity search to see if all works okay
     output = docsearch.similarity_search(
-        "By the commonly adopted machine learning tradition", k=1, n_sentence_context=0, filter="doc.test_num = 2",
+        "By the commonly adopted machine learning tradition",
+        k=1,
+        n_sentence_context=0,
+        filter="doc.test_num = 2",
     )
     print(output)
-    assert output[0].page_content == "By the commonly adopted machine learning tradition (e.g., Chapter 28 in Murphy, 2012; Deng and Li, 2013), it may be natural to just classify deep learning techniques into deep discriminative models (e.g., DNNs) and deep probabilistic generative models (e.g., DBN, Deep Boltzmann Machine (DBM))."
+    assert (
+        output[0].page_content
+        == "By the commonly adopted machine learning tradition (e.g., Chapter 28 in Murphy, 2012; Deng and Li, 2013), it may be natural to just classify deep learning techniques into deep discriminative models (e.g., DNNs) and deep probabilistic generative models (e.g., DBN, Deep Boltzmann Machine (DBM))."
+    )
