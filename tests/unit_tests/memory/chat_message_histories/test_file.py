@@ -5,7 +5,7 @@ from typing import Generator
 import pytest
 
 from langchain.memory.chat_message_histories import FileChatMessageHistory
-from langchain.schema import AIMessage, HumanMessage
+from langchain.schema.messages import AIMessage, HumanMessage
 
 
 @pytest.fixture

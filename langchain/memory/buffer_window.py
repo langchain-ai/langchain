@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.schema import BaseMessage, get_buffer_string
+from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
 class ConversationBufferWindowMemory(BaseChatMemory):

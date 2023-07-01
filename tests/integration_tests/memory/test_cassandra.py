@@ -8,10 +8,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories.cassandra import (
     CassandraChatMessageHistory,
 )
-from langchain.schema import (
-    AIMessage,
-    HumanMessage,
-)
+from langchain.schema.messages import AIMessage, HumanMessage
 
 
 def _chat_message_history(

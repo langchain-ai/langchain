@@ -20,13 +20,15 @@ from langchain.prompts.chat import (
 from langchain.schema import (
     AgentAction,
     AgentFinish,
+    OutputParserException,
+)
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
-    BasePromptTemplate,
     FunctionMessage,
-    OutputParserException,
     SystemMessage,
 )
+from langchain.schema.prompt import BasePromptTemplate
 from langchain.tools import BaseTool
 
 
