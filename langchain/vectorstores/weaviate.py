@@ -470,7 +470,7 @@ class Weaviate(VectorStore):
             by_text=by_text,
         )
 
-    def delete(self, ids: List[str]) -> None:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete by vector IDs.
 
         Args:

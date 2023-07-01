@@ -464,7 +464,7 @@ class Redis(VectorStore):
 
     @staticmethod
     def delete(
-        ids: List[str],
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> bool:
         """

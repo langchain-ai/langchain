@@ -745,31 +745,32 @@ class DeepLake(VectorStore):
         return deeplake_dataset
 
     def delete(
-        self,
-        ids: Any[List[str], None] = None,
-        filter: Any[Dict[str, str], None] = None,
-        delete_all: Any[bool, None] = None,
-    ) -> bool:
-        """Delete the entities in the dataset.
+            self,
+            ids: Optional[List[str]] = None,
+            **kwargs: Any
+        ) -> bool:
+            """Delete the entities in the dataset.
 
-        Args:
-            ids (Optional[List[str]], optional): The document_ids to delete.
-                Defaults to None.
-            filter (Optional[Dict[str, str]], optional): The filter to delete by.
-                Defaults to None.
-            delete_all (Optional[bool], optional): Whether to drop the dataset.
-                Defaults to None.
+            Args:
+                ids (Optional[List[str]], optional): The document_ids to delete.
+                    Defaults to None.
+                **kwargs: Other keyword arguments that subclasses might use.
+                    - filter (Optional[Dict[str, str]], optional): The filter to delete by.
+                    - delete_all (Optional[bool], optional): Whether to drop the dataset.
 
-        Returns:
-            bool: Whether the delete operation was successful.
-        """
-        self.vectorstore.delete(
-            ids=ids,
-            filter=filter,
-            delete_all=delete_all,
-        )
+            Returns:
+                bool: Whether the delete operation was successful.
+            """
+            filter = kwargs.get('filter')
+            delete_all = kwargs.get('delete_all')
 
-        return True
+            self.vectorstore.delete(
+                ids=ids,
+                filter=filter,
+                delete_all=delete_all
+            )
+
+            return True
 
     @classmethod
     def force_delete_by_path(cls, path: str) -> None:
