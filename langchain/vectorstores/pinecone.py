@@ -359,7 +359,7 @@ class Pinecone(VectorStore):
                 delete_all: Optional[bool] = None,
                 namespace: Optional[str] = None,
                 filter: Optional[dict] = None,
-                **kwargs) -> None:
+                **kwargs: Any) -> None:
         """Delete by vector IDs or filter.
         Args:
             ids: List of ids to delete.

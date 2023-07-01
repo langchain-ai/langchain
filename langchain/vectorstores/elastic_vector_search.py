@@ -324,6 +324,9 @@ class ElasticVectorSearch(VectorStore, ABC):
             ids: List of ids to delete.
         """
 
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+
         # TODO: Check if this can be done in bulk
         for id in ids:
             self.client.delete(index=self.index_name, id=id)

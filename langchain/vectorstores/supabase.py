@@ -352,6 +352,10 @@ class SupabaseVectorStore(VectorStore):
         Args:
             ids: List of ids to delete.
         """
+
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+
         rows: List[dict[str, Any]] = [
             {
                 "id": id,

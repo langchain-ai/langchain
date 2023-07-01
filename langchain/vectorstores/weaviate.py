@@ -477,6 +477,9 @@ class Weaviate(VectorStore):
             ids: List of ids to delete.
         """
 
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+
         # TODO: Check if this can be done in bulk
         for id in ids:
             self._client.data_object.delete(uuid=id)
