@@ -5,10 +5,8 @@ from typing import List
 
 from langchain.schema import (
     BaseChatMessageHistory,
-    BaseMessage,
-    messages_from_dict,
-    messages_to_dict,
 )
+from langchain.schema.messages import BaseMessage, messages_from_dict, messages_to_dict
 
 logger = logging.getLogger(__name__)
 

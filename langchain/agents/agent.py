@@ -32,10 +32,10 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     AgentAction,
     AgentFinish,
-    BaseMessage,
     BaseOutputParser,
     OutputParserException,
 )
+from langchain.schema.messages import BaseMessage
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 

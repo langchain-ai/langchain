@@ -4,7 +4,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from langchain.memory.chat_message_histories import ZepChatMessageHistory
-from langchain.schema import AIMessage, HumanMessage
+from langchain.schema.messages import AIMessage, HumanMessage
 
 if TYPE_CHECKING:
     from zep_python import ZepClient
