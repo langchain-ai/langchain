@@ -1,13 +1,15 @@
 """Test agent trajectory evaluation chain."""
 
-from typing import List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
+from pydantic import Field
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
-from langchain.schema import AgentAction
+from langchain.schema import AgentAction, BaseMessage
 from langchain.tools.base import tool
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 
 
 @pytest.fixture
@@ -30,10 +32,31 @@ def foo(bar: str) -> str:
     return bar
 
 
+class _FakeTrajectoryChatModel(FakeChatModel):
+    queries: Dict = Field(default_factory=dict)
+    sequential_responses: Optional[bool] = False
+    response_index: int = 0
+
+    def _call(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        if self.sequential_responses:
+            response = self.queries[list(self.queries.keys())[self.response_index]]
+            self.response_index = self.response_index + 1
+            return response
+        else:
+            prompt = messages[0].content
+            return self.queries[prompt]
+
+
 def test_trajectory_eval_chain(
     intermediate_steps: List[Tuple[AgentAction, str]]
 ) -> None:
-    llm = FakeLLM(
+    llm = _FakeTrajectoryChatModel(
         queries={
             "a": "Trajectory good\nScore: 5",
             "b": "Trajectory not good\nScore: 1",
@@ -61,7 +84,7 @@ def test_trajectory_eval_chain(
 def test_trajectory_eval_chain_no_tools(
     intermediate_steps: List[Tuple[AgentAction, str]]
 ) -> None:
-    llm = FakeLLM(
+    llm = _FakeTrajectoryChatModel(
         queries={
             "a": "Trajectory good\nScore: 5",
             "b": "Trajectory not good\nScore: 1",
@@ -85,7 +108,7 @@ def test_trajectory_eval_chain_no_tools(
 
 
 def test_old_api_works(intermediate_steps: List[Tuple[AgentAction, str]]) -> None:
-    llm = FakeLLM(
+    llm = _FakeTrajectoryChatModel(
         queries={
             "a": "Trajectory good\nScore: 5",
             "b": "Trajectory not good\nScore: 1",

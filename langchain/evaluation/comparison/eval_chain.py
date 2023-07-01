@@ -9,6 +9,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.comparison.prompt import PROMPT, PROMPT_WITH_REFERENCE
+from langchain.evaluation.schema import PairwiseStringEvaluator
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser
 
@@ -50,7 +51,7 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
         }
 
 
-class PairwiseStringEvalChain(LLMChain):
+class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMChain):
     """A chain for comparing the output of two models.
 
     Example:
@@ -83,8 +84,8 @@ class PairwiseStringEvalChain(LLMChain):
     @classmethod
     def from_llm(
         cls,
-        *,
         llm: BaseLanguageModel,
+        *,
         prompt: Optional[PromptTemplate] = None,
         require_reference: bool = False,
         **kwargs: Any,
@@ -121,14 +122,23 @@ class PairwiseStringEvalChain(LLMChain):
         return cls(llm=llm, prompt=prompt_, **kwargs)
 
     def _prepare_input(
-        self, prediction: str, prediction_b: str, input: str, reference: Optional[str]
+        self,
+        prediction: str,
+        prediction_b: str,
+        input: Optional[str],
+        reference: Optional[str],
     ) -> dict:
         input_ = {
             "prediction": prediction,
             "prediction_b": prediction_b,
-            "input": input,
         }
-        if reference is not None and "reference" in self.prompt.input_variables:
+        if "input" in self.prompt.input_variables:
+            if not input:
+                raise ValueError("Input is require for this comparison evaluator")
+            input_["input"] = input
+        if "reference" in self.prompt.input_variables:
+            if reference is None:
+                raise ValueError("Reference is required for this comparison evaluator")
             input_["reference"] = reference
         return input_
 
@@ -137,7 +147,7 @@ class PairwiseStringEvalChain(LLMChain):
         *,
         prediction: str,
         prediction_b: str,
-        input: str,
+        input: Optional[str] = None,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
@@ -173,8 +183,8 @@ class PairwiseStringEvalChain(LLMChain):
         *,
         prediction: str,
         prediction_b: str,
-        input: str,
         reference: Optional[str] = None,
+        input: Optional[str] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> dict:
