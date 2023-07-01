@@ -5,7 +5,6 @@ import json
 from typing import Any, Callable, List, Optional, Sequence
 
 from langchain import BasePromptTemplate, FewShotPromptTemplate, LLMChain
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Operator,
@@ -23,7 +22,7 @@ from langchain.chains.query_constructor.prompt import (
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.output_parsers.json import parse_and_check_json_markdown
-from langchain.schema import BaseOutputParser, OutputParserException
+from langchain.schema import BaseOutputParser, OutputParserException, BaseLanguageModel
 
 
 class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):

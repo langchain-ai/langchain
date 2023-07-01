@@ -12,7 +12,6 @@ from langchain.agents.agent_types import AgentType
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.prompts.chat import (
@@ -20,7 +19,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain.schema import AIMessage, SystemMessage
+from langchain.schema import AIMessage, SystemMessage, BaseLanguageModel
 
 
 def create_sql_agent(

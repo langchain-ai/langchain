@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
-from langchain.base_language import BaseLanguageModel
+from langchain.schema import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain

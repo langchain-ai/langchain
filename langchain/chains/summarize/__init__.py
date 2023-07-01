@@ -1,7 +1,7 @@
 """Load summarizing chains."""
 from typing import Any, Mapping, Optional, Protocol
 
-from langchain.base_language import BaseLanguageModel
+from langchain.schema import BaseLanguageModel
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain

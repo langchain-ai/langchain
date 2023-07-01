@@ -7,7 +7,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, cast
 from pydantic import BaseModel, Field
 from requests import Response
 
-from langchain.base_language import BaseLanguageModel
+from langchain.schema import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain.chains.api.openapi.requests_chain import APIRequesterChain
 from langchain.chains.api.openapi.response_chain import APIResponderChain

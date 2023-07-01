@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, root_validator
 
-from langchain.base_language import BaseLanguageModel
+from langchain.schema import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,

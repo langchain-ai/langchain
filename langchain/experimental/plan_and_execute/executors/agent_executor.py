@@ -2,7 +2,7 @@ from typing import List
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.structured_chat.base import StructuredChatAgent
-from langchain.base_language import BaseLanguageModel
+from langchain.schema import BaseLanguageModel
 from langchain.experimental.plan_and_execute.executors.base import ChainExecutor
 from langchain.tools import BaseTool
 

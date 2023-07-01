@@ -16,11 +16,10 @@ from langchain.agents.agent_toolkits.pandas.prompt import (
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
 from langchain.agents.types import AgentType
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import SystemMessage
+from langchain.schema import SystemMessage, BaseLanguageModel
 from langchain.tools.python.tool import PythonAstREPLTool
 
 

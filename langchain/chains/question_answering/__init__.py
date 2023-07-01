@@ -1,7 +1,7 @@
 """Load question answering chains."""
 from typing import Any, Mapping, Optional, Protocol
 
-from langchain.base_language import BaseLanguageModel
+from langchain.schema import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain

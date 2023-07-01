@@ -10,7 +10,7 @@ from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
-from langchain.base_language import BaseLanguageModel
+from langchain.schema import BaseLanguageModel
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.prompts.base import BasePromptTemplate

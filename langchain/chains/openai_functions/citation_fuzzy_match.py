@@ -2,14 +2,13 @@ from typing import Iterator, List
 
 from pydantic import BaseModel, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import get_llm_kwargs
 from langchain.output_parsers.openai_functions import (
     PydanticOutputFunctionsParser,
 )
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema import HumanMessage, SystemMessage, BaseLanguageModel
 
 
 class FactWithEvidence(BaseModel):
