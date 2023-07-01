@@ -10,6 +10,10 @@ from typing import Any, List, Optional
 import numpy as np
 from pydantic import BaseModel
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
 
@@ -50,7 +54,13 @@ class SVMRetriever(BaseRetriever, BaseModel):
         index = create_index(texts, embeddings)
         return cls(embeddings=embeddings, index=index, texts=texts, **kwargs)
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         from sklearn import svm
 
         query_embeds = np.array(self.embeddings.embed_query(query))
@@ -87,5 +97,11 @@ class SVMRetriever(BaseRetriever, BaseModel):
                 top_k_results.append(Document(page_content=self.texts[row - 1]))
         return top_k_results
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError

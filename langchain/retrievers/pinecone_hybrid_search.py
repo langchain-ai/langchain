@@ -1,9 +1,14 @@
 """Taken from: https://docs.pinecone.io/docs/hybrid-search"""
+
 import hashlib
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
 
@@ -95,6 +100,7 @@ def create_index(
 
 class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
     embeddings: Embeddings
+    """description"""
     sparse_encoder: Any
     index: Any
     top_k: int = 4
@@ -136,7 +142,13 @@ class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
             )
         return values
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         from pinecone_text.hybrid import hybrid_convex_scale
 
         sparse_vec = self.sparse_encoder.encode_queries(query)
@@ -161,5 +173,11 @@ class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
         # return search results as json
         return final_result
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError

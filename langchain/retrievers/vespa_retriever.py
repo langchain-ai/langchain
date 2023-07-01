@@ -1,9 +1,14 @@
 """Wrapper for retrieving documents from Vespa."""
+
 from __future__ import annotations
 
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.schema import BaseRetriever, Document
 
 if TYPE_CHECKING:
@@ -20,6 +25,15 @@ class VespaRetriever(BaseRetriever):
         content_field: str,
         metadata_fields: Optional[Sequence[str]] = None,
     ):
+        """
+
+        Args:
+            app: Vespa client.
+            body: query body.
+            content_field: result field with document contents.
+            metadata_fields: result fields to include in document metadata.
+
+        """
         self._application = app
         self._query_body = body
         self._content_field = content_field
@@ -50,12 +64,24 @@ class VespaRetriever(BaseRetriever):
             docs.append(Document(page_content=page_content, metadata=metadata))
         return docs
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         body = self._query_body.copy()
         body["query"] = query
         return self._query(body)
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError
 
     def get_relevant_documents_with_filter(

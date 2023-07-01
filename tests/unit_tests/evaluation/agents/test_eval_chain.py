@@ -45,14 +45,14 @@ def test_trajectory_eval_chain(
     res = chain.evaluate_agent_trajectory(
         input="What is your favorite food?",
         agent_trajectory=intermediate_steps,
-        output="I like pie.",
+        prediction="I like pie.",
     )
     assert res["score"] == 5
     # Test when ref is provided
     res = chain.evaluate_agent_trajectory(
         input="What is your favorite food?",
         agent_trajectory=intermediate_steps,
-        output="I like pie.",
+        prediction="I like pie.",
         reference="Paris",
     )
     assert res["score"] == 1
@@ -72,13 +72,13 @@ def test_trajectory_eval_chain_no_tools(
     res = chain.evaluate_agent_trajectory(
         input="What is your favorite food?",
         agent_trajectory=intermediate_steps,
-        output="I like pie.",
+        prediction="I like pie.",
     )
     assert res["score"] == 5
     res = chain.evaluate_agent_trajectory(
         input="What is your favorite food?",
         agent_trajectory=intermediate_steps,
-        output="I like pie.",
+        prediction="I like pie.",
         reference="Paris",
     )
     assert res["score"] == 1
