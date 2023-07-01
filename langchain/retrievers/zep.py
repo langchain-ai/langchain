@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.schema import BaseRetriever, Document
 
 if TYPE_CHECKING:
@@ -20,13 +24,14 @@ class ZepRetriever(BaseRetriever):
     histories, and exposes them via simple, low-latency APIs.
 
     For server installation instructions, see:
-    https://getzep.github.io/deployment/quickstart/
+    https://docs.getzep.com/deployment/quickstart/
     """
 
     def __init__(
         self,
         session_id: str,
         url: str,
+        api_key: Optional[str] = None,
         top_k: Optional[int] = None,
     ):
         try:
@@ -37,7 +42,7 @@ class ZepRetriever(BaseRetriever):
                 "Please install it with `pip install zep-python`."
             )
 
-        self.zep_client = ZepClient(base_url=url)
+        self.zep_client = ZepClient(base_url=url, api_key=api_key)
         self.session_id = session_id
         self.top_k = top_k
 
@@ -53,8 +58,13 @@ class ZepRetriever(BaseRetriever):
             if r.message
         ]
 
-    def get_relevant_documents(
-        self, query: str, metadata: Optional[Dict] = None
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        metadata: Optional[Dict] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         from zep_python import MemorySearchPayload
 
@@ -68,8 +78,13 @@ class ZepRetriever(BaseRetriever):
 
         return self._search_result_to_doc(results)
 
-    async def aget_relevant_documents(
-        self, query: str, metadata: Optional[Dict] = None
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        metadata: Optional[Dict] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         from zep_python import MemorySearchPayload
 
