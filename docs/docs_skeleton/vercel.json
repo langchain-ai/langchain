@@ -137,8 +137,8 @@
       "destination": "/docs/ecosystem/integrations/ctransformers"
     },
     {
-      "source": "/en/latest/integrations/databerry.html",
-      "destination": "/docs/ecosystem/integrations/databerry"
+      "source": "/en/latest/integrations/chaindesk.html",
+      "destination": "/docs/ecosystem/integrations/chaindesk"
     },
     {
       "source": "/en/latest/integrations/databricks/databricks.html",
@@ -1329,8 +1329,8 @@
       "destination": "/docs/modules/data_connection/retrievers/integrations/cohere-reranker"
     },
     {
-      "source": "/en/latest/modules/indexes/retrievers/examples/databerry.html",
-      "destination": "/docs/modules/data_connection/retrievers/integrations/databerry"
+      "source": "/en/latest/modules/indexes/retrievers/examples/chaindesk.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/chaindesk"
     },
     {
       "source": "/en/latest/modules/indexes/retrievers/examples/elastic_search_bm25.html",

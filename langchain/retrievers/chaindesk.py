@@ -10,8 +10,8 @@ from langchain.callbacks.manager import (
 from langchain.schema import BaseRetriever, Document
 
 
-class DataberryRetriever(BaseRetriever):
-    """Retriever that uses the Databerry API."""
+class ChaindeskRetriever(BaseRetriever):
+    """Retriever that uses the Chaindesk API."""
 
     datastore_url: str
     top_k: Optional[int]
