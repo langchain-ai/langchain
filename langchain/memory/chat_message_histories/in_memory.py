@@ -4,8 +4,8 @@ from pydantic import BaseModel
 
 from langchain.schema import (
     BaseChatMessageHistory,
-    BaseMessage,
 )
+from langchain.schema.messages import BaseMessage
 
 
 class ChatMessageHistory(BaseChatMessageHistory, BaseModel):

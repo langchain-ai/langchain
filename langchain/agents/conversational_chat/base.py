@@ -25,11 +25,9 @@ from langchain.prompts.chat import (
 )
 from langchain.schema import (
     AgentAction,
-    AIMessage,
-    BaseMessage,
     BaseOutputParser,
-    HumanMessage,
 )
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 from langchain.tools.base import BaseTool
 
 

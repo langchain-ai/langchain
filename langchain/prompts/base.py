@@ -11,7 +11,8 @@ from pydantic import Field, root_validator
 
 from langchain.formatting import formatter
 from langchain.load.serializable import Serializable
-from langchain.schema import BaseMessage, BaseOutputParser, HumanMessage, PromptValue
+from langchain.schema import BaseOutputParser, PromptValue
+from langchain.schema.messages import BaseMessage, HumanMessage
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
