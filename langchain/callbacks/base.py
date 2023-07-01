@@ -4,7 +4,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
-from langchain.schema import AgentAction, AgentFinish, BaseMessage, Document, LLMResult
+from langchain.schema import AgentAction, AgentFinish, Document, LLMResult
+from langchain.schema.messages import BaseMessage
 
 
 class RetrieverManagerMixin:

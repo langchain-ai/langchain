@@ -18,7 +18,8 @@ from langchain.callbacks.tracers.langchain_v1 import (
     TracerSessionV1,
 )
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum, TracerSessionV1Base
-from langchain.schema import HumanMessage, LLMResult
+from langchain.schema import LLMResult
+from langchain.schema.messages import HumanMessage
 
 TEST_SESSION_ID = 2023
 
