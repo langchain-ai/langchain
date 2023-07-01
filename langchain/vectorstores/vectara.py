@@ -129,11 +129,14 @@ class Vectara(VectorStore):
         **kwargs: Any,
     ) -> List[str]:
         """
-        Vectara provides a way to add documents directly via our API where pre-processing and chunking occurs internally in an optimal way
+        Vectara provides a way to add documents directly via our API where
+        pre-processing and chunking occurs internally in an optimal way
         This method provides a way to use that API in LangChain
 
         Args:
-            files_list: Iterable of strings, each representing a local file path. Files could be text, HTML, PDF, markdown, doc/docx, ppt/pptx, etc. see API docs for full list
+            files_list: Iterable of strings, each representing a local file path.
+                    Files could be text, HTML, PDF, markdown, doc/docx, ppt/pptx, etc.
+                    see API docs for full list
             metadatas: Optional list of metadatas associated with each file
 
         Returns:
@@ -141,7 +144,7 @@ class Vectara(VectorStore):
         """
         doc_ids = []
         for inx, file in enumerate(files_list):
-            if os.path.exists(file) == False:
+            if not os.path.exists(file):
                 logging.error(f"File {file} does not exist, skipping")
                 continue
             md = metadatas[inx] if metadatas else {}
@@ -185,8 +188,9 @@ class Vectara(VectorStore):
             metadatas: Optional list of metadatas associated with the texts.
             doc_metadata: optional metadata for the document
 
-        This function indexes all the input text strings in the Vectara corpus as a single Vectara document,
-        Where each input text is considered a "part" and the metadata are associated with each part.
+        This function indexes all the input text strings in the Vectara corpus as a
+        single Vectara document, where each input text is considered a "part" and the
+        metadata are associated with each part.
         if 'doc_metadata' is provided, it is associated with the Vectara document.
 
         Returns:
@@ -217,7 +221,8 @@ class Vectara(VectorStore):
             self._index_doc(doc)
         elif success_str == "E_NO_PERMISSIONS":
             print(
-                "No permissions to add document to Vectara. Check your corpus ID, customer ID and API key"
+                """No permissions to add document to Vectara. 
+                Check your corpus ID, customer ID and API key"""
             )
         return [doc_id]
 

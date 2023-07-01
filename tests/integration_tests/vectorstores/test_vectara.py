@@ -7,7 +7,8 @@ import urllib.request
 # For this test to run properly, please setup as follows
 # 1. Create a corpus in Vectara, with a filter attribute called "test_num".
 # 2. Create an API_KEY for this corpus with permissions for query and indexing
-# 3. Setup environment variables: VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
+# 3. Setup environment variables:
+#    VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
 
 
 def get_abbr(s: str) -> str:
