@@ -43,3 +43,30 @@ def test_partial_with_chat_prompts() -> None:
     assert pipeline_prompt.input_variables == ["bar"]
     output = pipeline_prompt.format_prompt(bar="okay")
     assert output.to_messages()[0].content == "jim okay"
+
+
+def test_missing_variable() -> None:
+    prompt_a = PromptTemplate.from_template("{foo}")
+    prompt_b = PromptTemplate.from_template("okay {bar}")
+    prompt_c = PromptTemplate.from_template("{A} {B}")
+    pipeline_prompt = PipelinePromptTemplate(
+        final_prompt=prompt_c, pipeline_prompts=[("A", prompt_a), ("B", prompt_b)]
+    )
+    output = pipeline_prompt.format(foo="jim")
+
+    print(output)
+    assert output == "jim okay "
+
+
+def test_missing_variable_jinja2() -> None:
+    prompt_a = PromptTemplate.from_template("{{foo}}", template_format="jinja2")
+    prompt_b = PromptTemplate.from_template("okay {{bar}}", template_format="jinja2")
+    prompt_c = PromptTemplate.from_template("{{A}} {{B}}", template_format="jinja2")
+    pipeline_prompt = PipelinePromptTemplate(
+        final_prompt=prompt_c,
+        pipeline_prompts=[("A", prompt_a), ("B", prompt_b)],
+    )
+    output = pipeline_prompt.format(foo="jim")
+
+    print(output)
+    assert output == "jim okay "

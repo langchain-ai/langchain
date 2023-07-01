@@ -8,7 +8,7 @@ from langchain.schema import PromptValue
 
 
 def _get_inputs(inputs: dict, input_variables: List[str]) -> dict:
-    return {k: inputs[k] for k in input_variables}
+    return {k: inputs.get(k, "") for k in input_variables}
 
 
 class PipelinePromptTemplate(BasePromptTemplate):
