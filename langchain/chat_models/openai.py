@@ -351,7 +351,9 @@ class ChatOpenAI(BaseChatModel):
                     role = stream_resp["choices"][0]["delta"].get("role", role)
                     token = stream_resp["choices"][0]["delta"].get("content") or ""
                     inner_completion += token
-                    _function_call = stream_resp["choices"][0]["delta"].get("function_call")
+                    _function_call = stream_resp["choices"][0]["delta"].get(
+                        "function_call"
+                    )
                     if _function_call:
                         if function_call is None:
                             function_call = _function_call

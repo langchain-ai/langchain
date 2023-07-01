@@ -74,9 +74,12 @@ tracing_v2_callback_var: ContextVar[
 def _get_debug() -> bool:
     return langchain.debug
 
+
 class StreamInterruption(Exception):
     """Exception to signal an interruption to a streaming response."""
+
     pass
+
 
 @contextmanager
 def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
