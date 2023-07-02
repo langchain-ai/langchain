@@ -17,7 +17,14 @@ class ConversationTokenBufferMemory(BaseChatMemory):
     @property
     def buffer(self) -> List[BaseMessage]:
         """String buffer of memory."""
-        return self.chat_memory.messages
+        if self.return_messages:
+            return self.chat_memory.messages
+        else:
+            return get_buffer_string(
+                self.chat_memory.messages,
+                human_prefix=self.human_prefix,
+                ai_prefix=self.ai_prefix,
+            )
 
     @property
     def memory_variables(self) -> List[str]:
