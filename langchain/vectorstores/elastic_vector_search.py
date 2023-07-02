@@ -317,12 +317,15 @@ class ElasticVectorSearch(VectorStore, ABC):
             )
         return response
 
-    def delete(self, ids: List[str]) -> None:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete by vector IDs.
 
         Args:
             ids: List of ids to delete.
         """
+
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
 
         # TODO: Check if this can be done in bulk
         for id in ids:
