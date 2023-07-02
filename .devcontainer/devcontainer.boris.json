@@ -1,0 +1,29 @@
+{
+	"dockerComposeFile": "./docker-compose.yaml",
+	"service": "langchain",
+	"workspaceFolder": "/workspaces/langchain",
+	"name": "langchain",
+	"customizations": {
+		"vscode": {
+			"extensions": [   
+				"ms-python.python"
+			],
+			"settings": {
+				"python.defaultInterpreterPath": "/home/vscode/langchain-py-env/bin/python3.11",
+                "terminal.integrated.shell.linux": "/usr/bin/zsh"
+			}
+		}
+		
+	},
+
+    "features": {
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/devcontainers/features/sshd:1": { "version": "latest" }
+    },
+
+
+	"postCreateCommand": "/bin/bash bootstrap.sh",
+
+	"remoteUser": "vscode",
+	"overrideCommand": true
+}

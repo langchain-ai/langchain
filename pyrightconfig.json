@@ -1,0 +1,16 @@
+{
+  "executionEnvironments": [
+        {"root": "/Users/borisdev/workspace/langchain/langchain"}
+  ],
+  "include": [
+    "/Users/borisdev/workspace/langchain/.devcontainer/site-packages",
+  ],
+  
+  "exclude": [
+    "/Users/borisdev/.pyenv/versions/3.8.12/lib/python3.8/site-packages"
+  ],
+
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false
+
+}
