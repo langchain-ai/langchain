@@ -52,7 +52,10 @@ class EmbaasDocumentExtractionPayload(EmbaasDocumentExtractionParameters):
 
 
 class BaseEmbaasLoader(BaseModel):
+    """Base class for embedding a model into an Embaas document extraction API."""
+
     embaas_api_key: Optional[str] = None
+    """The API key for the embaas document extraction API."""
     api_url: str = EMBAAS_DOC_API_URL
     """The URL of the embaas document extraction API."""
     params: EmbaasDocumentExtractionParameters = EmbaasDocumentExtractionParameters()
@@ -69,7 +72,7 @@ class BaseEmbaasLoader(BaseModel):
 
 
 class EmbaasBlobLoader(BaseEmbaasLoader, BaseBlobParser):
-    """Wrapper around embaas's document byte loader service.
+    """Embaas's document byte loader.
 
     To use, you should have the
     environment variable ``EMBAAS_API_KEY`` set with your API key, or pass
@@ -99,6 +102,11 @@ class EmbaasBlobLoader(BaseEmbaasLoader, BaseBlobParser):
     """
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+        """Parses the blob lazily.
+
+        Args:
+            blob: The blob to parse.
+        """
         yield from self._get_documents(blob=blob)
 
     @staticmethod
@@ -170,7 +178,7 @@ class EmbaasBlobLoader(BaseEmbaasLoader, BaseBlobParser):
 
 
 class EmbaasLoader(BaseEmbaasLoader, BaseLoader):
-    """Wrapper around embaas's document loader service.
+    """Embaas's document loader.
 
     To use, you should have the
     environment variable ``EMBAAS_API_KEY`` set with your API key, or pass
