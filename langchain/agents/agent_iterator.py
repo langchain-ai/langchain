@@ -327,7 +327,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         self,
         next_step_output: AgentFinish | list[tuple[AgentAction, str]],
         run_manager: Optional[CallbackManagerForChainRun],
-    ) -> dict[str, Any] | dict[str, list[tuple[AgentAction, str]]]:
+    ) -> dict[str, str | list[tuple[AgentAction, str]]]:
         """
         Process the output of the next step,
         handling AgentFinish and tool return cases.
@@ -361,15 +361,14 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
                 self.final_outputs = output
                 return output
 
-        #output = {"intermediate_steps": self.intermediate_steps}
-        #return output
-        return next_step_output
+        output = {"intermediate_step": next_step_output}
+        return output
 
     async def _aprocess_next_step_output(
         self,
         next_step_output: AgentFinish | list[tuple[AgentAction, str]],
         run_manager: Optional[AsyncCallbackManagerForChainRun],
-    ) -> (dict[str, Any] | dict[str, list[tuple[AgentAction, str]]]):
+    ) -> (dict[str, str | list[tuple[AgentAction, str]]]):
         """
         Process the output of the next async step,
         handling AgentFinish and tool return cases.
@@ -403,9 +402,8 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
                 self.final_outputs = output
                 return output
 
-        #output = {"intermediate_steps": self.intermediate_steps}
-        #return output
-        return next_step_output
+        output = {"intermediate_step": next_step_output}
+        return output
 
     def _stop(self) -> dict[str, Any]:
         """

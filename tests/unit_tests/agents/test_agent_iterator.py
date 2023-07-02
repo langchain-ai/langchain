@@ -273,8 +273,8 @@ def test_agent_iterator_output_structure() -> None:
 
     for step in agent_iter:
         assert isinstance(step, dict)
-        if "intermediate_steps" in step:
-            assert isinstance(step["intermediate_steps"], list)
+        if "intermediate_step" in step:
+            assert isinstance(step["intermediate_step"], list)
         elif "output" in step:
             assert isinstance(step["output"], str)
         else:
@@ -290,8 +290,8 @@ async def test_agent_async_iterator_output_structure() -> None:
     assert isinstance(agent_async_iter, AgentExecutorIterator)
     async for step in agent_async_iter:
         assert isinstance(step, dict)
-        if "intermediate_steps" in step:
-            assert isinstance(step["intermediate_steps"], list)
+        if "intermediate_step" in step:
+            assert isinstance(step["intermediate_step"], list)
         elif "output" in step:
             assert isinstance(step["output"], str)
         else:
