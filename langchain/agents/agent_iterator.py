@@ -361,8 +361,9 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
                 self.final_outputs = output
                 return output
 
-        output = {"intermediate_steps": self.intermediate_steps}
-        return output
+        #output = {"intermediate_steps": self.intermediate_steps}
+        #return output
+        return next_step_output
 
     async def _aprocess_next_step_output(
         self,
@@ -402,8 +403,9 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
                 self.final_outputs = output
                 return output
 
-        output = {"intermediate_steps": self.intermediate_steps}
-        return output
+        #output = {"intermediate_steps": self.intermediate_steps}
+        #return output
+        return next_step_output
 
     def _stop(self) -> dict[str, Any]:
         """
