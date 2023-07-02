@@ -15,7 +15,7 @@ class ConversationTokenBufferMemory(BaseChatMemory):
     max_token_limit: int = 2000
 
     @property
-    def buffer(self) -> List[BaseMessage]:
+    def buffer(self) -> Any:
         """String buffer of memory."""
         if self.return_messages:
             return self.chat_memory.messages
