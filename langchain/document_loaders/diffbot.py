@@ -11,12 +11,19 @@ logger = logging.getLogger(__name__)
 
 
 class DiffbotLoader(BaseLoader):
-    """Loader that loads Diffbot file json."""
+    """Loads Diffbot file json."""
 
     def __init__(
         self, api_token: str, urls: List[str], continue_on_failure: bool = True
     ):
-        """Initialize with API token, ids, and key."""
+        """Initialize with API token, ids, and key.
+
+        Args:
+            api_token: Diffbot API token.
+            urls: List of URLs to load.
+            continue_on_failure: Whether to continue loading other URLs if one fails.
+               Defaults to True.
+        """
         self.api_token = api_token
         self.urls = urls
         self.continue_on_failure = continue_on_failure
@@ -38,7 +45,7 @@ class DiffbotLoader(BaseLoader):
         return response.json() if response.ok else {}
 
     def load(self) -> List[Document]:
-        """Extract text from Diffbot on all the URLs and return Document instances"""
+        """Extract text from Diffbot on all the URLs and return Documents"""
         docs: List[Document] = list()
 
         for url in self.urls:
