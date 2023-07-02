@@ -1,6 +1,5 @@
 """Test RDF/ SPARQL Graph Database Chain."""
 import os
-import pytest
 
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
 from langchain.graphs import RdfGraph
@@ -11,10 +10,10 @@ def test_connect_file_rdf() -> None:
     """
     Test loading online resource.
     """
-    url = "http://www.w3.org/People/Berners-Lee/card"
+    berners_lee_card = "http://www.w3.org/People/Berners-Lee/card"
 
     graph = RdfGraph(
-        url=url,
+        source_file=berners_lee_card,
         standard="rdf",
     )
 
@@ -33,10 +32,10 @@ def test_sparql_select() -> None:
     """
     Test for generating and executing simple SPARQL SELECT query.
     """
-    url = "http://www.w3.org/People/Berners-Lee/card"
+    berners_lee_card = "http://www.w3.org/People/Berners-Lee/card"
 
     graph = RdfGraph(
-        url=url,
+        source_file=berners_lee_card,
         standard="rdf",
     )
 
@@ -50,13 +49,13 @@ def test_sparql_insert() -> None:
     """
     Test for generating and executing simple SPARQL INSERT query.
     """
-    url = "http://www.w3.org/People/Berners-Lee/card"
-    _local_file = "test.ttl"
+    berners_lee_card = "http://www.w3.org/People/Berners-Lee/card"
+    _local_copy = "test.ttl"
 
     graph = RdfGraph(
-        url=url,
+        source_file=berners_lee_card,
         standard="rdf",
-        local_file=_local_file,
+        local_copy=_local_copy,
     )
 
     chain = GraphSparqlQAChain.from_llm(OpenAI(temperature=0), graph=graph)
@@ -77,6 +76,6 @@ def test_sparql_insert() -> None:
 
     # clean up
     try:
-        os.remove(_local_file)
+        os.remove(_local_copy)
     except OSError:
         pass

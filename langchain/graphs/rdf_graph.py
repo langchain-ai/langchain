@@ -23,7 +23,7 @@ cls_query_rdf = prefixes["rdfs"] + (
 cls_query_rdfs = prefixes["rdfs"] + (
     """SELECT DISTINCT ?cls ?com\n"""
     """WHERE { \n"""
-    """    ?instance a/rdfs:subClassOf* ?cls \n"""
+    """    ?instance a/rdfs:subClassOf* ?cls . \n"""
     """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
     """}"""
 )
@@ -68,20 +68,36 @@ class RdfGraph:
     RDFlib wrapper for graph operations.
     Modes:
     * "local": Local file - can be queried and changed
-    * "online": Online file - can only be queried
-    * "store": Triple store - can be queried and changed
+    * "online": Online file - can only be queried, changes can be stored locally
+    * "store": Triple store - can be queried and changed if an update_endpoint is available
+    Together with a source file, the serialization should be specified.
     """
 
     def __init__(
         self,
-        url: str = None,
+        source_file: str = None,
+        serialization: str = "ttl",
         query_endpoint: str = None,
         update_endpoint: str = None,
         standard: str = "rdf",
-        local_file: str = None,
+        local_copy: str = None,
     ) -> None:
+        """
+        Set up the RDFlib graph
+
+        :param source_file: either a path for a local file or a URL
+        :param serialization: serialization of the input
+        :param query_endpoint: SPARQL endpoint for queries, read access
+        :param update_endpoint: SPARQL endpoint for UPDATE queries, write access
+        :param standard: RDF, RDFS, or OWL
+        :param local_copy: local copy of an online or an existing file for storing changes
+        """
+        self.source_file = source_file
+        self.serialization = serialization
+        self.query_endpoint = query_endpoint
+        self.update_endpoint = update_endpoint
         self.standard = standard
-        self.local_file = local_file
+        self.local_copy = local_copy
 
         try:
             import rdflib
@@ -95,28 +111,31 @@ class RdfGraph:
         if self.standard not in (supported_standards := ("rdf", "rdfs", "owl")):
             raise ValueError(f"Invalid standard. Supported standards are: {supported_standards}.")
 
-        if not url and (not query_endpoint or not update_endpoint) or url and query_endpoint and update_endpoint:
+        if not source_file and not query_endpoint or source_file and (query_endpoint or update_endpoint):
             raise ValueError(
                 "Could not unambiguously initialize the graph wrapper. "
-                "Specify either a file (local or online) via the url "
+                "Specify either a file (local or online) via the source_file "
                 "or a triple store via the endpoints."
             )
 
-        if url:
-            _format = None
-            if url.endswith('.ttl'):
-                _format = 'ttl'
-            if 'http' in url:
-                self.mode = "local"
-            else:
+        if source_file:
+            if source_file.startswith("http"):
                 self.mode = "online"
+            else:
+                self.mode = "local"
+                if self.local_copy is None:
+                    self.local_copy = self.source_file
             self.graph = rdflib.Graph()
-            self.graph.parse(url, format=_format)
+            self.graph.parse(source_file, format=self.serialization)
 
-        if query_endpoint and update_endpoint:
+        if query_endpoint:
             self.mode = "store"
-            self._store = sparqlstore.SPARQLUpdateStore()
-            self._store.open((query_endpoint, update_endpoint))
+            if update_endpoint:
+                self._store = sparqlstore.SPARQLUpdateStore()
+                self._store.open((query_endpoint, update_endpoint))
+            else:
+                self._store = sparqlstore.SPARQLStore()
+                self._store.open(query_endpoint)
             self.graph = rdflib.Graph(self._store, identifier=default)
 
         # Verify that the graph was loaded
@@ -156,8 +175,8 @@ class RdfGraph:
             self.graph.update(query)
         except ParserError as e:
             raise ValueError("Generated SPARQL statement is invalid\n" f"{e}")
-        if self.local_file:
-            self.graph.serialize(destination=self.local_file)
+        if self.local_copy:
+            self.graph.serialize(destination=self.local_copy, format=self.local_copy.split(".")[-1])
         else:
             raise ValueError(f"No target file specified for saving the updated file.")
 
@@ -189,29 +208,30 @@ class RdfGraph:
                 f"""{", ".join([self._res_to_str(r, "rel") for r in relationships])}\n"""
             )
 
-        if self.standard == "rdf":
-            clss = self.query(cls_query_rdf)
-            rels = self.query(rel_query_rdf)
-            self.schema = _rdf_s_schema(clss, rels)
-        elif self.standard == "rdfs":
-            clss = self.query(cls_query_rdfs)
-            rels = self.query(rel_query_rdfs)
-            self.schema = _rdf_s_schema(clss, rels)
-        elif self.standard == "owl":
-            clss = self.query(cls_query_owl)
-            ops = self.query(cls_query_owl)
-            dps = self.query(cls_query_owl)
-            self.schema = (
-                f"""In the following, each IRI is followed by the local name and """
-                f"""optionally its description in parentheses. \n"""
-                f"""The OWL graph supports the following node types:\n"""
-                f"""{", ".join([self._res_to_str(r, "cls") for r in clss])}\n"""
-                f"""The OWL graph supports the following object properties, """
-                f"""i.e., relationships between objects:\n"""
-                f"""{", ".join([self._res_to_str(r, "op") for r in ops])}\n"""
-                f"""The OWL graph supports the following data properties, """
-                f"""i.e., relationships between objects and literals:\n"""
-                f"""{", ".join([self._res_to_str(r, "dp") for r in dps])}\n"""
-            )
-        else:
-            raise ValueError(f"Mode '{self.standard}' is currently not supported.")
+        match self.standard:
+            case "rdf":
+                clss = self.query(cls_query_rdf)
+                rels = self.query(rel_query_rdf)
+                self.schema = _rdf_s_schema(clss, rels)
+            case "rdfs":
+                clss = self.query(cls_query_rdfs)
+                rels = self.query(rel_query_rdfs)
+                self.schema = _rdf_s_schema(clss, rels)
+            case "owl":
+                clss = self.query(cls_query_owl)
+                ops = self.query(cls_query_owl)
+                dps = self.query(cls_query_owl)
+                self.schema = (
+                    f"""In the following, each IRI is followed by the local name and """
+                    f"""optionally its description in parentheses. \n"""
+                    f"""The OWL graph supports the following node types:\n"""
+                    f"""{", ".join([self._res_to_str(r, "cls") for r in clss])}\n"""
+                    f"""The OWL graph supports the following object properties, """
+                    f"""i.e., relationships between objects:\n"""
+                    f"""{", ".join([self._res_to_str(r, "op") for r in ops])}\n"""
+                    f"""The OWL graph supports the following data properties, """
+                    f"""i.e., relationships between objects and literals:\n"""
+                    f"""{", ".join([self._res_to_str(r, "dp") for r in dps])}\n"""
+                )
+            case _:
+                raise ValueError(f"Mode '{self.standard}' is currently not supported.")
