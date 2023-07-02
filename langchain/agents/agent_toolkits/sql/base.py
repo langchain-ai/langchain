@@ -20,7 +20,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain.schema import AIMessage, SystemMessage
+from langchain.schema.messages import AIMessage, SystemMessage
 
 
 def create_sql_agent(

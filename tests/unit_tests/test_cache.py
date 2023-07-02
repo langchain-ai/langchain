@@ -16,12 +16,10 @@ from langchain.chat_models.base import BaseChatModel, dumps
 from langchain.llms import FakeListLLM
 from langchain.llms.base import BaseLLM
 from langchain.schema import (
-    AIMessage,
-    BaseMessage,
     ChatGeneration,
     Generation,
-    HumanMessage,
 )
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 
 
 def get_sqlite_cache() -> SQLAlchemyCache:

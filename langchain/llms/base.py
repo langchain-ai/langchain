@@ -22,14 +22,12 @@ from langchain.callbacks.manager import (
 )
 from langchain.load.dump import dumpd
 from langchain.schema import (
-    AIMessage,
-    BaseMessage,
     Generation,
     LLMResult,
     PromptValue,
     RunInfo,
-    get_buffer_string,
 )
+from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
 
 
 def _get_verbosity() -> bool:

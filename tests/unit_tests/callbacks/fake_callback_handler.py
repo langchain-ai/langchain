@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
-from langchain.schema import BaseMessage
+from langchain.schema.messages import BaseMessage
 
 
 class BaseFakeCallbackHandler(BaseModel):
