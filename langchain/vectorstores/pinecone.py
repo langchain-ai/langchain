@@ -353,13 +353,15 @@ class Pinecone(VectorStore):
         return cls(
             pinecone.Index(index_name), embedding.embed_query, text_key, namespace
         )
-        
-    def delete(self,
-                ids: Optional[List[str]] = None,
-                delete_all: Optional[bool] = None,
-                namespace: Optional[str] = None,
-                filter: Optional[dict] = None,
-                **kwargs: Any) -> None:
+
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        delete_all: Optional[bool] = None,
+        namespace: Optional[str] = None,
+        filter: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> None:
         """Delete by vector IDs or filter.
         Args:
             ids: List of ids to delete.

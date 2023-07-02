@@ -65,9 +65,7 @@ class VectorStore(ABC):
             False otherwise, None if not implemented.
         """
 
-        raise NotImplementedError(
-            "delete method must be implemented by subclass."
-        )
+        raise NotImplementedError("delete method must be implemented by subclass.")
 
     async def aadd_texts(
         self,
