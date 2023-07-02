@@ -346,12 +346,16 @@ class SupabaseVectorStore(VectorStore):
         )
         return docs
 
-    def delete(self, ids: List[str]) -> None:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete by vector IDs.
 
         Args:
             ids: List of ids to delete.
         """
+
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+
         rows: List[dict[str, Any]] = [
             {
                 "id": id,
