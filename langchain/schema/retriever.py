@@ -16,12 +16,35 @@ if TYPE_CHECKING:
 
 
 class BaseRetriever(ABC):
-    """Base abstract class for a Retriever.
+    """Abstract base class for a Document retrieval system.
 
-    Handles backwards-compatibility checks and automatically inserts Callback calls.
-    Most retrieval implementations should inherit from this class. When one retriever
-    wraps another it can make sense to inherit from BaseRetriever directly, instead.
-    """
+    A retrieval system is defined as something that can take string queries and return
+        the most 'relevant' Documents from some source.
+
+    Example:
+        .. code-block:: python
+
+            class TFIDFRetriever(BaseRetriever, BaseModel):
+                vectorizer: Any
+                docs: List[Document]
+                tfidf_array: Any
+                k: int = 4
+
+                class Config:
+                    arbitrary_types_allowed = True
+
+                def get_relevant_documents(self, query: str) -> List[Document]:
+                    from sklearn.metrics.pairwise import cosine_similarity
+
+                    # Ip -- (n_docs,x), Op -- (n_docs,n_Feats)
+                    query_vec = self.vectorizer.transform([query])
+                    # Op -- (n_docs,1) -- Cosine Sim with each doc
+                    results = cosine_similarity(self.tfidf_array, query_vec).reshape((-1,))
+                    return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
+
+                async def aget_relevant_documents(self, query: str) -> List[Document]:
+                    raise NotImplementedError
+    """  # noqa: E501
 
     _new_arg_supported: bool = False
     _expects_other_args: bool = False
@@ -66,7 +89,7 @@ class BaseRetriever(ABC):
     ) -> List[Document]:
         """Get documents relevant to a query.
         Args:
-            query: string to find relevant documents for
+            query: String to find relevant documents for
             run_manager: The callbacks handler to use
         Returns:
             List of relevant documents
@@ -78,7 +101,7 @@ class BaseRetriever(ABC):
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
         Args:
-            query: string to find relevant documents for
+            query: String to find relevant documents for
             run_manager: The callbacks handler to use
         Returns:
             List of relevant documents
