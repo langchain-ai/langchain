@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Iterator, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -26,3 +26,7 @@ class BraveSearchLoader(BaseLoader):
             search_kwargs=self.search_kwargs,
         )
         return brave_client.download_documents(self.query)
+
+    def lazy_load(self) -> Iterator[Document]:
+        for doc in self.load():
+            yield doc
