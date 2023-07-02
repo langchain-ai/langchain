@@ -91,8 +91,9 @@ class Cassandra(VectorStore):
     def delete_by_document_id(self, document_id: str) -> None:
         return self.table.delete(document_id)
 
-    def delete(self, ids: List[str]) -> Optional[bool]:
-        """Delete by vector ID.
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector IDs.
+
 
         Args:
             ids: List of ids to delete.
@@ -101,6 +102,10 @@ class Cassandra(VectorStore):
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
+
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+
         for document_id in ids:
             self.delete_by_document_id(document_id)
         return True
