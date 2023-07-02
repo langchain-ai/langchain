@@ -11,10 +11,12 @@ from langchain.callbacks.manager import (
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.vertexai import _VertexAICommon, is_codey_model
 from langchain.schema import (
-    AIMessage,
-    BaseMessage,
     ChatGeneration,
     ChatResult,
+)
+from langchain.schema.messages import (
+    AIMessage,
+    BaseMessage,
     HumanMessage,
     SystemMessage,
 )

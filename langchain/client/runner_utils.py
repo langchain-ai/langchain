@@ -31,10 +31,12 @@ from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import BaseLLM
 from langchain.schema import (
-    BaseMessage,
     ChatResult,
-    HumanMessage,
     LLMResult,
+)
+from langchain.schema.messages import (
+    BaseMessage,
+    HumanMessage,
     get_buffer_string,
     messages_from_dict,
 )

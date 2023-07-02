@@ -4,11 +4,9 @@ import logging
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 from langchain.schema import (
-    AIMessage,
     BaseChatMessageHistory,
-    BaseMessage,
-    HumanMessage,
 )
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 
 if TYPE_CHECKING:
     from zep_python import Memory, MemorySearchResult, Message, NotFoundError

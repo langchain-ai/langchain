@@ -47,7 +47,7 @@ import ChatModel from "@snippets/get_started/quickstart/chat_model.mdx"
 
 ## Prompt templates
 
-Most LLM applications do not pass user input directly into to an LLM. Usually they will add the user input to a larger piece of text, called a prompt template, that provides additional context on the specific task at hand.
+Most LLM applications do not pass user input directly into an LLM. Usually they will add the user input to a larger piece of text, called a prompt template, that provides additional context on the specific task at hand.
 
 In the previous example, the text we passed to the model contained instructions to generate a company name. For our application, it'd be great if the user only had to provide the description of a company/product, without having to worry about giving the model instructions.
 
@@ -138,7 +138,7 @@ The chains and agents we've looked at so far have been stateless, but for many a
 
 The Memory module gives you a way to maintain application state. The base Memory interface is simple: it lets you update state given the latest run inputs and outputs and it lets you modify (or contextualize) the next input using the stored state.
 
-There are a number of built-in memory systems. The simplest of these are is a buffer memory which just prepends the last few inputs/outputs to the current input - we will use this in the example below.
+There are a number of built-in memory systems. The simplest of these is a buffer memory which just prepends the last few inputs/outputs to the current input - we will use this in the example below.
 
 import MemoryLLM from "@snippets/get_started/quickstart/memory_llms.mdx"
 import MemoryChatModel from "@snippets/get_started/quickstart/memory_chat_models.mdx"
