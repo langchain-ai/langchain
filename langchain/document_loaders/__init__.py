@@ -145,10 +145,10 @@ from langchain.document_loaders.youtube import (
     YoutubeLoader,
 )
 
-# Legacy: only for backwards compat. Use PyPDFLoader instead
+# Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
 
-# For backwards compatability
+# For backwards compatibility
 TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [

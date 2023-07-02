@@ -1,4 +1,3 @@
-"""Load conversations from ChatGPT data export"""
 import datetime
 import json
 from typing import List
@@ -29,9 +28,15 @@ def concatenate_rows(message: dict, title: str) -> str:
 
 
 class ChatGPTLoader(BaseLoader):
-    """Loader that loads conversations from exported ChatGPT data."""
+    """Load conversations from exported ChatGPT data."""
 
     def __init__(self, log_file: str, num_logs: int = -1):
+        """
+
+        Args:
+            log_file: Path to the log file
+            num_logs: Number of logs to load. If 0, load all logs.
+        """
         self.log_file = log_file
         self.num_logs = num_logs
 
