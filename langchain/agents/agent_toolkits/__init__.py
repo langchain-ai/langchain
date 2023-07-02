@@ -8,11 +8,11 @@ from langchain.agents.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
 )
 from langchain.agents.agent_toolkits.gmail.toolkit import GmailToolkit
-from langchain.agents.agent_toolkits.office365.toolkit import O365Toolkit
 from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
 from langchain.agents.agent_toolkits.json.base import create_json_agent
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.agent_toolkits.nla.toolkit import NLAToolkit
+from langchain.agents.agent_toolkits.office365.toolkit import O365Toolkit
 from langchain.agents.agent_toolkits.openapi.base import create_openapi_agent
 from langchain.agents.agent_toolkits.openapi.toolkit import OpenAPIToolkit
 from langchain.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
