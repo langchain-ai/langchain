@@ -78,8 +78,10 @@ class RdfGraph:
         query_endpoint: str = None,
         update_endpoint: str = None,
         standard: str = "rdf",
+        local_file: str = None,
     ) -> None:
         self.standard = standard
+        self.local_file = local_file
 
         try:
             import rdflib
@@ -143,6 +145,21 @@ class RdfGraph:
         except ParserError as e:
             raise ValueError("Generated SPARQL statement is invalid\n" f"{e}")
         return [r for r in res]
+
+    def update(self, query: str) -> None:
+        """
+        Update the graph.
+        """
+        from rdflib.exceptions import ParserError
+
+        try:
+            self.graph.update(query)
+        except ParserError as e:
+            raise ValueError("Generated SPARQL statement is invalid\n" f"{e}")
+        if self.local_file:
+            self.graph.serialize(destination=self.local_file)
+        else:
+            raise ValueError(f"No target file specified for saving the updated file.")
 
     @staticmethod
     def _get_local_name(iri: str) -> str:
