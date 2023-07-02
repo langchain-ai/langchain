@@ -14,9 +14,10 @@ from langchain.callbacks.manager import (
 )
 
 class BaseRetriever(ABC):
+
     @abstractmethod
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant to a query.
         Args:
@@ -32,7 +33,6 @@ class BaseRetriever(ABC):
         query: str,
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
         Args:
@@ -110,7 +110,7 @@ class NumpyRetriever(BaseRetriever):
         ]
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant to a query.
         Args:
@@ -127,7 +127,6 @@ class NumpyRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
         Args:
