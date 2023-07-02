@@ -93,6 +93,12 @@ from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.tools.youtube.search import YouTubeSearchTool
 from langchain.tools.zapier.tool import ZapierNLAListActions, ZapierNLARunAction
+from langchain.tools.office365.create_draft_message import O365CreateDraftMessage
+from langchain.tools.office365.events_search import O365SearchEvents
+from langchain.tools.office365.messages_search import O365SearchEmails
+from langchain.tools.office365.send_event import O365SendEvent
+from langchain.tools.office365.send_message import O365SendMessage
+from langchain.tools.office365.utils import authenticate
 
 __all__ = [
     "AIPluginTool",
@@ -150,6 +156,12 @@ __all__ = [
     "NavigateTool",
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
+    "O365SearchEmails",
+    "O365SearchEvents",
+    "O365CreateDraftMessage",
+    "O365SendMessage",
+    "O365SendEvent",
+    "authenticate",
     "PubmedQueryRun",
     "PythonAstREPLTool",
     "PythonREPLTool",
