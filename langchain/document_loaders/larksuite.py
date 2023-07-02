@@ -1,4 +1,4 @@
-"""Loader that loads LarkSuite (FeiShu) document json dump."""
+"""Loads LarkSuite (FeiShu) document json dump."""
 import json
 import urllib.request
 from typing import Any, Iterator, List
@@ -8,10 +8,16 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class LarkSuiteDocLoader(BaseLoader):
-    """Loader that loads LarkSuite (FeiShu) document."""
+    """Loads LarkSuite (FeiShu) document."""
 
     def __init__(self, domain: str, access_token: str, document_id: str):
-        """Initialize with domain, access_token (tenant / user), and document_id."""
+        """Initialize with domain, access_token (tenant / user), and document_id.
+
+        Args:
+            domain: The domain to load the LarkSuite.
+            access_token: The access_token to use.
+            document_id: The document_id to load.
+        """
         self.domain = domain
         self.access_token = access_token
         self.document_id = document_id
