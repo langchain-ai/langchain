@@ -372,7 +372,7 @@ class Chain(Serializable, ABC):
         """Return dictionary representation of chain."""
         if self.memory is not None:
             raise ValueError("Saving of memory is not yet supported.")
-        _dict = super().dict()
+        _dict = super().dict(exclude_unset=True)
         _dict["_type"] = self._chain_type
         return _dict
 
