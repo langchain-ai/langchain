@@ -1,8 +1,9 @@
+import tempfile
+import urllib.request
+
 from langchain.docstore.document import Document
 from langchain.vectorstores.vectara import Vectara
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-import tempfile
-import urllib.request
 
 # For this test to run properly, please setup as follows
 # 1. Create a corpus in Vectara, with a filter attribute called "test_num".
@@ -57,10 +58,15 @@ def test_vectara_from_files() -> None:
     """Test end to end construction and search."""
 
     # download documents to local storage and then upload as files
+    # attention paper and deep learning book
     urls = [
-        "https://arxiv.org/pdf/1706.03762.pdf",  # attention paper
-        "https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/Final-DengYu-NOW-Book-DeepLearn2013-ForLecturesJuly2.docx",  # deep learning book
+        ("https://arxiv.org/pdf/1706.03762.pdf"),
+        (
+            "https://www.microsoft.com/en-us/research/wp-content/uploads/"
+            "2016/02/Final-DengYu-NOW-Book-DeepLearn2013-ForLecturesJuly2.docx"
+        ),
     ]
+
     files_list = []
     for url in urls:
         name = tempfile.NamedTemporaryFile().name
@@ -81,7 +87,10 @@ def test_vectara_from_files() -> None:
         filter="doc.test_num = 2",
     )
     print(output)
-    assert (
-        output[0].page_content
-        == "By the commonly adopted machine learning tradition (e.g., Chapter 28 in Murphy, 2012; Deng and Li, 2013), it may be natural to just classify deep learning techniques into deep discriminative models (e.g., DNNs) and deep probabilistic generative models (e.g., DBN, Deep Boltzmann Machine (DBM))."
+    assert output[0].page_content == (
+        "By the commonly adopted machine learning tradition "
+        "(e.g., Chapter 28 in Murphy, 2012; Deng and Li, 2013), it may be natural "
+        "to just classify deep learning techniques into deep discriminative models "
+        "(e.g., DNNs) and deep probabilistic generative models (e.g., DBN, Deep "
+        "Boltzmann Machine (DBM))."
     )
