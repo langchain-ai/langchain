@@ -26,7 +26,8 @@ raw_documents = TextLoader('../../../state_of_the_union.txt').load()
 text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 documents = text_splitter.split_documents(raw_documents)
 
-db = FAISS.from_documents(documents, OpenAIEmbeddings())
+embeddings = OpenAIEmbeddings()
+db = FAISS.from_documents(documents, embeddings)
 ```
 
 ### Similarity search
