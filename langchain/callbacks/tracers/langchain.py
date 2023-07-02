@@ -17,7 +17,7 @@ from langchain.callbacks.tracers.schemas import (
     TracerSession,
 )
 from langchain.env import get_runtime_environment
-from langchain.schema import BaseMessage, messages_to_dict
+from langchain.schema.messages import BaseMessage, messages_to_dict
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
@@ -176,6 +176,24 @@ class LangChainTracer(BaseTracer):
 
     def _on_tool_error(self, run: Run) -> None:
         """Process the Tool Run upon error."""
+        self._futures.add(
+            self.executor.submit(self._update_run_single, run.copy(deep=True))
+        )
+
+    def _on_retriever_start(self, run: Run) -> None:
+        """Process the Retriever Run upon start."""
+        self._futures.add(
+            self.executor.submit(self._persist_run_single, run.copy(deep=True))
+        )
+
+    def _on_retriever_end(self, run: Run) -> None:
+        """Process the Retriever Run."""
+        self._futures.add(
+            self.executor.submit(self._update_run_single, run.copy(deep=True))
+        )
+
+    def _on_retriever_error(self, run: Run) -> None:
+        """Process the Retriever Run upon error."""
         self._futures.add(
             self.executor.submit(self._update_run_single, run.copy(deep=True))
         )

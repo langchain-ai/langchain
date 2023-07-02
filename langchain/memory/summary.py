@@ -11,10 +11,8 @@ from langchain.memory.prompt import SUMMARY_PROMPT
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import (
     BaseChatMessageHistory,
-    BaseMessage,
-    SystemMessage,
-    get_buffer_string,
 )
+from langchain.schema.messages import BaseMessage, SystemMessage, get_buffer_string
 
 
 class SummarizerMixin(BaseModel):

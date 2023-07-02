@@ -21,10 +21,12 @@ from langchain.prompts.chat import (
 from langchain.schema import (
     AgentAction,
     AgentFinish,
+    OutputParserException,
+)
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     FunctionMessage,
-    OutputParserException,
     SystemMessage,
 )
 from langchain.tools import BaseTool
@@ -152,7 +154,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         tools: The tools this agent has access to.
         prompt: The prompt for this agent, should support agent_scratchpad as one
             of the variables. For an easy way to construct this prompt, use
-            `OpenAIFunctionsAgent.create_prompt(...)`
+            `OpenAIMultiFunctionsAgent.create_prompt(...)`
     """
 
     llm: BaseLanguageModel

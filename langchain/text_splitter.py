@@ -70,7 +70,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunk_size: Maximum size of chunks to return
             chunk_overlap: Overlap in characters between chunks
             length_function: Function that measures the length of given chunks
-            keep_separator: Whether or not to keep the separator in the chunks
+            keep_separator: Whether to keep the separator in the chunks
             add_start_index: If `True`, includes chunk's start index in metadata
         """
         if chunk_overlap > chunk_size:

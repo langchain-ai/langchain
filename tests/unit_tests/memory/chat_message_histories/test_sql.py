@@ -4,7 +4,7 @@ from typing import Tuple
 import pytest
 
 from langchain.memory.chat_message_histories import SQLChatMessageHistory
-from langchain.schema import AIMessage, HumanMessage
+from langchain.schema.messages import AIMessage, HumanMessage
 
 
 # @pytest.fixture(params=[("SQLite"), ("postgresql")])
