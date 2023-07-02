@@ -111,10 +111,6 @@ class GraphSparqlQAChain(Chain):
             generated_sparql, color="green", end="\n", verbose=self.verbose
         )
 
-        print(intent)
-        print(self.graph.get_schema)
-        print(generated_sparql)
-
         match intent:
             case "SELECT":
                 context = self.graph.query(generated_sparql)
