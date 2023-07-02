@@ -9,7 +9,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.embeddings.base import Embeddings
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 
@@ -20,7 +20,7 @@ class SearchType(str, Enum):
     mmr = "mmr"
 
 
-class DocArrayRetriever(Retriever, BaseModel):
+class DocArrayRetriever(BaseRetriever, BaseModel):
     """
     Retriever class for DocArray Document Indices.
 

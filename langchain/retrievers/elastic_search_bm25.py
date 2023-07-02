@@ -10,10 +10,10 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.schema import Retriever
+from langchain.schema import BaseRetriever
 
 
-class ElasticSearchBM25Retriever(Retriever):
+class ElasticSearchBM25Retriever(BaseRetriever):
     """Wrapper around Elasticsearch using BM25 as a retrieval method.
 
 

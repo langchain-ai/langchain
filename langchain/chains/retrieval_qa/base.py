@@ -20,7 +20,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 from langchain.prompts import PromptTemplate
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 
@@ -191,12 +191,13 @@ class RetrievalQA(BaseRetrievalQA):
             from langchain.chains import RetrievalQA
             from langchain.faiss import FAISS
             from langchain.vectorstores.base import VectorStoreRetriever
+
             retriever = VectorStoreRetriever(vectorstore=FAISS(...))
             retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=retriever)
 
     """
 
-    retriever: Retriever = Field(exclude=True)
+    retriever: BaseRetriever = Field(exclude=True)
 
     def _get_docs(
         self,

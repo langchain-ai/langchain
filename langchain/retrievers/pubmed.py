@@ -5,11 +5,11 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 from langchain.utilities.pupmed import PubMedAPIWrapper
 
 
-class PubMedRetriever(Retriever, PubMedAPIWrapper):
+class PubMedRetriever(BaseRetriever, PubMedAPIWrapper):
     """
     It is effectively a wrapper for PubMedAPIWrapper.
     It wraps load() to get_relevant_documents().

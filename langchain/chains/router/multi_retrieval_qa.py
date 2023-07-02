@@ -15,7 +15,7 @@ from langchain.chains.router.multi_retrieval_prompt import (
 )
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
-from langchain.schema import Retriever
+from langchain.schema import BaseRetriever
 
 
 class MultiRetrievalQAChain(MultiRouteChain):
@@ -38,7 +38,7 @@ class MultiRetrievalQAChain(MultiRouteChain):
         cls,
         llm: BaseLanguageModel,
         retriever_infos: List[Dict[str, Any]],
-        default_retriever: Optional[Retriever] = None,
+        default_retriever: Optional[BaseRetriever] = None,
         default_prompt: Optional[PromptTemplate] = None,
         default_chain: Optional[Chain] = None,
         **kwargs: Any,

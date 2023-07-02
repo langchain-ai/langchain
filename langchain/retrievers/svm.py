@@ -15,7 +15,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.embeddings.base import Embeddings
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
@@ -32,7 +32,7 @@ def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
         return np.array(list(executor.map(embeddings.embed_query, contexts)))
 
 
-class SVMRetriever(Retriever, BaseModel):
+class SVMRetriever(BaseRetriever, BaseModel):
     """SVM Retriever."""
 
     embeddings: Embeddings

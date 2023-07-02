@@ -370,34 +370,6 @@ class Document(Serializable):
 
 
 class BaseRetriever(ABC):
-    """Minimal interface for a Retriever."""
-
-    @abstractmethod
-    def get_relevant_documents(
-        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
-    ) -> List[Document]:
-        """Retrieve documents relevant to a query.
-        Args:
-            query: string to find relevant documents for
-            callbacks: Callback manager or list of callbacks
-        Returns:
-            List of relevant documents
-        """
-
-    @abstractmethod
-    async def aget_relevant_documents(
-        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
-    ) -> List[Document]:
-        """Asynchronously get documents relevant to a query.
-        Args:
-            query: string to find relevant documents for
-            callbacks: Callback manager or list of callbacks
-        Returns:
-            List of relevant documents
-        """
-
-
-class Retriever(BaseRetriever, ABC):
     """Base abstract class for a Retriever.
 
     Handles backwards-compatibility checks and automatically inserts Callback calls.
@@ -412,7 +384,7 @@ class Retriever(BaseRetriever, ABC):
         super().__init_subclass__(**kwargs)
         # Version upgrade for old retrievers that implemented the public
         # methods directly.
-        if cls.get_relevant_documents != Retriever.get_relevant_documents:
+        if cls.get_relevant_documents != BaseRetriever.get_relevant_documents:
             warnings.warn(
                 "Retrievers must implement abstract `_get_relevant_documents` method"
                 " instead of `get_relevant_documents`",
@@ -420,12 +392,12 @@ class Retriever(BaseRetriever, ABC):
             )
             swap = cls.get_relevant_documents
             cls.get_relevant_documents = (  # type: ignore[assignment]
-                Retriever.get_relevant_documents
+                BaseRetriever.get_relevant_documents
             )
             cls._get_relevant_documents = swap  # type: ignore[assignment]
         if (
             hasattr(cls, "aget_relevant_documents")
-            and cls.aget_relevant_documents != Retriever.aget_relevant_documents
+            and cls.aget_relevant_documents != BaseRetriever.aget_relevant_documents
         ):
             warnings.warn(
                 "Retrievers must implement abstract `_aget_relevant_documents` method"
@@ -434,7 +406,7 @@ class Retriever(BaseRetriever, ABC):
             )
             aswap = cls.aget_relevant_documents
             cls.aget_relevant_documents = (  # type: ignore[assignment]
-                Retriever.aget_relevant_documents
+                BaseRetriever.aget_relevant_documents
             )
             cls._aget_relevant_documents = aswap  # type: ignore[assignment]
         parameters = signature(cls._get_relevant_documents).parameters

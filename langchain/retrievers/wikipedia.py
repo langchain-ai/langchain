@@ -4,11 +4,11 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 
 
-class WikipediaRetriever(Retriever, WikipediaAPIWrapper):
+class WikipediaRetriever(BaseRetriever, WikipediaAPIWrapper):
     """
     It is effectively a wrapper for WikipediaAPIWrapper.
     It wraps load() to get_relevant_documents().

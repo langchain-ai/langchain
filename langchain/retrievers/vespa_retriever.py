@@ -9,13 +9,13 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 
 if TYPE_CHECKING:
     from vespa.application import Vespa
 
 
-class VespaRetriever(Retriever):
+class VespaRetriever(BaseRetriever):
     """Retriever that uses the Vespa."""
 
     def __init__(

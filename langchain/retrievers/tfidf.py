@@ -13,10 +13,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 
 
-class TFIDFRetriever(Retriever, BaseModel):
+class TFIDFRetriever(BaseRetriever, BaseModel):
     vectorizer: Any
     docs: List[Document]
     tfidf_array: Any

@@ -18,7 +18,7 @@ from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores import (
     Chroma,
     MyScale,
@@ -51,7 +51,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     return BUILTIN_TRANSLATORS[vectorstore_cls]()
 
 
-class SelfQueryRetriever(Retriever, BaseModel):
+class SelfQueryRetriever(BaseRetriever, BaseModel):
     """Retriever that wraps around a vector store and uses an LLM to generate
     the vector store queries."""
 

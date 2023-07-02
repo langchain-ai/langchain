@@ -7,10 +7,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 
 
-class DataberryRetriever(Retriever):
+class DataberryRetriever(BaseRetriever):
     """Retriever that uses the Databerry API."""
 
     datastore_url: str

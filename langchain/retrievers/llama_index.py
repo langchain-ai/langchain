@@ -6,10 +6,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 
 
-class LlamaIndexRetriever(Retriever, BaseModel):
+class LlamaIndexRetriever(BaseRetriever, BaseModel):
     """Question-answering with sources over an LlamaIndex data structure."""
 
     index: Any
@@ -45,7 +45,7 @@ class LlamaIndexRetriever(Retriever, BaseModel):
         raise NotImplementedError("LlamaIndexRetriever does not support async")
 
 
-class LlamaIndexGraphRetriever(Retriever, BaseModel):
+class LlamaIndexGraphRetriever(BaseRetriever, BaseModel):
     """Question-answering with sources over an LlamaIndex graph data structure."""
 
     graph: Any

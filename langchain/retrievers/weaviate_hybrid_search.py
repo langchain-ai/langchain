@@ -12,10 +12,10 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.schema import Retriever
+from langchain.schema import BaseRetriever
 
 
-class WeaviateHybridSearchRetriever(Retriever):
+class WeaviateHybridSearchRetriever(BaseRetriever):
     def __init__(
         self,
         client: Any,

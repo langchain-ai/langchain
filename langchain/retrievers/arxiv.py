@@ -4,11 +4,11 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 from langchain.utilities.arxiv import ArxivAPIWrapper
 
 
-class ArxivRetriever(Retriever, ArxivAPIWrapper):
+class ArxivRetriever(BaseRetriever, ArxivAPIWrapper):
     """
     It is effectively a wrapper for ArxivAPIWrapper.
     It wraps load() to get_relevant_documents().

@@ -13,11 +13,11 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
 
-class AzureCognitiveSearchRetriever(Retriever, BaseModel):
+class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
     """Wrapper around Azure Cognitive Search."""
 
     service_name: str = ""

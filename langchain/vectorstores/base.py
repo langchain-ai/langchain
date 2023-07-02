@@ -27,7 +27,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.schema import Retriever
+from langchain.schema import BaseRetriever
 
 VST = TypeVar("VST", bound="VectorStore")
 
@@ -374,7 +374,7 @@ class VectorStore(ABC):
         return VectorStoreRetriever(vectorstore=self, **kwargs)
 
 
-class VectorStoreRetriever(Retriever, BaseModel):
+class VectorStoreRetriever(BaseRetriever, BaseModel):
     vectorstore: VectorStore
     search_type: str = "similarity"
     search_kwargs: dict = Field(default_factory=dict)

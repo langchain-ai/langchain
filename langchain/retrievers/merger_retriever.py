@@ -4,10 +4,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document, Retriever
+from langchain.schema import BaseRetriever, Document
 
 
-class MergerRetriever(Retriever):
+class MergerRetriever(BaseRetriever):
     """
     This class merges the results of multiple retrievers.
 

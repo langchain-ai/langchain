@@ -6,13 +6,13 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 
 if TYPE_CHECKING:
     from zep_python import MemorySearchResult
 
 
-class ZepRetriever(Retriever):
+class ZepRetriever(BaseRetriever):
     """A Retriever implementation for the Zep long-term memory store. Search your
     user's long-term chat history with Zep.
 

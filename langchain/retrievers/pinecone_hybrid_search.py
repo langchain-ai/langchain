@@ -10,7 +10,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.embeddings.base import Embeddings
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 
 
 def hash_text(text: str) -> str:
@@ -98,7 +98,7 @@ def create_index(
         index.upsert(vectors)
 
 
-class PineconeHybridSearchRetriever(Retriever, BaseModel):
+class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
     embeddings: Embeddings
     """description"""
     sparse_encoder: Any

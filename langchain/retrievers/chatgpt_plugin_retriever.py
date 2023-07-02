@@ -10,10 +10,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 
 
-class ChatGPTPluginRetriever(Retriever, BaseModel):
+class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
     url: str
     bearer_token: str
     top_k: int = 3

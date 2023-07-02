@@ -10,19 +10,19 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 @pytest.fixture
-def fake_retriever_v1() -> Retriever:
+def fake_retriever_v1() -> BaseRetriever:
     with pytest.warns(
         DeprecationWarning,
         match="Retrievers must implement abstract "
         "`_get_relevant_documents` method instead of `get_relevant_documents`",
     ):
 
-        class FakeRetrieverV1(Retriever):
+        class FakeRetrieverV1(BaseRetriever):
             def get_relevant_documents(  # type: ignore[override]
                 self,
                 query: str,
@@ -46,7 +46,7 @@ def fake_retriever_v1() -> Retriever:
         return FakeRetrieverV1()  # type: ignore[abstract]
 
 
-def test_fake_retriever_v1_upgrade(fake_retriever_v1: Retriever) -> None:
+def test_fake_retriever_v1_upgrade(fake_retriever_v1: BaseRetriever) -> None:
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v1._new_arg_supported is False
     assert fake_retriever_v1._expects_other_args is False
@@ -61,7 +61,7 @@ def test_fake_retriever_v1_upgrade(fake_retriever_v1: Retriever) -> None:
 
 @pytest.mark.asyncio
 async def test_fake_retriever_v1_upgrade_async(
-    fake_retriever_v1: Retriever,
+    fake_retriever_v1: BaseRetriever,
 ) -> None:
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v1._new_arg_supported is False
@@ -76,7 +76,7 @@ async def test_fake_retriever_v1_upgrade_async(
 
 
 @pytest.fixture
-def fake_retriever_v1_with_kwargs() -> Retriever:
+def fake_retriever_v1_with_kwargs() -> BaseRetriever:
     # Test for things like the Weaviate V1 Retriever.
     with pytest.warns(
         DeprecationWarning,
@@ -84,7 +84,7 @@ def fake_retriever_v1_with_kwargs() -> Retriever:
         "`_get_relevant_documents` method instead of `get_relevant_documents`",
     ):
 
-        class FakeRetrieverV1(Retriever):
+        class FakeRetrieverV1(BaseRetriever):
             def get_relevant_documents(  # type: ignore[override]
                 self, query: str, where_filter: Optional[Dict[str, object]] = None
             ) -> List[Document]:
@@ -107,7 +107,7 @@ def fake_retriever_v1_with_kwargs() -> Retriever:
 
 
 def test_fake_retriever_v1_with_kwargs_upgrade(
-    fake_retriever_v1_with_kwargs: Retriever,
+    fake_retriever_v1_with_kwargs: BaseRetriever,
 ) -> None:
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v1_with_kwargs._new_arg_supported is False
@@ -124,7 +124,7 @@ def test_fake_retriever_v1_with_kwargs_upgrade(
 
 @pytest.mark.asyncio
 async def test_fake_retriever_v1_with_kwargs_upgrade_async(
-    fake_retriever_v1_with_kwargs: Retriever,
+    fake_retriever_v1_with_kwargs: BaseRetriever,
 ) -> None:
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v1_with_kwargs._new_arg_supported is False
@@ -141,7 +141,7 @@ async def test_fake_retriever_v1_with_kwargs_upgrade_async(
     assert callbacks.retriever_errors == 0
 
 
-class FakeRetrieverV2(Retriever):
+class FakeRetrieverV2(BaseRetriever):
     def __init__(self, throw_error: bool = False) -> None:
         self.throw_error = throw_error
 
@@ -171,17 +171,17 @@ class FakeRetrieverV2(Retriever):
 
 
 @pytest.fixture
-def fake_retriever_v2() -> Retriever:
+def fake_retriever_v2() -> BaseRetriever:
     return FakeRetrieverV2()  # type: ignore[abstract]
 
 
 @pytest.fixture
-def fake_erroring_retriever_v2() -> Retriever:
+def fake_erroring_retriever_v2() -> BaseRetriever:
     return FakeRetrieverV2(throw_error=True)  # type: ignore[abstract]
 
 
 def test_fake_retriever_v2(
-    fake_retriever_v2: Retriever, fake_erroring_retriever_v2: Retriever
+    fake_retriever_v2: BaseRetriever, fake_erroring_retriever_v2: BaseRetriever
 ) -> None:
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v2._new_arg_supported is True
@@ -199,7 +199,7 @@ def test_fake_retriever_v2(
 
 @pytest.mark.asyncio
 async def test_fake_retriever_v2_async(
-    fake_retriever_v2: Retriever, fake_erroring_retriever_v2: Retriever
+    fake_retriever_v2: BaseRetriever, fake_erroring_retriever_v2: BaseRetriever
 ) -> None:
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v2._new_arg_supported is True

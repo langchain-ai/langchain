@@ -4,10 +4,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 
 
-class MetalRetriever(Retriever):
+class MetalRetriever(BaseRetriever):
     """Retriever that uses the Metal API."""
 
     def __init__(self, client: Any, params: Optional[dict] = None):

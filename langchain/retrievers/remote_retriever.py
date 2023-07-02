@@ -8,10 +8,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 
 
-class RemoteLangChainRetriever(Retriever, BaseModel):
+class RemoteLangChainRetriever(BaseRetriever, BaseModel):
     url: str
     headers: Optional[dict] = None
     input_key: str = "message"

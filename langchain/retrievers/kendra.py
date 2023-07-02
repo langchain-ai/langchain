@@ -8,7 +8,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.schema import Retriever
+from langchain.schema import BaseRetriever
 
 
 def clean_excerpt(excerpt: str) -> str:
@@ -148,7 +148,7 @@ class RetrieveResult(BaseModel, extra=Extra.allow):
         return docs
 
 
-class AmazonKendraRetriever(Retriever):
+class AmazonKendraRetriever(BaseRetriever):
     """Retriever class to query documents from Amazon Kendra Index.
 
     Args:

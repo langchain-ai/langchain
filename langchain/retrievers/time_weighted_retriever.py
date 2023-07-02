@@ -10,7 +10,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document, Retriever
+from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 
@@ -19,7 +19,7 @@ def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> f
     return (time - ref_time).total_seconds() / 3600
 
 
-class TimeWeightedVectorStoreRetriever(Retriever, BaseModel):
+class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     """Retriever combining embedding similarity with recency."""
 
     vectorstore: VectorStore

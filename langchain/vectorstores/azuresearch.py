@@ -26,7 +26,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.schema import Retriever
+from langchain.schema import BaseRetriever
 from langchain.utils import get_from_env
 from langchain.vectorstores.base import VectorStore
 
@@ -475,7 +475,7 @@ class AzureSearch(VectorStore):
         return azure_search
 
 
-class AzureSearchVectorStoreRetriever(Retriever, BaseModel):
+class AzureSearchVectorStoreRetriever(BaseRetriever, BaseModel):
     vectorstore: AzureSearch
     search_type: str = "hybrid"
     k: int = 4
