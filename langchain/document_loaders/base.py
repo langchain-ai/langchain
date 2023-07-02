@@ -8,10 +8,10 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
 class BaseLoader(ABC):
-    """Interface for loading documents.
+    """Interface for loading Documents.
 
     Implementations should implement the lazy-loading method using generators
-    to avoid loading all documents into memory at once.
+    to avoid loading all Documents into memory at once.
 
     The `load` method will remain as is for backwards compatibility, but its
     implementation should be just `list(self.lazy_load())`.
@@ -22,12 +22,20 @@ class BaseLoader(ABC):
     # This method returns a List which is materialized in memory.
     @abstractmethod
     def load(self) -> List[Document]:
-        """Load data into document objects."""
+        """Load data into Document objects."""
 
     def load_and_split(
         self, text_splitter: Optional[TextSplitter] = None
     ) -> List[Document]:
-        """Load documents and split into chunks."""
+        """Load Documents and split into chunks. Chunks are returned as Documents.
+
+        Args:
+            text_splitter: TextSplitter instance to use for splitting documents.
+              Defaults to RecursiveCharacterTextSplitter.
+
+        Returns:
+            List of Documents.
+        """
         if text_splitter is None:
             _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()
         else:
@@ -40,7 +48,7 @@ class BaseLoader(ABC):
     def lazy_load(
         self,
     ) -> Iterator[Document]:
-        """A lazy loader for document content."""
+        """A lazy loader for Documents."""
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement lazy_load()"
         )
@@ -49,7 +57,7 @@ class BaseLoader(ABC):
 class BaseBlobParser(ABC):
     """Abstract interface for blob parsers.
 
-    A blob parser is provides a way to parse raw data stored in a blob into one
+    A blob parser provides a way to parse raw data stored in a blob into one
     or more documents.
 
     The parser can be composed with blob loaders, making it easy to re-use
