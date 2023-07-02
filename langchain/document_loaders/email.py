@@ -1,4 +1,4 @@
-"""Loader that loads email files."""
+"""Loads email files."""
 import os
 from typing import Any, List
 
@@ -72,12 +72,17 @@ class UnstructuredEmailLoader(UnstructuredFileLoader):
 
 class OutlookMessageLoader(BaseLoader):
     """
-    Loader that loads Outlook Message files using extract_msg.
+    Loads Outlook Message files using extract_msg.
+
     https://github.com/TeamMsgExtractor/msg-extractor
     """
 
     def __init__(self, file_path: str):
-        """Initialize with file path."""
+        """Initialize with a file path.
+
+        Args:
+            file_path: The path to the Outlook Message file.
+        """
 
         self.file_path = file_path
 

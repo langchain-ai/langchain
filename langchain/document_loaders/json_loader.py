@@ -1,4 +1,4 @@
-"""Loader that loads data from JSON."""
+"""Loads data from JSON."""
 import json
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -8,8 +8,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class JSONLoader(BaseLoader):
-    """Loads a JSON file and references a jq schema provided to load the text into
-    documents.
+    """Loads a JSON file using a jq schema.
 
     Example:
         [{"text": ...}, {"text": ...}, {"text": ...}] -> schema = .[].text
@@ -101,7 +100,7 @@ class JSONLoader(BaseLoader):
             return str(content) if content is not None else ""
 
     def _validate_content_key(self, data: Any) -> None:
-        """Check if content key is valid"""
+        """Check if a content key is valid"""
         sample = data.first()
         if not isinstance(sample, dict):
             raise ValueError(
