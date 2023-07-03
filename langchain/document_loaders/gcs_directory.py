@@ -7,10 +7,16 @@ from langchain.document_loaders.gcs_file import GCSFileLoader
 
 
 class GCSDirectoryLoader(BaseLoader):
-    """Loading logic for loading documents from GCS."""
+    """Loads Documents from GCS."""
 
     def __init__(self, project_name: str, bucket: str, prefix: str = ""):
-        """Initialize with bucket and key name."""
+        """Initialize with bucket and key name.
+
+        Args:
+            project_name: The name of the project for the GCS bucket.
+            bucket: The name of the GCS bucket.
+            prefix: The prefix of the GCS bucket.
+        """
         self.project_name = project_name
         self.bucket = bucket
         self.prefix = prefix
@@ -20,7 +26,7 @@ class GCSDirectoryLoader(BaseLoader):
         try:
             from google.cloud import storage
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import google-cloud-storage python package. "
                 "Please install it with `pip install google-cloud-storage`."
             )

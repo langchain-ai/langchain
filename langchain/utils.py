@@ -66,6 +66,14 @@ def raise_for_status_with_text(response: Response) -> None:
 
 
 def stringify_value(val: Any) -> str:
+    """Stringify a value.
+
+    Args:
+        val: The value to stringify.
+
+    Returns:
+        str: The stringified value.
+    """
     if isinstance(val, str):
         return val
     elif isinstance(val, dict):
@@ -77,6 +85,14 @@ def stringify_value(val: Any) -> str:
 
 
 def stringify_dict(data: dict) -> str:
+    """Stringify a dictionary.
+
+    Args:
+        data: The dictionary to stringify.
+
+    Returns:
+        str: The stringified dictionary.
+    """
     text = ""
     for key, value in data.items():
         text += key + ": " + stringify_value(value) + "\n"

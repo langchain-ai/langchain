@@ -18,6 +18,16 @@ def import_langkit(
     toxicity: bool = False,
     themes: bool = False,
 ) -> Any:
+    """Import the langkit python package and raise an error if it is not installed.
+
+    Args:
+        sentiment: Whether to import the langkit.sentiment module. Defaults to False.
+        toxicity: Whether to import the langkit.toxicity module. Defaults to False.
+        themes: Whether to import the langkit.themes module. Defaults to False.
+
+    Returns:
+        The imported langkit module.
+    """
     try:
         import langkit  # noqa: F401
         import langkit.regexes  # noqa: F401

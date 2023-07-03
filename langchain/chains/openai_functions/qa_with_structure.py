@@ -11,7 +11,8 @@ from langchain.output_parsers.openai_functions import (
 )
 from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.schema import BaseLLMOutputParser, HumanMessage, SystemMessage
+from langchain.schema import BaseLLMOutputParser
+from langchain.schema.messages import HumanMessage, SystemMessage
 
 
 class AnswerWithSources(BaseModel):
@@ -29,6 +30,18 @@ def create_qa_with_structure_chain(
     output_parser: str = "base",
     prompt: Optional[Union[PromptTemplate, ChatPromptTemplate]] = None,
 ) -> LLMChain:
+    """Create a question answering chain that returns an answer with sources.
+
+    Args:
+        llm: Language model to use for the chain.
+        schema: Pydantic schema to use for the output.
+        output_parser: Output parser to use. Should be one of `pydantic` or `base`.
+            Default to `base`.
+        prompt: Optional prompt to use for the chain.
+
+    Returns:
+
+    """
     if output_parser == "pydantic":
         if not (isinstance(schema, type) and issubclass(schema, BaseModel)):
             raise ValueError(
@@ -79,4 +92,13 @@ def create_qa_with_structure_chain(
 
 
 def create_qa_with_sources_chain(llm: BaseLanguageModel, **kwargs: Any) -> LLMChain:
+    """Create a question answering chain that returns an answer with sources.
+
+    Args:
+        llm: Language model to use for the chain.
+        **kwargs: Keyword arguments to pass to `create_qa_with_structure_chain`.
+
+    Returns:
+        Chain (LLMChain) that can be used to answer questions with citations.
+    """
     return create_qa_with_structure_chain(llm, AnswerWithSources, **kwargs)

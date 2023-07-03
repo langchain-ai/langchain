@@ -694,14 +694,14 @@ def test_md_header_text_splitter_1() -> None:
     )
     output = markdown_splitter.split_text(markdown_document)
     expected_output = [
-        {
-            "content": "Hi this is Jim  \nHi this is Joe",
-            "metadata": {"Header 1": "Foo", "Header 2": "Bar"},
-        },
-        {
-            "content": "Hi this is Molly",
-            "metadata": {"Header 1": "Foo", "Header 2": "Baz"},
-        },
+        Document(
+            page_content="Hi this is Jim  \nHi this is Joe",
+            metadata={"Header 1": "Foo", "Header 2": "Bar"},
+        ),
+        Document(
+            page_content="Hi this is Molly",
+            metadata={"Header 1": "Foo", "Header 2": "Baz"},
+        ),
     ]
     assert output == expected_output
 
@@ -729,18 +729,18 @@ def test_md_header_text_splitter_2() -> None:
     )
     output = markdown_splitter.split_text(markdown_document)
     expected_output = [
-        {
-            "content": "Hi this is Jim  \nHi this is Joe",
-            "metadata": {"Header 1": "Foo", "Header 2": "Bar"},
-        },
-        {
-            "content": "Hi this is Lance",
-            "metadata": {"Header 1": "Foo", "Header 2": "Bar", "Header 3": "Boo"},
-        },
-        {
-            "content": "Hi this is Molly",
-            "metadata": {"Header 1": "Foo", "Header 2": "Baz"},
-        },
+        Document(
+            page_content="Hi this is Jim  \nHi this is Joe",
+            metadata={"Header 1": "Foo", "Header 2": "Bar"},
+        ),
+        Document(
+            page_content="Hi this is Lance",
+            metadata={"Header 1": "Foo", "Header 2": "Bar", "Header 3": "Boo"},
+        ),
+        Document(
+            page_content="Hi this is Molly",
+            metadata={"Header 1": "Foo", "Header 2": "Baz"},
+        ),
     ]
     assert output == expected_output
 
@@ -774,27 +774,27 @@ def test_md_header_text_splitter_3() -> None:
     output = markdown_splitter.split_text(markdown_document)
 
     expected_output = [
-        {
-            "content": "Hi this is Jim  \nHi this is Joe",
-            "metadata": {"Header 1": "Foo", "Header 2": "Bar"},
-        },
-        {
-            "content": "Hi this is Lance",
-            "metadata": {"Header 1": "Foo", "Header 2": "Bar", "Header 3": "Boo"},
-        },
-        {
-            "content": "Hi this is John",
-            "metadata": {
+        Document(
+            page_content="Hi this is Jim  \nHi this is Joe",
+            metadata={"Header 1": "Foo", "Header 2": "Bar"},
+        ),
+        Document(
+            page_content="Hi this is Lance",
+            metadata={"Header 1": "Foo", "Header 2": "Bar", "Header 3": "Boo"},
+        ),
+        Document(
+            page_content="Hi this is John",
+            metadata={
                 "Header 1": "Foo",
                 "Header 2": "Bar",
                 "Header 3": "Boo",
                 "Header 4": "Bim",
             },
-        },
-        {
-            "content": "Hi this is Molly",
-            "metadata": {"Header 1": "Foo", "Header 2": "Baz"},
-        },
+        ),
+        Document(
+            page_content="Hi this is Molly",
+            metadata={"Header 1": "Foo", "Header 2": "Baz"},
+        ),
     ]
 
     assert output == expected_output

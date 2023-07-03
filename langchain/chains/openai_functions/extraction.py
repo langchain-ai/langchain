@@ -40,6 +40,15 @@ Passage:
 
 
 def create_extraction_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
+    """Creates a chain that extracts information from a passage.
+
+    Args:
+        schema: The schema of the entities to extract.
+        llm: The language model to use.
+
+    Returns:
+        Chain that can be used to extract information from a passage.
+    """
     function = _get_extraction_function(schema)
     prompt = ChatPromptTemplate.from_template(_EXTRACTION_TEMPLATE)
     output_parser = JsonKeyOutputFunctionsParser(key_name="info")
@@ -56,12 +65,22 @@ def create_extraction_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
 def create_extraction_chain_pydantic(
     pydantic_schema: Any, llm: BaseLanguageModel
 ) -> Chain:
+    """Creates a chain that extracts information from a passage using pydantic schema.
+
+    Args:
+        pydantic_schema: The pydantic schema of the entities to extract.
+        llm: The language model to use.
+
+    Returns:
+        Chain that can be used to extract information from a passage.
+    """
+
     class PydanticSchema(BaseModel):
         info: List[pydantic_schema]  # type: ignore
 
-    openai_schema = PydanticSchema.schema()
+    openai_schema = pydantic_schema.schema()
     openai_schema = _resolve_schema_references(
-        openai_schema, openai_schema["definitions"]
+        openai_schema, openai_schema.get("definitions", {})
     )
 
     function = _get_extraction_function(openai_schema)

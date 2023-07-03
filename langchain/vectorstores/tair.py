@@ -19,6 +19,8 @@ def _uuid_key() -> str:
 
 
 class Tair(VectorStore):
+    """Wrapper around Tair Vector store."""
+
     def __init__(
         self,
         embedding_function: Embeddings,
@@ -34,7 +36,7 @@ class Tair(VectorStore):
         try:
             from tair import Tair as TairClient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tair python package. "
                 "Please install it with `pip install tair`."
             )

@@ -11,10 +11,12 @@ from langchain.callbacks.manager import (
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.vertexai import _VertexAICommon, is_codey_model
 from langchain.schema import (
-    AIMessage,
-    BaseMessage,
     ChatGeneration,
     ChatResult,
+)
+from langchain.schema.messages import (
+    AIMessage,
+    BaseMessage,
     HumanMessage,
     SystemMessage,
 )
@@ -129,8 +131,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         context = history.system_message.content if history.system_message else None
         params = {**self._default_params, **kwargs}
         if not self.is_codey_model:
-            params["context"] = context
-        chat = self.client.start_chat(**params)
+            chat = self.client.start_chat(context=context, **params)
+        else:
+            chat = self.client.start_chat(**params)
         for pair in history.history:
             chat._history.append((pair.question.content, pair.answer.content))
         response = chat.send_message(question.content, **params)

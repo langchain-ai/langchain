@@ -32,7 +32,7 @@ def init_vertexai(
                 will be ascertained from the environment.
 
     Raises:
-        ImportError: If importing vertexai SDK didn't not succeed.
+        ImportError: If importing vertexai SDK did not succeed.
     """
     try:
         import vertexai

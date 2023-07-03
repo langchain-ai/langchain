@@ -226,7 +226,7 @@ class PowerBIDataset(BaseModel):
                 json=self._create_json_content(command),
                 timeout=10,
             ) as response:
-                response_json = await response.json()
+                response_json = await response.json(content_type=response.content_type)
                 return response_json
         async with aiohttp.ClientSession() as session:
             async with session.post(
@@ -235,7 +235,7 @@ class PowerBIDataset(BaseModel):
                 json=self._create_json_content(command),
                 timeout=10,
             ) as response:
-                response_json = await response.json()
+                response_json = await response.json(content_type=response.content_type)
                 return response_json
 
 

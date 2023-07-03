@@ -27,6 +27,15 @@ Passage:
 
 
 def create_tagging_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
+    """Creates a chain that extracts information from a passage.
+
+    Args:
+        schema: The schema of the entities to extract.
+        llm: The language model to use.
+
+    Returns:
+        Chain (LLMChain) that can be used to extract information from a passage.
+    """
     function = _get_tagging_function(schema)
     prompt = ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
     output_parser = JsonOutputFunctionsParser()
@@ -43,6 +52,15 @@ def create_tagging_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
 def create_tagging_chain_pydantic(
     pydantic_schema: Any, llm: BaseLanguageModel
 ) -> Chain:
+    """Creates a chain that extracts information from a passage.
+
+    Args:
+        pydantic_schema: The pydantic schema of the entities to extract.
+        llm: The language model to use.
+
+    Returns:
+        Chain (LLMChain) that can be used to extract information from a passage.
+    """
     openai_schema = pydantic_schema.schema()
     function = _get_tagging_function(openai_schema)
     prompt = ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
