@@ -197,19 +197,20 @@ class QueryPowerBITool(BaseTool):
     ) -> Tuple[Optional[str], Optional[str]]:
         """Parse the output of the query to a markdown table."""
         if "results" in pbi_result:
-            if len(pbi_result["results"][0]["tables"][0]["rows"]) == 0:
+            rows = pbi_result["results"][0]["tables"][0]["rows"]
+            if len(rows) == 0:
                 return (
+                    "0 results found, are you sure all the filters and the values are correct (don't assume the values for fields)?",
                     None,
-                    "0 results found, are you sure all the filters and the values are correct (don't make stuff up)?",
                 )
-            result = json_to_md(pbi_result["results"][0]["tables"][0]["rows"])
+            result = json_to_md(rows)
             too_long, length = self._result_too_large(result)
             if too_long:
                 return (
                     f"Result too large, please try to be more specific or use the `TOPN` function. The result is {length} tokens long, the limit is {self.output_token_limit} tokens.",
                     None,
                 )
-            return json_to_md(pbi_result["results"][0]["tables"][0]["rows"]), None
+            return result, None
 
         if "error" in pbi_result:
             if (
