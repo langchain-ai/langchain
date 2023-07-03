@@ -8,8 +8,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
-from langchain.evaluation.schema import EvalChain
-from langchain.prompts.base import BasePromptTemplate
+from langchain.evaluation.schema import EvalChain, StringEvaluator
 from langchain.schema import BaseOutputParser, BasePromptTemplate
 
 _SUPPORTED_CRITERIA = {
@@ -61,7 +60,7 @@ CRITERIA_TYPE = Union[
 ]
 
 
-class CriteriaEvalChain(EvalChain, LLMChain):
+class CriteriaEvalChain(StringEvaluator, EvalChain, LLMChain):
     """LLM Chain for evaluating runs against criteria.
 
     Parameters
@@ -98,15 +97,30 @@ class CriteriaEvalChain(EvalChain, LLMChain):
     >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
     """
 
-    requires_reference: bool = False
-    """Whether the evaluation template expects a reference text."""
     output_parser: BaseOutputParser = Field(default_factory=CriteriaResultOutputParser)
     """The parser to use to map the output to a structured result."""
+    criteria_names: List[str] = Field(default_factory=list)
 
     class Config:
         """Configuration for the QAEvalChain."""
 
         extra = Extra.ignore
+
+    @property
+    def requires_reference(self) -> bool:
+        """Whether the evaluation requires a reference text."""
+        return "reference" in self.prompt.input_variables
+
+    @property
+    def evaluation_name(self) -> str:
+        """Get the name of the evaluation.
+
+        Returns
+        -------
+        str
+            The name of the evaluation.
+        """
+        return " ".join(self.criteria_names)
 
     @staticmethod
     def get_supported_default_criteria() -> List[str]:
@@ -242,10 +256,14 @@ class CriteriaEvalChain(EvalChain, LLMChain):
             else:
                 prompt = PROMPT
         criteria_ = cls.resolve_criteria(criteria)
+        criteria_names = list(criteria_.keys())
         criteria_str = " ".join(f"{k}: {v}" for k, v in criteria_.items())
         prompt_ = prompt.partial(criteria=criteria_str)
         return cls(
-            llm=llm, prompt=prompt_, requires_reference=requires_reference, **kwargs
+            llm=llm,
+            prompt=prompt_,
+            criteria_names=criteria_names,
+            **kwargs,
         )
 
     def _get_eval_input(
