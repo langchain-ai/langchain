@@ -41,11 +41,10 @@ from langchain.callbacks.tracers.wandb import WandbTracer
 from langchain.schema import (
     AgentAction,
     AgentFinish,
-    BaseMessage,
     Document,
     LLMResult,
-    get_buffer_string,
 )
+from langchain.schema.messages import BaseMessage, get_buffer_string
 
 logger = logging.getLogger(__name__)
 Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
@@ -443,6 +442,7 @@ class RunManager(BaseRunManager):
             text,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -470,6 +470,7 @@ class AsyncRunManager(BaseRunManager):
             text,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -494,6 +495,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             token=token,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -510,6 +512,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             response,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -530,6 +533,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -554,6 +558,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             token,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -570,6 +575,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             response,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -590,6 +596,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -627,6 +634,7 @@ class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
             outputs,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -647,6 +655,7 @@ class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -666,6 +675,7 @@ class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
             action,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -685,6 +695,7 @@ class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
             finish,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -722,6 +733,7 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
             outputs,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -742,6 +754,7 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -761,6 +774,7 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
             action,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -780,6 +794,7 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
             finish,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -821,6 +836,7 @@ class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
             output,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -841,6 +857,7 @@ class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -878,6 +895,7 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
             output,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -898,6 +916,7 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -927,6 +946,7 @@ class CallbackManagerForRetrieverRun(RunManager, RetrieverManagerMixin):
             documents,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -943,6 +963,7 @@ class CallbackManagerForRetrieverRun(RunManager, RetrieverManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -973,6 +994,7 @@ class AsyncCallbackManagerForRetrieverRun(
             documents,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -989,6 +1011,7 @@ class AsyncCallbackManagerForRetrieverRun(
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -1189,6 +1212,7 @@ class CallbackManager(BaseCallbackManager):
             query,
             run_id=run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -1455,6 +1479,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             query,
             run_id=run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 

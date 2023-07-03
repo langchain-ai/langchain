@@ -6,7 +6,8 @@ from typing import Any, List, Optional, Sequence, Set
 
 from langchain.callbacks.manager import Callbacks
 from langchain.load.serializable import Serializable
-from langchain.schema import BaseMessage, LLMResult, PromptValue, get_buffer_string
+from langchain.schema import LLMResult, PromptValue
+from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
 class BaseLanguageModel(Serializable, ABC):

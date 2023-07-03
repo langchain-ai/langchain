@@ -55,11 +55,7 @@ class SVMRetriever(BaseRetriever, BaseModel):
         return cls(embeddings=embeddings, index=index, texts=texts, **kwargs)
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         from sklearn import svm
 
@@ -98,10 +94,6 @@ class SVMRetriever(BaseRetriever, BaseModel):
         return top_k_results
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError
