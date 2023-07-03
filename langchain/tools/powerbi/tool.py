@@ -160,7 +160,7 @@ class QueryPowerBITool(BaseTool):
         logger.debug("PBI Result: %s", pbi_result)
         logger.debug(f"PBI Query duration: {end_time - start_time:0.6f}")
         result, error = self._parse_output(pbi_result)
-        if error is not None and "TokenExpired" in error or "TokenError" in error:
+        if error is not None and ("TokenExpired" in error or "TokenError" in error):
             self.session_cache[
                 tool_input
             ] = "Authentication token expired or invalid, please try to reauthenticate or check the scope of the credential."
