@@ -18,23 +18,12 @@ from langchain.tools.powerbi.prompt import (
     RETRY_RESPONSE,
 )
 from langchain.utilities.powerbi import PowerBIDataset, json_to_md
+from langchain.chat_models.openai import _import_tiktoken
 
 if TYPE_CHECKING:
     import tiktoken
 
 logger = logging.getLogger(__name__)
-
-
-def _import_tiktoken() -> Any:
-    try:
-        import tiktoken
-    except ImportError:
-        raise ValueError(
-            "Could not import tiktoken python package. "
-            "This is needed in order to calculate get_token_ids. "
-            "Please install it with `pip install tiktoken`."
-        )
-    return tiktoken
 
 
 class QueryPowerBITool(BaseTool):
@@ -225,9 +214,8 @@ class QueryPowerBITool(BaseTool):
     def _result_too_large(self, result: str) -> Tuple[bool, int]:
         """Tokenize the output of the query."""
         if self.tiktoken_model_name:
-            _import_tiktoken()
-            logger.info("Tiktokenizing result")
-            encoding = tiktoken.encoding_for_model(self.tiktoken_model_name)
+            tiktoken_ = _import_tiktoken()
+            encoding = tiktoken_.encoding_for_model(self.tiktoken_model_name)
             length = len(encoding.encode(result))
             logger.info("Result length: %s", length)
             return length > self.output_token_limit, length
