@@ -23,6 +23,7 @@ from langchain.document_loaders.blob_loaders import (
     YoutubeAudioLoader,
 )
 from langchain.document_loaders.blockchain import BlockchainDocumentLoader
+from langchain.document_loaders.brave_search import BraveSearchLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
@@ -146,10 +147,10 @@ from langchain.document_loaders.youtube import (
     YoutubeLoader,
 )
 
-# Legacy: only for backwards compat. Use PyPDFLoader instead
+# Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
 
-# For backwards compatability
+# For backwards compatibility
 TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
@@ -169,6 +170,7 @@ __all__ = [
     "Blob",
     "BlobLoader",
     "BlockchainDocumentLoader",
+    "BraveSearchLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",

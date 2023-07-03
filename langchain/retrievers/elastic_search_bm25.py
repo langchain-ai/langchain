@@ -117,11 +117,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         return ids
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         query_dict = {"query": {"match": {"content": query}}}
         res = self.client.search(index=self.index_name, body=query_dict)
@@ -132,10 +128,6 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         return docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError

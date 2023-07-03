@@ -26,7 +26,7 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
     QUESTION_PROMPT,
 )
 from langchain.docstore.document import Document
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
 
 
 class BaseQAWithSourcesChain(Chain, ABC):
