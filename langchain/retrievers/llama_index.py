@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, cast
 
 from pydantic import BaseModel, Field
 
@@ -40,7 +40,7 @@ class LlamaIndexRetriever(BaseRetriever, BaseModel):
         return docs
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: Optional[AsyncCallbackManagerForRetrieverRun]
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError("LlamaIndexRetriever does not support async")
 
