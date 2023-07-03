@@ -48,7 +48,7 @@ class BaseLanguageModel(Serializable, ABC):
     def generate_prompt(
         self,
         prompts: List[PromptValue],
-        stop: Optional[Sequence[str]] = None,
+        stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -82,7 +82,7 @@ class BaseLanguageModel(Serializable, ABC):
     async def agenerate_prompt(
         self,
         prompts: List[PromptValue],
-        stop: Optional[Sequence[str]] = None,
+        stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> LLMResult:
