@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import List
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -31,8 +31,8 @@ class MergerRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         """
         Get the relevant documents for a given query.
@@ -52,8 +52,8 @@ class MergerRetriever(BaseRetriever):
     async def _aget_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         """
         Asynchronously get the relevant documents for a given query.
