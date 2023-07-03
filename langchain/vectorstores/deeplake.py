@@ -250,7 +250,8 @@ class DeepLake(VectorStore):
             unsupported_argument = next(iter(kwargs))
             if kwargs[unsupported_argument] is not False:
                 raise ValueError(
-                    f"specifying {unsupported_argument} is not supported with tql search."
+                    f"specifying {unsupported_argument} is "
+                    "not supported with tql search."
                 )
 
         return docs
