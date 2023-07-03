@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Type, cast
 from pydantic import BaseModel, Field, root_validator
 
 from langchain import LLMChain
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -17,7 +18,7 @@ from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
-from langchain.schema import BaseRetriever, Document, BaseLanguageModel
+from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores import (
     Chroma,
     MyScale,

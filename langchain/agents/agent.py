@@ -14,6 +14,7 @@ from pydantic import BaseModel, root_validator
 
 from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import InvalidTool
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -33,7 +34,7 @@ from langchain.schema import (
     AgentFinish,
     BaseMessage,
     BaseOutputParser,
-    OutputParserException, BaseLanguageModel,
+    OutputParserException,
 )
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout

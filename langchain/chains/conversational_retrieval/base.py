@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -21,7 +22,7 @@ from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseMessage, BaseRetriever, Document, BaseLanguageModel
+from langchain.schema import BaseMessage, BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 # Depending on the memory type and configuration, the chat history format may differ.
