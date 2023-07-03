@@ -13,7 +13,7 @@ from langchain.memory.prompt import (
     ENTITY_SUMMARIZATION_PROMPT,
 )
 from langchain.memory.utils import get_prompt_input_key
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
 from langchain.schema.messages import BaseMessage, get_buffer_string
 
 logger = logging.getLogger(__name__)
