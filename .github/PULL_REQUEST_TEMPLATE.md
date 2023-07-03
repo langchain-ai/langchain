@@ -12,11 +12,11 @@ If you're adding a new integration, please include:
   2. an example notebook showing its use.
 
 Maintainer responsibilities:
-  - General / Misc / if you don't know who to tag: @dev2049
+  - General / Misc / if you don't know who to tag: @baskaryan
   - DataLoaders / VectorStores / Retrievers: @rlancemartin, @eyurtsev
-  - Models / Prompts: @hwchase17, @dev2049
+  - Models / Prompts: @hwchase17, @baskaryan
   - Memory: @hwchase17
-  - Agents / Tools / Toolkits: @vowelparrot
+  - Agents / Tools / Toolkits: @hinthornw
   - Tracing / Callbacks: @agola11
   - Async: @agola11
 
