@@ -78,7 +78,7 @@ class EmbeddingStore(BaseModel):
     )
     collection = relationship(CollectionStore, back_populates="embeddings")
 
-    embedding: List[float] = sqlalchemy.Column(sqlalchemy.ARRAY(sqlalchemy.REAL))
+    embedding = sqlalchemy.Column(sqlalchemy.ARRAY(sqlalchemy.REAL)) # type: ignore
     document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     cmetadata = sqlalchemy.Column(JSON, nullable=True)
 
