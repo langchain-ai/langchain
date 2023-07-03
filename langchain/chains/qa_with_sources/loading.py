@@ -18,7 +18,7 @@ from langchain.chains.qa_with_sources import (
 from langchain.chains.question_answering.map_rerank_prompt import (
     PROMPT as MAP_RERANK_PROMPT,
 )
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema.prompt_template import BasePromptTemplate
 
 
 class LoadingCallable(Protocol):

@@ -7,7 +7,7 @@ import requests
 from openapi_schema_pydantic import Parameter
 from requests import Response
 
-from langchain import BasePromptTemplate, LLMChain
+from langchain import LLMChain
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -16,6 +16,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.input import get_colored_text
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.prompts import ChatPromptTemplate
+from langchain.schema import BasePromptTemplate
 from langchain.tools import APIOperation
 from langchain.utilities.openapi import OpenAPISpec
 
