@@ -211,7 +211,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 return len(tokenizer.encode(text))
 
             def _huggingface_tokenizer_batched_length(texts: List[str]) -> List[int]:
-                return tokenizer(texts, truncation=False, return_length=True).lengths
+                return tokenizer(texts, truncation=False, return_length=True).length
 
         except ImportError:
             raise ValueError(
