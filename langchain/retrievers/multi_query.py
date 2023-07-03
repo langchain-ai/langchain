@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List
+from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -98,8 +98,8 @@ class MultiQueryRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         """Get relevated documents given a user query.
 
@@ -117,8 +117,8 @@ class MultiQueryRetriever(BaseRetriever):
     async def _aget_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError
 

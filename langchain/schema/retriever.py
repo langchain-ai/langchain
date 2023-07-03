@@ -44,7 +44,6 @@ class BaseRetriever(ABC):
 
                 async def aget_relevant_documents(self, query: str) -> List[Document]:
                     raise NotImplementedError
-
     """  # noqa: E501
 
     _new_arg_supported: bool = False
@@ -86,27 +85,23 @@ class BaseRetriever(ABC):
 
     @abstractmethod
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant to a query.
         Args:
-            query: String to find relevant documents for.
-            run_manager: The callbacks handler to use.
+            query: String to find relevant documents for
+            run_manager: The callbacks handler to use
         Returns:
             List of relevant documents
         """
 
     @abstractmethod
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
         Args:
-            query: string to find relevant documents for
+            query: String to find relevant documents for
             run_manager: The callbacks handler to use
         Returns:
             List of relevant documents
@@ -117,8 +112,8 @@ class BaseRetriever(ABC):
     ) -> List[Document]:
         """Retrieve documents relevant to a query.
         Args:
-            query: String to find relevant documents for.
-            callbacks: Callback manager or list of callbacks.
+            query: string to find relevant documents for
+            callbacks: Callback manager or list of callbacks
         Returns:
             List of relevant documents
         """
@@ -132,14 +127,13 @@ class BaseRetriever(ABC):
             **kwargs,
         )
         try:
+            _kwargs = kwargs if self._expects_other_args else {}
             if self._new_arg_supported:
                 result = self._get_relevant_documents(
-                    query, run_manager=run_manager, **kwargs
+                    query, run_manager=run_manager, **_kwargs
                 )
-            elif self._expects_other_args:
-                result = self._get_relevant_documents(query, **kwargs)
             else:
-                result = self._get_relevant_documents(query)  # type: ignore[call-arg]
+                result = self._get_relevant_documents(query, **_kwargs)
         except Exception as e:
             run_manager.on_retriever_error(e)
             raise e
@@ -170,16 +164,13 @@ class BaseRetriever(ABC):
             **kwargs,
         )
         try:
+            _kwargs = kwargs if self._expects_other_args else {}
             if self._new_arg_supported:
                 result = await self._aget_relevant_documents(
-                    query, run_manager=run_manager, **kwargs
+                    query, run_manager=run_manager, **_kwargs
                 )
-            elif self._expects_other_args:
-                result = await self._aget_relevant_documents(query, **kwargs)
             else:
-                result = await self._aget_relevant_documents(
-                    query,  # type: ignore[call-arg]
-                )
+                result = await self._aget_relevant_documents(query, **_kwargs)
         except Exception as e:
             await run_manager.on_retriever_error(e)
             raise e

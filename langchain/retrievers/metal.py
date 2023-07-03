@@ -22,11 +22,7 @@ class MetalRetriever(BaseRetriever):
         self.params = params or {}
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         results = self.client.search({"text": query}, **self.params)
         final_results = []
@@ -36,10 +32,6 @@ class MetalRetriever(BaseRetriever):
         return final_results
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError

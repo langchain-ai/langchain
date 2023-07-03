@@ -12,8 +12,7 @@ from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
-from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import OutputParserException
+from langchain.schema import BasePromptTemplate, OutputParserException
 from langchain.utilities.bash import BashProcess
 
 logger = logging.getLogger(__name__)

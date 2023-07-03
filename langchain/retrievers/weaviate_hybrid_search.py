@@ -93,7 +93,6 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
         where_filter: Optional[Dict[str, object]] = None,
-        **kwargs: Any,
     ) -> List[Document]:
         """Look up similar documents in Weaviate."""
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
@@ -112,11 +111,6 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         return docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        where_filter: Optional[Dict[str, object]] = None,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError
