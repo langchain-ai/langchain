@@ -32,17 +32,16 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             # Initialise with default model and instruction
-            from langchain.llms import EmbaasEmbeddings
+            from langchain.embeddings import EmbaasEmbeddings
             emb = EmbaasEmbeddings()
 
             # Initialise with custom model and instruction
-            from langchain.llms import EmbaasEmbeddings
+            from langchain.embeddings import EmbaasEmbeddings
             emb_model = "instructor-large"
             emb_inst = "Represent the Wikipedia document for retrieval"
             emb = EmbaasEmbeddings(
                 model=emb_model,
-                instruction=emb_inst,
-                embaas_api_key="your-api-key"
+                instruction=emb_inst
             )
     """
 

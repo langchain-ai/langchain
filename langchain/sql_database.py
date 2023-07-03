@@ -230,8 +230,8 @@ class SQLDatabase:
     def get_usable_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
         if self._include_tables:
-            return self._include_tables
-        return self._all_tables - self._ignore_tables
+            return sorted(self._include_tables)
+        return sorted(self._all_tables - self._ignore_tables)
 
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
@@ -290,6 +290,7 @@ class SQLDatabase:
             if has_extra_info:
                 table_info += "*/"
             tables.append(table_info)
+        tables.sort()
         final_str = "\n\n".join(tables)
         return final_str
 

@@ -11,6 +11,8 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class BlockchainType(Enum):
+    """Enumerator of the supported blockchains."""
+
     ETH_MAINNET = "eth-mainnet"
     ETH_GOERLI = "eth-goerli"
     POLYGON_MAINNET = "polygon-mainnet"
@@ -53,6 +55,16 @@ class BlockchainDocumentLoader(BaseLoader):
         get_all_tokens: bool = False,
         max_execution_time: Optional[int] = None,
     ):
+        """
+
+        Args:
+            contract_address: The address of the smart contract.
+            blockchainType: The blockchain type.
+            api_key: The Alchemy API key.
+            startToken: The start token for pagination.
+            get_all_tokens: Whether to get all tokens on the contract.
+            max_execution_time: The maximum execution time (sec).
+        """
         self.contract_address = contract_address
         self.blockchainType = blockchainType.value
         self.api_key = os.environ.get("ALCHEMY_API_KEY") or api_key

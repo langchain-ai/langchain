@@ -31,11 +31,29 @@ class Chain(Serializable, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[BaseMemory] = None
+    """Optional memory object. Defaults to None.
+    Memory is a class that gets called at the start 
+    and at the end of every chain. At the start, memory loads variables and passes
+    them along in the chain. At the end, it saves any returned variables.
+    There are many different types of memory - please see memory docs 
+    for the full catalog."""
     callbacks: Callbacks = Field(default=None, exclude=True)
+    """Optional list of callback handlers (or callback manager). Defaults to None.
+    Callback handlers are called throughout the lifecycle of a call to a chain,
+    starting with on_chain_start, ending with on_chain_end or on_chain_error.
+    Each custom chain can optionally call additional callback methods, see Callback docs
+    for full details."""
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
-    verbose: bool = Field(
-        default_factory=_get_verbosity
-    )  # Whether to print the response text
+    """Deprecated, use `callbacks` instead."""
+    verbose: bool = Field(default_factory=_get_verbosity)
+    """Whether or not run in verbose mode. In verbose mode, some intermediate logs
+    will be printed to the console. Defaults to `langchain.verbose` value."""
+    tags: Optional[List[str]] = None
+    """Optional list of tags associated with the chain. Defaults to None
+    These tags will be associated with each call to this chain,
+    and passed as arguments to the handlers defined in `callbacks`.
+    You can use these to eg identify a specific instance of a chain with its use case.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -111,6 +129,7 @@ class Chain(Serializable, ABC):
         return_only_outputs: bool = False,
         callbacks: Callbacks = None,
         *,
+        tags: Optional[List[str]] = None,
         include_run_info: bool = False,
     ) -> Dict[str, Any]:
         """Run the logic of this chain and add to output if desired.
@@ -129,7 +148,7 @@ class Chain(Serializable, ABC):
         """
         inputs = self.prep_inputs(inputs)
         callback_manager = CallbackManager.configure(
-            callbacks, self.callbacks, self.verbose
+            callbacks, self.callbacks, self.verbose, tags, self.tags
         )
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
         run_manager = callback_manager.on_chain_start(
@@ -159,6 +178,7 @@ class Chain(Serializable, ABC):
         return_only_outputs: bool = False,
         callbacks: Callbacks = None,
         *,
+        tags: Optional[List[str]] = None,
         include_run_info: bool = False,
     ) -> Dict[str, Any]:
         """Run the logic of this chain and add to output if desired.
@@ -177,7 +197,7 @@ class Chain(Serializable, ABC):
         """
         inputs = self.prep_inputs(inputs)
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, self.callbacks, self.verbose
+            callbacks, self.callbacks, self.verbose, tags, self.tags
         )
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         run_manager = await callback_manager.on_chain_start(
@@ -244,21 +264,33 @@ class Chain(Serializable, ABC):
         """Call the chain on all inputs in the list."""
         return [self(inputs, callbacks=callbacks) for inputs in input_list]
 
-    def run(self, *args: Any, callbacks: Callbacks = None, **kwargs: Any) -> str:
-        """Run the chain as text in, text out or multiple variables, text out."""
+    @property
+    def _run_output_key(self) -> str:
         if len(self.output_keys) != 1:
             raise ValueError(
                 f"`run` not supported when there is not exactly "
                 f"one output key. Got {self.output_keys}."
             )
+        return self.output_keys[0]
+
+    def run(
+        self,
+        *args: Any,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Run the chain as text in, text out or multiple variables, text out."""
+        # Run at start to make sure this is possible/defined
+        _output_key = self._run_output_key
 
         if args and not kwargs:
             if len(args) != 1:
                 raise ValueError("`run` supports only one positional argument.")
-            return self(args[0], callbacks=callbacks)[self.output_keys[0]]
+            return self(args[0], callbacks=callbacks, tags=tags)[_output_key]
 
         if kwargs and not args:
-            return self(kwargs, callbacks=callbacks)[self.output_keys[0]]
+            return self(kwargs, callbacks=callbacks, tags=tags)[_output_key]
 
         if not kwargs and not args:
             raise ValueError(
@@ -271,7 +303,13 @@ class Chain(Serializable, ABC):
             f" but not both. Got args: {args} and kwargs: {kwargs}."
         )
 
-    async def arun(self, *args: Any, callbacks: Callbacks = None, **kwargs: Any) -> str:
+    async def arun(
+        self,
+        *args: Any,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> str:
         """Run the chain as text in, text out or multiple variables, text out."""
         if len(self.output_keys) != 1:
             raise ValueError(
@@ -282,10 +320,14 @@ class Chain(Serializable, ABC):
         if args and not kwargs:
             if len(args) != 1:
                 raise ValueError("`run` supports only one positional argument.")
-            return (await self.acall(args[0], callbacks=callbacks))[self.output_keys[0]]
+            return (await self.acall(args[0], callbacks=callbacks, tags=tags))[
+                self.output_keys[0]
+            ]
 
         if kwargs and not args:
-            return (await self.acall(kwargs, callbacks=callbacks))[self.output_keys[0]]
+            return (await self.acall(kwargs, callbacks=callbacks, tags=tags))[
+                self.output_keys[0]
+            ]
 
         raise ValueError(
             f"`run` supported with either positional arguments or keyword arguments"

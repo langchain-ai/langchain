@@ -2,7 +2,7 @@ import json
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import RedisChatMessageHistory
-from langchain.schema import _message_to_dict
+from langchain.schema.messages import _message_to_dict
 
 
 def test_memory_with_message_store() -> None:

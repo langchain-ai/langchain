@@ -3,6 +3,8 @@ from typing import List, Optional
 
 from langchain.schema import (
     BaseChatMessageHistory,
+)
+from langchain.schema.messages import (
     BaseMessage,
     _message_to_dict,
     messages_from_dict,
@@ -44,6 +46,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         """Retrieve the messages from DynamoDB"""
         from botocore.exceptions import ClientError
 
+        response = None
         try:
             response = self.table.get_item(Key={"SessionId": self.session_id})
         except ClientError as error:

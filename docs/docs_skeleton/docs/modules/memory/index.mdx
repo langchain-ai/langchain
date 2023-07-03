@@ -1,0 +1,30 @@
+---
+sidebar_position: 3
+---
+
+# Memory
+
+🚧 _Docs under construction_ 🚧
+
+By default, Chains and Agents are stateless,
+meaning that they treat each incoming query independently (like the underlying LLMs and chat models themselves).
+In some applications, like chatbots, it is essential
+to remember previous interactions, both in the short and long-term.
+The **Memory** class does exactly that.
+
+LangChain provides memory components in two forms.
+First, LangChain provides helper utilities for managing and manipulating previous chat messages.
+These are designed to be modular and useful regardless of how they are used.
+Secondly, LangChain provides easy ways to incorporate these utilities into chains.
+
+## Get started
+
+Memory involves keeping a concept of state around throughout a user's interactions with an language model. A user's interactions with a language model are captured in the concept of ChatMessages, so this boils down to ingesting, capturing, transforming and extracting knowledge from a sequence of chat messages. There are many different ways to do this, each of which exists as its own memory type.
+
+In general, for each type of memory there are two ways to understanding using memory. These are the standalone functions which extract information from a sequence of messages, and then there is the way you can use this type of memory in a chain.
+
+Memory can return multiple pieces of information (for example, the most recent N messages and a summary of all previous messages). The returned information can either be a string or a list of messages.
+
+import GetStarted from "@snippets/modules/memory/get_started.mdx"
+
+<GetStarted/>

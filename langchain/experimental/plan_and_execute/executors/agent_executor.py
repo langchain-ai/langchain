@@ -23,6 +23,18 @@ def load_agent_executor(
     verbose: bool = False,
     include_task_in_prompt: bool = False,
 ) -> ChainExecutor:
+    """
+    Load an agent executor.
+
+    Args:
+        llm: BaseLanguageModel
+        tools: List[BaseTool]
+        verbose: bool. Defaults to False.
+        include_task_in_prompt: bool. Defaults to False.
+
+    Returns:
+        ChainExecutor
+    """
     input_variables = ["previous_steps", "current_step", "agent_scratchpad"]
     template = HUMAN_MESSAGE_TEMPLATE
 

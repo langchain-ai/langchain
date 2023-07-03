@@ -13,6 +13,8 @@ from langchain.callbacks.manager import (
     tracing_v2_enabled,
 )
 from langchain.chains import LLMChain
+from langchain.chains.constitutional_ai.base import ConstitutionalChain
+from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
@@ -158,6 +160,25 @@ def test_tracing_v2_context_manager() -> None:
         agent.run(questions[0])  # this should be traced
 
     agent.run(questions[0])  # this should not be traced
+
+
+def test_tracing_v2_chain_with_tags() -> None:
+    llm = OpenAI(temperature=0)
+    chain = ConstitutionalChain.from_llm(
+        llm,
+        chain=LLMChain.from_string(llm, "Q: {question} A:"),
+        tags=["only-root"],
+        constitutional_principles=[
+            ConstitutionalPrinciple(
+                critique_request="Tell if this answer is good.",
+                revision_request="Give a better answer.",
+            )
+        ],
+    )
+    if "LANGCHAIN_TRACING_V2" in os.environ:
+        del os.environ["LANGCHAIN_TRACING_V2"]
+    with tracing_v2_enabled():
+        chain.run("what is the meaning of life", tags=["a-tag"])
 
 
 def test_trace_as_group() -> None:

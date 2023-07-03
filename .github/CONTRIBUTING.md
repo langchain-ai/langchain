@@ -59,6 +59,8 @@ we do not want these to get in the way of getting good code into the codebase.
 
 ## 🚀 Quick Start
 
+> **Note:** You can run this repository locally (which is described below) or in a [development container](https://containers.dev/) (which is described in the [.devcontainer folder](https://github.com/hwchase17/langchain/tree/master/.devcontainer)).
+
 This project uses [Poetry](https://python-poetry.org/) as a dependency manager. Check out Poetry's [documentation on how to install it](https://python-poetry.org/docs/#installation) on your system before proceeding.
 
 ❗Note: If you use `Conda` or `Pyenv` as your environment / package manager, avoid dependency conflicts by doing the following first:
