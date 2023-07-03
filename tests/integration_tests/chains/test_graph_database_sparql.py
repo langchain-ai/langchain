@@ -36,7 +36,10 @@ def test_sparql_select() -> None:
 
     chain = GraphSparqlQAChain.from_llm(OpenAI(temperature=0), graph=graph)
     output = chain.run("What is Tim Berners-Lee's work homepage?")
-    expected_output = " The work homepage of Tim Berners-Lee is http://www.w3.org/People/Berners-Lee/."
+    expected_output = (
+        " The work homepage of Tim Berners-Lee is "
+        "http://www.w3.org/People/Berners-Lee/."
+    )
     assert output == expected_output
 
 

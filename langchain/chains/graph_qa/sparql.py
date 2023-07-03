@@ -23,7 +23,8 @@ from langchain.prompts.base import BasePromptTemplate
 
 class GraphSparqlQAChain(Chain):
     """
-    Chain for question-answering against an RDF or OWL graph by generating SPARQL statements.
+    Chain for question-answering against an RDF or OWL graph by generating
+    SPARQL statements.
     """
 
     graph: RdfGraph = Field(exclude=True)
@@ -73,7 +74,10 @@ class GraphSparqlQAChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        """Generate SPARQL query, use it to retrieve a response from the gdb and answer the question."""
+        """
+        Generate SPARQL query, use it to retrieve a response from the gdb and answer
+        the question.
+        """
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         prompt = inputs[self.input_key]
@@ -87,8 +91,8 @@ class GraphSparqlQAChain(Chain):
             sparql_generation_chain = self.sparql_generation_update_chain
         else:
             raise ValueError(
-                "I am sorry, but this prompt seems to fit none of the currently supported "
-                "SPARQL query types, i.e., SELECT and UPDATE."
+                "I am sorry, but this prompt seems to fit none of the currently "
+                "supported SPARQL query types, i.e., SELECT and UPDATE."
             )
 
         _run_manager.on_text("Identified intent:", end="\n", verbose=self.verbose)

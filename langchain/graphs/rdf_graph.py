@@ -83,9 +83,9 @@ class RdfGraph:
     """
     RDFlib wrapper for graph operations.
     Modes:
-    * "local": Local file - can be queried and changed
-    * "online": Online file - can only be queried, changes can be stored locally
-    * "store": Triple store - can be queried and changed if an update_endpoint is available
+    * local: Local file - can be queried and changed
+    * online: Online file - can only be queried, changes can be stored locally
+    * store: Triple store - can be queried and changed if update_endpoint available
     Together with a source file, the serialization should be specified.
     """
 
@@ -106,7 +106,7 @@ class RdfGraph:
         :param query_endpoint: SPARQL endpoint for queries, read access
         :param update_endpoint: SPARQL endpoint for UPDATE queries, write access
         :param standard: RDF, RDFS, or OWL
-        :param local_copy: local copy of an online or an existing file for storing changes
+        :param local_copy: new local copy for storing changes
         """
         self.source_file = source_file
         self.serialization = serialization
@@ -163,7 +163,7 @@ class RdfGraph:
 
         # Verify that the graph was loaded
         if not len(self.graph):
-            raise AssertionError(f"The graph is empty.")
+            raise AssertionError("The graph is empty.")
 
         # Set schema
         self.schema = ""
@@ -210,7 +210,7 @@ class RdfGraph:
                 destination=self.local_copy, format=self.local_copy.split(".")[-1]
             )
         else:
-            raise ValueError(f"No target file specified for saving the updated file.")
+            raise ValueError("No target file specified for saving the updated file.")
 
     @staticmethod
     def _get_local_name(iri: str) -> str:
@@ -243,12 +243,12 @@ class RdfGraph:
             relationships: List[rdflib.query.ResultRow],
         ) -> str:
             return (
-                f"""In the following, each IRI is followed by the local name and """
-                f"""optionally its description in parentheses. \n"""
-                f"""The RDF graph supports the following node types:\n"""
-                f"""{", ".join([self._res_to_str(r, "cls") for r in classes])}\n"""
-                f"""The RDF graph supports the following relationships:\n"""
-                f"""{", ".join([self._res_to_str(r, "rel") for r in relationships])}\n"""
+                f"In the following, each IRI is followed by the local name and "
+                f"optionally its description in parentheses. \n"
+                f"The RDF graph supports the following node types:\n"
+                f'{", ".join([self._res_to_str(r, "cls") for r in classes])}\n'
+                f"The RDF graph supports the following relationships:\n"
+                f'{", ".join([self._res_to_str(r, "rel") for r in relationships])}\n'
             )
 
         if self.standard == "rdf":
@@ -264,16 +264,16 @@ class RdfGraph:
             ops = self.query(cls_query_owl)
             dps = self.query(cls_query_owl)
             self.schema = (
-                f"""In the following, each IRI is followed by the local name and """
-                f"""optionally its description in parentheses. \n"""
-                f"""The OWL graph supports the following node types:\n"""
-                f"""{", ".join([self._res_to_str(r, "cls") for r in clss])}\n"""
-                f"""The OWL graph supports the following object properties, """
-                f"""i.e., relationships between objects:\n"""
-                f"""{", ".join([self._res_to_str(r, "op") for r in ops])}\n"""
-                f"""The OWL graph supports the following data properties, """
-                f"""i.e., relationships between objects and literals:\n"""
-                f"""{", ".join([self._res_to_str(r, "dp") for r in dps])}\n"""
+                f"In the following, each IRI is followed by the local name and "
+                f"optionally its description in parentheses. \n"
+                f"The OWL graph supports the following node types:\n"
+                f'{", ".join([self._res_to_str(r, "cls") for r in clss])}\n'
+                f"The OWL graph supports the following object properties, "
+                f"i.e., relationships between objects:\n"
+                f'{", ".join([self._res_to_str(r, "op") for r in ops])}\n'
+                f"The OWL graph supports the following data properties, "
+                f"i.e., relationships between objects and literals:\n"
+                f'{", ".join([self._res_to_str(r, "dp") for r in dps])}\n'
             )
         else:
             raise ValueError(f"Mode '{self.standard}' is currently not supported.")
