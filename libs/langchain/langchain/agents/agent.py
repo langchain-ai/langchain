@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import time
 from abc import abstractmethod
 from pathlib import Path
 from typing import (
@@ -19,6 +18,7 @@ from typing import (
 )
 
 import yaml
+from egg_timer import EggTimer
 
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
@@ -861,13 +861,10 @@ s
         """Lookup tool by name."""
         return {tool.name: tool for tool in self.tools}[name]
 
-    def _should_continue(self, iterations: int, time_elapsed: float) -> bool:
+    def _should_continue(self, iterations: int, timer: EggTimer) -> bool:
         if self.max_iterations is not None and iterations >= self.max_iterations:
             return False
-        if (
-            self.max_execution_time is not None
-            and time_elapsed >= self.max_execution_time
-        ):
+        if self.max_execution_time is not None and timer.is_expired():
             return False
 
         return True
@@ -1115,10 +1112,10 @@ s
         intermediate_steps: List[Tuple[AgentAction, str]] = []
         # Let's start tracking the number of iterations and time elapsed
         iterations = 0
-        time_elapsed = 0.0
-        start_time = time.time()
+        timer = EggTimer()
+        timer.set(self.max_execution_time or 0)
         # We now enter the agent loop (until it returns something).
-        while self._should_continue(iterations, time_elapsed):
+        while self._should_continue(iterations, timer):
             next_step_output = self._take_next_step(
                 name_to_tool_map,
                 color_mapping,
@@ -1141,7 +1138,6 @@ s
                         tool_return, intermediate_steps, run_manager=run_manager
                     )
             iterations += 1
-            time_elapsed = time.time() - start_time
         output = self.agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
         )
@@ -1162,12 +1158,12 @@ s
         intermediate_steps: List[Tuple[AgentAction, str]] = []
         # Let's start tracking the number of iterations and time elapsed
         iterations = 0
-        time_elapsed = 0.0
-        start_time = time.time()
+        timer = EggTimer()
+        timer.set(self.max_execution_time or 0)
         # We now enter the agent loop (until it returns something).
         async with asyncio_timeout(self.max_execution_time):
             try:
-                while self._should_continue(iterations, time_elapsed):
+                while self._should_continue(iterations, timer):
                     next_step_output = await self._atake_next_step(
                         name_to_tool_map,
                         color_mapping,
@@ -1193,7 +1189,6 @@ s
                             )
 
                     iterations += 1
-                    time_elapsed = time.time() - start_time
                 output = self.agent.return_stopped_response(
                     self.early_stopping_method, intermediate_steps, **inputs
                 )
