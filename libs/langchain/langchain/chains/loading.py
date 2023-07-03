@@ -360,7 +360,7 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> SQLDatabaseChain:
     else:
         prompt = None
     # in case of duplicate key error
-    config.pop('llm_chain')
+    config.pop("llm_chain")
     return SQLDatabaseChain.from_llm(llm, database, prompt=prompt, **config)
 
 
