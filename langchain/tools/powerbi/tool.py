@@ -111,7 +111,7 @@ class QueryPowerBITool(BaseTool):
         if query == "I cannot answer this":
             self.session_cache[tool_input] = query
             return self.session_cache[tool_input]
-        logger.info("PBI Query: %s", query)
+        logger.info("PBI Query:\n%s", query)
         start_time = perf_counter()
         pbi_result = self.powerbi.run(command=query)
         end_time = perf_counter()
@@ -199,8 +199,9 @@ class QueryPowerBITool(BaseTool):
         if "results" in pbi_result:
             rows = pbi_result["results"][0]["tables"][0]["rows"]
             if len(rows) == 0:
+                logger.info("0 records in result, query was valid.")
                 return (
-                    "0 results found, are you sure all the filters and the values are correct (don't assume the values for fields)?",
+                    "0 rows returned, this might be correct, but please validate if all filter values were correct?",
                     None,
                 )
             result = json_to_md(rows)
