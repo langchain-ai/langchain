@@ -30,6 +30,14 @@ class JoplinLoader(BaseLoader):
         port: int = 41184,
         host: str = "localhost",
     ) -> None:
+        """
+
+        Args:
+            access_token: The access token to use.
+            port: The port where the Web Clipper service is running. Default is 41184.
+            host: The host where the Web Clipper service is running.
+                Default is localhost.
+        """
         access_token = access_token or get_from_env(
             "access_token", "JOPLIN_ACCESS_TOKEN"
         )

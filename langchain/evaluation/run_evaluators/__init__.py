@@ -9,6 +9,7 @@ from langchain.evaluation.run_evaluators.implementations import (
     StringRunEvaluatorInputMapper,
     get_criteria_evaluator,
     get_qa_evaluator,
+    get_trajectory_evaluator,
 )
 
 __all__ = [
@@ -17,6 +18,7 @@ __all__ = [
     "RunEvaluatorOutputParser",
     "get_qa_evaluator",
     "get_criteria_evaluator",
+    "get_trajectory_evaluator",
     "StringRunEvaluatorInputMapper",
     "ChoicesOutputParser",
 ]

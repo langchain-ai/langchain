@@ -1,6 +1,6 @@
-"""Loader that loads email files."""
+"""Loads email files."""
 import os
-from typing import List
+from typing import Any, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -11,7 +11,45 @@ from langchain.document_loaders.unstructured import (
 
 
 class UnstructuredEmailLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load email files."""
+    """Loader that uses unstructured to load email files. Works with both
+    .eml and .msg files. You can process attachments in addition to the
+    e-mail message itself by passing process_attachments=True into the
+    constructor for the loader. By default, attachments will be processed
+    with the unstructured partition function. If you already know the document
+    types of the attachments, you can specify another partitioning function
+    with the attachment partitioner kwarg.
+
+    Example
+    -------
+    from langchain.document_loaders import UnstructuredEmailLoader
+
+    loader = UnstructuredEmailLoader("example_data/fake-email.eml", mode="elements")
+    loader.load()
+
+    Example
+    -------
+    from langchain.document_loaders import UnstructuredEmailLoader
+
+    loader = UnstructuredEmailLoader(
+        "example_data/fake-email-attachment.eml",
+        mode="elements",
+        process_attachments=True,
+    )
+    loader.load()
+    """
+
+    def __init__(
+        self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
+    ):
+        process_attachments = unstructured_kwargs.get("process_attachments")
+        attachment_partitioner = unstructured_kwargs.get("attachment_partitioner")
+
+        if process_attachments and attachment_partitioner is None:
+            from unstructured.partition.auto import partition
+
+            unstructured_kwargs["attachment_partitioner"] = partition
+
+        super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
         from unstructured.file_utils.filetype import FileType, detect_filetype
@@ -34,12 +72,17 @@ class UnstructuredEmailLoader(UnstructuredFileLoader):
 
 class OutlookMessageLoader(BaseLoader):
     """
-    Loader that loads Outlook Message files using extract_msg.
+    Loads Outlook Message files using extract_msg.
+
     https://github.com/TeamMsgExtractor/msg-extractor
     """
 
     def __init__(self, file_path: str):
-        """Initialize with file path."""
+        """Initialize with a file path.
+
+        Args:
+            file_path: The path to the Outlook Message file.
+        """
 
         self.file_path = file_path
 

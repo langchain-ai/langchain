@@ -36,7 +36,7 @@ class _AnthropicCommon(BaseModel):
     default_request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
 
-    anthropic_api_url: str = "https://api.anthropic.com"
+    anthropic_api_url: Optional[str] = None
 
     anthropic_api_key: Optional[str] = None
 
@@ -52,7 +52,10 @@ class _AnthropicCommon(BaseModel):
         )
         """Get custom api url from environment."""
         anthropic_api_url = get_from_dict_or_env(
-            values, "anthropic_api_url", "ANTHROPIC_API_URL"
+            values,
+            "anthropic_api_url",
+            "ANTHROPIC_API_URL",
+            default="https://api.anthropic.com",
         )
 
         try:

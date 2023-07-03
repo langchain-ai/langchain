@@ -160,6 +160,14 @@ class Pinecone(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        return self.similarity_search_with_score(query, k)
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -345,3 +353,34 @@ class Pinecone(VectorStore):
         return cls(
             pinecone.Index(index_name), embedding.embed_query, text_key, namespace
         )
+
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        delete_all: Optional[bool] = None,
+        namespace: Optional[str] = None,
+        filter: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Delete by vector IDs or filter.
+        Args:
+            ids: List of ids to delete.
+            filter: Dictionary of conditions to filter vectors to delete.
+        """
+
+        if namespace is None:
+            namespace = self._namespace
+
+        if delete_all:
+            self._index.delete(delete_all=True, namespace=namespace, **kwargs)
+        elif ids is not None:
+            chunk_size = 1000
+            for i in range(0, len(ids), chunk_size):
+                chunk = ids[i : i + chunk_size]
+                self._index.delete(ids=chunk, namespace=namespace, **kwargs)
+        elif filter is not None:
+            self._index.delete(filter=filter, namespace=namespace, **kwargs)
+        else:
+            raise ValueError("Either ids, delete_all, or filter must be provided.")
+
+        return None

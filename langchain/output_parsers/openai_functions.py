@@ -5,6 +5,8 @@ from langchain.schema import BaseLLMOutputParser, ChatGeneration, Generation
 
 
 class OutputFunctionsParser(BaseLLMOutputParser[Any]):
+    args_only: bool = True
+
     def parse_result(self, result: List[Generation]) -> Any:
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
@@ -17,13 +19,18 @@ class OutputFunctionsParser(BaseLLMOutputParser[Any]):
         except ValueError as exc:
             raise ValueError(f"Could not parse function call: {exc}")
 
-        return func_call["arguments"]
+        if self.args_only:
+            return func_call["arguments"]
+        return func_call
 
 
 class JsonOutputFunctionsParser(OutputFunctionsParser):
     def parse_result(self, result: List[Generation]) -> Any:
-        _args = super().parse_result(result)
-        return json.loads(_args)
+        func = super().parse_result(result)
+        if self.args_only:
+            return json.loads(func)
+        func["arguments"] = json.loads(func["arguments"])
+        return func
 
 
 class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):

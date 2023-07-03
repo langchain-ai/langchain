@@ -7,11 +7,13 @@ from langchain.callbacks.manager import (
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.anthropic import _AnthropicCommon
 from langchain.schema import (
+    ChatGeneration,
+    ChatResult,
+)
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
-    ChatGeneration,
     ChatMessage,
-    ChatResult,
     HumanMessage,
     SystemMessage,
 )
@@ -76,6 +78,8 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         Returns:
             str: Combined string with necessary HUMAN_PROMPT and AI_PROMPT tags.
         """
+        messages = messages.copy()  # don't mutate the original list
+
         if not self.AI_PROMPT:
             raise NameError("Please ensure the anthropic package is loaded")
 

@@ -1,4 +1,3 @@
-"""Loading logic for loading documents from an Azure Blob Storage file."""
 import os
 import tempfile
 from typing import List
@@ -9,20 +8,23 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class AzureBlobStorageFileLoader(BaseLoader):
-    """Loading logic for loading documents from Azure Blob Storage."""
+    """Loading Documents from Azure Blob Storage."""
 
     def __init__(self, conn_str: str, container: str, blob_name: str):
         """Initialize with connection string, container and blob name."""
         self.conn_str = conn_str
+        """Connection string for Azure Blob Storage."""
         self.container = container
+        """Container name."""
         self.blob = blob_name
+        """Blob name."""
 
     def load(self) -> List[Document]:
         """Load documents."""
         try:
             from azure.storage.blob import BlobClient
         except ImportError as exc:
-            raise ValueError(
+            raise ImportError(
                 "Could not import azure storage blob python package. "
                 "Please install it with `pip install azure-storage-blob`."
             ) from exc

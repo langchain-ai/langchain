@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from langchain.base_language import BaseLanguageModel
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import BaseLLM
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
 
 
 class BasePromptSelector(BaseModel, ABC):
@@ -31,8 +31,24 @@ class ConditionalPromptSelector(BasePromptSelector):
 
 
 def is_llm(llm: BaseLanguageModel) -> bool:
+    """Check if the language model is a LLM.
+
+    Args:
+        llm: Language model to check.
+
+    Returns:
+        True if the language model is a BaseLLM model, False otherwise.
+    """
     return isinstance(llm, BaseLLM)
 
 
 def is_chat_model(llm: BaseLanguageModel) -> bool:
+    """Check if the language model is a chat model.
+
+    Args:
+        llm: Language model to check.
+
+    Returns:
+        True if the language model is a BaseChatModel model, False otherwise.
+    """
     return isinstance(llm, BaseChatModel)

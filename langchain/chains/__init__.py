@@ -2,6 +2,10 @@
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
+from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
+from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
+from langchain.chains.combine_documents.refine import RefineDocumentsChain
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.conversational_retrieval.base import (
@@ -11,6 +15,7 @@ from langchain.chains.conversational_retrieval.base import (
 from langchain.chains.flare.base import FlareChain
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
@@ -27,6 +32,8 @@ from langchain.chains.openai_functions import (
     create_citation_fuzzy_match_chain,
     create_extraction_chain,
     create_extraction_chain_pydantic,
+    create_qa_with_sources_chain,
+    create_qa_with_structure_chain,
     create_tagging_chain,
     create_tagging_chain_pydantic,
 )
@@ -61,6 +68,7 @@ __all__ = [
     "GraphCypherQAChain",
     "GraphQAChain",
     "HypotheticalDocumentEmbedder",
+    "KuzuQAChain",
     "LLMBashChain",
     "LLMChain",
     "LLMCheckerChain",
@@ -95,4 +103,10 @@ __all__ = [
     "create_tagging_chain_pydantic",
     "load_chain",
     "create_citation_fuzzy_match_chain",
+    "create_qa_with_structure_chain",
+    "create_qa_with_sources_chain",
+    "StuffDocumentsChain",
+    "MapRerankDocumentsChain",
+    "MapReduceDocumentsChain",
+    "RefineDocumentsChain",
 ]

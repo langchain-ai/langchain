@@ -1,5 +1,6 @@
 import importlib
 import json
+import os
 from typing import Any, Dict, Optional
 
 from langchain.load.serializable import Serializable
@@ -19,6 +20,8 @@ class Reviver:
             if key in self.secrets_map:
                 return self.secrets_map[key]
             else:
+                if key in os.environ and os.environ[key]:
+                    return os.environ[key]
                 raise KeyError(f'Missing key "{key}" in load(secrets_map)')
 
         if (

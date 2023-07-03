@@ -20,6 +20,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 def import_mlflow() -> Any:
+    """Import the mlflow python package and raise an error if it is not installed."""
     try:
         import mlflow
     except ImportError:
@@ -117,7 +118,7 @@ class MlflowLogger:
     Parameters:
         name (str): Name of the run.
         experiment (str): Name of the experiment.
-        tags (str): Tags to be attached for the run.
+        tags (dict): Tags to be attached for the run.
         tracking_uri (str): MLflow tracking server uri.
 
     This handler implements the helper functions to initialize,
@@ -222,7 +223,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     Parameters:
         name (str): Name of the run.
         experiment (str): Name of the experiment.
-        tags (str): Tags to be attached for the run.
+        tags (dict): Tags to be attached for the run.
         tracking_uri (str): MLflow tracking server uri.
 
     This handler will utilize the associated callback method called and formats

@@ -6,12 +6,10 @@ import pytest
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.schema import (
-    AIMessage,
-    BaseMessage,
     ChatGeneration,
-    HumanMessage,
     LLMResult,
 )
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -22,6 +20,22 @@ def test_anthropic_call() -> None:
     response = chat([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+
+
+def test_anthropic_generate() -> None:
+    """Test generate method of anthropic."""
+    chat = ChatAnthropic(model="test")
+    chat_messages: List[List[BaseMessage]] = [
+        [HumanMessage(content="How many toes do dogs have?")]
+    ]
+    messages_copy = [messages.copy() for messages in chat_messages]
+    result: LLMResult = chat.generate(chat_messages)
+    assert isinstance(result, LLMResult)
+    for response in result.generations[0]:
+        assert isinstance(response, ChatGeneration)
+        assert isinstance(response.text, str)
+        assert response.text == response.message.content
+    assert chat_messages == messages_copy
 
 
 def test_anthropic_streaming() -> None:
