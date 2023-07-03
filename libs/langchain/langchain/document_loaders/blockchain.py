@@ -1,10 +1,10 @@
 import os
 import re
-import time
 from enum import Enum
 from typing import List, Optional
 
 import requests
+from egg_timer import EggTimer
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -83,7 +83,8 @@ class BlockchainDocumentLoader(BaseLoader):
 
         current_start_token = self.startToken
 
-        start_time = time.time()
+        timer = EggTimer()
+        timer.set(self.max_execution_time or 0)
 
         while True:
             url = (
@@ -122,10 +123,7 @@ class BlockchainDocumentLoader(BaseLoader):
             # get the start token for the next API call from the last item in array
             current_start_token = self._get_next_tokenId(result[-1].metadata["tokenId"])
 
-            if (
-                self.max_execution_time is not None
-                and (time.time() - start_time) > self.max_execution_time
-            ):
+            if self.max_execution_time is not None and timer.is_expired():
                 raise RuntimeError("Execution time exceeded the allowed time limit.")
 
         if not result:
