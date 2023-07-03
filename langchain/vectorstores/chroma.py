@@ -470,6 +470,7 @@ class Chroma(VectorStore):
             persist_directory=persist_directory,
             client_settings=client_settings,
             client=client,
+            **kwargs,
         )
         chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return chroma_collection
