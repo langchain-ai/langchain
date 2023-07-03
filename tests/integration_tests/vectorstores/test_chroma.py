@@ -228,3 +228,38 @@ def test_chroma_update_document() -> None:
     ]
     assert new_embedding == embedding.embed_documents([updated_content])[0]
     assert new_embedding != old_embedding
+
+
+def test_chroma_relevance_score_fn() -> None:
+    """Test end to end construction and scored search with custom relevance_score_fn."""
+    transform_value_1 = 0.25
+    transform_value_2 = 0.75
+    values_map = {0.0: transform_value_1, 1.0: transform_value_2}
+
+    texts = ["far", "bar", "baz"]
+    metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+        relevance_score_fn=lambda score: values_map.get(score, -1),
+    )
+    output = docsearch.similarity_search_with_relevance_scores(
+        "far", k=1, filter={"first_letter": "f"}
+    )
+    assert output == [
+        (
+            Document(page_content="far", metadata={"first_letter": "f"}),
+            transform_value_1,
+        )
+    ]
+    output = docsearch.similarity_search_with_relevance_scores(
+        "far", k=1, filter={"first_letter": "b"}
+    )
+    assert output == [
+        (
+            Document(page_content="bar", metadata={"first_letter": "b"}),
+            transform_value_2,
+        )
+    ]
