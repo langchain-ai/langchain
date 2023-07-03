@@ -9,7 +9,7 @@ from langchain.output_parsers.openai_functions import (
     PydanticOutputFunctionsParser,
 )
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema.messages import HumanMessage, SystemMessage
 
 
 class FactWithEvidence(BaseModel):

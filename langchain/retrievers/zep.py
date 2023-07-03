@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -64,7 +64,6 @@ class ZepRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
         metadata: Optional[Dict] = None,
-        **kwargs: Any,
     ) -> List[Document]:
         from zep_python import MemorySearchPayload
 
@@ -84,7 +83,6 @@ class ZepRetriever(BaseRetriever):
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
         metadata: Optional[Dict] = None,
-        **kwargs: Any,
     ) -> List[Document]:
         from zep_python import MemorySearchPayload
 
