@@ -19,15 +19,13 @@ from langchain.callbacks.manager import (
 )
 from langchain.load.dump import dumpd, dumps
 from langchain.schema import (
-    AIMessage,
-    BaseMessage,
     ChatGeneration,
     ChatResult,
-    HumanMessage,
     LLMResult,
     PromptValue,
     RunInfo,
 )
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 
 
 def _get_verbosity() -> bool:

@@ -9,20 +9,23 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class AzureBlobStorageContainerLoader(BaseLoader):
-    """Loading logic for loading documents from Azure Blob Storage."""
+    """Loading Documents from Azure Blob Storage."""
 
     def __init__(self, conn_str: str, container: str, prefix: str = ""):
         """Initialize with connection string, container and blob prefix."""
         self.conn_str = conn_str
+        """Connection string for Azure Blob Storage."""
         self.container = container
+        """Container name."""
         self.prefix = prefix
+        """Prefix for blob names."""
 
     def load(self) -> List[Document]:
         """Load documents."""
         try:
             from azure.storage.blob import ContainerClient
         except ImportError as exc:
-            raise ValueError(
+            raise ImportError(
                 "Could not import azure storage blob python package. "
                 "Please install it with `pip install azure-storage-blob`."
             ) from exc

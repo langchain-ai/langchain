@@ -4,7 +4,7 @@ from pydantic import root_validator
 
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.summary import SummarizerMixin
-from langchain.schema import BaseMessage, get_buffer_string
+from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
 class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):

@@ -17,7 +17,7 @@ from langchain.callbacks.tracers.schemas import (
     TracerSession,
 )
 from langchain.env import get_runtime_environment
-from langchain.schema import BaseMessage, messages_to_dict
+from langchain.schema.messages import BaseMessage, messages_to_dict
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()

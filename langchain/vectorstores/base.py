@@ -53,20 +53,19 @@ class VectorStore(ABC):
             List of ids from adding the texts into the vectorstore.
         """
 
-    def delete(self, ids: List[str]) -> Optional[bool]:
-        """Delete by vector ID.
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
 
         Args:
             ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
 
-        raise NotImplementedError(
-            "delete_by_id method must be implemented by subclass."
-        )
+        raise NotImplementedError("delete method must be implemented by subclass.")
 
     async def aadd_texts(
         self,
@@ -408,11 +407,7 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
         return values
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
-        **kwargs: Any,
+        self, query: str, *, run_manager: Optional[CallbackManagerForRetrieverRun]
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
@@ -432,11 +427,7 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
         return docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
-        **kwargs: Any,
+        self, query: str, *, run_manager: Optional[AsyncCallbackManagerForRetrieverRun]
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = await self.vectorstore.asimilarity_search(

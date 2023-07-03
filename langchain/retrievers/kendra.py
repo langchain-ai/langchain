@@ -264,8 +264,8 @@ class AmazonKendraRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         """Run search on Kendra index and get top k documents
 
@@ -281,7 +281,7 @@ class AmazonKendraRetriever(BaseRetriever):
     async def _aget_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError("Async version is not implemented for Kendra yet.")

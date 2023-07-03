@@ -7,12 +7,14 @@ from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import (
+    ChatGeneration,
+    LLMResult,
+)
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
-    ChatGeneration,
     ChatMessage,
     HumanMessage,
-    LLMResult,
     SystemMessage,
 )
 
