@@ -23,6 +23,7 @@ from langchain.document_loaders.blob_loaders import (
     YoutubeAudioLoader,
 )
 from langchain.document_loaders.blockchain import BlockchainDocumentLoader
+from langchain.document_loaders.brave_search import BraveSearchLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
@@ -168,6 +169,7 @@ __all__ = [
     "Blob",
     "BlobLoader",
     "BlockchainDocumentLoader",
+    "BraveSearchLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",
