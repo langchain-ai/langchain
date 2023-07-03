@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 import numpy as np
 
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     import chromadb
     import chromadb.config
     from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
+    from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
@@ -59,7 +60,7 @@ class Chroma(VectorStore):
     def __init__(
         self,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        embedding_function: Optional[Embeddings] = None,
+        embedding_function: Optional[Union[Embeddings, SentenceTransformerEmbeddingFunction]] = None,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[Dict] = None,
@@ -89,11 +90,16 @@ class Chroma(VectorStore):
                     )
             self._client = chromadb.Client(self._client_settings)
 
-        self._embedding_function = embedding_function
+        if isinstance(embedding_function, Embeddings):
+            self._embedding_function = embedding_function.embed_documents
+        elif isinstance(embedding_function, 
+                        chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction):
+            self._embedding_function = embedding_function
+
         self._persist_directory = persist_directory
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
-            embedding_function=self._embedding_function.embed_documents
+            embedding_function=self._embedding_function
             if self._embedding_function is not None
             else None,
             metadata=collection_metadata,
