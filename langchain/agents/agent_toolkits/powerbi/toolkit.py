@@ -26,6 +26,8 @@ class PowerBIToolkit(BaseToolkit):
     examples: Optional[str] = None
     max_iterations: int = 5
     callback_manager: Optional[BaseCallbackManager] = None
+    output_token_limit: Optional[int] = None
+    tiktoken_model_name: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -57,6 +59,8 @@ class PowerBIToolkit(BaseToolkit):
                 powerbi=self.powerbi,
                 examples=self.examples,
                 max_iterations=self.max_iterations,
+                output_token_limit=self.output_token_limit,
+                tiktoken_model_name=self.tiktoken_model_name,
             ),
             InfoPowerBITool(powerbi=self.powerbi),
             ListPowerBITool(powerbi=self.powerbi),
