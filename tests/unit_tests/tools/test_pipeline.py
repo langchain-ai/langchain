@@ -15,6 +15,7 @@ def test_step_in_str_out_str() -> None:
 def test_step_in_str_out_dict() -> None:
     f = PipelineStep(func=lambda x: x + "_processed", output_expression="y")
     out = f("x")
+    assert isinstance(out, dict)
     assert out["y"] == "x_processed"
 
 
@@ -76,12 +77,14 @@ def test_pipeline_run() -> None:
 
     out = tool('{"num": 2}')
     out = json.loads(out)
+    assert isinstance(out, dict)
     assert out["o0"] == 3
     assert out["o1"] == 6
     assert out["o2"] == 9
 
     out = tool._run({"num": 2})
     out = json.loads(out)
+    assert isinstance(out, dict)
     assert out["o0"] == 3
     assert out["o1"] == 6
     assert out["o2"] == 9
@@ -131,5 +134,30 @@ def test_pipeline_output_single() -> None:
     )
 
     out = tool('{"num": 2}')
+    out = json.loads(out)
+    assert out == 9
+
+
+@pytest.mark.asyncio
+async def test_shell_tool_arun() -> None:
+    f0 = PipelineStep(
+        func=lambda x: x + 1,
+        input_expression={"x": "num"},
+        output_expression="o0",
+    )
+    f1 = PipelineStep(
+        func=lambda x: x * 2, input_expression={"x": "o0"}, output_expression="o1"
+    )
+    f2 = PipelineStep(
+        func=lambda x: x**2, input_expression={"x": "o0"}, output_expression="o2"
+    )
+    tool = PipelineTool(
+        name="test-ppl",
+        description="dummy for ppl test",
+        steps=[f0, f1, f2],
+        output_expression=["o2"],
+    )
+
+    out = await tool._arun('{"num": 2}')
     out = json.loads(out)
     assert out == 9
