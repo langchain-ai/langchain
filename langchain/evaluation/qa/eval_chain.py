@@ -19,14 +19,20 @@ def _parse_string_eval_output(text: str) -> dict:
     Returns:
         Any: The parsed output.
     """
-    reasoning, verdict = text.strip().rsplit("\n", maxsplit=1)
+    splits = text.strip().rsplit("\n", maxsplit=1)
+    if len(splits) == 1:
+        verdict = splits[0]
+        reasoning = None
+    else:
+        reasoning, verdict = splits
+        reasoning = reasoning.strip()
     score = (
         1
         if verdict.upper() == "CORRECT"
         else (0 if verdict.upper() == "INCORRECT" else None)
     )
     return {
-        "reasoning": reasoning.strip(),
+        "reasoning": reasoning,
         "value": verdict,
         "score": score,
     }
