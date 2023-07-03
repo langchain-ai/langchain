@@ -78,13 +78,15 @@ class LangChainTracer(BaseTracer):
         """Start a trace for an LLM run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
+        start_time = datetime.utcnow()
         chat_model_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"messages": [messages_to_dict(batch) for batch in messages]},
             extra=kwargs,
-            start_time=datetime.utcnow(),
+            events=[{"name": "start", "time": start_time}],
+            start_time=start_time,
             execution_order=execution_order,
             child_execution_order=execution_order,
             run_type=RunTypeEnum.llm,
