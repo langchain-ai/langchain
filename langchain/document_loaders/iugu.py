@@ -20,6 +20,12 @@ class IuguLoader(BaseLoader):
     """Loader that fetches data from IUGU."""
 
     def __init__(self, resource: str, api_token: Optional[str] = None) -> None:
+        """Initialize the IUGU resource.
+
+        Args:
+            resource: The name of the resource to fetch.
+            api_token: The IUGU API token to use.
+        """
         self.resource = resource
         api_token = api_token or get_from_env("api_token", "IUGU_API_TOKEN")
         self.headers = {"Authorization": f"Bearer {api_token}"}

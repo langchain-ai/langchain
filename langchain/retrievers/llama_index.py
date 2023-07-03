@@ -16,11 +16,7 @@ class LlamaIndexRetriever(BaseRetriever, BaseModel):
     query_kwargs: Dict = Field(default_factory=dict)
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant for a query."""
         try:
@@ -44,11 +40,7 @@ class LlamaIndexRetriever(BaseRetriever, BaseModel):
         return docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
-        **kwargs: Any,
+        self, query: str, *, run_manager: Optional[AsyncCallbackManagerForRetrieverRun]
     ) -> List[Document]:
         raise NotImplementedError("LlamaIndexRetriever does not support async")
 
@@ -60,11 +52,7 @@ class LlamaIndexGraphRetriever(BaseRetriever, BaseModel):
     query_configs: List[Dict] = Field(default_factory=list)
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant for a query."""
         try:
@@ -96,10 +84,6 @@ class LlamaIndexGraphRetriever(BaseRetriever, BaseModel):
         return docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError("LlamaIndexGraphRetriever does not support async")
