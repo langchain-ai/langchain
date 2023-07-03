@@ -1,4 +1,4 @@
-"""Agent for working with pandas objects."""
+"""Agent for working with pandas objects."""                                            
 from typing import Any, Dict, List, Optional
 
 from langchain.agents.agent import AgentExecutor
@@ -30,7 +30,7 @@ def _validate_spark_connect_df(df: Any) -> bool:
 
 def create_spark_dataframe_agent(
     llm: BaseLLM,
-    df: Any,
+    dfs: List[Any],
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = PREFIX,
     suffix: str = SUFFIX,
@@ -43,21 +43,29 @@ def create_spark_dataframe_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a spark agent from an LLM and dataframe."""
+    """Construct a spark agent from an LLM and multiple data frames."""
+                                                                                                
+                                                                              
 
-    if not _validate_spark_df(df) and not _validate_spark_connect_df(df):
-        raise ValueError("Spark is not installed. run `pip install pyspark`.")
+    for df in dfs:
+        if not _validate_spark_df(df) and not _validate_spark_connect_df(df):
+            raise ValueError("Spark is not installed. Run `pip install pyspark`.")
 
     if input_variables is None:
-        input_variables = ["df", "input", "agent_scratchpad"]
-    tools = [PythonAstREPLTool(locals={"df": df})]
+        input_variables = ["dfs", "input", "agent_scratchpad"]
+    tools = [PythonAstREPLTool(locals={"dfs": dfs})]
     prompt = ZeroShotAgent.create_prompt(
         tools, prefix=prefix, suffix=suffix, input_variables=input_variables
     )
-    partial_prompt = prompt.partial(df=str(df.first()))
+
+    partial_prompts = []
+    for df in dfs:
+        partial_prompt = prompt.partial(dfs=str(df.first()))
+        partial_prompts.append(partial_prompt)
+
     llm_chain = LLMChain(
         llm=llm,
-        prompt=partial_prompt,
+        prompt=partial_prompts,
         callback_manager=callback_manager,
     )
     tool_names = [tool.name for tool in tools]
