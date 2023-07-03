@@ -8,7 +8,6 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class JSONLinesLoader(BaseLoader):
-
     def __init__(
         self,
         file_path: Union[str, Path],
@@ -32,10 +31,10 @@ class JSONLinesLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load and return documents from the JSONL file."""
-        
+
         json_l_data = self._load_jsonl_file(self.file_path)
         docs = []
-        for i,json_item in enumerate(json_l_data,1):
+        for i, json_item in enumerate(json_l_data, 1):
             data = self._jq_schema.input(json_item)
             # Perform some validation
             # This is not a perfect validation, but it should catch most cases
@@ -52,11 +51,11 @@ class JSONLinesLoader(BaseLoader):
                 docs.append(Document(page_content=text, metadata=metadata))
 
         return docs
-    
-    def _load_jsonl_file(self, file_path:Path) -> List[Dict]:
-        """Loads and returns json object in list from the given jsonl file """
+
+    def _load_jsonl_file(self, file_path: Path) -> List[Dict]:
+        """Loads and returns json object in list from the given jsonl file"""
         data = []
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             for line in file:
                 json_data = json.loads(line)
                 data.append(json_data)
