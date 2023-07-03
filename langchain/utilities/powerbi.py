@@ -208,13 +208,15 @@ class PowerBIDataset(BaseModel):
     def run(self, command: str) -> Any:
         """Execute a DAX command and return a json representing the results."""
         _LOGGER.debug("Running command: %s", command)
-        result = requests.post(
+        response = requests.post(
             self.request_url,
             json=self._create_json_content(command),
             headers=self.headers,
             timeout=10,
         )
-        return result.json()
+        if response.status == 403:
+            return "Could not login to PowerBI, please check your credentials."
+        return response.json()
 
     async def arun(self, command: str) -> Any:
         """Execute a DAX command and return the result asynchronously."""
@@ -226,6 +228,8 @@ class PowerBIDataset(BaseModel):
                 json=self._create_json_content(command),
                 timeout=10,
             ) as response:
+                if response.status == 403:
+                    return "Could not login to PowerBI, please check your credentials."
                 response_json = await response.json(content_type=response.content_type)
                 return response_json
         async with aiohttp.ClientSession() as session:
@@ -235,6 +239,8 @@ class PowerBIDataset(BaseModel):
                 json=self._create_json_content(command),
                 timeout=10,
             ) as response:
+                if response.status == 403:
+                    return "Could not login to PowerBI, please check your credentials."
                 response_json = await response.json(content_type=response.content_type)
                 return response_json
 
