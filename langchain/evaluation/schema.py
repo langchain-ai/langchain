@@ -1,9 +1,9 @@
 """Interfaces to be implemented by general evaluators."""
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Optional, Protocol, runtime_checkable
+from typing import Any, Optional
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
@@ -34,13 +34,12 @@ class EvalChain(Chain):
     """A base class for evaluators that use an LLM."""
 
     @classmethod
+    @abstractmethod
     def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> EvalChain:
         """Create a new evaluator from an LLM."""
-        return cls(llm=llm, **kwargs)
 
 
-@runtime_checkable
-class StringEvaluator(Protocol):
+class StringEvaluator(ABC):
     """Protocol for evaluating strings."""
 
     @abstractmethod
@@ -90,8 +89,7 @@ class StringEvaluator(Protocol):
         )
 
 
-@runtime_checkable
-class PairwiseStringEvaluator(Protocol):
+class PairwiseStringEvaluator(ABC):
     """A protocol for comparing the output of two models."""
 
     @abstractmethod
@@ -122,6 +120,7 @@ class PairwiseStringEvaluator(Protocol):
 
     async def aevaluate_string_pairs(
         self,
+        *,
         prediction: str,
         prediction_b: str,
         reference: Optional[str] = None,

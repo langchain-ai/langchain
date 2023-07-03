@@ -8,10 +8,7 @@ from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChai
 from langchain.evaluation.comparison import PairwiseStringEvalChain
 from langchain.evaluation.criteria.eval_chain import CriteriaEvalChain
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
-from langchain.evaluation.schema import (
-    EvalChain,
-    EvaluatorType,
-)
+from langchain.evaluation.schema import EvalChain, EvaluatorType
 
 
 def load_dataset(uri: str) -> List[Dict]:

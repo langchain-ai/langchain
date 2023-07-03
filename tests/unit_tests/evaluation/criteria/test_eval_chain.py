@@ -32,4 +32,4 @@ def test_criteria_eval_chain() -> None:
 
 
 def test_implements_string_protocol() -> None:
-    assert isinstance(CriteriaEvalChain, StringEvaluator)
+    assert issubclass(CriteriaEvalChain, StringEvaluator)
