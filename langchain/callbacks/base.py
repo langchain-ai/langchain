@@ -421,6 +421,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         *,
         run_id: UUID,
