@@ -3,16 +3,18 @@
 import json
 
 import pytest
-from aioresponses import aioresponses
 
 from langchain.requests import TextRequestsWrapper
 
 
+@pytest.mark.requires("aioresponses")
 @pytest.mark.asyncio
 async def test_text_requests_wrapper_apost() -> None:
     url = "http://example.com"
     data = {"key": "value"}
     mock_response_data = {"status": "success"}
+
+    from aioresponses import aioresponses
 
     with aioresponses() as mock:
         mock.post(url, payload=mock_response_data, status=200)
@@ -24,11 +26,14 @@ async def test_text_requests_wrapper_apost() -> None:
         mock.assert_called_once_with(url, "POST", headers=None, json=data)
 
 
+@pytest.mark.requires("aioresponses")
 @pytest.mark.asyncio
 async def test_text_requests_wrapper_apatch() -> None:
     url = "http://example.com"
     data = {"key": "value"}
     mock_response_data = {"status": "success"}
+
+    from aioresponses import aioresponses
 
     with aioresponses() as mock:
         mock.patch(url, payload=mock_response_data, status=200)
@@ -40,11 +45,14 @@ async def test_text_requests_wrapper_apatch() -> None:
         mock.assert_called_once_with(url, "PATCH", headers=None, json=data)
 
 
+@pytest.mark.requires("aioresponses")
 @pytest.mark.asyncio
 async def test_text_requests_wrapper_aput() -> None:
     url = "http://example.com"
     data = {"key": "value"}
     mock_response_data = {"status": "success"}
+
+    from aioresponses import aioresponses
 
     with aioresponses() as mock:
         mock.put(url, payload=mock_response_data, status=200)
