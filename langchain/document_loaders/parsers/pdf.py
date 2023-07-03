@@ -63,7 +63,7 @@ class PyMuPDFParser(BaseBlobParser):
                     page_content=page.get_text(**self.text_kwargs),
                     metadata=dict(
                         {
-                            "source": blob.source,
+                            "source": blob.path,
                             "file_path": blob.source,
                             "page": page.number,
                             "total_pages": len(doc),
