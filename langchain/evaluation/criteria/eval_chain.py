@@ -97,8 +97,6 @@ class CriteriaEvalChain(StringEvaluator, LLMChain):
     >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
     """
 
-    requires_reference: bool = False
-    """Whether the evaluation template expects a reference text."""
     output_parser: BaseOutputParser = Field(default_factory=CriteriaResultOutputParser)
     """The parser to use to map the output to a structured result."""
 
@@ -106,6 +104,24 @@ class CriteriaEvalChain(StringEvaluator, LLMChain):
         """Configuration for the QAEvalChain."""
 
         extra = Extra.ignore
+
+    @property
+    def requires_reference(self) -> bool:
+        return "reference" in self.prompt.input_variables
+
+    @property
+    def requires_input(self) -> bool:
+        return True
+
+    @property
+    def _skip_reference_warning(self) -> str:
+        """Warning to show when reference is ignored."""
+        return (
+            f"Ignoring reference in {self.__class__.__name__}, as it is not expected."
+            "\nTo use a reference, initialize CriteriaEvalChain with"
+            " `require_reference=True` or with a prompt with 'reference'"
+            " as an input variable."
+        )
 
     @staticmethod
     def get_supported_default_criteria() -> List[str]:
@@ -262,7 +278,7 @@ class CriteriaEvalChain(StringEvaluator, LLMChain):
             input_["reference"] = reference
         return input_
 
-    def evaluate_strings(
+    def _evaluate_strings(
         self,
         *,
         prediction: str,
@@ -306,7 +322,7 @@ class CriteriaEvalChain(StringEvaluator, LLMChain):
         input_ = self._get_eval_input(prediction, reference, input)
         return self(input_, **kwargs)["text"]
 
-    async def aevaluate_strings(
+    async def _aevaluate_strings(
         self,
         *,
         prediction: str,
