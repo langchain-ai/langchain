@@ -513,6 +513,7 @@ class Chroma(VectorStore):
             persist_directory=persist_directory,
             client_settings=client_settings,
             client=client,
+            **kwargs,
         )
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
