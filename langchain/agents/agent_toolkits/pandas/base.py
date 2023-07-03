@@ -19,7 +19,7 @@ from langchain.agents.types import AgentType
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import SystemMessage
 from langchain.tools.python.tool import PythonAstREPLTool
 

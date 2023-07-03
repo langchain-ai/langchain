@@ -13,7 +13,7 @@ from langchain.memory.prompt import (
 )
 from langchain.memory.utils import get_prompt_input_key
 from langchain.schema import BasePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, get_buffer_string
 
 logger = logging.getLogger(__name__)

@@ -4,7 +4,7 @@ from typing import List
 from langchain.chains.llm import LLMChain
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 TEST_GEN_TEMPLATE_SUFFIX = "Add another example."
 

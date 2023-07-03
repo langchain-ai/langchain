@@ -35,7 +35,7 @@ from langchain.memory import ReadOnlySharedMemory
 from langchain.prompts import PromptTemplate
 from langchain.requests import RequestsWrapper
 from langchain.schema import BasePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.requests.tool import BaseRequestsTool
 

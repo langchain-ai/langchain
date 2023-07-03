@@ -5,7 +5,7 @@ from typing import Any
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.generate_prompt import PROMPT
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class QAGenerateChain(LLMChain):

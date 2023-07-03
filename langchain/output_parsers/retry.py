@@ -10,7 +10,7 @@ from langchain.schema import (
     OutputParserException,
     PromptValue,
 )
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}

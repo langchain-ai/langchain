@@ -24,7 +24,7 @@ from langchain.schema import (
     NoOpOutputParser,
     PromptValue,
 )
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class LLMChain(Chain):

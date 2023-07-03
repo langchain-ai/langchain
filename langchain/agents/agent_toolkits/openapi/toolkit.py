@@ -10,7 +10,7 @@ from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.agent_toolkits.openapi.prompt import DESCRIPTION
 from langchain.agents.tools import Tool
 from langchain.requests import TextRequestsWrapper
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.json.tool import JsonSpec
 from langchain.tools.requests.tool import (

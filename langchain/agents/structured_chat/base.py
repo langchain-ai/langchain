@@ -16,7 +16,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.schema import AgentAction, BasePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"

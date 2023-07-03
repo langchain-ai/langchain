@@ -24,7 +24,7 @@ from langchain.evaluation.run_evaluators.base import (
 )
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate, OutputParserException
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 _QA_PROMPTS = {

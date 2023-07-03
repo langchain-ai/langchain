@@ -8,7 +8,7 @@ from langchain.output_parsers.openai_functions import (
     PydanticOutputFunctionsParser,
 )
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import HumanMessage, SystemMessage
 
 

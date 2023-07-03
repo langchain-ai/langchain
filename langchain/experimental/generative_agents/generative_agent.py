@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from langchain import LLMChain
 from langchain.experimental.generative_agents.memory import GenerativeAgentMemory
 from langchain.prompts import PromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class GenerativeAgent(BaseModel):

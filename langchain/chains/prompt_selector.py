@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import BaseLLM
 from langchain.schema import BasePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class BasePromptSelector(BaseModel, ABC):

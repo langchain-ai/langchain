@@ -13,7 +13,7 @@ from langchain.chains.api.openapi.response_chain import APIResponderChain
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.requests import Requests
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.openapi.utils.api_models import APIOperation
 
 

@@ -26,7 +26,7 @@ from langchain.schema import (
     PromptValue,
     RunInfo,
 )
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
 
 

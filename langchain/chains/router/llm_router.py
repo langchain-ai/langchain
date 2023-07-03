@@ -13,7 +13,7 @@ from langchain.chains import LLMChain
 from langchain.chains.router.base import RouterChain
 from langchain.output_parsers.json import parse_and_check_json_markdown
 from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class LLMRouterChain(RouterChain):

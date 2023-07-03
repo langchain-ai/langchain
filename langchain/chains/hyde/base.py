@@ -14,7 +14,7 @@ from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.chains.llm import LLMChain
 from langchain.embeddings.base import Embeddings
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class HypotheticalDocumentEmbedder(Chain, Embeddings):

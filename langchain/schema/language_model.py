@@ -47,7 +47,7 @@ class BaseLanguageModel(Serializable, ABC):
     @abstractmethod
     def generate_prompt(
         self,
-        prompts: Sequence[PromptValue],
+        prompts: List[PromptValue],
         stop: Optional[Sequence[str]] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
@@ -64,7 +64,7 @@ class BaseLanguageModel(Serializable, ABC):
                 type (e.g., pure text completion models vs chat models).
 
         Args:
-            prompts: Sequence of PromptValues. A PromptValue is an object that can be
+            prompts: List of PromptValues. A PromptValue is an object that can be
                 converted to match the format of any language model (string for pure
                 text generation models and BaseMessages for chat models).
             stop: Stop words to use when generating. Model output is cut off at the
@@ -81,7 +81,7 @@ class BaseLanguageModel(Serializable, ABC):
     @abstractmethod
     async def agenerate_prompt(
         self,
-        prompts: Sequence[PromptValue],
+        prompts: List[PromptValue],
         stop: Optional[Sequence[str]] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
@@ -98,7 +98,7 @@ class BaseLanguageModel(Serializable, ABC):
                 type (e.g., pure text completion models vs chat models).
 
         Args:
-            prompts: Sequence of PromptValues. A PromptValue is an object that can be
+            prompts: List of PromptValues. A PromptValue is an object that can be
                 converted to match the format of any language model (string for pure
                 text generation models and BaseMessages for chat models).
             stop: Stop words to use when generating. Model output is cut off at the
@@ -134,7 +134,7 @@ class BaseLanguageModel(Serializable, ABC):
     @abstractmethod
     def predict_messages(
         self,
-        messages: Sequence[BaseMessage],
+        messages: List[BaseMessage],
         *,
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
@@ -176,7 +176,7 @@ class BaseLanguageModel(Serializable, ABC):
     @abstractmethod
     async def apredict_messages(
         self,
-        messages: Sequence[BaseMessage],
+        messages: List[BaseMessage],
         *,
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
@@ -219,7 +219,7 @@ class BaseLanguageModel(Serializable, ABC):
         """
         return len(self.get_token_ids(text))
 
-    def get_num_tokens_from_messages(self, messages: Sequence[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Get the number of tokens in the messages.
 
         Args:

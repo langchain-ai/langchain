@@ -17,7 +17,7 @@ from langchain.chains.question_answering import (
 from langchain.chains.question_answering.map_rerank_prompt import (
     PROMPT as MAP_RERANK_PROMPT,
 )
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
 
 

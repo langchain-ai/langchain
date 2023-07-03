@@ -8,7 +8,7 @@ from langchain.experimental.plan_and_execute.schema import (
     Step,
 )
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import SystemMessage
 
 SYSTEM_PROMPT = (

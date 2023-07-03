@@ -11,7 +11,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.natbot.prompt import PROMPT
 from langchain.llms.openai import OpenAI
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class NatBotChain(Chain):

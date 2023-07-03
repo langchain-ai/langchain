@@ -11,7 +11,7 @@ from langchain.chains.graph_qa.prompts import CYPHER_QA_PROMPT, KUZU_GENERATION_
 from langchain.chains.llm import LLMChain
 from langchain.graphs.kuzu_graph import KuzuGraph
 from langchain.schema import BasePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class KuzuQAChain(Chain):

@@ -8,7 +8,7 @@ from langchain.chains.constitutional_ai.principles import PRINCIPLES
 from langchain.chains.constitutional_ai.prompts import CRITIQUE_PROMPT, REVISION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class ConstitutionalChain(Chain):

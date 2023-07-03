@@ -10,7 +10,7 @@ from langchain.chains.llm import LLMChain
 from langchain.evaluation.comparison.prompt import PROMPT, PROMPT_WITH_REFERENCE
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class PairwiseStringResultOutputParser(BaseOutputParser[dict]):

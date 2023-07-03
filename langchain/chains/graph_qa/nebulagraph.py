@@ -11,7 +11,7 @@ from langchain.chains.graph_qa.prompts import CYPHER_QA_PROMPT, NGQL_GENERATION_
 from langchain.chains.llm import LLMChain
 from langchain.graphs.nebula_graph import NebulaGraph
 from langchain.schema import BasePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class NebulaGraphQAChain(Chain):

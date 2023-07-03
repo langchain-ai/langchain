@@ -33,7 +33,7 @@ from langchain.schema import (
     ChatResult,
     LLMResult,
 )
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import (
     BaseMessage,
     HumanMessage,

@@ -16,7 +16,7 @@ from langchain.input import get_colored_text
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import BasePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import APIOperation
 from langchain.utilities.openapi import OpenAPISpec
 

@@ -7,7 +7,7 @@ from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.powerbi.prompt import QUESTION_TO_QUERY
 from langchain.tools.powerbi.tool import (

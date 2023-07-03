@@ -17,7 +17,7 @@ from langchain.chains.llm_checker.prompt import (
 )
 from langchain.chains.sequential import SequentialChain
 from langchain.prompts import PromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def _load_question_to_checked_assertions_chain(

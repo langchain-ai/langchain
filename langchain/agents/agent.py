@@ -34,7 +34,7 @@ from langchain.schema import (
     BasePromptTemplate,
     OutputParserException,
 )
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout

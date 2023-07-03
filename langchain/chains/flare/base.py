@@ -19,7 +19,7 @@ from langchain.chains.flare.prompts import (
 from langchain.chains.llm import LLMChain
 from langchain.llms import OpenAI
 from langchain.schema import BasePromptTemplate, BaseRetriever, Generation
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class _ResponseChain(LLMChain):

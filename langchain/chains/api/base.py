@@ -14,7 +14,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.requests import TextRequestsWrapper
 from langchain.schema import BasePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class APIChain(Chain):

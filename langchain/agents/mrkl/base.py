@@ -14,7 +14,7 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 

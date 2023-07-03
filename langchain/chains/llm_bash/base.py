@@ -12,7 +12,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
 from langchain.schema import BasePromptTemplate, OutputParserException
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.utilities.bash import BashProcess
 
 logger = logging.getLogger(__name__)

@@ -14,7 +14,7 @@ from langchain.output_parsers.openai_functions import (
     PydanticAttrOutputFunctionsParser,
 )
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def _get_extraction_function(entity_schema: dict) -> dict:

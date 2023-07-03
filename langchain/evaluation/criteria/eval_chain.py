@@ -8,7 +8,7 @@ from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
 from langchain.schema import BaseOutputParser, BasePromptTemplate
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 _SUPPORTED_CRITERIA = {
     "conciseness": "Is the submission concise and to the point?",

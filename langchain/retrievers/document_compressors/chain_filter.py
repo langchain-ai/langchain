@@ -9,7 +9,7 @@ from langchain.retrievers.document_compressors.chain_filter_prompt import (
     prompt_template,
 )
 from langchain.schema import BasePromptTemplate, Document
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def _get_default_chain_prompt() -> PromptTemplate:

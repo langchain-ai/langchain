@@ -11,7 +11,7 @@ from langchain.schema import (
     BaseChatMessageHistory,
     BasePromptTemplate,
 )
-from langchain.schema.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, SystemMessage, get_buffer_string
 
 
