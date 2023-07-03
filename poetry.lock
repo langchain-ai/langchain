@@ -1315,13 +1315,13 @@ graph = ["gremlinpython (==3.4.6)"]
 
 [[package]]
 name = "cassio"
-version = "0.0.6"
+version = "0.0.7"
 description = "A framework-agnostic Python library to seamlessly integrate Apache Cassandra with ML/LLM/genAI workloads."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "cassio-0.0.6-py3-none-any.whl", hash = "sha256:44bc9cad86dd703b363a2eb99337a68f63d2d6c9c5f234ab1aae6a0223fc6aaf"},
-    {file = "cassio-0.0.6.tar.gz", hash = "sha256:3b4fc218dc93c973e1a31e984583dbd15debbdfaf1bb93a6971d046ecc9bd50c"},
+    {file = "cassio-0.0.7-py3-none-any.whl", hash = "sha256:394d8ca18076f051543917e46c06a61d43679c22c0ddf2717308259fcb3d7452"},
+    {file = "cassio-0.0.7.tar.gz", hash = "sha256:68b3b036f6de64e728f91538ba81a3f0eb4cf217320ab4bf50bb7135bac9a903"},
 ]
 
 [package.dependencies]
@@ -6045,13 +6045,13 @@ pydantic = ">=1.8.2"
 
 [[package]]
 name = "openllm"
-version = "0.1.10"
+version = "0.1.19"
 description = "OpenLLM: REST/gRPC API server for running any open Large-Language Model - StableLM, Llama, Alpaca, Dolly, Flan-T5, Custom"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "openllm-0.1.10-py3-none-any.whl", hash = "sha256:1ef9187cdabc4aea6ae127cd8cc43afb0dd1ab7e48dd22e173dedb1bba685511"},
-    {file = "openllm-0.1.10.tar.gz", hash = "sha256:708048eeb1ffb8caac18e67e09f5ba65410eabf4ac3e706c336fd7420793661e"},
+    {file = "openllm-0.1.19-py3-none-any.whl", hash = "sha256:b0b3fefc978879382e780615adc8f3932644014db0b77c5c9ec16b54ade0e7fd"},
+    {file = "openllm-0.1.19.tar.gz", hash = "sha256:fbb91294d17f9ff1496f4871208e2bdfed5f51e48e7e4bbc1803209983b1cc00"},
 ]
 
 [package.dependencies]
@@ -6067,12 +6067,13 @@ transformers = {version = ">=4.29.0", extras = ["accelerate", "tokenizers", "tor
 typing-extensions = "*"
 
 [package.extras]
-agents = ["diffusers", "soundfile", "transformers[agents]"]
-all = ["openllm[agents]", "openllm[chatglm]", "openllm[falcon]", "openllm[fine-tune]", "openllm[flan-t5]", "openllm[openai]", "openllm[starcoder]"]
+agents = ["diffusers", "soundfile", "transformers[agents] (>=4.30)"]
+all = ["openllm[agents]", "openllm[chatglm]", "openllm[falcon]", "openllm[fine-tune]", "openllm[flan-t5]", "openllm[mpt]", "openllm[openai]", "openllm[starcoder]"]
 chatglm = ["cpm-kernels", "sentencepiece"]
 falcon = ["einops", "safetensors", "xformers"]
-fine-tune = ["accelerate", "bitsandbytes", "datasets", "deepspeed", "peft"]
+fine-tune = ["accelerate", "bitsandbytes", "datasets", "deepspeed", "peft", "trl"]
 flan-t5 = ["flax", "jax", "jaxlib", "keras", "tensorflow"]
+mpt = ["triton"]
 openai = ["openai", "tiktoken"]
 starcoder = ["bitsandbytes"]
 
@@ -10756,6 +10757,17 @@ files = [
 cryptography = ">=35.0.0"
 
 [[package]]
+name = "types-pytz"
+version = "2023.3.0.0"
+description = "Typing stubs for pytz"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-pytz-2023.3.0.0.tar.gz", hash = "sha256:ecdc70d543aaf3616a7e48631543a884f74205f284cefd6649ddf44c6a820aac"},
+    {file = "types_pytz-2023.3.0.0-py3-none-any.whl", hash = "sha256:4fc2a7fbbc315f0b6630e0b899fd6c743705abe1094d007b0e612d10da15e0f3"},
+]
+
+[[package]]
 name = "types-pyyaml"
 version = "6.0.12.10"
 description = "Typing stubs for PyYAML"
@@ -11749,13 +11761,13 @@ multidict = ">=4.0"
 
 [[package]]
 name = "zep-python"
-version = "0.31"
+version = "0.32"
 description = "Zep stores, manages, enriches, indexes, and searches long-term memory for conversational AI applications. This is the Python client for the Zep service."
 optional = true
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "zep_python-0.31-py3-none-any.whl", hash = "sha256:379f3666cea21a055f014be6de2fd831f38be71a4b0056cea2536199bca0695a"},
-    {file = "zep_python-0.31.tar.gz", hash = "sha256:94203fb9c109e0e933f7ced34dc91d55bdf403561e25e691ea33dadd763042e1"},
+    {file = "zep_python-0.32-py3-none-any.whl", hash = "sha256:5b4e54851c28742e869b8a66928b16618ff0074375428791c7bc4221c2744085"},
+    {file = "zep_python-0.32.tar.gz", hash = "sha256:7320b36069b4063119fef0f90a7f75fabf0d6e77083abf5f187b5d241ce1576b"},
 ]
 
 [package.dependencies]
@@ -11852,4 +11864,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "269a4f85c8905ffd03475a5631a6fb909e92bc62669695c95342b26ee8a6ba1f"
+content-hash = "16f392bdfbd91c64ba902623ec635c2f7e371c9aa747e4480b051d85c0f1809c"

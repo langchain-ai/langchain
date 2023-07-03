@@ -62,8 +62,8 @@ class PairwiseStringEvaluator(Protocol):
     def evaluate_string_pairs(
         self,
         *,
-        output_a: str,
-        output_b: str,
+        prediction: str,
+        prediction_b: str,
         reference: Optional[str] = None,
         input: Optional[str] = None,
         **kwargs: Any,
@@ -71,8 +71,8 @@ class PairwiseStringEvaluator(Protocol):
         """Evaluate the output string pairs.
 
         Args:
-            output_a (str): The output string from the first model.
-            output_b (str): The output string from the second model.
+            prediction (str): The output string from the first model.
+            prediction_b (str): The output string from the second model.
             reference (str, optional): The expected output / reference
                 string. Defaults to None.
             input (str, optional): The input string. Defaults to None.
@@ -86,8 +86,8 @@ class PairwiseStringEvaluator(Protocol):
 
     async def aevaluate_string_pairs(
         self,
-        output_a: str,
-        output_b: str,
+        prediction: str,
+        prediction_b: str,
         reference: Optional[str] = None,
         input: Optional[str] = None,
         **kwargs: Any,
@@ -95,8 +95,8 @@ class PairwiseStringEvaluator(Protocol):
         """Evaluate the output string pairs.
 
         Args:
-            output_a (str): The output string from the first model.
-            output_b (str): The output string from the second model.
+            prediction (str): The output string from the first model.
+            prediction_b (str): The output string from the second model.
             reference (str, optional): The expected output / reference
                 string. Defaults to None.
             input (str, optional): The input string. Defaults to None.

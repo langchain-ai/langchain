@@ -17,7 +17,7 @@ from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChai
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
 from langchain.text_splitter import TextSplitter
 
 

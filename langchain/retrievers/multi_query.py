@@ -3,6 +3,10 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
@@ -91,7 +95,12 @@ class MultiQueryRetriever(BaseRetriever):
             parser_key=parser_key,
         )
 
-    def get_relevant_documents(self, question: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+    ) -> List[Document]:
         """Get relevated documents given a user query.
 
         Args:
@@ -100,15 +109,22 @@ class MultiQueryRetriever(BaseRetriever):
         Returns:
             Unique union of relevant documents from all generated queries
         """
-        queries = self.generate_queries(question)
-        documents = self.retrieve_documents(queries)
+        queries = self.generate_queries(query, run_manager)
+        documents = self.retrieve_documents(queries, run_manager)
         unique_documents = self.unique_union(documents)
         return unique_documents
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+    ) -> List[Document]:
         raise NotImplementedError
 
-    def generate_queries(self, question: str) -> List[str]:
+    def generate_queries(
+        self, question: str, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[str]:
         """Generate queries based upon user input.
 
         Args:
@@ -117,13 +133,17 @@ class MultiQueryRetriever(BaseRetriever):
         Returns:
             List of LLM generated queries that are similar to the user input
         """
-        response = self.llm_chain({"question": question})
+        response = self.llm_chain(
+            {"question": question}, callbacks=run_manager.get_child()
+        )
         lines = getattr(response["text"], self.parser_key, [])
         if self.verbose:
             logger.info(f"Generated queries: {lines}")
         return lines
 
-    def retrieve_documents(self, queries: List[str]) -> List[Document]:
+    def retrieve_documents(
+        self, queries: List[str], run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         """Run all LLM generated queries.
 
         Args:
@@ -134,7 +154,9 @@ class MultiQueryRetriever(BaseRetriever):
         """
         documents = []
         for query in queries:
-            docs = self.retriever.get_relevant_documents(query)
+            docs = self.retriever.get_relevant_documents(
+                query, callbacks=run_manager.get_child()
+            )
             documents.extend(docs)
         return documents
 

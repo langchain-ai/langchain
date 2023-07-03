@@ -14,6 +14,7 @@ from langchain.document_loaders.base import BaseLoader
 
 class EverNoteLoader(BaseLoader):
     """EverNote Loader.
+
     Loads an EverNote notebook export file e.g. my_notebook.enex into Documents.
     Instructions on producing this file can be found at
     https://help.evernote.com/hc/en-us/articles/209005557-Export-notes-and-notebooks-as-ENEX-or-HTML

@@ -23,9 +23,8 @@ from langchain.evaluation.run_evaluators.base import (
     RunEvaluatorInputMapper,
     RunEvaluatorOutputParser,
 )
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import OutputParserException
+from langchain.schema import BasePromptTemplate, OutputParserException
 from langchain.tools.base import BaseTool
 
 _QA_PROMPTS = {

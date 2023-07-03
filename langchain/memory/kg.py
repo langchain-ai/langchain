@@ -12,12 +12,8 @@ from langchain.memory.prompt import (
     KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
 )
 from langchain.memory.utils import get_prompt_input_key
-from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import (
-    BaseMessage,
-    SystemMessage,
-    get_buffer_string,
-)
+from langchain.schema import BasePromptTemplate
+from langchain.schema.messages import BaseMessage, SystemMessage, get_buffer_string
 
 
 class ConversationKGMemory(BaseChatMemory):
