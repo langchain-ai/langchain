@@ -1,6 +1,7 @@
 """Pipeline Tool"""
 from __future__ import annotations
 
+import asyncio
 import json
 from copy import copy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -129,4 +130,6 @@ class PipelineTool(BaseTool):
         tool_input: Union[str, Dict],
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        return self._run(tool_input)
+        return await asyncio.get_event_loop().run_in_executor(
+            None, self._run, tool_input
+        )
