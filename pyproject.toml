@@ -225,7 +225,6 @@ openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
 clarifai = ["clarifai"]
 cohere = ["cohere"]
-
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
 javascript = ["esprima"]
