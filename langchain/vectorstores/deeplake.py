@@ -125,12 +125,15 @@ class DeepLake(VectorStore):
                 "Please install it with `pip install deeplake`."
             )
 
-        if version_compare(deeplake.__version__, "3.6.2") == -1:
+        if (
+            kwargs.get("runtime") == {"tensor_db": True}
+            and version_compare(deeplake.__version__, "3.6.7") == -1
+        ):
             raise ValueError(
-                "deeplake version should be >= 3.6.3, but you've installed"
-                f" {deeplake.__version__}. Consider upgrading deeplake version \
-                    pip install --upgrade deeplake."
+                "To use tensor_db option you need to update deeplake to `3.6.7`. "
+                f"Currently installed deeplake version is {deeplake.__version__}. "
             )
+
         self.dataset_path = dataset_path
 
         self.vectorstore = DeepLakeVectorStore(
