@@ -92,7 +92,7 @@ class WebBaseLoader(BaseLoader):
                     "To get a realistic header for requests, "
                     "`pip install fake_useragent`."
                 )
-        
+
         self.session = requests.Session()
         self.session.headers = dict(headers)
         self.session.verify = verify_ssl
@@ -115,7 +115,7 @@ class WebBaseLoader(BaseLoader):
                     async with session.get(
                         url,
                         headers=self.session.headers,
-                        ssl=None if self.session.verify else False
+                        ssl=None if self.session.verify else False,
                     ) as response:
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:
