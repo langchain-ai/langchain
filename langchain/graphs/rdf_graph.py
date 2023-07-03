@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 from typing import (
-    Any,
+    TYPE_CHECKING,
     List,
-    Tuple,
+    Optional,
 )
+
+if TYPE_CHECKING:
+    import rdflib
 
 prefixes = {
     "owl": """PREFIX owl: <http://www.w3.org/2002/07/owl#>\n""",
@@ -86,12 +91,12 @@ class RdfGraph:
 
     def __init__(
         self,
-        source_file: str = None,
-        serialization: str = "ttl",
-        query_endpoint: str = None,
-        update_endpoint: str = None,
-        standard: str = "rdf",
-        local_copy: str = None,
+        source_file: Optional[str] = None,
+        serialization: Optional[str] = "ttl",
+        query_endpoint: Optional[str] = None,
+        update_endpoint: Optional[str] = None,
+        standard: Optional[str] = "rdf",
+        local_copy: Optional[str] = None,
     ) -> None:
         """
         Set up the RDFlib graph
@@ -148,12 +153,12 @@ class RdfGraph:
 
         if query_endpoint:
             self.mode = "store"
-            if update_endpoint:
-                self._store = sparqlstore.SPARQLUpdateStore()
-                self._store.open((query_endpoint, update_endpoint))
-            else:
+            if not update_endpoint:
                 self._store = sparqlstore.SPARQLStore()
                 self._store.open(query_endpoint)
+            else:
+                self._store = sparqlstore.SPARQLUpdateStore()
+                self._store.open((query_endpoint, update_endpoint))
             self.graph = rdflib.Graph(self._store, identifier=default)
 
         # Verify that the graph was loaded
@@ -171,19 +176,26 @@ class RdfGraph:
         """
         return self.schema
 
-    def query(self, query: str) -> List[Tuple[Any]]:
+    def query(
+        self,
+        query: str,
+    ) -> List[rdflib.query.ResultRow]:
         """
         Query the graph.
         """
         from rdflib.exceptions import ParserError
+        from rdflib.query import ResultRow
 
         try:
             res = self.graph.query(query)
         except ParserError as e:
             raise ValueError("Generated SPARQL statement is invalid\n" f"{e}")
-        return [r for r in res]
+        return [r for r in res if isinstance(r, ResultRow)]
 
-    def update(self, query: str) -> None:
+    def update(
+        self,
+        query: str,
+    ) -> None:
         """
         Update the graph.
         """
@@ -210,10 +222,11 @@ class RdfGraph:
             raise ValueError(f"Unexpected IRI '{iri}', contains neither '#' nor '/'.")
         return local_name
 
-    def _res_to_str(self, res, var: str) -> str:
+    def _res_to_str(self, res: rdflib.query.ResultRow, var: str) -> str:
         return (
-            res[var].n3()
-            + " ("
+            "<"
+            + res[var]
+            + "> ("
             + self._get_local_name(res[var])
             + ", "
             + str(res["com"])
@@ -225,7 +238,10 @@ class RdfGraph:
         Load the graph schema information.
         """
 
-        def _rdf_s_schema(classes, relationships) -> str:
+        def _rdf_s_schema(
+            classes: List[rdflib.query.ResultRow],
+            relationships: List[rdflib.query.ResultRow],
+        ) -> str:
             return (
                 f"""In the following, each IRI is followed by the local name and """
                 f"""optionally its description in parentheses. \n"""

@@ -23,9 +23,6 @@ def test_connect_file_rdf() -> None:
     assert len(output) == 86
 
 
-# TODO: test for RDFS and OWL, too
-
-
 def test_sparql_select() -> None:
     """
     Test for generating and executing simple SPARQL SELECT query.

@@ -114,7 +114,10 @@ class GraphSparqlQAChain(Chain):
                 {"prompt": prompt, "context": context},
                 callbacks=callbacks,
             )
-            return {self.output_key: result[self.qa_chain.output_key]}
+            res = result[self.qa_chain.output_key]
         elif intent == "UPDATE":
             self.graph.update(generated_sparql)
-            return {self.output_key: "Successfully inserted triples into the graph."}
+            res = "Successfully inserted triples into the graph."
+        else:
+            raise ValueError("Unsupported SPARQL query type.")
+        return {self.output_key: res}
