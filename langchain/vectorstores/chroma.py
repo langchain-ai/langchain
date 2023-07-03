@@ -3,7 +3,17 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 import numpy as np
 
@@ -64,6 +74,7 @@ class Chroma(VectorStore):
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[Dict] = None,
         client: Optional[chromadb.Client] = None,
+        relevance_score_fn: Callable[[float], float] = lambda x: x,
     ) -> None:
         """Initialize with Chroma client."""
         try:
@@ -98,6 +109,7 @@ class Chroma(VectorStore):
             else None,
             metadata=collection_metadata,
         )
+        self._relevance_score_fn = relevance_score_fn
 
     @xor_args(("query_texts", "query_embeddings"))
     def __query_collection(
@@ -123,6 +135,11 @@ class Chroma(VectorStore):
             where=where,
             **kwargs,
         )
+
+    def _normalize_relevance_scores(
+        self, documents: List[Tuple[Document, float]]
+    ) -> List[Tuple[Document, float]]:
+        return [(doc, self._relevance_score_fn(score)) for doc, score in documents]
 
     def add_texts(
         self,
@@ -215,7 +232,7 @@ class Chroma(VectorStore):
         results = self.__query_collection(
             query_embeddings=embedding, n_results=k, where=filter
         )
-        return _results_to_docs_and_scores(results)
+        return self._normalize_relevance_scores(_results_to_docs_and_scores(results))
 
     def similarity_search_with_score(
         self,
@@ -254,7 +271,9 @@ class Chroma(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        return self.similarity_search_with_score(query, k, **kwargs)
+        return self._normalize_relevance_scores(
+            self.similarity_search_with_score(query, k, **kwargs)
+        )
 
     def max_marginal_relevance_search_by_vector(
         self,
