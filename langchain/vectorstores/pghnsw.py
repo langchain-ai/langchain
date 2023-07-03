@@ -78,7 +78,7 @@ class EmbeddingStore(BaseModel):
     )
     collection = relationship(CollectionStore, back_populates="embeddings")
 
-    embedding = sqlalchemy.Column(sqlalchemy.ARRAY(sqlalchemy.REAL)) # type: ignore
+    embedding = sqlalchemy.Column(sqlalchemy.ARRAY(sqlalchemy.REAL))  # type: ignore
     document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     cmetadata = sqlalchemy.Column(JSON, nullable=True)
 
@@ -89,6 +89,7 @@ class EmbeddingStore(BaseModel):
 class QueryResult:
     EmbeddingStore: EmbeddingStore
     distance: float
+
 
 class HNSWVectoreStore(VectorStore):
     """
@@ -106,6 +107,7 @@ class HNSWVectoreStore(VectorStore):
         (default: False)
         - Useful for testing.
     """
+
     def __init__(
         self,
         connection_string: str,
@@ -161,11 +163,19 @@ class HNSWVectoreStore(VectorStore):
                 session, self.collection_name, cmetadata=self.collection_metadata
             )
 
-    def create_hnsw_index(self, max_elements: int = 10000, dims: int = ADA_TOKEN_COUNT, m: int = 8, ef_construction: int = 16, ef_search: int = 16) -> None:    
+    def create_hnsw_index(
+        self,
+        max_elements: int = 10000,
+        dims: int = ADA_TOKEN_COUNT,
+        m: int = 8,
+        ef_construction: int = 16,
+        ef_search: int = 16,
+    ) -> None:
         # Define the SQL queries for creating the HNSW extension and index
         create_index_query = sqlalchemy.text(
-            "CREATE INDEX IF NOT EXISTS langchain_pg_embedding_idx ON langchain_pg_embedding USING hnsw (embedding) WITH (maxelements = {}, dims={}, m={}, efconstruction={}, efsearch={});"
-            .format(max_elements, dims, m, ef_construction, ef_search)
+            "CREATE INDEX IF NOT EXISTS langchain_pg_embedding_idx ON langchain_pg_embedding USING hnsw (embedding) WITH (maxelements = {}, dims={}, m={}, efconstruction={}, efsearch={});".format(
+                max_elements, dims, m, ef_construction, ef_search
+            )
         )
 
         # Execute the queries
@@ -343,10 +353,14 @@ class HNSWVectoreStore(VectorStore):
             results: List[QueryResult] = (
                 session.query(
                     EmbeddingStore,
-                    func.abs(EmbeddingStore.embedding.op('<->')(embedding)).label("distance")
+                    func.abs(EmbeddingStore.embedding.op("<->")(embedding)).label(
+                        "distance"
+                    ),
                 )  # Specify the columns you need here, e.g., EmbeddingStore.embedding
                 .filter(filter_by)
-                .order_by(func.abs(EmbeddingStore.embedding.op('<->')(embedding)).asc())  # Using PostgreSQL specific operator with the correct column name
+                .order_by(
+                    func.abs(EmbeddingStore.embedding.op("<->")(embedding)).asc()
+                )  # Using PostgreSQL specific operator with the correct column name
                 .limit(k)
                 .all()
             )
@@ -370,7 +384,6 @@ class HNSWVectoreStore(VectorStore):
         filter: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
-
         docs_and_scores = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, filter=filter
         )
@@ -387,7 +400,6 @@ class HNSWVectoreStore(VectorStore):
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> HNSWVectoreStore:
-
         embeddings = embedding.embed_documents(list(texts))
 
         return cls._initialize_from_embeddings(
@@ -412,7 +424,6 @@ class HNSWVectoreStore(VectorStore):
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> HNSWVectoreStore:
-
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
 
@@ -435,7 +446,6 @@ class HNSWVectoreStore(VectorStore):
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> HNSWVectoreStore:
-
         connection_string = cls.get_connection_string(kwargs)
 
         store = cls(
@@ -474,7 +484,6 @@ class HNSWVectoreStore(VectorStore):
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> HNSWVectoreStore:
-
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
         connection_string = cls.get_connection_string(kwargs)
