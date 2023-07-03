@@ -49,6 +49,13 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         pydantic_args = self.pydantic_schema.parse_raw(_args)
         return pydantic_args
 
+class PydanticOutputFunctionsParserToString(OutputFunctionsParser):
+    pydantic_schema: Any
+
+    def parse_result(self, result: List[Generation]) -> str:
+        _args = super().parse_result(result)
+        pydantic_args = self.pydantic_schema.parse_raw(_args)
+        return str(pydantic_args.dict())
 
 class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
     attr_name: str
