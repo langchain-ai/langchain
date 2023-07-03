@@ -18,7 +18,7 @@ class DataForSeoAPIWrapper(BaseModel):
         default={
             "location_name": "United States",
             "language_code": "en",
-            "se_depth": 10,
+            "depth": 10,
             "se_name": "google",
             "se_type": "organic"
         }
@@ -134,7 +134,6 @@ class DataForSeoAPIWrapper(BaseModel):
 
     def _process_response(self, res: dict) -> str:
         """Process response from DataForSEO SERP API."""
-
         toret = "No good search result found"
         for task in res.get('tasks', []):
             for result in task.get('result', []):
