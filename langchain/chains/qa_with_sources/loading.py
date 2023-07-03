@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Mapping, Optional, Protocol
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
@@ -18,6 +17,7 @@ from langchain.chains.qa_with_sources import (
 from langchain.chains.question_answering.map_rerank_prompt import (
     PROMPT as MAP_RERANK_PROMPT,
 )
+from langchain.schema.base_language import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
 
 

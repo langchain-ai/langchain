@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, root_validator
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -27,6 +26,7 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
 )
 from langchain.docstore.document import Document
 from langchain.schema import BasePromptTemplate
+from langchain.schema.base_language import BaseLanguageModel
 
 
 class BaseQAWithSourcesChain(Chain, ABC):

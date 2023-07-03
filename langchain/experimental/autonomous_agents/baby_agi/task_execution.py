@@ -1,5 +1,5 @@
 from langchain import LLMChain, PromptTemplate
-from langchain.base_language import BaseLanguageModel
+from langchain.schema.base_language import BaseLanguageModel
 
 
 class TaskExecutionChain(LLMChain):

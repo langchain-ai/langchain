@@ -4,10 +4,10 @@ from __future__ import annotations
 from typing import Any, List, Optional, Sequence
 
 from langchain import PromptTemplate
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
+from langchain.schema.base_language import BaseLanguageModel
 
 
 def _parse_string_eval_output(text: str) -> dict:

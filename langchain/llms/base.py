@@ -11,7 +11,6 @@ import yaml
 from pydantic import Field, root_validator, validator
 
 import langchain
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -27,6 +26,7 @@ from langchain.schema import (
     PromptValue,
     RunInfo,
 )
+from langchain.schema.base_language import BaseLanguageModel
 from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
 
 

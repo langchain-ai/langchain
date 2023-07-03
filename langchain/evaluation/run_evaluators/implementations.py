@@ -4,7 +4,6 @@ from langchainplus_sdk.evaluation import EvaluationResult
 from langchainplus_sdk.schemas import Example, Run, RunTypeEnum
 from pydantic import BaseModel, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.evaluation.agents.trajectory_eval_prompt import (
@@ -25,6 +24,7 @@ from langchain.evaluation.run_evaluators.base import (
 )
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate, OutputParserException
+from langchain.schema.base_language import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 _QA_PROMPTS = {
