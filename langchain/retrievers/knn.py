@@ -56,11 +56,7 @@ class KNNRetriever(BaseRetriever, BaseModel):
         return cls(embeddings=embeddings, index=index, texts=texts, **kwargs)
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         query_embeds = np.array(self.embeddings.embed_query(query))
         # calc L2 norm
@@ -84,10 +80,6 @@ class KNNRetriever(BaseRetriever, BaseModel):
         return top_k_results
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError
