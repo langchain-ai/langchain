@@ -17,13 +17,11 @@ def test_connect_file_rdf() -> None:
         standard="rdf",
     )
 
-    query = (
-        """SELECT ?s ?p ?o\n"""
-        """WHERE { ?s ?p ?o }"""
-    )
+    query = """SELECT ?s ?p ?o\n""" """WHERE { ?s ?p ?o }"""
 
     output = graph.query(query)
     assert len(output) == 86
+
 
 # TODO: test for RDFS and OWL, too
 

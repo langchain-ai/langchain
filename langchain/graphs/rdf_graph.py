@@ -4,7 +4,6 @@ from typing import (
     Tuple,
 )
 
-
 prefixes = {
     "owl": """PREFIX owl: <http://www.w3.org/2002/07/owl#>\n""",
     "rdf": """PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n""",
@@ -38,28 +37,40 @@ rel_query_rdf = prefixes["rdfs"] + (
     """}"""
 )
 
-rel_query_rdfs = prefixes["rdf"] + prefixes["rdfs"] + (
-    """SELECT DISTINCT ?rel ?com\n"""
-    """WHERE { \n"""
-    """    ?rel a/rdfs:subPropertyOf* rdf:Property . \n"""
-    """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
-    """}"""
+rel_query_rdfs = (
+    prefixes["rdf"]
+    + prefixes["rdfs"]
+    + (
+        """SELECT DISTINCT ?rel ?com\n"""
+        """WHERE { \n"""
+        """    ?rel a/rdfs:subPropertyOf* rdf:Property . \n"""
+        """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+        """}"""
+    )
 )
 
-op_query_owl = prefixes["rdfs"] + prefixes["owl"] + (
-    """SELECT DISTINCT ?op ?com\n"""
-    """WHERE { \n"""
-    """    ?op a/rdfs:subPropertyOf* owl:ObjectProperty . \n"""
-    """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
-    """}"""
+op_query_owl = (
+    prefixes["rdfs"]
+    + prefixes["owl"]
+    + (
+        """SELECT DISTINCT ?op ?com\n"""
+        """WHERE { \n"""
+        """    ?op a/rdfs:subPropertyOf* owl:ObjectProperty . \n"""
+        """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+        """}"""
+    )
 )
 
-dp_query_owl = prefixes["rdfs"] + prefixes["owl"] + (
-    """SELECT DISTINCT ?dp ?com\n"""
-    """WHERE { \n"""
-    """    ?dp a/rdfs:subPropertyOf* owl:DatatypeProperty . \n"""
-    """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
-    """}"""
+dp_query_owl = (
+    prefixes["rdfs"]
+    + prefixes["owl"]
+    + (
+        """SELECT DISTINCT ?dp ?com\n"""
+        """WHERE { \n"""
+        """    ?dp a/rdfs:subPropertyOf* owl:DatatypeProperty . \n"""
+        """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+        """}"""
+    )
 )
 
 
@@ -101,17 +112,24 @@ class RdfGraph:
 
         try:
             import rdflib
-            from rdflib.plugins.stores import sparqlstore
             from rdflib.graph import DATASET_DEFAULT_GRAPH_ID as default
+            from rdflib.plugins.stores import sparqlstore
         except ImportError:
             raise ValueError(
                 "Could not import rdflib python package. "
                 "Please install it with `pip install rdflib`."
             )
         if self.standard not in (supported_standards := ("rdf", "rdfs", "owl")):
-            raise ValueError(f"Invalid standard. Supported standards are: {supported_standards}.")
+            raise ValueError(
+                f"Invalid standard. Supported standards are: {supported_standards}."
+            )
 
-        if not source_file and not query_endpoint or source_file and (query_endpoint or update_endpoint):
+        if (
+            not source_file
+            and not query_endpoint
+            or source_file
+            and (query_endpoint or update_endpoint)
+        ):
             raise ValueError(
                 "Could not unambiguously initialize the graph wrapper. "
                 "Specify either a file (local or online) via the source_file "
@@ -176,22 +194,31 @@ class RdfGraph:
         except ParserError as e:
             raise ValueError("Generated SPARQL statement is invalid\n" f"{e}")
         if self.local_copy:
-            self.graph.serialize(destination=self.local_copy, format=self.local_copy.split(".")[-1])
+            self.graph.serialize(
+                destination=self.local_copy, format=self.local_copy.split(".")[-1]
+            )
         else:
             raise ValueError(f"No target file specified for saving the updated file.")
 
     @staticmethod
     def _get_local_name(iri: str) -> str:
-        if '#' in iri:
-            local_name = iri.split('#')[-1]
-        elif '/' in iri:
-            local_name = iri.split('/')[-1]
+        if "#" in iri:
+            local_name = iri.split("#")[-1]
+        elif "/" in iri:
+            local_name = iri.split("/")[-1]
         else:
             raise ValueError(f"Unexpected IRI '{iri}', contains neither '#' nor '/'.")
         return local_name
 
     def _res_to_str(self, res, var: str) -> str:
-        return res[var].n3() + ' (' + self._get_local_name(res[var]) + ', ' + str(res["com"]) + ')'
+        return (
+            res[var].n3()
+            + " ("
+            + self._get_local_name(res[var])
+            + ", "
+            + str(res["com"])
+            + ")"
+        )
 
     def load_schema(self) -> None:
         """
@@ -208,30 +235,29 @@ class RdfGraph:
                 f"""{", ".join([self._res_to_str(r, "rel") for r in relationships])}\n"""
             )
 
-        match self.standard:
-            case "rdf":
-                clss = self.query(cls_query_rdf)
-                rels = self.query(rel_query_rdf)
-                self.schema = _rdf_s_schema(clss, rels)
-            case "rdfs":
-                clss = self.query(cls_query_rdfs)
-                rels = self.query(rel_query_rdfs)
-                self.schema = _rdf_s_schema(clss, rels)
-            case "owl":
-                clss = self.query(cls_query_owl)
-                ops = self.query(cls_query_owl)
-                dps = self.query(cls_query_owl)
-                self.schema = (
-                    f"""In the following, each IRI is followed by the local name and """
-                    f"""optionally its description in parentheses. \n"""
-                    f"""The OWL graph supports the following node types:\n"""
-                    f"""{", ".join([self._res_to_str(r, "cls") for r in clss])}\n"""
-                    f"""The OWL graph supports the following object properties, """
-                    f"""i.e., relationships between objects:\n"""
-                    f"""{", ".join([self._res_to_str(r, "op") for r in ops])}\n"""
-                    f"""The OWL graph supports the following data properties, """
-                    f"""i.e., relationships between objects and literals:\n"""
-                    f"""{", ".join([self._res_to_str(r, "dp") for r in dps])}\n"""
-                )
-            case _:
-                raise ValueError(f"Mode '{self.standard}' is currently not supported.")
+        if self.standard == "rdf":
+            clss = self.query(cls_query_rdf)
+            rels = self.query(rel_query_rdf)
+            self.schema = _rdf_s_schema(clss, rels)
+        elif self.standard == "rdfs":
+            clss = self.query(cls_query_rdfs)
+            rels = self.query(rel_query_rdfs)
+            self.schema = _rdf_s_schema(clss, rels)
+        elif self.standard == "owl":
+            clss = self.query(cls_query_owl)
+            ops = self.query(cls_query_owl)
+            dps = self.query(cls_query_owl)
+            self.schema = (
+                f"""In the following, each IRI is followed by the local name and """
+                f"""optionally its description in parentheses. \n"""
+                f"""The OWL graph supports the following node types:\n"""
+                f"""{", ".join([self._res_to_str(r, "cls") for r in clss])}\n"""
+                f"""The OWL graph supports the following object properties, """
+                f"""i.e., relationships between objects:\n"""
+                f"""{", ".join([self._res_to_str(r, "op") for r in ops])}\n"""
+                f"""The OWL graph supports the following data properties, """
+                f"""i.e., relationships between objects and literals:\n"""
+                f"""{", ".join([self._res_to_str(r, "dp") for r in dps])}\n"""
+            )
+        else:
+            raise ValueError(f"Mode '{self.standard}' is currently not supported.")

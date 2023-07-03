@@ -3,12 +3,7 @@ Question answering over an RDF or OWL graph using SPARQL.
 """
 from __future__ import annotations
 
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional
-)
+from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
@@ -19,7 +14,7 @@ from langchain.chains.graph_qa.prompts import (
     SPARQL_GENERATION_SELECT_PROMPT,
     SPARQL_GENERATION_UPDATE_PROMPT,
     SPARQL_INTENT_PROMPT,
-    SPARQL_QA_PROMPT
+    SPARQL_QA_PROMPT,
 )
 from langchain.chains.llm import LLMChain
 from langchain.graphs.rdf_graph import RdfGraph
@@ -83,24 +78,21 @@ class GraphSparqlQAChain(Chain):
         callbacks = _run_manager.get_child()
         prompt = inputs[self.input_key]
 
-        _intent = self.sparql_intent_chain.run(
-            {"prompt": prompt}, callbacks=callbacks
-        )
+        _intent = self.sparql_intent_chain.run({"prompt": prompt}, callbacks=callbacks)
         intent = _intent.strip()
 
-        match intent:
-            case "SELECT":
-                sparql_generation_chain = self.sparql_generation_select_chain
-            case "UPDATE":
-                sparql_generation_chain = self.sparql_generation_update_chain
-            case _:
-                raise ValueError("I am sorry, but this prompt seems to fit none of the currently supported "
-                                 "SPARQL query types, i.e., SELECT and UPDATE.")
+        if intent == "SELECT":
+            sparql_generation_chain = self.sparql_generation_select_chain
+        elif intent == "UPDATE":
+            sparql_generation_chain = self.sparql_generation_update_chain
+        else:
+            raise ValueError(
+                "I am sorry, but this prompt seems to fit none of the currently supported "
+                "SPARQL query types, i.e., SELECT and UPDATE."
+            )
 
         _run_manager.on_text("Identified intent:", end="\n", verbose=self.verbose)
-        _run_manager.on_text(
-            intent, color="green", end="\n", verbose=self.verbose
-        )
+        _run_manager.on_text(intent, color="green", end="\n", verbose=self.verbose)
 
         generated_sparql = sparql_generation_chain.run(
             {"prompt": prompt, "schema": self.graph.get_schema}, callbacks=callbacks
@@ -111,19 +103,18 @@ class GraphSparqlQAChain(Chain):
             generated_sparql, color="green", end="\n", verbose=self.verbose
         )
 
-        match intent:
-            case "SELECT":
-                context = self.graph.query(generated_sparql)
+        if intent == "SELECT":
+            context = self.graph.query(generated_sparql)
 
-                _run_manager.on_text("Full Context:", end="\n", verbose=self.verbose)
-                _run_manager.on_text(
-                    str(context), color="green", end="\n", verbose=self.verbose
-                )
-                result = self.qa_chain(
-                    {"prompt": prompt, "context": context},
-                    callbacks=callbacks,
-                )
-                return {self.output_key: result[self.qa_chain.output_key]}
-            case "UPDATE":
-                self.graph.update(generated_sparql)
-                return {self.output_key: "Successfully inserted triples into the graph."}
+            _run_manager.on_text("Full Context:", end="\n", verbose=self.verbose)
+            _run_manager.on_text(
+                str(context), color="green", end="\n", verbose=self.verbose
+            )
+            result = self.qa_chain(
+                {"prompt": prompt, "context": context},
+                callbacks=callbacks,
+            )
+            return {self.output_key: result[self.qa_chain.output_key]}
+        elif intent == "UPDATE":
+            self.graph.update(generated_sparql)
+            return {self.output_key: "Successfully inserted triples into the graph."}
