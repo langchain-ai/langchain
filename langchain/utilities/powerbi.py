@@ -215,7 +215,9 @@ class PowerBIDataset(BaseModel):
             timeout=10,
         )
         if response.status == 403:
-            return "Could not login to PowerBI, please check your credentials."
+            return (
+                "TokenError: Could not login to PowerBI, please check your credentials."
+            )
         return response.json()
 
     async def arun(self, command: str) -> Any:
@@ -229,7 +231,7 @@ class PowerBIDataset(BaseModel):
                 timeout=10,
             ) as response:
                 if response.status == 403:
-                    return "Could not login to PowerBI, please check your credentials."
+                    return "TokenError: Could not login to PowerBI, please check your credentials."
                 response_json = await response.json(content_type=response.content_type)
                 return response_json
         async with aiohttp.ClientSession() as session:
@@ -240,7 +242,7 @@ class PowerBIDataset(BaseModel):
                 timeout=10,
             ) as response:
                 if response.status == 403:
-                    return "Could not login to PowerBI, please check your credentials."
+                    return "TokenError: Could not login to PowerBI, please check your credentials."
                 response_json = await response.json(content_type=response.content_type)
                 return response_json
 
