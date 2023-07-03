@@ -14,7 +14,11 @@ from langchain.tools.playwright.base import BaseBrowserTool
 
 
 def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:
-    to_skip = {BaseBrowserTool, GmailBaseTool, O365BaseTool}  # Abstract but not recognized
+    to_skip = {
+        BaseBrowserTool,
+        GmailBaseTool,
+        O365BaseTool,
+    }  # Abstract but not recognized
     subclasses = []
     for subclass in cls.__subclasses__():
         if (
